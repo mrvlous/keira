@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+# Clang-Format Coding Style Specification
+#
+# Defines the C formatting style guidelines enforced across the Keira Kernel codebase.
+# This configuration is based on the LLVM style with modifications to match the
+# kernel project's coding conventions.
+
+# Use LLVM formatting rules as the baseline
+BasedOnStyle: LLVM
+
+# Target programming language is C/C++
+Language: Cpp
+
+# Indentation & Tab Settings
+# Number of columns used for indentation
+IndentWidth: 4
+# Number of columns used for tab width
+TabWidth: 4
+# Avoid using physical tabs, enforce spaces instead
+UseTab: Never
+# Indentation level for wrapped continuation lines
+ContinuationIndentWidth: 4
+
+# Line Width Limit
+# Restrict line width to 100 characters to ensure readability on smaller screens
+ColumnLimit: 100
+
+# Brace Wrapping Rules
+# Enable customized brace placement options
+BreakBeforeBraces: Custom
+BraceWrapping:
+  # Do not wrap brace after case label
+  AfterCaseLabel: false
+  # Do not wrap brace after class definition
+  AfterClass: false
+  # Do not wrap brace after control statements (if, for, while, etc.)
+  AfterControlStatement: Never
+  # Do not wrap brace after enum declaration
+  AfterEnum: false
+  # Do not wrap brace after function definition
+  AfterFunction: false
+  # Do not wrap brace after namespace declaration
+  AfterNamespace: false
+  # Do not wrap brace after Objective-C declaration
+  AfterObjCDeclaration: false
+  # Do not wrap brace after struct declaration
+  AfterStruct: false
+  # Do not wrap brace after union declaration
+  AfterUnion: false
+  # Do not wrap brace before catch statement
+  BeforeCatch: false
+  # Do not wrap brace before else statement
+  BeforeElse: false
+  # Do not indent braces themselves
+  IndentBraces: false
+  # Allow empty functions to be formatted on a single line
+  SplitEmptyFunction: true
+  # Allow empty structs/records to be formatted on a single line
+  SplitEmptyRecord: true
+  # Allow empty namespaces to be formatted on a single line
+  SplitEmptyNamespace: true
+
+# Control Statement & Short Block Handling
+# Prevent collapsing short blocks onto a single line
+AllowShortBlocksOnASingleLine: Never
+# Prevent collapsing case labels and their statements onto a single line
+AllowShortCaseLabelsOnASingleLine: false
+# Prevent collapsing short functions onto a single line
+AllowShortFunctionsOnASingleLine: None
+# Prevent collapsing short if-statements onto a single line
+AllowShortIfStatementsOnASingleLine: Never
+# Prevent collapsing short loop statements onto a single line
+AllowShortLoopsOnASingleLine: false
+
+# Alignment Rules
+# Align arguments after an open bracket
+AlignAfterOpenBracket: Align
+# Do not align consecutive assignment operators
+AlignConsecutiveAssignments: None
+# Do not align consecutive declarations
+AlignConsecutiveDeclarations: None
+# Do not align consecutive macro definitions
+AlignConsecutiveMacros: None
+# Align escaped newlines (in macros) to the left
+AlignEscapedNewlines: Left
+# Align operands of binary operations
+AlignOperands: Align
+# Align trailing comments
+AlignTrailingComments: true
+
+# Pointer & Reference Alignment
+# Bind pointer asterisks to the right (e.g. char *ptr)
+PointerAlignment: Right
+
+# Spacing Rules
+# Do not add space after a C-style cast
+SpaceAfterCStyleCast: false
+# Add space before assignment operators
+SpaceBeforeAssignmentOperators: true
+# Add space before parentheses only in control statements
+SpaceBeforeParens: ControlStatements
+# Do not insert spaces in empty parentheses
+SpaceInEmptyParentheses: false
+# Do not insert spaces in C-style cast parentheses
+SpacesInCStyleCastParentheses: false
+# Do not insert spaces inside standard parentheses
+SpacesInParentheses: false
+# Do not insert spaces inside square brackets
+SpacesInSquareBrackets: false
+
+# Header Include Sorting
+# Automatically sort include statements alphabetically
+SortIncludes: true
+# Regroup include blocks to avoid duplicate groups
+IncludeBlocks: Regroup

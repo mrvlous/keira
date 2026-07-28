@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+# Rustfmt Style Specification
+#
+# Defines the formatting style guidelines enforced across the Rust source code
+# in the Keira Kernel project.
+
+# Maximum line width limit (100 characters)
+max_width = 100
+
+# Number of spaces per tab indentation
+tab_spaces = 4
+
+# Enforce Unix-style (LF) line endings
+newline_style = "Unix"
+
+# Target Rust edition for formatting constraints
+edition = "2021"
+
+# Use default heuristic rules to decide when to wrap small code constructs
+use_small_heuristics = "Default"

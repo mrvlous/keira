@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+# Clippy Linter Configuration
+#
+# Adjusts limits and style rules for cargo clippy code diagnostics.
+# See https://doc.rust-lang.org/clippy/index.html for details.
+
+# Maximum number of parameters a function can have before warning
+too-many-arguments-threshold = 8
+
+# Maximum line length warning threshold (aligned with rustfmt.toml)
+max-line-length = 100

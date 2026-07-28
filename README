@@ -1,0 +1,89 @@
+Keira Kernel
+============
+
+Keira is a freestanding, multi-language x86_64 operating system kernel. It
+manages system hardware resources, coordinates low-level C drivers, and
+provides a multitasking scheduler, virtual file routing, and a system shell
+controlled by a core Rust kernel static library.
+
+Quick Start
+-----------
+
+* Get the latest code: https://github.com/mrvlous/keira
+* Setup the workspace: See docs/contributing/setup.md
+* Build the kernel: See docs/contributing/build.md
+
+Essential Documentation
+-----------------------
+
+All developers and users should be familiar with:
+
+* Building requirements: docs/contributing/setup.md
+* Coding Style: docs/contributing/style.md
+* License: See LICENSE (GPL-2.0)
+
+More modular guides can be found starting from the documentation map:
+docs/README.md
+
+
+Who Are You?
+============
+
+Find your role below:
+
+* New Kernel Developer - Getting started with kernel development
+* Academic Researcher - Studying kernel internals and architecture
+* Device Driver Developer - Writing drivers for hardware interfaces
+* AI Coding Assistant - LLMs and AI-powered development tools
+
+
+For Specific Users
+==================
+
+New Kernel Developer
+--------------------
+
+Welcome! Start your Keira development journey here:
+
+* Getting Started: docs/contributing/setup.md
+* Build Pipeline: docs/contributing/build.md
+* Coding Style: docs/contributing/style.md
+* Bootstrapping Sequence: docs/architecture/bootstrapping.md
+
+Academic Researcher
+-------------------
+
+Explore the kernel's core subsystems and design details:
+
+* Memory Management: docs/architecture/memory.md
+* Task Scheduler: docs/architecture/scheduler.md
+* System Calls and Privilege: docs/architecture/syscalls.md
+* Virtual Filesystem (VFS) Layer: docs/filesystems/vfs.md
+* FAT Filesystem Implementation: docs/filesystems/fat.md
+* TAR Boot initrd Reader: docs/filesystems/tar.md
+
+Device Driver Developer
+-----------------------
+
+Write and support hardware device drivers:
+
+* VGA Text Console: docs/drivers/vga.md
+* Serial UART COM1: docs/drivers/serial.md
+* Sound (PC Speaker & HDA): docs/drivers/sound.md
+* Mouse & CMOS RTC: docs/drivers/mouse_rtc.md
+
+AI Coding Assistant
+-------------------
+
+CRITICAL: If you are an LLM or AI-powered coding assistant, you MUST read and
+follow the coding standards before proposing changes to Keira:
+
+* Coding Style and Comment Rules: docs/contributing/style.md
+
+
+Communication and Support
+=========================
+
+* Repository Home: https://github.com/mrvlous/keira
+* Issue Tracker: https://github.com/mrvlous/keira/issues
+* Technical Index: docs/README.md

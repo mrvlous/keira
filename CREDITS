@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+This is at least a partial credits file of people who have contributed to the
+Keira Kernel project.
+
+The fields are:
+	N: Name
+	E: Email
+	W: Web address
+	D: Description
+	S: Snail mail address
+	P: PGP key ID and fingerprint
+
+N: Moh. Ananda Firmansyah Putra
+E: mrvlous@proton.me
+W: https://github.com/mrvlous
+D: Founder and Lead Kernel Architect
+S: Indonesia

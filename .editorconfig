@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+# EditorConfig Specification
+#
+# Defines consistent coding style rules across editors for the project's source files.
+# See https://editorconfig.org for documentation.
+
+# Set as root EditorConfig file to prevent searching parent directories
+root = true
+
+# Global configuration defaults for all files
+[*]
+# Enforce Unix-style line endings (LF)
+end_of_line = lf
+# Ensure every file ends with a trailing newline character
+insert_final_newline = true
+# Strip any trailing whitespace from ends of lines
+trim_trailing_whitespace = true
+# Set default character encoding format
+charset = utf-8
+
+# Indentation settings for C, C++ and Linker script source files
+[*.{c,h,ld}]
+indent_style = space
+indent_size = 4
+
+# Indentation settings for Rust source files
+[*.rs]
+indent_style = space
+indent_size = 4
+
+# Indentation settings for Assembly files
+[*.{asm,inc}]
+indent_style = space
+indent_size = 4
+
+# Indentation settings for TOML configuration files
+[*.toml]
+indent_style = space
+indent_size = 4
+
+# Indentation settings for Makefile build scripts
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+# Indentation settings for JSON target specifications
+[*.json]
+indent_style = space
+indent_size = 4

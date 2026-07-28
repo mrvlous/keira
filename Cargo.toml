@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+# Cargo Configuration File for Keira Kernel
+#
+# Configures crate metadata, compilation targets, library format,
+# and profiles for compiling the Rust core module.
+
+[package]
+# Name of the Rust package
+name = "keira"
+# Current package version
+version = "0.1.0"
+# Target Rust edition
+edition = "2021"
+# List of project authors and contact emails
+authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
+# Brief description of the Rust kernel library
+description = "Keira x86_64 kernel: Rust core module (no_std, freestanding)"
+# Licensing classification of the project
+license = "GPL-2.0-only"
+# Homepage URL of the project
+homepage = "https://github.com/mrvlous/keira"
+# Source code repository URL
+repository = "https://github.com/mrvlous/keira"
+# Search tags/keywords for crate categorization
+keywords = ["kernel", "os", "freestanding", "x86_64", "no_std"]
+# Target categories for categorization
+categories = ["embedded", "no-std", "os-development"]
+
+[lib]
+# Output name of the compiled library
+name = "keira_kernel"
+# Path to the library entry point source file
+path = "kernel/src/lib.rs"
+# Compile as a static archive library (.a) for linking with bootstrap assembly
+crate-type = ["staticlib"]
+
+# Development build configuration profile
+[profile.dev]
+# Disable stack unwinding and abort immediately on panic (required in freestanding environments)
+panic = "abort"
+
+# Production release build configuration profile
+[profile.release]
+# Disable stack unwinding and abort immediately on panic (required in freestanding environments)
+panic = "abort"
+# Optimize heavily for speed (level 3)
+opt-level = 3
+# Enable Link-Time Optimization (LTO) to optimize across crate boundaries
+lto = true
+# Restrict code generation to a single thread/unit to maximize optimization scope
+codegen-units = 1
