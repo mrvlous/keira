@@ -118,6 +118,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("tasks") => {
                 vga::print_str("Usage: tasks\nList all running processes, their state, and IDs in the scheduler.\n");
             }
+            Some("stop") => {
+                vga::print_str(
+                    "Usage: stop <PID>\nTerminate a running process by its Process ID (PID).\n",
+                );
+            }
             Some("wait") => {
                 vga::print_str("Usage: wait <ms>\nSuspend the shell execution for a specified number of milliseconds.\n");
             }

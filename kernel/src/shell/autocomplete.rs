@@ -39,7 +39,7 @@ pub unsafe fn handle_autocomplete() {
     let commands = [
         "guide", "system", "cpu", "runtime", "time", "memory", "devices", "drives", "use", "disk",
         "ramdisk", "list", "go", "view", "create", "folder", "delete", "edit", "initrd", "search",
-        "tasks", "wait", "run", "script", "say", "wipe", "reset", "copy", "move", "write",
+        "tasks", "stop", "wait", "run", "script", "say", "wipe", "reset", "copy", "move", "write",
         "please", "login", "history", "theme", "play", "hda", "help",
     ];
 

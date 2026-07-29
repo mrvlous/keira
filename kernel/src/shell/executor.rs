@@ -316,6 +316,7 @@ pub fn execute_command_inner(cmd: &str) {
         "reset" => super::cmds::reset::run(&mut parts),
         "run" => super::cmds::run::run(&mut parts),
         "tasks" => super::cmds::tasks::run(&mut parts),
+        "stop" => super::cmds::stop::run(&mut parts),
         "disk" => super::cmds::disk::run(&mut parts),
 
         "list" => super::cmds::list::run(&mut parts),

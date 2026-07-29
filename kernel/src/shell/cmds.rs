@@ -40,6 +40,7 @@ pub mod run;
 pub mod runtime;
 pub mod say;
 pub mod script;
+pub mod stop;
 pub mod system;
 pub mod tasks;
 pub mod theme;

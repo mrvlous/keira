@@ -54,3 +54,16 @@ User processes run in Ring 3 with restricted memory access and permissions.
     *   Code Segment (CS) set to `0x2B` (User Code Segment selector with Ring 3 privileges).
     *   Stack Segment (SS) set to `0x23` (User Data Segment selector with Ring 3 privileges).
     *   RFLAGS set to `0x202` (Interrupt Flag enabled).
+
+---
+
+## 4. Task Termination and Process Control
+
+### Process Termination (`stop_task`)
+*   **API**: `pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str>`
+*   **Protection**: Task 0 (the bootstrap kernel shell) cannot be terminated.
+*   **Cleanup Pipeline**: When a task's state is set to `TaskState::Terminated`, the scheduler releases all active file locks (`release_all_locks_for_task`), frees allocated user space virtual memory pages (`free_user_pages`), and returns the stack frame (`pmm::free_frame`) to the physical page allocator.
+
+### Shell Control Command (`stop`)
+*   **Usage**: `stop <PID>` (Requires admin privilege or `please stop <PID>`).
+*   **Execution**: Resolves target process by numeric PID and invokes `stop_task(pid)` in the scheduler.

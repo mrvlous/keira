@@ -395,6 +395,25 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
     current_rsp
 }
 
+/// Terminate/stop a task by PID
+///
+/// # Safety
+/// This function modifies global mutable state `TASKS`. Must be called in kernel context.
+pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str> {
+    if pid == 0 {
+        return Err("Cannot stop the kernel shell (Task 0)");
+    }
+    for i in 1..MAX_TASKS {
+        if let Some(ref mut task) = TASKS[i] {
+            if task.id == pid {
+                task.state = TaskState::Terminated;
+                return Ok(());
+            }
+        }
+    }
+    Err("Task PID not found")
+}
+
 /// List all registered tasks
 ///
 /// # Safety
