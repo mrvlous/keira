@@ -44,16 +44,23 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str(" ...\n");
         vga::set_color(vga::Color::White, vga::Color::Black);
 
-        vga::print_str("HTTP/1.1 200 OK\n");
-        vga::print_str("Content-Type: text/plain\n");
-        vga::print_str("Content-Length: 42\n\n");
-        vga::print_str("Hello from Keira Kernel v0.3.0 Network!\n");
-
-        e1000::PACKETS_SENT += 1;
-        e1000::PACKETS_RECEIVED += 1;
-
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("\n[Download Complete: 42 bytes received]\n");
+        match e1000::fetch_http(url) {
+            Ok((payload, len)) => {
+                if let Ok(s) = core::str::from_utf8(&payload[..len]) {
+                    vga::print_str(s);
+                }
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("\n[Download Complete: ");
+                vga::print_u64(len as u64);
+                vga::print_str(" bytes received]\n");
+            }
+            Err(err) => {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("Error: ");
+                vga::print_str(err);
+                vga::print_str("\n");
+            }
+        }
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }
