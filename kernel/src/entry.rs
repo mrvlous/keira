@@ -130,11 +130,23 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     }
     crate::io::vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);
 
-    // Initialize PCI and AHCI
-    crate::io::vga::print_boot_log("Initializing PCI Bus & storage/audio host controllers", 0);
+    // Initialize PCI, AHCI, HDA and Network
+    crate::io::vga::print_boot_log(
+        "Initializing PCI Bus & storage/audio/network host controllers",
+        0,
+    );
     crate::io::pci::init();
     let _ = crate::io::ahci::init();
     let _ = unsafe { crate::io::hda::init() };
+    unsafe {
+        if crate::net::e1000::init() {
+            crate::io::vga::print_boot_log(
+                "Initializing Intel e1000 Gigabit Ethernet NIC driver",
+                0,
+            );
+            crate::io::vga::print_boot_log("Configuring Network Stack (Ethernet/ARP/IPv4/ICMP)", 0);
+        }
+    }
 
     // Initialize FAT filesystem
     unsafe {

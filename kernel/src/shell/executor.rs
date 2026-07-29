@@ -310,6 +310,8 @@ pub fn execute_command_inner(cmd: &str) {
         "time" => super::cmds::time::run(&mut parts),
         "memory" => super::cmds::memory::run(&mut parts),
         "devices" => super::cmds::devices::run(&mut parts),
+        "network" => super::cmds::network::run(&mut parts),
+        "download" => super::cmds::download::run(&mut parts),
         "wait" => super::cmds::wait::run(&mut parts),
         "initrd" => super::cmds::initrd::run(&mut parts),
         "wipe" => super::cmds::wipe::run(&mut parts),

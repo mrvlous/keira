@@ -37,10 +37,11 @@ pub unsafe fn handle_autocomplete() {
 
     let is_command = prefix_start == 0;
     let commands = [
-        "guide", "system", "cpu", "runtime", "time", "memory", "devices", "drives", "use", "disk",
-        "ramdisk", "list", "go", "view", "create", "folder", "delete", "edit", "initrd", "search",
-        "tasks", "stop", "wait", "run", "script", "say", "wipe", "reset", "copy", "move", "write",
-        "please", "login", "history", "theme", "play", "hda", "help",
+        "guide", "system", "cpu", "runtime", "time", "memory", "devices", "network", "download",
+        "drives", "use", "disk", "ramdisk", "list", "go", "view", "create", "folder", "delete",
+        "edit", "initrd", "search", "tasks", "stop", "wait", "run", "script", "say", "wipe",
+        "reset", "copy", "move", "write", "please", "login", "history", "theme", "play", "hda",
+        "help",
     ];
 
     if is_command {

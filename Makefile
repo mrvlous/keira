@@ -136,6 +136,7 @@ C_SRCS        := drivers/serial/serial.c \
 	         drivers/keyboard/keyboard.c \
 	         drivers/mouse/mouse.c \
 	         drivers/rtc/rtc.c \
+	         drivers/net/e1000.c \
 	         mm/heap.c \
 	         arch/x86/kernel/hw_init.c
 

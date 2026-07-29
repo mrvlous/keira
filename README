@@ -71,6 +71,7 @@ Write and support hardware device drivers:
 * Serial UART COM1: docs/drivers/serial.md
 * Sound (PC Speaker & HDA): docs/drivers/sound.md
 * Mouse & CMOS RTC: docs/drivers/mouse_rtc.md
+* Intel e1000 Network Driver: docs/drivers/network.md
 
 AI Coding Assistant
 -------------------

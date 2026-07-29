@@ -17,6 +17,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.
 *   [Mouse and RTC Drivers](drivers/mouse_rtc.md): PS/2 mouse packet decoding, resolution setup, and CMOS Real-Time Clock register queries.
+*   [Intel e1000 Network Driver](drivers/network.md): PCI enumeration, MAC address parsing, and ICMP Ping network interface handling.
 
 ### 3. Filesystems
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, mount points, file descriptors, and abstraction layers.

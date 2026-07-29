@@ -28,7 +28,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("System & Hardware:\n");
                 vga::set_color(vga::Color::White, bg);
-                vga::print_str("  system    cpu       runtime   time      memory    devices\n\n");
+                vga::print_str(
+                    "  system    cpu       runtime   time      memory    devices   network\n",
+                );
+                vga::print_str("  download\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -40,7 +43,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Process & Execution:\n");
                 vga::set_color(vga::Color::White, bg);
-                vga::print_str("  tasks     wait      script    run\n\n");
+                vga::print_str("  tasks     stop      wait      script    run\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("User Account & Privileges:\n");
@@ -63,9 +66,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 );
             }
             Some("devices") => {
-                vga::print_str(
-                    "Usage: devices\nScan and list all detected devices on the PCI bus.\n",
-                );
+                vga::print_str("Usage: devices\nScan and list all detected PCI hardware devices and their vendor IDs.\n");
+            }
+            Some("network") => {
+                vga::print_str("Usage: network [ping <target_ip>]\nDisplay network interface state or send ICMP ping packets.\n");
+            }
+            Some("download") => {
+                vga::print_str("Usage: download <URL>\nFetch and display data over HTTP/IP network connections.\n");
             }
             Some("runtime") => {
                 vga::print_str(

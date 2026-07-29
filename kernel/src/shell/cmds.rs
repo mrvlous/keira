@@ -18,6 +18,7 @@ pub mod delete;
 pub mod devices;
 
 pub mod disk;
+pub mod download;
 pub mod drives;
 pub mod edit;
 pub mod folder;
@@ -33,6 +34,7 @@ pub mod list;
 pub mod login;
 pub mod memory;
 pub mod r#move;
+pub mod network;
 pub mod play;
 pub mod ramdisk;
 pub mod reset;
