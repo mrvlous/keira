@@ -458,6 +458,40 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             u64::MAX
         }
+        // Syscall 17: HTTP GET Request
+        // Signature: sys_http_get(url_ptr: *const u8, buf_ptr: *mut u8, max_len: u64) -> payload_len or u64::MAX
+        17 => {
+            let url_ptr = arg1 as *const u8;
+            let buf_ptr = arg2 as *mut u8;
+            let max_len = arg3;
+            if url_ptr.is_null() || buf_ptr.is_null() || max_len == 0 {
+                return u64::MAX;
+            }
+            let mut url_buf = [0u8; 128];
+            let len = match unsafe { read_user_string(url_ptr, &mut url_buf) } {
+                Ok(l) => l,
+                Err(_) => return u64::MAX,
+            };
+            let url_str = match core::str::from_utf8(&url_buf[..len]) {
+                Ok(s) => s,
+                Err(_) => return u64::MAX,
+            };
+            if validate_user_ptr(buf_ptr as u64, max_len).is_err() {
+                return u64::MAX;
+            }
+            unsafe {
+                match crate::net::e1000::fetch_http(url_str) {
+                    Ok((payload, payload_len)) => {
+                        let to_copy = core::cmp::min(payload_len, max_len as usize);
+                        for i in 0..to_copy {
+                            *buf_ptr.add(i) = payload[i];
+                        }
+                        to_copy as u64
+                    }
+                    Err(_) => u64::MAX,
+                }
+            }
+        }
         // Syscall 16: chdir
         // Signature: sys_chdir(path_ptr: *const u8) -> 0 on success
         16 => {

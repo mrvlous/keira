@@ -31,11 +31,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some(u) => u,
             None => {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);
-                vga::print_str("Usage: download <URL>\n");
+                vga::print_str("Usage: download <URL> [target_file_path]\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 return;
             }
         };
+
+        let target_file = parts.next();
 
         e1000::init();
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
@@ -46,9 +48,27 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         match e1000::fetch_http(url) {
             Ok((payload, len)) => {
-                if let Ok(s) = core::str::from_utf8(&payload[..len]) {
-                    vga::print_str(s);
+                if let Some(dest_path) = target_file {
+                    let _ = crate::fs::fat::create_file(dest_path);
+                    match crate::fs::fat::write_file_content(dest_path, &payload[..len]) {
+                        Ok(_) => {
+                            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                            vga::print_str("Saved network payload to ");
+                            vga::print_str(dest_path);
+                            vga::print_str(" (FAT16 Disk Storage)\n");
+                        }
+                        Err(_) => {
+                            if let Ok(s) = core::str::from_utf8(&payload[..len]) {
+                                vga::print_str(s);
+                            }
+                        }
+                    }
+                } else {
+                    if let Ok(s) = core::str::from_utf8(&payload[..len]) {
+                        vga::print_str(s);
+                    }
                 }
+
                 vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                 vga::print_str("\n[Download Complete: ");
                 vga::print_u64(len as u64);

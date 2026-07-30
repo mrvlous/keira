@@ -72,7 +72,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: network [ping <target_ip>]\nDisplay network interface state or send ICMP ping packets.\n");
             }
             Some("download") => {
-                vga::print_str("Usage: download <URL>\nFetch and display data over HTTP/IP network connections.\n");
+                vga::print_str("Usage: download <URL> [target_file_path]\nFetch HTTP payload data stream and save directly to FAT16 disk storage.\n");
             }
             Some("runtime") => {
                 vga::print_str(

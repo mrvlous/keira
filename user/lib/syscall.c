@@ -13,7 +13,7 @@
  *
  * Provides inline assembly wrappers invoking x86_64 `syscall` instruction.
  * Standard x86_64 ABI register conventions:
- *   - RAX : System call vector number (1 to 16)
+ *   - RAX : System call vector number (1 to 17)
  *   - RDI : Argument 1
  *   - RSI : Argument 2
  *   - RDX : Argument 3
@@ -239,6 +239,24 @@ int sys_chdir(const char *path) {
     __asm__ volatile("syscall"
                      : "=a"(res)
                      : "a"(16), "D"((unsigned long)path)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+/**
+ * sys_http_get - Perform HTTP GET network request over e1000 network stack.
+ * @url: Null-terminated target URL string.
+ * @buf: Destination memory buffer pointer.
+ * @max_len: Buffer capacity limit in bytes.
+ *
+ * Return: Bytes received in response payload, or negative error code.
+ */
+int sys_http_get(const char *url, void *buf, int max_len) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(17), "D"((unsigned long)url), "S"((unsigned long)buf),
+                       "d"((unsigned long)max_len)
                      : "rcx", "r11", "memory");
     return (int)res;
 }

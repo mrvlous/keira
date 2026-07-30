@@ -20,4 +20,4 @@ The network driver ([e1000.c](../../drivers/net/e1000.c) & [e1000.rs](../../kern
 
 * **`network`**: Displays the active network interface card state (`eth0`), MAC address, NAT IP address (`10.0.2.15`), and packet TX/RX statistics.
 * **`network ping <target_ip>`**: Transmits ICMP Echo Request packets to the target IP address (e.g. `8.8.8.8`) and calculates round-trip latency (RTT) in milliseconds.
-* **`download <URL>`**: Fetches network resources over HTTP/IP and displays received data payload.
+* **`download <URL> [target_file_path]`**: Fetches network resources over HTTP/IP and saves received payload data stream directly to FAT16 disk storage.

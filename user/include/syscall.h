@@ -143,4 +143,14 @@ int sys_getcwd(char *buf, int len);
  */
 int sys_chdir(const char *path);
 
+/**
+ * sys_http_get - Perform HTTP GET network request over e1000 network stack.
+ * @url: Null-terminated target URL string.
+ * @buf: Destination memory buffer pointer.
+ * @max_len: Buffer capacity limit in bytes.
+ *
+ * Return: Bytes received in response payload, or negative error code.
+ */
+int sys_http_get(const char *url, void *buf, int max_len);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */

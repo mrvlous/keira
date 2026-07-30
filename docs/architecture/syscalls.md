@@ -24,6 +24,27 @@ When a user program executes the `syscall` instruction:
     *   Passes the system call parameters (number in RAX; arguments in RDI, RSI, RDX, R10, R8, R9) to the Rust handler.
     *   Invokes the handler function `syscall_handler` in [handler.rs](../../kernel/src/syscall/handler.rs).
 
+### System Call Vector Table
+| Vector | Name | Signature |
+| :---: | :--- | :--- |
+| 1 | `sys_print_char` | `(char c)` |
+| 2 | `sys_exit` | `(void)` |
+| 3 | `sys_sleep` | `(ms: u64)` |
+| 4 | `sys_uptime` | `() -> u64` |
+| 5 | `sys_exec` | `(path: *const u8)` |
+| 6 | `sys_open` | `(path: *const u8, write_mode: u64) -> fd` |
+| 7 | `sys_read` | `(fd: u64, buf: *mut u8, len: u64) -> bytes` |
+| 8 | `sys_write` | `(fd: u64, buf: *const u8, len: u64) -> bytes` |
+| 9 | `sys_close` | `(fd: u64) -> status` |
+| 10 | `sys_seek` | `(fd: u64, offset: u64) -> status` |
+| 11 | `sys_sbrk` | `(increment: i64) -> old_break` |
+| 12 | `sys_spawn` | `(path: *const u8) -> child_pid` |
+| 13 | `sys_waitpid` | `(pid: u64) -> status` |
+| 14 | `sys_getpid` | `() -> pid` |
+| 15 | `sys_getcwd` | `(buf: *mut u8, len: u64) -> length` |
+| 16 | `sys_chdir` | `(path: *const u8) -> status` |
+| 17 | `sys_http_get` | `(url: *const u8, buf: *mut u8, max_len: u64) -> payload_len` |
+
 ---
 
 ## 2. Exception Dispatcher
