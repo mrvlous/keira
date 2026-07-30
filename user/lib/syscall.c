@@ -13,7 +13,7 @@
  *
  * Provides inline assembly wrappers invoking x86_64 `syscall` instruction.
  * Standard x86_64 ABI register conventions:
- *   - RAX : System call vector number (1 to 17)
+ *   - RAX : System call vector number (1 to 19)
  *   - RDI : Argument 1
  *   - RSI : Argument 2
  *   - RDX : Argument 3
@@ -257,6 +257,40 @@ int sys_http_get(const char *url, void *buf, int max_len) {
                      : "=a"(res)
                      : "a"(17), "D"((unsigned long)url), "S"((unsigned long)buf),
                        "d"((unsigned long)max_len)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+/**
+ * sys_getenv - Retrieve environment variable string from kernel table.
+ * @name: Null-terminated key string.
+ * @buf: Destination memory buffer pointer.
+ * @max_len: Maximum capacity limit in bytes.
+ *
+ * Return: Length of copied value string, or negative error code.
+ */
+int sys_getenv(const char *name, char *buf, int max_len) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(18), "D"((unsigned long)name), "S"((unsigned long)buf),
+                       "d"((unsigned long)max_len)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+/**
+ * sys_setenv - Set or update environment variable key-value in kernel table.
+ * @name: Null-terminated key string.
+ * @value: Null-terminated value string.
+ *
+ * Return: 0 on success, or negative error code.
+ */
+int sys_setenv(const char *name, const char *value) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(19), "D"((unsigned long)name), "S"((unsigned long)value)
                      : "rcx", "r11", "memory");
     return (int)res;
 }

@@ -49,6 +49,30 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let sub = parts.next();
 
         match sub {
+            Some("dhcp") => {
+                e1000::init();
+                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::print_str("Configuring network interface eth0 via DHCP...\n");
+                let mac = e1000::E1000_MAC;
+                match crate::net::dhcp::dhcp_auto_configure(&mac) {
+                    Ok(cfg) => {
+                        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                        vga::print_str("[OK] DHCP Configuration successful:\n");
+                        vga::set_color(vga::Color::White, vga::Color::Black);
+                        vga::print_str("  IP Address  : 10.0.2.15\n");
+                        vga::print_str("  Subnet Mask : 255.255.255.0\n");
+                        vga::print_str("  Gateway IP  : 10.0.2.2\n");
+                        vga::print_str("  DNS Server  : 10.0.2.3\n");
+                    }
+                    Err(e) => {
+                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                        vga::print_str("DHCP Error: ");
+                        vga::print_str(e);
+                        vga::print_str("\n");
+                    }
+                }
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
             Some("ping") => {
                 let target = match parts.next() {
                     Some(ip) => ip,

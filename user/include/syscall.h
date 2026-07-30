@@ -153,4 +153,23 @@ int sys_chdir(const char *path);
  */
 int sys_http_get(const char *url, void *buf, int max_len);
 
+/**
+ * sys_getenv - Retrieve environment variable string from kernel table.
+ * @name: Null-terminated key string.
+ * @buf: Destination memory buffer pointer.
+ * @max_len: Maximum capacity limit in bytes.
+ *
+ * Return: Length of copied value string, or negative error code.
+ */
+int sys_getenv(const char *name, char *buf, int max_len);
+
+/**
+ * sys_setenv - Set or update environment variable key-value in kernel table.
+ * @name: Null-terminated key string.
+ * @value: Null-terminated value string.
+ *
+ * Return: 0 on success, or negative error code.
+ */
+int sys_setenv(const char *name, const char *value);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */

@@ -31,7 +31,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "  system    cpu       runtime   time      memory    devices   network\n",
                 );
-                vga::print_str("  download\n\n");
+                vga::print_str("  download  env\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");

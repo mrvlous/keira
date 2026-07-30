@@ -316,3 +316,26 @@ pub unsafe fn remove_entry(name: &str) -> Result<(), &'static str> {
     write_sector(found.sector, &sector_data)?;
     Ok(())
 }
+
+pub unsafe fn append_file_content(filename: &str, content: &[u8]) -> Result<(), &'static str> {
+    if content.is_empty() {
+        return Ok(());
+    }
+
+    if create_file(filename).is_ok() {
+        return write_file_content(filename, content);
+    }
+
+    let mut existing_buf = [0u8; 8192];
+    let existing_size = read_file_content(filename, &mut existing_buf).unwrap_or(0);
+
+    let mut new_buf = [0u8; 16384];
+    if existing_size + content.len() > new_buf.len() {
+        return Err("File size limit exceeded for append operation");
+    }
+
+    new_buf[..existing_size].copy_from_slice(&existing_buf[..existing_size]);
+    new_buf[existing_size..existing_size + content.len()].copy_from_slice(content);
+
+    write_file_content(filename, &new_buf[..existing_size + content.len()])
+}

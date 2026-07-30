@@ -157,3 +157,93 @@ int printf(const char *fmt, ...) {
     va_end(args);
     return count;
 }
+
+#include "malloc.h"
+
+FILE *fopen(const char *filename, const char *mode) {
+    if (!filename || !mode)
+        return NULL;
+    int write_mode = 0;
+    if (mode[0] == 'w' || mode[0] == 'a') {
+        write_mode = (mode[0] == 'a') ? 2 : 1;
+    }
+    int fd = sys_open(filename, write_mode);
+    if (fd < 0)
+        return NULL;
+
+    FILE *f = (FILE *)malloc(sizeof(FILE));
+    if (!f) {
+        sys_close(fd);
+        return NULL;
+    }
+    f->fd = fd;
+    f->flags = write_mode;
+    f->pos = 0;
+    f->eof = 0;
+    f->err = 0;
+    return f;
+}
+
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    if (!ptr || size == 0 || nmemb == 0 || !stream)
+        return 0;
+    int bytes_to_read = size * nmemb;
+    int res = sys_read(stream->fd, ptr, bytes_to_read);
+    if (res <= 0) {
+        stream->eof = 1;
+        return 0;
+    }
+    stream->pos += res;
+    return res / size;
+}
+
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    if (!ptr || size == 0 || nmemb == 0 || !stream)
+        return 0;
+    int bytes_to_write = size * nmemb;
+    int res = sys_write(stream->fd, ptr, bytes_to_write);
+    if (res < 0) {
+        stream->err = 1;
+        return 0;
+    }
+    stream->pos += res;
+    return res / size;
+}
+
+int fclose(FILE *stream) {
+    if (!stream)
+        return -1;
+    int res = sys_close(stream->fd);
+    free(stream);
+    return res;
+}
+
+int fseek(FILE *stream, long offset, int whence) {
+    if (!stream)
+        return -1;
+    (void)whence;
+    int res = sys_seek(stream->fd, (unsigned long)offset);
+    if (res >= 0) {
+        stream->pos = offset;
+        stream->eof = 0;
+        return 0;
+    }
+    return -1;
+}
+
+long ftell(FILE *stream) {
+    if (!stream)
+        return -1;
+    return stream->pos;
+}
+
+int feof(FILE *stream) {
+    if (!stream)
+        return 1;
+    return stream->eof;
+}
+
+int remove(const char *filename) {
+    (void)filename;
+    return 0;
+}

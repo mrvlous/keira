@@ -80,3 +80,94 @@ pub static mut IS_ADMIN: bool = false;
 pub static mut IN_SEARCH_MODE: bool = false;
 pub static mut SEARCH_BUFFER: [u8; 16] = [0; 16];
 pub static mut SEARCH_LEN: usize = 0;
+
+// Environment Variables Table
+pub static mut ENV_PATH: [u8; 64] = [
+    b'/', b's', b'y', b's', b't', b'e', b'm', b'/', b'b', b'i', b'n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
+pub static mut ENV_PATH_LEN: usize = 11;
+pub static mut ENV_USER: [u8; 16] = *b"admin           ";
+pub static mut ENV_USER_LEN: usize = 5;
+pub static mut ENV_HOME: [u8; 32] = *b"/users/admin                    ";
+pub static mut ENV_HOME_LEN: usize = 12;
+pub static mut ENV_SHELL: [u8; 32] = *b"/system/bin/keira               ";
+pub static mut ENV_SHELL_LEN: usize = 17;
+
+pub unsafe fn get_env_var(name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
+    match name {
+        "PATH" => {
+            let len = ENV_PATH_LEN;
+            if buf.len() < len {
+                return Err("Buffer too small");
+            }
+            buf[..len].copy_from_slice(&ENV_PATH[..len]);
+            Ok(len)
+        }
+        "USER" => {
+            let len = ENV_USER_LEN;
+            if buf.len() < len {
+                return Err("Buffer too small");
+            }
+            buf[..len].copy_from_slice(&ENV_USER[..len]);
+            Ok(len)
+        }
+        "HOME" => {
+            let len = ENV_HOME_LEN;
+            if buf.len() < len {
+                return Err("Buffer too small");
+            }
+            buf[..len].copy_from_slice(&ENV_HOME[..len]);
+            Ok(len)
+        }
+        "SHELL" => {
+            let len = ENV_SHELL_LEN;
+            if buf.len() < len {
+                return Err("Buffer too small");
+            }
+            buf[..len].copy_from_slice(&ENV_SHELL[..len]);
+            Ok(len)
+        }
+        _ => Err("Environment variable not found"),
+    }
+}
+
+pub unsafe fn set_env_var(name: &str, value: &str) -> Result<(), &'static str> {
+    let val_bytes = value.as_bytes();
+    match name {
+        "PATH" => {
+            if val_bytes.len() > 64 {
+                return Err("Value too long");
+            }
+            ENV_PATH[..val_bytes.len()].copy_from_slice(val_bytes);
+            ENV_PATH_LEN = val_bytes.len();
+            Ok(())
+        }
+        "USER" => {
+            if val_bytes.len() > 16 {
+                return Err("Value too long");
+            }
+            ENV_USER[..val_bytes.len()].copy_from_slice(val_bytes);
+            ENV_USER_LEN = val_bytes.len();
+            Ok(())
+        }
+        "HOME" => {
+            if val_bytes.len() > 32 {
+                return Err("Value too long");
+            }
+            ENV_HOME[..val_bytes.len()].copy_from_slice(val_bytes);
+            ENV_HOME_LEN = val_bytes.len();
+            Ok(())
+        }
+        "SHELL" => {
+            if val_bytes.len() > 32 {
+                return Err("Value too long");
+            }
+            ENV_SHELL[..val_bytes.len()].copy_from_slice(val_bytes);
+            ENV_SHELL_LEN = val_bytes.len();
+            Ok(())
+        }
+        _ => Err("Invalid environment variable key"),
+    }
+}

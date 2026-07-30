@@ -14,15 +14,30 @@
 #include <stddef.h>
 
 /**
- * Keira User-Space Standard I/O Interface
+ * Keira User-Space Standard I/O Interface (stdio)
  */
 
-/**
- * printf - Format and print string to user terminal output.
- * @fmt: Format string buffer.
- *
- * Return: Total number of characters printed.
- */
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
+typedef struct FILE {
+    int fd;
+    int flags;
+    long pos;
+    int eof;
+    int err;
+} FILE;
+
 int printf(const char *fmt, ...);
+
+FILE *fopen(const char *filename, const char *mode);
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+int fclose(FILE *stream);
+int fseek(FILE *stream, long offset, int whence);
+long ftell(FILE *stream);
+int feof(FILE *stream);
+int remove(const char *filename);
 
 #endif /* KEIRA_USER_LIB_STDIO_H */

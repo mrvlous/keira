@@ -1,13 +1,13 @@
 # User Runtime Library (libc)
 
-This document details the user-space C standard library interfaces, dynamic memory management, and system call wrapper mechanics in Keira Kernel.
+This document details the user-space C standard library interfaces, dynamic memory management, POSIX file I/O, environment variables, and system call wrapper mechanics in Keira Kernel.
 
 ## 1. System Call Wrapper Interface
 User applications interact with the kernel by executing system calls wrapped in assembly routines ([syscall.h](../../user/include/syscall.h)).
 
 ### Assembly Wrappers
 System calls are declared using standard wrappers that assign parameters to Registers matching the System V AMD64 ABI:
-*   **System Call Number**: Passed in the `RAX` register.
+*   **System Call Number**: Passed in the `RAX` register (1 to 19).
 *   **Arguments**: Loaded sequentially into registers `RDI`, `RSI`, `RDX`, `R10`, `R8`, and `R9`.
 *   **Trigger**: The `syscall` instruction is executed.
 *   **Return Value**: The result is retrieved from the `RAX` register.
@@ -15,29 +15,23 @@ System calls are declared using standard wrappers that assign parameters to Regi
 ---
 
 ## 2. Dynamic Memory Management (`malloc`)
-The user-space memory allocator ([malloc.h](../../user/include/malloc.h)) manages heap memory allocation for user processes.
-
-### Memory Allocation APIs
-*   `void *malloc(size_t size)`: Allocates a block of heap memory.
-*   `void free(void *ptr)`: Releases a previously allocated block of memory.
-*   `void *calloc(size_t num, size_t size)`: Allocates a zero-initialized block of memory.
-*   `void *realloc(void *ptr, size_t size)`: Resizes an existing heap allocation.
-
-### Under the Hood: `sbrk` System Call
-The allocator requests raw memory pages from the kernel using the `sbrk` system call:
-1.  **Syscall Parameters**: `sbrk` takes a signed increment `increment`.
-2.  **Kernel Execution**: The kernel handler ([handler.rs](../../kernel/src/syscall/handler.rs)):
-    *   If `increment > 0`, it maps new physical pages in the process's lower-half virtual address space to move the program break forward.
-    *   If `increment < 0`, it unmaps pages to shrink the program break.
-    *   Returns the previous program break virtual address.
+The user-space memory allocator ([malloc.h](../../user/include/malloc.h)) manages heap memory allocation for user processes using the `sbrk` system call.
 
 ---
 
-## 3. String and Memory Utilities
-Standard memory and string copy routines are implemented in [string.h](../../user/include/string.h):
-*   `size_t strlen(const char *str)`: Calculates the length of a null-terminated string.
-*   `void *memcpy(void *dest, const void *src, size_t n)`: Copies memory blocks.
-*   `void *memset(void *s, int c, size_t n)`: Fills memory regions with constant bytes.
-*   `int strcmp(const char *s1, const char *s2)`: Compares two strings.
-*   `char *strcpy(char *dest, const char *src)`: Copies strings.
-*   `char *strncpy(char *dest, const char *src, size_t n)`: Copies up to `n` characters of a string.
+## 3. POSIX File I/O Operations ([stdio.h](../../user/include/stdio.h))
+Standard file stream operations provided for C userland programs (`gcc.c` output binaries):
+*   `FILE *fopen(const char *filename, const char *mode)`: Opens a file stream for reading, writing, or appending.
+*   `size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)`: Reads data elements from stream.
+*   `size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)`: Writes data elements to stream.
+*   `int fclose(FILE *stream)`: Closes file stream and releases heap structures.
+*   `int fseek(FILE *stream, long offset, int whence)`: Seeks file offset pointer.
+*   `long ftell(FILE *stream)`: Returns current file offset pointer position.
+*   `int feof(FILE *stream)`: Returns non-zero if stream end-of-file condition is met.
+
+---
+
+## 4. Standard Utilities & Environment Variables ([stdlib.h](../../user/include/stdlib.h))
+*   `char *getenv(const char *name)`: Retrieves environment variable value string by key (`PATH`, `USER`, `HOME`, `SHELL`).
+*   `int setenv(const char *name, const char *value, int overwrite)`: Sets or updates environment variable key-value in kernel table.
+*   `int http_get(const char *url, void *buf, int max_len)`: Fetches HTTP URL response payload into userland buffer.

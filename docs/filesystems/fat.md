@@ -54,7 +54,8 @@ The path parser ([path.rs](../../kernel/src/fs/fat/path.rs)) splits virtual abso
 1.  **Resolve Parent Directory**: Iteratively reads directory clusters, parsing entries to locate subdirectories until reaching the target parent directory.
 2.  **File Operations**:
     *   **Read**: Walks the cluster chain of the file, reading sectors and writing their contents into a target memory buffer.
-    *   **Write/Create**: Allocates a free directory entry in the parent directory, sets its short/long name, allocates an initial data cluster, and writes the data to disk while updating the file size fields.
+    *   **Write/Create**: Allocates a free directory entry in the parent directory, sets its short/long name, allocates initial data clusters, and writes data to disk while updating file size fields.
+    *   **Append**: Appends byte arrays to existing file streams (`append_file_content`), dynamically allocating additional FAT clusters and expanding file chain entries without corrupting existing data.
 
 ---
 

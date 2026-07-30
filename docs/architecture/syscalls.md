@@ -44,6 +44,8 @@ When a user program executes the `syscall` instruction:
 | 15 | `sys_getcwd` | `(buf: *mut u8, len: u64) -> length` |
 | 16 | `sys_chdir` | `(path: *const u8) -> status` |
 | 17 | `sys_http_get` | `(url: *const u8, buf: *mut u8, max_len: u64) -> payload_len` |
+| 18 | `sys_getenv` | `(name: *const u8, buf: *mut u8, max_len: u64) -> length` |
+| 19 | `sys_setenv` | `(name: *const u8, value: *const u8) -> status` |
 
 ---
 

@@ -518,6 +518,56 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             u64::MAX
         }
+        // Syscall 18: getenv
+        // Signature: sys_getenv(name_ptr: *const u8, buf_ptr: *mut u8, max_len: u64) -> len
+        18 => {
+            let name_ptr = arg1 as *const u8;
+            let buf_ptr = arg2 as *mut u8;
+            let max_len = arg3;
+            let mut name_buf = [0u8; 32];
+            let nlen = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
+                Ok(l) => l,
+                Err(_) => return u64::MAX,
+            };
+            if let Ok(name_str) = core::str::from_utf8(&name_buf[..nlen]) {
+                let mut kbuf = [0u8; 128];
+                if let Ok(klen) = unsafe { crate::shell::state::get_env_var(name_str, &mut kbuf) } {
+                    let copy_len = core::cmp::min(klen, max_len as usize);
+                    if validate_user_ptr(buf_ptr as u64, copy_len as u64).is_ok() {
+                        unsafe {
+                            core::ptr::copy_nonoverlapping(kbuf.as_ptr(), buf_ptr, copy_len);
+                        }
+                        return copy_len as u64;
+                    }
+                }
+            }
+            u64::MAX
+        }
+        // Syscall 19: setenv
+        // Signature: sys_setenv(name_ptr: *const u8, val_ptr: *const u8) -> 0
+        19 => {
+            let name_ptr = arg1 as *const u8;
+            let val_ptr = arg2 as *const u8;
+            let mut name_buf = [0u8; 32];
+            let mut val_buf = [0u8; 64];
+            let nlen = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
+                Ok(l) => l,
+                Err(_) => return u64::MAX,
+            };
+            let vlen = match unsafe { read_user_string(val_ptr, &mut val_buf) } {
+                Ok(l) => l,
+                Err(_) => return u64::MAX,
+            };
+            if let (Ok(name_str), Ok(val_str)) = (
+                core::str::from_utf8(&name_buf[..nlen]),
+                core::str::from_utf8(&val_buf[..vlen]),
+            ) {
+                if unsafe { crate::shell::state::set_env_var(name_str, val_str) }.is_ok() {
+                    return 0;
+                }
+            }
+            u64::MAX
+        }
         _ => {
             // Unknown syscall
             u64::MAX

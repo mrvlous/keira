@@ -300,6 +300,7 @@ pub fn execute_command_inner(cmd: &str) {
 
     match command {
         "guide" => super::cmds::guide::run(&mut parts),
+        "env" => super::cmds::env::run(&mut parts),
         "login" => super::cmds::login::run(&mut parts),
         "drives" => super::cmds::drives::run(&mut parts),
         "use" => super::cmds::r#use::run(&mut parts),

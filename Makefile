@@ -163,7 +163,7 @@ ALL_OBJS      := $(ASM_OBJS) $(C_OBJS)
 SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
                  devices wait initrd wipe reset run write tasks disk list \
                  go script view create folder delete edit say copy help history \
-                 move theme please search play hda download network stop
+                 move theme please search play hda download network stop env
 
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
@@ -236,7 +236,7 @@ size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
 objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 	$(Q)objdump -h $(KERNEL_BIN)
 # User-space compilation configuration
-USER_LIB_SRCS := user/lib/syscall.c user/lib/string.c user/lib/stdio.c user/lib/malloc.c
+USER_LIB_SRCS := user/lib/syscall.c user/lib/string.c user/lib/stdio.c user/lib/stdlib.c user/lib/malloc.c
 USER_CC_FLAGS  := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
 
 user: build/user_test.elf build/gcc.elf ## Build user-space programs (init, gcc)
@@ -282,7 +282,7 @@ $(DISK_IMG): build/user_test.elf build/gcc.elf
 	@$(LOG_DISK) "Copying binaries and configuration files..."
 	$(Q)mcopy -o -i $(DISK_IMG) build/user_test.elf ::/apps/bin/user_test.elf
 	$(Q)mcopy -o -i $(DISK_IMG) build/gcc.elf ::/apps/bin/gcc.elf
-	$(Q)for header in stdio.h string.h syscall.h malloc.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
+	$(Q)for header in stdio.h stdlib.h string.h syscall.h malloc.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
 initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
 
 $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf

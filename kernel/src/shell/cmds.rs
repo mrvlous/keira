@@ -21,6 +21,7 @@ pub mod disk;
 pub mod download;
 pub mod drives;
 pub mod edit;
+pub mod env;
 pub mod folder;
 pub mod go;
 pub mod guide;
