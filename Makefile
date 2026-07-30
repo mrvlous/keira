@@ -15,7 +15,6 @@
 #   3. Cargo (Rust Core): Compiles `no_std` kernel core static library (`.a`).
 #   4. LD (Linker)      : Links object files into a single ELF64 kernel executable.
 #   5. GRUB (Bootloader): Packages kernel and USTAR initrd into a bootable ISO.
-
 # Directory layout paths
 BUILD_DIR     := build
 OBJ_DIR       := $(BUILD_DIR)/obj
@@ -35,6 +34,16 @@ CC            := gcc
 LD            := ld
 CARGO         := cargo
 
+# Configurable build parameters (override via command line)
+DISK_SIZE     ?= 32
+QEMU_MEM      ?= 128M
+
+# Verbose mode: set V=1 to see raw commands
+ifeq ($(V),1)
+    Q :=
+else
+    Q := @
+endif
 # Assembler flags: ELF64 output format with assembly include path
 ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
 
@@ -72,8 +81,6 @@ LD_FLAGS      := -n \
 RUST_TARGET   := targets/x86_64-keira-none.json
 RUST_MODE     := release
 RUST_LIB      := target/x86_64-keira-none/$(RUST_MODE)/libkeira_kernel.a
-
-# QEMU emulator execution flags
 QEMU          := qemu-system-x86_64
 QEMU_FLAGS    := -cdrom $(KERNEL_ISO) \
 	         -device ahci,id=ahci0 \
@@ -84,8 +91,12 @@ QEMU_FLAGS    := -cdrom $(KERNEL_ISO) \
 	         -boot d \
 	         -serial stdio \
 	         -no-shutdown \
-	         -m 128M
+	         -m $(QEMU_MEM)
 
+# QEMU with e1000 NIC emulation for network testing
+QEMU_NET_FLAGS := $(QEMU_FLAGS) \
+	         -device e1000,netdev=net0 \
+	         -netdev user,id=net0
 # ANSI color codes for terminal feedback
 ifeq ($(COLOR),0)
     CLR_RESET   :=
@@ -96,6 +107,7 @@ ifeq ($(COLOR),0)
     CLR_MAGENTA :=
     CLR_CYAN    :=
     CLR_ORANGE  :=
+    CLR_RED     :=
 else
     CLR_RESET   := \033[0m
     CLR_BOLD    := \033[1m
@@ -105,6 +117,7 @@ else
     CLR_MAGENTA := \033[35m
     CLR_CYAN    := \033[36m
     CLR_ORANGE  := \033[38;5;208m
+    CLR_RED     := \033[31m
 endif
 
 LOG_ASM     := printf "  $(CLR_YELLOW)$(CLR_BOLD)[ASM]$(CLR_RESET)   %s\n"
@@ -115,8 +128,10 @@ LOG_ISO     := printf "  $(CLR_MAGENTA)$(CLR_BOLD)[ISO]$(CLR_RESET)   %s\n"
 LOG_DISK    := printf "  $(CLR_CYAN)$(CLR_BOLD)[DISK]$(CLR_RESET)  %s\n"
 LOG_DONE    := printf "$(CLR_GREEN)$(CLR_BOLD)[DONE]$(CLR_RESET)  %s\n"
 LOG_INFO    := printf "$(CLR_CYAN)$(CLR_BOLD)[INFO]$(CLR_RESET)  %s\n"
-
-# Source code files
+LOG_WARN    := printf "$(CLR_YELLOW)$(CLR_BOLD)[WARN]$(CLR_RESET)  %s\n"
+LOG_ERR     := printf "$(CLR_RED)$(CLR_BOLD)[ERR]$(CLR_RESET)   %s\n"
+LOG_CHECK   := printf "  $(CLR_GREEN)$(CLR_BOLD)[OK]$(CLR_RESET)    %s\n"
+LOG_MISS    := printf "  $(CLR_RED)$(CLR_BOLD)[MISS]$(CLR_RESET)  %s\n"
 ASM_SRCS      := arch/x86/boot/multiboot2_header.asm \
 	         arch/x86/boot/entry32.asm \
 	         arch/x86/boot/entry64.asm \
@@ -144,187 +159,233 @@ ASM_OBJS      := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 C_OBJS        := $(patsubst %.c,$(OBJ_DIR)/%.c.o,$(C_SRCS))
 ALL_OBJS      := $(ASM_OBJS) $(C_OBJS)
 
-.PHONY: all run debug clean rust iso dirs format lint user disk initrd help
+# Shell command binaries to populate filesystem images
+SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
+                 devices wait initrd wipe reset run write tasks disk list \
+                 go script view create folder delete edit say copy help history \
+                 move theme please search play hda download network stop
+
+# Driver descriptor files for filesystem images
+DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
+                 ide.sys ahci.sys sound.sys e1000.sys
+.PHONY: all run debug clean rust iso dirs format lint user disk initrd \
+        help info check size objdump qemu-net
 
 .DEFAULT_GOAL := all
+all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image
 
-# Build master bootable ISO image and FAT16 disk image
-all: $(KERNEL_ISO) $(DISK_IMG)
+help: ## Display all available Makefile targets
+	@printf "$(CLR_BOLD)Keira OS Build System$(CLR_RESET)  $(CLR_CYAN)v$(VERSION)$(CLR_RESET)\n\n"
+	@printf "  $(CLR_BOLD)Usage$(CLR_RESET): make <target> [V=1] [COLOR=0] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
+	@printf "$(CLR_BOLD)  Build Targets:$(CLR_RESET)\n"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    $(CLR_CYAN)%-15s$(CLR_RESET) %s\n", $$1, $$2}'
+	@printf "\n$(CLR_BOLD)  Variables:$(CLR_RESET)\n"
+	@printf "    $(CLR_CYAN)V=1$(CLR_RESET)             Show raw commands (verbose mode)\n"
+	@printf "    $(CLR_CYAN)COLOR=0$(CLR_RESET)         Disable colored output\n"
+	@printf "    $(CLR_CYAN)DISK_SIZE=N$(CLR_RESET)     FAT16 disk size in MB (default: 32)\n"
+	@printf "    $(CLR_CYAN)QEMU_MEM=NM$(CLR_RESET)     QEMU guest memory (default: 128M)\n\n"
+info: ## Display build configuration and toolchain versions
+	@printf "$(CLR_BOLD)Keira OS Build Info$(CLR_RESET)\n\n"
+	@printf "  $(CLR_BOLD)Kernel$(CLR_RESET)\n"
+	@printf "    Version      : $(CLR_CYAN)$(VERSION)$(CLR_RESET)\n"
+	@printf "    Name         : $(CLR_CYAN)$(KERNEL_NAME)$(CLR_RESET)\n"
+	@printf "    Binary       : $(CLR_CYAN)$(KERNEL_BIN)$(CLR_RESET)\n"
+	@printf "    ISO          : $(CLR_CYAN)$(KERNEL_ISO)$(CLR_RESET)\n"
+	@printf "    Disk Image   : $(CLR_CYAN)$(DISK_IMG) ($(DISK_SIZE)MB FAT16)$(CLR_RESET)\n\n"
+	@printf "  $(CLR_BOLD)Toolchain$(CLR_RESET)\n"
+	@printf "    NASM         : $(CLR_CYAN)$(shell $(ASM) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
+	@printf "    GCC          : $(CLR_CYAN)$(shell $(CC) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
+	@printf "    LD           : $(CLR_CYAN)$(shell $(LD) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
+	@printf "    Cargo        : $(CLR_CYAN)$(shell $(CARGO) --version 2>/dev/null || echo 'not found')$(CLR_RESET)\n"
+	@printf "    Rustc        : $(CLR_CYAN)$(shell rustc --version 2>/dev/null || echo 'not found')$(CLR_RESET)\n"
+	@printf "    QEMU         : $(CLR_CYAN)$(shell $(QEMU) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n\n"
+	@printf "  $(CLR_BOLD)Source Files$(CLR_RESET)\n"
+	@printf "    Assembly     : $(CLR_CYAN)$(words $(ASM_SRCS)) files$(CLR_RESET)\n"
+	@printf "    C Drivers    : $(CLR_CYAN)$(words $(C_SRCS)) files$(CLR_RESET)\n"
+	@printf "    Shell Cmds   : $(CLR_CYAN)$(words $(SHELL_CMDS)) commands$(CLR_RESET)\n"
+	@printf "    Drivers      : $(CLR_CYAN)$(words $(DRIVER_FILES)) descriptors$(CLR_RESET)\n\n"
+	@printf "  $(CLR_BOLD)Rust Target$(CLR_RESET)\n"
+	@printf "    Spec         : $(CLR_CYAN)$(RUST_TARGET)$(CLR_RESET)\n"
+	@printf "    Profile      : $(CLR_CYAN)$(RUST_MODE)$(CLR_RESET)\n"
+	@printf "    Output       : $(CLR_CYAN)$(RUST_LIB)$(CLR_RESET)\n\n"
 
-# Display interactive target usage help
-help:
-	@printf "$(CLR_BOLD)Keira OS Build System (v$(VERSION))$(CLR_RESET)\n"
-	@printf "Usage: make <target> [COLOR=0]\n\n"
-	@printf "$(CLR_BOLD)Available Targets:$(CLR_RESET)\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
-	@printf "\n"
+check: ## Verify all required build dependencies are installed
+	@MISSING=0; \
+	for tool in nasm gcc ld cargo rustc grub-mkrescue xorriso qemu-system-x86_64 \
+	            clang-format clang-tidy mkfs.fat mmd mcopy tar dd; do \
+	    if command -v $$tool >/dev/null 2>&1; then \
+	        $(LOG_CHECK) "$$tool"; \
+	    else \
+	        $(LOG_MISS) "$$tool"; \
+	        MISSING=$$((MISSING + 1)); \
+	    fi; \
+	done; \
+	printf "\n"; \
+	if [ $$MISSING -eq 0 ]; then \
+	    $(LOG_DONE) "All dependencies satisfied"; \
+	else \
+	    $(LOG_WARN) "$$MISSING missing dependencies detected"; \
+	fi
 
+size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
+	@printf "  $(CLR_BOLD)Section Sizes:$(CLR_RESET)\n"
+	$(Q)size $(KERNEL_BIN) | sed 's/^/    /'
+	@printf "\n  $(CLR_BOLD)File Size:$(CLR_RESET)\n"
+	@printf "    $(CLR_CYAN)%s$(CLR_RESET)\n\n" "$$(du -h $(KERNEL_BIN) | cut -f1) ($(KERNEL_BIN))"
+
+objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
+	$(Q)objdump -h $(KERNEL_BIN)
 # User-space compilation configuration
 USER_LIB_SRCS := user/lib/syscall.c user/lib/string.c user/lib/stdio.c user/lib/malloc.c
 USER_CC_FLAGS  := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
 
-# Build user-space programs (init, gcc)
-user: build/user_test.elf build/gcc.elf
+user: build/user_test.elf build/gcc.elf ## Build user-space programs (init, gcc)
 
 build/user_test.elf: user/bin/init.c $(USER_LIB_SRCS) user/linker.ld | dirs
 	@$(LOG_INFO) "Building user space program: init (user_test.elf)..."
-	@$(CC) $(USER_CC_FLAGS) user/bin/init.c $(USER_LIB_SRCS) -o build/user_test.elf
+	$(Q)$(CC) $(USER_CC_FLAGS) user/bin/init.c $(USER_LIB_SRCS) -o build/user_test.elf
 
 build/gcc.elf: user/bin/gcc.c $(USER_LIB_SRCS) user/linker.ld | dirs
 	@$(LOG_INFO) "Building user space program: gcc (gcc.elf)..."
-	@$(CC) $(USER_CC_FLAGS) user/bin/gcc.c $(USER_LIB_SRCS) -o build/gcc.elf
-
-# Create and populate FAT16 hard disk image
-disk: $(DISK_IMG)
+	$(Q)$(CC) $(USER_CC_FLAGS) user/bin/gcc.c $(USER_LIB_SRCS) -o build/gcc.elf
+disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
 $(DISK_IMG): build/user_test.elf build/gcc.elf
 	@rm -f $(DISK_IMG)
-	@$(LOG_DISK) "Creating 32MB FAT16 disk image..."
-	@dd if=/dev/zero of=$(DISK_IMG) bs=1M count=32 2>/dev/null
-	@mkfs.fat -F 16 $(DISK_IMG) >/dev/null
+	@$(LOG_DISK) "Creating $(DISK_SIZE)MB FAT16 disk image..."
+	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
+	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure..."
-	@mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/drivers ::/system/include ::/apps ::/apps/bin ::/apps/games ::/apps/src ::/config ::/config/boot ::/config/theme ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/drivers ::/system/include ::/apps ::/apps/bin ::/apps/games ::/apps/src ::/config ::/config/boot ::/config/theme ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
 	@$(LOG_DISK) "Populating directories with command binaries..."
-	@mkdir -p $(BUILD_DIR)/system_bin
-	@for cmd in guide login drives use ramdisk system cpu runtime time memory \
-	            devices wait initrd wipe reset run write tasks disk list \
-	            go script view create folder delete edit say copy help history \
-	            move theme please search play hda; do \
+	$(Q)mkdir -p $(BUILD_DIR)/system_bin
+	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(BUILD_DIR)/system_bin/$$cmd; \
 	    mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/system_bin/$$cmd ::/system/bin/$$cmd; \
 	done
 	@$(LOG_DISK) "Copying driver files and system config..."
-	@mkdir -p $(BUILD_DIR)/drivers
-	@echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(BUILD_DIR)/drivers/serial.sys
-	@echo "Keira VGA Text Console Driver (80x25 characters, color support)" > $(BUILD_DIR)/drivers/vga.sys
-	@echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(BUILD_DIR)/drivers/keyboard.sys
-	@echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(BUILD_DIR)/drivers/mouse.sys
-	@echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(BUILD_DIR)/drivers/rtc.sys
-	@echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(BUILD_DIR)/drivers/ide.sys
-	@echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/drivers/ahci.sys
-	@echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/drivers/sound.sys
-	@for driver in serial.sys vga.sys keyboard.sys mouse.sys rtc.sys ide.sys ahci.sys sound.sys; do \
+	$(Q)mkdir -p $(BUILD_DIR)/drivers
+	$(Q)echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(BUILD_DIR)/drivers/serial.sys
+	$(Q)echo "Keira VGA Text Console Driver (80x25 characters, color support)" > $(BUILD_DIR)/drivers/vga.sys
+	$(Q)echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(BUILD_DIR)/drivers/keyboard.sys
+	$(Q)echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(BUILD_DIR)/drivers/mouse.sys
+	$(Q)echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(BUILD_DIR)/drivers/rtc.sys
+	$(Q)echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(BUILD_DIR)/drivers/ide.sys
+	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/drivers/ahci.sys
+	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/drivers/sound.sys
+	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(BUILD_DIR)/drivers/e1000.sys
+	$(Q)for driver in $(DRIVER_FILES); do \
 	    mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/drivers/$$driver ::/system/drivers/$$driver; \
 	done
-	@echo "color_scheme=classic\nprompt_symbol=>\ncursor=block" > $(BUILD_DIR)/default.cfg
-	@mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/default.cfg ::/config/theme/default.cfg
+	$(Q)echo "color_scheme=classic\nprompt_symbol=>\ncursor=block" > $(BUILD_DIR)/default.cfg
+	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/default.cfg ::/config/theme/default.cfg
 	@$(LOG_DISK) "Copying binaries and configuration files..."
-	@mcopy -o -i $(DISK_IMG) build/user_test.elf ::/apps/bin/user_test.elf
-	@mcopy -o -i $(DISK_IMG) build/gcc.elf ::/apps/bin/gcc.elf
-	@for header in stdio.h string.h syscall.h malloc.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
-
-# Build RAM Disk USTAR archive
-initrd: $(BUILD_DIR)/initrd.tar
+	$(Q)mcopy -o -i $(DISK_IMG) build/user_test.elf ::/apps/bin/user_test.elf
+	$(Q)mcopy -o -i $(DISK_IMG) build/gcc.elf ::/apps/bin/gcc.elf
+	$(Q)for header in stdio.h string.h syscall.h malloc.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
+initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
 
 $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf
 	@$(LOG_INFO) "Building RAM Disk (Initrd)..."
-	@mkdir -p $(BUILD_DIR)/initrd_root/system/bin
-	@mkdir -p $(BUILD_DIR)/initrd_root/system/drivers
-	@mkdir -p $(BUILD_DIR)/initrd_root/system/include
-	@mkdir -p $(BUILD_DIR)/initrd_root/apps/bin
-	@mkdir -p $(BUILD_DIR)/initrd_root/config/boot
-	@mkdir -p $(BUILD_DIR)/initrd_root/config/theme
-	@mkdir -p $(BUILD_DIR)/initrd_root/users/admin
-	@mkdir -p $(BUILD_DIR)/initrd_root/users/default
-	@mkdir -p $(BUILD_DIR)/initrd_root/users/guest
-	@mkdir -p $(BUILD_DIR)/initrd_root/temp
-	@mkdir -p $(BUILD_DIR)/initrd_root/data
-	@for cmd in guide login drives use ramdisk system cpu runtime time memory \
-	            devices wait initrd wipe reset run write tasks disk list \
-	            go script view create folder delete edit say copy help history \
-	            move theme please search play hda; do \
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/bin
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/drivers
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/include
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/apps/bin
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/config/boot
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/config/theme
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/admin
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/default
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/guest
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/temp
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/data
+	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(BUILD_DIR)/initrd_root/system/bin/$$cmd; \
 	done
-	@echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(BUILD_DIR)/initrd_root/system/drivers/serial.sys
-	@echo "Keira VGA Text & Widescreen Console Driver (color support)" > $(BUILD_DIR)/initrd_root/system/drivers/vga.sys
-	@echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(BUILD_DIR)/initrd_root/system/drivers/keyboard.sys
-	@echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(BUILD_DIR)/initrd_root/system/drivers/mouse.sys
-	@echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(BUILD_DIR)/initrd_root/system/drivers/rtc.sys
-	@echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ide.sys
-	@echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ahci.sys
-	@echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/initrd_root/system/drivers/sound.sys
-	@echo "color_scheme=classic\nprompt_symbol=>\ncursor=block" > $(BUILD_DIR)/initrd_root/config/theme/default.cfg
-	@cp build/user_test.elf $(BUILD_DIR)/initrd_root/apps/bin/user_test.elf
-	@cp build/gcc.elf $(BUILD_DIR)/initrd_root/apps/bin/gcc.elf
-	@cp user/include/*.h $(BUILD_DIR)/initrd_root/system/include/
-	@cd $(BUILD_DIR)/initrd_root && tar -cf ../initrd.tar *
-
-# Package GRUB Multiboot2 bootable ISO image
-iso: $(KERNEL_ISO)
+	$(Q)echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(BUILD_DIR)/initrd_root/system/drivers/serial.sys
+	$(Q)echo "Keira VGA Text & Widescreen Console Driver (color support)" > $(BUILD_DIR)/initrd_root/system/drivers/vga.sys
+	$(Q)echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(BUILD_DIR)/initrd_root/system/drivers/keyboard.sys
+	$(Q)echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(BUILD_DIR)/initrd_root/system/drivers/mouse.sys
+	$(Q)echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(BUILD_DIR)/initrd_root/system/drivers/rtc.sys
+	$(Q)echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ide.sys
+	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ahci.sys
+	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/initrd_root/system/drivers/sound.sys
+	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(BUILD_DIR)/initrd_root/system/drivers/e1000.sys
+	$(Q)echo "color_scheme=classic\nprompt_symbol=>\ncursor=block" > $(BUILD_DIR)/initrd_root/config/theme/default.cfg
+	$(Q)cp build/user_test.elf $(BUILD_DIR)/initrd_root/apps/bin/user_test.elf
+	$(Q)cp build/gcc.elf $(BUILD_DIR)/initrd_root/apps/bin/gcc.elf
+	$(Q)cp user/include/*.h $(BUILD_DIR)/initrd_root/system/include/
+	$(Q)cd $(BUILD_DIR)/initrd_root && tar -cf ../initrd.tar *
+iso: $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
 
 $(KERNEL_ISO): $(KERNEL_BIN) $(BUILD_DIR)/initrd.tar | dirs
 	@$(LOG_ISO) "Creating bootable ISO..."
-	@mkdir -p $(ISO_DIR)/boot/grub
-	@cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_NAME).bin
-	@cp $(BUILD_DIR)/initrd.tar $(ISO_DIR)/boot/initrd.tar
-	@echo 'set timeout=0' > $(ISO_DIR)/boot/grub/grub.cfg
-	@echo 'set default=0' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@echo '' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@echo 'menuentry "Keira" {' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@echo '	multiboot2 /boot/keira.bin' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@echo '	module2 /boot/initrd.tar initrd' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@echo '	boot' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
-	@grub-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
+	$(Q)mkdir -p $(ISO_DIR)/boot/grub
+	$(Q)cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_NAME).bin
+	$(Q)cp $(BUILD_DIR)/initrd.tar $(ISO_DIR)/boot/initrd.tar
+	$(Q)echo 'set timeout=0' > $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo 'set default=0' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo '' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo 'menuentry "Keira" {' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo '	multiboot2 /boot/keira.bin' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo '	module2 /boot/initrd.tar initrd' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo '	boot' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)grub-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
 	@$(LOG_DONE) "$(KERNEL_ISO) ready"
-
 # Link final kernel ELF64 binary executable
 $(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) arch/x86/linker.ld | dirs
 	@$(LOG_LD) "Linking kernel..."
-	@$(LD) $(LD_FLAGS) -o $(KERNEL_BIN) $(ALL_OBJS) $(RUST_LIB)
+	$(Q)$(LD) $(LD_FLAGS) -o $(KERNEL_BIN) $(ALL_OBJS) $(RUST_LIB)
 	@$(LOG_DONE) "$(KERNEL_BIN) ready"
 
 # Compile freestanding Rust kernel module
-rust:
+rust: ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(RUST_MODE))...."
-	@$(CARGO) -Zjson-target-spec -Zbuild-std=core build --target $(RUST_TARGET) --$(RUST_MODE) 2>&1 | sed 's/^/        /'
+	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core build --target $(RUST_TARGET) --$(RUST_MODE) 2>&1 | sed 's/^/        /'
 
 $(RUST_LIB): rust
 
 # Compile Assembly source files (.asm -> .o)
 $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	@$(LOG_ASM) "$<"
-	@mkdir -p $(dir $@)
-	@$(ASM) $(ASM_FLAGS) -o $@ $<
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
 # Compile C source files (.c -> .o)
 $(OBJ_DIR)/%.c.o: %.c | dirs
 	@$(LOG_CC) "$<"
-	@mkdir -p $(dir $@)
-	@$(CC) $(CC_FLAGS) -c -o $@ $<
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(CC_FLAGS) -c -o $@ $<
 
 # Create target build directories
 dirs:
-	@mkdir -p $(BUILD_DIR) $(OBJ_DIR)
-
-# Launch system in QEMU virtual machine
-run: all
+	$(Q)mkdir -p $(BUILD_DIR) $(OBJ_DIR)
+run: all ## Launch Keira in QEMU virtual machine
 	@$(LOG_INFO) "Launching Keira in QEMU..."
-	@$(QEMU) $(QEMU_FLAGS)
+	$(Q)$(QEMU) $(QEMU_FLAGS)
 
-# Launch system in QEMU debug mode with GDB stub
-debug: all
+debug: all ## Launch Keira in QEMU debug mode (GDB on :1234)
 	@$(LOG_INFO) "Launching Keira (debug mode, waiting for GDB on :1234)..."
-	@$(QEMU) $(QEMU_FLAGS) -S -s
+	$(Q)$(QEMU) $(QEMU_FLAGS) -S -s
 
-# Remove build directory and compiled artifacts
-clean:
+qemu-net: all ## Launch Keira in QEMU with e1000 NIC emulation
+	@$(LOG_INFO) "Launching Keira with e1000 network (QEMU)..."
+	$(Q)$(QEMU) $(QEMU_NET_FLAGS)
+clean: ## Remove build directory and compiled artifacts
 	@$(LOG_INFO) "Removing build artifacts..."
-	@rm -rf $(BUILD_DIR)
-	@$(CARGO) clean 2>/dev/null || true
+	$(Q)rm -rf $(BUILD_DIR)
+	$(Q)$(CARGO) clean 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
 
-# Format Rust and C source code
-format:
+format: ## Format Rust and C source code
 	@$(LOG_INFO) "Formatting Rust code..."
-	@$(CARGO) fmt --all
+	$(Q)$(CARGO) fmt --all
 	@$(LOG_INFO) "Formatting C code..."
-	@find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
+	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
 	@$(LOG_DONE) "Formatting complete"
 
-# Static linting of C code using clang-tidy
-lint:
+lint: ## Static analysis of C code using clang-tidy
 	@$(LOG_INFO) "Linting C code..."
-	@find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-tidy --quiet {} -- -I include -I drivers -I arch/x86/include -I user/include -ffreestanding -m64 \;
+	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-tidy --quiet {} -- -I include -I drivers -I arch/x86/include -I user/include -ffreestanding -m64 \;
 	@$(LOG_DONE) "Linting complete"
 	
