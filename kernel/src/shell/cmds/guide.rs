@@ -191,6 +191,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("hda") => {
                 vga::print_str("Usage: hda <play [freq]|stop|status>\nPlay sound waveforms using the Intel High Definition Audio (HDA) controller.\n");
             }
+            Some("env") => {
+                vga::print_str("Usage: env [key] [value]\nView or modify environment variables ($USER, $HOME, $PATH, $SHELL).\n");
+            }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);
                 vga::print_str("Error: Unknown command '");

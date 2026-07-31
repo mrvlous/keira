@@ -101,8 +101,50 @@ pub unsafe fn check_write_permission() -> bool {
             && current_path.as_bytes()[home.len()] == b'/')
 }
 
+pub fn expand_env_vars(input: &str, out_buf: &mut [u8]) -> usize {
+    let mut out_idx = 0usize;
+    let bytes = input.as_bytes();
+    let len = bytes.len();
+    let mut i = 0usize;
+
+    while i < len {
+        if bytes[i] == b'$' && i + 1 < len {
+            let start = i + 1;
+            let mut end = start;
+            while end < len && (bytes[end].is_ascii_alphanumeric() || bytes[end] == b'_') {
+                end += 1;
+            }
+            if end > start {
+                if let Ok(var_name) = core::str::from_utf8(&bytes[start..end]) {
+                    let mut val_buf = [0u8; 128];
+                    if let Ok(vlen) = unsafe { get_env_var(var_name, &mut val_buf) } {
+                        let to_copy = core::cmp::min(vlen, out_buf.len() - out_idx);
+                        out_buf[out_idx..out_idx + to_copy].copy_from_slice(&val_buf[..to_copy]);
+                        out_idx += to_copy;
+                        i = end;
+                        continue;
+                    }
+                }
+            }
+        }
+        if out_idx < out_buf.len() {
+            out_buf[out_idx] = bytes[i];
+            out_idx += 1;
+        }
+        i += 1;
+    }
+    out_idx
+}
+
 pub fn execute_command(cmd: &str) {
-    let trimmed = cmd.trim();
+    let mut exp_buf = [0u8; 512];
+    let exp_len = expand_env_vars(cmd, &mut exp_buf);
+    let expanded_cmd = match core::str::from_utf8(&exp_buf[..exp_len]) {
+        Ok(s) => s,
+        Err(_) => cmd,
+    };
+
+    let trimmed = expanded_cmd.trim();
     if trimmed.starts_with("please ") || trimmed == "please" {
         let mut parts = trimmed.split_whitespace();
         if let Some("please") = parts.next() {

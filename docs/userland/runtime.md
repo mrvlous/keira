@@ -35,3 +35,4 @@ Standard file stream operations provided for C userland programs (`gcc.c` output
 *   `char *getenv(const char *name)`: Retrieves environment variable value string by key (`PATH`, `USER`, `HOME`, `SHELL`).
 *   `int setenv(const char *name, const char *value, int overwrite)`: Sets or updates environment variable key-value in kernel table.
 *   `int http_get(const char *url, void *buf, int max_len)`: Fetches HTTP URL response payload into userland buffer.
+*   **Shell `$VAR` Expansion**: The terminal shell interpreter automatically expands `$VAR` tokens (`$USER`, `$HOME`, `$PATH`, `$SHELL`) before executing command strings.

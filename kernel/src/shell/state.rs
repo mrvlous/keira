@@ -106,19 +106,23 @@ pub unsafe fn get_env_var(name: &str, buf: &mut [u8]) -> Result<usize, &'static 
             Ok(len)
         }
         "USER" => {
-            let len = ENV_USER_LEN;
+            let ubytes = &CURRENT_USER[..CURRENT_USER_LEN];
+            let len = ubytes.len();
             if buf.len() < len {
                 return Err("Buffer too small");
             }
-            buf[..len].copy_from_slice(&ENV_USER[..len]);
+            buf[..len].copy_from_slice(ubytes);
             Ok(len)
         }
         "HOME" => {
-            let len = ENV_HOME_LEN;
+            let ubytes = &CURRENT_USER[..CURRENT_USER_LEN];
+            let prefix = b"/users/";
+            let len = prefix.len() + ubytes.len();
             if buf.len() < len {
                 return Err("Buffer too small");
             }
-            buf[..len].copy_from_slice(&ENV_HOME[..len]);
+            buf[..prefix.len()].copy_from_slice(prefix);
+            buf[prefix.len()..len].copy_from_slice(ubytes);
             Ok(len)
         }
         "SHELL" => {

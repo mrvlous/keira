@@ -58,23 +58,20 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("ENVIRONMENT VARIABLES:\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
 
-                let vars = [
-                    ("PATH", &ENV_PATH[..ENV_PATH_LEN]),
-                    ("USER", &ENV_USER[..ENV_USER_LEN]),
-                    ("HOME", &ENV_HOME[..ENV_HOME_LEN]),
-                    ("SHELL", &ENV_SHELL[..ENV_SHELL_LEN]),
-                ];
-
-                for (name, val_bytes) in vars {
-                    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-                    vga::print_str("  ");
-                    vga::print_str(name);
-                    vga::print_str("=");
-                    vga::set_color(vga::Color::White, vga::Color::Black);
-                    if let Ok(s) = core::str::from_utf8(val_bytes) {
-                        vga::print_str(s);
+                let keys = ["PATH", "USER", "HOME", "SHELL"];
+                let mut buf = [0u8; 128];
+                for k in keys {
+                    if let Ok(len) = get_env_var(k, &mut buf) {
+                        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                        vga::print_str("  ");
+                        vga::print_str(k);
+                        vga::print_str("=");
+                        vga::set_color(vga::Color::White, vga::Color::Black);
+                        if let Ok(s) = core::str::from_utf8(&buf[..len]) {
+                            vga::print_str(s);
+                        }
+                        vga::print_str("\n");
                     }
-                    vga::print_str("\n");
                 }
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
