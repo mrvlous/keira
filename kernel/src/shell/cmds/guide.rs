@@ -69,7 +69,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: devices\nScan and list all detected PCI hardware devices and their vendor IDs.\n");
             }
             Some("network") => {
-                vga::print_str("Usage: network [ping <target_ip>]\nDisplay network interface state or send ICMP ping packets.\n");
+                vga::print_str("Usage: network [dhcp|resolve <domain>|ping <target_ip>]\nDisplay interface state, configure DHCP, resolve DNS, or send ICMP ping.\n");
             }
             Some("download") => {
                 vga::print_str("Usage: download <URL> [target_file_path]\nFetch HTTP payload data stream and save directly to FAT16 disk storage.\n");

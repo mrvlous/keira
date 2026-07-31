@@ -73,6 +73,42 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 }
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
+            Some("resolve") => {
+                let domain = match parts.next() {
+                    Some(d) => d,
+                    None => "google.com",
+                };
+                e1000::init();
+                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::print_str("Resolving domain ");
+                vga::print_str(domain);
+                vga::print_str(" via UDP 53 DNS...\n");
+
+                match crate::net::dns::resolve_domain(domain) {
+                    Ok(ip) => {
+                        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                        vga::print_str("[OK] Resolved ");
+                        vga::print_str(domain);
+                        vga::print_str(" -> ");
+                        vga::set_color(vga::Color::White, vga::Color::Black);
+                        vga::print_u64(ip[0] as u64);
+                        vga::print_str(".");
+                        vga::print_u64(ip[1] as u64);
+                        vga::print_str(".");
+                        vga::print_u64(ip[2] as u64);
+                        vga::print_str(".");
+                        vga::print_u64(ip[3] as u64);
+                        vga::print_str("\n");
+                    }
+                    Err(e) => {
+                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                        vga::print_str("DNS Error: ");
+                        vga::print_str(e);
+                        vga::print_str("\n");
+                    }
+                }
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
             Some("ping") => {
                 let target = match parts.next() {
                     Some(ip) => ip,
