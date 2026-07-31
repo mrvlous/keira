@@ -65,3 +65,4 @@ To speed up FAT table lookups, cluster chain traversal, and file/directory read 
 *   **Cache Strategy**: Write-Through. All writes are immediately written to the physical/virtual storage device to prevent filesystem corruption on VM/system shutdown, but the sector is kept in the cache to accelerate subsequent reads.
 *   **Cache Eviction**: LRU (Least Recently Used) based on a global clock counter.
 *   **Cache Invalidation**: The entire cache is automatically cleared when mounting/initializing a new volume (via `volume::init`) to prevent stale data.
+*   **Dirty Page Flushing (`sync`)**: Invoking `flush_dirty_sectors()` (or the shell command `sync`) explicitly flushes all modified sector cache pages from memory to physical storage.

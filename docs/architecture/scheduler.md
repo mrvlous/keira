@@ -64,6 +64,7 @@ User processes run in Ring 3 with restricted memory access and permissions.
 *   **Protection**: Task 0 (the bootstrap kernel shell) cannot be terminated.
 *   **Cleanup Pipeline**: When a task's state is set to `TaskState::Terminated`, the scheduler releases all active file locks (`release_all_locks_for_task`), frees allocated user space virtual memory pages (`free_user_pages`), and returns the stack frame (`pmm::free_frame`) to the physical page allocator.
 
-### Shell Control Command (`stop`)
+### Shell Control Command (`stop` & `sys_kill`)
 *   **Usage**: `stop <PID>` (Requires admin privilege or `please stop <PID>`).
-*   **Execution**: Resolves target process by numeric PID and invokes `stop_task(pid)` in the scheduler.
+*   **Execution**: Resolves target process by numeric PID and invokes `send_signal(pid, 9)` (`SIGKILL`) in the scheduler.
+*   **Signals**: Supports `SIGINT` (2), `SIGKILL` (9), and `SIGTERM` (15) for process management.

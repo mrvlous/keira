@@ -568,6 +568,37 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             u64::MAX
         }
+        // Syscall 20: mmap
+        // Signature: sys_mmap(addr: u64, len: u64, prot: u64) -> vaddr
+        20 => {
+            let addr = arg1;
+            let len = arg2 as usize;
+            let prot = arg3;
+            match unsafe { crate::mem::vmm::mmap_anonymous(addr, len, prot) } {
+                Ok(vaddr) => vaddr,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 21: munmap
+        // Signature: sys_munmap(addr: u64, len: u64) -> status
+        21 => {
+            let addr = arg1;
+            let len = arg2 as usize;
+            match unsafe { crate::mem::vmm::munmap_pages(addr, len) } {
+                Ok(()) => 0,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 22: kill
+        // Signature: sys_kill(pid: u64, sig: u64) -> status
+        22 => {
+            let pid = arg1 as usize;
+            let sig = arg2 as u32;
+            match unsafe { crate::task::scheduler::send_signal(pid, sig) } {
+                Ok(()) => 0,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX

@@ -172,4 +172,32 @@ int sys_getenv(const char *name, char *buf, int max_len);
  */
 int sys_setenv(const char *name, const char *value);
 
+/**
+ * sys_mmap - Map contiguous virtual memory page pages.
+ * @addr: Suggested base virtual address (or 0 for automatic).
+ * @len: Allocation size in bytes.
+ * @prot: Page protection flags.
+ *
+ * Return: Virtual address pointer to mapped region, or (void *)-1.
+ */
+void *sys_mmap(void *addr, size_t len, int prot);
+
+/**
+ * sys_munmap - Unmap virtual memory page region.
+ * @addr: Base virtual address.
+ * @len: Region size in bytes.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
+int sys_munmap(void *addr, size_t len);
+
+/**
+ * sys_kill - Send signal to target process PID.
+ * @pid: Process ID.
+ * @sig: Signal number (9=SIGKILL, 15=SIGTERM, 2=SIGINT).
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
+int sys_kill(int pid, int sig);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */

@@ -307,3 +307,41 @@ unsafe fn free_page_table_tree(table_phys: u64, level: u32) {
     }
     pmm::free_frame(table_phys);
 }
+
+/// Allocate and map contiguous virtual memory pages for mmap syscall
+pub unsafe fn mmap_anonymous(
+    requested_addr: u64,
+    len: usize,
+    _prot: u64,
+) -> Result<u64, &'static str> {
+    if len == 0 {
+        return Err("Invalid zero length for mmap");
+    }
+    let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;
+    let base_vaddr = if requested_addr != 0 && requested_addr >= 0x40000000 {
+        requested_addr
+    } else {
+        0x50000000
+    };
+
+    for i in 0..pages {
+        let vaddr = base_vaddr + (i as u64 * pmm::PAGE_SIZE);
+        let phys_frame = pmm::alloc_frame().ok_or("Out of physical memory for mmap")?;
+        map_page(vaddr, phys_frame, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER)?;
+    }
+
+    Ok(base_vaddr)
+}
+
+/// Unmap contiguous virtual memory pages for munmap syscall
+pub unsafe fn munmap_pages(vaddr: u64, len: usize) -> Result<(), &'static str> {
+    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 {
+        return Err("Invalid address alignment or length for munmap");
+    }
+    let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;
+    for i in 0..pages {
+        let addr = vaddr + (i as u64 * pmm::PAGE_SIZE);
+        let _ = unmap_page(addr);
+    }
+    Ok(())
+}

@@ -363,6 +363,7 @@ pub fn execute_command_inner(cmd: &str) {
         "tasks" => super::cmds::tasks::run(&mut parts),
         "stop" => super::cmds::stop::run(&mut parts),
         "disk" => super::cmds::disk::run(&mut parts),
+        "sync" => super::cmds::sync::run(&mut parts),
 
         "list" => super::cmds::list::run(&mut parts),
         "go" => super::cmds::go::run(&mut parts),

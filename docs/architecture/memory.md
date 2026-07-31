@@ -34,6 +34,8 @@ Each table contains 512 entries (8 bytes each), fitting exactly inside one 4096-
 *   `pub unsafe fn map_page(virtual_addr: u64, physical_addr: u64, flags: u64) -> Result<(), &'static str>`: Maps a virtual page to a physical frame. If intermediate tables (PDPT, PD, PT) do not exist, it allocates physical frames via the PMM and inserts them into the hierarchy with write and user access flags set.
 *   `pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str>`: Clears the page table entry mapping the virtual address, and invalidates the page entry in the processor TLB (Translation Lookaside Buffer) using the assembly instruction `invlpg`.
 *   `pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str>`: Creates a new PML4 table for a user process. It copies all higher-half kernel entries (to keep kernel code mapped in user space) while leaving the lower half clear for the user program space.
+*   `pub unsafe fn mmap_anonymous(addr: u64, len: usize, prot: u64) -> Result<u64, &'static str>`: Dynamically allocates and maps contiguous virtual memory pages for Ring 3 process heap/stack requests (`sys_mmap`).
+*   `pub unsafe fn munmap_pages(addr: u64, len: usize) -> Result<(), &'static str>`: Unmaps virtual memory page regions and frees physical page frames (`sys_munmap`).
 
 ---
 

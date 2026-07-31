@@ -488,3 +488,26 @@ fn print_decimal(val: u64) {
         serial::print_str(s);
     }
 }
+
+/// Terminate task by PID (e.g. SIGKILL=9, SIGTERM=15, SIGINT=2)
+pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
+    if pid >= MAX_TASKS {
+        return Err("Invalid process ID");
+    }
+
+    if let Some(ref mut task) = TASKS[pid] {
+        if pid == 0 {
+            return Err("Cannot terminate root kernel shell process");
+        }
+        match sig {
+            2 | 9 | 15 => {
+                task.state = TaskState::Terminated;
+                TASKS[pid] = None;
+                Ok(())
+            }
+            _ => Err("Unsupported signal type"),
+        }
+    } else {
+        Err("Process ID not found")
+    }
+}

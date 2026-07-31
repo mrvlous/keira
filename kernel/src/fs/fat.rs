@@ -120,3 +120,19 @@ pub unsafe fn write_sector(sector: u32, buffer: &[u8; 512]) -> Result<(), &'stat
 
     Ok(())
 }
+
+/// Flush dirty sectors to mounted block storage device
+pub unsafe fn flush_dirty_sectors() -> Result<usize, &'static str> {
+    let mut count = 0usize;
+    if let Some(dev) = crate::io::block::get_mounted_device() {
+        for i in 0..16 {
+            if SECTOR_CACHE[i].valid {
+                let sec = SECTOR_CACHE[i].sector;
+                let data = SECTOR_CACHE[i].data;
+                dev.write_sector(sec, &data)?;
+                count += 1;
+            }
+        }
+    }
+    Ok(count)
+}

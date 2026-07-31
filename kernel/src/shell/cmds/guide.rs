@@ -38,7 +38,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("  drives    use       disk      ramdisk   list      go\n");
                 vga::print_str("  view      create    folder    delete    edit      write\n");
-                vga::print_str("  copy      move      initrd    search\n\n");
+                vga::print_str("  copy      move      initrd    search    sync\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Process & Execution:\n");
@@ -193,6 +193,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("env") => {
                 vga::print_str("Usage: env [key] [value]\nView or modify environment variables ($USER, $HOME, $PATH, $SHELL).\n");
+            }
+            Some("sync") => {
+                vga::print_str(
+                    "Usage: sync\nFlush dirty filesystem block cache sectors to storage device.\n",
+                );
             }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);

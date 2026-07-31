@@ -13,7 +13,7 @@
  *
  * Provides inline assembly wrappers invoking x86_64 `syscall` instruction.
  * Standard x86_64 ABI register conventions:
- *   - RAX : System call vector number (1 to 19)
+ *   - RAX : System call vector number (1 to 22)
  *   - RDI : Argument 1
  *   - RSI : Argument 2
  *   - RDX : Argument 3
@@ -291,6 +291,34 @@ int sys_setenv(const char *name, const char *value) {
     __asm__ volatile("syscall"
                      : "=a"(res)
                      : "a"(19), "D"((unsigned long)name), "S"((unsigned long)value)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+void *sys_mmap(void *addr, size_t len, int prot) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(20), "D"((unsigned long)addr), "S"((unsigned long)len),
+                       "d"((unsigned long)prot)
+                     : "rcx", "r11", "memory");
+    return (void *)res;
+}
+
+int sys_munmap(void *addr, size_t len) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(21), "D"((unsigned long)addr), "S"((unsigned long)len)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+int sys_kill(int pid, int sig) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(22), "D"((unsigned long)pid), "S"((unsigned long)sig)
                      : "rcx", "r11", "memory");
     return (int)res;
 }
