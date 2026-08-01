@@ -14,15 +14,16 @@ The filesystem exposes resources using standard structures:
 ---
 
 ## 2. Mount Points and Directory Routing
-Keira organizes all filesystems into a single unified directory tree:
-*   `/` (Root): Routed to the read-only TAR boot initrd.
-*   `/dev/`: Contains virtual character and block devices.
-*   Disk Mounts: Logical FAT volumes are mapped to subdirectories (e.g. `/disk`).
+Keira organizes all filesystems into a single unified directory tree adhering to Keira's native hierarchy:
+*   `/` (Root): Routed to the primary mounted storage volume.
+*   `/system/dev/`: Native location for virtual character device nodes (`null`, `zero`, `random`, `tty`).
+*   `/dev/` Path Aliasing: VFS automatically resolves POSIX `/dev/<node>` paths to native `/system/dev/<node>` paths.
+*   `/initrd/`: Read-only TAR boot initrd.
 
 The virtual file dispatcher inspects file paths and routes requests:
-1.  **Resolve Path**: Translates relative path components into absolute paths.
-2.  **Route Mount**: Finds the longest matching mount prefix in the VFS mount registry.
-3.  **Forward Operation**: Delegates the read, write, open, or close call to the registered filesystem driver (e.g. FAT, TAR, DevFS).
+1.  **Resolve Path & Aliases**: Translates `/dev/` aliases and relative path components into absolute paths.
+2.  **Route Mount**: Finds the matching prefix in the VFS mount registry.
+3.  **Forward Operation**: Delegates read, write, open, or close calls to the target filesystem or character device handler (`dev.rs`).
 
 ---
 

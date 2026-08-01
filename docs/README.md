@@ -20,7 +20,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver, Dynamic ARP cache, and POSIX Sockets.
 
 ### 3. Filesystems & Storage
-*   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, mount points, file descriptors, and abstraction layers.
+*   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.
 *   [TAR Archive Reader](filesystems/tar.md): Read-only parsing of the USTAR archive format loaded as the boot initrd.
 *   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, and Block Cache dirty page flushing (`sync`).
 

@@ -3,7 +3,7 @@
 This document details the lexical analysis, parsing, and execution architecture of the built-in self-hosting C compiler (`bin/gcc`) included in Keira Kernel.
 
 ## 1. Compiler Overview
-The self-hosting compiler ([gcc.c](../../user/bin/gcc.c)) is a custom compiler designed to compile C source files directly in the user-space environment of Keira Kernel (v0.8.0). It links against the extended `libc` runtime (`stdio.h`, `stdlib.h`, `string.h`, `syscall.h`, `socket.h`, `malloc.h`).
+The self-hosting compiler ([gcc.c](../../user/bin/gcc.c)) is a custom compiler designed to compile C source files directly in the user-space environment of Keira Kernel (v0.9.0). It links against the extended `libc` runtime (`stdio.h`, `stdlib.h`, `string.h`, `syscall.h`, `socket.h`, `malloc.h`).
 
 ---
 

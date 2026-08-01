@@ -289,6 +289,7 @@ $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf
 	@$(LOG_INFO) "Building RAM Disk (Initrd)..."
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/bin
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/drivers
+	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/dev
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/include
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/apps/bin
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/config/boot
@@ -298,6 +299,10 @@ $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/guest
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/temp
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/data
+	$(Q)echo "Keira Null Device Node" > $(BUILD_DIR)/initrd_root/system/dev/null
+	$(Q)echo "Keira Zero Device Node" > $(BUILD_DIR)/initrd_root/system/dev/zero
+	$(Q)echo "Keira Random Device Node" > $(BUILD_DIR)/initrd_root/system/dev/random
+	$(Q)echo "Keira TTY Console Node" > $(BUILD_DIR)/initrd_root/system/dev/tty
 	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(BUILD_DIR)/initrd_root/system/bin/$$cmd; \
 	done

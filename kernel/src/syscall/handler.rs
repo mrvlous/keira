@@ -186,6 +186,17 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                                 Err(_) => return u64::MAX,
                             };
 
+                        let resolved_path = crate::fs::vfs::resolve_alias_path(path_str);
+                        if resolved_path.starts_with("/system/dev/") {
+                            let node_name = &resolved_path[12..];
+                            let user_slice = core::slice::from_raw_parts_mut(buf_ptr, len as usize);
+                            if let Ok(bytes) = crate::fs::dev::read_dev_node(node_name, user_slice)
+                            {
+                                return bytes as u64;
+                            }
+                            return u64::MAX;
+                        }
+
                         let frame = match crate::mem::pmm::alloc_frame() {
                             Some(f) => f,
                             None => return u64::MAX,
@@ -242,6 +253,17 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                                 Ok(s) => s,
                                 Err(_) => return u64::MAX,
                             };
+
+                        let resolved_path = crate::fs::vfs::resolve_alias_path(path_str);
+                        if resolved_path.starts_with("/system/dev/") {
+                            let node_name = &resolved_path[12..];
+                            let user_slice = core::slice::from_raw_parts(buf_ptr, len as usize);
+                            if let Ok(bytes) = crate::fs::dev::write_dev_node(node_name, user_slice)
+                            {
+                                return bytes as u64;
+                            }
+                            return u64::MAX;
+                        }
 
                         let frame = match crate::mem::pmm::alloc_frame() {
                             Some(f) => f,

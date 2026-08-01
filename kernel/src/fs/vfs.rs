@@ -21,18 +21,34 @@ pub enum FilesystemType {
     Initrd,
 }
 
+/// Resolve path aliases to Keira native directory standard (/dev/ -> /system/dev/)
+pub fn resolve_alias_path(path: &str) -> &str {
+    if path.starts_with("/dev/") {
+        match path {
+            "/dev/null" => "/system/dev/null",
+            "/dev/zero" => "/system/dev/zero",
+            "/dev/random" => "/system/dev/random",
+            "/dev/tty" => "/system/dev/tty",
+            _ => path,
+        }
+    } else {
+        path
+    }
+}
+
 /// Routes an absolute or relative path to its target filesystem and clean path.
 pub fn route_path(path: &str) -> (&str, FilesystemType) {
-    if path.starts_with("/initrd/") {
-        (&path[8..], FilesystemType::Initrd)
-    } else if path == "/initrd" {
+    let resolved = resolve_alias_path(path);
+    if resolved.starts_with("/initrd/") {
+        (&resolved[8..], FilesystemType::Initrd)
+    } else if resolved == "/initrd" {
         ("", FilesystemType::Initrd)
-    } else if path.starts_with("initrd/") {
-        (&path[7..], FilesystemType::Initrd)
-    } else if path == "initrd" {
+    } else if resolved.starts_with("initrd/") {
+        (&resolved[7..], FilesystemType::Initrd)
+    } else if resolved == "initrd" {
         ("", FilesystemType::Initrd)
     } else {
-        (path, FilesystemType::Fat)
+        (resolved, FilesystemType::Fat)
     }
 }
 
