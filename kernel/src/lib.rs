@@ -28,6 +28,7 @@ pub mod entry;
 pub mod fs;
 /// I/O subsystem : safe Rust wrappers around C hardware drivers.
 pub mod io;
+pub mod ipc;
 pub mod mem;
 pub mod net;
 pub mod shell;

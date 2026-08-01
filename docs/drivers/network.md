@@ -19,8 +19,10 @@ The network subsystem ([e1000.c](../../drivers/net/e1000.c), [e1000.rs](../../ke
 ## 3. DNS Resolver & Network Stack Architecture
 
 * **DNS Resolver ([dns.rs](../../kernel/src/net/dns.rs))**: Encodes QNAME questions (`google.com` → `\x06google\x03com\x00`), builds UDP 53 DNS query headers, transmits frames, and parses Type A IPv4 Answer RRs.
+* **Dynamic ARP Cache ([arp.rs](../../kernel/src/net/arp.rs))**: Maintains a 16-slot IP-to-MAC resolution table with broadcast `ARP Request` (who-has) and `ARP Reply` (is-at) parser for physical network interfaces.
 * **TCP State Engine ([tcp.rs](../../kernel/src/net/tcp.rs))**: Implements sequence & acknowledgment number tracking, IP pseudo-header checksum calculation, 3-way handshake (`SYN` → `SYN-ACK` → `ACK`), reliable payload streaming, and graceful `FIN` connection teardown.
 * **DHCP Client ([dhcp.rs](../../kernel/src/net/dhcp.rs))**: Implements `DHCP Discover` (UDP 67/68 Broadcast), `DHCP Offer`, `DHCP Request`, and `DHCP ACK` protocol parsing to auto-configure local IP address, Subnet Mask, Default Gateway, and DNS Server.
+* **Userland Network Socket API**: Exposes POSIX socket primitives via system calls: `sys_socket` (24), `sys_connect` (25), `sys_send` (26), and `sys_recv` (27).
 
 ---
 

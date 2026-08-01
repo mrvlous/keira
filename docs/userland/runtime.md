@@ -7,7 +7,7 @@ User applications interact with the kernel by executing system calls wrapped in 
 
 ### Assembly Wrappers
 System calls are declared using standard wrappers that assign parameters to Registers matching the System V AMD64 ABI:
-*   **System Call Number**: Passed in the `RAX` register (1 to 19).
+*   **System Call Number**: Passed in the `RAX` register (1 to 27).
 *   **Arguments**: Loaded sequentially into registers `RDI`, `RSI`, `RDX`, `R10`, `R8`, and `R9`.
 *   **Trigger**: The `syscall` instruction is executed.
 *   **Return Value**: The result is retrieved from the `RAX` register.
@@ -31,8 +31,12 @@ Standard file stream operations provided for C userland programs (`gcc.c` output
 
 ---
 
-## 4. Standard Utilities & Environment Variables ([stdlib.h](../../user/include/stdlib.h))
+## 4. Standard Utilities & Socket API ([stdlib.h](../../user/include/stdlib.h) & [socket.h](../../user/include/socket.h))
 *   `char *getenv(const char *name)`: Retrieves environment variable value string by key (`PATH`, `USER`, `HOME`, `SHELL`).
 *   `int setenv(const char *name, const char *value, int overwrite)`: Sets or updates environment variable key-value in kernel table.
 *   `int http_get(const char *url, void *buf, int max_len)`: Fetches HTTP URL response payload into userland buffer.
+*   `int sys_socket(int domain, int type, int protocol)`: Creates network communication socket (`AF_INET`).
+*   `int sys_connect(int sockfd, const void *addr, int addrlen)`: Initiates socket connection to target IP/port.
+*   `int sys_send(int sockfd, const void *buf, size_t len, int flags)`: Transmits data payload stream over socket.
+*   `int sys_recv(int sockfd, void *buf, size_t max_len, int flags)`: Receives data payload stream over socket.
 *   **Shell `$VAR` Expansion**: The terminal shell interpreter automatically expands `$VAR` tokens (`$USER`, `$HOME`, `$PATH`, `$SHELL`) before executing command strings.

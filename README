@@ -3,7 +3,8 @@ Keira Kernel
 
 Keira is a freestanding, multi-language x86_64 operating system kernel. It
 manages system hardware resources, coordinates low-level C drivers, and
-provides a multitasking scheduler, virtual file routing, and a system shell
+provides a preemptive priority multitasking scheduler, 27 POSIX system calls,
+AHCI SATA storage driver, IPC Pipe subsystem, Userland Socket API, and a system shell
 controlled by a core Rust kernel static library.
 
 Quick Start

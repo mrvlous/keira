@@ -49,6 +49,11 @@ When a user program executes the `syscall` instruction:
 | 20 | `sys_mmap` | `(addr: *mut u8, len: u64, prot: u64) -> vaddr` |
 | 21 | `sys_munmap` | `(addr: *mut u8, len: u64) -> status` |
 | 22 | `sys_kill` | `(pid: u64, sig: u64) -> status` |
+| 23 | `sys_pipe` | `(pipefd: *mut i32) -> status` |
+| 24 | `sys_socket` | `(domain: u64, type: u64, proto: u64) -> sockfd` |
+| 25 | `sys_connect` | `(sockfd: u64, addr: *const u8, len: u64) -> status` |
+| 26 | `sys_send` | `(sockfd: u64, buf: *const u8, len: u64, flags: u64) -> bytes` |
+| 27 | `sys_recv` | `(sockfd: u64, buf: *mut u8, max_len: u64, flags: u64) -> bytes` |
 
 ---
 

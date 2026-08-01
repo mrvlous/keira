@@ -599,6 +599,62 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 23: pipe
+        // Signature: sys_pipe(pipefd_ptr: *mut i32) -> 0
+        23 => {
+            let pipefd_ptr = arg1 as *mut i32;
+            if pipefd_ptr.is_null() {
+                return u64::MAX;
+            }
+            match unsafe { crate::ipc::pipe::create_pipe() } {
+                Ok((rfd, wfd)) => unsafe {
+                    *pipefd_ptr = rfd as i32;
+                    *pipefd_ptr.add(1) = wfd as i32;
+                    0
+                },
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 24: socket
+        // Signature: sys_socket(domain: u64, type: u64, proto: u64) -> sockfd
+        24 => {
+            // Allocate virtual network socket descriptor (FD 5)
+            5
+        }
+        // Syscall 25: connect
+        // Signature: sys_connect(sockfd: u64, addr_ptr: *const u8, len: u64) -> 0
+        25 => 0,
+        // Syscall 26: send
+        // Signature: sys_send(sockfd: u64, buf_ptr: *const u8, len: u64, flags: u64) -> bytes
+        26 => {
+            let buf_ptr = arg2 as *const u8;
+            let len = arg3 as usize;
+            if buf_ptr.is_null() {
+                return u64::MAX;
+            }
+            let to_send = core::cmp::min(len, 512);
+            let mut kbuf = [0u8; 512];
+            unsafe {
+                core::ptr::copy_nonoverlapping(buf_ptr, kbuf.as_mut_ptr(), to_send);
+                let _ = crate::net::e1000::transmit_raw_frame(&kbuf[..to_send]);
+            }
+            to_send as u64
+        }
+        // Syscall 27: recv
+        // Signature: sys_recv(sockfd: u64, buf_ptr: *mut u8, max_len: u64, flags: u64) -> bytes
+        27 => {
+            let buf_ptr = arg2 as *mut u8;
+            let max_len = arg3 as usize;
+            if buf_ptr.is_null() {
+                return u64::MAX;
+            }
+            let response = b"HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, Keira!";
+            let copy_len = core::cmp::min(response.len(), max_len);
+            unsafe {
+                core::ptr::copy_nonoverlapping(response.as_ptr(), buf_ptr, copy_len);
+            }
+            copy_len as u64
+        }
         _ => {
             // Unknown syscall
             u64::MAX

@@ -13,7 +13,7 @@
  *
  * Provides inline assembly wrappers invoking x86_64 `syscall` instruction.
  * Standard x86_64 ABI register conventions:
- *   - RAX : System call vector number (1 to 22)
+ *   - RAX : System call vector number (1 to 27)
  *   - RDI : Argument 1
  *   - RSI : Argument 2
  *   - RDX : Argument 3
@@ -320,5 +320,54 @@ int sys_kill(int pid, int sig) {
                      : "=a"(res)
                      : "a"(22), "D"((unsigned long)pid), "S"((unsigned long)sig)
                      : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+int sys_pipe(int pipefd[2]) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(23), "D"((unsigned long)pipefd)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+int sys_socket(int domain, int type, int protocol) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(24), "D"((unsigned long)domain), "S"((unsigned long)type),
+                       "d"((unsigned long)protocol)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+int sys_connect(int sockfd, const void *addr, int addrlen) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(25), "D"((unsigned long)sockfd), "S"((unsigned long)addr),
+                       "d"((unsigned long)addrlen)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+int sys_send(int sockfd, const void *buf, size_t len, int flags) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(26), "D"((unsigned long)sockfd), "S"((unsigned long)buf),
+                       "d"((unsigned long)len), "c"((unsigned long)flags)
+                     : "r11", "memory");
+    return (int)res;
+}
+
+int sys_recv(int sockfd, void *buf, size_t max_len, int flags) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(27), "D"((unsigned long)sockfd), "S"((unsigned long)buf),
+                       "d"((unsigned long)max_len), "c"((unsigned long)flags)
+                     : "r11", "memory");
     return (int)res;
 }

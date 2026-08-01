@@ -52,9 +52,43 @@ pub unsafe fn init() -> bool {
     true
 }
 
+pub const LAPIC_ICR_LOW: u32 = 0x0300;
+pub const LAPIC_ICR_HIGH: u32 = 0x0310;
+
+pub static mut CPU_CORE_COUNT: usize = 1;
+
+/// Send Inter-Processor Interrupt (IPI) via ICR registers
+pub unsafe fn send_ipi(apic_id: u32, vector: u8, delivery_mode: u32) {
+    write_lapic_reg(LAPIC_ICR_HIGH, (apic_id as u32) << 24);
+    write_lapic_reg(LAPIC_ICR_LOW, (delivery_mode & 0x700) | (vector as u32));
+}
+
+/// Initialize SMP multi-core CPUs via INIT-SIPI-SIPI sequence
+pub unsafe fn smp_init() -> usize {
+    if !APIC_INITIALIZED {
+        return 1;
+    }
+    // Probe primary BSP CPU ID
+    let bsp_id = (read_lapic_reg(LAPIC_ID) >> 24) & 0xFF;
+    let mut online = 1usize;
+
+    // Send INIT IPI to secondary AP cores
+    for apic_id in 0..4 {
+        if apic_id != bsp_id {
+            send_ipi(apic_id, 0, 0x500); // INIT IPI
+            send_ipi(apic_id, 0x08, 0x600); // Start-up IPI (SIPI vector 0x08)
+            online += 1;
+        }
+    }
+
+    CPU_CORE_COUNT = online;
+    online
+}
+
 /// Signal End-of-Interrupt (EOI) to Local APIC
 pub unsafe fn signal_eoi() {
     if APIC_INITIALIZED {
         write_lapic_reg(LAPIC_EOI, 0);
     }
 }
+

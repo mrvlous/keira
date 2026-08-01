@@ -200,4 +200,54 @@ int sys_munmap(void *addr, size_t len);
  */
 int sys_kill(int pid, int sig);
 
+/**
+ * sys_pipe - Create an Inter-Process Communication ring buffer pipe pair.
+ * @pipefd: Array of 2 integers to store read/write file descriptors.
+ *
+ * Return: 0 on success, or negative error code on failure.
+ */
+int sys_pipe(int pipefd[2]);
+
+/**
+ * sys_socket - Create an endpoint for network communication.
+ * @domain: Protocol family (AF_INET=2).
+ * @type: Socket type (SOCK_STREAM=1, SOCK_DGRAM=2).
+ * @protocol: Protocol selection.
+ *
+ * Return: Socket file descriptor, or negative error code.
+ */
+int sys_socket(int domain, int type, int protocol);
+
+/**
+ * sys_connect - Initiate a connection on a network socket.
+ * @sockfd: Socket file descriptor.
+ * @addr: Target address structure pointer.
+ * @addrlen: Address structure size in bytes.
+ *
+ * Return: 0 on success, or negative error code.
+ */
+int sys_connect(int sockfd, const void *addr, int addrlen);
+
+/**
+ * sys_send - Transmit a buffer message on a socket descriptor.
+ * @sockfd: Socket descriptor.
+ * @buf: Data buffer pointer.
+ * @len: Message length in bytes.
+ * @flags: Message transmission flags.
+ *
+ * Return: Number of bytes sent, or negative error code.
+ */
+int sys_send(int sockfd, const void *buf, size_t len, int flags);
+
+/**
+ * sys_recv - Receive a message payload from a socket descriptor.
+ * @sockfd: Socket descriptor.
+ * @buf: Target destination buffer pointer.
+ * @max_len: Buffer capacity limit.
+ * @flags: Message reception flags.
+ *
+ * Return: Number of bytes received, or negative error code.
+ */
+int sys_recv(int sockfd, void *buf, size_t max_len, int flags);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */
