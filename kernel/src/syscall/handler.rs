@@ -677,6 +677,18 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             copy_len as u64
         }
+        // Syscall 28: shmget
+        // Signature: sys_shmget(size: u64) -> shm_id
+        28 => match unsafe { crate::ipc::shm::create_shm(arg1 as usize) } {
+            Ok(id) => id as u64,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 29: shmat
+        // Signature: sys_shmat(shmid: u64) -> virt_addr
+        29 => match unsafe { crate::ipc::shm::get_shm_frame(arg1 as usize) } {
+            Some(frame) => frame,
+            None => u64::MAX,
+        },
         _ => {
             // Unknown syscall
             u64::MAX

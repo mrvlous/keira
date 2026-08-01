@@ -101,3 +101,8 @@ pub unsafe fn init_user_mode() {
     // Setup STAR, LSTAR, SFMASK, EFER MSRs for syscall/sysret
     init_syscall_msrs();
 }
+
+/// Dynamically updates the TSS RSP0 stack pointer loaded when switching from Ring 3 to Ring 0.
+pub unsafe fn set_kernel_stack(rsp0: u64) {
+    TSS.rsp0 = rsp0;
+}

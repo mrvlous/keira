@@ -10,7 +10,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Bootstrapping and Trampolining](architecture/bootstrapping.md): The multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
 *   [Memory Management](architecture/memory.md): Design of the Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, SMP multi-core execution (`smp_init`), and Unix signals (`sys_kill`).
-*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 27 system call vectors, Local APIC controller, and privilege level transitions.
+*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 29 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, and privilege level transitions.
 
 ### 2. Device Drivers
 *   [VGA Text Console](drivers/vga.md): Display buffer manipulation, cursor positioning, and text-mode mouse cursor rendering.

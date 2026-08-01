@@ -10,3 +10,4 @@
 //! Keira Kernel: Inter-Process Communication Module Root
 
 pub mod pipe;
+pub mod shm;

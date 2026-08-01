@@ -7,7 +7,7 @@ User applications interact with the kernel by executing system calls wrapped in 
 
 ### Assembly Wrappers
 System calls are declared using standard wrappers that assign parameters to Registers matching the System V AMD64 ABI:
-*   **System Call Number**: Passed in the `RAX` register (1 to 27).
+*   **System Call Number**: Passed in the `RAX` register (1 to 29).
 *   **Arguments**: Loaded sequentially into registers `RDI`, `RSI`, `RDX`, `R10`, `R8`, and `R9`.
 *   **Trigger**: The `syscall` instruction is executed.
 *   **Return Value**: The result is retrieved from the `RAX` register.
@@ -49,3 +49,10 @@ Standard file stream operations provided for C userland programs (`gcc.c` output
 *   `time_t time(time_t *tloc)`: Returns current epoch uptime seconds.
 *   `clock_t clock(void)`: Returns elapsed clock ticks in milliseconds.
 *   `unsigned int sleep(unsigned int seconds)`: Suspends execution for specified duration via `sys_sleep`.
+
+---
+
+## 6. Shared Memory IPC & C String Extensions ([string.h](../../user/include/string.h))
+*   `int sys_shmget(size_t size)`: Allocates shared physical page region (Syscall 28).
+*   `void *sys_shmat(int shmid)`: Attaches shared physical memory region to calling process virtual address space (Syscall 29).
+*   `char *strtok(char *str, const char *delim)`, `char *strstr(const char *haystack, const char *needle)`: C string parsing functions.

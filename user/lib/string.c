@@ -113,3 +113,64 @@ char *strncpy(char *dest, const char *src, unsigned long n) {
     }
     return dest;
 }
+
+char *strchr(const char *s, int c) {
+    while (*s) {
+        if (*s == (char)c)
+            return (char *)s;
+        s++;
+    }
+    return (c == 0) ? (char *)s : NULL;
+}
+
+char *strrchr(const char *s, int c) {
+    const char *last = NULL;
+    do {
+        if (*s == (char)c)
+            last = s;
+    } while (*s++);
+    return (char *)last;
+}
+
+char *strstr(const char *haystack, const char *needle) {
+    if (!*needle)
+        return (char *)haystack;
+    for (; *haystack; haystack++) {
+        if (*haystack == *needle) {
+            const char *h = haystack, *n = needle;
+            while (*h && *n && *h == *n) {
+                h++;
+                n++;
+            }
+            if (!*n)
+                return (char *)haystack;
+        }
+    }
+    return NULL;
+}
+
+static char *strtok_saved = NULL;
+char *strtok(char *str, const char *delim) {
+    if (!str)
+        str = strtok_saved;
+    if (!str)
+        return NULL;
+
+    while (*str && strchr(delim, *str))
+        str++;
+    if (!*str) {
+        strtok_saved = NULL;
+        return NULL;
+    }
+
+    char *token = str;
+    while (*str && !strchr(delim, *str))
+        str++;
+    if (*str) {
+        *str = '\0';
+        strtok_saved = str + 1;
+    } else {
+        strtok_saved = NULL;
+    }
+    return token;
+}

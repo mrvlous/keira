@@ -371,3 +371,21 @@ int sys_recv(int sockfd, void *buf, size_t max_len, int flags) {
                      : "r11", "memory");
     return (int)res;
 }
+
+int sys_shmget(size_t size) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(28), "D"((unsigned long)size)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+void *sys_shmat(int shmid) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(29), "D"((unsigned long)shmid)
+                     : "rcx", "r11", "memory");
+    return (void *)res;
+}

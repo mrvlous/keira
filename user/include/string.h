@@ -73,4 +73,9 @@ char *strcpy(char *dest, const char *src);
  */
 char *strncpy(char *dest, const char *src, unsigned long n);
 
+char *strchr(const char *s, int c);
+char *strrchr(const char *s, int c);
+char *strstr(const char *haystack, const char *needle);
+char *strtok(char *str, const char *delim);
+
 #endif /* KEIRA_USER_LIB_STRING_H */

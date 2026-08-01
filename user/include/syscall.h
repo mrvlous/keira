@@ -250,4 +250,20 @@ int sys_send(int sockfd, const void *buf, size_t len, int flags);
  */
 int sys_recv(int sockfd, void *buf, size_t max_len, int flags);
 
+/**
+ * sys_shmget - Allocate a shared memory region (Syscall 28).
+ * @size: Byte size of requested region.
+ *
+ * Return: SHM region ID (> 0), or negative error code.
+ */
+int sys_shmget(size_t size);
+
+/**
+ * sys_shmat - Attach a shared memory region to process address space (Syscall 29).
+ * @shmid: Shared memory region ID.
+ *
+ * Return: Virtual base pointer to mapped shared page, or (void *)-1.
+ */
+void *sys_shmat(int shmid);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */

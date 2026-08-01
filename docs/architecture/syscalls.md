@@ -54,6 +54,8 @@ When a user program executes the `syscall` instruction:
 | 25 | `sys_connect` | `(sockfd: u64, addr: *const u8, len: u64) -> status` |
 | 26 | `sys_send` | `(sockfd: u64, buf: *const u8, len: u64, flags: u64) -> bytes` |
 | 27 | `sys_recv` | `(sockfd: u64, buf: *mut u8, max_len: u64, flags: u64) -> bytes` |
+| 28 | `sys_shmget` | `(size: u64) -> shm_id` |
+| 29 | `sys_shmat` | `(shmid: u64) -> vaddr` |
 
 ---
 
