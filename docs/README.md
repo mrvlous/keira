@@ -25,7 +25,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, and Block Cache dirty page flushing (`sync`).
 
 ### 4. Userland Subsystems & IPC
-*   [User Runtime Library (libc & Sockets)](userland/runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), and system call wrappers.
+*   [User Runtime Library (libc & Extensions)](userland/runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), C Math (`math.h`) & Time (`time.h`), and system call wrappers.
 *   [The Init Process](userland/init.md): User-space initialization sequence (`bin/init`) spawning system processes.
 *   [Self-Hosting C Compiler](userland/gcc.md): Parser, lexer, AST builder, and helper structures inside the built-in C compiler (`bin/gcc`).
 

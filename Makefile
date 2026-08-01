@@ -282,7 +282,7 @@ $(DISK_IMG): build/user_test.elf build/gcc.elf
 	@$(LOG_DISK) "Copying binaries and configuration files..."
 	$(Q)mcopy -o -i $(DISK_IMG) build/user_test.elf ::/apps/bin/user_test.elf
 	$(Q)mcopy -o -i $(DISK_IMG) build/gcc.elf ::/apps/bin/gcc.elf
-	$(Q)for header in stdio.h stdlib.h string.h syscall.h malloc.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
+	$(Q)for header in stdio.h stdlib.h string.h syscall.h socket.h math.h time.h malloc.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
 initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
 
 $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf

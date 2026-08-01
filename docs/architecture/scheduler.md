@@ -68,3 +68,9 @@ User processes run in Ring 3 with restricted memory access and permissions.
 *   **Usage**: `stop <PID>` (Requires admin privilege or `please stop <PID>`).
 *   **Execution**: Resolves target process by numeric PID and invokes `send_signal(pid, 9)` (`SIGKILL`) in the scheduler.
 *   **Signals**: Supports `SIGINT` (2), `SIGKILL` (9), and `SIGTERM` (15) for process management.
+
+---
+
+## 5. SMP Multi-Core Execution (`smp_init`)
+*   **APIC Enumeration**: Enumerates Local APIC MMIO registers (`0xFEE00000`) and sends INIT-SIPI-SIPI Inter-Processor Interrupts (IPIs) to wake up secondary AP CPU cores.
+*   **Core Count Tracking**: Tracks active CPU cores in `CPU_CORE_COUNT` and displays topology details via `cpu` shell command.

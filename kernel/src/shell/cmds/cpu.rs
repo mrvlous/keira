@@ -23,10 +23,28 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Ok(v_str) = core::str::from_utf8(&vendor) {
         unsafe {
             vga::set_color(vga::Color::LightBlue, vga::Color::Black);
-            vga::print_str("CPU Vendor: ");
+            vga::print_str("CPU VENDOR: ");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str(v_str);
             vga::print_str("\n");
+
+            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::print_str("  Architecture : x86_64 64-Bit Long Mode\n");
+            vga::print_str("  APIC Controller : ");
+            if crate::arch::apic::APIC_INITIALIZED {
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("Enabled (MMIO 0xFEE00000)\n");
+            } else {
+                vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                vga::print_str("PIC Fallback Mode\n");
+            }
+
+            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::print_str("  SMP Cores    : ");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_u64(crate::arch::apic::CPU_CORE_COUNT as u64);
+            vga::print_str(" Active Core(s)\n");
+
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
     }

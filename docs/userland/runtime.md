@@ -40,3 +40,12 @@ Standard file stream operations provided for C userland programs (`gcc.c` output
 *   `int sys_send(int sockfd, const void *buf, size_t len, int flags)`: Transmits data payload stream over socket.
 *   `int sys_recv(int sockfd, void *buf, size_t max_len, int flags)`: Receives data payload stream over socket.
 *   **Shell `$VAR` Expansion**: The terminal shell interpreter automatically expands `$VAR` tokens (`$USER`, `$HOME`, `$PATH`, `$SHELL`) before executing command strings.
+
+---
+
+## 5. Math & Time Extensions ([math.h](../../user/include/math.h) & [time.h](../../user/include/time.h))
+*   `double fabs(double x)`, `double sqrt(double x)`, `double pow(double base, double exp)`: C mathematical calculations.
+*   `double sin(double x)`, `double cos(double x)`: Trigonometric calculations.
+*   `time_t time(time_t *tloc)`: Returns current epoch uptime seconds.
+*   `clock_t clock(void)`: Returns elapsed clock ticks in milliseconds.
+*   `unsigned int sleep(unsigned int seconds)`: Suspends execution for specified duration via `sys_sleep`.

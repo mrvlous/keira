@@ -23,6 +23,7 @@
 // Module declarations
 
 /// Kernel entry point (`kernel_main`), called by the ASM trampoline.
+pub mod arch;
 pub mod entry;
 
 pub mod fs;

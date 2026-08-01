@@ -91,4 +91,3 @@ pub unsafe fn signal_eoi() {
         write_lapic_reg(LAPIC_EOI, 0);
     }
 }
-
