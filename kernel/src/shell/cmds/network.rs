@@ -144,6 +144,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 }
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
+            Some("dns-cache") | Some("cache") => {
+                crate::net::dns::print_dns_cache();
+            }
             _ => {
                 e1000::init();
                 vga::set_color(vga::Color::LightBlue, vga::Color::Black);

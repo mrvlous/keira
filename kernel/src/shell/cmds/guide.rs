@@ -170,7 +170,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: run <program.elf>\nLoad and execute a freestanding user mode ELF program in Ring 3.\n");
             }
             Some("write") => {
-                vga::print_str("Usage: write <filename> <text>\nWrite text content to a file on the active storage drive.\n");
+                vga::print_str("Usage: write [-a|--append|>>] <filename> <text>\nWrite or append text content to a file on the active FAT16 storage drive.\n");
             }
             Some("copy") => {
                 vga::print_str("Usage: copy <src_file> <dest_file>\nCopy a file from the source path to the destination path.\n");

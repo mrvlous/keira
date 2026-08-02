@@ -18,6 +18,8 @@ extern "C" {
     pub fn heap_get_total() -> usize;
     pub fn heap_get_used() -> usize;
     pub fn heap_get_free() -> usize;
+    pub fn heap_get_alloc_count() -> usize;
+    pub fn heap_get_peak() -> usize;
 }
 
 /// Safe re-export of vga::init() for use by shell command modules.

@@ -62,4 +62,18 @@ size_t heap_get_used(void);
  */
 size_t heap_get_free(void);
 
+/**
+ * heap_get_alloc_count - Read total number of allocation requests.
+ *
+ * Return: Allocation count.
+ */
+size_t heap_get_alloc_count(void);
+
+/**
+ * heap_get_peak - Read peak heap usage in bytes.
+ *
+ * Return: Peak allocated bytes.
+ */
+size_t heap_get_peak(void);
+
 #endif /* KEIRA_INCLUDE_KEIRA_HEAP_H */

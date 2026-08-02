@@ -19,7 +19,9 @@ pub mod volume;
 pub use dir::{
     change_directory, create_dir, find_matches, get_dir_cluster, list_files, list_files_in_dir,
 };
-pub use file::{cat_file, create_file, read_file_content, remove_entry, write_file_content};
+pub use file::{
+    append_file_content, cat_file, create_file, read_file_content, remove_entry, write_file_content,
+};
 pub use path::{filename_to_8_3, find_entry, format_filename, resolve_path};
 pub use types::{DirectoryEntry, Fat16Volume, FoundEntry};
 pub use volume::{init, print_disk_info};

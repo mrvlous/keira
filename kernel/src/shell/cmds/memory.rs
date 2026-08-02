@@ -92,7 +92,22 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         vga::print_u64(phys_free / 1024);
-        vga::print_str(" KB\n");
+        vga::print_str(" KB\n\n");
+
+        let alloc_count = unsafe { heap_get_alloc_count() } as u64;
+        let peak_bytes = unsafe { heap_get_peak() } as u64;
+
+        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::print_str("Heap Allocator Statistics:\n");
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("  Total Allocations : ");
+        vga::print_u64(alloc_count);
+        vga::print_str(" requests\n");
+        vga::print_str("  Peak Heap Usage   : ");
+        vga::print_u64(peak_bytes);
+        vga::print_str(" bytes (");
+        vga::print_u64(peak_bytes / 1024);
+        vga::print_str(" KB)\n");
 
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }

@@ -27,6 +27,8 @@
 static uint8_t *heap_start = NULL;
 static uint8_t *heap_end = NULL;
 static uint8_t *heap_next = NULL;
+static size_t g_alloc_count = 0;
+static size_t g_peak_used = 0;
 
 /**
  * heap_init - Initialize kernel bump allocator memory boundaries.
@@ -38,6 +40,8 @@ void heap_init(void *start, size_t size) {
     heap_start = (uint8_t *)start;
     heap_end = heap_start + size;
     heap_next = heap_start;
+    g_alloc_count = 0;
+    g_peak_used = 0;
 }
 
 /**
@@ -63,6 +67,11 @@ void *kmalloc(size_t size) {
     /* Save current allocation pointer and bump pointer forward */
     void *ptr = heap_next;
     heap_next += size;
+    g_alloc_count++;
+    size_t current_used = (size_t)(heap_next - heap_start);
+    if (current_used > g_peak_used) {
+        g_peak_used = current_used;
+    }
     return ptr;
 }
 
@@ -100,4 +109,22 @@ size_t heap_get_used(void) {
  */
 size_t heap_get_free(void) {
     return (size_t)(heap_end - heap_next);
+}
+
+/**
+ * heap_get_alloc_count - Read total number of allocation requests.
+ *
+ * Return: Allocation count.
+ */
+size_t heap_get_alloc_count(void) {
+    return g_alloc_count;
+}
+
+/**
+ * heap_get_peak - Read peak heap usage in bytes.
+ *
+ * Return: Peak allocated bytes.
+ */
+size_t heap_get_peak(void) {
+    return g_peak_used;
 }

@@ -267,6 +267,24 @@ pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &
     Ok(())
 }
 
+pub unsafe fn append_file_content(filename: &str, content: &[u8]) -> Result<usize, &'static str> {
+    let mut buf = [0u8; 4096];
+    let existing_len = match read_file_content(filename, &mut buf) {
+        Ok(len) => len,
+        Err(_) => 0,
+    };
+
+    if existing_len + content.len() > buf.len() {
+        return Err("Combined content exceeds maximum buffer capacity (4KB)");
+    }
+
+    buf[existing_len..existing_len + content.len()].copy_from_slice(content);
+    let total_len = existing_len + content.len();
+    write_file_content(filename, &buf[..total_len])?;
+
+    Ok(total_len)
+}
+
 pub unsafe fn create_file(filename: &str) -> Result<(), &'static str> {
     let vol_ptr = &raw const VOLUME;
     let vol = (*vol_ptr)
@@ -315,27 +333,4 @@ pub unsafe fn remove_entry(name: &str) -> Result<(), &'static str> {
 
     write_sector(found.sector, &sector_data)?;
     Ok(())
-}
-
-pub unsafe fn append_file_content(filename: &str, content: &[u8]) -> Result<(), &'static str> {
-    if content.is_empty() {
-        return Ok(());
-    }
-
-    if create_file(filename).is_ok() {
-        return write_file_content(filename, content);
-    }
-
-    let mut existing_buf = [0u8; 8192];
-    let existing_size = read_file_content(filename, &mut existing_buf).unwrap_or(0);
-
-    let mut new_buf = [0u8; 16384];
-    if existing_size + content.len() > new_buf.len() {
-        return Err("File size limit exceeded for append operation");
-    }
-
-    new_buf[..existing_size].copy_from_slice(&existing_buf[..existing_size]);
-    new_buf[existing_size..existing_size + content.len()].copy_from_slice(content);
-
-    write_file_content(filename, &new_buf[..existing_size + content.len()])
 }

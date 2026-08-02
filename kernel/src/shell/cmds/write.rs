@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'write'
 //!
-//! Implementation of the 'write' shell command to write text content to a file.
+//! Implementation of the 'write' shell command to write or append text content to a FAT16 file.
 
 use crate::io::vga;
 use crate::shell::executor::*;
@@ -24,12 +24,26 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             return;
         }
 
-        let filename = match parts.next() {
+        let first_arg = match parts.next() {
             Some(s) => s,
             None => {
-                vga::print_str("Usage: write <filename> <text>\n");
+                vga::print_str("Usage: write [-a|--append|>>] <filename> <text>\n");
                 return;
             }
+        };
+
+        let is_append = first_arg == "-a" || first_arg == "--append" || first_arg == ">>";
+
+        let filename = if is_append {
+            match parts.next() {
+                Some(s) => s,
+                None => {
+                    vga::print_str("Usage: write [-a|--append|>>] <filename> <text>\n");
+                    return;
+                }
+            }
+        } else {
+            first_arg
         };
 
         // Gather the rest of the arguments as the text content
@@ -66,17 +80,39 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
         }
 
-        match crate::fs::fat::write_file_content(filename, &text_buf[..text_len]) {
-            Ok(_) => {
-                vga::print_str("Successfully wrote content to ");
-                vga::print_str(filename);
-                vga::print_str(".\n");
+        if is_append {
+            match crate::fs::fat::append_file_content(filename, &text_buf[..text_len]) {
+                Ok(new_size) => {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("Successfully appended content to ");
+                    vga::print_str(filename);
+                    vga::print_str(" (New size: ");
+                    vga::print_u64(new_size as u64);
+                    vga::print_str(" bytes).\n");
+                }
+                Err(e) => {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str("Error appending to file: ");
+                    vga::print_str(e);
+                    vga::print_str("\n");
+                }
             }
-            Err(e) => {
-                vga::print_str("Error writing to file: ");
-                vga::print_str(e);
-                vga::print_str("\n");
+        } else {
+            match crate::fs::fat::write_file_content(filename, &text_buf[..text_len]) {
+                Ok(_) => {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("Successfully wrote content to ");
+                    vga::print_str(filename);
+                    vga::print_str(".\n");
+                }
+                Err(e) => {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str("Error writing to file: ");
+                    vga::print_str(e);
+                    vga::print_str("\n");
+                }
             }
         }
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }
