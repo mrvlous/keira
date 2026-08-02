@@ -14,11 +14,11 @@ use super::{KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP};
 use crate::io::vga;
 
 unsafe fn editor_save_file() -> Result<(), &'static str> {
-    let mut flat_buf = [0u8; 2048];
+    let mut flat_buf = [0u8; 4096];
     let mut flat_len = 0;
 
     let mut last_y = 0;
-    for y in 0..23 {
+    for y in 0..128 {
         if LINE_LENS[y] > 0 {
             last_y = y;
         }
@@ -27,14 +27,14 @@ unsafe fn editor_save_file() -> Result<(), &'static str> {
     for y in 0..=last_y {
         let row_len = LINE_LENS[y] as usize;
         for x in 0..row_len {
-            if flat_len < 2048 {
+            if flat_len < 4096 {
                 flat_buf[flat_len] = EDITOR_GRID[y][x];
                 flat_len += 1;
             }
         }
 
         if y < last_y {
-            if flat_len < 2048 {
+            if flat_len < 4096 {
                 flat_buf[flat_len] = b'\n';
                 flat_len += 1;
             }
@@ -58,29 +58,30 @@ pub unsafe fn editor_start(filename: &str) -> Result<(), &'static str> {
     EDIT_FILENAME_LEN = core::cmp::min(filename.len(), 12);
     EDIT_FILENAME[..EDIT_FILENAME_LEN].copy_from_slice(filename.as_bytes());
 
-    EDITOR_GRID = [[b' '; 80]; 23];
-    LINE_LENS = [0; 23];
+    EDITOR_GRID = [[b' '; 80]; 128];
+    LINE_LENS = [0; 128];
     EDIT_CUR_X = 0;
     EDIT_CUR_Y = 0;
+    EDIT_SCROLL_Y = 0;
     EDITOR_CONFIRM_EXIT = false;
     EDITOR_CONFIRM_SAVE = false;
     IN_SEARCH_MODE = false;
     SEARCH_LEN = 0;
     SEARCH_BUFFER = [0; 16];
 
-    let mut file_buf = [0u8; 2048];
+    let mut file_buf = [0u8; 4096];
     match crate::fs::vfs::read_file(filename, &mut file_buf) {
         Ok(bytes_read) => {
             let mut x = 0;
             let mut y = 0;
             for &b in &file_buf[..bytes_read] {
                 if b == b'\n' {
-                    if y < 23 {
+                    if y < 128 {
                         LINE_LENS[y] = x as u16;
                     }
                     x = 0;
                     y += 1;
-                    if y >= 23 {
+                    if y >= 128 {
                         break;
                     }
                 } else if b == b'\r' {
@@ -92,7 +93,7 @@ pub unsafe fn editor_start(filename: &str) -> Result<(), &'static str> {
                     }
                 }
             }
-            if y < 23 {
+            if y < 128 {
                 LINE_LENS[y] = x as u16;
             }
         }
@@ -112,8 +113,9 @@ pub unsafe fn editor_start(filename: &str) -> Result<(), &'static str> {
 
 pub unsafe fn editor_redraw() {
     vga::init();
+    vga::set_cursor_pos(0, 0);
 
-    // 1. Draw top bar (Header)
+    // 1. Draw top bar (Header with Ln X, Col Y status indicator)
     vga::set_color(vga::Color::White, vga::Color::DarkGrey);
     vga::print_str("  Keira Text Editor ");
     vga::print_str(env!("CARGO_PKG_VERSION"));
@@ -122,6 +124,10 @@ pub unsafe fn editor_redraw() {
     if let Ok(name_str) = core::str::from_utf8(filename_slice) {
         vga::print_str(name_str);
     }
+    vga::print_str("  |  Ln ");
+    vga::print_u64((EDIT_CUR_Y + 1) as u64);
+    vga::print_str(", Col ");
+    vga::print_u64((EDIT_CUR_X + 1) as u64);
     vga::print_str(" ");
 
     let mut current_col = vga::get_cursor_col();
@@ -130,12 +136,13 @@ pub unsafe fn editor_redraw() {
         current_col += 1;
     }
 
-    // 2. Draw grid content with syntax highlighting and line numbers
-    for y in 0..23 {
-        vga::set_cursor_pos((y + 1) as u16, 0);
+    // 2. Draw grid content with scrolling offset, syntax highlighting and line numbers
+    for y_view in 0..23 {
+        let actual_y = (EDIT_SCROLL_Y as usize) + y_view;
+        vga::set_cursor_pos((y_view + 1) as u16, 0);
 
         // Render line number gutter (e.g. " 1 | ")
-        let val = (y + 1) as u8;
+        let val = ((actual_y + 1) % 100) as u8;
         let ten = val / 10;
         let one = val % 10;
         let ten_char = if ten == 0 { b' ' } else { b'0' + ten };
@@ -146,7 +153,7 @@ pub unsafe fn editor_redraw() {
             vga::print_str(gutter_str);
         }
 
-        let len = core::cmp::min(LINE_LENS[y] as usize, 75);
+        let len = core::cmp::min(LINE_LENS[actual_y] as usize, 75);
         let mut x = 0;
         let mut highlight_remaining = 0;
 
@@ -155,7 +162,7 @@ pub unsafe fn editor_redraw() {
             if SEARCH_LEN > 0 && highlight_remaining == 0 && x + SEARCH_LEN <= len {
                 let mut matched = true;
                 for i in 0..SEARCH_LEN {
-                    if EDITOR_GRID[y][x + i] != SEARCH_BUFFER[i] {
+                    if EDITOR_GRID[actual_y][x + i] != SEARCH_BUFFER[i] {
                         matched = false;
                         break;
                     }
@@ -172,7 +179,7 @@ pub unsafe fn editor_redraw() {
             };
 
             let fg_override = highlight_remaining > 0;
-            let c = EDITOR_GRID[y][x];
+            let c = EDITOR_GRID[actual_y][x];
 
             // 1. Highlight numbers
             if c >= b'0' && c <= b'9' {
@@ -217,7 +224,7 @@ pub unsafe fn editor_redraw() {
                     if SEARCH_LEN > 0 && highlight_remaining == 0 && x + SEARCH_LEN <= len {
                         let mut matched = true;
                         for i in 0..SEARCH_LEN {
-                            if EDITOR_GRID[y][x + i] != SEARCH_BUFFER[i] {
+                            if EDITOR_GRID[actual_y][x + i] != SEARCH_BUFFER[i] {
                                 matched = false;
                                 break;
                             }
@@ -238,7 +245,7 @@ pub unsafe fn editor_redraw() {
                     };
                     vga::set_color(str_fg, str_bg);
 
-                    let sc = EDITOR_GRID[y][x];
+                    let sc = EDITOR_GRID[actual_y][x];
                     let s_sc = [sc];
                     if let Ok(c_str) = core::str::from_utf8(&s_sc) {
                         vga::print_str(c_str);
@@ -274,7 +281,7 @@ pub unsafe fn editor_redraw() {
                     if SEARCH_LEN > 0 && highlight_remaining == 0 && x + SEARCH_LEN <= len {
                         let mut matched = true;
                         for i in 0..SEARCH_LEN {
-                            if EDITOR_GRID[y][x + i] != SEARCH_BUFFER[i] {
+                            if EDITOR_GRID[actual_y][x + i] != SEARCH_BUFFER[i] {
                                 matched = false;
                                 break;
                             }
@@ -295,7 +302,7 @@ pub unsafe fn editor_redraw() {
                     };
                     vga::set_color(str_fg, str_bg);
 
-                    let sc = EDITOR_GRID[y][x];
+                    let sc = EDITOR_GRID[actual_y][x];
                     let s_sc = [sc];
                     if let Ok(c_str) = core::str::from_utf8(&s_sc) {
                         vga::print_str(c_str);
@@ -312,7 +319,7 @@ pub unsafe fn editor_redraw() {
             }
 
             // 3. Highlight comments
-            if c == b'/' && x + 1 < len && EDITOR_GRID[y][x + 1] == b'/' {
+            if c == b'/' && x + 1 < len && EDITOR_GRID[actual_y][x + 1] == b'/' {
                 vga::set_color(
                     if fg_override {
                         vga::Color::Black
@@ -325,7 +332,7 @@ pub unsafe fn editor_redraw() {
                     if SEARCH_LEN > 0 && highlight_remaining == 0 && x + SEARCH_LEN <= len {
                         let mut matched = true;
                         for i in 0..SEARCH_LEN {
-                            if EDITOR_GRID[y][x + i] != SEARCH_BUFFER[i] {
+                            if EDITOR_GRID[actual_y][x + i] != SEARCH_BUFFER[i] {
                                 matched = false;
                                 break;
                             }
@@ -346,7 +353,7 @@ pub unsafe fn editor_redraw() {
                     };
                     vga::set_color(cmt_fg, cmt_bg);
 
-                    let sc = EDITOR_GRID[y][x];
+                    let sc = EDITOR_GRID[actual_y][x];
                     let s_sc = [sc];
                     if let Ok(c_str) = core::str::from_utf8(&s_sc) {
                         vga::print_str(c_str);
@@ -398,10 +405,10 @@ pub unsafe fn editor_redraw() {
 
             if is_alpha(c) || c == b'_' {
                 let start = x;
-                while x < len && is_alnum(EDITOR_GRID[y][x]) {
+                while x < len && is_alnum(EDITOR_GRID[actual_y][x]) {
                     x += 1;
                 }
-                let word_slice = &EDITOR_GRID[y][start..x];
+                let word_slice = &EDITOR_GRID[actual_y][start..x];
                 let is_keyword = match word_slice {
                     b"fn" | b"let" | b"struct" | b"impl" | b"pub" | b"for" | b"if" | b"else"
                     | b"match" | b"return" | b"loop" | b"mut" | b"static" | b"const" | b"use"
@@ -415,7 +422,7 @@ pub unsafe fn editor_redraw() {
                     {
                         let mut matched = true;
                         for i in 0..SEARCH_LEN {
-                            if EDITOR_GRID[y][word_char_x + i] != SEARCH_BUFFER[i] {
+                            if EDITOR_GRID[actual_y][word_char_x + i] != SEARCH_BUFFER[i] {
                                 matched = false;
                                 break;
                             }
@@ -516,7 +523,12 @@ pub unsafe fn editor_redraw() {
     } else if IN_SEARCH_MODE {
         vga::set_cursor_pos(24, (10 + SEARCH_LEN) as u16);
     } else {
-        vga::set_cursor_pos(EDIT_CUR_Y + 1, EDIT_CUR_X + 5);
+        let view_row = if EDIT_CUR_Y >= EDIT_SCROLL_Y {
+            EDIT_CUR_Y - EDIT_SCROLL_Y
+        } else {
+            0
+        };
+        vga::set_cursor_pos(view_row + 1, EDIT_CUR_X + 5);
     }
 }
 
@@ -710,12 +722,21 @@ pub unsafe fn editor_handle_keypress(c: u8) {
             editor_redraw();
         }
         10 | 13 => {
-            if EDIT_CUR_Y < 22 {
+            if EDIT_CUR_Y < 127 {
                 let cur_y = EDIT_CUR_Y as usize;
                 let cur_x = EDIT_CUR_X as usize;
                 let cur_len = LINE_LENS[cur_y] as usize;
 
-                for r in (cur_y + 1..22).rev() {
+                // Calculate leading spaces on cur_y for smart auto-indentation
+                let mut auto_indent = 0usize;
+                while auto_indent < cur_len
+                    && EDITOR_GRID[cur_y][auto_indent] == b' '
+                    && auto_indent < 16
+                {
+                    auto_indent += 1;
+                }
+
+                for r in (cur_y + 1..127).rev() {
                     EDITOR_GRID[r + 1] = EDITOR_GRID[r];
                     LINE_LENS[r + 1] = LINE_LENS[r];
                 }
@@ -724,18 +745,32 @@ pub unsafe fn editor_handle_keypress(c: u8) {
                 EDITOR_GRID[next_y] = [b' '; 80];
                 LINE_LENS[next_y] = 0;
 
+                // Copy leading indentation spaces to next_y
+                if auto_indent > 0 {
+                    for i in 0..auto_indent {
+                        EDITOR_GRID[next_y][i] = b' ';
+                    }
+                    LINE_LENS[next_y] = auto_indent as u16;
+                }
+
                 if cur_x < cur_len {
                     let to_move = cur_len - cur_x;
                     for i in 0..to_move {
-                        EDITOR_GRID[next_y][i] = EDITOR_GRID[cur_y][cur_x + i];
-                        EDITOR_GRID[cur_y][cur_x + i] = b' ';
+                        if auto_indent + i < 75 {
+                            EDITOR_GRID[next_y][auto_indent + i] = EDITOR_GRID[cur_y][cur_x + i];
+                            EDITOR_GRID[cur_y][cur_x + i] = b' ';
+                        }
                     }
-                    LINE_LENS[next_y] = to_move as u16;
+                    LINE_LENS[next_y] = (auto_indent + to_move) as u16;
                 }
                 LINE_LENS[cur_y] = cur_x as u16;
 
                 EDIT_CUR_Y += 1;
-                EDIT_CUR_X = 0;
+                EDIT_CUR_X = auto_indent as u16;
+
+                if EDIT_CUR_Y >= EDIT_SCROLL_Y + 23 {
+                    EDIT_SCROLL_Y = EDIT_CUR_Y - 22;
+                }
                 editor_redraw();
             }
         }
@@ -767,12 +802,12 @@ pub unsafe fn editor_handle_keypress(c: u8) {
                 LINE_LENS[prev_y] += to_copy as u16;
 
                 if cur_len <= space_left {
-                    for r in y..22 {
+                    for r in y..127 {
                         EDITOR_GRID[r] = EDITOR_GRID[r + 1];
                         LINE_LENS[r] = LINE_LENS[r + 1];
                     }
-                    EDITOR_GRID[22] = [b' '; 80];
-                    LINE_LENS[22] = 0;
+                    EDITOR_GRID[127] = [b' '; 80];
+                    LINE_LENS[127] = 0;
 
                     EDIT_CUR_Y -= 1;
                     EDIT_CUR_X = prev_len as u16;
@@ -789,6 +824,9 @@ pub unsafe fn editor_handle_keypress(c: u8) {
                     EDIT_CUR_Y -= 1;
                     EDIT_CUR_X = prev_len as u16;
                 }
+                if EDIT_CUR_Y < EDIT_SCROLL_Y {
+                    EDIT_SCROLL_Y = EDIT_CUR_Y;
+                }
                 editor_redraw();
             }
         }
@@ -799,15 +837,21 @@ pub unsafe fn editor_handle_keypress(c: u8) {
                 if EDIT_CUR_X > len {
                     EDIT_CUR_X = len;
                 }
+                if EDIT_CUR_Y < EDIT_SCROLL_Y {
+                    EDIT_SCROLL_Y = EDIT_CUR_Y;
+                }
                 editor_redraw();
             }
         }
         KEY_DOWN => {
-            if EDIT_CUR_Y < 22 {
+            if EDIT_CUR_Y < 127 {
                 EDIT_CUR_Y += 1;
                 let len = LINE_LENS[EDIT_CUR_Y as usize];
                 if EDIT_CUR_X > len {
                     EDIT_CUR_X = len;
+                }
+                if EDIT_CUR_Y >= EDIT_SCROLL_Y + 23 {
+                    EDIT_SCROLL_Y = EDIT_CUR_Y - 22;
                 }
                 editor_redraw();
             }
@@ -820,6 +864,9 @@ pub unsafe fn editor_handle_keypress(c: u8) {
             } else if EDIT_CUR_Y > 0 {
                 EDIT_CUR_Y -= 1;
                 EDIT_CUR_X = LINE_LENS[EDIT_CUR_Y as usize];
+                if EDIT_CUR_Y < EDIT_SCROLL_Y {
+                    EDIT_SCROLL_Y = EDIT_CUR_Y;
+                }
                 editor_redraw();
             }
         }
@@ -829,9 +876,12 @@ pub unsafe fn editor_handle_keypress(c: u8) {
             if EDIT_CUR_X < len {
                 EDIT_CUR_X += 1;
                 editor_redraw();
-            } else if EDIT_CUR_Y < 22 {
+            } else if EDIT_CUR_Y < 127 {
                 EDIT_CUR_Y += 1;
                 EDIT_CUR_X = 0;
+                if EDIT_CUR_Y >= EDIT_SCROLL_Y + 23 {
+                    EDIT_SCROLL_Y = EDIT_CUR_Y - 22;
+                }
                 editor_redraw();
             }
         }

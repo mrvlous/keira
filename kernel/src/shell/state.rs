@@ -31,12 +31,13 @@ pub static mut PROMPT_ROW: u16 = 0;
 
 // Editor state variables
 pub static mut IN_EDITOR_MODE: bool = false;
-pub static mut EDITOR_GRID: [[u8; 80]; 23] = [[b' '; 80]; 23];
-pub static mut LINE_LENS: [u16; 23] = [0; 23];
+pub static mut EDITOR_GRID: [[u8; 80]; 128] = [[b' '; 80]; 128];
+pub static mut LINE_LENS: [u16; 128] = [0; 128];
 pub static mut EDIT_FILENAME: [u8; 12] = [0; 12];
 pub static mut EDIT_FILENAME_LEN: usize = 0;
 pub static mut EDIT_CUR_X: u16 = 0;
 pub static mut EDIT_CUR_Y: u16 = 0;
+pub static mut EDIT_SCROLL_Y: u16 = 0;
 pub static mut EDITOR_CONFIRM_SAVE: bool = false;
 pub static mut EDITOR_CONFIRM_EXIT: bool = false;
 pub static mut EDITOR_STATUS_MSG: [u8; 40] = [0; 40];

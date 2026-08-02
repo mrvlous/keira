@@ -58,6 +58,10 @@ pub unsafe fn get_current_user_home() -> &'static str {
 
 pub fn print_prompt() {
     unsafe {
+        if IN_EDITOR_MODE {
+            return;
+        }
+
         let user_color = if IS_ADMIN {
             vga::Color::LightRed
         } else {
@@ -354,7 +358,7 @@ pub fn process_pending() {
         BUFFER_LEN = 0;
         COMMAND_READY = false;
 
-        if !IN_PLEASE_MODE && !IN_LOGIN_MODE {
+        if !IN_PLEASE_MODE && !IN_LOGIN_MODE && !IN_EDITOR_MODE {
             print_prompt();
         }
     }

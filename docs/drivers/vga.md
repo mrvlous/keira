@@ -59,3 +59,13 @@ The PS/2 keyboard driver ([keyboard.c](../../drivers/keyboard/keyboard.c)) inter
 The shell handler ([shell.rs](../../kernel/src/shell.rs)) intercepts control codes to trigger system behaviors:
 *   **`Ctrl+C` (ASCII 3)**: Aborts the current command input buffer, exits `please`/`login` password prompts, and reprints the active prompt on a new line.
 *   **`Ctrl+L` (ASCII 12)**: Re-initializes the VGA console to clear the screen and moves the cursor to `(0, 0)`. Then, reprints the shell prompt and restores the user's current typed input buffer.
+
+---
+
+## 5. VGA Code Editor Subsystem ([editor.rs](../../kernel/src/shell/editor.rs))
+The built-in VGA Code Editor (`edit` command) provides a full-featured, interactive terminal editing environment:
+*   **Buffer Capacity & Scrolling**: Stores up to 128 lines in memory (`EDITOR_GRID`), with an interactive 23-line viewport controlled by `EDIT_SCROLL_Y` vertical scrolling.
+*   **Real-Time Status Header**: Displays active filename and `Ln X, Col Y` cursor position.
+*   **Syntax Highlighting**: Real-time token highlighting for Rust/C keywords, string literals, comments, numbers, and operators.
+*   **Smart Auto-Indentation**: Automatically matches leading line indentation spaces upon pressing `Enter`.
+*   **Shortcuts**: `Ctrl+F` (Search), `Ctrl+S`/`F3` (Quick Save), and `Ctrl+Q`/`F10` (Save & Exit).

@@ -345,7 +345,7 @@ $(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) arch/x86/linker.ld | dirs
 	@$(LOG_DONE) "$(KERNEL_BIN) ready"
 
 # Compile freestanding Rust kernel module
-rust: ## Build Rust kernel static library
+rust: | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core build --target $(RUST_TARGET) --$(RUST_MODE) 2>&1 | sed 's/^/        /'
 
