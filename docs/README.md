@@ -10,7 +10,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Bootstrapping and Trampolining](architecture/bootstrapping.md): The multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
 *   [Memory Management](architecture/memory.md): Design of the Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, SMP multi-core execution (`smp_init`), and Unix signals (`sys_kill`).
-*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 29 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, and privilege level transitions.
+*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 30 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, and process cloning (`sys_fork`).
 
 ### 2. Device Drivers
 *   [VGA Text Console](drivers/vga.md): Display buffer manipulation, cursor positioning, and text-mode mouse cursor rendering.
@@ -22,7 +22,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 ### 3. Filesystems & Storage
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.
 *   [TAR Archive Reader](filesystems/tar.md): Read-only parsing of the USTAR archive format loaded as the boot initrd.
-*   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, and Block Cache dirty page flushing (`sync`).
+*   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, sector block cache `sync`, and native file protection (`protect`, `fileinfo`).
 
 ### 4. Userland Subsystems & IPC
 *   [User Runtime Library (libc & Extensions)](userland/runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), C Math (`math.h`) & Time (`time.h`), and system call wrappers.

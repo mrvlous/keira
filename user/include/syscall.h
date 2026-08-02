@@ -266,4 +266,11 @@ int sys_shmget(size_t size);
  */
 void *sys_shmat(int shmid);
 
+/**
+ * sys_fork - Clone calling process into a new child process (Syscall 30).
+ *
+ * Return: Child PID in parent process, 0 in child process, or negative error code.
+ */
+int sys_fork(void);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */

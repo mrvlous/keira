@@ -689,6 +689,12 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             Some(frame) => frame,
             None => u64::MAX,
         },
+        // Syscall 30: fork
+        // Signature: sys_fork() -> child_pid
+        30 => match unsafe { crate::task::scheduler::fork_current_task() } {
+            Ok(child_pid) => child_pid as u64,
+            Err(_) => u64::MAX,
+        },
         _ => {
             // Unknown syscall
             u64::MAX

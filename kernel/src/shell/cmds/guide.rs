@@ -38,7 +38,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("  drives    use       disk      ramdisk   list      go\n");
                 vga::print_str("  view      create    folder    delete    edit      write\n");
-                vga::print_str("  copy      move      initrd    search    sync\n\n");
+                vga::print_str("  copy      move      initrd    search    sync      protect\n");
+                vga::print_str("  fileinfo\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Process & Execution:\n");
@@ -198,6 +199,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "Usage: sync\nFlush dirty filesystem block cache sectors to storage device.\n",
                 );
+            }
+            Some("protect") => {
+                vga::print_str("Usage: protect <file_path> <readonly|readwrite>\nToggle read-only or read-write attribute protection on FAT16 file entry.\n");
+            }
+            Some("fileinfo") => {
+                vga::print_str("Usage: fileinfo <file_path>\nInspect detailed FAT16 file metadata, cluster index, size, and protection flags.\n");
             }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);

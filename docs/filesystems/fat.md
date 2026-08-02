@@ -66,3 +66,10 @@ To speed up FAT table lookups, cluster chain traversal, and file/directory read 
 *   **Cache Eviction**: LRU (Least Recently Used) based on a global clock counter.
 *   **Cache Invalidation**: The entire cache is automatically cleared when mounting/initializing a new volume (via `volume::init`) to prevent stale data.
 *   **Dirty Page Flushing (`sync`)**: Invoking `flush_dirty_sectors()` (or the shell command `sync`) explicitly flushes all modified sector cache pages from memory to physical storage.
+
+---
+
+## 6. File Protection & Metadata Inspection Commands
+Keira OS provides native, full-word shell commands to inspect and modify FAT16 directory entry attributes without relying on Linux naming conventions:
+*   **`protect <file_path> <readonly|readwrite>`**: Toggles the Read-Only attribute flag (`0x01`) on a FAT16 file entry, preventing unauthorized modifications.
+*   **`fileinfo <file_path>`**: Inspects detailed file entry metadata, including file size in bytes, first cluster index, attribute bitmasks, and write protection status.

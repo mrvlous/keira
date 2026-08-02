@@ -382,6 +382,8 @@ pub fn execute_command_inner(cmd: &str) {
         "theme" => super::cmds::theme::run(&mut parts),
         "search" => super::cmds::search::run(&mut parts),
         "play" => super::cmds::play::run(&mut parts),
+        "protect" => super::cmds::protect::run(&mut parts),
+        "fileinfo" => super::cmds::fileinfo::run(&mut parts),
 
         "hda" => super::cmds::hda::run(&mut parts),
         _ => {

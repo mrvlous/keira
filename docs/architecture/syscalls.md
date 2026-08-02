@@ -56,6 +56,7 @@ When a user program executes the `syscall` instruction:
 | 27 | `sys_recv` | `(sockfd: u64, buf: *mut u8, max_len: u64, flags: u64) -> bytes` |
 | 28 | `sys_shmget` | `(size: u64) -> shm_id` |
 | 29 | `sys_shmat` | `(shmid: u64) -> vaddr` |
+| 30 | `sys_fork` | `() -> child_pid` |
 
 ---
 

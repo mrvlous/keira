@@ -223,6 +223,51 @@ pub unsafe fn spawn_user(
     Ok(slot_idx)
 }
 
+/// Clones the currently running task into a new child process (fork).
+pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
+    let parent_idx = CURRENT_TASK_IDX;
+
+    let mut slot_idx = 0;
+    let mut found = false;
+    for i in 1..MAX_TASKS {
+        if TASKS[i].is_none() {
+            slot_idx = i;
+            found = true;
+            break;
+        }
+    }
+
+    if !found {
+        return Err("Scheduler Error: Max tasks reached");
+    }
+
+    let ptr = &raw const TASKS;
+    if let Some(ref parent) = (*ptr)[parent_idx] {
+        let stack_frame = pmm::alloc_frame().ok_or("Out of memory for child stack")?;
+        let pml4_phys = crate::mem::vmm::clone_kernel_pml4()?;
+
+        let child_task = Task {
+            id: slot_idx,
+            name: "fork_child",
+            rsp: parent.rsp,
+            stack_addr: stack_frame,
+            state: TaskState::Ready,
+            fds: parent.fds,
+            program_break: parent.program_break,
+            program_break_start: parent.program_break_start,
+            cwd: parent.cwd,
+            cwd_len: parent.cwd_len,
+            parent_id: parent_idx,
+            pml4_phys,
+        };
+
+        TASKS[slot_idx] = Some(child_task);
+        Ok(slot_idx)
+    } else {
+        Err("Scheduler Error: Parent task invalid")
+    }
+}
+
 /// Terminate the currently running task
 ///
 /// # Safety

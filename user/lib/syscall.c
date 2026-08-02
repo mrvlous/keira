@@ -389,3 +389,9 @@ void *sys_shmat(int shmid) {
                      : "rcx", "r11", "memory");
     return (void *)res;
 }
+
+int sys_fork(void) {
+    unsigned long res;
+    __asm__ volatile("syscall" : "=a"(res) : "a"(30) : "rcx", "r11", "memory");
+    return (int)res;
+}
