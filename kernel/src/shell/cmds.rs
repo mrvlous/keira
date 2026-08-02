@@ -30,6 +30,7 @@ pub mod guide;
 pub mod hda;
 pub mod help;
 pub mod history;
+pub mod https;
 pub mod initrd;
 pub mod list;
 pub mod login;

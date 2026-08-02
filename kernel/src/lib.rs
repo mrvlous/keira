@@ -26,6 +26,7 @@
 pub mod arch;
 pub mod entry;
 
+pub mod crypto;
 pub mod fs;
 /// I/O subsystem : safe Rust wrappers around C hardware drivers.
 pub mod io;

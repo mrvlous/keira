@@ -415,3 +415,13 @@ int sys_madvise(void *addr, size_t len, int advice) {
                      : "rcx", "r11", "memory");
     return (int)res;
 }
+
+int sys_tls_connect(const char *hostname, void *buf, int max_len) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(33), "D"((unsigned long)hostname), "S"((unsigned long)buf),
+                       "d"((unsigned long)max_len)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}

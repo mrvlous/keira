@@ -14,3 +14,4 @@ pub mod dhcp;
 pub mod dns;
 pub mod e1000;
 pub mod tcp;
+pub mod tls;

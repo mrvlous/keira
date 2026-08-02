@@ -31,7 +31,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "  system    cpu       runtime   time      memory    devices   network\n",
                 );
-                vga::print_str("  download  env       framebuffer usb\n\n");
+                vga::print_str("  download  env       framebuffer usb       https\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -211,6 +211,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("usb") => {
                 vga::print_str("Usage: usb <info|scan|devices>\nEnumerate PCI USB host controllers (xHCI/EHCI) and list connected USB devices.\n");
+            }
+            Some("https") => {
+                vga::print_str("Usage: https <url|info|sha256>\nPerform encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519).\n");
             }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);

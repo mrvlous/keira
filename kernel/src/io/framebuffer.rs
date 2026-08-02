@@ -241,7 +241,7 @@ pub unsafe fn render_desktop_demo() {
     draw_string(
         16,
         7,
-        "Keira Kernel Desktop v0.14.0 (x86_64 Long Mode)",
+        "Keira Kernel Desktop v0.15.0 (x86_64 Long Mode)",
         0x61AFEF,
         0xFF000000,
     );

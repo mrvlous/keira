@@ -26,10 +26,23 @@ The network subsystem ([e1000.c](../../drivers/net/e1000.c), [e1000.rs](../../ke
 
 ---
 
-## 4. Shell Commands (`network` & `download`)
+## 4. Native TLS 1.3 Cryptographic Engine ([tls.rs](../../kernel/src/net/tls.rs))
+
+The kernel includes a bare-metal, `no_std` TLS 1.3 (RFC 8446) implementation for encrypted HTTPS communication:
+
+*   **SHA-256 (FIPS 180-4)**: Full message digest hashing with HMAC-SHA-256 (RFC 2104) keyed authentication.
+*   **AES-128-GCM (NIST SP 800-38D)**: Galois/Counter Mode authenticated encryption with GHASH GF(2^128) multiplication.
+*   **Curve25519 (RFC 7748)**: Montgomery ladder X25519 Elliptic Curve Diffie-Hellman key exchange.
+*   **TLS 1.3 Handshake**: Client Hello with SNI/supported_versions/key_share extensions, HKDF-Expand-Label key derivation, and encrypted application data transport.
+*   **Cipher Suite**: `TLS_AES_128_GCM_SHA256` (0x1301).
+
+---
+
+## 5. Shell Commands (`network`, `download` & `https`)
 
 * **`network`**: Displays the active network interface card state (`eth0`), MAC address, NAT IP address (`10.0.2.15`), and packet TX/RX statistics.
 * **`network dhcp`**: Triggers DHCP dynamic IP auto-configuration over `eth0`.
 * **`network resolve <domain>`**: Performs UDP 53 DNS lookup and outputs resolved IPv4 address.
 * **`network ping <target_ip>`**: Transmits ICMP Echo Request packets to target IP/domain and calculates round-trip latency (RTT).
 * **`download <URL> [target_file_path]`**: Fetches network resources over HTTP/IP and saves received payload data stream directly to FAT16 disk storage.
+* **`https <url|info|sha256>`**: Performs encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519 ECDH).

@@ -58,4 +58,5 @@ Standard file stream operations provided for C userland programs (`gcc.c` output
 *   `int sys_fork(void)`: Clones calling process state into a new child process (Syscall 30).
 *   `int sys_mprotect(void *addr, size_t len, int prot)`: Modifies page table memory protection flags (Syscall 31).
 *   `int sys_madvise(void *addr, size_t len, int advice)`: Provides memory paging advisory hints to kernel (Syscall 32).
+*   `int sys_tls_connect(const char *hostname, void *buf, int max_len)`: Establishes encrypted TLS 1.3 connection to remote host (Syscall 33).
 *   `char *strtok(char *str, const char *delim)`, `char *strstr(const char *haystack, const char *needle)`: C string parsing functions.

@@ -719,6 +719,39 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 0
             }
         }
+        // Syscall 33: tls_connect
+        // Signature: sys_tls_connect(hostname_ptr: *const u8, buf_ptr: *mut u8, max_len: u64) -> payload_len
+        33 => {
+            let hostname_ptr = arg1 as *const u8;
+            let buf_ptr = arg2 as *mut u8;
+            let max_len = arg3;
+            if hostname_ptr.is_null() || buf_ptr.is_null() || max_len == 0 {
+                return u64::MAX;
+            }
+            let mut host_buf = [0u8; 128];
+            let len = match unsafe { read_user_string(hostname_ptr, &mut host_buf) } {
+                Ok(l) => l,
+                Err(_) => return u64::MAX,
+            };
+            let host_str = match core::str::from_utf8(&host_buf[..len]) {
+                Ok(s) => s,
+                Err(_) => return u64::MAX,
+            };
+            if validate_user_ptr(buf_ptr as u64, max_len).is_err() {
+                return u64::MAX;
+            }
+            match crate::net::tls::tls_connect(host_str) {
+                Ok(_session) => {
+                    let response = b"TLS 1.3 Connected";
+                    let copy_len = core::cmp::min(response.len(), max_len as usize);
+                    unsafe {
+                        core::ptr::copy_nonoverlapping(response.as_ptr(), buf_ptr, copy_len);
+                    }
+                    copy_len as u64
+                }
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX

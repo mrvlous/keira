@@ -3,10 +3,10 @@ Keira Kernel
 
 Keira is a freestanding, multi-language x86_64 operating system kernel. It
 manages system hardware resources, coordinates low-level C drivers, and
-provides a preemptive priority multitasking scheduler, 32 system calls,
+provides a preemptive priority multitasking scheduler, 33 system calls,
 AHCI SATA storage driver, VBE High-Resolution Linear Framebuffer Driver, USB Host Controller Subsystem,
-IPC Shared Memory & Pipe subsystems, Userland Socket API, 46 native shell commands,
-and a system shell controlled by a core Rust kernel static library.
+Native TLS 1.3 Cryptographic Engine, IPC Shared Memory & Pipe subsystems, Userland Socket API,
+47 native shell commands, and a system shell controlled by a core Rust kernel static library.
 
 Quick Start
 -----------
@@ -60,6 +60,7 @@ Explore the kernel's core subsystems and design details:
 * Memory Management: docs/architecture/memory.md
 * Task Scheduler: docs/architecture/scheduler.md
 * System Calls and Privilege: docs/architecture/syscalls.md
+* Cryptographic Subsystem: docs/architecture/crypto.md
 * Virtual Filesystem (VFS) Layer: docs/filesystems/vfs.md
 * FAT Filesystem Implementation: docs/filesystems/fat.md
 * TAR Boot initrd Reader: docs/filesystems/tar.md

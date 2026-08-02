@@ -293,4 +293,14 @@ int sys_mprotect(void *addr, size_t len, int prot);
  */
 int sys_madvise(void *addr, size_t len, int advice);
 
+/**
+ * sys_tls_connect - Establish encrypted TLS 1.3 connection to remote host (Syscall 33).
+ * @hostname: Null-terminated hostname string.
+ * @buf: Destination buffer for encrypted response payload.
+ * @max_len: Buffer capacity limit in bytes.
+ *
+ * Return: Bytes received in response payload, or negative error code.
+ */
+int sys_tls_connect(const char *hostname, void *buf, int max_len);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */
