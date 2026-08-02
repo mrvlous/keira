@@ -241,7 +241,11 @@ pub unsafe fn render_desktop_demo() {
     draw_string(
         16,
         7,
-        "Keira Kernel Desktop v0.15.1 (x86_64 Long Mode)",
+        concat!(
+            "Keira Kernel Desktop v",
+            env!("CARGO_PKG_VERSION"),
+            " (x86_64 Long Mode)"
+        ),
         0x61AFEF,
         0xFF000000,
     );

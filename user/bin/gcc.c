@@ -1562,7 +1562,7 @@ void compile_global_declarations(void) {
  * into a standalone ELF64 executable user binary.
  */
 void _start(void) {
-    print_str("GCC (GNU C Compiler) for Keira Kernel v0.15.1\n");
+    print_str("GCC (GNU C Compiler) for Keira Kernel\n");
     print_str("Compiling source: /data/main.c -> /apps/bin/app.elf\n");
 
     /* Initialize compiler state */
