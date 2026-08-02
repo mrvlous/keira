@@ -42,3 +42,6 @@ pub mod sound;
 
 /// Intel HD Audio Driver
 pub mod hda;
+
+/// VBE High-Resolution Linear Framebuffer Driver
+pub mod framebuffer;

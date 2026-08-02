@@ -34,7 +34,7 @@ header_start:
     dd 20
     dd 0
     dd 0
-    dd 0
+    dd 32
 
     ; End Tag (Tag Type 0)
     align 8

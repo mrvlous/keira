@@ -69,3 +69,11 @@ The built-in VGA Code Editor (`edit` command) provides a full-featured, interact
 *   **Syntax Highlighting**: Real-time token highlighting for Rust/C keywords, string literals, comments, numbers, and operators.
 *   **Smart Auto-Indentation**: Automatically matches leading line indentation spaces upon pressing `Enter`.
 *   **Shortcuts**: `Ctrl+F` (Search), `Ctrl+S`/`F3` (Quick Save), and `Ctrl+Q`/`F10` (Save & Exit).
+
+---
+
+## 6. VBE High-Resolution Linear Framebuffer Driver ([framebuffer.rs](../../kernel/src/io/framebuffer.rs))
+Keira Kernel provides a 1024x768 32-bpp TrueColor VBE linear framebuffer graphics driver:
+*   **Linear Address Space**: Physical base mapped at `0xFD000000` with 4096 bytes pitch per scanline.
+*   **Graphics Primitives**: `draw_pixel`, `fill_screen`, `draw_rect`, `draw_char`, `draw_string`, `draw_mouse_cursor`.
+*   **Desktop Wallpaper & GUI Windowing Demo**: Invoked via the native `framebuffer demo` or `framebuffer test` shell commands.

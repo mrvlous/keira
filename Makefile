@@ -164,7 +164,7 @@ SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
                  devices wait initrd wipe reset run write tasks disk list \
                  go script view create folder delete edit say copy help history \
                  move theme please search play hda download network stop env sync \
-                 protect fileinfo
+                 protect fileinfo framebuffer
 
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
@@ -176,7 +176,7 @@ DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
 all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image
 
 help: ## Display all available Makefile targets
-	@printf "$(CLR_BOLD)Keira OS Build System$(CLR_RESET)  $(CLR_CYAN)v$(VERSION)$(CLR_RESET)\n\n"
+	@printf "$(CLR_BOLD)Keira Kernel Build System$(CLR_RESET)  $(CLR_CYAN)v$(VERSION)$(CLR_RESET)\n\n"
 	@printf "  $(CLR_BOLD)Usage$(CLR_RESET): make <target> [V=1] [COLOR=0] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
 	@printf "$(CLR_BOLD)  Build Targets:$(CLR_RESET)\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    $(CLR_CYAN)%-15s$(CLR_RESET) %s\n", $$1, $$2}'
@@ -186,7 +186,7 @@ help: ## Display all available Makefile targets
 	@printf "    $(CLR_CYAN)DISK_SIZE=N$(CLR_RESET)     FAT16 disk size in MB (default: 32)\n"
 	@printf "    $(CLR_CYAN)QEMU_MEM=NM$(CLR_RESET)     QEMU guest memory (default: 128M)\n\n"
 info: ## Display build configuration and toolchain versions
-	@printf "$(CLR_BOLD)Keira OS Build Info$(CLR_RESET)\n\n"
+	@printf "$(CLR_BOLD)Keira Kernel Build Info$(CLR_RESET)\n\n"
 	@printf "  $(CLR_BOLD)Kernel$(CLR_RESET)\n"
 	@printf "    Version      : $(CLR_CYAN)$(VERSION)$(CLR_RESET)\n"
 	@printf "    Name         : $(CLR_CYAN)$(KERNEL_NAME)$(CLR_RESET)\n"

@@ -70,6 +70,6 @@ To speed up FAT table lookups, cluster chain traversal, and file/directory read 
 ---
 
 ## 6. File Protection & Metadata Inspection Commands
-Keira OS provides native, full-word shell commands to inspect and modify FAT16 directory entry attributes without relying on Linux naming conventions:
+Keira Kernel provides native, full-word shell commands to inspect and modify FAT16 directory entry attributes without relying on Linux naming conventions:
 *   **`protect <file_path> <readonly|readwrite>`**: Toggles the Read-Only attribute flag (`0x01`) on a FAT16 file entry, preventing unauthorized modifications.
 *   **`fileinfo <file_path>`**: Inspects detailed file entry metadata, including file size in bytes, first cluster index, attribute bitmasks, and write protection status.

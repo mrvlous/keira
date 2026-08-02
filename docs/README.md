@@ -13,7 +13,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 30 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, and process cloning (`sys_fork`).
 
 ### 2. Device Drivers
-*   [VGA Text Console & Code Editor](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, mouse cursor rendering, and interactive 128-line code editor (`edit`).
+*   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE 1024x768 32-bpp Linear Framebuffer Graphics (`framebuffer`).
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.
 *   [Mouse and RTC Drivers](drivers/mouse_rtc.md): PS/2 mouse packet decoding, resolution setup, and CMOS Real-Time Clock register queries.

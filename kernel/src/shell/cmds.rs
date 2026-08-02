@@ -24,6 +24,7 @@ pub mod edit;
 pub mod env;
 pub mod fileinfo;
 pub mod folder;
+pub mod framebuffer;
 pub mod go;
 pub mod guide;
 pub mod hda;

@@ -31,7 +31,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "  system    cpu       runtime   time      memory    devices   network\n",
                 );
-                vga::print_str("  download  env\n\n");
+                vga::print_str("  download  env       framebuffer\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -205,6 +205,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("fileinfo") => {
                 vga::print_str("Usage: fileinfo <file_path>\nInspect detailed FAT16 file metadata, cluster index, size, and protection flags.\n");
+            }
+            Some("framebuffer") => {
+                vga::print_str("Usage: framebuffer <info|demo|test>\nQuery VBE 1024x768 32-bpp graphics info, test linear framebuffer, or launch desktop demo.\n");
             }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);
