@@ -385,6 +385,7 @@ pub fn execute_command_inner(cmd: &str) {
         "protect" => super::cmds::protect::run(&mut parts),
         "fileinfo" => super::cmds::fileinfo::run(&mut parts),
         "framebuffer" => super::cmds::framebuffer::run(&mut parts),
+        "usb" => super::cmds::usb::run(&mut parts),
 
         "hda" => super::cmds::hda::run(&mut parts),
         _ => {

@@ -273,4 +273,24 @@ void *sys_shmat(int shmid);
  */
 int sys_fork(void);
 
+/**
+ * sys_mprotect - Modify virtual memory page access permissions (Syscall 31).
+ * @addr: Page-aligned virtual base address.
+ * @len: Range size in bytes.
+ * @prot: Bitmask of protection flags (PROT_READ, PROT_WRITE, PROT_EXEC).
+ *
+ * Return: 0 on success, or negative error code.
+ */
+int sys_mprotect(void *addr, size_t len, int prot);
+
+/**
+ * sys_madvise - Provide memory paging advisory hints to kernel (Syscall 32).
+ * @addr: Page-aligned virtual base address.
+ * @len: Range size in bytes.
+ * @advice: Memory advice flag (MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL).
+ *
+ * Return: 0 on success, or negative error code.
+ */
+int sys_madvise(void *addr, size_t len, int advice);
+
 #endif /* KEIRA_USER_LIB_SYSCALL_H */

@@ -57,6 +57,8 @@ When a user program executes the `syscall` instruction:
 | 28 | `sys_shmget` | `(size: u64) -> shm_id` |
 | 29 | `sys_shmat` | `(shmid: u64) -> vaddr` |
 | 30 | `sys_fork` | `() -> child_pid` |
+| 31 | `sys_mprotect` | `(addr: u64, len: u64, prot: u64) -> status` |
+| 32 | `sys_madvise` | `(addr: u64, len: u64, advice: u64) -> status` |
 
 ---
 

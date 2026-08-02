@@ -56,4 +56,6 @@ Standard file stream operations provided for C userland programs (`gcc.c` output
 *   `int sys_shmget(size_t size)`: Allocates shared physical page region (Syscall 28).
 *   `void *sys_shmat(int shmid)`: Attaches shared physical memory region to calling process virtual address space (Syscall 29).
 *   `int sys_fork(void)`: Clones calling process state into a new child process (Syscall 30).
+*   `int sys_mprotect(void *addr, size_t len, int prot)`: Modifies page table memory protection flags (Syscall 31).
+*   `int sys_madvise(void *addr, size_t len, int advice)`: Provides memory paging advisory hints to kernel (Syscall 32).
 *   `char *strtok(char *str, const char *delim)`, `char *strstr(const char *haystack, const char *needle)`: C string parsing functions.

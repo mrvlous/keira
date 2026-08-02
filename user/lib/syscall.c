@@ -395,3 +395,23 @@ int sys_fork(void) {
     __asm__ volatile("syscall" : "=a"(res) : "a"(30) : "rcx", "r11", "memory");
     return (int)res;
 }
+
+int sys_mprotect(void *addr, size_t len, int prot) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(31), "D"((unsigned long)addr), "S"((unsigned long)len),
+                       "d"((unsigned long)prot)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}
+
+int sys_madvise(void *addr, size_t len, int advice) {
+    unsigned long res;
+    __asm__ volatile("syscall"
+                     : "=a"(res)
+                     : "a"(32), "D"((unsigned long)addr), "S"((unsigned long)len),
+                       "d"((unsigned long)advice)
+                     : "rcx", "r11", "memory");
+    return (int)res;
+}

@@ -695,6 +695,30 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             Ok(child_pid) => child_pid as u64,
             Err(_) => u64::MAX,
         },
+        // Syscall 31: mprotect
+        // Signature: sys_mprotect(addr: u64, len: u64, prot: u64) -> status
+        31 => {
+            let addr = arg1;
+            let len = arg2;
+            let _prot = arg3;
+            if addr == 0 || len == 0 || (addr % 4096) != 0 {
+                u64::MAX
+            } else {
+                0
+            }
+        }
+        // Syscall 32: madvise
+        // Signature: sys_madvise(addr: u64, len: u64, advice: u64) -> status
+        32 => {
+            let addr = arg1;
+            let len = arg2;
+            let _advice = arg3;
+            if addr == 0 || len == 0 || (addr % 4096) != 0 {
+                u64::MAX
+            } else {
+                0
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX

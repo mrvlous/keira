@@ -3,9 +3,9 @@ Keira Kernel
 
 Keira is a freestanding, multi-language x86_64 operating system kernel. It
 manages system hardware resources, coordinates low-level C drivers, and
-provides a preemptive priority multitasking scheduler, 30 system calls,
-AHCI SATA storage driver, VBE High-Resolution Linear Framebuffer Driver,
-IPC Shared Memory & Pipe subsystems, Userland Socket API, 45 native shell commands,
+provides a preemptive priority multitasking scheduler, 32 system calls,
+AHCI SATA storage driver, VBE High-Resolution Linear Framebuffer Driver, USB Host Controller Subsystem,
+IPC Shared Memory & Pipe subsystems, Userland Socket API, 46 native shell commands,
 and a system shell controlled by a core Rust kernel static library.
 
 Quick Start
@@ -74,6 +74,7 @@ Write and support hardware device drivers:
 * Sound (PC Speaker & HDA): docs/drivers/sound.md
 * Mouse & CMOS RTC: docs/drivers/mouse_rtc.md
 * Intel e1000 Network Driver: docs/drivers/network.md
+* USB Host Controller Driver: docs/drivers/usb.md
 
 AI Coding Assistant
 -------------------

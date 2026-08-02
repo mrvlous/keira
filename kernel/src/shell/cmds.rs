@@ -51,6 +51,7 @@ pub mod system;
 pub mod tasks;
 pub mod theme;
 pub mod time;
+pub mod usb;
 pub mod r#use;
 pub mod view;
 pub mod wait;

@@ -45,3 +45,6 @@ pub mod hda;
 
 /// VBE High-Resolution Linear Framebuffer Driver
 pub mod framebuffer;
+
+/// USB Host Controller Subsystem (xHCI / EHCI / UHCI / OHCI)
+pub mod usb;
