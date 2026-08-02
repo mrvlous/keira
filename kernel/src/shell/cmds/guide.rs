@@ -73,7 +73,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: network [dhcp|resolve <domain>|ping <target_ip>]\nDisplay interface state, configure DHCP, resolve DNS, or send ICMP ping.\n");
             }
             Some("download") => {
-                vga::print_str("Usage: download <URL> [target_file_path]\nFetch HTTP payload data stream and save directly to FAT16 disk storage.\n");
+                vga::print_str("Usage: download <URL> [target_file_path]\nFetch network payload over encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save to FAT16 disk storage.\n");
             }
             Some("runtime") => {
                 vga::print_str(

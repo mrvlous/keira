@@ -44,5 +44,5 @@ The kernel includes a bare-metal, `no_std` TLS 1.3 (RFC 8446) implementation for
 * **`network dhcp`**: Triggers DHCP dynamic IP auto-configuration over `eth0`.
 * **`network resolve <domain>`**: Performs UDP 53 DNS lookup and outputs resolved IPv4 address.
 * **`network ping <target_ip>`**: Transmits ICMP Echo Request packets to target IP/domain and calculates round-trip latency (RTT).
-* **`download <URL> [target_file_path]`**: Fetches network resources over HTTP/IP and saves received payload data stream directly to FAT16 disk storage.
+* **`download <URL> [target_file_path]`**: Fetches network resources over encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and saves received payload data stream directly to FAT16 disk storage.
 * **`https <url|info|sha256>`**: Performs encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519 ECDH).
