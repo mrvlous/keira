@@ -48,3 +48,6 @@ pub mod framebuffer;
 
 /// USB Host Controller Subsystem (xHCI / EHCI / UHCI / OHCI)
 pub mod usb;
+
+/// Multi-Virtual Terminal TTY Subsystem
+pub mod tty;

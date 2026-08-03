@@ -271,15 +271,26 @@ pub fn execute_command(cmd: &str) {
         }
     }
 
-    // 3. Output Redirection check (has >)
+    // 3. Output Redirection check (has > or >>)
     let mut redirection_target = None;
-    if let Some(pos) = actual_cmd.find('>') {
+    let mut is_append = false;
+    if let Some(pos) = actual_cmd.find(">>") {
+        let cmd_part = &actual_cmd[..pos];
+        let file_part = &actual_cmd[pos + 2..];
+        let filename = file_part.trim();
+        if !filename.is_empty() {
+            redirection_target = Some(filename);
+            actual_cmd = cmd_part.trim();
+            is_append = true;
+        }
+    } else if let Some(pos) = actual_cmd.find('>') {
         let cmd_part = &actual_cmd[..pos];
         let file_part = &actual_cmd[pos + 1..];
         let filename = file_part.trim();
         if !filename.is_empty() {
             redirection_target = Some(filename);
             actual_cmd = cmd_part.trim();
+            is_append = false;
         }
     }
 
@@ -322,7 +333,13 @@ pub fn execute_command(cmd: &str) {
             }
 
             let content = &crate::io::vga::REDIRECT_BUFFER[..crate::io::vga::REDIRECT_LEN];
-            match crate::fs::fat::write_file_content(filename, content) {
+            let res = if is_append {
+                crate::fs::fat::append_file_content(filename, content).map(|_| ())
+            } else {
+                crate::fs::fat::write_file_content(filename, content)
+            };
+
+            match res {
                 Ok(_) => {}
                 Err(e) => {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);

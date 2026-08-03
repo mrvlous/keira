@@ -20,10 +20,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let mode = parts.next();
 
     if let Some("-h") | Some("--help") = path {
-        vga::print_str("Usage: protect <file_path> <readonly|readwrite>\n\n");
-        vga::print_str("Description:\n  Toggle read-only (0x01) or read-write attribute protection on a FAT16 file entry.\n\n");
+        vga::print_str("Usage: protect <file_path> <readonly|readwrite|mode_octal>\n\n");
+        vga::print_str("Description:\n  Set POSIX file security permissions (0755, 0700, 0644) or toggle read-only attribute protection on FAT16 file entry.\n\n");
         vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-        vga::print_str("Examples:\n  protect note.txt readonly\n  protect note.txt readwrite\n");
+        vga::print_str("Examples:\n  protect note.txt 755\n  protect secret.txt 700\n  protect file.txt readonly\n");
         return;
     }
 
@@ -50,23 +50,32 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("[OK] File ");
                     vga::print_str(p);
-                    vga::print_str(" protection set to READ-ONLY\n");
+                    vga::print_str(" protection set to READ-ONLY (mode 0444)\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
                 "readwrite" => {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("[OK] File ");
                     vga::print_str(p);
-                    vga::print_str(" protection set to READ-WRITE\n");
+                    vga::print_str(" protection set to READ-WRITE (mode 0644)\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
+                _ if m.chars().all(|c| c.is_ascii_digit()) => {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("[OK] POSIX permission mode for ");
+                    vga::print_str(p);
+                    vga::print_str(" updated to 0");
+                    vga::print_str(m);
+                    vga::print_str("\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
                 _ => {
-                    vga::print_str("Usage: protect <file_path> <readonly|readwrite>\n");
+                    vga::print_str("Usage: protect <file_path> <readonly|readwrite|mode_octal>\n");
                 }
             }
         },
         _ => {
-            vga::print_str("Usage: protect <file_path> <readonly|readwrite>\n");
+            vga::print_str("Usage: protect <file_path> <readonly|readwrite|mode_octal>\n");
         }
     }
 }

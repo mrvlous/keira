@@ -52,8 +52,38 @@ pub fn route_path(path: &str) -> (&str, FilesystemType) {
     }
 }
 
+use crate::shell::state::*;
+
+/// Check POSIX access permissions based on active user context and file path
+pub fn check_access_permission(path: &str, is_write: bool) -> Result<(), &'static str> {
+    unsafe {
+        let current_user =
+            core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]).unwrap_or("admin");
+        if current_user == "admin" {
+            return Ok(());
+        }
+
+        let clean = resolve_alias_path(path);
+        if clean.starts_with("/users/") {
+            let rest = &clean[7..];
+            let owner = if let Some(slash_idx) = rest.find('/') {
+                &rest[..slash_idx]
+            } else {
+                rest
+            };
+            if !owner.is_empty() && owner != current_user {
+                return Err("Permission denied: Target path belongs to another user");
+            }
+        } else if clean.starts_with("/system/") && is_write {
+            return Err("Permission denied: Only admin can modify system configuration files");
+        }
+    }
+    Ok(())
+}
+
 /// Reads a file's content into the provided buffer from the routed filesystem.
 pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
+    check_access_permission(path, false)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => tar::read_file_content(clean_path, buf),
@@ -63,6 +93,7 @@ pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
 
 /// Writes the content buffer to a file on the routed filesystem (FAT16 only).
 pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
+    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -75,6 +106,7 @@ pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
 
 /// Creates a new file on the routed filesystem (FAT16 only).
 pub fn create_file(path: &str) -> Result<(), &'static str> {
+    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -84,6 +116,7 @@ pub fn create_file(path: &str) -> Result<(), &'static str> {
 
 /// Removes a file or directory on the routed filesystem (FAT16 only).
 pub fn remove_entry(path: &str) -> Result<(), &'static str> {
+    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -93,6 +126,7 @@ pub fn remove_entry(path: &str) -> Result<(), &'static str> {
 
 /// Creates a directory on the routed filesystem (FAT16 only).
 pub fn create_dir(path: &str) -> Result<(), &'static str> {
+    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),

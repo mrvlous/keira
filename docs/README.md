@@ -29,6 +29,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 ### 4. Userland Subsystems & IPC
 *   [User Runtime Library (libc & Extensions)](userland/runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), C Math (`math.h`) & Time (`time.h`), and system call wrappers.
 *   [Multi-User Accounts & System Hostname](userland/users_hostname.md): Persistent user management (`user`), password storage (`/system/etc/passwd`), system hostname configuration (`hostname`), dynamic prompt, 3-attempt retry fallback, and UNIX privilege separation.
+*   [POSIX File Permissions, Redirection & Multi-TTY](userland/tty_permissions.md): POSIX file security & permissions (`chmod`/`protect`), file I/O redirection (`>`, `>>`, `<`), multi-stage pipe chains (`|`), and Multi-Virtual Terminal Subsystem (`tty`).
 *   [The Init Process](userland/init.md): User-space initialization sequence (`bin/init`) spawning system processes.
 *   [Self-Hosting C Compiler](userland/gcc.md): Parser, lexer, AST builder, and helper structures inside the built-in C compiler (`bin/gcc`).
 
