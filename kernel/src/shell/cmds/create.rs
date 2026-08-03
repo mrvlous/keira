@@ -26,9 +26,16 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
         }
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: create <filename>\n\n");
+                vga::print_str("Description:\n  Create a new empty file in the active directory on FAT16 storage.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  create document.txt\n");
+                return;
+            }
             Some(s) => s,
             None => {
-                vga::print_str("Usage: newfile <filename>\n");
+                vga::print_str("Usage: create <filename>\n");
                 return;
             }
         };

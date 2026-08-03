@@ -19,6 +19,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let path = parts.next();
     let mode = parts.next();
 
+    if let Some("-h") | Some("--help") = path {
+        vga::print_str("Usage: protect <file_path> <readonly|readwrite>\n\n");
+        vga::print_str("Description:\n  Toggle read-only (0x01) or read-write attribute protection on a FAT16 file entry.\n\n");
+        vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+        vga::print_str("Examples:\n  protect note.txt readonly\n  protect note.txt readwrite\n");
+        return;
+    }
+
     match (path, mode) {
         (Some(p), Some(m)) => unsafe {
             let (dir_cluster, name) = match fat::resolve_path(p) {

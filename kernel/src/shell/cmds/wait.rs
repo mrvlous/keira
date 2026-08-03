@@ -18,9 +18,16 @@ use crate::shell::executor::*;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: wait <milliseconds>\n\n");
+                vga::print_str("Description:\n  Suspend shell execution for specified duration in milliseconds.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  wait 1000\n");
+                return;
+            }
             Some(s) => s,
             None => {
-                vga::print_str("Usage: sleep <milliseconds>\n");
+                vga::print_str("Usage: wait <milliseconds>\n");
                 return;
             }
         };

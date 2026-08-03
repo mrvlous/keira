@@ -17,6 +17,13 @@ use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
+        if let Some("-h") | Some("--help") = parts.next() {
+            vga::print_str("Usage: time\n\n");
+            vga::print_str("Description:\n  Query CMOS Real-Time Clock (RTC) hardware registers to display system date and UTC time.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            return;
+        }
+
         let mut time = RtcTime {
             second: 0,
             minute: 0,

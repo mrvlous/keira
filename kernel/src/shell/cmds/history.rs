@@ -15,7 +15,18 @@
 use crate::io::vga;
 use crate::shell::state::*;
 
-pub fn run(_parts: &mut core::str::SplitWhitespace) {
+pub fn run(parts: &mut core::str::SplitWhitespace) {
+    if let Some("-h") | Some("--help") = parts.next() {
+        unsafe {
+            vga::print_str("Usage: history\n\n");
+            vga::print_str(
+                "Description:\n  Print the ring buffer of recently entered shell commands.\n\n",
+            );
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        }
+        return;
+    }
+
     unsafe {
         if HISTORY_COUNT == 0 {
             vga::print_str("No history entries yet.\n");

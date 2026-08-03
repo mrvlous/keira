@@ -49,6 +49,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let sub = parts.next();
 
         match sub {
+            Some("-h") | Some("--help") => {
+                vga::print_str(
+                    "Usage: network [dhcp|dns-cache|resolve <domain>|ping <target_ip>]\n\n",
+                );
+                vga::print_str("Description:\n  Display network interface state (eth0), configure DHCP auto-IP, inspect 16-slot DNS cache, resolve domain names, or send ICMP echo ping.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Subcommands:\n  dhcp              Configure network interface eth0 dynamically via DHCP\n  dns-cache         Inspect 16-slot Dynamic DNS Cache Table and hit statistics\n  resolve <domain>  Query UDP Port 53 DNS Resolver for domain IP address\n  ping <target_ip>  Send ICMP Echo Request packets and measure RTT latency\n");
+            }
             Some("dhcp") => {
                 e1000::init();
                 vga::set_color(vga::Color::LightCyan, vga::Color::Black);

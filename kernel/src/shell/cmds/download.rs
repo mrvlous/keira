@@ -29,6 +29,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         let url = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: download <URL> [target_file_path]\n\n");
+                vga::print_str("Description:\n  Fetch network resources over encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save received payload data stream directly to FAT16 disk storage.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  download https://google.com page.html\n");
+                return;
+            }
             Some(u) => u,
             None => {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);

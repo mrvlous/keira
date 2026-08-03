@@ -27,6 +27,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
         let sub = parts.next();
         match sub {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: ramdisk create <size_kb>\n\n");
+                vga::print_str("Description:\n  Dynamically allocate a RAM Disk in memory, auto-format as FAT16, and register block device ram0.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  ramdisk create 1024\n");
+                return;
+            }
             Some("create") => {
                 let size_str = parts.next();
                 match size_str {

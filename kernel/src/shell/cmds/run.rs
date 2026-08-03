@@ -17,6 +17,13 @@ use crate::io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: run <program.elf>\n\n");
+                vga::print_str("Description:\n  Load and execute a freestanding user mode x86_64 ELF binary program in Ring 3 user space.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  run hello.elf\n  run gcc\n");
+                return;
+            }
             Some(s) => s,
             None => {
                 vga::print_str("Usage: run <program.elf>\n");

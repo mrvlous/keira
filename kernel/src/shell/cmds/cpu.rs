@@ -15,6 +15,15 @@
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
+    if let Some("-h") | Some("--help") = parts.next() {
+        unsafe {
+            vga::print_str("Usage: cpu\n\n");
+            vga::print_str("Description:\n  Query CPUID instruction to display processor vendor string, 64-bit architecture, APIC controller state, and SMP active core counts.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        }
+        return;
+    }
+
     let cpuid = unsafe { core::arch::x86_64::__cpuid(0) };
     let mut vendor = [0u8; 12];
     vendor[0..4].copy_from_slice(&cpuid.ebx.to_le_bytes());

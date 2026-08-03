@@ -15,6 +15,17 @@
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
+    let mut cloned = parts.clone();
+    if let Some("-h") | Some("--help") = cloned.next() {
+        unsafe {
+            vga::print_str("Usage: say <message...>\n\n");
+            vga::print_str("Description:\n  Echo back the input text message to the VGA console output stream.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  say Hello Keira Kernel!\n");
+        }
+        return;
+    }
+
     unsafe {
         let mut first = true;
         for part in parts {

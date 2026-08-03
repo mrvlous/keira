@@ -19,6 +19,13 @@ use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let arg = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: script <filename.sh>\n\n");
+            vga::print_str("Description:\n  Read and execute terminal shell commands sequentially line-by-line from a script file on FAT16 storage.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  script build.sh\n");
+            return;
+        }
         Some(s) => s,
         None => {
             vga::print_str("Usage: script <filename.sh>\n");

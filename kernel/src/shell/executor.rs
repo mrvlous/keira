@@ -159,6 +159,16 @@ pub fn execute_command(cmd: &str) {
                 vga::print_str("Usage: please <command>\n");
                 return;
             }
+
+            if *cmd_to_run == "-h" || *cmd_to_run == "--help" {
+                vga::print_str("Usage: please <command>\n\n");
+                vga::print_str("Description:\n  Execute a privileged administrative shell command with elevated admin rights.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str(
+                    "Examples:\n  please user create keira_dev pass123\n  please devices\n",
+                );
+                return;
+            }
             unsafe {
                 if is_admin_mode() {
                     execute_command(cmd_to_run);

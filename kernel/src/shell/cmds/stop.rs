@@ -27,6 +27,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         let pid_str = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: stop <PID>\n\n");
+                vga::print_str("Description:\n  Terminate a running process task by its numeric Process ID (PID).\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  stop 2\n");
+                return;
+            }
             Some(s) => s,
             None => {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);

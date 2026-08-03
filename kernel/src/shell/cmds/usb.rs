@@ -19,6 +19,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let sub = parts.next();
 
     match sub {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: usb <info|scan|devices>\n\n");
+            vga::print_str("Description:\n  Enumerate PCI USB host controllers (xHCI/EHCI/UHCI), scan root hubs, and list active USB bus devices.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Subcommands:\n  info     Query USB host controller status and PCI addresses\n  scan     Rescan PCI bus for connected USB host controllers\n  devices  List connected USB peripheral devices and root hub ports\n");
+        }
         Some("info") | Some("controllers") | None => unsafe {
             usb::print_usb_info();
         },

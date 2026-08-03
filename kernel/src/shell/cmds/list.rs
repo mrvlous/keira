@@ -20,13 +20,19 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let mut path_arg = None;
 
         for part in parts {
-            if part == "-a" || part == "-all" || part == "--all" {
+            if part == "-h" || part == "--help" {
+                vga::print_str("Usage: list [path] [-a|-all|--all]\n\n");
+                vga::print_str("Description:\n  List files and directories located in the specified path or active working directory on FAT16 storage.\n\n");
+                vga::print_str("Options:\n  -a, -all, --all    Show hidden/system files and dot/dotdot entries\n  -h, --help         Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  list\n  list /system/etc -a\n");
+                return;
+            } else if part == "-a" || part == "-all" || part == "--all" {
                 show_all = true;
             } else if part.starts_with('-') {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
                 vga::print_str("Warning: Unknown option '");
                 vga::print_str(part);
-                vga::print_str("'. Supported options: -a, -all.\n");
+                vga::print_str("'. Supported options: -a, -all, -h, --help.\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             } else {
                 path_arg = Some(part);

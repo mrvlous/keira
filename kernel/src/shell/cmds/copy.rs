@@ -20,6 +20,13 @@ use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let src = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: copy <src_file> <dest_file>\n\n");
+            vga::print_str("Description:\n  Copy a file from the source path to the destination path on FAT16 storage.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  copy note.txt note_bak.txt\n");
+            return;
+        }
         Some(s) => s,
         None => {
             vga::print_str("Usage: copy <src_file> <dest_file>\n");

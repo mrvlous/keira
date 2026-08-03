@@ -16,7 +16,16 @@
 use crate::io::vga;
 use crate::shell::executor::*;
 
-pub fn run(_parts: &mut core::str::SplitWhitespace) {
+pub fn run(parts: &mut core::str::SplitWhitespace) {
+    if let Some("-h") | Some("--help") = parts.next() {
+        unsafe {
+            vga::print_str("Usage: system\n\n");
+            vga::print_str("Description:\n  Display comprehensive kernel specifications, OS version, CPU vendor, system uptime, heap utilization, and PCI device counts.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        }
+        return;
+    }
+
     unsafe {
         let ms = get_uptime_ms();
         let hours = ms / 3600000;

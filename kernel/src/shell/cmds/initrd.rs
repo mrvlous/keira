@@ -13,6 +13,17 @@
 //! Implementation of the 'initrd' shell command.
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
+    if let Some("-h") | Some("--help") = parts.next() {
+        unsafe {
+            crate::io::vga::print_str("Usage: initrd\n\n");
+            crate::io::vga::print_str("Description:\n  List all preloaded files and sizes stored in the read-only Initrd TAR RAM disk.\n\n");
+            crate::io::vga::print_str(
+                "Options:\n  -h, --help    Show this help message and exit\n",
+            );
+        }
+        return;
+    }
+
     unsafe {
         crate::fs::tar::list_files();
     }

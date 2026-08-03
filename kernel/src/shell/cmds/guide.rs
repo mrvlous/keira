@@ -20,6 +20,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let sub = parts.next();
         let bg = CURRENT_THEME.text_bg;
         match sub {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: guide [command]\n\n");
+                vga::print_str("Description:\n  Interactive system command directory and documentation guide system.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            }
             None => {
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Keira Kernel System Guide\n");

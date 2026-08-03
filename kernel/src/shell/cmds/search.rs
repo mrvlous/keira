@@ -17,6 +17,13 @@ use crate::io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let pattern = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: search <pattern> [filename]\n\n");
+                vga::print_str("Description:\n  Search for lines matching pattern in a file or from stdin pipe stream.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  search main kernel.c\n  list | search bin\n");
+                return;
+            }
             Some(p) => p,
             None => {
                 vga::print_str("Usage: search <pattern> [filename]\n");

@@ -27,6 +27,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
         let dev_name = parts.next();
         match dev_name {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: use <device_name>\n\n");
+                vga::print_str("Description:\n  Mount and activate a block storage device (e.g. ram0, ahci0) as the active FAT16 filesystem volume.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  use ram0\n");
+            }
             None => {
                 vga::print_str("Usage: use <device_name> (e.g. use ram0)\n");
             }

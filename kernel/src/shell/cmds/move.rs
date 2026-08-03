@@ -20,6 +20,13 @@ use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let src = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: move <src_file> <dest_file>\n\n");
+            vga::print_str("Description:\n  Move or rename a file from source path to destination path on FAT16 storage.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  move file.txt file_renamed.txt\n");
+            return;
+        }
         Some(s) => s,
         None => {
             vga::print_str("Usage: move <src_file> <dest_file>\n");

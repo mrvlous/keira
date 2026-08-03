@@ -17,6 +17,13 @@ use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
+        if let Some("-h") | Some("--help") = parts.next() {
+            vga::print_str("Usage: tasks\n\n");
+            vga::print_str("Description:\n  List all active task processes, Process IDs (PIDs), execution states, and priority queue levels.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            return;
+        }
+
         if !is_admin_mode() {
             vga::set_color(vga::Color::LightRed, vga::Color::Black);
             vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");

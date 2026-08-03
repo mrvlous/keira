@@ -46,6 +46,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let new_name = parts.next();
 
         match new_name {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: hostname [new_name]\n\n");
+                vga::print_str("Description:\n  Query or update the system hostname. Hostname is persisted to /system/etc/hostname on FAT16 disk.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  hostname\n  hostname keira-box\n");
+            }
             None => {
                 let hostname_str =
                     core::str::from_utf8(&HOSTNAME[..HOSTNAME_LEN]).unwrap_or("keira");

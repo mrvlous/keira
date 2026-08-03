@@ -17,6 +17,13 @@ use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
+        if let Some("-h") | Some("--help") = parts.next() {
+            vga::print_str("Usage: disk\n\n");
+            vga::print_str("Description:\n  Display primary storage drive geometry, sector layout, and active FAT filesystem details.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            return;
+        }
+
         if !is_admin_mode() {
             vga::set_color(vga::Color::LightRed, vga::Color::Black);
             vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");

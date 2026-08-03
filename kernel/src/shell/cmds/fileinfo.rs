@@ -18,6 +18,14 @@ use crate::io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let path = parts.next();
 
+    if let Some("-h") | Some("--help") = path {
+        vga::print_str("Usage: fileinfo <file_path>\n\n");
+        vga::print_str("Description:\n  Inspect detailed FAT16 file metadata including file size in bytes, first cluster index, attribute bitmasks, and write protection status.\n\n");
+        vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+        vga::print_str("Examples:\n  fileinfo kernel.bin\n");
+        return;
+    }
+
     if let Some(p) = path {
         unsafe {
             let (dir_cluster, name) = match fat::resolve_path(p) {

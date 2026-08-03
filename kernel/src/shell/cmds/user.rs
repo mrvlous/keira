@@ -142,6 +142,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let sub = parts.next();
 
         match sub {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: user <create|delete|list|password|info>\n\n");
+                vga::print_str("Description:\n  Manage system user accounts, passwords, home directories, and query active user context.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Subcommands:\n  create <user> <pw>  Create a new user account + home directory\n  delete <username>   Delete a registered user account\n  list                List all registered accounts on FAT16 storage\n  password <usr> <pw> Update password for target account\n  info                Display active user context and privilege level\n");
+            }
             Some("create") => {
                 if !is_admin_mode() {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);

@@ -19,6 +19,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let sub = parts.next();
 
     match sub {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: framebuffer <info|demo|test>\n\n");
+            vga::print_str("Description:\n  Query VBE 1024x768 32-bpp Linear Framebuffer graphics info, run color primitive test, or render desktop GUI demo.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Subcommands:\n  info    Query VBE base address, resolution, pitch, and status\n  demo    Render full desktop GUI wallpaper and windowing demo\n  test    Execute linear framebuffer graphics primitive test\n");
+        }
         Some("demo") | Some("desktop") => unsafe {
             framebuffer::render_desktop_demo();
         },

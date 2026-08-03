@@ -25,6 +25,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         let first_arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: write [-a|--append|>>] <filename> <text...>\n\n");
+                vga::print_str("Description:\n  Write or append text content to a file on FAT16 disk storage.\n\n");
+                vga::print_str("Options:\n  -a, --append, >>  Append text stream to existing file end-of-chain\n  -h, --help        Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  write note.txt Hello Keira!\n  write -a note.txt New line appended.\n");
+                return;
+            }
             Some(s) => s,
             None => {
                 vga::print_str("Usage: write [-a|--append|>>] <filename> <text>\n");

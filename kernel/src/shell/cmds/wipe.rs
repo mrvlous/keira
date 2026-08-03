@@ -17,6 +17,15 @@ use crate::shell::executor::*;
 use crate::shell::state::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
+    if let Some("-h") | Some("--help") = parts.next() {
+        unsafe {
+            vga::print_str("Usage: wipe\n\n");
+            vga::print_str("Description:\n  Re-initialize VGA console driver to clear screen buffer and reset cursor to (0, 0).\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        }
+        return;
+    }
+
     unsafe {
         vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
         vga_init();

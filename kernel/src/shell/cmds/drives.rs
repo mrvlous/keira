@@ -16,6 +16,13 @@ use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
+        if let Some("-h") | Some("--help") = parts.next() {
+            vga::print_str("Usage: drives\n\n");
+            vga::print_str("Description:\n  List all registered block storage devices, their size capacity in KB, type, and mount status.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            return;
+        }
+
         vga::set_color(vga::Color::LightBlue, vga::Color::Black);
         vga::print_str("NAME      TYPE      SIZE (KB)   STATUS\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

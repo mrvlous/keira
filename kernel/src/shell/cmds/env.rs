@@ -19,6 +19,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let key = parts.next();
         let val = parts.next();
 
+        if let Some("-h") | Some("--help") = key {
+            vga::print_str("Usage: env [key] [value]\n\n");
+            vga::print_str("Description:\n  View all environment variables ($USER, $HOME, $PATH, $SHELL), query a specific key, or set a new key-value pair.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  env\n  env PATH\n  env PATH /system/bin\n");
+            return;
+        }
+
         match (key, val) {
             (Some(k), Some(v)) => {
                 if set_env_var(k, v).is_ok() {

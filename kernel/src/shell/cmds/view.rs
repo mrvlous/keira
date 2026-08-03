@@ -17,6 +17,13 @@ use crate::io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: view <filename>\n\n");
+                vga::print_str("Description:\n  Read file contents from FAT16 storage and print raw UTF-8 text string to VGA console stream.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  view note.txt\n");
+                return;
+            }
             Some(s) => s,
             None => {
                 vga::print_str("Usage: view <filename>\n");

@@ -17,6 +17,15 @@ use crate::shell::state::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let theme_name = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: theme [retro|matrix|arch|classic|dracula]\n\n");
+            vga::print_str(
+                "Description:\n  Switch active VGA terminal color scheme palette in real-time.\n\n",
+            );
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Available Themes:\n  retro    Monochrome green phosphor terminal\n  matrix   Matrix style lime & dark green console\n  arch     Cybernetic blue on black theme\n  classic  Standard retro white on black\n  dracula  Premium gothic dark purple & magenta\n");
+            return;
+        }
         Some(name) => name,
         None => {
             vga::print_str("Usage: theme [retro|matrix|arch|classic|dracula]\n");

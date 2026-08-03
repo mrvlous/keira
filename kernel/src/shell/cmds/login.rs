@@ -20,6 +20,13 @@ use crate::shell::state::*;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let target_user = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: login <username>\n\n");
+                vga::print_str("Description:\n  Switch active user session context. Admin switches instantly; non-admin users require password authentication.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  login admin\n  login marvelous\n");
+                return;
+            }
             Some(u) => u,
             None => {
                 vga::print_str("Usage: login <username>\n");

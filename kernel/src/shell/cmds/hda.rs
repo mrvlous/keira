@@ -18,9 +18,16 @@ use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let action = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: hda <status|play [freq]|stop>\n\n");
+            vga::print_str("Description:\n  Query status or generate continuous audio waveforms using the Intel High Definition Audio (HDA) DMA controller.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Subcommands:\n  status       Query Intel HDA controller PCI mapping state\n  play [freq]  Play continuous tone at frequency (1-20000 Hz, default 440 Hz)\n  stop         Silence active HDA audio stream\n");
+            return;
+        }
         Some(s) => s,
         None => {
-            vga::print_str("Usage: hda <play [freq]|stop|status>\n");
+            vga::print_str("Usage: hda <status|play [freq]|stop>\n");
             return;
         }
     };

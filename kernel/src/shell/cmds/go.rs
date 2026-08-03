@@ -18,6 +18,13 @@ use crate::shell::state::*;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: go <path>\n\n");
+                vga::print_str("Description:\n  Change current working directory on the active FAT16 volume. Supports relative (., ..) and absolute paths.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  go /users/admin\n  go ..\n");
+                return;
+            }
             Some(s) => s,
             None => {
                 vga::print_str("Usage: go <path>\n");

@@ -27,9 +27,16 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
         }
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: edit <filename>\n\n");
+                vga::print_str("Description:\n  Launch the interactive 128-line VGA text editor with syntax highlighting, search, and vertical scrolling.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  edit main.c\n");
+                return;
+            }
             Some(s) => s,
             None => {
-                vga::print_str("Usage: editor <filename>\n");
+                vga::print_str("Usage: edit <filename>\n");
                 return;
             }
         };

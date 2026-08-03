@@ -26,6 +26,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
         }
         let arg = match parts.next() {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: delete <name>\n\n");
+                vga::print_str("Description:\n  Delete a file or empty directory from the active directory on FAT16 storage.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Examples:\n  delete oldfile.txt\n");
+                return;
+            }
             Some(s) => s,
             None => {
                 vga::print_str("Usage: delete <name>\n");

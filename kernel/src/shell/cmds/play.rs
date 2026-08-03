@@ -18,6 +18,13 @@ use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let melody = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: play <mario|nokia|starwars|beep>\n\n");
+            vga::print_str("Description:\n  Play predefined retro chiptune melodies or simple audio beeps on the PC speaker.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  play mario\n  play beep\n");
+            return;
+        }
         Some(s) => s,
         None => {
             vga::print_str("Usage: play <mario|nokia|starwars|beep>\n");

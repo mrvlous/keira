@@ -17,6 +17,13 @@ use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
+        if let Some("-h") | Some("--help") = parts.next() {
+            vga::print_str("Usage: reset\n\n");
+            vga::print_str("Description:\n  Reboot the system using a PS/2 keyboard controller hardware reset.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            return;
+        }
+
         unsafe {
             if !is_admin_mode() {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);

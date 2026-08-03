@@ -31,6 +31,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let sub = parts.next();
 
         match sub {
+            Some("-h") | Some("--help") => {
+                vga::print_str("Usage: https <url|info|sha256>\n\n");
+                vga::print_str("Description:\n  Perform encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519 ECDH, HKDF-SHA256).\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                vga::print_str("Subcommands:\n  info    Query Native TLS 1.3 cryptographic engine parameters and status\n  sha256  Execute FIPS 180-4 SHA-256 digest self-test\n");
+            }
             Some("info") | None => {
                 vga::set_color(vga::Color::LightCyan, vga::Color::Black);
                 vga::print_str("KEIRA NATIVE TLS 1.3 ENGINE\n");

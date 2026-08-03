@@ -17,6 +17,13 @@ use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
+        if let Some("-h") | Some("--help") = parts.next() {
+            vga::print_str("Usage: memory\n\n");
+            vga::print_str("Description:\n  Display kernel C bump heap allocator statistics, peak consumption, allocation request counts, and physical RAM frame stats.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            return;
+        }
+
         let total = unsafe { heap_get_total() } as u64;
         let used = unsafe { heap_get_used() } as u64;
         let free = unsafe { heap_get_free() } as u64;
