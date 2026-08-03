@@ -164,7 +164,7 @@ SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
                  devices wait initrd wipe reset run write tasks disk list \
                  go script view create folder delete edit say copy help history \
                  move theme please search play hda download network stop env sync \
-                 protect fileinfo framebuffer usb https
+                 protect fileinfo framebuffer usb https user hostname
 
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \

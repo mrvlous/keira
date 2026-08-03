@@ -7,7 +7,7 @@ User applications interact with the kernel by executing system calls wrapped in 
 
 ### Assembly Wrappers
 System calls are declared using standard wrappers that assign parameters to Registers matching the System V AMD64 ABI:
-*   **System Call Number**: Passed in the `RAX` register (1 to 30).
+*   **System Call Number**: Passed in the `RAX` register (1 to 33).
 *   **Arguments**: Loaded sequentially into registers `RDI`, `RSI`, `RDX`, `R10`, `R8`, and `R9`.
 *   **Trigger**: The `syscall` instruction is executed.
 *   **Return Value**: The result is retrieved from the `RAX` register.

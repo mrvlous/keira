@@ -10,69 +10,94 @@
 
 //! Keira Kernel: Shell Command 'login'
 //!
-//! Implementation of the 'login' shell command.
+//! Switch active user context.
+//! - Admin switching to another user: Instant (UNIX root behavior).
+//! - Non-admin switching to admin or another user: Requires password authentication.
 
 use crate::io::vga;
 use crate::shell::state::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
-        let username = parts.next();
-        match username {
+        let target_user = match parts.next() {
+            Some(u) => u,
             None => {
-                vga::print_str(
-                    "Usage: login <username> (e.g. login admin, login guest, login default)\n",
-                );
+                vga::print_str("Usage: login <username>\n");
+                return;
             }
-            Some("admin") => unsafe {
-                vga::print_str("Password for admin: ");
-                LOGIN_USERNAME = [0u8; 16];
-                let user_str = "admin";
-                LOGIN_USERNAME[..user_str.len()].copy_from_slice(user_str.as_bytes());
-                LOGIN_USERNAME_LEN = user_str.len();
+        };
 
-                IN_LOGIN_MODE = true;
-                BUFFER_LEN = 0;
-                INPUT_BUFFER = [0u8; BUFFER_SIZE];
-                COMMAND_READY = false;
-            },
-            Some(other) => unsafe {
-                if other == "guest" || other == "default" {
-                    CURRENT_USER = [0u8; 16];
-                    CURRENT_USER[..other.len()].copy_from_slice(other.as_bytes());
-                    CURRENT_USER_LEN = other.len();
-                    IS_ADMIN = false;
+        let current_user_str =
+            core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]).unwrap_or("");
 
-                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                    vga::print_str("Logged in as ");
-                    vga::print_str(other);
-                    vga::print_str(".\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        // If currently admin, switching to any user is instant (UNIX root behavior)
+        if current_user_str == "admin" {
+            if target_user == "admin" {
+                vga::print_str("Already logged in as admin.\n");
+                return;
+            }
 
-                    // Change directory to the user's home folder
-                    let path_str = if other == "guest" {
-                        "/users/guest"
-                    } else {
-                        "/users/default"
-                    };
-                    let _ = crate::fs::fat::change_directory(path_str);
+            let (exists, _, _) = super::user::lookup_user(target_user);
+            if !exists && target_user != "guest" {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("Error: Unknown user '");
+                vga::print_str(target_user);
+                vga::print_str("'. Use 'user list' to see registered users.\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
 
-                    let rel_path = if other == "guest" {
-                        "users/guest"
-                    } else {
-                        "users/default"
-                    };
-                    SHELL_PATH = [0u8; 80];
-                    SHELL_PATH[..rel_path.len()].copy_from_slice(rel_path.as_bytes());
-                    SHELL_PATH_LEN = rel_path.len();
-                } else {
-                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                    vga::print_str("Error: Unknown user '");
-                    vga::print_str(other);
-                    vga::print_str("'.\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                }
-            },
+            // Perform instant switch
+            CURRENT_USER = [0u8; 16];
+            CURRENT_USER[..target_user.len()].copy_from_slice(target_user.as_bytes());
+            CURRENT_USER_LEN = target_user.len();
+            IS_ADMIN = false;
+
+            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+            vga::print_str("Switched to user ");
+            vga::print_str(target_user);
+            vga::print_str(".\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+            let mut home_buf = [0u8; 32];
+            let prefix = b"/users/";
+            home_buf[..prefix.len()].copy_from_slice(prefix);
+            home_buf[prefix.len()..prefix.len() + target_user.len()]
+                .copy_from_slice(target_user.as_bytes());
+            let home_str = core::str::from_utf8(&home_buf[..prefix.len() + target_user.len()])
+                .unwrap_or("/users/admin");
+
+            let _ = crate::fs::fat::change_directory(home_str);
+            let rel_path = &home_str[1..];
+            SHELL_PATH = [0u8; 80];
+            SHELL_PATH[..rel_path.len()].copy_from_slice(rel_path.as_bytes());
+            SHELL_PATH_LEN = rel_path.len();
+            return;
         }
+
+        // If currently NOT admin, user MUST provide password for target_user (including admin!)
+        let (exists, _, _) = super::user::lookup_user(target_user);
+        if !exists && target_user != "admin" {
+            vga::set_color(vga::Color::LightRed, vga::Color::Black);
+            vga::print_str("Error: Unknown user '");
+            vga::print_str(target_user);
+            vga::print_str("'. Use 'user list' to see registered users.\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            return;
+        }
+
+        vga::print_str("Password for ");
+        vga::print_str(target_user);
+        vga::print_str(": ");
+
+        LOGIN_USERNAME = [0u8; 16];
+        LOGIN_USERNAME[..target_user.len()].copy_from_slice(target_user.as_bytes());
+        LOGIN_USERNAME_LEN = target_user.len();
+
+        IN_LOGIN_MODE = true;
+        LOGIN_ATTEMPTS = 0;
+        BUFFER_LEN = 0;
+        INPUT_BUFFER = [0u8; BUFFER_SIZE];
+        COMMAND_READY = false;
     }
 }

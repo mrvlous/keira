@@ -72,12 +72,16 @@ pub fn count_pci_devices() -> u64 {
     count
 }
 
+static mut HOME_PATH_BUF: [u8; 32] = [0u8; 32];
+
 pub unsafe fn get_current_user_home() -> &'static str {
-    match core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
-        Ok("admin") => "users/admin",
-        Ok("guest") => "users/guest",
-        _ => "users/default",
-    }
+    let prefix = b"users/";
+    let user_bytes = &CURRENT_USER[..CURRENT_USER_LEN];
+    let total_len = prefix.len() + user_bytes.len();
+    HOME_PATH_BUF = [0u8; 32];
+    HOME_PATH_BUF[..prefix.len()].copy_from_slice(prefix);
+    HOME_PATH_BUF[prefix.len()..total_len].copy_from_slice(user_bytes);
+    core::str::from_utf8(&HOME_PATH_BUF[..total_len]).unwrap_or("users/admin")
 }
 
 pub unsafe fn is_admin_mode() -> bool {
@@ -177,6 +181,7 @@ pub fn execute_command(cmd: &str) {
                 }
 
                 IN_PLEASE_MODE = true;
+                PLEASE_ATTEMPTS = 0;
                 BUFFER_LEN = 0;
                 INPUT_BUFFER = [0u8; BUFFER_SIZE];
                 COMMAND_READY = false;
@@ -346,6 +351,8 @@ pub fn execute_command_inner(cmd: &str) {
         "guide" => super::cmds::guide::run(&mut parts),
         "env" => super::cmds::env::run(&mut parts),
         "login" => super::cmds::login::run(&mut parts),
+        "user" => super::cmds::user::run(&mut parts),
+        "hostname" => super::cmds::hostname::run(&mut parts),
         "drives" => super::cmds::drives::run(&mut parts),
         "use" => super::cmds::r#use::run(&mut parts),
         "ramdisk" => super::cmds::ramdisk::run(&mut parts),

@@ -45,9 +45,12 @@ For early kernel driver memory requests, a sequential bump allocator is implemen
 ### Design Specifications
 *   **16-Byte Alignment**: Allocations are rounded up to 16-byte boundaries (using `(size + 15) & ~15`) to comply with the AMD64 ABI and SIMD alignment requirements.
 *   **Bump Mechanics**: The allocator retains a `heap_next` pointer. Every allocation increments `heap_next` by the requested size.
+*   **Allocation Tracking**: Each `kmalloc` call increments a global `g_alloc_count` counter and updates `g_peak_used` to track peak heap consumption.
 *   **Memory Recovery**: The allocator does not reclaim individual blocks. Releasing memory via `kfree` is a no-op; memory is only reclaimed during a complete reset of the allocator.
 
 ### APIs
 *   `void heap_init(void *start, size_t size)`: Sets the physical bounds of the C kernel heap.
 *   `void *kmalloc(size_t size)`: Allocates a contiguous block of memory. Returns `NULL` if the requested size exceeds the remaining heap capacity.
 *   `void kfree(void *ptr)`: Release memory stub.
+*   `size_t heap_get_alloc_count(void)`: Returns the total number of allocation requests since boot.
+*   `size_t heap_get_peak(void)`: Returns the peak heap usage in bytes.

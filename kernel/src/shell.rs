@@ -30,7 +30,7 @@ pub const KEY_F10: u8 = 0x85;
 use crate::io::vga;
 use autocomplete::handle_autocomplete;
 use editor::editor_handle_keypress;
-use executor::execute_command;
+use executor::{execute_command, get_current_user_home};
 use history::{history_load, history_push};
 use state::*;
 
@@ -48,13 +48,6 @@ pub fn print_logo() {
 ///
 /// # Safety
 /// This function reads from global mutable state `CURRENT_USER` and `CURRENT_USER_LEN`.
-pub unsafe fn get_current_user_home() -> &'static str {
-    match core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
-        Ok("admin") => "users/admin",
-        Ok("guest") => "users/guest",
-        _ => "users/default",
-    }
-}
 
 pub fn print_prompt() {
     unsafe {
@@ -75,7 +68,13 @@ pub fn print_prompt() {
         }
 
         vga::set_color(CURRENT_THEME.host, CURRENT_THEME.text_bg);
-        vga::print_str("@keira ");
+        vga::print_str("@");
+        if let Ok(hostname_str) = core::str::from_utf8(&HOSTNAME[..HOSTNAME_LEN]) {
+            vga::print_str(hostname_str);
+        } else {
+            vga::print_str("keira");
+        }
+        vga::print_str(" ");
 
         vga::set_color(CURRENT_THEME.path, CURRENT_THEME.text_bg);
         let current_path = core::str::from_utf8(&SHELL_PATH[..SHELL_PATH_LEN]).unwrap_or_default();
@@ -116,8 +115,17 @@ pub fn print_prompt() {
 
 pub fn run_boot_script() {
     unsafe {
-        if crate::fs::fat::change_directory("/users/default").is_ok() {
-            let initial_path = "users/default";
+        // Load persisted hostname from disk
+        cmds::hostname::load_hostname();
+
+        // Boot as admin user with full privileges
+        CURRENT_USER = [0u8; 16];
+        let admin_str = b"admin";
+        CURRENT_USER[..admin_str.len()].copy_from_slice(admin_str);
+        CURRENT_USER_LEN = admin_str.len();
+
+        if crate::fs::fat::change_directory("/users/admin").is_ok() {
+            let initial_path = "users/admin";
             SHELL_PATH[..initial_path.len()].copy_from_slice(initial_path.as_bytes());
             SHELL_PATH_LEN = initial_path.len();
         }
@@ -267,76 +275,139 @@ pub fn process_pending() {
         }
 
         if IN_PLEASE_MODE {
-            IN_PLEASE_MODE = false;
             COMMAND_READY = false;
 
             let password_slice = &INPUT_BUFFER[..BUFFER_LEN];
-            let is_correct = password_slice == b"keira";
+            let user_str = core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]).unwrap_or("");
+            let (found, pwd, pwd_len) = cmds::user::lookup_user(user_str);
+            let is_correct = if user_str == "admin" {
+                true
+            } else if found && pwd_len > 0 {
+                password_slice == &pwd[..pwd_len]
+            } else {
+                password_slice == b"keira"
+            };
 
             // Reset buffer
             BUFFER_LEN = 0;
             INPUT_BUFFER = [0u8; BUFFER_SIZE];
 
             if is_correct {
+                PLEASE_ATTEMPTS = 0;
+                IN_PLEASE_MODE = false;
                 IS_ADMIN = true;
                 if let Ok(cmd_str) = core::str::from_utf8(&PLEASE_COMMAND[..PLEASE_COMMAND_LEN]) {
                     execute_command(cmd_str);
                 }
                 IS_ADMIN = false;
+                PLEASE_COMMAND = [0u8; 128];
+                PLEASE_COMMAND_LEN = 0;
+
+                if !IN_PLEASE_MODE && !IN_LOGIN_MODE {
+                    print_prompt();
+                }
             } else {
-                vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
-                vga::print_str("please: incorrect password.\n");
-                vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
-            }
-
-            PLEASE_COMMAND = [0u8; 128];
-            PLEASE_COMMAND_LEN = 0;
-
-            if !IN_PLEASE_MODE && !IN_LOGIN_MODE {
-                print_prompt();
+                PLEASE_ATTEMPTS += 1;
+                if PLEASE_ATTEMPTS < 3 {
+                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::print_str("please: incorrect password (attempt ");
+                    vga::print_u64(PLEASE_ATTEMPTS as u64);
+                    vga::print_str("/3). Try again: ");
+                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                } else {
+                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::print_str("please: 3 incorrect password attempts. Aborted.\n");
+                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                    PLEASE_ATTEMPTS = 0;
+                    IN_PLEASE_MODE = false;
+                    PLEASE_COMMAND = [0u8; 128];
+                    PLEASE_COMMAND_LEN = 0;
+                    print_prompt();
+                }
             }
             return;
         }
 
         if IN_LOGIN_MODE {
-            IN_LOGIN_MODE = false;
             COMMAND_READY = false;
 
             let password_slice = &INPUT_BUFFER[..BUFFER_LEN];
-            let is_correct = password_slice == b"keira";
+            let login_user_str =
+                core::str::from_utf8(&LOGIN_USERNAME[..LOGIN_USERNAME_LEN]).unwrap_or("");
+            let (found, pwd, pwd_len) = cmds::user::lookup_user(login_user_str);
+            let is_correct = if login_user_str == "admin" {
+                if found && pwd_len > 0 {
+                    password_slice == &pwd[..pwd_len]
+                } else {
+                    password_slice == b"keira"
+                }
+            } else {
+                found && password_slice == &pwd[..pwd_len]
+            };
 
             // Reset buffer
             BUFFER_LEN = 0;
             INPUT_BUFFER = [0u8; BUFFER_SIZE];
 
             if is_correct {
-                if let Ok(user_str) = core::str::from_utf8(&LOGIN_USERNAME[..LOGIN_USERNAME_LEN]) {
-                    CURRENT_USER = [0u8; 16];
-                    CURRENT_USER[..user_str.len()].copy_from_slice(user_str.as_bytes());
-                    CURRENT_USER_LEN = user_str.len();
+                LOGIN_ATTEMPTS = 0;
+                IN_LOGIN_MODE = false;
 
-                    vga::set_color(vga::Color::LightGreen, CURRENT_THEME.text_bg);
-                    vga::print_str("Successfully logged in as admin.\n");
-                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                CURRENT_USER = [0u8; 16];
+                CURRENT_USER[..login_user_str.len()].copy_from_slice(login_user_str.as_bytes());
+                CURRENT_USER_LEN = login_user_str.len();
 
-                    // Switch to admin home folder
-                    let _ = crate::fs::fat::change_directory("/users/admin");
-                    let initial_path = "users/admin";
-                    SHELL_PATH = [0u8; 80];
-                    SHELL_PATH[..initial_path.len()].copy_from_slice(initial_path.as_bytes());
-                    SHELL_PATH_LEN = initial_path.len();
+                if login_user_str == "admin" {
+                    IS_ADMIN = true;
+                } else {
+                    IS_ADMIN = false;
                 }
-            } else {
-                vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
-                vga::print_str("login: incorrect password.\n");
+
+                vga::set_color(vga::Color::LightGreen, CURRENT_THEME.text_bg);
+                vga::print_str("Successfully logged in as ");
+                vga::print_str(login_user_str);
+                vga::print_str(".\n");
                 vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
-            }
 
-            LOGIN_USERNAME = [0u8; 16];
-            LOGIN_USERNAME_LEN = 0;
+                let mut home_buf = [0u8; 32];
+                let prefix = b"/users/";
+                home_buf[..prefix.len()].copy_from_slice(prefix);
+                home_buf[prefix.len()..prefix.len() + login_user_str.len()]
+                    .copy_from_slice(login_user_str.as_bytes());
+                let home_str =
+                    core::str::from_utf8(&home_buf[..prefix.len() + login_user_str.len()])
+                        .unwrap_or("/users/admin");
 
-            if !IN_PLEASE_MODE && !IN_LOGIN_MODE {
+                let _ = crate::fs::fat::change_directory(home_str);
+                let rel_path = &home_str[1..];
+                SHELL_PATH = [0u8; 80];
+                SHELL_PATH[..rel_path.len()].copy_from_slice(rel_path.as_bytes());
+                SHELL_PATH_LEN = rel_path.len();
+
+                LOGIN_USERNAME = [0u8; 16];
+                LOGIN_USERNAME_LEN = 0;
+
                 print_prompt();
+            } else {
+                LOGIN_ATTEMPTS += 1;
+                if LOGIN_ATTEMPTS < 3 {
+                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::print_str("login: incorrect password (attempt ");
+                    vga::print_u64(LOGIN_ATTEMPTS as u64);
+                    vga::print_str("/3). Password for ");
+                    vga::print_str(login_user_str);
+                    vga::print_str(": ");
+                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                } else {
+                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::print_str("login: 3 incorrect password attempts. Access denied.\n");
+                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                    LOGIN_ATTEMPTS = 0;
+                    IN_LOGIN_MODE = false;
+                    LOGIN_USERNAME = [0u8; 16];
+                    LOGIN_USERNAME_LEN = 0;
+                    print_prompt();
+                }
             }
             return;
         }

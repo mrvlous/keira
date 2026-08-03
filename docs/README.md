@@ -18,7 +18,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.
 *   [Mouse and RTC Drivers](drivers/mouse_rtc.md): PS/2 mouse packet decoding, resolution setup, and CMOS Real-Time Clock register queries.
-*   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).
+*   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver with 16-slot cache table, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).
 *   [USB Host Controller Driver](drivers/usb.md): PCI enumeration for xHCI/EHCI/UHCI USB controllers, descriptor decoding, and bus status querying (`usb`).
 
 ### 3. Filesystems & Storage
@@ -28,6 +28,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 
 ### 4. Userland Subsystems & IPC
 *   [User Runtime Library (libc & Extensions)](userland/runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), C Math (`math.h`) & Time (`time.h`), and system call wrappers.
+*   [Multi-User Accounts & System Hostname](userland/users_hostname.md): Persistent user management (`user`), password storage (`/system/etc/passwd`), system hostname configuration (`hostname`), dynamic prompt, 3-attempt retry fallback, and UNIX privilege separation.
 *   [The Init Process](userland/init.md): User-space initialization sequence (`bin/init`) spawning system processes.
 *   [Self-Hosting C Compiler](userland/gcc.md): Parser, lexer, AST builder, and helper structures inside the built-in C compiler (`bin/gcc`).
 

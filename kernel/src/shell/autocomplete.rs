@@ -41,7 +41,7 @@ pub unsafe fn handle_autocomplete() {
         "drives", "use", "disk", "ramdisk", "list", "go", "view", "create", "folder", "delete",
         "edit", "initrd", "search", "tasks", "stop", "wait", "run", "script", "say", "wipe",
         "reset", "copy", "move", "write", "please", "login", "history", "theme", "play", "hda",
-        "help",
+        "help", "user", "hostname",
     ];
 
     if is_command {

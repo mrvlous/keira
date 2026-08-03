@@ -18,7 +18,7 @@ The network subsystem ([e1000.c](../../drivers/net/e1000.c), [e1000.rs](../../ke
 
 ## 3. DNS Resolver & Network Stack Architecture
 
-* **DNS Resolver ([dns.rs](../../kernel/src/net/dns.rs))**: Encodes QNAME questions (`google.com` → `\x06google\x03com\x00`), builds UDP 53 DNS query headers, transmits frames, and parses Type A IPv4 Answer RRs.
+* **DNS Resolver ([dns.rs](../../kernel/src/net/dns.rs))**: Encodes QNAME questions (`google.com` → `\x06google\x03com\x00`), builds UDP 53 DNS query headers, transmits frames, and parses Type A IPv4 Answer RRs. Includes a **16-slot Dynamic DNS Cache Table** with hit tracking for 0ms domain resolution on repeated queries.
 * **Dynamic ARP Cache ([arp.rs](../../kernel/src/net/arp.rs))**: Maintains a 16-slot IP-to-MAC resolution table with broadcast `ARP Request` (who-has) and `ARP Reply` (is-at) parser for physical network interfaces.
 * **TCP State Engine ([tcp.rs](../../kernel/src/net/tcp.rs))**: Implements sequence & acknowledgment number tracking, IP pseudo-header checksum calculation, 3-way handshake (`SYN` → `SYN-ACK` → `ACK`), reliable payload streaming, and graceful `FIN` connection teardown.
 * **DHCP Client ([dhcp.rs](../../kernel/src/net/dhcp.rs))**: Implements `DHCP Discover` (UDP 67/68 Broadcast), `DHCP Offer`, `DHCP Request`, and `DHCP ACK` protocol parsing to auto-configure local IP address, Subnet Mask, Default Gateway, and DNS Server.
@@ -43,6 +43,7 @@ The kernel includes a bare-metal, `no_std` TLS 1.3 (RFC 8446) implementation for
 * **`network`**: Displays the active network interface card state (`eth0`), MAC address, NAT IP address (`10.0.2.15`), and packet TX/RX statistics.
 * **`network dhcp`**: Triggers DHCP dynamic IP auto-configuration over `eth0`.
 * **`network resolve <domain>`**: Performs UDP 53 DNS lookup and outputs resolved IPv4 address.
+* **`network dns-cache`**: Displays the active 16-slot DNS cache table with resolved domains, IPs, and hit counts.
 * **`network ping <target_ip>`**: Transmits ICMP Echo Request packets to target IP/domain and calculates round-trip latency (RTT).
 * **`download <URL> [target_file_path]`**: Fetches network resources over encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and saves received payload data stream directly to FAT16 disk storage.
 * **`https <url|info|sha256>`**: Performs encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519 ECDH).
