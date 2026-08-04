@@ -68,6 +68,9 @@ When a user program executes the `syscall` instruction:
 | 39 | `sys_io_uring_enter` | `(fd: u64, to_submit: u32, min_complete: u32, flags: u32) -> completed` |
 | 40 | `sys_futex` | `(uaddr: u64, op: u32, val: u32, val2: u32) -> status` |
 | 41 | `sys_clone_thread` | `(fn_ptr: u64, stack_ptr: u64, flags: u64) -> thread_id` |
+| 42 | `sys_kvm_create_vm` | `() -> vm_id` |
+| 43 | `sys_kvm_run_vcpu` | `(vm_id: u64, vcpu_id: u32) -> status` |
+| 44 | `sys_syslog` | `(buf_ptr: *mut u8, len: u64) -> read_len` |
 
 ---
 

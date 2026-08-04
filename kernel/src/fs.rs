@@ -14,6 +14,7 @@
 
 pub mod dev;
 pub mod elf;
+pub mod ext4;
 pub mod fat;
 pub mod lock;
 pub mod tar;

@@ -17,3 +17,6 @@
 pub mod aes;
 pub mod curve25519;
 pub mod sha256;
+
+/// Hardware Security TPM 2.0 Enclave Subsystem
+pub mod tpm;

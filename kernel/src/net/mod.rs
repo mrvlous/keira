@@ -10,6 +10,7 @@
 //! Keira Kernel: Networking Subsystem Root
 
 pub mod arp;
+pub mod bpf;
 pub mod dhcp;
 pub mod dns;
 pub mod e1000;

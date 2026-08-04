@@ -20,3 +20,6 @@ pub mod unwind;
 
 /// Symmetric Multiprocessing (SMP) IPI & TLB Shootdown Subsystem
 pub mod smp;
+
+/// Hardware Virtualization Hypervisor Subsystem (Intel VMX / AMD SVM)
+pub mod kvm;

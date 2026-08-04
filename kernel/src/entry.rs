@@ -24,6 +24,7 @@
 
 use crate::shell;
 
+pub mod klog;
 pub mod module;
 
 /// Kernel main entry point : the heart of Keira.

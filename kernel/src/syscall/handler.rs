@@ -838,6 +838,32 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 42: kvm_create_vm
+        // Signature: sys_kvm_create_vm() -> vm_id
+        42 => match crate::arch::kvm::sys_kvm_create_vm() {
+            Ok(vmid) => vmid,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 43: kvm_run_vcpu
+        // Signature: sys_kvm_run_vcpu(vm_id: u64, vcpu_id: u32) -> status
+        43 => {
+            let vm_id = arg1;
+            let vcpu_id = arg2 as u32;
+            match crate::arch::kvm::sys_kvm_run_vcpu(vm_id, vcpu_id) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 44: syslog
+        // Signature: sys_syslog(buf_ptr: *mut u8, len: u64) -> read_len
+        44 => {
+            let buf_ptr = arg1 as *mut u8;
+            let len = arg2 as usize;
+            match crate::entry::klog::sys_syslog_read(buf_ptr, len) {
+                Ok(bytes) => bytes as u64,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX

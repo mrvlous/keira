@@ -10,11 +10,16 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Bootstrapping and Trampolining](architecture/bootstrapping.md): The multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
 *   [Memory Management](architecture/memory.md): Design of the Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, SMP multi-core execution (`smp_init`), and Unix signals (`sys_kill`).
-*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 41 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), async I/O (`sys_io_uring_setup`), futex threading (`sys_futex`/`sys_clone_thread`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
+*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 44 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), async I/O (`sys_io_uring_setup`), futex threading (`sys_futex`), hypervisor (`sys_kvm_create_vm`), syslog (`sys_syslog`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
 *   [Cryptographic Subsystem](architecture/crypto.md): Bare-metal Rust `no_std` implementations of SHA-256/HMAC, AES-128-GCM AEAD, and Curve25519 X25519 ECDH key exchange.
 *   [LKM, HPET & SMP Subsystems](architecture/lkm_hpet_smp.md): Dynamically Loadable Kernel Modules (`sys_init_module`), HPET nanosecond timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), and SMP IPI TLB shootdown.
 *   [PCIe, io_uring & NX/KASLR Subsystems](architecture/pcie_iouring_nx.md): PCIe ECAM & MSI/MSI-X interrupts, asynchronous kernel I/O (`io_uring`), hardware NX bit enforcement, and KASLR randomization.
 *   [Futex, Threading & cgroups Subsystems](architecture/futex_cgroups.md): Fast Userspace Mutex (`sys_futex`), POSIX thread creation (`sys_clone_thread`), resource cgroups, and PID namespaces.
+*   [Hardware Virtualization Hypervisor (KVM)](architecture/kvm.md): Intel VMX / AMD SVM guest VM execution context (`sys_kvm_create_vm`/`sys_kvm_run_vcpu`).
+*   [Hardware Security TPM 2.0 Enclave](architecture/tpm.md): Trusted Platform Module MMIO interface, PCR measurement banks, and hardware key storage.
+*   [Zero-Copy BPF Packet Filter Engine](architecture/bpf.md): In-kernel BPF bytecode interpreter for raw socket packet filtering.
+*   [DMA Scatter-Gather Allocator](architecture/dma.md): Contiguous physical DMA buffer allocation and Scatter-Gather list mapping.
+*   [Kernel Event Logging & Syslog](architecture/klog.md): Circular `dmesg` kernel log ring buffer and diagnostic system call (`sys_syslog`).
 
 ### 2. Device Drivers
 *   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE Auto-Adaptive 32-bpp Linear Framebuffer Graphics (`framebuffer`).
@@ -26,6 +31,8 @@ To help you navigate the codebase, the documentation is divided into the followi
 
 ### 3. Filesystems & Storage
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.
+*   [Native EXT4 Filesystem Driver](filesystems/ext4.md): Native Linux EXT4 superblock parsing, inode table reading, and extent tree block mapping.
+*   [FAT16 Filesystem Implementation](filesystems/fat.md): Partition boot sector parsing, File Allocation Table traversal, directory entries, file creation, block sector cache, and append mode (`fat::append_file_content`).
 *   [TAR Archive Reader](filesystems/tar.md): Read-only parsing of the USTAR archive format loaded as the boot initrd.
 *   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, sector block cache `sync`, and native file protection (`protect`, `fileinfo`).
 

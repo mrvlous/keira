@@ -11,6 +11,7 @@
 //!
 //! Provides Physical Memory Management (PMM) and Virtual Memory Management (VMM).
 
+pub mod dma;
 pub mod pmm;
 pub mod vmm;
 
