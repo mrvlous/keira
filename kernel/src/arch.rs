@@ -23,3 +23,12 @@ pub mod smp;
 
 /// Hardware Virtualization Hypervisor Subsystem (Intel VMX / AMD SVM)
 pub mod kvm;
+
+/// High-Resolution POSIX Interval Timers Engine
+pub mod timer;
+
+/// ACPI Hardware Power Management & NMI Watchdog Subsystem
+pub mod power;
+
+/// Hardware Performance Counters & PMU Engine
+pub mod perf;

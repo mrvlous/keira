@@ -10,7 +10,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Bootstrapping and Trampolining](architecture/bootstrapping.md): The multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
 *   [Memory Management](architecture/memory.md): Design of the Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, SMP multi-core execution (`smp_init`), and Unix signals (`sys_kill`).
-*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 44 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), async I/O (`sys_io_uring_setup`), futex threading (`sys_futex`), hypervisor (`sys_kvm_create_vm`), syslog (`sys_syslog`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
+*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 49 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), async I/O (`sys_io_uring_setup`), futex threading (`sys_futex`), hypervisor (`sys_kvm_create_vm`), syslog (`sys_syslog`), interval timers (`sys_timer_create`), pipe splice (`sys_splice`), PMU counters (`sys_perf_event_open`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
 *   [Cryptographic Subsystem](architecture/crypto.md): Bare-metal Rust `no_std` implementations of SHA-256/HMAC, AES-128-GCM AEAD, and Curve25519 X25519 ECDH key exchange.
 *   [LKM, HPET & SMP Subsystems](architecture/lkm_hpet_smp.md): Dynamically Loadable Kernel Modules (`sys_init_module`), HPET nanosecond timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), and SMP IPI TLB shootdown.
 *   [PCIe, io_uring & NX/KASLR Subsystems](architecture/pcie_iouring_nx.md): PCIe ECAM & MSI/MSI-X interrupts, asynchronous kernel I/O (`io_uring`), hardware NX bit enforcement, and KASLR randomization.
@@ -20,8 +20,14 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Zero-Copy BPF Packet Filter Engine](architecture/bpf.md): In-kernel BPF bytecode interpreter for raw socket packet filtering.
 *   [DMA Scatter-Gather Allocator](architecture/dma.md): Contiguous physical DMA buffer allocation and Scatter-Gather list mapping.
 *   [Kernel Event Logging & Syslog](architecture/klog.md): Circular `dmesg` kernel log ring buffer and diagnostic system call (`sys_syslog`).
+*   [Mandatory Access Control (MAC)](architecture/mac.md): Path-based security rule evaluation and process sandboxing policies.
+*   [High-Resolution POSIX Interval Timers](architecture/timer.md): POSIX nanosecond interval timers (`sys_timer_create`/`sys_timer_settime`).
+*   [Zero-Copy Kernel Pipe Splice](architecture/splice.md): In-kernel page swapping between file descriptors (`sys_splice`/`sys_vmsplice`).
+*   [ACPI Power Management & NMI Watchdog](architecture/power.md): ACPI power state transitions (S0/S3/S5) and hardware NMI watchdog.
+*   [Hardware Performance PMU Counters](architecture/perf.md): CPU hardware event monitoring unit counters (`sys_perf_event_open`).
 
 ### 2. Device Drivers
+*   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.
 *   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE Auto-Adaptive 32-bpp Linear Framebuffer Graphics (`framebuffer`).
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.

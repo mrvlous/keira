@@ -54,3 +54,6 @@ pub mod tty;
 
 /// PCI Express (PCIe) ECAM & MSI Subsystem
 pub mod pcie;
+
+/// NVMe (Non-Volatile Memory Express) PCIe Controller Driver
+pub mod nvme;

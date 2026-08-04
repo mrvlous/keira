@@ -14,3 +14,6 @@ pub mod shm;
 
 /// Asynchronous Kernel I/O Engine (io_uring)
 pub mod io_uring;
+
+/// Zero-Copy Kernel Pipe Splice Subsystem
+pub mod splice;

@@ -18,5 +18,8 @@ pub mod types;
 /// Resource Control Groups (cgroups) & PID Namespaces
 pub mod cgroup;
 
+/// Mandatory Access Control (MAC / SELinux) Security Engine
+pub mod mac;
+
 pub use scheduler::{exit_current, init, list_tasks, spawn};
 pub use types::{InterruptContext, Task, TaskState};

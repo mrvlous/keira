@@ -71,6 +71,11 @@ When a user program executes the `syscall` instruction:
 | 42 | `sys_kvm_create_vm` | `() -> vm_id` |
 | 43 | `sys_kvm_run_vcpu` | `(vm_id: u64, vcpu_id: u32) -> status` |
 | 44 | `sys_syslog` | `(buf_ptr: *mut u8, len: u64) -> read_len` |
+| 45 | `sys_timer_create` | `(clock_id: u64, timer_id_ptr: *mut u64) -> status` |
+| 46 | `sys_timer_settime` | `(timer_id: u64, flags: u32, interval_nanos: u64) -> status` |
+| 47 | `sys_splice` | `(fd_in: u64, fd_out: u64, len: u64) -> bytes_spliced` |
+| 48 | `sys_vmsplice` | `(fd: u64, iov_ptr: u64, nr_segs: u64) -> bytes_spliced` |
+| 49 | `sys_perf_event_open` | `(event_type: u32, config: u64, pid: u64) -> counter_fd` |
 
 ---
 

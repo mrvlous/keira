@@ -864,6 +864,60 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 45: timer_create
+        // Signature: sys_timer_create(clock_id: u64, timer_id_ptr: *mut u64) -> status
+        45 => {
+            let clock_id = arg1;
+            let timer_id_ptr = arg2 as *mut u64;
+            match crate::arch::timer::sys_timer_create(clock_id, timer_id_ptr) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 46: timer_settime
+        // Signature: sys_timer_settime(timer_id: u64, flags: u32, interval_nanos: u64) -> status
+        46 => {
+            let timer_id = arg1;
+            let flags = arg2 as u32;
+            let interval_nanos = arg3;
+            match crate::arch::timer::sys_timer_settime(timer_id, flags, interval_nanos) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 47: splice
+        // Signature: sys_splice(fd_in: u64, fd_out: u64, len: u64) -> bytes_spliced
+        47 => {
+            let fd_in = arg1;
+            let fd_out = arg2;
+            let len = arg3 as usize;
+            match crate::ipc::splice::sys_splice(fd_in, fd_out, len, 0) {
+                Ok(bytes) => bytes as u64,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 48: vmsplice
+        // Signature: sys_vmsplice(fd: u64, iov_ptr: u64, nr_segs: u64) -> bytes_spliced
+        48 => {
+            let fd = arg1;
+            let iov_ptr = arg2;
+            let nr_segs = arg3 as usize;
+            match crate::ipc::splice::sys_vmsplice(fd, iov_ptr, nr_segs, 0) {
+                Ok(bytes) => bytes as u64,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 49: perf_event_open
+        // Signature: sys_perf_event_open(event_type: u32, config: u64, pid: u64) -> counter_fd
+        49 => {
+            let event_type = arg1 as u32;
+            let config = arg2;
+            let pid = arg3;
+            match crate::arch::perf::sys_perf_event_open(event_type, config, pid) {
+                Ok(fd) => fd,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX
