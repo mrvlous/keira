@@ -11,3 +11,6 @@
 
 pub mod pipe;
 pub mod shm;
+
+/// Asynchronous Kernel I/O Engine (io_uring)
+pub mod io_uring;

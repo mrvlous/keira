@@ -345,3 +345,10 @@ pub unsafe fn munmap_pages(vaddr: u64, len: usize) -> Result<(), &'static str> {
     }
     Ok(())
 }
+
+pub static mut KASLR_SLIDE_OFFSET: u64 = 0x200000;
+
+/// Calculate Kernel Address Space Layout Randomization (KASLR) base slide offset
+pub fn get_kaslr_offset() -> u64 {
+    unsafe { KASLR_SLIDE_OFFSET }
+}

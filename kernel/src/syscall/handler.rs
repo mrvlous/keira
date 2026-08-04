@@ -796,6 +796,25 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             crate::arch::unwind::unwind_stack();
             0
         }
+        // Syscall 38: io_uring_setup
+        // Signature: sys_io_uring_setup(entries: u32, p_ptr: *mut u64) -> ring_vaddr
+        38 => {
+            let entries = arg1 as u32;
+            match crate::ipc::io_uring::setup_ring(entries) {
+                Ok(vaddr) => vaddr,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 39: io_uring_enter
+        // Signature: sys_io_uring_enter(fd: u64, to_submit: u32, min_complete: u32, flags: u32) -> completed
+        39 => {
+            let to_submit = arg2 as u32;
+            let min_complete = arg3 as u32;
+            match crate::ipc::io_uring::enter_ring(to_submit, min_complete) {
+                Ok(c) => c as u64,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX

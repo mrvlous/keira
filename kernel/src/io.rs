@@ -51,3 +51,6 @@ pub mod usb;
 
 /// Multi-Virtual Terminal TTY Subsystem
 pub mod tty;
+
+/// PCI Express (PCIe) ECAM & MSI Subsystem
+pub mod pcie;

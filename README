@@ -3,8 +3,8 @@ Keira Kernel
 
 Keira is a freestanding, multi-language x86_64 operating system kernel. It
 manages system hardware resources, coordinates low-level C drivers, and
-provides a preemptive priority multitasking scheduler, 37 system calls,
-AHCI SATA storage driver, VBE High-Resolution Linear Framebuffer Driver, USB Host Controller Subsystem, Loadable Kernel Modules (LKM), HPET Timer,
+provides a preemptive priority multitasking scheduler, 39 system calls,
+AHCI SATA storage driver, VBE High-Resolution Linear Framebuffer Driver, USB Host Controller Subsystem, Loadable Kernel Modules (LKM), HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR Protection,
 Native TLS 1.3 Cryptographic Engine, IPC Shared Memory & Pipe subsystems, Multi-User Accounts & Hostname, POSIX File Permissions & Multi-TTY, Userland Socket API,
 49 native shell commands, and a system shell controlled by a core Rust kernel static library.
 
@@ -13,19 +13,21 @@ Quick Start
 
 * Get the latest code: https://github.com/mrvlous/keira
 * Setup the workspace: See docs/contributing/setup.md
-* Build the kernel: See docs/contributing/build.md
+* Build & run the kernel: `make run`
 
-Essential Documentation
------------------------
+Architecture & Documentation Map
+--------------------------------
 
-All developers and users should be familiar with:
+Explore the kernel's core subsystems and design details:
 
-* Building requirements: docs/contributing/setup.md
-* Coding Style: docs/contributing/style.md
-* License: See LICENSE (GPL-2.0)
+* Memory Management: docs/architecture/memory.md
+* Task Scheduler: docs/architecture/scheduler.md
+* System Calls and Privilege: docs/architecture/syscalls.md
+* Cryptographic Subsystem: docs/architecture/crypto.md
+* LKM, HPET & SMP Subsystems: docs/architecture/lkm_hpet_smp.md
+* PCIe, io_uring & NX/KASLR Subsystems: docs/architecture/pcie_iouring_nx.md
 
-More modular guides can be found starting from the documentation map:
-docs/README.md
+More modular guides can be found starting from the documentation map: docs/README.md
 
 
 Who Are You?

@@ -64,6 +64,8 @@ When a user program executes the `syscall` instruction:
 | 35 | `sys_delete_module` | `(name_ptr: *const u8) -> status` |
 | 36 | `sys_clock_gettime` | `(clk_id: u64, tp_ptr: *mut u64) -> nanos` |
 | 37 | `sys_ptrace` | `(request: u64, pid: u64, addr: u64, data: u64) -> status` |
+| 38 | `sys_io_uring_setup` | `(entries: u32, p_ptr: *mut u64) -> ring_vaddr` |
+| 39 | `sys_io_uring_enter` | `(fd: u64, to_submit: u32, min_complete: u32, flags: u32) -> completed` |
 
 ---
 
