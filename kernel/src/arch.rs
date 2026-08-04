@@ -11,3 +11,12 @@
 
 #[path = "../../arch/x86/kernel/apic.rs"]
 pub mod apic;
+
+/// High-Precision Event Timer (HPET) Subsystem
+pub mod hpet;
+
+/// Kernel Callstack Unwinder & Debugging Engine
+pub mod unwind;
+
+/// Symmetric Multiprocessing (SMP) IPI & TLB Shootdown Subsystem
+pub mod smp;

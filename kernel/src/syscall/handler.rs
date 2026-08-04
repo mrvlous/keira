@@ -752,6 +752,50 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 34: init_module
+        // Signature: sys_init_module(img_ptr: *const u8, len: u64) -> 0
+        34 => {
+            let img_ptr = arg1 as *const u8;
+            let len = arg2 as usize;
+            if img_ptr.is_null()
+                || len == 0
+                || validate_user_ptr(img_ptr as u64, len as u64).is_err()
+            {
+                return u64::MAX;
+            }
+            let img_slice = unsafe { core::slice::from_raw_parts(img_ptr, len) };
+            match crate::entry::module::init_module(img_slice) {
+                Ok(_) => 0,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 35: delete_module
+        // Signature: sys_delete_module(name_ptr: *const u8) -> 0
+        35 => {
+            let name_ptr = arg1 as *const u8;
+            let mut name_buf = [0u8; 64];
+            let len = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
+                Ok(l) => l,
+                Err(_) => return u64::MAX,
+            };
+            if let Ok(name_str) = core::str::from_utf8(&name_buf[..len]) {
+                match crate::entry::module::delete_module(name_str) {
+                    Ok(_) => 0,
+                    Err(_) => u64::MAX,
+                }
+            } else {
+                u64::MAX
+            }
+        }
+        // Syscall 36: clock_gettime
+        // Signature: sys_clock_gettime(clk_id: u64, tp_ptr: *mut u64) -> nanos
+        36 => crate::arch::hpet::read_nanos(),
+        // Syscall 37: ptrace
+        // Signature: sys_ptrace(request: u64, pid: u64, addr: u64, data: u64) -> 0
+        37 => {
+            crate::arch::unwind::unwind_stack();
+            0
+        }
         _ => {
             // Unknown syscall
             u64::MAX

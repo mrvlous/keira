@@ -24,6 +24,8 @@
 
 use crate::shell;
 
+pub mod module;
+
 /// Kernel main entry point : the heart of Keira.
 ///
 /// This function is called via C ABI from the assembly trampoline.

@@ -10,8 +10,9 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Bootstrapping and Trampolining](architecture/bootstrapping.md): The multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
 *   [Memory Management](architecture/memory.md): Design of the Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, SMP multi-core execution (`smp_init`), and Unix signals (`sys_kill`).
-*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 33 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
+*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 37 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
 *   [Cryptographic Subsystem](architecture/crypto.md): Bare-metal Rust `no_std` implementations of SHA-256/HMAC, AES-128-GCM AEAD, and Curve25519 X25519 ECDH key exchange.
+*   [LKM, HPET & SMP Subsystems](architecture/lkm_hpet_smp.md): Dynamically Loadable Kernel Modules (`sys_init_module`), HPET nanosecond timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), and SMP IPI TLB shootdown.
 
 ### 2. Device Drivers
 *   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE Auto-Adaptive 32-bpp Linear Framebuffer Graphics (`framebuffer`).

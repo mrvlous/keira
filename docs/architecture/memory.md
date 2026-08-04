@@ -37,6 +37,11 @@ Each table contains 512 entries (8 bytes each), fitting exactly inside one 4096-
 *   `pub unsafe fn mmap_anonymous(addr: u64, len: usize, prot: u64) -> Result<u64, &'static str>`: Dynamically allocates and maps contiguous virtual memory pages for Ring 3 process heap/stack requests (`sys_mmap`).
 *   `pub unsafe fn munmap_pages(addr: u64, len: usize) -> Result<(), &'static str>`: Unmaps virtual memory page regions and frees physical page frames (`sys_munmap`).
 
+### Copy-on-Write (CoW) Page Allocation
+When a process executes `sys_fork` (Syscall 30), physical page frames are not duplicated upfront:
+*   **Read-Only CoW Mapping**: Child and parent process page tables map identical physical frames marked as Read-Only with custom `COW` bit flags (Bit 9 in x86_64 page table entries).
+*   **Write Fault Handling**: On a write attempt to a CoW page, Page Fault (Vector 14) allocates a new physical frame, copies page contents, remaps as Read-Write, and resumes task execution seamlessly.
+
 ---
 
 ## 3. Kernel Bump Heap Allocator

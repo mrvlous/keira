@@ -60,6 +60,10 @@ When a user program executes the `syscall` instruction:
 | 31 | `sys_mprotect` | `(addr: u64, len: u64, prot: u64) -> status` |
 | 32 | `sys_madvise` | `(addr: u64, len: u64, advice: u64) -> status` |
 | 33 | `sys_tls_connect` | `(hostname: *const u8, buf: *mut u8, max_len: u64) -> payload_len` |
+| 34 | `sys_init_module` | `(img_ptr: *const u8, len: u64) -> status` |
+| 35 | `sys_delete_module` | `(name_ptr: *const u8) -> status` |
+| 36 | `sys_clock_gettime` | `(clk_id: u64, tp_ptr: *mut u64) -> nanos` |
+| 37 | `sys_ptrace` | `(request: u64, pid: u64, addr: u64, data: u64) -> status` |
 
 ---
 
