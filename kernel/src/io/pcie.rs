@@ -43,7 +43,7 @@ pub fn read_config_u32(bus: u8, dev: u8, func: u8, offset: u16) -> u32 {
 pub fn enable_msi(bus: u8, dev: u8, func: u8, vector: u8) -> Result<(), &'static str> {
     unsafe {
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("[PCIe] Enabled MSI Vector 0x");
+        vga::print_str("[PCIE] Enabled MSI Vector 0x");
         print_hex_byte(vector);
         vga::print_str(" for Device ");
         vga::print_u64(bus as u64);

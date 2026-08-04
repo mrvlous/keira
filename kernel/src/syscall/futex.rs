@@ -38,7 +38,7 @@ pub fn sys_futex_op(uaddr: u64, op: u32, val: u32, val2: u32) -> Result<u64, &'s
     match op {
         FUTEX_WAIT => unsafe {
             vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-            vga::print_str("[Futex] FUTEX_WAIT on 0x");
+            vga::print_str("[FUTEX] FUTEX_WAIT on 0x");
             print_hex(uaddr);
             vga::print_str(" (expected val: ");
             vga::print_u64(val as u64);
@@ -48,7 +48,7 @@ pub fn sys_futex_op(uaddr: u64, op: u32, val: u32, val2: u32) -> Result<u64, &'s
         },
         FUTEX_WAKE => unsafe {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-            vga::print_str("[Futex] FUTEX_WAKE woken ");
+            vga::print_str("[FUTEX] FUTEX_WAKE woken ");
             vga::print_u64(val as u64);
             vga::print_str(" waiting threads on 0x");
             print_hex(uaddr);
@@ -64,7 +64,7 @@ pub fn sys_futex_op(uaddr: u64, op: u32, val: u32, val2: u32) -> Result<u64, &'s
 pub fn sys_clone_thread(fn_ptr: u64, stack_ptr: u64, flags: u64) -> Result<u64, &'static str> {
     unsafe {
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("[Thread] Cloned new POSIX userland thread (stack: 0x");
+        vga::print_str("[THREAD] Cloned new POSIX userland thread (stack: 0x");
         print_hex(stack_ptr);
         vga::print_str(")\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

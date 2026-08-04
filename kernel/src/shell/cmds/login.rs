@@ -47,7 +47,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             let (exists, _, _) = super::user::lookup_user(target_user);
             if !exists && target_user != "guest" {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("Error: Unknown user '");
+                vga::print_str("[ERR] Unknown user '");
                 vga::print_str(target_user);
                 vga::print_str("'. Use 'user list' to see registered users.\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);

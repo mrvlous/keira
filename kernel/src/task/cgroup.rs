@@ -52,7 +52,7 @@ pub fn check_memory_limit(requested_bytes: u64) -> bool {
     unsafe {
         if DEFAULT_CGROUP.used_memory_bytes + requested_bytes > DEFAULT_CGROUP.max_memory_bytes {
             vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str("[cgroups] Memory limit exceeded for active task cgroup!\n");
+            vga::print_str("[CGROUPS] Memory limit exceeded for active task cgroup!\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             false
         } else {

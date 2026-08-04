@@ -49,7 +49,7 @@ pub static mut CQ_ENTRIES: [CompletionQueueEntry; 32] = [CompletionQueueEntry {
 pub fn setup_ring(entries: u32) -> Result<u64, &'static str> {
     unsafe {
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("[io_uring] Initialized SQ/CQ Ring Buffers (");
+        vga::print_str("[IO_URING] Initialized SQ/CQ Ring Buffers (");
         vga::print_u64(entries as u64);
         vga::print_str(" slots).\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -61,7 +61,7 @@ pub fn setup_ring(entries: u32) -> Result<u64, &'static str> {
 pub fn enter_ring(to_submit: u32, min_complete: u32) -> Result<u32, &'static str> {
     unsafe {
         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("[io_uring] Processed ");
+        vga::print_str("[IO_URING] Processed ");
         vga::print_u64(to_submit as u64);
         vga::print_str(" async I/O requests.\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
