@@ -66,6 +66,8 @@ When a user program executes the `syscall` instruction:
 | 37 | `sys_ptrace` | `(request: u64, pid: u64, addr: u64, data: u64) -> status` |
 | 38 | `sys_io_uring_setup` | `(entries: u32, p_ptr: *mut u64) -> ring_vaddr` |
 | 39 | `sys_io_uring_enter` | `(fd: u64, to_submit: u32, min_complete: u32, flags: u32) -> completed` |
+| 40 | `sys_futex` | `(uaddr: u64, op: u32, val: u32, val2: u32) -> status` |
+| 41 | `sys_clone_thread` | `(fn_ptr: u64, stack_ptr: u64, flags: u64) -> thread_id` |
 
 ---
 

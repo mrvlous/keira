@@ -12,6 +12,7 @@
 //! Provides the primary interfaces for system calls, CPU exceptions, and TSS management.
 
 pub mod exception;
+pub mod futex;
 pub mod handler;
 pub mod tss;
 

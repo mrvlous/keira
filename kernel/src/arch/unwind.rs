@@ -21,7 +21,7 @@ pub fn unwind_stack() {
         core::arch::asm!("mov {}, rbp", out(reg) rbp);
 
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
-        vga::print_str("--- [KERNEL CALLSTACK BACKTRACE] ---\n");
+        vga::print_str("[KERNEL CALLSTACK BACKTRACE]\n");
         vga::set_color(vga::Color::White, vga::Color::Black);
 
         let mut depth = 0;

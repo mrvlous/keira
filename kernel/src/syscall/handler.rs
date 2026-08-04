@@ -815,6 +815,29 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 40: futex
+        // Signature: sys_futex(uaddr: u64, op: u32, val: u32, val2: u32) -> status
+        40 => {
+            let uaddr = arg1;
+            let op = arg2 as u32;
+            let val = arg3 as u32;
+            let val2 = 0u32;
+            match crate::syscall::futex::sys_futex_op(uaddr, op, val, val2) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 41: clone_thread
+        // Signature: sys_clone_thread(fn_ptr: u64, stack_ptr: u64, flags: u64) -> thread_id
+        41 => {
+            let fn_ptr = arg1;
+            let stack_ptr = arg2;
+            let flags = arg3;
+            match crate::syscall::futex::sys_clone_thread(fn_ptr, stack_ptr, flags) {
+                Ok(tid) => tid,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX
