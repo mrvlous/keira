@@ -36,6 +36,12 @@ pub mod perf;
 /// AMD SEV & Intel TDX Confidential Computing Subsystem
 pub mod sev;
 
+/// Hyper-V Hypercall & SynIC Engine
+pub mod hyperv;
+
+/// POSIX PTP Hardware Clock Subsystem
+pub mod ptp;
+
 #[cfg(target_arch = "x86_64")]
 pub const ARCH_NAME: &str = "x86_64";
 

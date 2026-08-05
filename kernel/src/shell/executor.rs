@@ -449,6 +449,12 @@ pub fn execute_command_inner(cmd: &str) {
         "eventfd" | "signalfd" => super::cmds::eventfd::run(&mut parts),
         "mac" | "selinux" => super::cmds::mac::run(&mut parts),
         "mqueue" => super::cmds::mqueue::run(&mut parts),
+        "hyperv" => super::cmds::hyperv::run(&mut parts),
+        "io_uring_net" => super::cmds::io_uring_net::run(&mut parts),
+        "xhci" => super::cmds::xhci::run(&mut parts),
+        "ptp" => super::cmds::ptp::run(&mut parts),
+        "kpti" => super::cmds::kpti::run(&mut parts),
+        "autogroup" => super::cmds::autogroup::run(&mut parts),
         _ => {
             // Check if the command exists on disk/initrd at /system/bin/
             let found_in_path = unsafe {

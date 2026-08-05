@@ -14,6 +14,7 @@
 pub mod dma;
 pub mod kasan;
 pub mod kfence;
+pub mod kpti;
 pub mod pmm;
 pub mod swap;
 pub mod vmm;

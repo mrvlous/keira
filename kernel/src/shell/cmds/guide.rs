@@ -40,7 +40,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 );
                 vga::print_str("  nvme      bpf       tpm       power     perf      kasan\n");
                 vga::print_str("  drivers   lkm       unwind    timer     bpf_jit   virtio\n");
-                vga::print_str("  sev       io_worker kfence    deadline  mac\n\n");
+                vga::print_str("  sev       io_worker kfence    deadline  mac       hyperv\n");
+                vga::print_str("  xhci      ptp       kpti\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -54,7 +55,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Process & Execution:\n");
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("  tasks     stop      wait      script    run       cgroups\n");
-                vga::print_str("  futex     seccomp   epoll     eventfd   mqueue\n\n");
+                vga::print_str(
+                    "  futex     seccomp   epoll     eventfd   mqueue    io_uring_net\n",
+                );
+                vga::print_str("  autogroup\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("User Account & Privileges:\n");

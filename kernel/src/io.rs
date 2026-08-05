@@ -60,3 +60,6 @@ pub mod nvme;
 
 /// Virtio 1.0 Paravirtualized PCI Storage & Network Driver
 pub mod virtio;
+
+/// USB 3.0 xHCI Host Controller Isochronous Driver
+pub mod xhci;

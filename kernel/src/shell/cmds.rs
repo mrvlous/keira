@@ -11,6 +11,7 @@
 //!
 //! Exposes all modular command handlers implemented in the `cmds/` directory.
 
+pub mod autogroup;
 pub mod bpf;
 pub mod bpf_jit;
 pub mod cgroups;
@@ -40,10 +41,13 @@ pub mod help;
 pub mod history;
 pub mod hostname;
 pub mod https;
+pub mod hyperv;
 pub mod initrd;
+pub mod io_uring_net;
 pub mod io_worker;
 pub mod kasan;
 pub mod kfence;
+pub mod kpti;
 pub mod kvm;
 pub mod list;
 pub mod lkm;
@@ -57,6 +61,7 @@ pub mod nvme;
 pub mod perf;
 pub mod power;
 pub mod protect;
+pub mod ptp;
 pub mod ramdisk;
 pub mod reset;
 pub mod run;
@@ -83,3 +88,4 @@ pub mod virtio;
 pub mod wait;
 pub mod wipe;
 pub mod write;
+pub mod xhci;

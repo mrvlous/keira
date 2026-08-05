@@ -91,6 +91,12 @@ When a user program executes the `syscall` instruction:
 | 62 | `sys_io_uring_register` | `(fd: i32, opcode: u32, arg_ptr: u64, nr_args: u32) -> status` |
 | 63 | `sys_kfence` | `(sample_interval: u32, flags: u32) -> status` |
 | 64 | `sys_sched_setattr` | `(pid: u32, attr_ptr: u64, flags: u32) -> status` |
+| 65 | `sys_hyperv` | `(control: u64, input_gpa: u64, output_gpa: u64) -> status` |
+| 66 | `sys_io_uring_net` | `(fd: i32, flags: u32, timeout_ms: u32) -> status` |
+| 67 | `sys_xhci_iso` | `(slot_id: u32, ep_idx: u32, stream_id: u32) -> status` |
+| 68 | `sys_ptp_clock` | `(cmd: u32, target_nsec: u64) -> status` |
+| 69 | `sys_kpti` | `(enable: u32, flags: u32) -> status` |
+| 70 | `sys_sched_autogroup` | `(pid: u32, group_id: u32) -> status` |
 
 ---
 

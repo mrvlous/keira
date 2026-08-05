@@ -27,5 +27,8 @@ pub mod seccomp;
 /// POSIX Sched_Deadline EDF Hard Real-Time Scheduler Policy
 pub mod deadline;
 
+/// POSIX Sched_Autogroup Task Isolation Engine
+pub mod autogroup;
+
 pub use scheduler::{exit_current, init, list_tasks, spawn};
 pub use types::{InterruptContext, Task, TaskState};

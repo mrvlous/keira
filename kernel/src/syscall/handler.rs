@@ -1081,6 +1081,45 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 65: hyperv
+        // Signature: sys_hyperv(control: u64, input_gpa: u64, output_gpa: u64) -> status
+        65 => match crate::arch::hyperv::sys_hyperv(arg1, arg2, arg3) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 66: io_uring_net
+        // Signature: sys_io_uring_net(fd: i32, flags: u32, timeout_ms: u32) -> status
+        66 => {
+            match crate::net::io_uring_net::sys_io_uring_net(arg1 as i32, arg2 as u32, arg3 as u32)
+            {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 67: xhci_iso
+        // Signature: sys_xhci_iso(slot_id: u32, ep_idx: u32, stream_id: u32) -> status
+        67 => match crate::io::xhci::sys_xhci_iso(arg1 as u32, arg2 as u32, arg3 as u32) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 68: ptp_clock
+        // Signature: sys_ptp_clock(cmd: u32, target_nsec: u64) -> status
+        68 => match crate::arch::ptp::sys_ptp_clock(arg1 as u32, arg2) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 69: kpti
+        // Signature: sys_kpti(enable: u32, flags: u32) -> status
+        69 => match crate::mem::kpti::sys_kpti(arg1 as u32, arg2 as u32) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 70: sched_autogroup
+        // Signature: sys_sched_autogroup(pid: u32, group_id: u32) -> status
+        70 => match crate::task::autogroup::sys_sched_autogroup(arg1 as u32, arg2 as u32) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
         _ => {
             // Unknown syscall
             u64::MAX

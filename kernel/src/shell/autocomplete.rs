@@ -109,6 +109,12 @@ pub unsafe fn handle_autocomplete() {
         "eventfd",
         "mac",
         "mqueue",
+        "hyperv",
+        "io_uring_net",
+        "xhci",
+        "ptp",
+        "kpti",
+        "autogroup",
     ];
 
     if is_command {

@@ -42,6 +42,11 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [io_uring Worker Thread Pool Engine](architecture/io_worker.md): Async kernel polling worker threads (`sys_io_uring_register`).
 *   [KFENCE Memory Guard Engine](architecture/kfence.md): Sampling heap memory guard (`sys_kfence`).
 *   [POSIX Sched_Deadline EDF Scheduler](architecture/deadline.md): Hard real-time Earliest Deadline First scheduler (`sys_sched_setattr`).
+*   [Hyper-V Hypercall & SynIC Engine](architecture/hyperv.md): Microsoft Hyper-V / Azure hypercalls and SynIC synthetic interrupts (`sys_hyperv`).
+*   [io_uring Async Network Socket Polling](architecture/io_uring_net.md): Zero-copy async network socket polling (`sys_io_uring_net`).
+*   [POSIX PTP Hardware Clock Subsystem](architecture/ptp.md): IEEE 1588 nanosecond-precision hardware clock (`sys_ptp_clock`).
+*   [Kernel Page Table Isolation (KPTI / KASI)](architecture/kpti.md): Ring 0 / Ring 3 page table isolation (`sys_kpti`).
+*   [POSIX Sched_Autogroup Task Isolation](architecture/autogroup.md): Per-TTY terminal session autogrouping (`sys_sched_autogroup`).
 
 ### 2. Device Drivers
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.
@@ -52,6 +57,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [CMOS Real-Time Clock Driver](drivers/rtc.md): CMOS Real-Time Clock register queries and UTC timestamp parsing.
 *   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver with 16-slot cache table, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).
 *   [USB Host Controller Driver](drivers/usb.md): PCI enumeration for xHCI/EHCI/UHCI USB controllers, descriptor decoding, and bus status querying (`usb`).
+*   [USB 3.0 xHCI Isochronous Driver](drivers/xhci.md): High-speed USB 3.0 xHCI isochronous transfer ring buffers (`sys_xhci_iso`).
 
 ### 3. Filesystems & Storage
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.
