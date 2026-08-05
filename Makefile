@@ -162,9 +162,11 @@ ALL_OBJS      := $(ASM_OBJS) $(C_OBJS)
 # Shell command binaries to populate filesystem images
 SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
                  devices wait initrd wipe reset run write tasks disk list \
-                 go script view create folder delete edit say copy help history \
-                 move theme please search play hda download network stop env sync \
-                 protect fileinfo framebuffer usb https user hostname
+                 go script view create folder delete edit copy help history \
+                 move please search hda download network stop env sync \
+                 protect fileinfo framebuffer usb https user hostname syslog kvm \
+                 nvme ext4 cgroups futex bpf tpm swap seccomp epoll kasan \
+                 drivers lkm unwind power perf timer
 
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \

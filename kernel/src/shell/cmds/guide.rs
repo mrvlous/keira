@@ -36,7 +36,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "  system    cpu       runtime   time      memory    devices   network\n",
                 );
-                vga::print_str("  download  env       framebuffer usb       https\n\n");
+                vga::print_str(
+                    "  download  env       framebuffer usb       https     syslog    kvm\n",
+                );
+                vga::print_str("  nvme      bpf       tpm       power     perf      kasan\n");
+                vga::print_str("  drivers   lkm       unwind    timer\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -44,12 +48,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("  drives    use       disk      ramdisk   list      go\n");
                 vga::print_str("  view      create    folder    delete    edit      write\n");
                 vga::print_str("  copy      move      initrd    search    sync      protect\n");
-                vga::print_str("  fileinfo\n\n");
+                vga::print_str("  fileinfo  ext4      swap\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Process & Execution:\n");
                 vga::set_color(vga::Color::White, bg);
-                vga::print_str("  tasks     stop      wait      script    run\n\n");
+                vga::print_str("  tasks     stop      wait      script    run       cgroups\n");
+                vga::print_str("  futex     seccomp   epoll\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("User Account & Privileges:\n");
@@ -59,8 +64,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Utilities & Console:\n");
                 vga::set_color(vga::Color::White, bg);
-                vga::print_str("  guide     help      history   theme     say       play\n");
-                vga::print_str("  hda       wipe      reset\n");
+                vga::print_str("  guide     help      history   hda       wipe      reset\n");
                 vga::set_color(CURRENT_THEME.text_fg, bg);
             }
             Some("system") => {

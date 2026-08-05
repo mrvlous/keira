@@ -17,3 +17,12 @@ pub mod io_uring;
 
 /// Zero-Copy Kernel Pipe Splice Subsystem
 pub mod splice;
+
+/// EventFD & SignalFD Subsystem
+pub mod eventfd;
+
+/// Epoll Scalable I/O Event Notification Engine
+pub mod epoll;
+
+/// POSIX Message Queue IPC Subsystem
+pub mod mqueue;

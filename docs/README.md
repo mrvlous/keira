@@ -25,6 +25,12 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Zero-Copy Kernel Pipe Splice](architecture/splice.md): In-kernel page swapping between file descriptors (`sys_splice`/`sys_vmsplice`).
 *   [ACPI Power Management & NMI Watchdog](architecture/power.md): ACPI power state transitions (S0/S3/S5) and hardware NMI watchdog.
 *   [Hardware Performance PMU Counters](architecture/perf.md): CPU hardware event monitoring unit counters (`sys_perf_event_open`).
+*   [EventFD & SignalFD Subsystem](architecture/eventfd.md): Counter notification descriptors (`sys_eventfd`) and POSIX signal routing (`sys_signalfd`).
+*   [Seccomp BPF Syscall Filtering Sandbox](architecture/seccomp.md): In-kernel BPF system call sandbox filtering (`sys_seccomp`).
+*   [Swap Space & Virtual Memory Pager](architecture/swap.md): Anonymous physical memory page swapping (`sys_swapon`/`sys_swapoff`).
+*   [Epoll Scalable I/O Event Engine](architecture/epoll.md): Scalable O(1) event multiplexing descriptors (`sys_epoll_create`/`sys_epoll_ctl`).
+*   [KASAN Shadow Memory Diagnostic Engine](architecture/kasan.md): Shadow memory validation for heap access safety (`sys_kasan`).
+*   [POSIX Message Queue IPC Subsystem](architecture/mqueue.md): In-kernel priority message queues (`sys_mq_open`).
 
 ### 2. Device Drivers
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.

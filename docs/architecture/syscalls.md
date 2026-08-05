@@ -76,6 +76,15 @@ When a user program executes the `syscall` instruction:
 | 47 | `sys_splice` | `(fd_in: u64, fd_out: u64, len: u64) -> bytes_spliced` |
 | 48 | `sys_vmsplice` | `(fd: u64, iov_ptr: u64, nr_segs: u64) -> bytes_spliced` |
 | 49 | `sys_perf_event_open` | `(event_type: u32, config: u64, pid: u64) -> counter_fd` |
+| 50 | `sys_eventfd` | `(init_val: u32, flags: u32) -> fd` |
+| 51 | `sys_signalfd` | `(fd: i32, mask: u64, flags: u32) -> sfd` |
+| 52 | `sys_seccomp` | `(op: u32, flags: u32, args_ptr: u64) -> status` |
+| 53 | `sys_swapon` | `(path_ptr: *const u8, swapflags: i32) -> status` |
+| 54 | `sys_swapoff` | `(path_ptr: *const u8) -> status` |
+| 55 | `sys_epoll_create` | `(size: i32) -> epfd` |
+| 56 | `sys_epoll_ctl` | `(epfd: i32, op: i32, fd: i32) -> status` |
+| 57 | `sys_kasan` | `(addr: u64, size: u64) -> status` |
+| 58 | `sys_mq_open` | `(name_ptr: *const u8, oflag: i32, mode: u32) -> mqfd` |
 
 ---
 

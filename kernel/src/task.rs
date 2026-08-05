@@ -21,5 +21,8 @@ pub mod cgroup;
 /// Mandatory Access Control (MAC / SELinux) Security Engine
 pub mod mac;
 
+/// Seccomp BPF System Call Filter Engine
+pub mod seccomp;
+
 pub use scheduler::{exit_current, init, list_tasks, spawn};
 pub use types::{InterruptContext, Task, TaskState};

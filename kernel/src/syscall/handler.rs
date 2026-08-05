@@ -918,6 +918,98 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 50: eventfd
+        // Signature: sys_eventfd(init_val: u32, flags: u32) -> fd
+        50 => {
+            let init_val = arg1 as u32;
+            let flags = arg2 as u32;
+            match crate::ipc::eventfd::sys_eventfd(init_val, flags) {
+                Ok(fd) => fd,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 51: signalfd
+        // Signature: sys_signalfd(fd: i32, mask: u64, flags: u32) -> sfd
+        51 => {
+            let fd = arg1 as i32;
+            let mask = arg2;
+            let flags = arg3 as u32;
+            match crate::ipc::eventfd::sys_signalfd(fd, mask, flags) {
+                Ok(sfd) => sfd,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 52: seccomp
+        // Signature: sys_seccomp(op: u32, flags: u32, args_ptr: u64) -> status
+        52 => {
+            let op = arg1 as u32;
+            let flags = arg2 as u32;
+            let args_ptr = arg3;
+            match crate::task::seccomp::sys_seccomp(op, flags, args_ptr) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 53: swapon
+        // Signature: sys_swapon(path_ptr: *const u8, swapflags: i32) -> status
+        53 => {
+            let path_ptr = arg1 as *const u8;
+            let swapflags = arg2 as i32;
+            match crate::mem::swap::sys_swapon(path_ptr, swapflags) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 54: swapoff
+        // Signature: sys_swapoff(path_ptr: *const u8) -> status
+        54 => {
+            let path_ptr = arg1 as *const u8;
+            match crate::mem::swap::sys_swapoff(path_ptr) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 55: epoll_create
+        // Signature: sys_epoll_create(size: i32) -> epfd
+        55 => {
+            let size = arg1 as i32;
+            match crate::ipc::epoll::sys_epoll_create(size) {
+                Ok(epfd) => epfd,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 56: epoll_ctl
+        // Signature: sys_epoll_ctl(epfd: i32, op: i32, fd: i32) -> status
+        56 => {
+            let epfd = arg1 as i32;
+            let op = arg2 as i32;
+            let fd = arg3 as i32;
+            match crate::ipc::epoll::sys_epoll_ctl(epfd, op, fd, 0) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 57: kasan
+        // Signature: sys_kasan(addr: u64, size: u64) -> status
+        57 => {
+            let addr = arg1;
+            let size = arg2 as usize;
+            match crate::mem::kasan::sys_kasan(addr, size) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 58: mq_open
+        // Signature: sys_mq_open(name_ptr: *const u8, oflag: i32, mode: u32) -> mqfd
+        58 => {
+            let name_ptr = arg1 as *const u8;
+            let oflag = arg2 as i32;
+            let mode = arg3 as u32;
+            match crate::ipc::mqueue::sys_mq_open(name_ptr, oflag, mode) {
+                Ok(mqfd) => mqfd,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX
