@@ -99,7 +99,15 @@ void hw_init(void) {
 
     print_boot_log("Initializing Serial Port (COM1) driver", 0);
     print_boot_log("Configuring VGA text-mode frame buffer (80x25)", 0);
-    print_boot_log("Checking " ARCH_NAME " CPUID & Model Specific Registers (MSRs)", 0);
+#if defined(__x86_64__) || defined(_M_X64)
+    print_boot_log("Checking x86_64 CPUID & Model Specific Registers (MSRs)", 0);
+#elif defined(__aarch64__)
+    print_boot_log("Checking aarch64 System Control Registers (SCTLR)", 0);
+#elif defined(__riscv)
+    print_boot_log("Checking riscv64 Control and Status Registers (CSRs)", 0);
+#else
+    print_boot_log("Checking target CPU hardware registers", 0);
+#endif
 
     idt_init();
     print_boot_log("Loading Interrupt Descriptor Table (IDT) registers", 0);

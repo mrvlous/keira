@@ -27,6 +27,20 @@ use crate::shell;
 pub mod klog;
 pub mod module;
 
+#[cfg(target_arch = "x86_64")]
+const ARCH_BOOT_STR: &str = "Confirming active CPU x86_64 Long Mode status";
+#[cfg(target_arch = "aarch64")]
+const ARCH_BOOT_STR: &str = "Confirming active CPU aarch64 Exception Level status";
+#[cfg(target_arch = "riscv64")]
+const ARCH_BOOT_STR: &str = "Confirming active CPU riscv64 Supervisor Mode status";
+
+#[cfg(target_arch = "x86_64")]
+const BPF_JIT_BOOT_STR: &str = "Initializing eBPF JIT Compiler Engine (x86_64)";
+#[cfg(target_arch = "aarch64")]
+const BPF_JIT_BOOT_STR: &str = "Initializing eBPF JIT Compiler Engine (aarch64)";
+#[cfg(target_arch = "riscv64")]
+const BPF_JIT_BOOT_STR: &str = "Initializing eBPF JIT Compiler Engine (riscv64)";
+
 /// Kernel main entry point : the heart of Keira.
 ///
 /// This function is called via C ABI from the assembly trampoline.
@@ -38,7 +52,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     crate::io::vga::print_boot_log("Landed in 64-bit Rust kernel entry context", 0);
     crate::io::vga::print_boot_log("Checking Multiboot2 bootloader magic signature", 0);
     crate::io::vga::print_boot_log("Validating 4-level page frame identity mapping (1GB)", 0);
-    crate::io::vga::print_boot_log("Confirming active CPU x86_64 Long Mode status", 0);
+    crate::io::vga::print_boot_log(ARCH_BOOT_STR, 0);
 
     // CPU detection log
     let cpuid = core::arch::x86_64::__cpuid(0);
@@ -230,7 +244,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     crate::io::vga::print_boot_log("Re-configuring Global Descriptor Table (GDT) segments", 0);
     crate::io::vga::print_boot_log("Loading Task State Segment (TSS) cpu context structure", 0);
     crate::io::vga::print_boot_log("Enabling CPU ring 3 user-mode syscall interface MSRs", 0);
-    crate::io::vga::print_boot_log("Initializing eBPF JIT Compiler Engine (x86_64)", 0);
+    crate::io::vga::print_boot_log(BPF_JIT_BOOT_STR, 0);
     crate::io::vga::print_boot_log("Initializing Virtio 1.0 Paravirtualized PCI Driver", 0);
     crate::io::vga::print_boot_log("Initializing AMD SEV & Intel TDX Memory Enclave", 0);
     crate::io::vga::print_boot_log("Initializing io_uring Async Kernel Worker Pool", 0);

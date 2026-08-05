@@ -82,7 +82,6 @@ pub fn get_lfn_utf8(accum: &LfnAccumulator, buf: &mut [u8]) -> Option<usize> {
         None
     }
 }
-use super::{CURRENT_DIR_CLUSTER, VOLUME};
 
 /// Helper to format 8.3 FAT filename to standard string
 pub fn format_filename(name: &[u8; 11], dest: &mut [u8; 12]) -> usize {
@@ -156,25 +155,24 @@ pub fn filename_to_8_3(input: &str) -> Result<[u8; 11], &'static str> {
     Ok(name_bytes)
 }
 
+/// Sanitize and strip leading/trailing slashes and whitespace from path
+pub fn sanitize_path(path: &str) -> &str {
+    let mut trimmed = path.trim();
+    while trimmed.starts_with('/') {
+        trimmed = &trimmed[1..];
+    }
+    while trimmed.ends_with('/') {
+        trimmed = &trimmed[..trimmed.len() - 1];
+    }
+    trimmed
+}
+
 /// Resolve a nested path to its parent directory cluster and filename.
 /// Supports both absolute (e.g. "/apps/bin/file.txt") and relative (e.g. "bin/file.txt") paths.
 pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
-    let vol_ptr = &raw const VOLUME;
-    let _vol = (*vol_ptr).as_ref().ok_or("FAT16: Volume not initialized")?;
+    let mut current_cluster = crate::fs::fat::CURRENT_DIR_CLUSTER;
 
-    let mut current_cluster = if path.starts_with('/') {
-        0
-    } else {
-        CURRENT_DIR_CLUSTER
-    };
-
-    let mut path_trimmed = path;
-    if path_trimmed.starts_with('/') {
-        path_trimmed = &path_trimmed[1..];
-    }
-    if path_trimmed.ends_with('/') {
-        path_trimmed = &path_trimmed[..path_trimmed.len() - 1];
-    }
+    let path_trimmed = sanitize_path(path);
 
     if path_trimmed.is_empty() {
         return Ok((0, ""));

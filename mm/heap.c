@@ -56,11 +56,16 @@ void *kmalloc(size_t size) {
         return NULL;
     }
 
+    /* Verify integer overflow on size calculation */
+    if (size > (SIZE_MAX - HEAP_ALIGN_MASK)) {
+        return NULL;
+    }
+
     /* Round up allocation request to 16-byte boundary alignment */
     size = (size + HEAP_ALIGN_MASK) & ~((size_t)HEAP_ALIGN_MASK);
 
     /* Verify allocation fits within remaining heap limit */
-    if (heap_next + size > heap_end) {
+    if (heap_next + size < heap_next || heap_next + size > heap_end) {
         return NULL;
     }
 
