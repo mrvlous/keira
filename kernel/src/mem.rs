@@ -13,6 +13,7 @@
 
 pub mod dma;
 pub mod kasan;
+pub mod kfence;
 pub mod pmm;
 pub mod swap;
 pub mod vmm;

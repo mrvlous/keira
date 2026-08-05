@@ -1010,6 +1010,68 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
+        // Syscall 59: bpf_jit
+        // Signature: sys_bpf_jit(insn_ptr: *const u8, insn_cnt: usize) -> jit_addr
+        59 => {
+            let insn_ptr = arg1 as *const u8;
+            let insn_cnt = arg2 as usize;
+            match crate::net::bpf_jit::sys_bpf_jit(insn_ptr, insn_cnt) {
+                Ok(addr) => addr,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 60: virtio
+        // Signature: sys_virtio(device_id: u32, queue_idx: u32) -> status
+        60 => {
+            let device_id = arg1 as u32;
+            let queue_idx = arg2 as u32;
+            match crate::io::virtio::sys_virtio(device_id, queue_idx) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 61: sev
+        // Signature: sys_sev(cmd: u32, page_addr: u64) -> status
+        61 => {
+            let cmd = arg1 as u32;
+            let page_addr = arg2;
+            match crate::arch::sev::sys_sev(cmd, page_addr) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 62: io_uring_register
+        // Signature: sys_io_uring_register(fd: i32, opcode: u32, arg_ptr: u64, nr_args: u32) -> status
+        62 => {
+            let fd = arg1 as i32;
+            let opcode = arg2 as u32;
+            let arg_ptr = arg3;
+            match crate::ipc::io_worker::sys_io_uring_register(fd, opcode, arg_ptr, 0) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 63: kfence
+        // Signature: sys_kfence(sample_interval: u32, flags: u32) -> status
+        63 => {
+            let sample_interval = arg1 as u32;
+            let flags = arg2 as u32;
+            match crate::mem::kfence::sys_kfence(sample_interval, flags) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
+        // Syscall 64: sched_setattr
+        // Signature: sys_sched_setattr(pid: u32, attr_ptr: u64, flags: u32) -> status
+        64 => {
+            let pid = arg1 as u32;
+            let attr_ptr = arg2;
+            let flags = arg3 as u32;
+            match crate::task::deadline::sys_sched_setattr(pid, attr_ptr, flags) {
+                Ok(res) => res,
+                Err(_) => u64::MAX,
+            }
+        }
         _ => {
             // Unknown syscall
             u64::MAX

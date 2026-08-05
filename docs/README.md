@@ -8,13 +8,10 @@ To help you navigate the codebase, the documentation is divided into the followi
 
 ### 1. Architecture and Core Kernel
 *   [Bootstrapping and Trampolining](architecture/bootstrapping.md): The multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
-*   [Memory Management](architecture/memory.md): Design of the Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
+*   [Memory Management](architecture/memory.md): Design of Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap` page allocation, and early C bump heap allocator.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, SMP multi-core execution (`smp_init`), and Unix signals (`sys_kill`).
-*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 49 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), async I/O (`sys_io_uring_setup`), futex threading (`sys_futex`), hypervisor (`sys_kvm_create_vm`), syslog (`sys_syslog`), interval timers (`sys_timer_create`), pipe splice (`sys_splice`), PMU counters (`sys_perf_event_open`), and TLS 1.3 encrypted connections (`sys_tls_connect`).
+*   [System Calls and Interrupts](architecture/syscalls.md): Exception handling, 64 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching, process cloning (`sys_fork`), virtual memory protection (`sys_mprotect`/`sys_madvise`), loadable kernel modules (`sys_init_module`), high-precision HPET timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), async I/O (`sys_io_uring_setup`), futex threading (`sys_futex`), hypervisor (`sys_kvm_create_vm`), syslog (`sys_syslog`), interval timers (`sys_timer_create`), pipe splice (`sys_splice`), PMU counters (`sys_perf_event_open`), eBPF JIT (`sys_bpf_jit`), Virtio (`sys_virtio`), SEV/TDX (`sys_sev`), io_worker (`sys_io_uring_register`), KFENCE (`sys_kfence`), and Sched_Deadline (`sys_sched_setattr`).
 *   [Cryptographic Subsystem](architecture/crypto.md): Bare-metal Rust `no_std` implementations of SHA-256/HMAC, AES-128-GCM AEAD, and Curve25519 X25519 ECDH key exchange.
-*   [LKM, HPET & SMP Subsystems](architecture/lkm_hpet_smp.md): Dynamically Loadable Kernel Modules (`sys_init_module`), HPET nanosecond timer (`sys_clock_gettime`), kernel unwinder (`sys_ptrace`), and SMP IPI TLB shootdown.
-*   [PCIe, io_uring & NX/KASLR Subsystems](architecture/pcie_iouring_nx.md): PCIe ECAM & MSI/MSI-X interrupts, asynchronous kernel I/O (`io_uring`), hardware NX bit enforcement, and KASLR randomization.
-*   [Futex, Threading & cgroups Subsystems](architecture/futex_cgroups.md): Fast Userspace Mutex (`sys_futex`), POSIX thread creation (`sys_clone_thread`), resource cgroups, and PID namespaces.
 *   [Hardware Virtualization Hypervisor (KVM)](architecture/kvm.md): Intel VMX / AMD SVM guest VM execution context (`sys_kvm_create_vm`/`sys_kvm_run_vcpu`).
 *   [Hardware Security TPM 2.0 Enclave](architecture/tpm.md): Trusted Platform Module MMIO interface, PCR measurement banks, and hardware key storage.
 *   [Zero-Copy BPF Packet Filter Engine](architecture/bpf.md): In-kernel BPF bytecode interpreter for raw socket packet filtering.
@@ -38,27 +35,36 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Symmetric Multiprocessing (SMP)](architecture/smp.md): Multi-core CPU initialization and LAPIC IPI shootdown.
 *   [PCIe ECAM & MSI/MSI-X Interrupts](architecture/pcie.md): PCIe configuration space and Message Signaled Interrupts.
 *   [Asynchronous Kernel I/O Engine (io_uring)](architecture/iouring.md): Zero-copy ring buffer I/O (`sys_io_uring_setup`).
+*   [NX Bit & KASLR Hardware Security](architecture/nx.md): Hardware No-Execute (NX) page protection and KASLR randomization.
+*   [eBPF JIT Compiler Engine](architecture/bpf_jit.md): Native x86_64 JIT bytecode translation (`sys_bpf_jit`).
+*   [Virtio 1.0 Paravirtualized PCI Driver](architecture/virtio.md): Split/Packed Virtqueues (`sys_virtio`).
+*   [AMD SEV & Intel TDX Subsystem](architecture/sev.md): Confidential computing enclaves (`sys_sev`).
+*   [io_uring Worker Thread Pool Engine](architecture/io_worker.md): Async kernel polling worker threads (`sys_io_uring_register`).
+*   [KFENCE Memory Guard Engine](architecture/kfence.md): Sampling heap memory guard (`sys_kfence`).
+*   [POSIX Sched_Deadline EDF Scheduler](architecture/deadline.md): Hard real-time Earliest Deadline First scheduler (`sys_sched_setattr`).
 
 ### 2. Device Drivers
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.
 *   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE Auto-Adaptive 32-bpp Linear Framebuffer Graphics (`framebuffer`).
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.
-*   [Mouse and RTC Drivers](drivers/mouse_rtc.md): PS/2 mouse packet decoding, resolution setup, and CMOS Real-Time Clock register queries.
+*   [PS/2 Mouse Driver](drivers/mouse.md): PS/2 mouse packet decoding, resolution setup, and coordinate tracking.
+*   [CMOS Real-Time Clock Driver](drivers/rtc.md): CMOS Real-Time Clock register queries and UTC timestamp parsing.
 *   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver with 16-slot cache table, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).
 *   [USB Host Controller Driver](drivers/usb.md): PCI enumeration for xHCI/EHCI/UHCI USB controllers, descriptor decoding, and bus status querying (`usb`).
 
 ### 3. Filesystems & Storage
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.
 *   [Native EXT4 Filesystem Driver](filesystems/ext4.md): Native Linux EXT4 superblock parsing, inode table reading, and extent tree block mapping.
-*   [FAT16 Filesystem Implementation](filesystems/fat.md): Partition boot sector parsing, File Allocation Table traversal, directory entries, file creation, block sector cache, and append mode (`fat::append_file_content`).
-*   [TAR Archive Reader](filesystems/tar.md): Read-only parsing of the USTAR archive format loaded as the boot initrd.
 *   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, sector block cache `sync`, and native file protection (`protect`, `fileinfo`).
+*   [TAR Archive Reader](filesystems/tar.md): Read-only parsing of the USTAR archive format loaded as the boot initrd.
 
 ### 4. Userland Subsystems & IPC
 *   [User Runtime Library (libc & Extensions)](userland/runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), C Math (`math.h`) & Time (`time.h`), and system call wrappers.
-*   [Multi-User Accounts & System Hostname](userland/users_hostname.md): Persistent user management (`user`), password storage (`/system/etc/passwd`), system hostname configuration (`hostname`), dynamic prompt, 3-attempt retry fallback, and UNIX privilege separation.
-*   [POSIX File Permissions, Redirection & Multi-TTY](userland/tty_permissions.md): POSIX file security & permissions (`chmod`/`protect`), file I/O redirection (`>`, `>>`, `<`), multi-stage pipe chains (`|`), and Multi-Virtual Terminal Subsystem (`tty`).
+*   [Multi-User Account Management](userland/users.md): Persistent user management (`user`), password storage (`/system/etc/passwd`), dynamic prompt, 3-attempt retry fallback, and UNIX privilege separation.
+*   [System Hostname Configuration](userland/hostname.md): System hostname configuration (`hostname`) persisted to `/system/etc/hostname`.
+*   [POSIX File Security & Attributes](userland/permissions.md): POSIX file security & protection flags (`protect`, `fileinfo`).
+*   [Multi-Virtual Terminal Subsystem](userland/tty.md): Virtual terminal switching (`tty1`..`tty4`) and console screen buffers.
 *   [The Init Process](userland/init.md): User-space initialization sequence (`bin/init`) spawning system processes.
 *   [Self-Hosting C Compiler](userland/gcc.md): Parser, lexer, AST builder, and helper structures inside the built-in C compiler (`bin/gcc`).
 

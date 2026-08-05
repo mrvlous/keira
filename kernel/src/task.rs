@@ -24,5 +24,8 @@ pub mod mac;
 /// Seccomp BPF System Call Filter Engine
 pub mod seccomp;
 
+/// POSIX Sched_Deadline EDF Hard Real-Time Scheduler Policy
+pub mod deadline;
+
 pub use scheduler::{exit_current, init, list_tasks, spawn};
 pub use types::{InterruptContext, Task, TaskState};

@@ -85,6 +85,12 @@ When a user program executes the `syscall` instruction:
 | 56 | `sys_epoll_ctl` | `(epfd: i32, op: i32, fd: i32) -> status` |
 | 57 | `sys_kasan` | `(addr: u64, size: u64) -> status` |
 | 58 | `sys_mq_open` | `(name_ptr: *const u8, oflag: i32, mode: u32) -> mqfd` |
+| 59 | `sys_bpf_jit` | `(insn_ptr: *const u8, insn_cnt: usize) -> jit_addr` |
+| 60 | `sys_virtio` | `(device_id: u32, queue_idx: u32) -> status` |
+| 61 | `sys_sev` | `(cmd: u32, page_addr: u64) -> status` |
+| 62 | `sys_io_uring_register` | `(fd: i32, opcode: u32, arg_ptr: u64, nr_args: u32) -> status` |
+| 63 | `sys_kfence` | `(sample_interval: u32, flags: u32) -> status` |
+| 64 | `sys_sched_setattr` | `(pid: u32, attr_ptr: u64, flags: u32) -> status` |
 
 ---
 

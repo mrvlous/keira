@@ -12,10 +12,12 @@
 //! Exposes all modular command handlers implemented in the `cmds/` directory.
 
 pub mod bpf;
+pub mod bpf_jit;
 pub mod cgroups;
 pub mod copy;
 pub mod cpu;
 pub mod create;
+pub mod deadline;
 pub mod delete;
 pub mod devices;
 pub mod disk;
@@ -38,7 +40,9 @@ pub mod history;
 pub mod hostname;
 pub mod https;
 pub mod initrd;
+pub mod io_worker;
 pub mod kasan;
+pub mod kfence;
 pub mod kvm;
 pub mod list;
 pub mod lkm;
@@ -57,6 +61,7 @@ pub mod runtime;
 pub mod script;
 pub mod search;
 pub mod seccomp;
+pub mod sev;
 pub mod stop;
 pub mod swap;
 pub mod sync;
@@ -71,6 +76,7 @@ pub mod usb;
 pub mod r#use;
 pub mod user;
 pub mod view;
+pub mod virtio;
 pub mod wait;
 pub mod wipe;
 pub mod write;

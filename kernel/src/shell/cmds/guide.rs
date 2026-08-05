@@ -39,7 +39,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     "  download  env       framebuffer usb       https     syslog    kvm\n",
                 );
                 vga::print_str("  nvme      bpf       tpm       power     perf      kasan\n");
-                vga::print_str("  drivers   lkm       unwind    timer\n\n");
+                vga::print_str("  drivers   lkm       unwind    timer     bpf_jit   virtio\n");
+                vga::print_str("  sev       io_worker kfence    deadline\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");

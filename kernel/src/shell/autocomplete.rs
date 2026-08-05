@@ -99,8 +99,13 @@ pub unsafe fn handle_autocomplete() {
         "fileinfo",
         "framebuffer",
         "usb",
-        "https",
         "sync",
+        "bpf_jit",
+        "virtio",
+        "sev",
+        "io_worker",
+        "kfence",
+        "deadline",
     ];
 
     if is_command {

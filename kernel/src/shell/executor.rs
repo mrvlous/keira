@@ -440,6 +440,12 @@ pub fn execute_command_inner(cmd: &str) {
         "seccomp" => super::cmds::seccomp::run(&mut parts),
         "epoll" => super::cmds::epoll::run(&mut parts),
         "kasan" => super::cmds::kasan::run(&mut parts),
+        "bpf_jit" => super::cmds::bpf_jit::run(&mut parts),
+        "virtio" => super::cmds::virtio::run(&mut parts),
+        "sev" => super::cmds::sev::run(&mut parts),
+        "io_worker" => super::cmds::io_worker::run(&mut parts),
+        "kfence" => super::cmds::kfence::run(&mut parts),
+        "deadline" => super::cmds::deadline::run(&mut parts),
         _ => {
             // Check if the command exists on disk/initrd at /system/bin/
             let found_in_path = unsafe {

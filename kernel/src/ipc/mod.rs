@@ -26,3 +26,6 @@ pub mod epoll;
 
 /// POSIX Message Queue IPC Subsystem
 pub mod mqueue;
+
+/// io_uring Async I/O Worker Thread Pool Engine
+pub mod io_worker;

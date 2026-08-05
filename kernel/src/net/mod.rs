@@ -11,6 +11,7 @@
 
 pub mod arp;
 pub mod bpf;
+pub mod bpf_jit;
 pub mod dhcp;
 pub mod dns;
 pub mod e1000;

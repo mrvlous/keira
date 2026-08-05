@@ -57,3 +57,6 @@ pub mod pcie;
 
 /// NVMe (Non-Volatile Memory Express) PCIe Controller Driver
 pub mod nvme;
+
+/// Virtio 1.0 Paravirtualized PCI Storage & Network Driver
+pub mod virtio;

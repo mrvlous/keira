@@ -32,3 +32,6 @@ pub mod power;
 
 /// Hardware Performance Counters & PMU Engine
 pub mod perf;
+
+/// AMD SEV & Intel TDX Confidential Computing Subsystem
+pub mod sev;
