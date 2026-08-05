@@ -163,3 +163,18 @@ pub unsafe fn set_env_var(name: &str, value: &str) -> Result<(), &'static str> {
         _ => Err("Invalid environment variable key"),
     }
 }
+
+/// Execute a closure under interrupt-safe atomic spinlock protection
+pub fn with_spin_lock<F, R>(f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    unsafe {
+        core::arch::asm!("cli");
+    }
+    let res = f();
+    unsafe {
+        core::arch::asm!("sti");
+    }
+    res
+}

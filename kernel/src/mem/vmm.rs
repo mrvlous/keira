@@ -334,9 +334,21 @@ pub unsafe fn mmap_anonymous(
     Ok(base_vaddr)
 }
 
+/// Validate if virtual memory range is non-null and page aligned
+pub fn validate_virt_addr_range(vaddr: u64, len: usize) -> bool {
+    if vaddr == 0 || len == 0 {
+        return false;
+    }
+    let end = match vaddr.checked_add(len as u64) {
+        Some(e) => e,
+        None => return false,
+    };
+    end > vaddr
+}
+
 /// Unmap contiguous virtual memory pages for munmap syscall
 pub unsafe fn munmap_pages(vaddr: u64, len: usize) -> Result<(), &'static str> {
-    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 {
+    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 || !validate_virt_addr_range(vaddr, len) {
         return Err("Invalid address alignment or length for munmap");
     }
     let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;

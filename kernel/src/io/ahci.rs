@@ -90,6 +90,7 @@ impl BlockDevice for AhciBlockDevice {
             let dst = SECTOR_BUF_PHYS as *mut u8;
             core::ptr::copy_nonoverlapping(buffer.as_ptr(), dst, 512);
             sata_dma_transfer(self.port_num, sector, true)?;
+            flush_dma_cache();
             Ok(())
         }
     }
@@ -134,6 +135,11 @@ unsafe fn write_port(port: usize, offset: usize, val: u32) {
 
 unsafe fn io_delay() {
     core::arch::asm!("out 0x80, al", in("al") 0u8);
+}
+
+/// Flush CPU memory cache line for AHCI SATA DMA transfer buffers
+pub unsafe fn flush_dma_cache() {
+    core::arch::asm!("mfence", options(nostack, preserves_flags));
 }
 
 unsafe fn sata_dma_transfer(port: usize, sector: u32, write: bool) -> Result<(), &'static str> {

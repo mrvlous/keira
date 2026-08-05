@@ -51,6 +51,15 @@ unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, &'st
     Ok(len)
 }
 
+/// Validate process file descriptor index range (0..1024)
+pub fn validate_fd(fd: i32) -> Result<(), &'static str> {
+    if fd >= 0 && fd < 1024 {
+        Ok(())
+    } else {
+        Err("File descriptor out of valid bounds (0..1024)")
+    }
+}
+
 /// Central system call dispatcher
 /// Maps standard user registers to operations.
 #[no_mangle]

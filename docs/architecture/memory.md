@@ -14,6 +14,8 @@ During boot, `pmm::init` parses the Multiboot2 information structure to read the
 ### APIs
 *   `pub fn alloc_frame() -> Option<u64>`: Pops a free physical frame address from the stack.
 *   `pub fn free_frame(frame_addr: u64)`: Pushes a physical address back onto the stack of free frames.
+*   `pub fn is_frame_page_aligned(phys_addr: u64) -> bool`: Validates if a physical address is 4KB page aligned.
+*   `pub fn validate_phys_frame(phys_addr: u64) -> bool`: Validates if a physical frame address resides within free memory boundaries.
 
 ---
 
