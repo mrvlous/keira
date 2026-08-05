@@ -166,7 +166,7 @@ SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
                  move please search hda download network stop env sync \
                  protect fileinfo framebuffer usb https user hostname syslog kvm \
                  nvme ext4 cgroups futex bpf tpm swap seccomp epoll kasan \
-                 drivers lkm unwind power perf timer bpf_jit virtio sev io_worker kfence deadline
+                 drivers lkm unwind power perf timer bpf_jit virtio sev io_worker kfence deadline eventfd mac mqueue
 
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \

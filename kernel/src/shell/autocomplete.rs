@@ -106,6 +106,9 @@ pub unsafe fn handle_autocomplete() {
         "io_worker",
         "kfence",
         "deadline",
+        "eventfd",
+        "mac",
+        "mqueue",
     ];
 
     if is_command {

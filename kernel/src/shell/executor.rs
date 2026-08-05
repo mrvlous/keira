@@ -446,6 +446,9 @@ pub fn execute_command_inner(cmd: &str) {
         "io_worker" => super::cmds::io_worker::run(&mut parts),
         "kfence" => super::cmds::kfence::run(&mut parts),
         "deadline" => super::cmds::deadline::run(&mut parts),
+        "eventfd" | "signalfd" => super::cmds::eventfd::run(&mut parts),
+        "mac" | "selinux" => super::cmds::mac::run(&mut parts),
+        "mqueue" => super::cmds::mqueue::run(&mut parts),
         _ => {
             // Check if the command exists on disk/initrd at /system/bin/
             let found_in_path = unsafe {
