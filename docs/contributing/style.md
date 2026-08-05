@@ -47,3 +47,10 @@ To maintain formatting consistency, the repository includes configurations for c
 *   **Clangd Config (`.clangd`)**: Outlines compile commands and include paths for C editor autocomplete.
 *   **Rustfmt (`rustfmt.toml`)**: Standardizes Rust indentation and line wraps.
 *   **Clippy (`.clippy.toml`)**: Enforces Rust code analysis checks (e.g. maximum function parameters and line width).
+
+---
+
+## 5. Language & Grammar Rules
+To maintain professional open-source standards:
+*   **English Language Only**: All code comments, docstrings, terminal output messages, commit messages, and documentation files must strictly be written in English with clean grammar.
+*   **Zero Non-English Comments**: Non-English code comments, variable names, or prompt strings are strictly prohibited across all C, Rust, Assembly, and Markdown files.

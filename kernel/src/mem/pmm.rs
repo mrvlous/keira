@@ -14,8 +14,10 @@
 
 use crate::io::serial;
 
-// Constants for Page/Frame size
+// Constants for Page/Frame size and Kernel Memory Base
 pub const PAGE_SIZE: u64 = 4096;
+pub const PAGE_SIZE_4K: u64 = 4096;
+pub const KERNEL_BASE_1MB: u64 = 0x100000;
 
 // Global state for physical frame allocator
 static mut FREE_MEM_START: u64 = 0;

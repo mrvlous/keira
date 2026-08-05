@@ -20,6 +20,7 @@ pub const PAGE_WRITABLE: u64 = 1 << 1;
 // User mode access allowed
 pub const PAGE_USER: u64 = 1 << 2;
 pub const PAGE_NO_EXECUTE: u64 = 1 << 63;
+pub const GB_1_IDENTITY_MAP: u64 = 0x4000_0000;
 
 /// Get the physical address of the active PML4 table from the CR3 register
 pub unsafe fn active_pml4() -> u64 {

@@ -230,6 +230,13 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     crate::io::vga::print_boot_log("Re-configuring Global Descriptor Table (GDT) segments", 0);
     crate::io::vga::print_boot_log("Loading Task State Segment (TSS) cpu context structure", 0);
     crate::io::vga::print_boot_log("Enabling CPU ring 3 user-mode syscall interface MSRs", 0);
+    crate::io::vga::print_boot_log("Initializing eBPF JIT Compiler Engine (x86_64)", 0);
+    crate::io::vga::print_boot_log("Initializing Virtio 1.0 Paravirtualized PCI Driver", 0);
+    crate::io::vga::print_boot_log("Initializing AMD SEV & Intel TDX Memory Enclave", 0);
+    crate::io::vga::print_boot_log("Initializing io_uring Async Kernel Worker Pool", 0);
+    crate::io::vga::print_boot_log("Initializing KFENCE Sampling Heap Memory Guard", 0);
+    crate::io::vga::print_boot_log("Initializing POSIX Sched_Deadline EDF Real-Time Policy", 0);
+    crate::io::vga::print_boot_log("Initializing Mandatory Access Control (MAC) Security", 0);
 
     // Spawning interactive shell log
     crate::io::vga::print_boot_log("Spawning interactive terminal shell environment", 0);

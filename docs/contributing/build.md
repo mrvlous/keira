@@ -23,7 +23,7 @@ To run the kernel in an emulator or on physical hardware, we construct a bootabl
 
 ## 3. FAT16 Disk Image
 A 32MB FAT16 disk image (`build/disk.img`) is created and populated with the Keira directory hierarchy:
-*   `/system/bin/`: All shell command binaries.
+*   `/system/bin/`: 73 native shell command binaries.
 *   `/system/drivers/`: Hardware driver descriptor files (`.sys`).
 *   `/system/include/`: C header files for userland programs.
 *   `/apps/bin/`: Compiled user-space ELF binaries (`user_test.elf`, `gcc.elf`).

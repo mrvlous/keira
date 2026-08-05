@@ -35,3 +35,12 @@ pub mod perf;
 
 /// AMD SEV & Intel TDX Confidential Computing Subsystem
 pub mod sev;
+
+#[cfg(target_arch = "x86_64")]
+pub const ARCH_NAME: &str = "x86_64";
+
+#[cfg(target_arch = "aarch64")]
+pub const ARCH_NAME: &str = "aarch64";
+
+#[cfg(target_arch = "riscv64")]
+pub const ARCH_NAME: &str = "riscv64";

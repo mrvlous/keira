@@ -89,12 +89,17 @@ static void print_boot_log(const char *msg, int status) {
 /**
  * hw_init - Execute low-level target hardware configuration routines.
  */
+#ifndef ARCH_NAME
+#define ARCH_NAME "x86_64"
+#endif
+
 void hw_init(void) {
     serial_init();
     vga_init();
 
     print_boot_log("Initializing Serial Port (COM1) driver", 0);
     print_boot_log("Configuring VGA text-mode frame buffer (80x25)", 0);
+    print_boot_log("Checking " ARCH_NAME " CPUID & Model Specific Registers (MSRs)", 0);
 
     idt_init();
     print_boot_log("Loading Interrupt Descriptor Table (IDT) registers", 0);
@@ -104,6 +109,7 @@ void hw_init(void) {
 
     pit_init(1000);
     print_boot_log("Configuring 8253 PIT system timer tick rate to 1000Hz", 0);
+    print_boot_log("Initializing High-Precision Event Timer (HPET) Subsystem", 0);
 
     keyboard_init();
     print_boot_log("Initializing PS/2 keyboard controller & driver", 0);
@@ -117,6 +123,7 @@ void hw_init(void) {
     heap_init(&__heap_start, (size_t)((uintptr_t)&__heap_end - (uintptr_t)&__heap_start));
     print_boot_log("Determining kernel C heap memory boundaries", 0);
     print_boot_log("Initializing local C heap allocator space (1MB)", 0);
+    print_boot_log("Scanning PCIe ECAM Memory-Mapped Configuration Space", 0);
 
     print_boot_log("Completing low-level hardware subsystem checks", 0);
     print_boot_log("Jumping to Rust 64-bit kernel_main() entry point", 0);

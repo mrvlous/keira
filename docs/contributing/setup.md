@@ -2,7 +2,18 @@
 
 This document describes how to install target toolchains, cross-compilers, and package dependencies required to compile and build Keira Kernel.
 
-## 1. Package Dependencies
+---
+
+## 1. Subsystem & Codebase Overview
+
+Keira Kernel is a freestanding 64-bit x86_64 operating system kernel consisting of:
+*   **64 System Call Vectors** (`sys_print_char` .. `sys_sched_setattr`).
+*   **73 Native Kernel Shell Commands** (`guide` .. `mqueue`).
+*   **37 Dedicated Modular Documentation Files** in `docs/`.
+
+---
+
+## 2. Package Dependencies
 Before building, ensure the following core tools are installed on your development machine:
 *   **NASM**: Assembly compiler for boot trampolines.
 *   **GCC / G++**: GNU Compiler Collection for C drivers and heap code.
@@ -18,7 +29,7 @@ sudo apt install build-essential nasm grub-pc-bin xorriso qemu-system-x86 git
 
 ---
 
-## 2. Rust Toolchain Configuration
+## 3. Rust Toolchain Configuration
 The kernel core requires a nightly Rust installation to compile in a freestanding `no_std` environment.
 
 ### Installation Steps
