@@ -31,6 +31,13 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [Epoll Scalable I/O Event Engine](architecture/epoll.md): Scalable O(1) event multiplexing descriptors (`sys_epoll_create`/`sys_epoll_ctl`).
 *   [KASAN Shadow Memory Diagnostic Engine](architecture/kasan.md): Shadow memory validation for heap access safety (`sys_kasan`).
 *   [POSIX Message Queue IPC Subsystem](architecture/mqueue.md): In-kernel priority message queues (`sys_mq_open`).
+*   [Resource Control Groups (cgroups)](architecture/cgroups.md): Process memory accounting & PID namespace isolation.
+*   [Fast Userspace Mutex (Futex)](architecture/futex.md): Atomic userspace locking and kernel wait queue synchronization (`sys_futex`).
+*   [Loadable Kernel Modules (LKM)](architecture/lkm.md): Dynamic module loading and kallsyms symbol resolution (`sys_init_module`).
+*   [High Precision Event Timer (HPET)](architecture/hpet.md): Nanosecond timer resolution and ACPI HPET mapping (`sys_clock_gettime`).
+*   [Symmetric Multiprocessing (SMP)](architecture/smp.md): Multi-core CPU initialization and LAPIC IPI shootdown.
+*   [PCIe ECAM & MSI/MSI-X Interrupts](architecture/pcie.md): PCIe configuration space and Message Signaled Interrupts.
+*   [Asynchronous Kernel I/O Engine (io_uring)](architecture/iouring.md): Zero-copy ring buffer I/O (`sys_io_uring_setup`).
 
 ### 2. Device Drivers
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.

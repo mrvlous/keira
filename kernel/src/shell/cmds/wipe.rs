@@ -14,7 +14,6 @@
 
 use crate::io::vga;
 use crate::shell::executor::*;
-use crate::shell::state::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
@@ -27,7 +26,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga_init();
     }
 }

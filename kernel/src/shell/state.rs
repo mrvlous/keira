@@ -47,25 +47,6 @@ pub static mut EDITOR_STATUS_COLOR: vga::Color = vga::Color::LightGreen;
 pub static mut SHELL_PATH: [u8; 80] = [0u8; 80];
 pub static mut SHELL_PATH_LEN: usize = 0;
 
-#[derive(Copy, Clone)]
-pub struct ShellTheme {
-    pub user: vga::Color,
-    pub host: vga::Color,
-    pub path: vga::Color,
-    pub symbol: vga::Color,
-    pub text_fg: vga::Color,
-    pub text_bg: vga::Color,
-}
-
-pub static mut CURRENT_THEME: ShellTheme = ShellTheme {
-    user: vga::Color::LightRed,
-    host: vga::Color::LightCyan,
-    path: vga::Color::LightBlue,
-    symbol: vga::Color::LightGreen,
-    text_fg: vga::Color::LightGrey,
-    text_bg: vga::Color::Black,
-};
-
 // Please and User Account Management States
 pub static mut IN_PLEASE_MODE: bool = false;
 pub static mut PLEASE_COMMAND: [u8; 128] = [0; 128];

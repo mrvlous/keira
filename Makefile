@@ -259,7 +259,7 @@ $(DISK_IMG): build/user_test.elf build/gcc.elf
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/drivers ::/system/include ::/apps ::/apps/bin ::/apps/games ::/apps/src ::/config ::/config/boot ::/config/theme ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/drivers ::/system/include ::/apps ::/apps/bin ::/apps/games ::/apps/src ::/config ::/config/boot ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
 	@$(LOG_DISK) "Populating directories with command binaries..."
 	$(Q)mkdir -p $(BUILD_DIR)/system_bin
 	$(Q)for cmd in $(SHELL_CMDS); do \
@@ -280,8 +280,8 @@ $(DISK_IMG): build/user_test.elf build/gcc.elf
 	$(Q)for driver in $(DRIVER_FILES); do \
 	    mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/drivers/$$driver ::/system/drivers/$$driver; \
 	done
-	$(Q)echo "color_scheme=classic\nprompt_symbol=>\ncursor=block" > $(BUILD_DIR)/default.cfg
-	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/default.cfg ::/config/theme/default.cfg
+	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(BUILD_DIR)/boot.cfg
+	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/boot.cfg ::/config/boot/boot.cfg
 	@$(LOG_DISK) "Copying binaries and configuration files..."
 	$(Q)mcopy -o -i $(DISK_IMG) build/user_test.elf ::/apps/bin/user_test.elf
 	$(Q)mcopy -o -i $(DISK_IMG) build/gcc.elf ::/apps/bin/gcc.elf
@@ -296,7 +296,6 @@ $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/include
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/apps/bin
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/config/boot
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/config/theme
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/admin
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/default
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/guest
@@ -318,7 +317,7 @@ $(BUILD_DIR)/initrd.tar: build/user_test.elf build/gcc.elf
 	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ahci.sys
 	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/initrd_root/system/drivers/sound.sys
 	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(BUILD_DIR)/initrd_root/system/drivers/e1000.sys
-	$(Q)echo "color_scheme=classic\nprompt_symbol=>\ncursor=block" > $(BUILD_DIR)/initrd_root/config/theme/default.cfg
+	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(BUILD_DIR)/initrd_root/config/boot/boot.cfg
 	$(Q)cp build/user_test.elf $(BUILD_DIR)/initrd_root/apps/bin/user_test.elf
 	$(Q)cp build/gcc.elf $(BUILD_DIR)/initrd_root/apps/bin/gcc.elf
 	$(Q)cp user/include/*.h $(BUILD_DIR)/initrd_root/system/include/

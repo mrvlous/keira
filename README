@@ -24,9 +24,13 @@ Explore the kernel's core subsystems and design details:
 * Task Scheduler: docs/architecture/scheduler.md
 * System Calls and Privilege: docs/architecture/syscalls.md
 * Cryptographic Subsystem: docs/architecture/crypto.md
-* LKM, HPET & SMP Subsystems: docs/architecture/lkm_hpet_smp.md
-* PCIe, io_uring & NX/KASLR Subsystems: docs/architecture/pcie_iouring_nx.md
-* Futex, Threading & cgroups Subsystems: docs/architecture/futex_cgroups.md
+* Loadable Kernel Modules (LKM): docs/architecture/lkm.md
+* High Precision Event Timer (HPET): docs/architecture/hpet.md
+* Symmetric Multiprocessing (SMP): docs/architecture/smp.md
+* PCIe ECAM & MSI Interrupts: docs/architecture/pcie.md
+* Asynchronous Kernel I/O (io_uring): docs/architecture/iouring.md
+* Fast Userspace Mutex (Futex): docs/architecture/futex.md
+* Resource Control Groups (cgroups): docs/architecture/cgroups.md
 * Hardware Virtualization Hypervisor (KVM): docs/architecture/kvm.md
 * Hardware Security TPM 2.0 Enclave: docs/architecture/tpm.md
 * Zero-Copy BPF Packet Filter Engine: docs/architecture/bpf.md
@@ -37,6 +41,12 @@ Explore the kernel's core subsystems and design details:
 * Zero-Copy Kernel Pipe Splice: docs/architecture/splice.md
 * ACPI Power Management & NMI Watchdog: docs/architecture/power.md
 * Hardware Performance PMU Counters: docs/architecture/perf.md
+* EventFD & SignalFD Subsystem: docs/architecture/eventfd.md
+* Seccomp BPF Syscall Filtering Sandbox: docs/architecture/seccomp.md
+* Swap Space & Virtual Memory Pager: docs/architecture/swap.md
+* Epoll Scalable I/O Event Engine: docs/architecture/epoll.md
+* KASAN Shadow Memory Diagnostic Engine: docs/architecture/kasan.md
+* POSIX Message Queue IPC Subsystem: docs/architecture/mqueue.md
 * NVMe PCIe Controller Driver: docs/drivers/nvme.md
 * Native EXT4 Linux Filesystem Driver: docs/filesystems/ext4.md
 

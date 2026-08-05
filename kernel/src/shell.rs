@@ -36,9 +36,7 @@ use state::*;
 
 /// Print the Keira ASCII Logo
 pub fn print_logo() {
-    unsafe {
-        vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
-    }
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     vga::print_str("Keira Kernel ");
     vga::print_str(env!("CARGO_PKG_VERSION"));
     vga::print_str("-keira-1 (tty1)\n\n");
@@ -58,16 +56,16 @@ pub fn print_prompt() {
         let user_color = if IS_ADMIN {
             vga::Color::LightRed
         } else {
-            CURRENT_THEME.user
+            vga::Color::LightRed
         };
-        vga::set_color(user_color, CURRENT_THEME.text_bg);
+        vga::set_color(user_color, vga::Color::Black);
         if let Ok(user_str) = core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
             vga::print_str(user_str);
         } else {
             vga::print_str("default");
         }
 
-        vga::set_color(CURRENT_THEME.host, CURRENT_THEME.text_bg);
+        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
         vga::print_str("@");
         if let Ok(hostname_str) = core::str::from_utf8(&HOSTNAME[..HOSTNAME_LEN]) {
             vga::print_str(hostname_str);
@@ -76,7 +74,7 @@ pub fn print_prompt() {
         }
         vga::print_str(" ");
 
-        vga::set_color(CURRENT_THEME.path, CURRENT_THEME.text_bg);
+        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
         let current_path = core::str::from_utf8(&SHELL_PATH[..SHELL_PATH_LEN]).unwrap_or_default();
 
         let home_path = get_current_user_home();
@@ -100,10 +98,10 @@ pub fn print_prompt() {
             vga::print_str(" ");
         }
 
-        vga::set_color(CURRENT_THEME.symbol, CURRENT_THEME.text_bg);
+        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
         vga::putchar(b'>');
         vga::print_str(" ");
-        vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 
     // Save cursor position right after prompt for history navigation
@@ -190,7 +188,7 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
             }
             // Ctrl+L to clear screen
             12 => {
-                vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::init();
                 print_prompt();
                 let typed = &INPUT_BUFFER[..BUFFER_LEN];
@@ -309,15 +307,15 @@ pub fn process_pending() {
             } else {
                 PLEASE_ATTEMPTS += 1;
                 if PLEASE_ATTEMPTS < 3 {
-                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("please: incorrect password (attempt ");
                     vga::print_u64(PLEASE_ATTEMPTS as u64);
                     vga::print_str("/3). Try again: ");
-                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 } else {
-                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("please: 3 incorrect password attempts. Aborted.\n");
-                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     PLEASE_ATTEMPTS = 0;
                     IN_PLEASE_MODE = false;
                     PLEASE_COMMAND = [0u8; 128];
@@ -363,11 +361,11 @@ pub fn process_pending() {
                     IS_ADMIN = false;
                 }
 
-                vga::set_color(vga::Color::LightGreen, CURRENT_THEME.text_bg);
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                 vga::print_str("Successfully logged in as ");
                 vga::print_str(login_user_str);
                 vga::print_str(".\n");
-                vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
                 let mut home_buf = [0u8; 32];
                 let prefix = b"/users/";
@@ -391,17 +389,17 @@ pub fn process_pending() {
             } else {
                 LOGIN_ATTEMPTS += 1;
                 if LOGIN_ATTEMPTS < 3 {
-                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("login: incorrect password (attempt ");
                     vga::print_u64(LOGIN_ATTEMPTS as u64);
                     vga::print_str("/3). Password for ");
                     vga::print_str(login_user_str);
                     vga::print_str(": ");
-                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 } else {
-                    vga::set_color(vga::Color::LightRed, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("login: 3 incorrect password attempts. Access denied.\n");
-                    vga::set_color(CURRENT_THEME.text_fg, CURRENT_THEME.text_bg);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     LOGIN_ATTEMPTS = 0;
                     IN_LOGIN_MODE = false;
                     LOGIN_USERNAME = [0u8; 16];

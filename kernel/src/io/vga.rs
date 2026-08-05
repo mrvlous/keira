@@ -598,41 +598,14 @@ pub fn print_hex(mut n: u64) {
     print(&buf[(i + 1)..=15]);
 }
 
-unsafe fn get_mapped_theme_colors(fg: Color, bg: Color) -> (Color, Color) {
-    use crate::shell::state::CURRENT_THEME;
-
-    // Bypass mapping for BSOD (Blue Screen of Death)
-    if bg as u8 == Color::Blue as u8 {
-        return (fg, bg);
-    }
-
-    let mapped_bg = if bg as u8 == Color::Black as u8 {
-        CURRENT_THEME.text_bg
-    } else {
-        bg
-    };
-
-    let mapped_fg = match fg {
-        Color::LightGrey | Color::White => CURRENT_THEME.text_fg,
-        Color::LightBlue => CURRENT_THEME.path,
-        Color::LightCyan => CURRENT_THEME.host,
-        Color::LightGreen => CURRENT_THEME.symbol,
-        Color::LightRed => CURRENT_THEME.user,
-        _ => fg,
-    };
-
-    (mapped_fg, mapped_bg)
-}
-
 /// Set the console text color.
 pub fn set_color(fg: Color, bg: Color) {
     unsafe {
-        let (mapped_fg, mapped_bg) = get_mapped_theme_colors(fg, bg);
         if fb_active() {
-            ACTIVE_FG_COLOR = get_rgb_color(mapped_fg);
-            ACTIVE_BG_COLOR = get_rgb_color(mapped_bg);
+            ACTIVE_FG_COLOR = get_rgb_color(fg);
+            ACTIVE_BG_COLOR = get_rgb_color(bg);
         } else {
-            vga_set_color(mapped_fg as u8, mapped_bg as u8);
+            vga_set_color(fg as u8, bg as u8);
         }
     }
 }

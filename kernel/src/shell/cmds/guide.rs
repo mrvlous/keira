@@ -13,12 +13,11 @@
 //! Implementation of the 'guide' shell command to list available commands and detail their usages.
 
 use crate::io::vga;
-use crate::shell::state::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let sub = parts.next();
-        let bg = CURRENT_THEME.text_bg;
+        let bg = vga::Color::Black;
         match sub {
             Some("-h") | Some("--help") => {
                 vga::print_str("Usage: guide [command]\n\n");
@@ -65,7 +64,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Utilities & Console:\n");
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("  guide     help      history   hda       wipe      reset\n");
-                vga::set_color(CURRENT_THEME.text_fg, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
             }
             Some("system") => {
                 vga::print_str("Usage: system\nShow system hardware specifications, memory statistics, and uptime.\n");
@@ -146,12 +145,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("guide") => {
                 vga::print_str("Usage: guide [command]\nShow the list of commands, or details about a specific command.\n");
             }
-            Some("say") => {
-                vga::print_str("Usage: say <message>\nEcho back the arguments typed by the user to the screen.\n");
-            }
-            Some("play") => {
-                vga::print_str("Usage: play <mario|nokia|starwars|beep>\nPlay retro tunes or a simple beep on the PC speaker.\n");
-            }
             Some("wipe") => {
                 vga::print_str("Usage: wipe\nClear the VGA screen and reset the cursor to the top-left position.\n");
             }
@@ -201,9 +194,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("move") => {
                 vga::print_str("Usage: move <src_file> <dest_file>\nMove or rename a file from the source path to the destination path.\n");
             }
-            Some("theme") => {
-                vga::print_str("Usage: theme [retro|matrix|arch|classic|dracula]\nChange the active shell background, foreground, and accent colors dynamically.\n");
-            }
             Some("hda") => {
                 vga::print_str("Usage: hda <play [freq]|stop|status>\nPlay sound waveforms using the Intel High Definition Audio (HDA) controller.\n");
             }
@@ -235,7 +225,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Error: Unknown command '");
                 vga::print_str(other);
                 vga::print_str("'. Type 'guide' to see all commands.\n");
-                vga::set_color(CURRENT_THEME.text_fg, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
             }
         }
     }

@@ -27,7 +27,6 @@ A 32MB FAT16 disk image (`build/disk.img`) is created and populated with the Kei
 *   `/system/drivers/`: Hardware driver descriptor files (`.sys`).
 *   `/system/include/`: C header files for userland programs.
 *   `/apps/bin/`: Compiled user-space ELF binaries (`user_test.elf`, `gcc.elf`).
-*   `/config/theme/`: Default theme configuration.
 *   `/users/`, `/temp/`, `/data/`: User directories, temporary storage, and persistent data.
 
 ---
