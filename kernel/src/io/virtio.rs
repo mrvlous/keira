@@ -18,6 +18,11 @@ use crate::io::vga;
 pub static mut VIRTIO_BLK_ACTIVE: bool = true;
 pub static mut VIRTIO_NET_ACTIVE: bool = true;
 
+/// Validate virtqueue ring descriptor index bounds
+pub fn validate_virtqueue_ring_idx(head: u16, queue_size: u16) -> bool {
+    queue_size != 0 && head < queue_size
+}
+
 /// Initialize or query Virtio 1.0 paravirtualized PCI queue status (Syscall 60)
 pub fn sys_virtio(device_id: u32, queue_idx: u32) -> Result<u64, &'static str> {
     unsafe {

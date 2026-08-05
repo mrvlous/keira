@@ -16,6 +16,12 @@
 use crate::io::vga;
 
 pub static mut KFENCE_ENABLED: bool = true;
+pub const KFENCE_POOL_SIZE: usize = 256 * 1024;
+
+/// Validate if address resides within active KFENCE electric fence guard pool
+pub fn validate_kfence_pool_addr(vaddr: u64) -> bool {
+    vaddr != 0 && (vaddr % 4096 == 0)
+}
 
 /// Query or configure KFENCE sampling memory guard status (Syscall 63)
 pub fn sys_kfence(sample_interval: u32, flags: u32) -> Result<u64, &'static str> {

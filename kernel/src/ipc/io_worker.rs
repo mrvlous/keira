@@ -17,6 +17,14 @@ use crate::io::vga;
 
 pub static mut IO_WORKERS_COUNT: usize = 4;
 
+/// Validate submission and completion queue head/tail index bounds
+pub fn validate_sq_cq_indices(head: u32, tail: u32, ring_entries: u32) -> bool {
+    if ring_entries == 0 || (ring_entries & (ring_entries - 1)) != 0 {
+        return false;
+    }
+    tail.wrapping_sub(head) <= ring_entries
+}
+
 /// Register buffers, files, or worker threads in an io_uring instance (Syscall 62)
 pub fn sys_io_uring_register(
     fd: i32,

@@ -16,6 +16,12 @@
 use crate::io::vga;
 
 pub static mut BPF_JIT_ENABLED: bool = true;
+pub const MAX_BPF_JIT_INSNS: usize = 4096;
+
+/// Validate eBPF JIT instruction jump target bounds
+pub fn validate_bpf_insn_bounds(insn_cnt: usize, jump_target_idx: usize) -> bool {
+    insn_cnt != 0 && insn_cnt <= MAX_BPF_JIT_INSNS && jump_target_idx < insn_cnt
+}
 
 /// Compile eBPF bytecode instructions to native x86_64 machine code (Syscall 59)
 pub fn sys_bpf_jit(insn_ptr: *const u8, insn_cnt: usize) -> Result<u64, &'static str> {

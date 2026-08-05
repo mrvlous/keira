@@ -23,6 +23,17 @@ pub struct SchedAttr {
     pub sched_period: u64,
 }
 
+/// Validate POSIX Sched_Deadline parameters: runtime <= deadline <= period
+pub fn validate_deadline_params(attr: &SchedAttr) -> Result<(), &'static str> {
+    if attr.sched_runtime == 0 || attr.sched_deadline == 0 || attr.sched_period == 0 {
+        return Err("Sched_Deadline attributes cannot be zero");
+    }
+    if attr.sched_runtime > attr.sched_deadline || attr.sched_deadline > attr.sched_period {
+        return Err("Invalid Sched_Deadline parameters: runtime <= deadline <= period violated");
+    }
+    Ok(())
+}
+
 /// Set task real-time scheduling attributes (Syscall 64)
 pub fn sys_sched_setattr(pid: u32, attr_ptr: u64, flags: u32) -> Result<u64, &'static str> {
     unsafe {

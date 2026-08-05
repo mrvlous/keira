@@ -17,6 +17,11 @@ use crate::io::vga;
 
 pub static mut SEV_ENABLED: bool = true;
 
+/// Validate if page address is non-null and page aligned for hardware encryption
+pub fn validate_enclave_page_addr(page_addr: u64) -> bool {
+    page_addr != 0 && (page_addr % 4096 == 0)
+}
+
 /// Query or activate AMD SEV-SNP / Intel TDX confidential memory encryption (Syscall 61)
 pub fn sys_sev(cmd: u32, page_addr: u64) -> Result<u64, &'static str> {
     unsafe {

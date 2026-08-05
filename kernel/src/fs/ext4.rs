@@ -47,6 +47,17 @@ pub fn init() -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Validate EXT4 inode number bounds
+pub fn validate_inode_num(inode_num: u32) -> bool {
+    unsafe {
+        if let Some(ref sb) = MOUNTED_EXT4 {
+            inode_num > 0 && inode_num <= sb.inodes_count
+        } else {
+            false
+        }
+    }
+}
+
 /// Read inode attributes from EXT4 inode table
 pub fn read_inode(inode_num: u32) -> Result<(), &'static str> {
     unsafe {

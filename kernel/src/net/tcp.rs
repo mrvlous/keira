@@ -112,3 +112,8 @@ fn calculate_tcp_checksum(
 
     !(sum as u16)
 }
+
+/// Validate TCP socket port bounds (non-zero ephemeral or well-known port)
+pub fn validate_socket_port(port: u16) -> bool {
+    port != 0
+}
