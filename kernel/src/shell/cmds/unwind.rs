@@ -14,6 +14,7 @@
 
 use crate::io::vga;
 
+#[inline(never)]
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {

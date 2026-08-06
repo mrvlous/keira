@@ -47,6 +47,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [POSIX PTP Hardware Clock Subsystem](architecture/ptp.md): IEEE 1588 nanosecond-precision hardware clock (`sys_ptp_clock`).
 *   [Kernel Page Table Isolation (KPTI / KASI)](architecture/kpti.md): Ring 0 / Ring 3 page table isolation (`sys_kpti`).
 *   [POSIX Sched_Autogroup Task Isolation](architecture/autogroup.md): Per-TTY terminal session autogrouping (`sys_sched_autogroup`).
+*   [Kernel Callstack Unwinder Engine](architecture/unwind.md): RBP/RSP pointer frame walking for kernel panic debugging backtraces.
 *   [POSIX Real-Time Signal Engine & Process Job Control](architecture/signal.md): POSIX signals (`SIGKILL`, `SIGTERM`, `SIGINT`) and terminal job control (`sys_kill`).
 
 ### 2. Device Drivers

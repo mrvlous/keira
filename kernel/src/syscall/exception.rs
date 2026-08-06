@@ -188,6 +188,9 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
     print_hex_serial(frame.error_code);
     crate::io::serial::print_str("\n");
 
+    // Walk stack frame pointers and output callstack backtrace
+    crate::arch::unwind::unwind_from_frame(frame.rbp, frame.rip);
+
     // Halt the CPU
     loop {
         unsafe {

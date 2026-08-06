@@ -60,6 +60,7 @@ Explore the kernel's core subsystems and design details:
 * POSIX PTP Hardware Clock Subsystem: docs/architecture/ptp.md
 * Kernel Page Table Isolation (KPTI): docs/architecture/kpti.md
 * POSIX Sched_Autogroup Task Isolation: docs/architecture/autogroup.md
+* Kernel Callstack Unwinder Engine: docs/architecture/unwind.md
 * POSIX Real-Time Signal Engine & Process Job Control: docs/architecture/signal.md
 * Intel High Definition Audio (HDA) DSP & WAV Streaming Engine: docs/drivers/audio_dsp.md
 * USB Mass Storage & USB HID Device Subsystem: docs/drivers/usb_storage.md
