@@ -7,9 +7,9 @@ This document describes how to install target toolchains, cross-compilers, and p
 ## 1. Subsystem & Codebase Overview
 
 Keira Kernel is a freestanding 64-bit x86_64 operating system kernel consisting of:
-*   **70 System Call Vectors** (`sys_print_char` .. `sys_sched_autogroup`).
-*   **79 Native Kernel Shell Commands** (`guide` .. `autogroup`).
-*   **43 Dedicated Modular Documentation Files** in `docs/`.
+*   **73 System Call Vectors** (`sys_print_char` .. `sys_usb_device`).
+*   **85 Native Kernel Shell Commands** (`guide` .. `bg`).
+*   **46 Dedicated Modular Documentation Files** in `docs/`.
 
 ---
 

@@ -97,6 +97,9 @@ When a user program executes the `syscall` instruction:
 | 68 | `sys_ptp_clock` | `(cmd: u32, target_nsec: u64) -> status` |
 | 69 | `sys_kpti` | `(enable: u32, flags: u32) -> status` |
 | 70 | `sys_sched_autogroup` | `(pid: u32, group_id: u32) -> status` |
+| 71 | `sys_audio_dsp` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
+| 72 | `sys_kill` | `(pid: u32, sig: u32) -> status` |
+| 73 | `sys_usb_device` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
 
 ---
 

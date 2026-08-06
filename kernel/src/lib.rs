@@ -33,6 +33,7 @@ pub mod io;
 pub mod ipc;
 pub mod mem;
 pub mod net;
+pub mod sched;
 pub mod shell;
 pub mod syscall;
 pub mod task;

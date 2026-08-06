@@ -115,6 +115,12 @@ pub unsafe fn handle_autocomplete() {
         "ptp",
         "kpti",
         "autogroup",
+        "aplay",
+        "alsamixer",
+        "kill",
+        "jobs",
+        "fg",
+        "bg",
     ];
 
     if is_command {

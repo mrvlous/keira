@@ -1120,6 +1120,24 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             Ok(res) => res,
             Err(_) => u64::MAX,
         },
+        // Syscall 71: audio_dsp
+        // Signature: sys_audio_dsp(cmd: u32, arg1: u64, arg2: u64) -> status
+        71 => match crate::io::audio::sys_audio_dsp(arg1 as u32, arg2, arg3) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 72: kill
+        // Signature: sys_kill(pid: u32, sig: u32) -> status
+        72 => match crate::sched::signal::sys_kill(arg1 as u32, arg2 as u32) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 73: usb_device
+        // Signature: sys_usb_device(cmd: u32, arg1: u64, arg2: u64) -> status
+        73 => match crate::io::usb_storage::sys_usb_device(arg1 as u32, arg2, arg3) {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
         _ => {
             // Unknown syscall
             u64::MAX

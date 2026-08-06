@@ -47,12 +47,15 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [POSIX PTP Hardware Clock Subsystem](architecture/ptp.md): IEEE 1588 nanosecond-precision hardware clock (`sys_ptp_clock`).
 *   [Kernel Page Table Isolation (KPTI / KASI)](architecture/kpti.md): Ring 0 / Ring 3 page table isolation (`sys_kpti`).
 *   [POSIX Sched_Autogroup Task Isolation](architecture/autogroup.md): Per-TTY terminal session autogrouping (`sys_sched_autogroup`).
+*   [POSIX Real-Time Signal Engine & Process Job Control](architecture/signal.md): POSIX signals (`SIGKILL`, `SIGTERM`, `SIGINT`) and terminal job control (`sys_kill`).
 
 ### 2. Device Drivers
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.
 *   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE Auto-Adaptive 32-bpp Linear Framebuffer Graphics (`framebuffer`).
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.
+*   [Intel High Definition Audio (HDA) DSP & WAV Streaming Engine](drivers/audio_dsp.md): Audio DMA stream ring buffers, RIFF WAV header parsing, and master volume control (`sys_audio_dsp`).
+*   [USB Mass Storage & USB HID Device Subsystem](drivers/usb_storage.md): USB Bulk-Only Transport (BOT) framing, SCSI commands, FAT16 flash drive mounting, and USB HID parsing (`sys_usb_device`).
 *   [PS/2 Mouse Driver](drivers/mouse.md): PS/2 mouse packet decoding, resolution setup, and coordinate tracking.
 *   [CMOS Real-Time Clock Driver](drivers/rtc.md): CMOS Real-Time Clock register queries and UTC timestamp parsing.
 *   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver with 16-slot cache table, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).

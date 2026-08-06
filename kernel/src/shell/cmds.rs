@@ -11,7 +11,10 @@
 //!
 //! Exposes all modular command handlers implemented in the `cmds/` directory.
 
+pub mod alsamixer;
+pub mod aplay;
 pub mod autogroup;
+pub mod bg;
 pub mod bpf;
 pub mod bpf_jit;
 pub mod cgroups;
@@ -30,6 +33,7 @@ pub mod env;
 pub mod epoll;
 pub mod eventfd;
 pub mod ext4;
+pub mod fg;
 pub mod fileinfo;
 pub mod folder;
 pub mod framebuffer;
@@ -45,8 +49,10 @@ pub mod hyperv;
 pub mod initrd;
 pub mod io_uring_net;
 pub mod io_worker;
+pub mod jobs;
 pub mod kasan;
 pub mod kfence;
+pub mod kill;
 pub mod kpti;
 pub mod kvm;
 pub mod list;

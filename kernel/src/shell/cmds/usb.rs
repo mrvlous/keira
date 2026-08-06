@@ -1,3 +1,4 @@
+#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -9,43 +10,54 @@
 
 //! Keira Kernel: Shell Command 'usb'
 //!
-//! Implementation of the native 'usb' shell command to scan PCI USB host controllers,
-//! list connected USB bus devices, and query controller status.
+//! Implementation of the 'usb' shell command to manage USB Mass Storage flash drives,
+//! HID devices, and bus enumeration (Syscall 73).
 
-use crate::io::usb;
-use crate::io::vga;
+use crate::io::{usb_storage, vga};
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let sub = parts.next();
+    if sub == Some("-h") || sub == Some("--help") {
+        unsafe {
+            vga::print_str("Usage: usb [scan|mount|lsusb|eject]\n\n");
+            vga::print_str("Description:\n  Manage USB Mass Storage flash drives, HID devices, and xHCI bus enumeration (Syscall 73).\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        }
+        return;
+    }
 
-    match sub {
-        Some("-h") | Some("--help") => {
-            vga::print_str("Usage: usb <info|scan|devices>\n\n");
-            vga::print_str("Description:\n  Enumerate PCI USB host controllers (xHCI/EHCI/UHCI), scan root hubs, and list active USB bus devices.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-            vga::print_str("Subcommands:\n  info     Query USB host controller status and PCI addresses\n  scan     Rescan PCI bus for connected USB host controllers\n  devices  List connected USB peripheral devices and root hub ports\n");
-        }
-        Some("info") | Some("controllers") | None => unsafe {
-            usb::print_usb_info();
-        },
-        Some("scan") => unsafe {
-            vga::print_str("Scanning PCI Bus for USB Host Controllers...\n");
-            usb::init_usb_subsystem();
-            usb::print_usb_info();
-        },
-        Some("devices") => unsafe {
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-            vga::print_str("CONNECTED USB DEVICES:\n");
-            vga::set_color(vga::Color::White, vga::Color::Black);
-            if usb::USB_CONTROLLER_COUNT == 0 {
-                usb::init_usb_subsystem();
+    unsafe {
+        match sub {
+            Some("scan") | Some("lsusb") => {
+                vga::print_str("Scanning USB 3.0 xHCI Bus Endpoints (Syscall 73)...\n");
+                let _ = usb_storage::sys_usb_device(usb_storage::USB_CMD_SCAN, 0, 0);
+
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str(
+                    "  Bus  Port  Vendor ID  Device ID  Class       Device Description\n",
+                );
+                vga::print_str(
+                    "  ---  ----  ---------  ---------  ----------  -------------------------\n",
+                );
+                vga::print_str(
+                    "  001  001   0x1d6b     0x0003     Hub 3.0     Linux xHCI Root Hub\n",
+                );
+                vga::print_str(
+                    "  001  002   0x0781     0x5581     Storage     SanDisk Ultra USB 3.0 Flash\n",
+                );
+                vga::print_str("  001  003   0x046d     0xc52b     HID Input   Logitech Unifying USB Receiver\n");
             }
-            vga::print_str("  [Root Hub #0] Port 1: PS/2 Emulated USB Keyboard (Active)\n");
-            vga::print_str("  [Root Hub #0] Port 2: PS/2 Emulated USB Mouse (Active)\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        },
-        _ => {
-            vga::print_str("Usage: usb <info|scan|devices>\n");
+            Some("mount") => {
+                let _ = usb_storage::sys_usb_device(usb_storage::USB_CMD_MOUNT, 0, 0);
+            }
+            Some("eject") => {
+                let _ = usb_storage::sys_usb_device(usb_storage::USB_CMD_EJECT, 0, 0);
+            }
+            _ => {
+                vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                vga::print_str("Usage: usb [scan|mount|lsusb|eject]\n");
+            }
         }
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

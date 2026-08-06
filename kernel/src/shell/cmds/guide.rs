@@ -225,6 +225,24 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("https") => {
                 vga::print_str("Usage: https <url|info|sha256>\nPerform encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519).\n");
             }
+            Some("aplay") => {
+                vga::print_str("Usage: aplay <file.wav>\nParse and stream RIFF WAV PCM audio payload through Intel HDA DSP DMA engine.\n");
+            }
+            Some("alsamixer") => {
+                vga::print_str("Usage: alsamixer [volume_percent 0..100]\nQuery or adjust Intel HDA DSP master volume gain and mute state.\n");
+            }
+            Some("kill") => {
+                vga::print_str("Usage: kill [-signal_number] <pid>\nDispatch POSIX real-time signal (SIGKILL, SIGTERM, SIGINT) to process PID.\n");
+            }
+            Some("jobs") => {
+                vga::print_str("Usage: jobs\nList active background and stopped process jobs in Job Control Table.\n");
+            }
+            Some("fg") => {
+                vga::print_str("Usage: fg [job_id]\nBring background or stopped process job to terminal foreground context.\n");
+            }
+            Some("bg") => {
+                vga::print_str("Usage: bg [job_id]\nResume stopped process job execution in background context.\n");
+            }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);
                 vga::print_str("Error: Unknown command '");

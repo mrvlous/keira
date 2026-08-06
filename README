@@ -3,10 +3,10 @@ Keira Kernel
 
 Keira is a freestanding, multi-language x86_64 operating system kernel. It
 manages system hardware resources, coordinates low-level C drivers, and
-provides a preemptive priority multitasking scheduler, 70 system calls,
-AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller, LKM, HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR, Futex Threading, cgroups, EXT4 Driver, KVM Hypervisor, TPM 2.0, BPF Engine, DMA Allocator, Syslog Buffer, MAC Security, POSIX Timers, Pipe Splice, ACPI Power, PMU Counters, EventFD, Seccomp BPF, Swap Space, Epoll, KASAN, Message Queues, eBPF JIT Compiler, Virtio 1.0 Driver, AMD SEV/TDX Enclave, io_uring Workers, KFENCE Guard, Sched_Deadline EDF Scheduler, Hyper-V Hypercall, io_uring Async Net, USB 3.0 xHCI Isochronous, PTP Clock, KPTI Page Table Isolation, Sched_Autogroup Task Isolation,
+provides a preemptive priority multitasking scheduler, 73 system calls,
+AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller, LKM, HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR, Futex Threading, cgroups, EXT4 Driver, KVM Hypervisor, TPM 2.0, BPF Engine, DMA Allocator, Syslog Buffer, MAC Security, POSIX Timers, Pipe Splice, ACPI Power, PMU Counters, EventFD, Seccomp BPF, Swap Space, Epoll, KASAN, Message Queues, eBPF JIT Compiler, Virtio 1.0 Driver, AMD SEV/TDX Enclave, io_uring Workers, KFENCE Guard, Sched_Deadline EDF Scheduler, Hyper-V Hypercall, io_uring Async Net, USB 3.0 xHCI Isochronous, PTP Clock, KPTI Page Table Isolation, Sched_Autogroup Task Isolation, Intel HDA Audio DSP Engine, POSIX Signals & Job Control, USB Mass Storage & HID Subsystem,
 Native TLS 1.3 Cryptographic Engine, IPC Shared Memory & Pipe subsystems, Multi-User Accounts & Hostname, POSIX File Permissions & Multi-TTY, Userland Socket API,
-79 native shell commands, and a system shell controlled by a core Rust kernel static library.
+85 native shell commands, and a system shell controlled by a core Rust kernel static library.
 
 Quick Start
 -----------
@@ -60,6 +60,9 @@ Explore the kernel's core subsystems and design details:
 * POSIX PTP Hardware Clock Subsystem: docs/architecture/ptp.md
 * Kernel Page Table Isolation (KPTI): docs/architecture/kpti.md
 * POSIX Sched_Autogroup Task Isolation: docs/architecture/autogroup.md
+* POSIX Real-Time Signal Engine & Process Job Control: docs/architecture/signal.md
+* Intel High Definition Audio (HDA) DSP & WAV Streaming Engine: docs/drivers/audio_dsp.md
+* USB Mass Storage & USB HID Device Subsystem: docs/drivers/usb_storage.md
 * NVMe PCIe Controller Driver: docs/drivers/nvme.md
 * Native EXT4 Linux Filesystem Driver: docs/filesystems/ext4.md
 

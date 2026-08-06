@@ -455,6 +455,12 @@ pub fn execute_command_inner(cmd: &str) {
         "ptp" => super::cmds::ptp::run(&mut parts),
         "kpti" => super::cmds::kpti::run(&mut parts),
         "autogroup" => super::cmds::autogroup::run(&mut parts),
+        "aplay" => super::cmds::aplay::run(&mut parts),
+        "alsamixer" => super::cmds::alsamixer::run(&mut parts),
+        "kill" => super::cmds::kill::run(&mut parts),
+        "jobs" => super::cmds::jobs::run(&mut parts),
+        "fg" => super::cmds::fg::run(&mut parts),
+        "bg" => super::cmds::bg::run(&mut parts),
         _ => {
             // Check if the command exists on disk/initrd at /system/bin/
             let found_in_path = unsafe {

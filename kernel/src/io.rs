@@ -63,3 +63,9 @@ pub mod virtio;
 
 /// USB 3.0 xHCI Host Controller Isochronous Driver
 pub mod xhci;
+
+/// Intel HDA Audio DSP & WAV PCM Streaming Engine
+pub mod audio;
+
+/// USB Mass Storage & USB HID Device Subsystem
+pub mod usb_storage;
