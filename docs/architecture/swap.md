@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Swap Space & Virtual Memory Pager Subsystem
 
 This document details anonymous physical memory page swapping to disk partitions and swap management system calls in Keira Kernel.

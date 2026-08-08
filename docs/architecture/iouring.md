@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Asynchronous Kernel I/O Engine (io_uring)
 
 This document details lockless Submission Queue (SQ) and Completion Queue (CQ) ring buffers, async I/O polling, and io_uring system calls in Keira Kernel.

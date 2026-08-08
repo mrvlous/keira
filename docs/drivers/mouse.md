@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # PS/2 Mouse Driver
 
 This document details the PS/2 mouse packet decoding, coordinate scaling, and interrupt handling in Keira Kernel.

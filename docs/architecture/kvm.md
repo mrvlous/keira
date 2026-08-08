@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Hardware Virtualization Hypervisor Subsystem (Intel VMX / AMD SVM)
 
 This document details the Type-1 and Type-2 hardware-assisted virtualization hypervisor architecture, Intel VMX / AMD SVM execution context, and guest virtual machine system calls in Keira Kernel.

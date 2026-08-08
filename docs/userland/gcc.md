@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Self-Hosting C Compiler (gcc)
 
 This document details the lexical analysis, parsing, and execution architecture of the built-in self-hosting C compiler (`bin/gcc`) included in Keira Kernel.

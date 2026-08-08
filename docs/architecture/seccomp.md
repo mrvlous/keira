@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Seccomp BPF System Call Filter Engine
 
 This document details in-kernel BPF system call sandbox filtering, process privilege bounding, and seccomp system call execution in Keira Kernel.

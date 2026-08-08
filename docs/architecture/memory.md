@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Memory Management Subsystem
 
 This document describes the memory management architecture of Keira Kernel, split into Physical Memory Management, Virtual Memory Management, and the kernel bump heap allocator.

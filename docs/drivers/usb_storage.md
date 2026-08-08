@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # USB Mass Storage & USB HID Device Subsystem
 
 This document details USB Bulk-Only Transport (BOT) framing, SCSI transparent command sets, USB Flash Drive FAT16 partition mounting, and USB HID report descriptor parsing in Keira Kernel.

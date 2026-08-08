@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # POSIX Sched_Deadline EDF Hard Real-Time Scheduler Policy
 
 This document details Earliest Deadline First (EDF) hard real-time task scheduling in Keira Kernel.

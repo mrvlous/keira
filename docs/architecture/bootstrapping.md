@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Bootstrapping and Trampolining
 
 This document details the multi-stage initialization pipeline of Keira Kernel from the bootloader load phase to the transition into 64-bit Rust long mode execution.

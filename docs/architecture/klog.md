@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Kernel Event Logging Ring Buffer & Syslog Subsystem
 
 This document details the in-memory circular syslog `dmesg` log ring buffer, severity log levels, and `sys_syslog` system call in Keira Kernel.

@@ -1,56 +1,64 @@
-# Coding Style Standards
+<!--
+SPDX-License-Identifier: GPL-2.0-only
 
-This document describes the comment syntax, formatting rules, and linter guidelines required for contributions to Keira Kernel.
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
 
-## 1. C Source and Header Files
-C source files must comply with standard kernel programming rules:
-*   **Block Comments Only**: Single-line C++ style comments (`//`) are strictly forbidden. Use C-style block comments (`/* ... */`).
-*   **No Inline Comments**: Comments must occupy their own line above the code block they describe. Do not write comments on the same line as code statements.
-*   **Documentation Blocks**: All functions, structures, and interfaces must be documented using double-asterisk Javadoc/kernel-doc style blocks:
-    ```c
-    /**
-     * function_name - Short summary of what this function does.
-     * @param1: Description of parameter 1.
-     *
-     * Return: Description of return value.
-     */
-    ```
-*   **Macro Guards**: Define guards at the end of conditional preprocessor directives:
-    ```c
-    #ifndef HEADER_GUARD_H
-    #define HEADER_GUARD_H
-    ...
-    #endif /* HEADER_GUARD_H */
-    ```
+# Coding, Comment, and License Style Guidelines
 
----
+To maintain code quality, security, and maintainability across the **Keira Kernel** codebase, all contributions must adhere to the style and licensing standards outlined below.
 
-## 2. Rust Source Files
-Rust source files use standard Cargo and Rust doc comment conventions:
-*   **Module Documentation**: Every module/crate file must start with inner doc comments (`//!`) describing the module's role.
-*   **Public API Documentation**: All public items (`pub fn`, `pub struct`, `pub enum`, `pub trait`) must be documented using outer doc comments (`///`).
-*   **Implementation Comments**: Standard implementation comments within functions use the `//` format.
-*   **No Inline Comments**: Move all comments to their own line above the code.
+## 1. Rust and C Formatting Rules
 
----
+- **Rust Edition**: Rust 2021 (no_std, freestanding).
+- **Line Length**: 100 characters maximum (enforced via `rustfmt.toml`).
+- **Indentation**: 4 spaces, no hard tabs.
+- **C Block Comments**: Single-line C++ style comments (`//`) in C source files are strictly forbidden. Use C-style block comments (`/* ... */`).
 
-## 3. Assembly Files
-Assembly code (`.asm`, `.inc`) uses semicolon comments:
-*   **Syntax**: Begin comments with a semicolon followed by a space `; `.
-*   **Line Placement**: Comments must occupy their own line above the target instructions. Avoid writing inline comments on the same line as CPU instructions.
+## 2. License Comment Header Rules
 
----
+Every file in the repository must begin with the appropriate standardized GPL-2.0-only license header:
 
-## 4. Linting and Formatting Tools
-To maintain formatting consistency, the repository includes configurations for code linters:
-*   **Clang-Format (`.clang-format`)**: Standardizes spaces, alignments, and brackets for C code. Run it before committing C files.
-*   **Clangd Config (`.clangd`)**: Outlines compile commands and include paths for C editor autocomplete.
-*   **Rustfmt (`rustfmt.toml`)**: Standardizes Rust indentation and line wraps.
-*   **Clippy (`.clippy.toml`)**: Enforces Rust code analysis checks (e.g. maximum function parameters and line width).
+### Source Files (`.rs`, `.c`, `.h`), `Makefile`, & `Cargo.toml`
+Must include the standard 1-paragraph GPL-2.0-only license block:
+```rust
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Keira Kernel - Operating System Kernel
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+```
 
----
+### Configuration Files (`.gitignore`, `rust-toolchain.toml`, `rustfmt.toml`)
+Must include the 4-line concise copyright comment block:
+```toml
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+```
 
-## 5. Language & Grammar Rules
-To maintain professional open-source standards:
-*   **English Language Only**: All code comments, docstrings, terminal output messages, commit messages, and documentation files must strictly be written in English with clean grammar.
-*   **Zero Non-English Comments**: Non-English code comments, variable names, or prompt strings are strictly prohibited across all C, Rust, Assembly, and Markdown files.
+### Markdown Files (`*.md` & `README`)
+Must include the HTML comment block:
+```markdown
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+```
+
+### `LICENSE` File
+Contains the full GNU General Public License v2.0 text.
+
+## 3. Documentation Style Rules
+
+- **Module-Level Rustdocs (`//!`)**: Required at top of every Rust source file after the license header.
+- **Item Rustdocs (`///`)**: Required for all public structs, enums, fields, and functions.
+- **No Decorative Symbols**: Never use decorative divider lines such as `---` or `===` within comments.
+- **Grammar**: Use formal, technical English. Zero non-English code comments permitted.

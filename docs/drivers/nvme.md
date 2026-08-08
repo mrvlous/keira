@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # NVMe (Non-Volatile Memory Express) PCIe Controller Driver
 
 This document details the 64-bit Memory-Mapped I/O (MMIO) register interface, Admin Queue pair initialization, I/O Queue creation, and NVMe Namespace management in Keira Kernel.

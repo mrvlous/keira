@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Kernel Callstack Unwinder & Process Tracing Engine
 
 This document details RBP/RSP pointer frame walking, kernel panic backtrace formatting, and process callstack tracing in Keira Kernel.

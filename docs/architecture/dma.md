@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Direct Memory Access (DMA) Scatter-Gather Allocator
 
 This document details the physically contiguous DMA memory allocation, Scatter-Gather list mapping, and zero-copy bus master data transfer engine in Keira Kernel.

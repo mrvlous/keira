@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Serial UART COM1 Driver
 
 This document details the low-level 16550A UART serial driver used for kernel logging and diagnostic outputs.

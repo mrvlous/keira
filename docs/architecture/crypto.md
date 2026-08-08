@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Bare-Metal Cryptographic Subsystem (`kernel/src/crypto/`)
 
 This document details the architecture, mathematical algorithms, and Rust `no_std` implementation of the core Cryptographic Subsystem in Keira Kernel.

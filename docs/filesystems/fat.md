@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # FAT Filesystem Subsystem
 
 This document details the layout, data structures, directory traversal, and cluster management of the FAT12/16/32 filesystem driver implemented in Keira Kernel.

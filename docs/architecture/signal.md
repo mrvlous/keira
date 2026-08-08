@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # POSIX Real-Time Signal Engine & Process Job Control Subsystem
 
 This document details POSIX signal dispatching, signal masks, Ring 3 stack frame contexts, and terminal job control state management in Keira Kernel.

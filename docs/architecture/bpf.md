@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Zero-Copy BPF (Berkeley Packet Filter) Engine
 
 This document details the in-kernel BPF bytecode interpreter, raw packet filtering engine, and zero-copy network socket filtering in Keira Kernel.

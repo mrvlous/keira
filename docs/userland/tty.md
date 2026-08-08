@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Multi-Virtual Terminal (TTY) Subsystem
 
 This document details virtual terminal switching, TTY device node routing, and console buffers in Keira Kernel.

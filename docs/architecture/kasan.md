@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # KASAN (Kernel Address Sanitizer) Shadow Memory Diagnostic Engine
 
 This document details shadow memory validation, out-of-bounds access detection, and use-after-free diagnostics in Keira Kernel.

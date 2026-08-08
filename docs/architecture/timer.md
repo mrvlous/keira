@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # High-Resolution POSIX Interval Timers Engine
 
 This document details nanosecond interval timer handling, `CLOCK_REALTIME` / `CLOCK_MONOTONIC`, and timer system calls in Keira Kernel.

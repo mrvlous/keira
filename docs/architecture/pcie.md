@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # PCIe ECAM & MSI/MSI-X Interrupt Subsystem
 
 This document details PCI Express Enhanced Configuration Access Mechanism (ECAM), Message Signaled Interrupts (MSI), and device enumeration in Keira Kernel.

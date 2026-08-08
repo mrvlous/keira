@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Building and Running the Kernel
 
 This document describes how to compile the kernel, package the boot image, and run the system using the QEMU emulator.

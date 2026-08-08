@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # EXT4 / EXT2 Linux Filesystem Kernel Driver Subsystem
 
 This document details the architecture, data structures, superblock parsing, inode table reading, and extent tree mapping of the native EXT4 / EXT2 filesystem driver in Keira Kernel.

@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Virtio 1.0 Paravirtualized PCI Storage & Network Driver
 
 This document details low-latency Virtio paravirtualized PCI storage and network drivers in Keira Kernel.

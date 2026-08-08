@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Workspace Setup Guide
 
 This document describes how to install target toolchains, cross-compilers, and package dependencies required to compile and build Keira Kernel.

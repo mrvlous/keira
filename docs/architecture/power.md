@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # ACPI Hardware Power Management & NMI Watchdog Subsystem
 
 This document details ACPI power state transitions (S0, S3, S5) and NMI hardware watchdog management in Keira Kernel.

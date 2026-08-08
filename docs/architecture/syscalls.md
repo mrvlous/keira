@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # System Calls and Exception Handling
 
 This document details the privilege level transitions, exception dispatching, and system call execution pipeline in Keira Kernel.

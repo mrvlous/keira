@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # VGA Text Console Driver
 
 This document details the VGA text mode driver, character cell structures, and hardware cursor programming in Keira Kernel.

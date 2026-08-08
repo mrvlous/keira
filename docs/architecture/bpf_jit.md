@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # eBPF JIT Compiler Engine
 
 This document details in-kernel eBPF bytecode compilation into native x86_64 machine code instructions in Keira Kernel.

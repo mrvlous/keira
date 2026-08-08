@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # io_uring Async I/O Worker Thread Pool Engine
 
 This document details kernel-space async I/O worker polling thread pools in Keira Kernel.

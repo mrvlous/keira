@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # POSIX PTP Hardware Clock Subsystem
 
 This document details the IEEE 1588 Precision Time Protocol (PTP) hardware clock architecture in Keira Kernel.

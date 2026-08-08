@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Intel e1000 PCI Network Controller Driver & DNS/TCP/DHCP Stack
 
 This document details the Intel e1000 Gigabit Ethernet network card driver architecture, TCP state machine engine, DHCP auto-IP client, and UDP Port 53 DNS Resolver implemented in Keira Kernel.

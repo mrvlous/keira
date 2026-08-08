@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # USB Host Controller Subsystem (`kernel/src/io/usb.rs`)
 
 This document details the PCI enumeration, host controller interface discovery, and device descriptor handling of the USB Host Controller Driver Subsystem in Keira Kernel.

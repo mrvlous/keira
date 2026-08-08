@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Kernel Page Table Isolation (KPTI / KASI) Security Subsystem
 
 This document details the Kernel Page Table Isolation (KPTI / KASI) security architecture in Keira Kernel.

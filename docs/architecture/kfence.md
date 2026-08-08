@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # KFENCE (Kernel Electric Fence) Sampling Memory Guard Engine
 
 This document details low-overhead sampling memory guards and out-of-bounds guard pages in Keira Kernel.

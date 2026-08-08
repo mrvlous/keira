@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # High Precision Event Timer (HPET) Subsystem
 
 This document details hardware HPET MMIO register mapping, nanosecond timer resolution, and clock source selection in Keira Kernel.

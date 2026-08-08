@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Hardware Performance Counters & PMU Engine
 
 This document details CPU Performance Monitoring Unit (PMU) event counting and hardware performance system calls in Keira Kernel.

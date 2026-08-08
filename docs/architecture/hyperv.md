@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # Hyper-V Hypercall & Synthetic Interrupt Controller (SynIC) Engine
 
 This document details the Hyper-V hypervisor guest support and SynIC synthetic interrupt controller architecture in Keira Kernel.

@@ -1,3 +1,10 @@
+<!--
+SPDX-License-Identifier: GPL-2.0-only
+
+Keira Kernel - Operating System Kernel
+Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+-->
+
 # EventFD & SignalFD Notification Subsystem
 
 This document details counter notification file descriptors, asynchronous event signaling, and POSIX signal routing via file descriptors in Keira Kernel.
