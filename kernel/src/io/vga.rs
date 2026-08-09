@@ -21,6 +21,7 @@ extern "C" {
     fn vga_set_cursor_pos(row: u16, col: u16);
     fn vga_get_cursor_col() -> u16;
     fn vga_get_cursor_row() -> u16;
+    fn vga_print_n(str: *const core::ffi::c_char, len: u64);
     fn vga_backspace();
     fn vga_clear_line_from(col: u16);
     fn vga_draw_mouse_text(x: u16, y: u16);
@@ -497,9 +498,10 @@ unsafe fn scroll_up() {
     );
 
     let bottom_row_start = (FRAMEBUFFER_HEIGHT - 16) * pitch_pixels;
-    for i in 0..(16 * pitch_pixels) {
-        *fb.offset((bottom_row_start + i) as isize) = ACTIVE_BG_COLOR;
-    }
+    let bottom_pixels = (16 * pitch_pixels) as usize;
+    let bottom_slice =
+        core::slice::from_raw_parts_mut(fb.offset(bottom_row_start as isize), bottom_pixels);
+    bottom_slice.fill(ACTIVE_BG_COLOR);
 }
 
 /// Write a single ASCII character to the VGA display or linear framebuffer.
@@ -548,8 +550,49 @@ pub fn putchar(c: u8) {
 
 /// Write a byte string to the VGA display/framebuffer.
 pub fn print(s: &[u8]) {
-    for &byte in s {
-        putchar(byte);
+    if s.is_empty() {
+        return;
+    }
+    unsafe {
+        VGA_BUSY = true;
+        CURSOR_BLINK_STATE = true;
+        if REDIRECT_TO_FILE {
+            let to_copy = core::cmp::min(s.len(), 4096 - REDIRECT_LEN);
+            REDIRECT_BUFFER[REDIRECT_LEN..REDIRECT_LEN + to_copy].copy_from_slice(&s[..to_copy]);
+            REDIRECT_LEN += to_copy;
+        } else if fb_active() {
+            hide_mouse_graphics();
+            draw_cursor(false);
+
+            for &c in s {
+                if c == b'\n' {
+                    CURSOR_X = 0;
+                    CURSOR_Y += 1;
+                } else if c == b'\r' {
+                    CURSOR_X = 0;
+                } else {
+                    draw_char(c, CURSOR_X, CURSOR_Y, ACTIVE_FG_COLOR, ACTIVE_BG_COLOR);
+                    CURSOR_X += 1;
+                    let max_cols = FRAMEBUFFER_WIDTH / 8;
+                    if CURSOR_X >= max_cols {
+                        CURSOR_X = 0;
+                        CURSOR_Y += 1;
+                    }
+                }
+
+                let max_rows = FRAMEBUFFER_HEIGHT / 16;
+                while CURSOR_Y >= max_rows {
+                    scroll_up();
+                    CURSOR_Y -= 1;
+                }
+            }
+
+            draw_cursor(true);
+            show_mouse_graphics();
+        } else {
+            vga_print_n(s.as_ptr() as *const core::ffi::c_char, s.len() as u64);
+        }
+        VGA_BUSY = false;
     }
 }
 

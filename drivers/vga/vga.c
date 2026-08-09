@@ -125,16 +125,14 @@ static inline uint8_t vga_make_color(uint8_t fg, uint8_t bg) {
  * vga_scroll - Scroll the screen display upward by one character line.
  */
 static void vga_scroll(void) {
-    for (uint16_t row = 1; row < VGA_HEIGHT; row++) {
-        for (uint16_t col = 0; col < VGA_WIDTH; col++) {
-            uint16_t src_index = row * VGA_WIDTH + col;
-            uint16_t dst_index = (row - 1) * VGA_WIDTH + col;
-            VGA_BUFFER[dst_index] = VGA_BUFFER[src_index];
-        }
+    uint64_t *dst = (uint64_t *)VGA_BUFFER;
+    uint64_t *src = (uint64_t *)(VGA_BUFFER + VGA_WIDTH);
+    for (uint32_t i = 0; i < 480; i++) {
+        dst[i] = src[i];
     }
 
     uint16_t blank = vga_make_entry(' ', current_attr);
-    uint16_t last_row_start = (VGA_HEIGHT - 1) * VGA_WIDTH;
+    uint32_t last_row_start = (VGA_HEIGHT - 1) * VGA_WIDTH;
     for (uint16_t col = 0; col < VGA_WIDTH; col++) {
         VGA_BUFFER[last_row_start + col] = blank;
     }
@@ -234,14 +232,57 @@ void vga_putchar(char c) {
 }
 
 /**
+ * vga_print_n - Render a batched string payload onto VGA display with single I/O cursor update.
+ * @str: Pointer to string buffer.
+ * @len: Length of string in bytes.
+ */
+void vga_print_n(const char *str, uint64_t len) {
+    if (vga_fb_mode || !str || len == 0) {
+        return;
+    }
+    vga_hide_mouse_internal();
+
+    for (uint64_t i = 0; i < len; i++) {
+        char c = str[i];
+        if (c == '\n') {
+            cursor_col = 0;
+            cursor_row++;
+        } else if (c == '\r') {
+            cursor_col = 0;
+        } else {
+            uint16_t index = cursor_row * VGA_WIDTH + cursor_col;
+            VGA_BUFFER[index] = vga_make_entry(c, current_attr);
+            cursor_col++;
+
+            if (cursor_col >= VGA_WIDTH) {
+                cursor_col = 0;
+                cursor_row++;
+            }
+        }
+
+        while (cursor_row >= VGA_HEIGHT) {
+            vga_scroll();
+            cursor_row--;
+        }
+    }
+
+    vga_update_cursor();
+    vga_show_mouse_internal();
+}
+
+/**
  * vga_print - Render a null-terminated string onto VGA display.
  * @str: Pointer to null-terminated string.
  */
 void vga_print(const char *str) {
-    while (*str) {
-        vga_putchar(*str);
-        str++;
+    if (!str) {
+        return;
     }
+    uint64_t len = 0;
+    while (str[len] != '\0') {
+        len++;
+    }
+    vga_print_n(str, len);
 }
 
 /**

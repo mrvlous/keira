@@ -61,6 +61,13 @@ void vga_putchar(char c);
 void vga_print(const char *str);
 
 /**
+ * vga_print_n - Render a batched string payload onto VGA display with single I/O cursor update.
+ * @str: Pointer to string buffer.
+ * @len: Length of string in bytes.
+ */
+void vga_print_n(const char *str, uint64_t len);
+
+/**
  * vga_backspace - Handle backspace input by erasing character before cursor.
  */
 void vga_backspace(void);
