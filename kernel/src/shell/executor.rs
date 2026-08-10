@@ -461,6 +461,12 @@ pub fn execute_command_inner(cmd: &str) {
         "jobs" => super::cmds::jobs::run(&mut parts),
         "fg" => super::cmds::fg::run(&mut parts),
         "bg" => super::cmds::bg::run(&mut parts),
+        "lvm" => super::cmds::lvm::run(&mut parts),
+        "raid" => super::cmds::raid::run(&mut parts),
+        "ipcs" => super::cmds::ipcs::run(&mut parts),
+        "ipcrm" => super::cmds::ipcrm::run(&mut parts),
+        "iptables" => super::cmds::iptables::run(&mut parts),
+        "firewall" => super::cmds::firewall::run(&mut parts),
         _ => {
             // Check if the command exists on disk/initrd at /system/bin/
             let found_in_path = unsafe {

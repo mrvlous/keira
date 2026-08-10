@@ -16,5 +16,6 @@ pub mod dhcp;
 pub mod dns;
 pub mod e1000;
 pub mod io_uring_net;
+pub mod netfilter;
 pub mod tcp;
 pub mod tls;

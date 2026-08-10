@@ -243,6 +243,24 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("bg") => {
                 vga::print_str("Usage: bg [job_id]\nResume stopped process job execution in background context.\n");
             }
+            Some("lvm") => {
+                vga::print_str("Usage: lvm [list|info|create|extend]\nManage Logical Volume Manager (LVM) physical volumes and volume groups.\n");
+            }
+            Some("raid") => {
+                vga::print_str("Usage: raid [status|sync|rebuild]\nQuery and manage Software RAID 0 (striping) and RAID 1 (mirroring) arrays.\n");
+            }
+            Some("ipcs") => {
+                vga::print_str("Usage: ipcs [-m|-s|-a]\nInspect active POSIX shared memory IPC segments and semaphores.\n");
+            }
+            Some("ipcrm") => {
+                vga::print_str("Usage: ipcrm <shmid|semid>\nRemove POSIX shared memory IPC segments or semaphores by ID.\n");
+            }
+            Some("iptables") => {
+                vga::print_str("Usage: iptables [-A|-D|-L|-F] <chain> <rule>\nManage stateful Netfilter IPv4 firewall chains (INPUT, OUTPUT, FORWARD).\n");
+            }
+            Some("firewall") => {
+                vga::print_str("Usage: firewall [status|enable|disable|flush]\nToggle stateful Netfilter IPv4 firewall engine or flush active rules.\n");
+            }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);
                 vga::print_str("Error: Unknown command '");

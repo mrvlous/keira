@@ -56,6 +56,7 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [POSIX Sched_Autogroup Task Isolation](architecture/autogroup.md): Per-TTY terminal session autogrouping (`sys_sched_autogroup`).
 *   [Kernel Callstack Unwinder Engine](architecture/unwind.md): RBP/RSP pointer frame walking for kernel panic debugging backtraces.
 *   [POSIX Real-Time Signal Engine & Process Job Control](architecture/signal.md): POSIX signals (`SIGKILL`, `SIGTERM`, `SIGINT`) and terminal job control (`sys_kill`).
+*   [POSIX Shared Memory IPC & Semaphore Subsystem](architecture/shm_sem.md): Shared physical memory pages (`shmget`/`shmat`) and counting semaphores (`sys_shm_sem`).
 
 ### 2. Device Drivers
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.
@@ -67,11 +68,13 @@ To help you navigate the codebase, the documentation is divided into the followi
 *   [PS/2 Mouse Driver](drivers/mouse.md): PS/2 mouse packet decoding, resolution setup, and coordinate tracking.
 *   [CMOS Real-Time Clock Driver](drivers/rtc.md): CMOS Real-Time Clock register queries and UTC timestamp parsing.
 *   [Intel e1000 Network Driver & Socket API](drivers/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, UDP 53 DNS Resolver with 16-slot cache table, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).
+*   [In-Kernel Stateful NAT Firewall Engine](drivers/netfilter.md): Stateful IPv4 packet filtering, IPTables rules, and 1:N NAT masquerading (`sys_netfilter`).
 *   [USB Host Controller Driver](drivers/usb.md): PCI enumeration for xHCI/EHCI/UHCI USB controllers, descriptor decoding, and bus status querying (`usb`).
 *   [USB 3.0 xHCI Isochronous Driver](drivers/xhci.md): High-speed USB 3.0 xHCI isochronous transfer ring buffers (`sys_xhci_iso`).
 
 ### 3. Filesystems & Storage
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.
+*   [Hardware RAID & Logical Volume Manager (LVM)](filesystems/lvm_raid.md): Storage pooling over SATA/NVMe, Volume Groups, and RAID 0/1 arrays (`sys_raid_lvm`).
 *   [Native EXT4 Filesystem Driver](filesystems/ext4.md): Native Linux EXT4 superblock parsing, inode table reading, and extent tree block mapping.
 *   [FAT Filesystem](filesystems/fat.md): FAT12/16/32 directory walking, cluster allocation tables, long file name (LFN) entries, cluster read/write/append operations, sector block cache `sync`, and native file protection (`protect`, `fileinfo`).
 *   [TAR Archive Reader](filesystems/tar.md): Read-only parsing of the USTAR archive format loaded as the boot initrd.

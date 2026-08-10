@@ -121,6 +121,12 @@ pub unsafe fn handle_autocomplete() {
         "jobs",
         "fg",
         "bg",
+        "lvm",
+        "raid",
+        "ipcs",
+        "ipcrm",
+        "iptables",
+        "firewall",
     ];
 
     if is_command {

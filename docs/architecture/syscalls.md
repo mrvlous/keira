@@ -107,6 +107,9 @@ When a user program executes the `syscall` instruction:
 | 71 | `sys_audio_dsp` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
 | 72 | `sys_kill` | `(pid: u32, sig: u32) -> status` |
 | 73 | `sys_usb_device` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
+| 74 | `sys_raid_lvm` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
+| 75 | `sys_shm_sem` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
+| 76 | `sys_netfilter` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
 
 ---
 

@@ -1138,6 +1138,24 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             Ok(res) => res,
             Err(_) => u64::MAX,
         },
+        // Syscall 74: raid_lvm
+        // Signature: sys_raid_lvm(cmd: u32, arg1: u64, arg2: u64) -> status
+        74 => match unsafe { crate::fs::lvm::sys_raid_lvm(arg1 as u32, arg2, arg3) } {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 75: shm_sem
+        // Signature: sys_shm_sem(cmd: u32, arg1: u64, arg2: u64) -> status
+        75 => match unsafe { crate::ipc::shm::sys_shm_sem(arg1 as u32, arg2, arg3) } {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
+        // Syscall 76: netfilter
+        // Signature: sys_netfilter(cmd: u32, arg1: u64, arg2: u64) -> status
+        76 => match unsafe { crate::net::netfilter::sys_netfilter(arg1 as u32, arg2, arg3) } {
+            Ok(res) => res,
+            Err(_) => u64::MAX,
+        },
         _ => {
             // Unknown syscall
             u64::MAX
