@@ -648,13 +648,16 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         }
         // Syscall 24: socket
         // Signature: sys_socket(domain: u64, type: u64, proto: u64) -> sockfd
-        24 => {
-            // Allocate virtual network socket descriptor (FD 5)
-            5
-        }
+        24 => match unsafe { crate::net::tcp::create_socket(arg1, arg2, arg3) } {
+            Ok(fd) => fd,
+            Err(_) => u64::MAX,
+        },
         // Syscall 25: connect
         // Signature: sys_connect(sockfd: u64, addr_ptr: *const u8, len: u64) -> 0
-        25 => 0,
+        25 => match unsafe { crate::net::tcp::connect_socket(arg1, arg2 as *const u8, arg3) } {
+            Ok(()) => 0,
+            Err(_) => u64::MAX,
+        },
         // Syscall 26: send
         // Signature: sys_send(sockfd: u64, buf_ptr: *const u8, len: u64, flags: u64) -> bytes
         26 => {
@@ -706,28 +709,16 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         },
         // Syscall 31: mprotect
         // Signature: sys_mprotect(addr: u64, len: u64, prot: u64) -> status
-        31 => {
-            let addr = arg1;
-            let len = arg2;
-            let _prot = arg3;
-            if addr == 0 || len == 0 || (addr % 4096) != 0 {
-                u64::MAX
-            } else {
-                0
-            }
-        }
+        31 => match unsafe { crate::mem::vmm::mprotect_pages(arg1, arg2 as usize, arg3) } {
+            Ok(()) => 0,
+            Err(_) => u64::MAX,
+        },
         // Syscall 32: madvise
         // Signature: sys_madvise(addr: u64, len: u64, advice: u64) -> status
-        32 => {
-            let addr = arg1;
-            let len = arg2;
-            let _advice = arg3;
-            if addr == 0 || len == 0 || (addr % 4096) != 0 {
-                u64::MAX
-            } else {
-                0
-            }
-        }
+        32 => match unsafe { crate::mem::vmm::madvise_pages(arg1, arg2 as usize, arg3) } {
+            Ok(()) => 0,
+            Err(_) => u64::MAX,
+        },
         // Syscall 33: tls_connect
         // Signature: sys_tls_connect(hostname_ptr: *const u8, buf_ptr: *mut u8, max_len: u64) -> payload_len
         33 => {

@@ -359,6 +359,30 @@ pub unsafe fn munmap_pages(vaddr: u64, len: usize) -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Adjust protection flags for virtual memory pages (Syscall 31: mprotect)
+pub unsafe fn mprotect_pages(vaddr: u64, len: usize, prot: u64) -> Result<(), &'static str> {
+    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 || !validate_virt_addr_range(vaddr, len) {
+        return Err("Invalid address alignment or length for mprotect");
+    }
+    let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;
+    for i in 0..pages {
+        let addr = vaddr + (i as u64 * pmm::PAGE_SIZE);
+        if let Some(phys) = get_phys_addr(addr) {
+            let flags = PAGE_PRESENT | PAGE_USER | if (prot & 2) != 0 { PAGE_WRITABLE } else { 0 };
+            let _ = map_page(addr, phys, flags);
+        }
+    }
+    Ok(())
+}
+
+/// Advise kernel on memory page management strategies (Syscall 32: madvise)
+pub unsafe fn madvise_pages(vaddr: u64, len: usize, _advice: u64) -> Result<(), &'static str> {
+    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 || !validate_virt_addr_range(vaddr, len) {
+        return Err("Invalid address alignment or length for madvise");
+    }
+    Ok(())
+}
+
 pub static mut KASLR_SLIDE_OFFSET: u64 = 0x200000;
 
 /// Calculate Kernel Address Space Layout Randomization (KASLR) base slide offset

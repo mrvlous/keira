@@ -49,6 +49,29 @@ pub struct TcpSocket {
     pub ack_num: u32,
 }
 
+static mut ACTIVE_SOCKET_COUNT: u64 = 5;
+
+pub unsafe fn create_socket(
+    domain: u64,
+    _socket_type: u64,
+    _proto: u64,
+) -> Result<u64, &'static str> {
+    if domain != 2 {
+        // AF_INET
+        return Ok(5);
+    }
+    ACTIVE_SOCKET_COUNT += 1;
+    Ok(ACTIVE_SOCKET_COUNT)
+}
+
+pub unsafe fn connect_socket(
+    _sockfd: u64,
+    _addr_ptr: *const u8,
+    _len: u64,
+) -> Result<(), &'static str> {
+    Ok(())
+}
+
 impl TcpSocket {
     pub fn new(local_ip: [u8; 4], remote_ip: [u8; 4], local_port: u16, remote_port: u16) -> Self {
         Self {
