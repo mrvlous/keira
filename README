@@ -14,58 +14,22 @@ Quick Start
 * Get the latest code: https://github.com/mrvlous/keira
 * Setup the workspace: See docs/contributing/setup.md
 * Build & run the kernel: `make run`
+* Automated test suite: `make test`
 
 Architecture & Documentation Map
 --------------------------------
 
-Explore the kernel's core subsystems and design details:
+Explore the kernel's core subsystems and design details across 9 modular sections:
 
-* Memory Management: docs/architecture/memory.md
-* Task Scheduler: docs/architecture/scheduler.md
-* System Calls and Privilege: docs/architecture/syscalls.md
-* Cryptographic Subsystem: docs/architecture/crypto.md
-* Loadable Kernel Modules (LKM): docs/architecture/lkm.md
-* High Precision Event Timer (HPET): docs/architecture/hpet.md
-* Symmetric Multiprocessing (SMP): docs/architecture/smp.md
-* PCIe ECAM & MSI Interrupts: docs/architecture/pcie.md
-* Asynchronous Kernel I/O (io_uring): docs/architecture/iouring.md
-* NX Bit & KASLR Hardware Security: docs/architecture/nx.md
-* Fast Userspace Mutex (Futex): docs/architecture/futex.md
-* Resource Control Groups (cgroups): docs/architecture/cgroups.md
-* Hardware Virtualization Hypervisor (KVM): docs/architecture/kvm.md
-* Hardware Security TPM 2.0 Enclave: docs/architecture/tpm.md
-* Zero-Copy BPF Packet Filter Engine: docs/architecture/bpf.md
-* DMA Scatter-Gather Allocator: docs/architecture/dma.md
-* Kernel Event Logging & Syslog: docs/architecture/klog.md
-* Mandatory Access Control (MAC): docs/architecture/mac.md
-* High-Resolution POSIX Interval Timers: docs/architecture/timer.md
-* Zero-Copy Kernel Pipe Splice: docs/architecture/splice.md
-* ACPI Power Management & NMI Watchdog: docs/architecture/power.md
-* Hardware Performance PMU Counters: docs/architecture/perf.md
-* EventFD & SignalFD Subsystem: docs/architecture/eventfd.md
-* Seccomp BPF Syscall Filtering Sandbox: docs/architecture/seccomp.md
-* Swap Space & Virtual Memory Pager: docs/architecture/swap.md
-* Epoll Scalable I/O Event Engine: docs/architecture/epoll.md
-* KASAN Shadow Memory Diagnostic Engine: docs/architecture/kasan.md
-* POSIX Message Queue IPC Subsystem: docs/architecture/mqueue.md
-* eBPF JIT Compiler Engine: docs/architecture/bpf_jit.md
-* Virtio 1.0 Paravirtualized PCI Driver: docs/architecture/virtio.md
-* AMD SEV & Intel TDX Subsystem: docs/architecture/sev.md
-* io_uring Worker Thread Pool Engine: docs/architecture/io_worker.md
-* KFENCE Memory Guard Engine: docs/architecture/kfence.md
-* POSIX Sched_Deadline EDF Scheduler: docs/architecture/deadline.md
-* Hyper-V Hypercall & SynIC Engine: docs/architecture/hyperv.md
-* io_uring Async Network Socket Polling: docs/architecture/io_uring_net.md
-* USB 3.0 xHCI Isochronous Driver: docs/drivers/xhci.md
-* POSIX PTP Hardware Clock Subsystem: docs/architecture/ptp.md
-* Kernel Page Table Isolation (KPTI): docs/architecture/kpti.md
-* POSIX Sched_Autogroup Task Isolation: docs/architecture/autogroup.md
-* Kernel Callstack Unwinder Engine: docs/architecture/unwind.md
-* POSIX Real-Time Signal Engine & Process Job Control: docs/architecture/signal.md
-* Intel High Definition Audio (HDA) DSP & WAV Streaming Engine: docs/drivers/audio_dsp.md
-* USB Mass Storage & USB HID Device Subsystem: docs/drivers/usb_storage.md
-* NVMe PCIe Controller Driver: docs/drivers/nvme.md
-* Native EXT4 Linux Filesystem Driver: docs/filesystems/ext4.md
+* Core Architecture: docs/architecture/README.md
+* Hardware & Software Security: docs/security/README.md
+* IPC & Asynchronous I/O: docs/ipc/README.md
+* Virtualization & Hypervisors: docs/virtualization/README.md
+* Networking & Packet Filtering: docs/networking/README.md
+* Device Drivers: docs/drivers/README.md
+* Filesystems & Storage: docs/filesystems/README.md
+* Userland Subsystems: docs/userland/README.md
+* Contribution Guidelines: docs/contributing/README.md
 
 More modular guides can be found starting from the documentation map: docs/README.md
 
@@ -102,13 +66,12 @@ Explore the kernel's core subsystems and design details:
 * Memory Management: docs/architecture/memory.md
 * Task Scheduler: docs/architecture/scheduler.md
 * System Calls and Privilege: docs/architecture/syscalls.md
-* Cryptographic Subsystem: docs/architecture/crypto.md
-* LKM, HPET & SMP Subsystems: docs/architecture/lkm_hpet_smp.md
+* Cryptographic Subsystem: docs/security/crypto.md
 * Virtual Filesystem (VFS) Layer: docs/filesystems/vfs.md
 * FAT Filesystem Implementation: docs/filesystems/fat.md
 * TAR Boot initrd Reader: docs/filesystems/tar.md
-* Multi-User Accounts & System Hostname: docs/userland/users_hostname.md
-* POSIX File Permissions, Redirection & Multi-TTY: docs/userland/tty_permissions.md
+* Multi-User Accounts & System Hostname: docs/userland/users.md
+* POSIX File Permissions & Multi-TTY: docs/userland/permissions.md
 
 Device Driver Developer
 -----------------------
@@ -118,8 +81,8 @@ Write and support hardware device drivers:
 * VGA Text Console, Code Editor & VBE Framebuffer: docs/drivers/vga.md
 * Serial UART COM1: docs/drivers/serial.md
 * Sound (PC Speaker & HDA): docs/drivers/sound.md
-* Mouse & CMOS RTC: docs/drivers/mouse_rtc.md
-* Intel e1000 Network Driver: docs/drivers/network.md
+* Mouse & CMOS RTC: docs/drivers/mouse.md
+* Intel e1000 Network Driver: docs/networking/network.md
 * USB Host Controller Driver: docs/drivers/usb.md
 
 AI Coding Assistant

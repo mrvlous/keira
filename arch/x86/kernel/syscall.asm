@@ -38,9 +38,10 @@ init_syscall_msrs:
     wrmsr
 
     ; Configure STAR MSR (0xC0000081) selector bases
+    ; Kernel CS/SS: 0x0008, User CS/SS base: 0x0018
     mov ecx, 0xC0000081
     rdmsr
-    mov edx, 0x001B0008
+    mov edx, 0x00180008
     wrmsr
 
     ; Configure LSTAR MSR (0xC0000082) target RIP for `syscall` instruction
@@ -117,6 +118,7 @@ syscall_handler_asm:
     pop r12
     pop rbx
     pop rbp
+    sti
     ret
 
 ; jump_to_user - Lower execution privilege level from Ring 0 to Ring 3
@@ -156,4 +158,3 @@ jump_to_user:
     xor r15, r15
 
     iretq
-    

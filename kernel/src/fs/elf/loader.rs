@@ -14,6 +14,10 @@ use crate::mem::{pmm, vmm};
 
 static mut ELF_FILE_BUF: [u8; 65536] = [0u8; 65536];
 
+extern "C" {
+    fn jump_to_user(entry: u64, stack: u64);
+}
+
 /// Load an ELF binary from Routed VFS disk, map pages, and return virtual entry address
 pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     let file_buf = unsafe { &mut *core::ptr::addr_of_mut!(ELF_FILE_BUF) };
@@ -166,7 +170,69 @@ pub unsafe fn spawn_user_program(filename: &str) -> Result<usize, &'static str> 
 
 /// Load and execute a freestanding user mode ELF program in an isolated address space
 pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
-    let task_id = spawn_user_program(filename)?;
-    crate::task::scheduler::wait_for_task(task_id);
+    // 1. Clone the kernel's PML4 to create an isolated address space for the child
+    let child_pml4 = vmm::clone_kernel_pml4()?;
+
+    // Save parent's PML4 so we can restore it
+    let parent_pml4 = vmm::active_pml4();
+
+    // 2. Switch to the child's address space to load the ELF
+    vmm::switch_address_space(child_pml4);
+
+    // 3. Load the ELF binary (maps segments into the child's page tables)
+    let entry_point = match load_elf(filename) {
+        Ok(ep) => ep,
+        Err(e) => {
+            vmm::switch_address_space(parent_pml4);
+            vmm::free_user_pages(child_pml4, 0x600000000000);
+            return Err(e);
+        }
+    };
+
+    // 4. Allocate and map user stack (4KB at 0x7FFFFFFF0000)
+    let stack_frame = match pmm::alloc_frame() {
+        Some(f) => f,
+        None => {
+            vmm::switch_address_space(parent_pml4);
+            vmm::free_user_pages(child_pml4, 0x600000000000);
+            return Err("Out of memory for user stack frame");
+        }
+    };
+    let user_stack_vaddr: u64 = 0x7FFFFFFF0000;
+    vmm::map_page(
+        user_stack_vaddr,
+        stack_frame,
+        vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
+    )?;
+
+    // Clear user stack
+    let stack_ptr = user_stack_vaddr as *mut u64;
+    for i in 0..512 {
+        *stack_ptr.add(i) = 0;
+    }
+
+    // 5. Initialize Task 0 state for user program execution
+    if let Some(ref mut task) = crate::task::scheduler::TASKS[0] {
+        task.program_break = 0x600000000000;
+        task.program_break_start = 0x600000000000;
+        task.fds = [crate::task::types::FileDescriptor::new(); 8];
+        task.pml4_phys = child_pml4;
+    }
+
+    // 6. Suspend scheduler task-switching during synchronous user program execution
+    let prev_sched = crate::task::scheduler::SCHEDULER_INITIALIZED;
+    crate::task::scheduler::SCHEDULER_INITIALIZED = false;
+
+    // 7. Jump to user space (Ring 3) and execute!
+    jump_to_user(entry_point, user_stack_vaddr + pmm::PAGE_SIZE - 16);
+
+    // 8. Re-enable scheduler and restore parent address space after user mode program exits (via sys_exit -> 0xDEADBEEF)
+    crate::task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+    if let Some(ref mut task) = crate::task::scheduler::TASKS[0] {
+        task.pml4_phys = parent_pml4;
+    }
+    vmm::switch_address_space(parent_pml4);
+    vmm::free_user_pages(child_pml4, 0x600000000000);
+
     Ok(())
 }

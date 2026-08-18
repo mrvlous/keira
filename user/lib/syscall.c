@@ -354,21 +354,23 @@ int sys_connect(int sockfd, const void *addr, int addrlen) {
 
 int sys_send(int sockfd, const void *buf, size_t len, int flags) {
     unsigned long res;
+    register unsigned long r10 __asm__("r10") = (unsigned long)flags;
     __asm__ volatile("syscall"
                      : "=a"(res)
                      : "a"(26), "D"((unsigned long)sockfd), "S"((unsigned long)buf),
-                       "d"((unsigned long)len), "c"((unsigned long)flags)
-                     : "r11", "memory");
+                       "d"((unsigned long)len), "r"(r10)
+                     : "rcx", "r11", "memory");
     return (int)res;
 }
 
 int sys_recv(int sockfd, void *buf, size_t max_len, int flags) {
     unsigned long res;
+    register unsigned long r10 __asm__("r10") = (unsigned long)flags;
     __asm__ volatile("syscall"
                      : "=a"(res)
                      : "a"(27), "D"((unsigned long)sockfd), "S"((unsigned long)buf),
-                       "d"((unsigned long)max_len), "c"((unsigned long)flags)
-                     : "r11", "memory");
+                       "d"((unsigned long)max_len), "r"(r10)
+                     : "rcx", "r11", "memory");
     return (int)res;
 }
 

@@ -1530,7 +1530,9 @@ void compile_global_declarations(void) {
                     code_buf[code_idx + 4] = 0x00;
                     code_buf[code_idx + 5] = 0x0f;
                     code_buf[code_idx + 6] = 0x05;
-                    code_idx = code_idx + 7;
+                    code_buf[code_idx + 7] = 0xeb;
+                    code_buf[code_idx + 8] = 0xfe;
+                    code_idx = code_idx + 9;
                 } else {
                     /* ret */
                     code_buf[code_idx] = 0xc3;

@@ -46,21 +46,20 @@ static int print_int(long val) {
     char buf[24];
     int i = 0;
     int count = 0;
-    int is_neg = 0;
+    unsigned long uval;
     if (val < 0) {
-        is_neg = 1;
-        val = -val;
+        sys_print_char('-');
+        count++;
+        uval = (unsigned long)(-val);
     } else if (val == 0) {
         sys_print_char('0');
         return 1;
+    } else {
+        uval = (unsigned long)val;
     }
-    while (val > 0) {
-        buf[i++] = '0' + (val % 10);
-        val /= 10;
-    }
-    if (is_neg) {
-        sys_print_char('-');
-        count++;
+    while (uval > 0) {
+        buf[i++] = (char)('0' + (uval % 10));
+        uval /= 10;
     }
     while (i > 0) {
         sys_print_char(buf[--i]);

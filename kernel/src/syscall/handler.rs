@@ -75,12 +75,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             0
         }
         // Syscall 2: Exit User Mode
-        2 => {
-            unsafe {
-                crate::task::scheduler::exit_current();
-            }
-            0
-        }
+        2 => 0xDEADBEEF,
         // Syscall 3: Sleep (busy halt)
         3 => {
             let ms = arg1;

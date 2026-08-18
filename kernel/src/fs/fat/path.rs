@@ -10,7 +10,9 @@
 //! Keira Kernel: FAT16 Path Resolution and Entry Lookup
 
 use super::dir::for_each_directory_entry;
+use super::read_sector;
 use super::types::{DirectoryEntry, FoundEntry, LfnAccumulator, LfnEntry};
+use super::volume::cluster_to_sector;
 
 /// Accumulates unicode character parts from an LFN entry into the accumulator
 pub unsafe fn accumulate_lfn(entry: &DirectoryEntry, accum: &mut LfnAccumulator) {
@@ -168,20 +170,47 @@ pub fn sanitize_path(path: &str) -> &str {
 }
 
 /// Resolve a nested path to its parent directory cluster and filename.
-/// Supports both absolute (e.g. "/apps/bin/file.txt") and relative (e.g. "bin/file.txt") paths.
+/// Supports both absolute (e.g. "/apps/bin/file.txt") and relative (e.g. "bin/file.txt", "../../system") paths.
 pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
-    let mut current_cluster = crate::fs::fat::CURRENT_DIR_CLUSTER;
+    let is_absolute = path.trim().starts_with('/');
+    let mut current_cluster = if is_absolute {
+        0 // Root directory
+    } else {
+        crate::fs::fat::CURRENT_DIR_CLUSTER
+    };
 
     let path_trimmed = sanitize_path(path);
 
     if path_trimmed.is_empty() {
-        return Ok((0, ""));
+        return Ok((current_cluster, ""));
     }
 
     let mut segments = path_trimmed.split('/');
     let mut current_segment = segments.next().ok_or("Invalid empty path")?;
 
     for next_segment in segments {
+        if current_segment == "." || current_segment.is_empty() {
+            current_segment = next_segment;
+            continue;
+        }
+        if current_segment == ".." {
+            if current_cluster != 0 {
+                let vol_ptr = &raw const crate::fs::fat::VOLUME;
+                if let Some(ref vol) = *vol_ptr {
+                    let sector = cluster_to_sector(current_cluster, vol);
+                    let mut sector_data = [0u8; 512];
+                    read_sector(sector, &mut sector_data)?;
+                    let entries = sector_data.as_ptr() as *const DirectoryEntry;
+                    let dotdot = &*entries.add(1);
+                    if dotdot.name[0] == b'.' && dotdot.name[1] == b'.' {
+                        current_cluster = dotdot.first_cluster_lo;
+                    }
+                }
+            }
+            current_segment = next_segment;
+            continue;
+        }
+
         let found = find_entry(current_segment, current_cluster)?;
         if (found.entry.attr & 0x10) == 0 {
             return Err("Path segment is not a directory");
@@ -204,7 +233,6 @@ pub unsafe fn find_entry(filename: &str, dir_cluster: u16) -> Result<FoundEntry,
                     index: parsed.index,
                     entry: parsed.entry,
                 });
-                // Stop iteration
                 return Ok(false);
             }
         }
