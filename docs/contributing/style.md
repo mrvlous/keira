@@ -42,7 +42,7 @@ Must include the 4-line concise copyright comment block:
 # Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 ```
 
-### Markdown Files (`*.md` & `README`)
+### Markdown Documentation Files (`docs/**/*.md`)
 Must include the HTML comment block:
 ```markdown
 <!--
@@ -52,6 +52,8 @@ Keira Kernel - Operating System Kernel
 Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 -->
 ```
+
+*(Note: Root `README` and auto-generated `Cargo.lock` are kept clean without header blocks).*
 
 ### `LICENSE` File
 Contains the full GNU General Public License v2.0 text.

@@ -23,7 +23,7 @@ fn validate_user_ptr(ptr: u64, len: u64) -> Result<(), &'static str> {
         Some(e) => e,
         None => return Err("Integer overflow in address calculation"),
     };
-    if ptr >= 0x40000000 && end <= 0x800000000000 {
+    if ptr >= 0x10000 && end <= 0x0000_7FFF_FFFF_FFFF {
         Ok(())
     } else {
         Err("Address range resides outside user space boundaries")
@@ -38,7 +38,7 @@ unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, &'st
     let max_len = buf.len();
     while len < max_len - 1 {
         let addr = ptr.add(len) as u64;
-        if addr < 0x40000000 || addr >= 0x800000000000 {
+        if addr < 0x10000 || addr >= 0x0000_7FFF_FFFF_FFFF {
             return Err("Address resides outside user space boundaries");
         }
         let c = *ptr.add(len);

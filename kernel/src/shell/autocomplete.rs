@@ -129,6 +129,16 @@ pub unsafe fn handle_autocomplete() {
         "firewall",
     ];
 
+    let standard_paths = [
+        "system/",
+        "apps/",
+        "users/",
+        "config/",
+        "data/",
+        "temp/",
+        "system.cfg",
+    ];
+
     if is_command {
         for &cmd in &commands {
             if cmd.starts_with(word) {
@@ -140,6 +150,16 @@ pub unsafe fn handle_autocomplete() {
             }
         }
     } else {
+        for &path in &standard_paths {
+            if path.starts_with(word) {
+                if match_count == 0 {
+                    first_match_len = path.len();
+                    first_match[..first_match_len].copy_from_slice(path.as_bytes());
+                }
+                match_count += 1;
+            }
+        }
+
         crate::fs::fat::find_matches(word, |filename| {
             if match_count == 0 {
                 first_match_len = filename.len();
@@ -195,6 +215,13 @@ pub unsafe fn handle_autocomplete() {
                 }
             }
         } else {
+            for &path in &standard_paths {
+                if path.starts_with(word) && printed < 10 {
+                    vga::print_str(path);
+                    vga::print_str("  ");
+                    printed += 1;
+                }
+            }
             let mut exceeded = false;
             crate::fs::fat::find_matches(word, |filename| {
                 if printed < 10 {
