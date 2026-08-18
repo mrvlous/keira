@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'virtio'
 //!
-//! Inspect Virtio 1.0 paravirtualized PCI storage & network queues (Syscall 60).
+//! Inspect Virtio paravirtualized PCI storage & network queues (Syscall 60).
 
 use crate::io::vga;
 
@@ -25,9 +25,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("Virtio 1.0 Paravirtualized PCI Driver Status (Syscall 60)\n");
-        let _ = crate::io::virtio::sys_virtio(0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::io::virtio::sys_virtio(1, 0);
     }
 }

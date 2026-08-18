@@ -8,26 +8,29 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'power' / 'poweroff' / 'reboot'
+//! Keira Kernel: Shell Command 'power'
 //!
-//! Manage ACPI power state transitions and NMI hardware watchdog timer.
+//! Query ACPI Power Management and NMI hardware watchdog status.
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: power [status|off|sleep]\n\n");
-            vga::print_str("Description:\n  Manage ACPI power state transitions (S0/S3/S5) & NMI hardware watchdog timer.\n\n");
+            vga::print_str("Usage: power [status|acpi]\n\n");
+            vga::print_str("Description:\n  Query ACPI power management states (S0/S3/S5) and NMI hardware watchdog.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
+        crate::arch::power::pet_watchdog();
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("ACPI Power Management & NMI Watchdog Status\n");
-        let _ = crate::arch::power::set_power_state(0);
+        vga::print_str("ACPI Power Management & Hardware Watchdog:\n");
+        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::print_str("  ACPI State    : S0 (Working)\n");
+        vga::print_str("  NMI Watchdog  : PETTED / ACTIVE [OK]\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

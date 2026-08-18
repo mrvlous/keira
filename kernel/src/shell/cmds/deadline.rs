@@ -10,24 +10,21 @@
 
 //! Keira Kernel: Shell Command 'deadline'
 //!
-//! Inspect Sched_Deadline EDF real-time task scheduler policy (Syscall 64).
+//! Configure SCHED_DEADLINE Earliest Deadline First (EDF) real-time policy (Syscall 65).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: deadline [status]\n\n");
-            vga::print_str("Description:\n  Inspect POSIX Sched_Deadline EDF hard real-time scheduler policy status (Syscall 64).\n\n");
+            vga::print_str("Usage: deadline [status|set <pid>]\n\n");
+            vga::print_str("Description:\n  Configure SCHED_DEADLINE Earliest Deadline First (EDF) real-time scheduler policy (Syscall 65).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("POSIX Sched_Deadline EDF Hard Real-Time Scheduler (Syscall 64)\n");
         let _ = crate::task::deadline::sys_sched_setattr(1, 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

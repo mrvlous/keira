@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'io_uring_net'
 //!
-//! Query io_uring Async Network Socket Polling Engine status (Syscall 66).
+//! Query io_uring async network socket polling and multishot buffers (Syscall 66).
 
 use crate::io::vga;
 
@@ -18,16 +18,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
             vga::print_str("Usage: io_uring_net [status]\n\n");
-            vga::print_str("Description:\n  Query io_uring Async Network Socket Polling Engine status (Syscall 66).\n\n");
+            vga::print_str("Description:\n  Query io_uring async network socket polling and zero-copy multishot buffers (Syscall 66).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("io_uring Async Network Socket Polling Engine (Syscall 66)\n");
-        let _ = crate::net::io_uring_net::sys_io_uring_net(0, 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::net::io_uring_net::sys_io_uring_net(1, 0, 0);
     }
 }

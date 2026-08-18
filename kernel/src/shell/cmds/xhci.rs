@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'xhci'
 //!
-//! Query USB 3.0 xHCI Host Controller Isochronous Transfer Driver status (Syscall 67).
+//! Query USB 3.0 xHCI Host Controller Isochronous Driver status (Syscall 67).
 
 use crate::io::vga;
 
@@ -25,9 +25,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("USB 3.0 xHCI Isochronous Transfer Subsystem (Syscall 67)\n");
         let _ = crate::io::xhci::sys_xhci_iso(0, 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

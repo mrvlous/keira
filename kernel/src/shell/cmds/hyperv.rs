@@ -10,24 +10,21 @@
 
 //! Keira Kernel: Shell Command 'hyperv'
 //!
-//! Query Hyper-V Hypercall & SynIC interrupt controller status (Syscall 65).
+//! Query Hyper-V / Microsoft Hypervisor synthetic interface (Syscall 64).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: hyperv [status]\n\n");
-            vga::print_str("Description:\n  Query Hyper-V Hypercall & SynIC synthetic interrupt controller status (Syscall 65).\n\n");
+            vga::print_str("Usage: hyperv [status|hypercall]\n\n");
+            vga::print_str("Description:\n  Query Hyper-V paravirtualized synthetic hypercall page & MSR clock (Syscall 64).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("Microsoft Hyper-V Hypercall & SynIC Controller Subsystem (Syscall 65)\n");
-        let _ = crate::arch::hyperv::sys_hyperv(0, 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::arch::hyperv::sys_hyperv(1, 0, 0);
     }
 }

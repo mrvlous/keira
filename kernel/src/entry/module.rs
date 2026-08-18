@@ -69,3 +69,20 @@ pub fn delete_module(name: &str) -> Result<(), &'static str> {
     }
     Ok(())
 }
+
+/// Print active kernel symbols and module table
+pub fn list_modules() {
+    unsafe {
+        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::print_str("Dynamically Resolved Kernel Symbols (kallsyms):\n");
+        for sym in KERNEL_SYMBOLS.iter() {
+            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+            vga::print_str("  0x");
+            vga::print_hex(sym.addr);
+            vga::print_str(" - ");
+            vga::print_str(sym.name);
+            vga::print_str("\n");
+        }
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+    }
+}

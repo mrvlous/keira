@@ -10,24 +10,23 @@
 
 //! Keira Kernel: Shell Command 'mqueue'
 //!
-//! Inspect in-kernel POSIX Message Queue IPC status (Syscall 58).
+//! Inspect POSIX Real-Time Message Queues (Syscall 41).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: mqueue [status]\n\n");
-            vga::print_str("Description:\n  Inspect in-kernel POSIX Message Queue IPC subsystem status (Syscall 58).\n\n");
+            vga::print_str("Usage: mqueue [create|send|receive|status]\n\n");
+            vga::print_str(
+                "Description:\n  Inspect POSIX Real-Time Message Queues (Syscall 41).\n\n",
+            );
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("POSIX Message Queue IPC Subsystem Status (Syscall 58)\n");
         let _ = crate::ipc::mqueue::sys_mq_open(core::ptr::null(), 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

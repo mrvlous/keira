@@ -10,24 +10,21 @@
 
 //! Keira Kernel: Shell Command 'ptp'
 //!
-//! Query IEEE 1588 PTP Hardware Clock status (Syscall 68).
+//! Query Precision Time Protocol IEEE 1588 hardware clock synchronization (Syscall 68).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: ptp [status]\n\n");
-            vga::print_str("Description:\n  Query IEEE 1588 Precision Time Protocol (PTP) Hardware Clock status (Syscall 68).\n\n");
+            vga::print_str("Usage: ptp [status|sync]\n\n");
+            vga::print_str("Description:\n  Query Precision Time Protocol (PTP IEEE 1588) hardware clock synchronization (Syscall 68).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("IEEE 1588 PTP Hardware Clock Subsystem (Syscall 68)\n");
-        let _ = crate::arch::ptp::sys_ptp_clock(0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::arch::ptp::sys_ptp_clock(1, 0);
     }
 }

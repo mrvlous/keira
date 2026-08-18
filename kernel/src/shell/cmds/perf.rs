@@ -10,24 +10,21 @@
 
 //! Keira Kernel: Shell Command 'perf'
 //!
-//! View CPU PMU hardware performance event counters (Syscall 49).
+//! Query Hardware Performance Counters (PMU) & CPU cycles (Syscall 51).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: perf [stat|list]\n\n");
-            vga::print_str("Description:\n  View CPU PMU hardware performance event counters (Syscall 49).\n\n");
+            vga::print_str("Usage: perf [stat|record|status]\n\n");
+            vga::print_str("Description:\n  Query Hardware Performance Counters (PMU) & CPU cycles (Syscall 51).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("Hardware Performance Monitoring Unit (PMU - Syscall 49)\n");
-        let _ = crate::arch::perf::sys_perf_event_open(0, 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::arch::perf::sys_perf_event_open(1, 0, 1);
     }
 }

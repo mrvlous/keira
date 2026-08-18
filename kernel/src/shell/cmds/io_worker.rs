@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'io_worker'
 //!
-//! Inspect io_uring async worker thread pool status (Syscall 62).
+//! Query io_uring async I/O worker thread pool engine (Syscall 62).
 
 use crate::io::vga;
 
@@ -18,16 +18,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
             vga::print_str("Usage: io_worker [status]\n\n");
-            vga::print_str("Description:\n  Inspect io_uring async kernel worker thread pool status (Syscall 62).\n\n");
+            vga::print_str("Description:\n  Query io_uring async I/O worker thread pool engine & register buffers (Syscall 62).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("io_uring Async Kernel Worker Thread Pool Status (Syscall 62)\n");
-        let _ = crate::ipc::io_worker::sys_io_uring_register(0, 0, 0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::ipc::io_worker::sys_io_uring_register(1, 0, 0, 0);
     }
 }

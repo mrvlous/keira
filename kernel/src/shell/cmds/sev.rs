@@ -10,24 +10,21 @@
 
 //! Keira Kernel: Shell Command 'sev'
 //!
-//! Inspect AMD SEV / Intel TDX confidential memory encryption status (Syscall 61).
+//! Query AMD Secure Encrypted Virtualization (SEV-SNP) hardware status (Syscall 61).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: sev [status]\n\n");
-            vga::print_str("Description:\n  Inspect AMD SEV-SNP / Intel TDX confidential memory encryption enclave status (Syscall 61).\n\n");
+            vga::print_str("Usage: sev [status|init]\n\n");
+            vga::print_str("Description:\n  Query AMD Secure Encrypted Virtualization (SEV-SNP) hardware memory encryption (Syscall 61).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("AMD SEV-SNP / Intel TDX Confidential Memory Encryption (Syscall 61)\n");
-        let _ = crate::arch::sev::sys_sev(0, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = crate::arch::sev::sys_sev(1, 0);
     }
 }

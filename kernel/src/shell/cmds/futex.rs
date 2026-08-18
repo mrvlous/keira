@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'futex'
 //!
-//! Inspect fast userspace mutex wait queue stats (Syscall 40 & 41).
+//! Query Fast Userspace Mutex wait queue status (Syscall 40).
 
 use crate::io::vga;
 
@@ -18,7 +18,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
             vga::print_str("Usage: futex [status]\n\n");
-            vga::print_str("Description:\n  Inspect fast userspace mutex wait queue stats & POSIX threading (Syscall 40 & 41).\n\n");
+            vga::print_str("Description:\n  Query Fast Userspace Mutex (Futex) wait queue and locking status (Syscall 40).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
@@ -26,9 +26,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
     unsafe {
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("Fast Userspace Mutex (Futex) Subsystem (Syscall 40 & 41)\n");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("  Status : [OK] Futex Wait Queues Active\n");
+        vga::print_str("Fast Userspace Mutex (Futex) Subsystem (Syscall 40):\n");
+        let _ =
+            crate::syscall::futex::sys_futex_op(0x400000, crate::syscall::futex::FUTEX_WAKE, 1, 0);
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

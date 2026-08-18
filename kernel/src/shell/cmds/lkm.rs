@@ -24,11 +24,5 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
-    unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("Dynamically Loadable Kernel Modules (LKM - Syscall 34 & 35)\n");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("  Status : [OK] kallsyms Dynamic Symbol Resolver Active\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    }
+    crate::entry::module::list_modules();
 }

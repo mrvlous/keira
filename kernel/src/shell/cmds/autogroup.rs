@@ -10,24 +10,21 @@
 
 //! Keira Kernel: Shell Command 'autogroup'
 //!
-//! Query POSIX Sched_Autogroup task isolation group status (Syscall 70).
+//! Configure CFS task scheduler session autogrouping (Syscall 70).
 
 use crate::io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: autogroup [status]\n\n");
-            vga::print_str("Description:\n  Query POSIX Sched_Autogroup task isolation group status (Syscall 70).\n\n");
+            vga::print_str("Usage: autogroup [status|set <pid> <group_id>]\n\n");
+            vga::print_str("Description:\n  Configure Completely Fair Scheduler (CFS) session group load balancing (Syscall 70).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("POSIX Sched_Autogroup Task Isolation Engine (Syscall 70)\n");
         let _ = crate::task::autogroup::sys_sched_autogroup(1, 0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

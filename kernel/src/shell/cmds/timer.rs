@@ -10,7 +10,7 @@
 
 //! Keira Kernel: Shell Command 'timer'
 //!
-//! Inspect POSIX high-resolution interval timers (Syscall 45 & 46).
+//! Inspect POSIX high-resolution nanosecond interval timers (Syscall 45 & 46).
 
 use crate::io::vga;
 
@@ -25,9 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("POSIX High-Resolution Interval Timers (Syscall 45 & 46)\n");
-        let _ = crate::arch::timer::sys_timer_create(0, core::ptr::null_mut());
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let mut tid: u64 = 0;
+        let _ = crate::arch::timer::sys_timer_create(0, &mut tid);
     }
 }
