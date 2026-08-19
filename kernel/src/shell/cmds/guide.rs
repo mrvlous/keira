@@ -64,7 +64,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("User Account & Privileges:\n");
                 vga::set_color(vga::Color::White, bg);
-                vga::print_str("  please    login     user      hostname\n\n");
+                vga::print_str("  login     user      hostname\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Utilities & Console:\n");
@@ -252,6 +252,66 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("firewall") => {
                 vga::print_str("Usage: firewall [status|enable|disable|flush]\nToggle stateful Netfilter IPv4 firewall engine or flush active rules.\n");
+            }
+            Some("bpf") => {
+                vga::print_str("Usage: bpf [load|run|status|attach|filter]\nCompile, attach, and execute in-kernel Berkeley Packet Filter (BPF) bytecode.\n");
+            }
+            Some("cgroups") => {
+                vga::print_str("Usage: cgroups [list|create|set|info]\nManage control groups (cgroups v2) for CPU and memory resource limits.\n");
+            }
+            Some("drivers") => {
+                vga::print_str("Usage: drivers\nList loaded hardware drivers, kernel modules, and device interfaces.\n");
+            }
+            Some("epoll") => {
+                vga::print_str("Usage: epoll [create|ctl|wait|status]\nControl scalable I/O event notification multiplexer (Syscall 55 & 56).\n");
+            }
+            Some("eventfd") => {
+                vga::print_str("Usage: eventfd [create|write|read|status]\nManage asynchronous event notification and signaling file descriptors.\n");
+            }
+            Some("ext4") => {
+                vga::print_str("Usage: ext4 [info|mount|ls|cat]\nInspect and browse second extended (EXT4) storage filesystem partitions.\n");
+            }
+            Some("futex") => {
+                vga::print_str("Usage: futex [wait|wake|lock|unlock]\nFast user-space mutex synchronization and thread coordination engine.\n");
+            }
+            Some("kvm") => {
+                vga::print_str("Usage: kvm [status|create|run|vcpu]\nControl bare-metal hardware virtualization hypervisor (Intel VMX / AMD SVM).\n");
+            }
+            Some("lkm") => {
+                vga::print_str("Usage: lkm [list|load|unload|info]\nInspect and manage dynamically loadable kernel modules (LKM).\n");
+            }
+            Some("mac") => {
+                vga::print_str("Usage: mac [status|enforce|permissive|policy]\nQuery and configure Mandatory Access Control (MAC) multi-level security policies.\n");
+            }
+            Some("mqueue") => {
+                vga::print_str("Usage: mqueue [create|send|receive|unlink]\nManage POSIX real-time message queue IPC channels.\n");
+            }
+            Some("nvme") => {
+                vga::print_str("Usage: nvme [info|scan|identify]\nEnumerate and manage PCI Express NVM Express (NVMe) solid-state drives.\n");
+            }
+            Some("perf") => {
+                vga::print_str("Usage: perf [start|stop|stat|counters]\nRead hardware performance monitoring unit (PMU) CPU performance event counters.\n");
+            }
+            Some("power") => {
+                vga::print_str("Usage: power [reboot|shutdown|status|suspend]\nExecute ACPI power state transitions, system shutdown, or CPU reboot.\n");
+            }
+            Some("seccomp") => {
+                vga::print_str("Usage: seccomp [status|strict|filter|load]\nConfigure kernel syscall filtering sandbox and security boundaries.\n");
+            }
+            Some("swap") => {
+                vga::print_str("Usage: swap [status|on|off|info]\nManage virtual memory paging swap space and disk swap partitions.\n");
+            }
+            Some("syslog") => {
+                vga::print_str("Usage: syslog [dump|clear|level]\nInspect kernel system ring buffer messages and dmesg log history.\n");
+            }
+            Some("timer") => {
+                vga::print_str("Usage: timer [status|create|set]\nInspect POSIX high-resolution nanosecond interval timers (Syscall 45 & 46).\n");
+            }
+            Some("tpm") => {
+                vga::print_str("Usage: tpm [status|pcr|random|quote]\nInteract with Trusted Platform Module (TPM 2.0) crypto chip and PCR banks.\n");
+            }
+            Some("unwind") => {
+                vga::print_str("Usage: unwind [dump|trace|stack]\nTrigger stack frame unwinding and inspect active kernel call stack traces.\n");
             }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);

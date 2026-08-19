@@ -619,7 +619,12 @@ pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> 
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
-    let req_end = b"\r\nUser-Agent: Keira/0.28.4\r\nConnection: close\r\n\r\n";
+    let req_end = concat!(
+        "\r\nUser-Agent: Keira/",
+        env!("CARGO_PKG_VERSION"),
+        "\r\nConnection: close\r\n\r\n"
+    )
+    .as_bytes();
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
@@ -667,7 +672,12 @@ pub unsafe fn fetch_https(
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
-    let req_end = b"\r\nUser-Agent: Keira/0.28.4\r\nConnection: close\r\n\r\n";
+    let req_end = concat!(
+        "\r\nUser-Agent: Keira/",
+        env!("CARGO_PKG_VERSION"),
+        "\r\nConnection: close\r\n\r\n"
+    )
+    .as_bytes();
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
