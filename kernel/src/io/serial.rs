@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Serial I/O (Rust FFI Wrapper)
 //!
 //! Safe Rust interface to the C serial port driver (`drivers/c/serial/`).
 //!
@@ -17,7 +16,7 @@
 //! Why wrap C functions instead of reimplementing in Rust?
 //!   - The C driver is already initialized by `hw_init()` before Rust runs.
 //!   - Avoids duplicating inline assembly for `outb`/`inb`.
-//!   - Demonstrates the C↔Rust interop that is central to Keira's design.
+//!   - Demonstrates the C<->Rust interop that is central to Keira's design.
 
 // FFI Declarations : C functions from `drivers/c/serial/serial.c`
 extern "C" {

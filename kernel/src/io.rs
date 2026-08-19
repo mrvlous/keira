@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: I/O Subsystem Module Root
 //!
 //! Re-exports the serial and VGA submodules, providing a clean namespace
 //! for all I/O operations.
@@ -19,7 +18,7 @@
 /// Serial port (COM1) output : wraps C `serial_print` / `serial_putchar`.
 pub mod serial;
 
-/// VGA text mode (80×25) output : wraps C `vga_print` / `vga_putchar`.
+/// VGA text mode (80x25) output : wraps C `vga_print` / `vga_putchar`.
 pub mod vga;
 
 /// PCI bus access.
@@ -57,15 +56,6 @@ pub mod pcie;
 
 /// NVMe (Non-Volatile Memory Express) PCIe Controller Driver
 pub mod nvme;
-
-/// Virtio 1.0 Paravirtualized PCI Storage & Network Driver
-pub mod virtio;
-
-/// USB 3.0 xHCI Host Controller Isochronous Driver
-pub mod xhci;
-
-/// Intel HDA Audio DSP & WAV PCM Streaming Engine
-pub mod audio;
 
 /// USB Mass Storage & USB HID Device Subsystem
 pub mod usb_storage;

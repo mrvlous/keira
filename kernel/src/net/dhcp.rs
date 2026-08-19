@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Dynamic Host Configuration Protocol (DHCP) Client
 //!
 //! Provides automatic IP configuration over UDP ports 67 (Server) and 68 (Client).
 //! Handles DHCP Discover, Offer, Request, and ACK messages.

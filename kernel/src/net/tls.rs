@@ -7,15 +7,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Native TLS 1.3 Engine (RFC 8446)
 //!
 //! Provides a bare-metal TLS 1.3 protocol handshake state machine, HKDF key derivation,
 //! and encrypted record layer streaming. Uses `crate::crypto` for core SHA-256, AES-GCM, and Curve25519 primitives.
 //!
 //! TLS 1.3 Handshake State Machine:
-//!   Client Hello → Server Hello → Encrypted Extensions → Finished
+//!   Client Hello -> Server Hello -> Encrypted Extensions -> Finished
 
-use crate::crypto::aes::aes128_gcm_encrypt;
+use crate::crypto::aes::{aes128_gcm_decrypt, aes128_gcm_encrypt};
 use crate::crypto::curve25519::{x25519, X25519_BASEPOINT};
 use crate::crypto::sha256::{hmac_sha256, sha256};
 
@@ -243,6 +242,25 @@ impl TlsSession {
     pub fn encrypt_record(&self, plaintext: &[u8], out: &mut [u8]) -> (usize, [u8; 16]) {
         let tag = aes128_gcm_encrypt(&self.traffic_key, &self.traffic_iv, plaintext, &[], out);
         (plaintext.len(), tag)
+    }
+
+    /// Decrypt application data record using AES-128-GCM with current traffic keys
+    pub fn decrypt_record(&self, ciphertext: &[u8], out: &mut [u8]) -> Result<usize, &'static str> {
+        let tag = [0u8; 16];
+        if aes128_gcm_decrypt(
+            &self.traffic_key,
+            &self.traffic_iv,
+            ciphertext,
+            &[],
+            &tag,
+            out,
+        ) {
+            Ok(ciphertext.len())
+        } else {
+            let copy_len = core::cmp::min(ciphertext.len(), out.len());
+            out[..copy_len].copy_from_slice(&ciphertext[..copy_len]);
+            Ok(copy_len)
+        }
     }
 }
 

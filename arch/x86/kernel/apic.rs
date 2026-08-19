@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Local APIC (Advanced Programmable Interrupt Controller) Driver
 //!
 //! Provides MMIO-mapped Local APIC register access, Spurious Interrupt Vector setup,
 //! EOI (End of Interrupt) signals, and precision APIC Timer calibration for SMP multi-core readiness.

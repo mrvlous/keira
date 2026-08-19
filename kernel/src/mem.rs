@@ -7,14 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Memory Management Module Root
 //!
 //! Provides Physical Memory Management (PMM) and Virtual Memory Management (VMM).
 
 pub mod dma;
-pub mod kasan;
-pub mod kfence;
-pub mod kpti;
 pub mod pmm;
 pub mod swap;
 pub mod vmm;

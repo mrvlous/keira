@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Virtual Memory Manager (VMM)
 //!
 //! Manages 4-level page tables (PML4, PDPT, PD, PT) on x86_64, enabling dynamic
 //! mapping and unmapping of virtual addresses to physical pages.
@@ -201,7 +200,7 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     let new_pml4_phys = pmm::alloc_frame().ok_or("Out of memory for new PML4")?;
     let new_pml4 = new_pml4_phys as *mut u64;
 
-    // Read the boot PML4[0] entry — it points to the boot PDPT
+    // Read the boot PML4[0] entry - it points to the boot PDPT
     let boot_pml4_0 = *boot_pml4;
     if (boot_pml4_0 & PAGE_PRESENT) == 0 {
         pmm::free_frame(new_pml4_phys);
@@ -218,12 +217,12 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     // Copy only PDPT[0] (kernel identity map: first 1GB via 2MB huge pages)
     *new_pdpt = *boot_pdpt;
 
-    // PDPT[1..511] are zeroed by alloc_frame — user space starts fresh
+    // PDPT[1..511] are zeroed by alloc_frame - user space starts fresh
 
     // Set new PML4[0] = new PDPT with present + writable + user flags
     *new_pml4 = new_pdpt_phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
 
-    // PML4[1..511] are zeroed by alloc_frame — user heap/stack space starts fresh
+    // PML4[1..511] are zeroed by alloc_frame - user heap/stack space starts fresh
 
     Ok(new_pml4_phys)
 }
@@ -299,7 +298,7 @@ unsafe fn free_page_table_tree(table_phys: u64, level: u32) {
         for i in 0..512 {
             let entry = *table.add(i);
             if (entry & PAGE_PRESENT) != 0 {
-                // Skip huge pages (bit 7) — they're part of the identity map
+                // Skip huge pages (bit 7) - they're part of the identity map
                 if (entry & (1 << 7)) == 0 {
                     free_page_table_tree(entry & !0xFFF, level - 1);
                 }

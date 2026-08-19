@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: FAT16 Volume and Driver Initialization
-
 use super::types::Fat16Volume;
 use super::{CURRENT_DIR_CLUSTER, VOLUME};
 use crate::io::vga;

@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'user'
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Multi-user account management with persistent storage on FAT16 disk.
 //! Accounts are stored in `/system/etc/passwd` (format: `username:password` per line).

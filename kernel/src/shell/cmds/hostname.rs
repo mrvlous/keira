@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'hostname'
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! View or set the system hostname. Hostname is persisted to `/system/etc/hostname` on FAT16 disk.
 

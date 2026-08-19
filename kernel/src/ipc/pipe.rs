@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Inter-Process Communication (IPC) Pipe Subsystem
 //!
 //! Provides ring buffer pipe primitives for data stream redirection between processes (`sys_pipe`).
 

@@ -7,13 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Rust Entry Point
 //!
 //! This is the Rust kernel's main entry point, called by the ASM trampoline
 //! (entry64.asm) after C hardware initialization (hw_init) completes.
 //!
-//! Call chain: GRUB → _start (ASM 32-bit) → _start64 (ASM 64-bit)
-//!           → hw_init() (C) → kernel_main() (Rust, this function)
+//! Call chain: GRUB -> _start (ASM 32-bit) -> _start64 (ASM 64-bit)
+//!           -> hw_init() (C) -> kernel_main() (Rust, this function)
 //!
 //! At this point:
 //!   - CPU is in 64-bit long mode
@@ -33,13 +32,6 @@ const ARCH_BOOT_STR: &str = "Confirming active CPU x86_64 Long Mode status";
 const ARCH_BOOT_STR: &str = "Confirming active CPU aarch64 Exception Level status";
 #[cfg(target_arch = "riscv64")]
 const ARCH_BOOT_STR: &str = "Confirming active CPU riscv64 Supervisor Mode status";
-
-#[cfg(target_arch = "x86_64")]
-const BPF_JIT_BOOT_STR: &str = "Initializing eBPF JIT Compiler Engine (x86_64)";
-#[cfg(target_arch = "aarch64")]
-const BPF_JIT_BOOT_STR: &str = "Initializing eBPF JIT Compiler Engine (aarch64)";
-#[cfg(target_arch = "riscv64")]
-const BPF_JIT_BOOT_STR: &str = "Initializing eBPF JIT Compiler Engine (riscv64)";
 
 /// Kernel main entry point : the heart of Keira.
 ///
@@ -155,13 +147,6 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     crate::io::pci::init();
     let _ = crate::io::ahci::init();
     let _ = unsafe { crate::io::hda::init() };
-    crate::io::vga::print_str(
-        "   - AHCI: Mapped ABAR controller memory space at physical 0xFEBF5000\n",
-    );
-    crate::io::vga::print_str("   - AHCI: Detected active SATA Hard Disk drive on Port 0\n");
-    crate::io::vga::print_str(
-        "   - HDA: Mapped controller register space at physical 0xFEBF0000\n",
-    );
     unsafe {
         if crate::net::e1000::init() {
             crate::io::vga::print_boot_log(
@@ -244,12 +229,6 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     crate::io::vga::print_boot_log("Re-configuring Global Descriptor Table (GDT) segments", 0);
     crate::io::vga::print_boot_log("Loading Task State Segment (TSS) cpu context structure", 0);
     crate::io::vga::print_boot_log("Enabling CPU ring 3 user-mode syscall interface MSRs", 0);
-    crate::io::vga::print_boot_log(BPF_JIT_BOOT_STR, 0);
-    crate::io::vga::print_boot_log("Initializing Virtio 1.0 Paravirtualized PCI Driver", 0);
-    crate::io::vga::print_boot_log("Initializing AMD SEV & Intel TDX Memory Enclave", 0);
-    crate::io::vga::print_boot_log("Initializing io_uring Async Kernel Worker Pool", 0);
-    crate::io::vga::print_boot_log("Initializing KFENCE Sampling Heap Memory Guard", 0);
-    crate::io::vga::print_boot_log("Initializing POSIX Sched_Deadline EDF Real-Time Policy", 0);
     crate::io::vga::print_boot_log("Initializing Mandatory Access Control (MAC) Security", 0);
 
     // Spawning interactive shell log
@@ -279,7 +258,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     // Print initial shell prompt
     shell::print_prompt();
 
-    // Idle loop (wait for interrupts like keyboard presses)
+    // Idle loop (wait for hardware interrupts such as PS/2 keyboard presses on tty1)
     loop {
         shell::process_pending();
         unsafe {

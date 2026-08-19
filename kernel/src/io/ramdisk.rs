@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: RAM Disk Block Device
 //!
 //! Emulates a read/write block device in physical memory by allocating
 //! pages (4KB frames) dynamically from the PMM.

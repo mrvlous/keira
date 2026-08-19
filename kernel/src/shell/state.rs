@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Terminal Shell and Editor Global States
-
 use crate::io::vga;
 
 pub const BUFFER_SIZE: usize = 256;

@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: USB Host Controller Subsystem (xHCI / EHCI / UHCI / OHCI)
 //!
 //! Provides PCI enumeration of USB host controllers, USB device descriptor decoding,
 //! endpoint data pipe initialization, and bus status querying.

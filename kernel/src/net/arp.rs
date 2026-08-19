@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Address Resolution Protocol (ARP) Subsystem
 //!
 //! Provides dynamic IP-to-MAC address mapping, broadcast ARP Request packet generation (who-has),
 //! ARP Reply packet parsing (is-at), and a static/dynamic 16-slot ARP cache table.

@@ -13,7 +13,7 @@ This document details the Type-1 and Type-2 hardware-assisted virtualization hyp
 
 ## 1. Hypervisor Architecture
 
-Keira Kernel provides bare-metal hardware virtualization support ([kvm.rs](../../kernel/src/arch/kvm.rs)), utilizing Intel VMX (Virtual Machine Extensions) and AMD SVM (Secure Virtual Machine) hardware primitives to execute isolated guest operating system virtual machines directly from Ring 0 kernel space.
+Keira Kernel provides bare-metal hardware virtualization support ([kvm.rs](../../kernel/src/arch/kvm.rs)), utilizing Intel VMX (Virtual Machine Extensions) and AMD SVM (Secure Virtual Machine) hardware primitives to execute isolated guest virtual machines directly from Ring 0 kernel space.
 
 ```
 +-------------------------------------------------------------------------+

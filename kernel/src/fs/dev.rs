@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Native Character Device Nodes Subsystem (/system/dev/)
 //!
 //! Provides virtual character device handlers for `/system/dev/null`, `/system/dev/zero`,
 //! `/system/dev/random`, and `/system/dev/tty`, adhering to Keira's native filesystem hierarchy.

@@ -9,7 +9,6 @@
 
 #![allow(static_mut_refs)]
 
-//! Keira Kernel: In-Kernel Stateful NAT Firewall & Packet Filtering Engine (Netfilter)
 //!
 //! Provides stateful IPv4 packet rule evaluation across INPUT, OUTPUT, FORWARD, and PREROUTING chains,
 //! connection tracking state machine (`CONNTRACK`), and NAT masquerading.

@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: AHCI (SATA) Storage Driver
 //!
 //! Exposes and initializes the AHCI SATA storage controller,
 //! maps the MMIO space (ABAR), probes ports, and registers SATA disks.
@@ -283,10 +282,6 @@ pub fn init() -> Result<(), &'static str> {
         )?;
         ABAR_VIRTUAL = abar_phys as u64;
 
-        crate::io::serial::print_str("   - AHCI: Mapped ABAR controller memory space at physical ");
-        crate::io::serial::print_hex(abar_phys as u64);
-        crate::io::serial::print_str("\n");
-
         // 3. Initialize Controller
         // Enable AHCI mode
         let mut ghc = read_abar(AHCI_REG_GHC);
@@ -407,12 +402,6 @@ pub fn init() -> Result<(), &'static str> {
 
                     let sig = read_port(p, PORT_REG_SIG);
                     if sig == AHCI_SIG_SATA {
-                        crate::io::serial::print_str(
-                            "   - AHCI: Detected active SATA Hard Disk drive on Port ",
-                        );
-                        crate::io::serial::print_u64(port as u64);
-                        crate::io::serial::print_str("\n");
-
                         // Register SATA Block Device (size = 10MB as safe default / 20480 sectors)
                         let size_sectors = 20480;
                         AHCI_DEVICE = Some(AhciBlockDevice {

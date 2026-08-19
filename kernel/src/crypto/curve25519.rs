@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Curve25519 Elliptic Curve Diffie-Hellman (RFC 7748) Subsystem
 //!
 //! Provides bare-metal implementation of X25519 scalar multiplication for ECDH key exchange.
 

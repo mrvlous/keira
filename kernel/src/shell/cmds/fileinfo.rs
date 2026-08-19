@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'fileinfo'
 //!
 //! Implementation of the native 'fileinfo' shell command to display detailed FAT16
 //! file metadata (size, cluster offset, attribute flags, timestamp).

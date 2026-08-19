@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Asynchronous Kernel I/O Engine (io_uring)
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides Submission Queue (SQ) and Completion Queue (CQ) ring buffers
 //! for high-performance non-blocking asynchronous file, socket, and device I/O.

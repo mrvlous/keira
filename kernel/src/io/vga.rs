@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: VGA and Linear Framebuffer Console Driver
 //!
 //! Provides unified character output, string printing, and color control.
 //! Intercepts text operations and redirects to Linear Framebuffer (LFB)
@@ -686,11 +685,13 @@ pub fn print_boot_log(msg: &str, status: u8) {
         }
     }
 
-    // Print to Serial
+    set_color(Color::LightGrey, Color::Black);
+
+    // Explicitly format and output milestone status to Serial (COM1) for host terminal log
     crate::io::serial::print_str("\x1b[1;34m::\x1b[0m ");
     crate::io::serial::print_str(msg);
 
-    let mut serial_padding = 72isize - 3isize - len as isize;
+    let mut serial_padding = 69 - len as isize;
     if serial_padding < 1 {
         serial_padding = 1;
     }
@@ -703,12 +704,10 @@ pub fn print_boot_log(msg: &str, status: u8) {
             crate::io::serial::print_str("\x1b[1;32m[ OK ]\x1b[0m\n");
         }
         1 => {
-            crate::io::serial::print_str("\x1b[1;33m[WARN]\x1b[0m\n");
+            crate::io::serial::print_str("\x1b[1;33m[ WARN ]\x1b[0m\n");
         }
         _ => {
-            crate::io::serial::print_str("\x1b[1;31m[FAIL]\x1b[0m\n");
+            crate::io::serial::print_str("\x1b[1;31m[ FAIL ]\x1b[0m\n");
         }
     }
-
-    set_color(Color::LightGrey, Color::Black);
 }

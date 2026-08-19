@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'protect'
 //!
 //! Implementation of the native 'protect' shell command to toggle file attributes
 //! (e.g. 'protect /data/file.txt readonly' or 'protect /data/file.txt readwrite').

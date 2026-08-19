@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'network'
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Implementation of the 'network' shell command for PCI network interface control and ICMP ping testing.
 
@@ -59,6 +59,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("dhcp") => {
                 e1000::init();
+                if !e1000::E1000_FOUND {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str(
+                        "DHCP Error: Network interface eth0 is offline (No e1000 NIC detected).\n",
+                    );
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
                 vga::set_color(vga::Color::LightCyan, vga::Color::Black);
                 vga::print_str("Configuring network interface eth0 via DHCP...\n");
                 let mac = e1000::E1000_MAC;
@@ -84,9 +92,22 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("resolve") => {
                 let domain = match parts.next() {
                     Some(d) => d,
-                    None => "google.com",
+                    None => {
+                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                        vga::print_str("Usage: network resolve <domain>\n");
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                        return;
+                    }
                 };
                 e1000::init();
+                if !e1000::E1000_FOUND {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str(
+                        "DNS Error: Network interface eth0 is offline (No e1000 NIC detected).\n",
+                    );
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
                 vga::set_color(vga::Color::LightCyan, vga::Color::Black);
                 vga::print_str("Resolving domain ");
                 vga::print_str(domain);
@@ -124,6 +145,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 };
 
                 e1000::init();
+                if !e1000::E1000_FOUND {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str(
+                        "Ping Error: Network interface eth0 is offline (No e1000 NIC detected).\n",
+                    );
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
                 vga::set_color(vga::Color::LightCyan, vga::Color::Black);
                 vga::print_str("PING ");
                 vga::print_str(target);
@@ -171,13 +200,16 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 if e1000::E1000_FOUND {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("UP (e1000)  ");
+                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    vga::print_str("10.0.2.15 (NAT) ");
                 } else {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("DOWN        ");
+                    vga::set_color(vga::Color::DarkGrey, vga::Color::Black);
+                    vga::print_str("0.0.0.0 (None)  ");
                 }
 
                 vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("10.0.2.15 (NAT) ");
                 vga::print_u64(e1000::PACKETS_SENT);
                 vga::print_str("/");
                 vga::print_u64(e1000::PACKETS_RECEIVED);

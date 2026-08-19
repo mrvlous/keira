@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Multi-Virtual Terminal TTY Subsystem
 //!
 //! Provides up to 3 independent virtual terminal instances (TTY 1, TTY 2, TTY 3)
 //! with dedicated screen buffers, active session contexts, and Alt+F1/F2/F3 switching.

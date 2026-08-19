@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Virtual File System (VFS) Layer
 //!
 //! Provides a unified interface for path routing, mounts, and file operations
 //! across FAT16 and Tar (Initrd) filesystems.

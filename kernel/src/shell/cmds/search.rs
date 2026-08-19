@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,11 +7,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'search'
+#![allow(unused_variables, unused_unsafe, static_mut_refs)]
+
 //!
 //! Implementation of the 'search' shell command to locate matching string patterns in files or pipe streams.
 
 use crate::io::vga;
+
+static mut SEARCH_FILE_BUF: [u8; 8192] = [0u8; 8192];
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
@@ -33,10 +35,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         let filename = parts.next();
 
-        let mut file_buf = [0u8; 8192];
         let content: &[u8] = if let Some(file) = filename {
-            match crate::fs::vfs::read_file(file, &mut file_buf) {
-                Ok(len) => &file_buf[..len],
+            match crate::fs::vfs::read_file(file, &mut SEARCH_FILE_BUF) {
+                Ok(len) => &SEARCH_FILE_BUF[..len],
                 Err(e) => {
                     vga::print_str("Error reading file: ");
                     vga::print_str(e);

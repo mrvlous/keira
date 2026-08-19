@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Block Device Abstraction Layer
 //!
 //! Provides a generic interface for block storage devices (HDD, SSD, Ramdisk)
 //! and manages the registry of available storage devices in the system.

@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: System Call Handler
-
 use crate::io::vga;
 
 extern "C" {
@@ -674,15 +672,18 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         27 => {
             let buf_ptr = arg2 as *mut u8;
             let max_len = arg3 as usize;
-            if buf_ptr.is_null() {
+            if buf_ptr.is_null() || max_len == 0 {
                 return u64::MAX;
             }
-            let response = b"HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, Keira!";
-            let copy_len = core::cmp::min(response.len(), max_len);
-            unsafe {
-                core::ptr::copy_nonoverlapping(response.as_ptr(), buf_ptr, copy_len);
+            if validate_user_ptr(buf_ptr as u64, max_len as u64).is_err() {
+                return u64::MAX;
             }
-            copy_len as u64
+            let kbuf = [0u8; 512];
+            let read_len = core::cmp::min(max_len, 512);
+            unsafe {
+                core::ptr::copy_nonoverlapping(kbuf.as_ptr(), buf_ptr, read_len);
+            }
+            read_len as u64
         }
         // Syscall 28: shmget
         // Signature: sys_shmget(size: u64) -> shm_id
@@ -984,16 +985,6 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
-        // Syscall 57: kasan
-        // Signature: sys_kasan(addr: u64, size: u64) -> status
-        57 => {
-            let addr = arg1;
-            let size = arg2 as usize;
-            match crate::mem::kasan::sys_kasan(addr, size) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
         // Syscall 58: mq_open
         // Signature: sys_mq_open(name_ptr: *const u8, oflag: i32, mode: u32) -> mqfd
         58 => {
@@ -1005,113 +996,6 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 Err(_) => u64::MAX,
             }
         }
-        // Syscall 59: bpf_jit
-        // Signature: sys_bpf_jit(insn_ptr: *const u8, insn_cnt: usize) -> jit_addr
-        59 => {
-            let insn_ptr = arg1 as *const u8;
-            let insn_cnt = arg2 as usize;
-            match crate::net::bpf_jit::sys_bpf_jit(insn_ptr, insn_cnt) {
-                Ok(addr) => addr,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 60: virtio
-        // Signature: sys_virtio(device_id: u32, queue_idx: u32) -> status
-        60 => {
-            let device_id = arg1 as u32;
-            let queue_idx = arg2 as u32;
-            match crate::io::virtio::sys_virtio(device_id, queue_idx) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 61: sev
-        // Signature: sys_sev(cmd: u32, page_addr: u64) -> status
-        61 => {
-            let cmd = arg1 as u32;
-            let page_addr = arg2;
-            match crate::arch::sev::sys_sev(cmd, page_addr) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 62: io_uring_register
-        // Signature: sys_io_uring_register(fd: i32, opcode: u32, arg_ptr: u64, nr_args: u32) -> status
-        62 => {
-            let fd = arg1 as i32;
-            let opcode = arg2 as u32;
-            let arg_ptr = arg3;
-            match crate::ipc::io_worker::sys_io_uring_register(fd, opcode, arg_ptr, 0) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 63: kfence
-        // Signature: sys_kfence(sample_interval: u32, flags: u32) -> status
-        63 => {
-            let sample_interval = arg1 as u32;
-            let flags = arg2 as u32;
-            match crate::mem::kfence::sys_kfence(sample_interval, flags) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 64: sched_setattr
-        // Signature: sys_sched_setattr(pid: u32, attr_ptr: u64, flags: u32) -> status
-        64 => {
-            let pid = arg1 as u32;
-            let attr_ptr = arg2;
-            let flags = arg3 as u32;
-            match crate::task::deadline::sys_sched_setattr(pid, attr_ptr, flags) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 65: hyperv
-        // Signature: sys_hyperv(control: u64, input_gpa: u64, output_gpa: u64) -> status
-        65 => match crate::arch::hyperv::sys_hyperv(arg1, arg2, arg3) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
-        // Syscall 66: io_uring_net
-        // Signature: sys_io_uring_net(fd: i32, flags: u32, timeout_ms: u32) -> status
-        66 => {
-            match crate::net::io_uring_net::sys_io_uring_net(arg1 as i32, arg2 as u32, arg3 as u32)
-            {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
-        }
-        // Syscall 67: xhci_iso
-        // Signature: sys_xhci_iso(slot_id: u32, ep_idx: u32, stream_id: u32) -> status
-        67 => match crate::io::xhci::sys_xhci_iso(arg1 as u32, arg2 as u32, arg3 as u32) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
-        // Syscall 68: ptp_clock
-        // Signature: sys_ptp_clock(cmd: u32, target_nsec: u64) -> status
-        68 => match crate::arch::ptp::sys_ptp_clock(arg1 as u32, arg2) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
-        // Syscall 69: kpti
-        // Signature: sys_kpti(enable: u32, flags: u32) -> status
-        69 => match crate::mem::kpti::sys_kpti(arg1 as u32, arg2 as u32) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
-        // Syscall 70: sched_autogroup
-        // Signature: sys_sched_autogroup(pid: u32, group_id: u32) -> status
-        70 => match crate::task::autogroup::sys_sched_autogroup(arg1 as u32, arg2 as u32) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
-        // Syscall 71: audio_dsp
-        // Signature: sys_audio_dsp(cmd: u32, arg1: u64, arg2: u64) -> status
-        71 => match crate::io::audio::sys_audio_dsp(arg1 as u32, arg2, arg3) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
         // Syscall 72: kill
         // Signature: sys_kill(pid: u32, sig: u32) -> status
         72 => match crate::sched::signal::sys_kill(arg1 as u32, arg2 as u32) {

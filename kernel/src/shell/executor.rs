@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Terminal Command Interpreter and Execution Engine
-
 use super::state::*;
 use crate::io::vga;
 
@@ -421,7 +419,6 @@ pub fn execute_command_inner(cmd: &str) {
         "usb" => super::cmds::usb::run(&mut parts),
         "https" => super::cmds::https::run(&mut parts),
 
-        "hda" => super::cmds::hda::run(&mut parts),
         "drivers" => super::cmds::drivers::run(&mut parts),
         "lkm" | "lsmod" => super::cmds::lkm::run(&mut parts),
         "unwind" => super::cmds::unwind::run(&mut parts),
@@ -439,24 +436,9 @@ pub fn execute_command_inner(cmd: &str) {
         "swap" => super::cmds::swap::run(&mut parts),
         "seccomp" => super::cmds::seccomp::run(&mut parts),
         "epoll" => super::cmds::epoll::run(&mut parts),
-        "kasan" => super::cmds::kasan::run(&mut parts),
-        "bpf_jit" => super::cmds::bpf_jit::run(&mut parts),
-        "virtio" => super::cmds::virtio::run(&mut parts),
-        "sev" => super::cmds::sev::run(&mut parts),
-        "io_worker" => super::cmds::io_worker::run(&mut parts),
-        "kfence" => super::cmds::kfence::run(&mut parts),
-        "deadline" => super::cmds::deadline::run(&mut parts),
         "eventfd" | "signalfd" => super::cmds::eventfd::run(&mut parts),
         "mac" | "selinux" => super::cmds::mac::run(&mut parts),
         "mqueue" => super::cmds::mqueue::run(&mut parts),
-        "hyperv" => super::cmds::hyperv::run(&mut parts),
-        "io_uring_net" => super::cmds::io_uring_net::run(&mut parts),
-        "xhci" => super::cmds::xhci::run(&mut parts),
-        "ptp" => super::cmds::ptp::run(&mut parts),
-        "kpti" => super::cmds::kpti::run(&mut parts),
-        "autogroup" => super::cmds::autogroup::run(&mut parts),
-        "aplay" => super::cmds::aplay::run(&mut parts),
-        "alsamixer" => super::cmds::alsamixer::run(&mut parts),
         "kill" => super::cmds::kill::run(&mut parts),
         "jobs" => super::cmds::jobs::run(&mut parts),
         "fg" => super::cmds::fg::run(&mut parts),

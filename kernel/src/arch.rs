@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: x86_64 Hardware Architecture Bindings
-
 #[path = "../../arch/x86/kernel/apic.rs"]
 pub mod apic;
 
@@ -32,15 +30,6 @@ pub mod power;
 
 /// Hardware Performance Counters & PMU Engine
 pub mod perf;
-
-/// AMD SEV & Intel TDX Confidential Computing Subsystem
-pub mod sev;
-
-/// Hyper-V Hypercall & SynIC Engine
-pub mod hyperv;
-
-/// POSIX PTP Hardware Clock Subsystem
-pub mod ptp;
 
 #[cfg(target_arch = "x86_64")]
 pub const ARCH_NAME: &str = "x86_64";

@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Native EXT4 / EXT2 Linux Filesystem Kernel Driver
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides superblock parsing, inode table reading, block group descriptors,
 //! and extent tree mapping for reading/writing native Linux storage partitions.

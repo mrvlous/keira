@@ -9,7 +9,6 @@
 
 #![allow(static_mut_refs)]
 
-//! Keira Kernel: Logical Volume Manager (LVM) & Software RAID Subsystem
 //!
 //! Provides real stateful Physical Volume (PV), Volume Group (VG), and Logical Volume (LV)
 //! abstractions along with RAID 0 (striping) and RAID 1 (mirroring) arrays.

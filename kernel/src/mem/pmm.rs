@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Physical Memory Manager (PMM)
 //!
 //! Parses the Multiboot2 memory map to locate available RAM regions and
 //! manages physical memory pages (4KB frames) using a zero-overhead free-list allocator.

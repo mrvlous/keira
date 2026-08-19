@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: USB Mass Storage & USB HID Device Subsystem Engine
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides USB Bulk-Only Transport (BOT) framing, SCSI transparent command set (CBW/CSW wrappers),
 //! USB Flash Drive FAT16 volume mounting, and USB HID report descriptor parsing (sys_usb_device - Syscall 73).

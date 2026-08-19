@@ -13,10 +13,10 @@ This document describes how to install target toolchains, cross-compilers, and p
 
 ## 1. Subsystem & Codebase Overview
 
-Keira Kernel is a freestanding 64-bit x86_64 operating system kernel consisting of:
-*   **76 System Call Vectors** (`sys_print_char` .. `sys_netfilter`).
-*   **91 Native Kernel Shell Commands** (`guide` .. `firewall`).
-*   **50 Dedicated Modular Documentation Files** in `docs/`.
+Keira Kernel is a freestanding 64-bit x86_64 kernel consisting of:
+*   **62 System Call Vectors** (`sys_print_char` .. `sys_netfilter`).
+*   **74 Native Kernel Shell Commands** (`guide` .. `firewall`).
+*   **68 Dedicated Modular Documentation Files** in `docs/`.
 
 ---
 
@@ -26,7 +26,7 @@ Before building, ensure the following core tools are installed on your developme
 *   **GCC / G++**: GNU Compiler Collection for C drivers and heap code.
 *   **GRUB-PC / GRUB-EFI**: Bootloader utilities to generate boot images.
 *   **Xorriso**: ISO filesystem creation tool used by GRUB.
-*   **QEMU**: Emulator to launch and run the generated operating system image.
+*   **QEMU**: Emulator to launch and run the generated kernel image.
 
 ### Installing Dependencies on Ubuntu/Debian
 ```bash

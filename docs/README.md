@@ -7,7 +7,7 @@ Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 
 # Keira Kernel Documentation Map
 
-Welcome to the technical documentation for Keira Kernel. This modular documentation system is designed to provide developers and contributors with a clear, in-depth understanding of the operating system's design, architecture, and code layout.
+Welcome to the technical documentation for Keira Kernel. This modular documentation system is designed to provide developers and contributors with a clear, in-depth understanding of the kernel's design, architecture, and code layout.
 
 ## Documentation Directory Structure
 
@@ -17,14 +17,11 @@ To help you navigate the codebase, the documentation is divided into 9 modular c
 *   [Bootstrapping & Trampolining](architecture/bootstrapping.md): Multi-stage boot sequence from GRUB to Rust 64-bit Long Mode.
 *   [Memory Management](architecture/memory.md): Physical Memory Manager (PMM), Virtual Memory Manager (VMM), `sys_mmap`/`sys_munmap`, and early C heap.
 *   [Task Scheduler](architecture/scheduler.md): Preemptive priority multitasking model, scheduler queue, and task states.
-*   [System Calls & Interrupts](architecture/syscalls.md): 76 system call vectors, Local APIC controller, dynamic TSS RSP0 stack switching.
+*   [System Calls & Interrupts](architecture/syscalls.md): System call dispatcher, Local APIC controller, dynamic TSS RSP0 stack switching.
 *   [Symmetric Multiprocessing (SMP)](architecture/smp.md): Multi-core CPU initialization and LAPIC IPI shootdown.
 *   [Loadable Kernel Modules (LKM)](architecture/lkm.md): Dynamic module loading and kallsyms symbol resolution (`sys_init_module`).
 *   [High Precision Event Timer (HPET)](architecture/hpet.md): Nanosecond timer resolution and ACPI HPET mapping (`sys_clock_gettime`).
 *   [High-Resolution POSIX Interval Timers](architecture/timer.md): POSIX nanosecond interval timers (`sys_timer_create`/`sys_timer_settime`).
-*   [POSIX Sched_Deadline EDF Scheduler](architecture/deadline.md): Hard real-time Earliest Deadline First scheduler (`sys_sched_setattr`).
-*   [POSIX Sched_Autogroup Task Isolation](architecture/autogroup.md): Per-TTY terminal session autogrouping (`sys_sched_autogroup`).
-*   [Kernel Page Table Isolation (KPTI / KASI)](architecture/kpti.md): Ring 0 / Ring 3 page table isolation (`sys_kpti`).
 *   [PCIe ECAM & MSI/MSI-X Interrupts](architecture/pcie.md): PCIe configuration space and Message Signaled Interrupts.
 *   [DMA Scatter-Gather Allocator](architecture/dma.md): Contiguous physical DMA buffer allocation and Scatter-Gather list mapping.
 *   [ACPI Power Management & NMI Watchdog](architecture/power.md): ACPI power state transitions (S0/S3/S5) and hardware NMI watchdog.
@@ -39,13 +36,9 @@ To help you navigate the codebase, the documentation is divided into 9 modular c
 *   [NX Bit & KASLR Hardware Security](security/nx.md): Hardware No-Execute (NX) page protection and KASLR randomization.
 *   [Mandatory Access Control (MAC)](security/mac.md): Path-based security rule evaluation and process sandboxing policies.
 *   [Seccomp BPF Syscall Filtering Sandbox](security/seccomp.md): In-kernel BPF system call sandbox filtering (`sys_seccomp`).
-*   [AMD SEV & Intel TDX Subsystem](security/sev.md): Confidential computing hardware enclaves (`sys_sev`).
-*   [KFENCE Memory Guard Engine](security/kfence.md): Sampling heap memory guard (`sys_kfence`).
-*   [KASAN Shadow Memory Diagnostic Engine](security/kasan.md): Shadow memory validation for heap access safety (`sys_kasan`).
 
 ### 3. Inter-Process Communication & Asynchronous I/O (`docs/ipc/`)
 *   [Asynchronous Kernel I/O Engine (io_uring)](ipc/iouring.md): Zero-copy ring buffer I/O (`sys_io_uring_setup`).
-*   [io_uring Worker Thread Pool Engine](ipc/io_worker.md): Async kernel polling worker threads (`sys_io_uring_register`).
 *   [Fast Userspace Mutex (Futex)](ipc/futex.md): Atomic userspace locking and kernel wait queue synchronization (`sys_futex`).
 *   [Epoll Scalable I/O Event Engine](ipc/epoll.md): Scalable O(1) event multiplexing descriptors (`sys_epoll_create`/`sys_epoll_ctl`).
 *   [EventFD & SignalFD Subsystem](ipc/eventfd.md): Counter notification descriptors (`sys_eventfd`) and POSIX signal routing (`sys_signalfd`).
@@ -56,29 +49,22 @@ To help you navigate the codebase, the documentation is divided into 9 modular c
 
 ### 4. Virtualization & Hypervisor (`docs/virtualization/`)
 *   [Hardware Virtualization Hypervisor (KVM)](virtualization/kvm.md): Intel VMX / AMD SVM guest VM execution context (`sys_kvm_create_vm`/`sys_kvm_run_vcpu`).
-*   [Hyper-V Hypercall & SynIC Engine](virtualization/hyperv.md): Microsoft Hyper-V / Azure hypercalls and SynIC synthetic interrupts (`sys_hyperv`).
-*   [Virtio 1.0 Paravirtualized PCI Driver](virtualization/virtio.md): Split/Packed Virtqueues (`sys_virtio`).
 
 ### 5. Networking & Packet Filtering (`docs/networking/`)
 *   [Intel e1000 Network Driver & Socket API](networking/network.md): PCI enumeration, MAC address parsing, TCP state engine, DHCP client, Dynamic ARP cache, POSIX Sockets, and Native TLS 1.3 Engine (`https`).
 *   [In-Kernel DNS Resolver & Cache Table](networking/dns_resolver.md): 16-slot dynamic LRU DNS cache table and UDP 53 RFC 1035 packet resolution.
 *   [In-Kernel Stateful NAT Firewall Engine](networking/netfilter.md): Stateful IPv4 packet filtering, IPTables rules, and 1:N NAT masquerading (`sys_netfilter`).
 *   [Zero-Copy BPF Packet Filter Engine](networking/bpf.md): In-kernel BPF bytecode interpreter for raw socket packet filtering.
-*   [eBPF JIT Compiler Engine](networking/bpf_jit.md): Native x86_64 JIT bytecode translation (`sys_bpf_jit`).
-*   [io_uring Async Network Socket Polling](networking/io_uring_net.md): Zero-copy async network socket polling (`sys_io_uring_net`).
-*   [POSIX PTP Hardware Clock Subsystem](networking/ptp.md): IEEE 1588 nanosecond-precision hardware clock (`sys_ptp_clock`).
 
 ### 6. Device Drivers (`docs/drivers/`)
 *   [NVMe PCIe Controller Driver](drivers/nvme.md): High-speed NVMe 1.4 PCIe SSD storage driver with Admin Queues, Doorbell registers, and Namespace mapping.
 *   [VGA Text Console, Code Editor & VBE Framebuffer](drivers/vga.md): Display buffer manipulation, cursor positioning, PS/2 input, interactive 128-line code editor (`edit`), and VBE Auto-Adaptive 32-bpp Linear Framebuffer Graphics (`framebuffer`).
 *   [Serial UART COM1](drivers/serial.md): Low-level 16550A serial communication driver for boot debugging logs.
 *   [Sound Programming](drivers/sound.md): Programming PIT Channel 2 for PC Speaker sound generation and Intel High Definition Audio (HDA) DMA controller initialization.
-*   [Intel High Definition Audio (HDA) DSP & WAV Streaming Engine](drivers/audio_dsp.md): Audio DMA stream ring buffers, RIFF WAV header parsing, and master volume control (`sys_audio_dsp`).
 *   [USB Mass Storage & USB HID Device Subsystem](drivers/usb_storage.md): USB Bulk-Only Transport (BOT) framing, SCSI commands, FAT16 flash drive mounting, and USB HID parsing (`sys_usb_device`).
 *   [PS/2 Mouse Driver](drivers/mouse.md): PS/2 mouse packet decoding, resolution setup, and coordinate tracking.
 *   [CMOS Real-Time Clock Driver](drivers/rtc.md): CMOS Real-Time Clock register queries and UTC timestamp parsing.
 *   [USB Host Controller Driver](drivers/usb.md): PCI enumeration for xHCI/EHCI/UHCI USB controllers, descriptor decoding, and bus status querying (`usb`).
-*   [USB 3.0 xHCI Isochronous Driver](drivers/xhci.md): High-speed USB 3.0 xHCI isochronous transfer ring buffers (`sys_xhci_iso`).
 
 ### 7. Filesystems & Storage (`docs/filesystems/`)
 *   [Virtual Filesystem (VFS)](filesystems/vfs.md): Core VFS traits, Keira native directory structure (`/system/dev/`), POSIX `/dev/` path aliasing, file descriptors, and abstraction layers.

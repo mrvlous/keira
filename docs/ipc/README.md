@@ -12,7 +12,6 @@ Welcome to the IPC and Asynchronous I/O documentation section for Keira Kernel.
 ## Documents
 
 * [Asynchronous Kernel I/O Engine (io_uring)](iouring.md): Zero-copy ring buffer I/O (`sys_io_uring_setup`).
-* [io_uring Worker Thread Pool Engine](io_worker.md): Async kernel polling worker threads (`sys_io_uring_register`).
 * [Fast Userspace Mutex (Futex)](futex.md): Atomic userspace locking and kernel wait queue synchronization (`sys_futex`).
 * [Epoll Scalable I/O Event Engine](epoll.md): Scalable O(1) event multiplexing descriptors (`sys_epoll_create`/`sys_epoll_ctl`).
 * [EventFD & SignalFD Subsystem](eventfd.md): Counter notification descriptors (`sys_eventfd`) and POSIX signal routing (`sys_signalfd`).

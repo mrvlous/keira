@@ -88,15 +88,15 @@ QEMU_FLAGS    := -cdrom $(KERNEL_ISO) \
 	         -device ide-hd,drive=sata0,bus=ahci0.0 \
 	         -audiodev none,id=snd0 \
 	         -device intel-hda -device hda-duplex,audiodev=snd0 \
+	         -device e1000,netdev=net0 \
+	         -netdev user,id=net0 \
 	         -boot d \
 	         -serial stdio \
 	         -no-shutdown \
 	         -m $(QEMU_MEM)
 
 # QEMU with e1000 NIC emulation for network testing
-QEMU_NET_FLAGS := $(QEMU_FLAGS) \
-	         -device e1000,netdev=net0 \
-	         -netdev user,id=net0
+QEMU_NET_FLAGS := $(QEMU_FLAGS)
 # ANSI color codes for terminal feedback
 ifeq ($(COLOR),0)
     CLR_RESET   :=
@@ -163,10 +163,11 @@ ALL_OBJS      := $(ASM_OBJS) $(C_OBJS)
 SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
                  devices wait initrd wipe reset run write tasks disk list \
                  go script view create folder delete edit copy help history \
-                 move please search hda download network stop env sync \
+                 move please search download network stop env sync \
                  protect fileinfo framebuffer usb https user hostname syslog kvm \
-                 nvme ext4 cgroups futex bpf tpm swap seccomp epoll kasan \
-                 drivers lkm unwind power perf timer bpf_jit virtio sev io_worker kfence deadline eventfd mac mqueue hyperv io_uring_net xhci ptp kpti autogroup aplay alsamixer kill jobs fg bg lvm raid ipcs ipcrm iptables firewall
+                 nvme ext4 cgroups futex bpf tpm swap seccomp epoll \
+                 drivers lkm unwind power perf timer eventfd mac mqueue \
+                 kill jobs fg bg lvm raid ipcs ipcrm iptables firewall
 
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \

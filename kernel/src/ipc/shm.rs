@@ -9,7 +9,6 @@
 
 #![allow(static_mut_refs)]
 
-//! Keira Kernel: POSIX Shared Memory IPC & Counting Semaphore Engine
 //!
 //! Provides stateful inter-process shared memory pages (`shmget`, `shmat`) and
 //! counting semaphores (`sem_wait`, `sem_post`) for multi-task synchronization.

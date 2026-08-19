@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Intel High Definition Audio (HDA) Rust Wrapper
 //!
 //! Handles PCI device discovery, MMIO page mapping, DMA buffer allocation,
 //! and FFI calls to the C HDA driver.
@@ -48,7 +47,6 @@ pub unsafe fn init() -> Result<(), &'static str> {
     let dev = match pci_dev {
         Some(d) => d,
         None => {
-            crate::io::serial::print_str("HDA: No HD Audio controller found on PCI bus\n");
             return Ok(());
         }
     };
@@ -74,10 +72,6 @@ pub unsafe fn init() -> Result<(), &'static str> {
     if bar_phys == 0 {
         return Err("HDA: BAR0 physical address is null");
     }
-
-    crate::io::serial::print_str("   - HDA: Mapped controller register space at physical ");
-    crate::io::serial::print_hex(bar_phys);
-    crate::io::serial::print_str("\n");
 
     // 4. Map HDA registers (BAR0 registers span up to 16KB; map 4 pages)
     vmm::map_page(bar_phys, bar_phys, vmm::PAGE_WRITABLE)?;

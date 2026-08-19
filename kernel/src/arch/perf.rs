@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Hardware Performance Counters & PMU Engine
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides CPU Performance Monitoring Unit (PMU) hardware event counters
 //! (CPU cycles, instructions executed, cache misses) and sys_perf_event_open (Syscall 49).

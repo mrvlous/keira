@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: CPU Exception Handling
 //!
 //! Provides the Rust handler dispatcher for CPU exceptions.
 //! When a CPU exception occurs, we dump the registers and halt the CPU.

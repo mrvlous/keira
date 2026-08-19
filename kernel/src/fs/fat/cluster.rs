@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: FAT16 Cluster Allocation and Tracking
-
 use super::types::Fat16Volume;
 use super::volume::cluster_to_sector;
 use super::{read_sector, write_sector};

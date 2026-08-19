@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'guide'
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Implementation of the 'guide' shell command to list available commands and detail their usages.
 
@@ -38,10 +38,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "  download  env       framebuffer usb       https     syslog    kvm\n",
                 );
-                vga::print_str("  nvme      bpf       tpm       power     perf      kasan\n");
-                vga::print_str("  drivers   lkm       unwind    timer     bpf_jit   virtio\n");
-                vga::print_str("  sev       io_worker kfence    deadline  mac       hyperv\n");
-                vga::print_str("  xhci      ptp       kpti\n\n");
+                vga::print_str("  nvme      bpf       tpm       power     perf      drivers\n");
+                vga::print_str("  lkm       unwind    timer     mac\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -49,16 +47,19 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("  drives    use       disk      ramdisk   list      go\n");
                 vga::print_str("  view      create    folder    delete    edit      write\n");
                 vga::print_str("  copy      move      initrd    search    sync      protect\n");
-                vga::print_str("  fileinfo  ext4      swap\n\n");
+                vga::print_str("  fileinfo  ext4      swap      lvm       raid\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Process & Execution:\n");
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("  tasks     stop      wait      script    run       cgroups\n");
-                vga::print_str(
-                    "  futex     seccomp   epoll     eventfd   mqueue    io_uring_net\n",
-                );
-                vga::print_str("  autogroup\n\n");
+                vga::print_str("  futex     seccomp   epoll     eventfd   mqueue    kill\n");
+                vga::print_str("  jobs      fg        bg\n\n");
+
+                vga::set_color(vga::Color::LightBlue, bg);
+                vga::print_str("Networking & IPC:\n");
+                vga::set_color(vga::Color::White, bg);
+                vga::print_str("  ipcs      ipcrm     iptables  firewall\n\n");
 
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("User Account & Privileges:\n");
@@ -68,7 +69,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightBlue, bg);
                 vga::print_str("Utilities & Console:\n");
                 vga::set_color(vga::Color::White, bg);
-                vga::print_str("  guide     help      history   hda       wipe      reset\n");
+                vga::print_str("  guide     help      history   wipe      reset\n");
                 vga::set_color(vga::Color::LightGrey, bg);
             }
             Some("system") => {
@@ -199,9 +200,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("move") => {
                 vga::print_str("Usage: move <src_file> <dest_file>\nMove or rename a file from the source path to the destination path.\n");
             }
-            Some("hda") => {
-                vga::print_str("Usage: hda <play [freq]|stop|status>\nPlay sound waveforms using the Intel High Definition Audio (HDA) controller.\n");
-            }
             Some("env") => {
                 vga::print_str("Usage: env [key] [value]\nView or modify environment variables ($USER, $HOME, $PATH, $SHELL).\n");
             }
@@ -224,12 +222,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("https") => {
                 vga::print_str("Usage: https <url|info|sha256>\nPerform encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519).\n");
-            }
-            Some("aplay") => {
-                vga::print_str("Usage: aplay <file.wav>\nParse and stream RIFF WAV PCM audio payload through Intel HDA DSP DMA engine.\n");
-            }
-            Some("alsamixer") => {
-                vga::print_str("Usage: alsamixer [volume_percent 0..100]\nQuery or adjust Intel HDA DSP master volume gain and mute state.\n");
             }
             Some("kill") => {
                 vga::print_str("Usage: kill [-signal_number] <pid>\nDispatch POSIX real-time signal (SIGKILL, SIGTERM, SIGINT) to process PID.\n");

@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Inter-Process Communication Module Root
-
 pub mod pipe;
 pub mod shm;
 
@@ -26,6 +24,3 @@ pub mod epoll;
 
 /// POSIX Message Queue IPC Subsystem
 pub mod mqueue;
-
-/// io_uring Async I/O Worker Thread Pool Engine
-pub mod io_worker;

@@ -7,10 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: FAT16 File Manipulations
-
 use super::cluster::{alloc_cluster, fat_next_cluster, free_cluster_chain};
-use super::dir::{create_directory_entry, is_dir_empty};
+use super::dir::{create_directory_entry_with_name, is_dir_empty};
 use super::path::{filename_to_8_3, find_entry, resolve_path};
 use super::types::DirectoryEntry;
 use super::volume::cluster_to_sector;
@@ -297,7 +295,7 @@ pub unsafe fn create_file(filename: &str) -> Result<(), &'static str> {
         return Err("File or directory already exists");
     }
 
-    create_directory_entry(name_8_3, 0x00, 0, 0, dir_cluster, vol)?;
+    create_directory_entry_with_name(name_8_3, name, 0x00, 0, 0, dir_cluster, vol)?;
     Ok(())
 }
 

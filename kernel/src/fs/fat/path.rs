@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: FAT16 Path Resolution and Entry Lookup
-
 use super::dir::for_each_directory_entry;
 use super::read_sector;
 use super::types::{DirectoryEntry, FoundEntry, LfnAccumulator, LfnEntry};
@@ -125,15 +123,13 @@ pub fn filename_to_8_3(input: &str) -> Result<[u8; 11], &'static str> {
 
     let base = parts.next().ok_or("Invalid filename")?;
     let ext = parts.next();
-    if parts.next().is_some() {
-        return Err("Filename cannot have multiple extensions");
+
+    if base.is_empty() {
+        return Err("Filename base must not be empty");
     }
 
-    if base.is_empty() || base.len() > 8 {
-        return Err("Filename base must be between 1 and 8 characters");
-    }
-
-    for (i, &b) in base.as_bytes().iter().enumerate() {
+    let base_len = core::cmp::min(base.len(), 8);
+    for (i, &b) in base.as_bytes()[..base_len].iter().enumerate() {
         let upper = b.to_ascii_uppercase();
         if !upper.is_ascii_alphanumeric() && upper != b'_' && upper != b'-' {
             return Err("Filename contains invalid characters");
@@ -142,15 +138,15 @@ pub fn filename_to_8_3(input: &str) -> Result<[u8; 11], &'static str> {
     }
 
     if let Some(e) = ext {
-        if e.is_empty() || e.len() > 3 {
-            return Err("Extension must be between 1 and 3 characters");
-        }
-        for (i, &b) in e.as_bytes().iter().enumerate() {
-            let upper = b.to_ascii_uppercase();
-            if !upper.is_ascii_alphanumeric() && upper != b'_' && upper != b'-' {
-                return Err("Extension contains invalid characters");
+        if !e.is_empty() {
+            let ext_len = core::cmp::min(e.len(), 3);
+            for (i, &b) in e.as_bytes()[..ext_len].iter().enumerate() {
+                let upper = b.to_ascii_uppercase();
+                if !upper.is_ascii_alphanumeric() && upper != b'_' && upper != b'-' {
+                    return Err("Extension contains invalid characters");
+                }
+                name_bytes[8 + i] = upper;
             }
-            name_bytes[8 + i] = upper;
         }
     }
 
@@ -224,17 +220,30 @@ pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
 
 pub unsafe fn find_entry(filename: &str, dir_cluster: u16) -> Result<FoundEntry, &'static str> {
     let mut found: Option<FoundEntry> = None;
+    let target_8_3 = filename_to_8_3(filename).ok();
 
     for_each_directory_entry(dir_cluster, |parsed| {
+        let mut matched = false;
         if let Ok(name_str) = core::str::from_utf8(&parsed.name[..parsed.name_len]) {
             if name_str.eq_ignore_ascii_case(filename) {
-                found = Some(FoundEntry {
-                    sector: parsed.sector,
-                    index: parsed.index,
-                    entry: parsed.entry,
-                });
-                return Ok(false);
+                matched = true;
             }
+        }
+        if !matched {
+            if let Some(ref sfn) = target_8_3 {
+                if &parsed.entry.name == sfn {
+                    matched = true;
+                }
+            }
+        }
+
+        if matched {
+            found = Some(FoundEntry {
+                sector: parsed.sector,
+                index: parsed.index,
+                entry: parsed.entry,
+            });
+            return Ok(false);
         }
         Ok(true)
     })?;

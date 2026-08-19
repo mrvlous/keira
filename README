@@ -1,12 +1,13 @@
 Keira Kernel
 ============
 
-Keira is a freestanding, multi-language x86_64 operating system kernel. It
+Keira is a freestanding, multi-language x86_64 kernel. It
 manages system hardware resources, coordinates low-level C drivers, and
-provides a preemptive priority multitasking scheduler, 76 system calls,
-AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller, LKM, HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR, Futex Threading, cgroups, EXT4 Driver, KVM Hypervisor, TPM 2.0, BPF Engine, DMA Allocator, Syslog Buffer, MAC Security, POSIX Timers, Pipe Splice, ACPI Power, PMU Counters, EventFD, Seccomp BPF, Swap Space, Epoll, KASAN, Message Queues, eBPF JIT Compiler, Virtio 1.0 Driver, AMD SEV/TDX Enclave, io_uring Workers, KFENCE Guard, Sched_Deadline EDF Scheduler, Hyper-V Hypercall, io_uring Async Net, USB 3.0 xHCI Isochronous, PTP Clock, KPTI Page Table Isolation, Sched_Autogroup Task Isolation, Intel HDA Audio DSP Engine, POSIX Signals & Job Control, USB Mass Storage & HID Subsystem, Hardware RAID & LVM, POSIX Shared Memory IPC, Stateful Netfilter IPv4 Firewall Engine,
+provides a preemptive priority multitasking scheduler, 62 system calls,
+AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller, LKM, HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR, Futex Threading, cgroups, EXT4 Driver, KVM Hypervisor, TPM 2.0, BPF Engine, DMA Allocator, Syslog Buffer, MAC Security, POSIX Timers, Pipe Splice, ACPI Power, PMU Counters, EventFD, Seccomp BPF, Swap Space, Epoll, Message Queues, POSIX Signals & Job Control, USB Mass Storage & HID Subsystem, Hardware RAID & LVM, POSIX Shared Memory IPC, Stateful Netfilter IPv4 Firewall Engine,
 Native TLS 1.3 Cryptographic Engine, IPC Shared Memory & Pipe subsystems, Multi-User Accounts & Hostname, POSIX File Permissions & Multi-TTY, Userland Socket API,
-91 native shell commands, and a system shell controlled by a core Rust kernel static library.
+74 native shell commands, and a system shell controlled by a core Rust kernel static library.
+
 
 Quick Start
 -----------

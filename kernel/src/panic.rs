@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Panic Handler
 //!
 //! Required by `#![no_std]` : the Rust compiler needs to know what to do
 //! when a panic occurs (e.g., array out-of-bounds, unwrap on None).

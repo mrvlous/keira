@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: VBE High-Resolution Linear Framebuffer Driver
 //!
 //! Provides 1024x768 32-bpp TrueColor graphics rendering, font bitmap engine,
 //! desktop wallpaper background, and graphical mouse cursor drawing.

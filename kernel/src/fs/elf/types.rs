@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: ELF64 Binary Type Definitions
-
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct ElfHeader {

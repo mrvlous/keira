@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: SHA-256 (FIPS 180-4) & HMAC-SHA-256 Cryptographic Subsystem
 //!
 //! Provides bare-metal, `no_std` message digest hashing and keyed-hash authentication.
 

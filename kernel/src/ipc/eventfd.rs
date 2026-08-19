@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Kernel EventFD & SignalFD Notification Subsystem
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides counter notification file descriptors for asynchronous event signaling
 //! (sys_eventfd - Syscall 50) and POSIX signal delivery via file descriptors (sys_signalfd - Syscall 51).

@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Task Management Module Root
 //!
 //! Provides support for task management, process representation, context switching,
 //! and cooperative multitasking scheduling.
@@ -23,12 +22,6 @@ pub mod mac;
 
 /// Seccomp BPF System Call Filter Engine
 pub mod seccomp;
-
-/// POSIX Sched_Deadline EDF Hard Real-Time Scheduler Policy
-pub mod deadline;
-
-/// POSIX Sched_Autogroup Task Isolation Engine
-pub mod autogroup;
 
 pub use scheduler::{exit_current, init, list_tasks, spawn};
 pub use types::{InterruptContext, Task, TaskState};

@@ -8,7 +8,7 @@
 // the Free Software Foundation; version 2 of the License.
 
 #![allow(dead_code)]
-//! Keira Kernel: PC Speaker Sound Driver (Rust FFI Wrapper)
+
 //!
 //! Safe Rust interface to the C PC Speaker driver (`drivers/sound/`).
 //!
@@ -19,7 +19,7 @@
 //! Why wrap C functions instead of reimplementing in Rust?
 //!   - Keeps hardware I/O port access centralized in the C driver layer.
 //!   - Avoids duplicating inline assembly for `outb`/`inb`.
-//!   - Demonstrates the C↔Rust interop that is central to Keira's design.
+//!   - Demonstrates the C<->Rust interop that is central to Keira's design.
 
 use core::arch::asm;
 

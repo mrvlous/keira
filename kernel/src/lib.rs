@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Crate Root
 //!
 //! This is the root of the Rust kernel crate. It operates in a fully
 //! freestanding environment:

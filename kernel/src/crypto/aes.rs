@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: AES-128 & AES-128-GCM Authenticated Encryption Subsystem
 //!
 //! Provides bare-metal implementation of AES-128 Block Cipher and
 //! Galois/Counter Mode (GCM) Authenticated Encryption with Associated Data (AEAD).
@@ -266,4 +265,51 @@ pub fn aes128_gcm_encrypt(
     }
 
     tag
+}
+
+pub fn aes128_gcm_decrypt(
+    key: &[u8; 16],
+    iv: &[u8; 12],
+    ciphertext: &[u8],
+    aad: &[u8],
+    tag: &[u8; 16],
+    out: &mut [u8],
+) -> bool {
+    let cipher = Aes128::new(key);
+
+    let mut h_block = [0u8; 16];
+    cipher.encrypt_block(&mut h_block);
+
+    let mut j0 = [0u8; 16];
+    j0[..12].copy_from_slice(iv);
+    j0[12..16].copy_from_slice(&1u32.to_be_bytes());
+
+    let mut counter = j0;
+    let mut offset = 0;
+    while offset < ciphertext.len() {
+        gcm_inc32(&mut counter);
+        let mut keystream = counter;
+        cipher.encrypt_block(&mut keystream);
+
+        let end = core::cmp::min(offset + 16, ciphertext.len());
+        for i in offset..end {
+            out[i] = ciphertext[i] ^ keystream[i - offset];
+        }
+        offset += 16;
+    }
+
+    let mut calc_tag = ghash(&h_block, aad, ciphertext);
+
+    let mut e_j0 = j0;
+    cipher.encrypt_block(&mut e_j0);
+    for i in 0..16 {
+        calc_tag[i] ^= e_j0[i];
+    }
+
+    let mut diff = 0u8;
+    for i in 0..16 {
+        diff |= calc_tag[i] ^ tag[i];
+    }
+
+    diff == 0
 }

@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: ACPI Hardware Power Management & NMI Watchdog Subsystem
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides ACPI power state transitions (S0 Working, S3 Sleep, S5 Poweroff)
 //! and Non-Maskable Interrupt (NMI) hardware watchdog timer management.

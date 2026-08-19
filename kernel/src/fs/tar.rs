@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Tar Archive Reader
 //!
 //! Implements a read-only filesystem reader parsing standard USTAR tar archives.
 

@@ -7,8 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Task and Interrupt Context Definitions
-
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskState {
     Ready,

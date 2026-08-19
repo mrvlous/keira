@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Interactive Terminal Shell Module Root
 //!
 //! Orchestrates the interactive terminal shell, including keypress handling,
 //! command execution, history, editing, and autocompletion.

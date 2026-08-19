@@ -7,15 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Networking Subsystem Root
-
 pub mod arp;
 pub mod bpf;
-pub mod bpf_jit;
 pub mod dhcp;
 pub mod dns;
 pub mod e1000;
-pub mod io_uring_net;
 pub mod netfilter;
 pub mod tcp;
 pub mod tls;

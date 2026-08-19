@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: VFS File Locking Mechanism
 //!
 //! Provides mutual exclusion for file write access. Tasks can acquire exclusive
 //! write locks on files to prevent concurrent write issues.

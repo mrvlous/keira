@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Kernel Event Logging Ring Buffer Subsystem
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides in-memory circular syslog dmesg log buffer, severity level tagging,
 //! and sys_syslog diagnostic system calls.

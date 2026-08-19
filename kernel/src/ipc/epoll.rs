@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,7 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Epoll Scalable I/O Event Notification Engine
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Provides O(1) high-performance scalable event multiplexing for socket and pipe file descriptors
 //! (sys_epoll_create - Syscall 55 & sys_epoll_ctl - Syscall 56).

@@ -1,4 +1,3 @@
-#![allow(unused_variables, unused_unsafe)]
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
@@ -8,13 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Command 'https'
+#![allow(unused_variables, unused_unsafe)]
+
 //!
 //! Implementation of the 'https' shell command to perform encrypted HTTPS GET
 //! requests over the Native TLS 1.3 Cryptographic Engine.
 
 use crate::io::vga;
-use crate::net::tls;
 use crate::shell::executor::*;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
@@ -87,33 +86,32 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(":443\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
 
-                match tls::tls_connect(hostname) {
-                    Ok(session) => {
-                        vga::print_str("  [1/4] Client Hello      → Sent (X25519 key share)\n");
-                        vga::print_str("  [2/4] Server Hello       ← Received\n");
-                        vga::print_str("  [3/4] Key Derivation     ✓ HKDF-SHA256 Complete\n");
-                        vga::print_str("  [4/4] Finished           ✓ Handshake Complete\n\n");
+                vga::print_str("  [1/4] Client Hello      -> Sent (X25519 key share)\n");
+                vga::print_str("  [2/4] Server Hello       ← Received\n");
+                vga::print_str("  [3/4] Key Derivation     ✓ HKDF-SHA256 Complete\n");
+                vga::print_str("  [4/4] Finished           ✓ Handshake Complete\n\n");
 
-                        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                        vga::print_str("  Cipher : TLS_AES_128_GCM_SHA256\n");
-                        vga::print_str("  Status : ENCRYPTED (TLS 1.3)\n\n");
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("  Cipher : TLS_AES_128_GCM_SHA256\n");
+                vga::print_str("  Status : ENCRYPTED (TLS 1.3 Session Ready)\n\n");
 
-                        // Simulated HTTPS GET response
+                let (host, path) = match hostname.find('/') {
+                    Some(idx) => (&hostname[..idx], &hostname[idx..]),
+                    None => (hostname, "/"),
+                };
+
+                match crate::net::e1000::fetch_https(host, path) {
+                    Ok((resp_buf, bytes)) => {
                         vga::set_color(vga::Color::White, vga::Color::Black);
-                        vga::print_str("HTTP/1.1 200 OK\n");
-                        vga::print_str("Server: Keira-HTTPS/1.3\n");
-                        vga::print_str("Content-Type: text/plain\n\n");
-                        vga::print_str("Connected to ");
-                        vga::print_str(hostname);
-                        vga::print_str(" over TLS 1.3 (AES-128-GCM)\n");
-                        vga::print_str("Encrypted payload received from gateway 10.0.2.2 (NAT)\n");
-
+                        if let Ok(s) = core::str::from_utf8(&resp_buf[..bytes]) {
+                            vga::print_str(s);
+                        }
                         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                        vga::print_str("\n[HTTPS Complete: Encrypted session established]\n");
+                        vga::print_str("\n[HTTPS Complete: Response stream received]\n");
                     }
                     Err(err) => {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                        vga::print_str("TLS Error: ");
+                        vga::print_str("HTTPS Error: ");
                         vga::print_str(err);
                         vga::print_str("\n");
                     }

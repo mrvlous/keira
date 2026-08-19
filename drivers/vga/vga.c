@@ -196,6 +196,8 @@ void vga_set_color(uint8_t fg, uint8_t bg) {
     current_attr = vga_make_color(fg, bg);
 }
 
+extern void serial_putchar(char c);
+
 /**
  * vga_putchar - Render a single ASCII character onto VGA buffer.
  * @c: ASCII character byte to output.

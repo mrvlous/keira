@@ -16,6 +16,3 @@ Welcome to the Security documentation section for Keira Kernel.
 * [NX Bit & KASLR Hardware Security](nx.md): Hardware No-Execute (NX) page protection and KASLR randomization.
 * [Mandatory Access Control (MAC)](mac.md): Path-based security rule evaluation and process sandboxing policies.
 * [Seccomp BPF Syscall Filtering Sandbox](seccomp.md): In-kernel BPF system call sandbox filtering (`sys_seccomp`).
-* [AMD SEV & Intel TDX Subsystem](sev.md): Confidential computing hardware enclaves (`sys_sev`).
-* [KFENCE Memory Guard Engine](kfence.md): Sampling heap memory guard (`sys_kfence`).
-* [KASAN Shadow Memory Diagnostic Engine](kasan.md): Shadow memory validation for heap access safety (`sys_kasan`).

@@ -14,9 +14,9 @@ Keira Kernel uses the x86_64 `syscall` and `sysret` assembly instructions for fa
 
 ### MSR Register Configuration
 During boot, `tss::init_user_mode` configures the Model Specific Registers (MSRs) to define the entry point and segment bases:
-*   **IA32_STAR (MSR `0xC0000081`)**: Configures the segment selectors.
+*   **IA32_STAR (MSR `0xC0000081`)**: Configures the segment selectors (`0x00180008`).
     *   Bits 32-47: Target kernel segment selector base (`0x08`).
-    *   Bits 48-63: Target user segment selector base (`0x1B`).
+    *   Bits 48-63: Target user segment selector base (`0x18`).
 *   **IA32_LSTAR (MSR `0xC0000082`)**: Set to the address of the assembly system call entry stub `syscall_entry` in `arch/x86/boot/entry64.asm`.
 *   **IA32_FMASK (MSR `0xC0000084`)**: Configures RFLAGS bitmask to disable interrupts (`0x200`) when entering kernel space.
 
@@ -90,21 +90,7 @@ When a user program executes the `syscall` instruction:
 | 54 | `sys_swapoff` | `(path_ptr: *const u8) -> status` |
 | 55 | `sys_epoll_create` | `(size: i32) -> epfd` |
 | 56 | `sys_epoll_ctl` | `(epfd: i32, op: i32, fd: i32) -> status` |
-| 57 | `sys_kasan` | `(addr: u64, size: u64) -> status` |
 | 58 | `sys_mq_open` | `(name_ptr: *const u8, oflag: i32, mode: u32) -> mqfd` |
-| 59 | `sys_bpf_jit` | `(insn_ptr: *const u8, insn_cnt: usize) -> jit_addr` |
-| 60 | `sys_virtio` | `(device_id: u32, queue_idx: u32) -> status` |
-| 61 | `sys_sev` | `(cmd: u32, page_addr: u64) -> status` |
-| 62 | `sys_io_uring_register` | `(fd: i32, opcode: u32, arg_ptr: u64, nr_args: u32) -> status` |
-| 63 | `sys_kfence` | `(sample_interval: u32, flags: u32) -> status` |
-| 64 | `sys_sched_setattr` | `(pid: u32, attr_ptr: u64, flags: u32) -> status` |
-| 65 | `sys_hyperv` | `(control: u64, input_gpa: u64, output_gpa: u64) -> status` |
-| 66 | `sys_io_uring_net` | `(fd: i32, flags: u32, timeout_ms: u32) -> status` |
-| 67 | `sys_xhci_iso` | `(slot_id: u32, ep_idx: u32, stream_id: u32) -> status` |
-| 68 | `sys_ptp_clock` | `(cmd: u32, target_nsec: u64) -> status` |
-| 69 | `sys_kpti` | `(enable: u32, flags: u32) -> status` |
-| 70 | `sys_sched_autogroup` | `(pid: u32, group_id: u32) -> status` |
-| 71 | `sys_audio_dsp` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
 | 72 | `sys_kill` | `(pid: u32, sig: u32) -> status` |
 | 73 | `sys_usb_device` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |
 | 74 | `sys_raid_lvm` | `(cmd: u32, arg1: u64, arg2: u64) -> status` |

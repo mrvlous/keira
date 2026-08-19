@@ -7,7 +7,4 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Process Scheduler & Signal Subsystem Module Root
-
-/// POSIX Real-Time Signal Engine & Process Job Control Subsystem
 pub mod signal;

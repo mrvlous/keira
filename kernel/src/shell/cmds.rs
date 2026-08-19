@@ -7,21 +7,15 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Shell Commands Module Root
 //!
 //! Exposes all modular command handlers implemented in the `cmds/` directory.
 
-pub mod alsamixer;
-pub mod aplay;
-pub mod autogroup;
 pub mod bg;
 pub mod bpf;
-pub mod bpf_jit;
 pub mod cgroups;
 pub mod copy;
 pub mod cpu;
 pub mod create;
-pub mod deadline;
 pub mod delete;
 pub mod devices;
 pub mod disk;
@@ -41,23 +35,16 @@ pub mod framebuffer;
 pub mod futex;
 pub mod go;
 pub mod guide;
-pub mod hda;
 pub mod help;
 pub mod history;
 pub mod hostname;
 pub mod https;
-pub mod hyperv;
 pub mod initrd;
-pub mod io_uring_net;
-pub mod io_worker;
 pub mod ipcrm;
 pub mod ipcs;
 pub mod iptables;
 pub mod jobs;
-pub mod kasan;
-pub mod kfence;
 pub mod kill;
-pub mod kpti;
 pub mod kvm;
 pub mod list;
 pub mod lkm;
@@ -72,7 +59,6 @@ pub mod nvme;
 pub mod perf;
 pub mod power;
 pub mod protect;
-pub mod ptp;
 pub mod raid;
 pub mod ramdisk;
 pub mod reset;
@@ -81,7 +67,6 @@ pub mod runtime;
 pub mod script;
 pub mod search;
 pub mod seccomp;
-pub mod sev;
 pub mod stop;
 pub mod swap;
 pub mod sync;
@@ -96,8 +81,6 @@ pub mod usb;
 pub mod r#use;
 pub mod user;
 pub mod view;
-pub mod virtio;
 pub mod wait;
 pub mod wipe;
 pub mod write;
-pub mod xhci;

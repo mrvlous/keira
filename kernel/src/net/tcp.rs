@@ -7,7 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Keira Kernel: Transmission Control Protocol (TCP) Engine
 //!
 //! Provides TCP packet parsing, sequence/ack number tracking, header generation,
 //! 3-way handshake state machine (SYN -> SYN-ACK -> ACK), data streaming, and FIN connection teardown.

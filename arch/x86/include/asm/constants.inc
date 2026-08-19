@@ -19,7 +19,7 @@ MULTIBOOT2_BOOTLOADER   equ 0x36D76289
 
 ; Memory Topology Configuration
 KERNEL_PHYS_BASE        equ 0x00100000
-KERNEL_STACK_SIZE       equ 0x4000
+KERNEL_STACK_SIZE       equ 0x8000
 
 ; VGA Text Mode Hardware Layout
 VGA_BUFFER_ADDR         equ 0xB8000
