@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! FAT16 volume initialization, BIOS Parameter Block (BPB) parsing, and disk geometry.
+
 use super::types::Fat16Volume;
 use super::{CURRENT_DIR_CLUSTER, VOLUME};
 use crate::io::vga;

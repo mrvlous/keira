@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! File operations: read, write, append, truncate, create, and remove files.
+
 use super::cluster::{alloc_cluster, fat_next_cluster, free_cluster_chain};
 use super::dir::{create_directory_entry_with_name, is_dir_empty};
 use super::path::{filename_to_8_3, find_entry, resolve_path};

@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Shell state management, input ring buffers, line editing context, and history state.
+
 use crate::io::vga;
 
 pub const BUFFER_SIZE: usize = 256;

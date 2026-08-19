@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Path resolution, 8.3 short filename formatting, and VFAT long filename accumulator.
+
 use super::dir::for_each_directory_entry;
 use super::read_sector;
 use super::types::{DirectoryEntry, FoundEntry, LfnAccumulator, LfnEntry};

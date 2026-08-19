@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Command dispatcher, pipeline execution, redirection parser, and built-in runner.
+
 use super::state::*;
 use crate::io::vga;
 

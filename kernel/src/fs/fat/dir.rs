@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Directory management, directory entry iteration, creation, deletion, and searching.
+
 use super::cluster::{alloc_cluster, fat_next_cluster, free_cluster_chain};
 use super::path::{
     accumulate_lfn, filename_to_8_3, find_entry, format_filename, get_lfn_utf8, resolve_path,

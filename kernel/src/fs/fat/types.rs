@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Data structures, on-disk directory entries, BPB records, and FAT volume types.
+
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub struct DirectoryEntry {

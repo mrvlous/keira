@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Network stack modules: Ethernet/ARP, IPv4, TCP, DHCP, DNS, TLS 1.3, Netfilter, and BPF engine.
+
 pub mod arp;
 pub mod bpf;
 pub mod dhcp;

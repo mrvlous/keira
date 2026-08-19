@@ -7,6 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Architecture-specific kernel subsystem modules, CPU features,
+//! hardware timers, APIC controllers, and hypervisor primitives.
+
 #[path = "../../arch/x86/kernel/apic.rs"]
 pub mod apic;
 

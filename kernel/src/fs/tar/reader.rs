@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! POSIX USTAR archive parser, in-memory initrd ramdisk unpacker, and file reader.
+
 use crate::io::vga;
 
 static mut INITRD_START: u64 = 0;

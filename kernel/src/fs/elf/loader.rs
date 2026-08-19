@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! ELF64 userland binary loader, PT_LOAD segment mapper, and user mode executor.
+
 use super::types::{ElfHeader, ProgramHeader, PT_LOAD};
 use crate::mem::{pmm, vmm};
 

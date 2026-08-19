@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! Task control block (TCB) types, CPU execution contexts, and task states.
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskState {
     Ready,

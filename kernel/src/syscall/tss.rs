@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! 64-bit Task State Segment (TSS), RSP0 kernel privilege stack, and IST interrupt table setup.
+
 use crate::mem::pmm;
 
 #[repr(C, packed)]

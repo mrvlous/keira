@@ -7,6 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//!
+//! File Allocation Table (FAT) cluster chain traversal, allocation, and deallocation.
+
 use super::types::Fat16Volume;
 use super::volume::cluster_to_sector;
 use super::{read_sector, write_sector};
