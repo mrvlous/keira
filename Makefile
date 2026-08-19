@@ -412,8 +412,10 @@ test: all ## Run automated headless QEMU smoke test
 
 clean: ## Remove build directory and compiled artifacts
 	@$(LOG_INFO) "Removing build artifacts..."
-	$(Q)rm -rf $(BUILD_DIR)
+	$(Q)rm -rf $(BUILD_DIR) target/
 	$(Q)$(CARGO) clean 2>/dev/null || true
+	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
+	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
 
 format: ## Format Rust and C source code

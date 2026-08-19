@@ -13,15 +13,37 @@
 # Master build system output directory
 /build/
 
-# Temporary editor files and backups
+# Compiled objects and binary artifacts
+*.o
+*.a
+*.bin
+*.elf
+*.iso
+*.img
+*.d
+
+# Temporary editor files, swaps, and backups
 *~
 *.swp
 *.swo
+*.bak
+*.tmp
+*.orig
+*.rej
+*.log
+*.out
 .DS_Store
+Thumbs.db
 
-# Local IDE configuration caches
+# Python bytecode caches
+__pycache__/
+*.pyc
+
+# Local IDE & tooling configuration caches
 .idea/
 .vscode/
 .vscode-test/
 .clangd/
 .eglot/
+.cache/
+.gdb_history
