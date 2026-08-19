@@ -48,12 +48,8 @@ pub unsafe fn get_rtc_fat_time_date() -> (u16, u16) {
 
     let fat_time =
         ((time.hour as u16) << 11) | ((time.minute as u16) << 5) | ((time.second as u16) / 2);
-    let year_offset = if time.year >= 1980 {
-        time.year - 1980
-    } else {
-        0
-    };
-    let fat_date = ((year_offset as u16) << 9) | ((time.month as u16) << 5) | (time.day as u16);
+    let year_offset = time.year.saturating_sub(1980);
+    let fat_date = (year_offset << 9) | ((time.month as u16) << 5) | (time.day as u16);
     (fat_time, fat_date)
 }
 
@@ -76,7 +72,7 @@ where
         }
     } else {
         let mut cluster = dir_cluster;
-        while cluster >= 2 && cluster < 0xFFF8 {
+        while (2..0xFFF8).contains(&cluster) {
             let start_sector = cluster_to_sector(cluster, vol);
             for s in 0..vol.sectors_per_cluster as u32 {
                 let sector = start_sector + s;
@@ -190,7 +186,7 @@ pub unsafe fn create_directory_entry_with_name(
     let chk = lfn_checksum(&sfn_name);
     let name_utf8 = original_name.as_bytes();
 
-    let num_lfn = (name_utf8.len() + 12) / 13;
+    let num_lfn = name_utf8.len().div_ceil(13);
     if num_lfn > 2 {
         return create_directory_entry(sfn_name, attr, first_cluster, size, dir_cluster, vol);
     }

@@ -58,7 +58,7 @@ pub static mut CPU_CORE_COUNT: usize = 1;
 
 /// Send Inter-Processor Interrupt (IPI) via ICR registers
 pub unsafe fn send_ipi(apic_id: u32, vector: u8, delivery_mode: u32) {
-    write_lapic_reg(LAPIC_ICR_HIGH, (apic_id as u32) << 24);
+    write_lapic_reg(LAPIC_ICR_HIGH, apic_id << 24);
     write_lapic_reg(LAPIC_ICR_LOW, (delivery_mode & 0x700) | (vector as u32));
 }
 

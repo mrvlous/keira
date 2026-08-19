@@ -148,7 +148,7 @@ pub unsafe fn draw_rect(x: u32, y: u32, w: u32, h: u32, color: u32) {
 /// Draw an 8x16 ASCII character onto the framebuffer
 pub unsafe fn draw_char(x: u32, y: u32, c: char, fg: u32, bg: u32) {
     let ascii = c as usize;
-    if ascii < 32 || ascii > 126 {
+    if !(32..=126).contains(&ascii) {
         return;
     }
     let font_idx = ascii - 32;

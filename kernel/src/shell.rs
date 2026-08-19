@@ -45,19 +45,13 @@ pub fn print_logo() {
 ///
 /// # Safety
 /// This function reads from global mutable state `CURRENT_USER` and `CURRENT_USER_LEN`.
-
 pub fn print_prompt() {
     unsafe {
         if IN_EDITOR_MODE {
             return;
         }
 
-        let user_color = if IS_ADMIN {
-            vga::Color::LightRed
-        } else {
-            vga::Color::LightRed
-        };
-        vga::set_color(user_color, vga::Color::Black);
+        vga::set_color(vga::Color::LightRed, vga::Color::Black);
         if let Ok(user_str) = core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
             vga::print_str(user_str);
         } else {
@@ -354,11 +348,7 @@ pub fn process_pending() {
                 CURRENT_USER[..login_user_str.len()].copy_from_slice(login_user_str.as_bytes());
                 CURRENT_USER_LEN = login_user_str.len();
 
-                if login_user_str == "admin" {
-                    IS_ADMIN = true;
-                } else {
-                    IS_ADMIN = false;
-                }
+                IS_ADMIN = login_user_str == "admin";
 
                 vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                 vga::print_str("Successfully logged in as ");

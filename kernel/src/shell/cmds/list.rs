@@ -56,7 +56,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 crate::fs::fat::CURRENT_DIR_CLUSTER
             };
 
-            if let Err(_) = crate::fs::fat::list_files_in_dir(target_cluster, show_all) {
+            if crate::fs::fat::list_files_in_dir(target_cluster, show_all).is_err() {
                 // Fallback to initrd RAM disk listing
                 crate::fs::tar::list_files();
             }

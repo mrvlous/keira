@@ -84,6 +84,10 @@ pub static mut ENV_HOME_LEN: usize = 12;
 pub static mut ENV_SHELL: [u8; 32] = *b"/system/bin/keira               ";
 pub static mut ENV_SHELL_LEN: usize = 17;
 
+/// Retrieves the string value of an environment variable.
+///
+/// # Safety
+/// Reads from global mutable environment states.
 pub unsafe fn get_env_var(name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
     match name {
         "PATH" => {
@@ -126,6 +130,10 @@ pub unsafe fn get_env_var(name: &str, buf: &mut [u8]) -> Result<usize, &'static 
     }
 }
 
+/// Sets or updates the string value of an environment variable.
+///
+/// # Safety
+/// Mutates global environment state variables.
 pub unsafe fn set_env_var(name: &str, value: &str) -> Result<(), &'static str> {
     let val_bytes = value.as_bytes();
     match name {

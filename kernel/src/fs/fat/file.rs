@@ -57,13 +57,13 @@ pub unsafe fn cat_file(filename: &str) {
     let entry = found.entry;
 
     // Read the file clusters
-    let mut size_left = entry.file_size as u32;
+    let mut size_left = entry.file_size;
     let mut current_cluster = entry.first_cluster_lo;
     let mut cluster_data = [0u8; 512];
 
     vga::set_color(vga::Color::White, vga::Color::Black);
 
-    while current_cluster >= 2 && current_cluster < 0xFFF8 {
+    while (2..0xFFF8).contains(&current_cluster) {
         let first_sector = cluster_to_sector(current_cluster, vol);
 
         for s in 0..vol.sectors_per_cluster as u32 {
@@ -82,7 +82,7 @@ pub unsafe fn cat_file(filename: &str) {
                 vga::print_str(s_str);
             } else {
                 for &b in slice {
-                    if b >= 32 && b <= 126 {
+                    if (32..=126).contains(&b) {
                         let c_buf = [b];
                         if let Ok(cs) = core::str::from_utf8(&c_buf) {
                             vga::print_str(cs);
@@ -138,7 +138,7 @@ pub unsafe fn read_file_content(filename: &str, buffer: &mut [u8]) -> Result<usi
     let mut cluster_data = [0u8; 512];
     let mut bytes_read = 0;
 
-    while current_cluster >= 2 && current_cluster < 0xFFF8 && size_left > 0 {
+    while (2..0xFFF8).contains(&current_cluster) && size_left > 0 {
         let first_sector = cluster_to_sector(current_cluster, vol);
 
         for s in 0..vol.sectors_per_cluster as u32 {
@@ -198,7 +198,7 @@ pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &
 
     // Calculate clusters needed
     let cluster_size_bytes = vol.sectors_per_cluster as usize * 512;
-    let num_clusters = (content.len() + cluster_size_bytes - 1) / cluster_size_bytes;
+    let num_clusters = content.len().div_ceil(cluster_size_bytes);
 
     let mut first_cluster = 0u16;
     let mut last_cluster = 0u16;
@@ -232,7 +232,7 @@ pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &
     let mut content_offset = 0usize;
     let mut current_cluster = first_cluster;
 
-    while current_cluster >= 2 && current_cluster < 0xFFF8 {
+    while (2..0xFFF8).contains(&current_cluster) {
         let first_sector = cluster_to_sector(current_cluster, vol);
 
         for s in 0..vol.sectors_per_cluster as u32 {
@@ -270,10 +270,7 @@ pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &
 
 pub unsafe fn append_file_content(filename: &str, content: &[u8]) -> Result<usize, &'static str> {
     let mut buf = [0u8; 4096];
-    let existing_len = match read_file_content(filename, &mut buf) {
-        Ok(len) => len,
-        Err(_) => 0,
-    };
+    let existing_len = read_file_content(filename, &mut buf).unwrap_or_default();
 
     if existing_len + content.len() > buf.len() {
         return Err("Combined content exceeds maximum buffer capacity (4KB)");

@@ -39,7 +39,7 @@ unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, &'st
     let max_len = buf.len();
     while len < max_len - 1 {
         let addr = ptr.add(len) as u64;
-        if addr < 0x10000 || addr >= 0x0000_7FFF_FFFF_FFFF {
+        if !(0x10000..0x0000_7FFF_FFFF_FFFF).contains(&addr) {
             return Err("Address resides outside user space boundaries");
         }
         let c = *ptr.add(len);
@@ -54,7 +54,7 @@ unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, &'st
 
 /// Validate process file descriptor index range (0..1024)
 pub fn validate_fd(fd: i32) -> Result<(), &'static str> {
-    if fd >= 0 && fd < 1024 {
+    if (0..1024).contains(&fd) {
         Ok(())
     } else {
         Err("File descriptor out of valid bounds (0..1024)")
@@ -126,10 +126,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             };
 
             let task_id = unsafe { crate::task::scheduler::CURRENT_TASK_IDX };
-            if write_mode {
-                if unsafe { crate::fs::lock::acquire_lock(path_str, task_id) }.is_err() {
-                    return u64::MAX;
-                }
+            if write_mode && unsafe { crate::fs::lock::acquire_lock(path_str, task_id) }.is_err() {
+                return u64::MAX;
             }
 
             // Check if file exists, if not write_mode and it doesn't exist, error out
@@ -192,8 +190,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                             };
 
                         let resolved_path = crate::fs::vfs::resolve_alias_path(path_str);
-                        if resolved_path.starts_with("/system/dev/") {
-                            let node_name = &resolved_path[12..];
+                        if let Some(node_name) = resolved_path.strip_prefix("/system/dev/") {
                             let user_slice = core::slice::from_raw_parts_mut(buf_ptr, len as usize);
                             if let Ok(bytes) = crate::fs::dev::read_dev_node(node_name, user_slice)
                             {
@@ -260,8 +257,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                             };
 
                         let resolved_path = crate::fs::vfs::resolve_alias_path(path_str);
-                        if resolved_path.starts_with("/system/dev/") {
-                            let node_name = &resolved_path[12..];
+                        if let Some(node_name) = resolved_path.strip_prefix("/system/dev/") {
                             let user_slice = core::slice::from_raw_parts(buf_ptr, len as usize);
                             if let Ok(bytes) = crate::fs::dev::write_dev_node(node_name, user_slice)
                             {
@@ -601,10 +597,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let addr = arg1;
             let len = arg2 as usize;
             let prot = arg3;
-            match unsafe { crate::mem::vmm::mmap_anonymous(addr, len, prot) } {
-                Ok(vaddr) => vaddr,
-                Err(_) => u64::MAX,
-            }
+            unsafe { crate::mem::vmm::mmap_anonymous(addr, len, prot) }.unwrap_or(u64::MAX)
         }
         // Syscall 21: munmap
         // Signature: sys_munmap(addr: u64, len: u64) -> status
@@ -644,10 +637,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         }
         // Syscall 24: socket
         // Signature: sys_socket(domain: u64, type: u64, proto: u64) -> sockfd
-        24 => match unsafe { crate::net::tcp::create_socket(arg1, arg2, arg3) } {
-            Ok(fd) => fd,
-            Err(_) => u64::MAX,
-        },
+        24 => unsafe { crate::net::tcp::create_socket(arg1, arg2, arg3) }.unwrap_or(u64::MAX),
         // Syscall 25: connect
         // Signature: sys_connect(sockfd: u64, addr_ptr: *const u8, len: u64) -> 0
         25 => match unsafe { crate::net::tcp::connect_socket(arg1, arg2 as *const u8, arg3) } {
@@ -696,10 +686,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         },
         // Syscall 29: shmat
         // Signature: sys_shmat(shmid: u64) -> virt_addr
-        29 => match unsafe { crate::ipc::shm::get_shm_frame(arg1 as usize) } {
-            Some(frame) => frame,
-            None => u64::MAX,
-        },
+        29 => unsafe { crate::ipc::shm::get_shm_frame(arg1 as usize) }.unwrap_or(u64::MAX),
         // Syscall 30: fork
         // Signature: sys_fork() -> child_pid
         30 => match unsafe { crate::task::scheduler::fork_current_task() } {
@@ -799,10 +786,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Signature: sys_io_uring_setup(entries: u32, p_ptr: *mut u64) -> ring_vaddr
         38 => {
             let entries = arg1 as u32;
-            match crate::ipc::io_uring::setup_ring(entries) {
-                Ok(vaddr) => vaddr,
-                Err(_) => u64::MAX,
-            }
+            crate::ipc::io_uring::setup_ring(entries).unwrap_or(u64::MAX)
         }
         // Syscall 39: io_uring_enter
         // Signature: sys_io_uring_enter(fd: u64, to_submit: u32, min_complete: u32, flags: u32) -> completed
@@ -821,10 +805,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let op = arg2 as u32;
             let val = arg3 as u32;
             let val2 = 0u32;
-            match crate::syscall::futex::sys_futex_op(uaddr, op, val, val2) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::syscall::futex::sys_futex_op(uaddr, op, val, val2).unwrap_or(u64::MAX)
         }
         // Syscall 41: clone_thread
         // Signature: sys_clone_thread(fn_ptr: u64, stack_ptr: u64, flags: u64) -> thread_id
@@ -832,26 +813,17 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let fn_ptr = arg1;
             let stack_ptr = arg2;
             let flags = arg3;
-            match crate::syscall::futex::sys_clone_thread(fn_ptr, stack_ptr, flags) {
-                Ok(tid) => tid,
-                Err(_) => u64::MAX,
-            }
+            crate::syscall::futex::sys_clone_thread(fn_ptr, stack_ptr, flags).unwrap_or(u64::MAX)
         }
         // Syscall 42: kvm_create_vm
         // Signature: sys_kvm_create_vm() -> vm_id
-        42 => match crate::arch::kvm::sys_kvm_create_vm() {
-            Ok(vmid) => vmid,
-            Err(_) => u64::MAX,
-        },
+        42 => crate::arch::kvm::sys_kvm_create_vm().unwrap_or(u64::MAX),
         // Syscall 43: kvm_run_vcpu
         // Signature: sys_kvm_run_vcpu(vm_id: u64, vcpu_id: u32) -> status
         43 => {
             let vm_id = arg1;
             let vcpu_id = arg2 as u32;
-            match crate::arch::kvm::sys_kvm_run_vcpu(vm_id, vcpu_id) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::arch::kvm::sys_kvm_run_vcpu(vm_id, vcpu_id).unwrap_or(u64::MAX)
         }
         // Syscall 44: syslog
         // Signature: sys_syslog(buf_ptr: *mut u8, len: u64) -> read_len
@@ -868,10 +840,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         45 => {
             let clock_id = arg1;
             let timer_id_ptr = arg2 as *mut u64;
-            match crate::arch::timer::sys_timer_create(clock_id, timer_id_ptr) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            unsafe { crate::arch::timer::sys_timer_create(clock_id, timer_id_ptr) }
+                .unwrap_or(u64::MAX)
         }
         // Syscall 46: timer_settime
         // Signature: sys_timer_settime(timer_id: u64, flags: u32, interval_nanos: u64) -> status
@@ -879,10 +849,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let timer_id = arg1;
             let flags = arg2 as u32;
             let interval_nanos = arg3;
-            match crate::arch::timer::sys_timer_settime(timer_id, flags, interval_nanos) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::arch::timer::sys_timer_settime(timer_id, flags, interval_nanos)
+                .unwrap_or(u64::MAX)
         }
         // Syscall 47: splice
         // Signature: sys_splice(fd_in: u64, fd_out: u64, len: u64) -> bytes_spliced
@@ -912,20 +880,14 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let event_type = arg1 as u32;
             let config = arg2;
             let pid = arg3;
-            match crate::arch::perf::sys_perf_event_open(event_type, config, pid) {
-                Ok(fd) => fd,
-                Err(_) => u64::MAX,
-            }
+            crate::arch::perf::sys_perf_event_open(event_type, config, pid).unwrap_or(u64::MAX)
         }
         // Syscall 50: eventfd
         // Signature: sys_eventfd(init_val: u32, flags: u32) -> fd
         50 => {
             let init_val = arg1 as u32;
             let flags = arg2 as u32;
-            match crate::ipc::eventfd::sys_eventfd(init_val, flags) {
-                Ok(fd) => fd,
-                Err(_) => u64::MAX,
-            }
+            crate::ipc::eventfd::sys_eventfd(init_val, flags).unwrap_or(u64::MAX)
         }
         // Syscall 51: signalfd
         // Signature: sys_signalfd(fd: i32, mask: u64, flags: u32) -> sfd
@@ -933,10 +895,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let fd = arg1 as i32;
             let mask = arg2;
             let flags = arg3 as u32;
-            match crate::ipc::eventfd::sys_signalfd(fd, mask, flags) {
-                Ok(sfd) => sfd,
-                Err(_) => u64::MAX,
-            }
+            crate::ipc::eventfd::sys_signalfd(fd, mask, flags).unwrap_or(u64::MAX)
         }
         // Syscall 52: seccomp
         // Signature: sys_seccomp(op: u32, flags: u32, args_ptr: u64) -> status
@@ -944,38 +903,26 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let op = arg1 as u32;
             let flags = arg2 as u32;
             let args_ptr = arg3;
-            match crate::task::seccomp::sys_seccomp(op, flags, args_ptr) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::task::seccomp::sys_seccomp(op, flags, args_ptr).unwrap_or(u64::MAX)
         }
         // Syscall 53: swapon
         // Signature: sys_swapon(path_ptr: *const u8, swapflags: i32) -> status
         53 => {
             let path_ptr = arg1 as *const u8;
             let swapflags = arg2 as i32;
-            match crate::mem::swap::sys_swapon(path_ptr, swapflags) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::mem::swap::sys_swapon(path_ptr, swapflags).unwrap_or(u64::MAX)
         }
         // Syscall 54: swapoff
         // Signature: sys_swapoff(path_ptr: *const u8) -> status
         54 => {
             let path_ptr = arg1 as *const u8;
-            match crate::mem::swap::sys_swapoff(path_ptr) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::mem::swap::sys_swapoff(path_ptr).unwrap_or(u64::MAX)
         }
         // Syscall 55: epoll_create
         // Signature: sys_epoll_create(size: i32) -> epfd
         55 => {
             let size = arg1 as i32;
-            match crate::ipc::epoll::sys_epoll_create(size) {
-                Ok(epfd) => epfd,
-                Err(_) => u64::MAX,
-            }
+            crate::ipc::epoll::sys_epoll_create(size).unwrap_or(u64::MAX)
         }
         // Syscall 56: epoll_ctl
         // Signature: sys_epoll_ctl(epfd: i32, op: i32, fd: i32) -> status
@@ -983,10 +930,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let epfd = arg1 as i32;
             let op = arg2 as i32;
             let fd = arg3 as i32;
-            match crate::ipc::epoll::sys_epoll_ctl(epfd, op, fd, 0) {
-                Ok(res) => res,
-                Err(_) => u64::MAX,
-            }
+            crate::ipc::epoll::sys_epoll_ctl(epfd, op, fd, 0).unwrap_or(u64::MAX)
         }
         // Syscall 58: mq_open
         // Signature: sys_mq_open(name_ptr: *const u8, oflag: i32, mode: u32) -> mqfd
@@ -994,41 +938,24 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let name_ptr = arg1 as *const u8;
             let oflag = arg2 as i32;
             let mode = arg3 as u32;
-            match crate::ipc::mqueue::sys_mq_open(name_ptr, oflag, mode) {
-                Ok(mqfd) => mqfd,
-                Err(_) => u64::MAX,
-            }
+            crate::ipc::mqueue::sys_mq_open(name_ptr, oflag, mode).unwrap_or(u64::MAX)
         }
         // Syscall 72: kill
         // Signature: sys_kill(pid: u32, sig: u32) -> status
-        72 => match crate::sched::signal::sys_kill(arg1 as u32, arg2 as u32) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
+        72 => crate::sched::signal::sys_kill(arg1 as u32, arg2 as u32).unwrap_or(u64::MAX),
         // Syscall 73: usb_device
         // Signature: sys_usb_device(cmd: u32, arg1: u64, arg2: u64) -> status
-        73 => match crate::io::usb_storage::sys_usb_device(arg1 as u32, arg2, arg3) {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
+        73 => crate::io::usb_storage::sys_usb_device(arg1 as u32, arg2, arg3).unwrap_or(u64::MAX),
         // Syscall 74: raid_lvm
         // Signature: sys_raid_lvm(cmd: u32, arg1: u64, arg2: u64) -> status
-        74 => match unsafe { crate::fs::lvm::sys_raid_lvm(arg1 as u32, arg2, arg3) } {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
+        74 => unsafe { crate::fs::lvm::sys_raid_lvm(arg1 as u32, arg2, arg3) }.unwrap_or(u64::MAX),
         // Syscall 75: shm_sem
         // Signature: sys_shm_sem(cmd: u32, arg1: u64, arg2: u64) -> status
-        75 => match unsafe { crate::ipc::shm::sys_shm_sem(arg1 as u32, arg2, arg3) } {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
+        75 => unsafe { crate::ipc::shm::sys_shm_sem(arg1 as u32, arg2, arg3) }.unwrap_or(u64::MAX),
         // Syscall 76: netfilter
         // Signature: sys_netfilter(cmd: u32, arg1: u64, arg2: u64) -> status
-        76 => match unsafe { crate::net::netfilter::sys_netfilter(arg1 as u32, arg2, arg3) } {
-            Ok(res) => res,
-            Err(_) => u64::MAX,
-        },
+        76 => unsafe { crate::net::netfilter::sys_netfilter(arg1 as u32, arg2, arg3) }
+            .unwrap_or(u64::MAX),
         _ => {
             // Unknown syscall
             u64::MAX

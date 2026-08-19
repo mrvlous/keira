@@ -21,6 +21,12 @@ pub struct FileLock {
     pub holder_task_id: usize,
 }
 
+impl Default for FileLock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileLock {
     pub const fn new() -> Self {
         Self {
@@ -44,14 +50,15 @@ pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static st
     // 1. Check if the file is already locked by another process
     for i in 0..MAX_FILE_LOCKS {
         let lock = &FILE_LOCKS[i];
-        if lock.is_locked && lock.path_len == path_bytes.len() {
-            if &lock.path[..lock.path_len] == path_bytes {
-                if lock.holder_task_id == task_id {
-                    // Already locked by the same task
-                    return Ok(());
-                } else {
-                    return Err("File is locked by another process");
-                }
+        if lock.is_locked
+            && lock.path_len == path_bytes.len()
+            && &lock.path[..lock.path_len] == path_bytes
+        {
+            if lock.holder_task_id == task_id {
+                // Already locked by the same task
+                return Ok(());
+            } else {
+                return Err("File is locked by another process");
             }
         }
     }
@@ -76,11 +83,13 @@ pub unsafe fn release_lock(path: &str, task_id: usize) {
     let path_bytes = path.as_bytes();
     for i in 0..MAX_FILE_LOCKS {
         let lock = &mut FILE_LOCKS[i];
-        if lock.is_locked && lock.holder_task_id == task_id && lock.path_len == path_bytes.len() {
-            if &lock.path[..lock.path_len] == path_bytes {
-                lock.is_locked = false;
-                lock.path_len = 0;
-            }
+        if lock.is_locked
+            && lock.holder_task_id == task_id
+            && lock.path_len == path_bytes.len()
+            && &lock.path[..lock.path_len] == path_bytes
+        {
+            lock.is_locked = false;
+            lock.path_len = 0;
         }
     }
 }

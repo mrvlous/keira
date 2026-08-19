@@ -42,6 +42,10 @@ pub struct ExceptionStackFrame {
     pub ss: u64,
 }
 
+/// CPU exception dispatcher invoked by low-level assembly ISR stubs.
+///
+/// # Safety
+/// `frame_ptr` must be a valid, aligned pointer to an `ExceptionStackFrame` constructed by the CPU/ISR.
 #[no_mangle]
 pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFrame) {
     let frame = &*frame_ptr;

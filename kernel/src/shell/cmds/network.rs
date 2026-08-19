@@ -139,10 +139,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             Some("ping") => {
-                let target = match parts.next() {
-                    Some(ip) => ip,
-                    None => "8.8.8.8",
-                };
+                let target = parts.next().unwrap_or("8.8.8.8");
 
                 e1000::init();
                 if !e1000::E1000_FOUND {

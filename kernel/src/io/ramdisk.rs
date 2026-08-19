@@ -101,7 +101,7 @@ pub fn create_ramdisk(size_kb: u32) -> Result<(), &'static str> {
     }
 
     // Each frame is 4KB
-    let required_frames = (size_kb + 3) / 4;
+    let required_frames = size_kb.div_ceil(4);
     if required_frames as usize > MAX_RAMDISK_FRAMES {
         return Err("Requested Ramdisk size exceeds max limit (4MB)");
     }
@@ -169,7 +169,7 @@ fn format_fat16(device: &dyn BlockDevice) -> Result<(), &'static str> {
     let root_dir_sectors = 32;
 
     let total_clusters = total_sectors / sectors_per_cluster as u32;
-    let sectors_per_fat = ((total_clusters * 2) + 511) / 512;
+    let sectors_per_fat = (total_clusters * 2).div_ceil(512);
 
     // 1. Prepare and write Sector 0 (Boot Sector / BPB)
     let mut boot_sec = [0u8; 512];
@@ -258,15 +258,15 @@ fn format_fat16(device: &dyn BlockDevice) -> Result<(), &'static str> {
     fat_start_sec[3] = 0xFF;
 
     for fat in 0..num_fats as u32 {
-        let base = reserved_sectors as u32 + (fat * sectors_per_fat as u32);
+        let base = reserved_sectors as u32 + (fat * sectors_per_fat);
         device.write_sector(base, &fat_start_sec)?;
         for s in 1..sectors_per_fat {
-            device.write_sector(base + s as u32, &zero_sec)?;
+            device.write_sector(base + s, &zero_sec)?;
         }
     }
 
     // 4. Write Root Directory (all zeroes)
-    let root_start = reserved_sectors as u32 + (num_fats as u32 * sectors_per_fat as u32);
+    let root_start = reserved_sectors as u32 + (num_fats as u32 * sectors_per_fat);
     for s in 0..root_dir_sectors {
         device.write_sector(root_start + s, &zero_sec)?;
     }

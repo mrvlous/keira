@@ -144,13 +144,11 @@ pub fn handle_timer_tick() {
         }
         TIMER_TICKS = TIMER_TICKS.wrapping_add(1);
         // Toggle cursor blink every 500 ms (PIT timer runs at 1000Hz)
-        if TIMER_TICKS % 500 == 0 {
-            if !VGA_BUSY {
-                CURSOR_BLINK_STATE = !CURSOR_BLINK_STATE;
-                hide_mouse_graphics();
-                draw_cursor(CURSOR_BLINK_STATE);
-                show_mouse_graphics();
-            }
+        if TIMER_TICKS.is_multiple_of(500) && !VGA_BUSY {
+            CURSOR_BLINK_STATE = !CURSOR_BLINK_STATE;
+            hide_mouse_graphics();
+            draw_cursor(CURSOR_BLINK_STATE);
+            show_mouse_graphics();
         }
     }
 }

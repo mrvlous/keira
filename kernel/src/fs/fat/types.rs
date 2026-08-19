@@ -49,6 +49,12 @@ pub struct LfnAccumulator {
     pub max_index: usize,
 }
 
+impl Default for LfnAccumulator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LfnAccumulator {
     pub const fn new() -> Self {
         Self {

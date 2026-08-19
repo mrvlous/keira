@@ -42,7 +42,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::print_str("\n");
                 } else {
                     for &b in slice {
-                        if b == b'\n' || b == b'\r' || b == b'\t' || (b >= 0x20 && b <= 0x7E) {
+                        if b == b'\n' || b == b'\r' || b == b'\t' || (0x20..=0x7E).contains(&b) {
                             let s = [b];
                             if let Ok(ch) = core::str::from_utf8(&s) {
                                 vga::print_str(ch);

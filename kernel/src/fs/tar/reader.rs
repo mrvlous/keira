@@ -25,10 +25,9 @@ pub fn init(start: u64, end: u64) {
 fn octal_str_to_u64(s: &[u8]) -> u64 {
     let mut res = 0;
     for &b in s {
-        if b >= b'0' && b <= b'7' {
+        if (b'0'..=b'7').contains(&b) {
             res = (res << 3) | ((b - b'0') as u64);
-        } else if b == 0 || b == b' ' {
-            if res != 0 || b == 0 {}
+        } else if (b == 0 || b == b' ') && (res != 0 || b == 0) {
         }
     }
     res
@@ -85,7 +84,7 @@ pub fn list_files() {
             vga::print_str("\n");
         }
 
-        addr += 512 + ((size + 511) / 512) * 512;
+        addr += 512 + size.div_ceil(512) * 512;
     }
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 }
@@ -133,7 +132,7 @@ pub fn cat_file(target: &str) -> Result<(), &'static str> {
             return Ok(());
         }
 
-        addr += 512 + ((size + 511) / 512) * 512;
+        addr += 512 + size.div_ceil(512) * 512;
     }
     Err("File not found")
 }
@@ -183,7 +182,7 @@ pub fn exists(target: &str) -> bool {
             return true;
         }
 
-        addr += 512 + ((size + 511) / 512) * 512;
+        addr += 512 + size.div_ceil(512) * 512;
     }
     false
 }
@@ -239,7 +238,7 @@ pub fn read_file_content(target: &str, buf: &mut [u8]) -> Result<usize, &'static
             return Ok(size as usize);
         }
 
-        addr += 512 + ((size + 511) / 512) * 512;
+        addr += 512 + size.div_ceil(512) * 512;
     }
     Err("File not found in Initrd")
 }

@@ -10,6 +10,3 @@
 
 # Maximum number of parameters a function can have before warning
 too-many-arguments-threshold = 8
-
-# Maximum line length warning threshold (aligned with rustfmt.toml)
-max-line-length = 100

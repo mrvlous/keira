@@ -67,7 +67,7 @@ impl TlsSession {
     /// Create a new TLS 1.3 session with fresh ephemeral keys
     pub fn new() -> Self {
         let seed = unsafe { get_uptime_ms() };
-        let client_random;
+
         let mut priv_key;
 
         let seed_bytes = seed.to_le_bytes();
@@ -79,7 +79,7 @@ impl TlsSession {
         entropy_input[24..32].copy_from_slice(b"S-1.3-RN");
         entropy_input[32..40].copy_from_slice(&seed.wrapping_add(0xDEADBEEF).to_le_bytes());
 
-        client_random = sha256(&entropy_input);
+        let client_random = sha256(&entropy_input);
 
         entropy_input[0] ^= 0xFF;
         entropy_input[8..16].copy_from_slice(b"X25519PK");

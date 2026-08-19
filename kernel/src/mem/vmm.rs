@@ -35,7 +35,8 @@ pub unsafe fn map_page(
     physical_addr: u64,
     flags: u64,
 ) -> Result<(), &'static str> {
-    if virtual_addr % pmm::PAGE_SIZE != 0 || physical_addr % pmm::PAGE_SIZE != 0 {
+    if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) || !physical_addr.is_multiple_of(pmm::PAGE_SIZE)
+    {
         return Err("Virtual or Physical address is not page-aligned");
     }
 
@@ -101,7 +102,7 @@ pub unsafe fn map_page(
 
 /// Unmap a virtual page
 pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
-    if virtual_addr % pmm::PAGE_SIZE != 0 {
+    if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Virtual address is not page-aligned");
     }
 
@@ -317,7 +318,7 @@ pub unsafe fn mmap_anonymous(
     if len == 0 {
         return Err("Invalid zero length for mmap");
     }
-    let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;
+    let pages = len.div_ceil(pmm::PAGE_SIZE as usize);
     let base_vaddr = if requested_addr != 0 && requested_addr >= 0x40000000 {
         requested_addr
     } else {
@@ -347,10 +348,10 @@ pub fn validate_virt_addr_range(vaddr: u64, len: usize) -> bool {
 
 /// Unmap contiguous virtual memory pages for munmap syscall
 pub unsafe fn munmap_pages(vaddr: u64, len: usize) -> Result<(), &'static str> {
-    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 || !validate_virt_addr_range(vaddr, len) {
+    if len == 0 || !vaddr.is_multiple_of(pmm::PAGE_SIZE) || !validate_virt_addr_range(vaddr, len) {
         return Err("Invalid address alignment or length for munmap");
     }
-    let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;
+    let pages = len.div_ceil(pmm::PAGE_SIZE as usize);
     for i in 0..pages {
         let addr = vaddr + (i as u64 * pmm::PAGE_SIZE);
         let _ = unmap_page(addr);
@@ -360,10 +361,10 @@ pub unsafe fn munmap_pages(vaddr: u64, len: usize) -> Result<(), &'static str> {
 
 /// Adjust protection flags for virtual memory pages (Syscall 31: mprotect)
 pub unsafe fn mprotect_pages(vaddr: u64, len: usize, prot: u64) -> Result<(), &'static str> {
-    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 || !validate_virt_addr_range(vaddr, len) {
+    if len == 0 || !vaddr.is_multiple_of(pmm::PAGE_SIZE) || !validate_virt_addr_range(vaddr, len) {
         return Err("Invalid address alignment or length for mprotect");
     }
-    let pages = (len + pmm::PAGE_SIZE as usize - 1) / pmm::PAGE_SIZE as usize;
+    let pages = len.div_ceil(pmm::PAGE_SIZE as usize);
     for i in 0..pages {
         let addr = vaddr + (i as u64 * pmm::PAGE_SIZE);
         if let Some(phys) = get_phys_addr(addr) {
@@ -376,7 +377,7 @@ pub unsafe fn mprotect_pages(vaddr: u64, len: usize, prot: u64) -> Result<(), &'
 
 /// Advise kernel on memory page management strategies (Syscall 32: madvise)
 pub unsafe fn madvise_pages(vaddr: u64, len: usize, _advice: u64) -> Result<(), &'static str> {
-    if len == 0 || vaddr % pmm::PAGE_SIZE != 0 || !validate_virt_addr_range(vaddr, len) {
+    if len == 0 || !vaddr.is_multiple_of(pmm::PAGE_SIZE) || !validate_virt_addr_range(vaddr, len) {
         return Err("Invalid address alignment or length for madvise");
     }
     Ok(())

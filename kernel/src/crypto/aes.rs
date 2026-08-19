@@ -79,12 +79,8 @@ impl Aes128 {
             block[9] = block[13];
             block[13] = tmp;
 
-            let tmp = block[2];
-            block[2] = block[10];
-            block[10] = tmp;
-            let tmp = block[6];
-            block[6] = block[14];
-            block[14] = tmp;
+            block.swap(2, 10);
+            block.swap(6, 14);
 
             let tmp = block[3];
             block[3] = block[15];
@@ -120,12 +116,8 @@ impl Aes128 {
         block[9] = block[13];
         block[13] = tmp;
 
-        let tmp = block[2];
-        block[2] = block[10];
-        block[10] = tmp;
-        let tmp = block[6];
-        block[6] = block[14];
-        block[14] = tmp;
+        block.swap(2, 10);
+        block.swap(6, 14);
 
         let tmp = block[3];
         block[3] = block[15];

@@ -75,32 +75,41 @@ pub fn count_pci_devices() -> u64 {
 
 static mut HOME_PATH_BUF: [u8; 32] = [0u8; 32];
 
+/// Returns the home directory path for the currently logged in user.
+///
+/// # Safety
+/// Reads from global mutable user states.
 pub unsafe fn get_current_user_home() -> &'static str {
-    let prefix = b"users/";
-    let user_bytes = &CURRENT_USER[..CURRENT_USER_LEN];
-    let total_len = prefix.len() + user_bytes.len();
-    HOME_PATH_BUF = [0u8; 32];
-    HOME_PATH_BUF[..prefix.len()].copy_from_slice(prefix);
-    HOME_PATH_BUF[prefix.len()..total_len].copy_from_slice(user_bytes);
+    let mut total_len = 0;
+    HOME_PATH_BUF[0..6].copy_from_slice(b"users/");
+    total_len += 6;
+    let user_len = CURRENT_USER_LEN;
+    HOME_PATH_BUF[total_len..total_len + user_len].copy_from_slice(&CURRENT_USER[..user_len]);
+    total_len += user_len;
     core::str::from_utf8(&HOME_PATH_BUF[..total_len]).unwrap_or("users/admin")
 }
 
+/// Checks whether the current shell execution session is running with admin privileges.
+///
+/// # Safety
+/// Reads from global mutable user states.
 pub unsafe fn is_admin_mode() -> bool {
     IS_ADMIN
-        || match core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
-            Ok("admin") => true,
-            _ => false,
-        }
+        || matches!(
+            core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]),
+            Ok("admin")
+        )
 }
 
+/// Validates whether the active user has write permissions in the current working directory.
+///
+/// # Safety
+/// Reads from global mutable user and path states.
 pub unsafe fn check_write_permission() -> bool {
     if is_admin_mode() {
         return true;
     }
-    let current_path = match core::str::from_utf8(&SHELL_PATH[..SHELL_PATH_LEN]) {
-        Ok(s) => s,
-        Err(_) => "",
-    };
+    let current_path = core::str::from_utf8(&SHELL_PATH[..SHELL_PATH_LEN]).unwrap_or_default();
     let home = get_current_user_home();
     current_path == home
         || (current_path.starts_with(home)

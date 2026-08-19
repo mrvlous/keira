@@ -57,7 +57,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let mut text_buf = [0u8; 1024];
         let mut text_len = 0;
 
-        while let Some(part) = parts.next() {
+        for part in parts.by_ref() {
             let part_bytes = part.as_bytes();
             if text_len > 0 && text_len < 1024 {
                 text_buf[text_len] = b' ';

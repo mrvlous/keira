@@ -46,11 +46,9 @@ pub fn register_device(dev: &'static dyn BlockDevice) -> Result<(), &'static str
 /// Find a registered block device by its name
 pub fn get_device(name: &str) -> Option<&'static dyn BlockDevice> {
     unsafe {
-        for slot in (&*core::ptr::addr_of!(BLOCK_DEVICES)).iter() {
-            if let Some(dev) = slot {
-                if dev.get_name() == name {
-                    return Some(*dev);
-                }
+        for dev in (&*core::ptr::addr_of!(BLOCK_DEVICES)).iter().flatten() {
+            if dev.get_name() == name {
+                return Some(*dev);
             }
         }
     }
@@ -81,11 +79,9 @@ where
 {
     unsafe {
         let mounted_name = MOUNTED_DEVICE.map(|d| d.get_name()).unwrap_or("");
-        for slot in (&*core::ptr::addr_of!(BLOCK_DEVICES)).iter() {
-            if let Some(dev) = slot {
-                let is_mounted = dev.get_name() == mounted_name;
-                f(*dev, is_mounted);
-            }
+        for dev in (&*core::ptr::addr_of!(BLOCK_DEVICES)).iter().flatten() {
+            let is_mounted = dev.get_name() == mounted_name;
+            f(*dev, is_mounted);
         }
     }
 }

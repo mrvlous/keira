@@ -34,11 +34,9 @@ unsafe fn editor_save_file() -> Result<(), &'static str> {
             }
         }
 
-        if y < last_y {
-            if flat_len < 4096 {
-                flat_buf[flat_len] = b'\n';
-                flat_len += 1;
-            }
+        if y < last_y && flat_len < 4096 {
+            flat_buf[flat_len] = b'\n';
+            flat_len += 1;
         }
     }
 
@@ -183,7 +181,7 @@ pub unsafe fn editor_redraw() {
             let c = EDITOR_GRID[actual_y][x];
 
             // 1. Highlight numbers
-            if c >= b'0' && c <= b'9' {
+            if (b'0'..=b'9').contains(&c) {
                 vga::set_color(
                     if fg_override {
                         vga::Color::Black
@@ -197,9 +195,7 @@ pub unsafe fn editor_redraw() {
                     vga::print_str(c_str);
                 }
                 x += 1;
-                if highlight_remaining > 0 {
-                    highlight_remaining -= 1;
-                }
+                highlight_remaining = highlight_remaining.saturating_sub(1);
                 continue;
             }
 
@@ -218,9 +214,7 @@ pub unsafe fn editor_redraw() {
                     vga::print_str(c_str);
                 }
                 x += 1;
-                if highlight_remaining > 0 {
-                    highlight_remaining -= 1;
-                }
+                highlight_remaining = highlight_remaining.saturating_sub(1);
                 while x < len {
                     if SEARCH_LEN > 0 && highlight_remaining == 0 && x + SEARCH_LEN <= len {
                         let mut matched = true;
@@ -252,9 +246,7 @@ pub unsafe fn editor_redraw() {
                         vga::print_str(c_str);
                     }
                     x += 1;
-                    if highlight_remaining > 0 {
-                        highlight_remaining -= 1;
-                    }
+                    highlight_remaining = highlight_remaining.saturating_sub(1);
                     if sc == b'"' {
                         break;
                     }
@@ -275,9 +267,7 @@ pub unsafe fn editor_redraw() {
                     vga::print_str(c_str);
                 }
                 x += 1;
-                if highlight_remaining > 0 {
-                    highlight_remaining -= 1;
-                }
+                highlight_remaining = highlight_remaining.saturating_sub(1);
                 while x < len {
                     if SEARCH_LEN > 0 && highlight_remaining == 0 && x + SEARCH_LEN <= len {
                         let mut matched = true;
@@ -309,9 +299,7 @@ pub unsafe fn editor_redraw() {
                         vga::print_str(c_str);
                     }
                     x += 1;
-                    if highlight_remaining > 0 {
-                        highlight_remaining -= 1;
-                    }
+                    highlight_remaining = highlight_remaining.saturating_sub(1);
                     if sc == b'\'' {
                         break;
                     }
@@ -360,9 +348,7 @@ pub unsafe fn editor_redraw() {
                         vga::print_str(c_str);
                     }
                     x += 1;
-                    if highlight_remaining > 0 {
-                        highlight_remaining -= 1;
-                    }
+                    highlight_remaining = highlight_remaining.saturating_sub(1);
                 }
                 continue;
             }
@@ -394,15 +380,15 @@ pub unsafe fn editor_redraw() {
                     vga::print_str(c_str);
                 }
                 x += 1;
-                if highlight_remaining > 0 {
-                    highlight_remaining -= 1;
-                }
+                highlight_remaining = highlight_remaining.saturating_sub(1);
                 continue;
             }
 
             // 5. Highlight words (keywords vs identifier)
-            let is_alpha = |b: u8| -> bool { (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z') };
-            let is_alnum = |b: u8| -> bool { is_alpha(b) || (b >= b'0' && b <= b'9') || b == b'_' };
+            let is_alpha =
+                |b: u8| -> bool { (b'a'..=b'z').contains(&b) || (b'A'..=b'Z').contains(&b) };
+            let is_alnum =
+                |b: u8| -> bool { is_alpha(b) || (b'0'..=b'9').contains(&b) || b == b'_' };
 
             if is_alpha(c) || c == b'_' {
                 let start = x;
@@ -450,9 +436,7 @@ pub unsafe fn editor_redraw() {
                     if let Ok(c_str) = core::str::from_utf8(&s_b) {
                         vga::print_str(c_str);
                     }
-                    if highlight_remaining > 0 {
-                        highlight_remaining -= 1;
-                    }
+                    highlight_remaining = highlight_remaining.saturating_sub(1);
                 }
                 continue;
             }
@@ -471,9 +455,7 @@ pub unsafe fn editor_redraw() {
                 vga::print_str(c_str);
             }
             x += 1;
-            if highlight_remaining > 0 {
-                highlight_remaining -= 1;
-            }
+            highlight_remaining = highlight_remaining.saturating_sub(1);
         }
 
         // Pad rest of line with space
@@ -524,11 +506,7 @@ pub unsafe fn editor_redraw() {
     } else if IN_SEARCH_MODE {
         vga::set_cursor_pos(24, (10 + SEARCH_LEN) as u16);
     } else {
-        let view_row = if EDIT_CUR_Y >= EDIT_SCROLL_Y {
-            EDIT_CUR_Y - EDIT_SCROLL_Y
-        } else {
-            0
-        };
+        let view_row = EDIT_CUR_Y.saturating_sub(EDIT_SCROLL_Y);
         vga::set_cursor_pos(view_row + 1, EDIT_CUR_X + 5);
     }
 }

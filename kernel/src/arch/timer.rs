@@ -26,17 +26,18 @@ pub struct PosixTimer {
 }
 
 /// Create a new high-resolution POSIX interval timer (Syscall 45)
-pub fn sys_timer_create(clock_id: u64, timer_id_ptr: *mut u64) -> Result<u64, &'static str> {
-    unsafe {
-        if !timer_id_ptr.is_null() {
-            *timer_id_ptr = 1;
-        }
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
-        vga::print_str("[TIMER] Created POSIX High-Res Interval Timer #1 (Clock: ");
-        vga::print_u64(clock_id);
-        vga::print_str(")\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+///
+/// # Safety
+/// The caller must ensure that `timer_id_ptr` is either null or points to valid writable memory.
+pub unsafe fn sys_timer_create(clock_id: u64, timer_id_ptr: *mut u64) -> Result<u64, &'static str> {
+    if !timer_id_ptr.is_null() {
+        *timer_id_ptr = 1;
     }
+    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::print_str("[TIMER] Created POSIX High-Res Interval Timer #1 (Clock: ");
+    vga::print_u64(clock_id);
+    vga::print_str(")\n");
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     Ok(0)
 }
 

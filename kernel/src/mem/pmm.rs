@@ -148,7 +148,7 @@ pub fn alloc_frame() -> Option<u64> {
 
 /// Free an allocated page frame
 pub fn free_frame(frame_addr: u64) {
-    if frame_addr == 0 || frame_addr % PAGE_SIZE != 0 {
+    if frame_addr == 0 || !frame_addr.is_multiple_of(PAGE_SIZE) {
         return;
     }
     unsafe {
@@ -157,9 +157,7 @@ pub fn free_frame(frame_addr: u64) {
         *ptr = FREE_LIST_HEAD;
         FREE_LIST_HEAD = frame_addr;
 
-        if USED_FRAMES_COUNT > 0 {
-            USED_FRAMES_COUNT -= 1;
-        }
+        USED_FRAMES_COUNT = USED_FRAMES_COUNT.saturating_sub(1);
     }
 }
 

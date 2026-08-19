@@ -63,8 +63,7 @@ pub fn check_access_permission(path: &str, is_write: bool) -> Result<(), &'stati
         }
 
         let clean = resolve_alias_path(path);
-        if clean.starts_with("/users/") {
-            let rest = &clean[7..];
+        if let Some(rest) = clean.strip_prefix("/users/") {
             let owner = if let Some(slash_idx) = rest.find('/') {
                 &rest[..slash_idx]
             } else {

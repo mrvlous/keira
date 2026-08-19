@@ -45,7 +45,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         let mut pid: usize = 0;
         for byte in pid_str.bytes() {
-            if (b'0'..=b'9').contains(&byte) {
+            if byte.is_ascii_digit() {
                 pid = pid * 10 + (byte - b'0') as usize;
             } else {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);

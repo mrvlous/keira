@@ -76,7 +76,7 @@ pub unsafe fn unwind_from_frame(starting_rbp: u64, starting_rip: u64) {
 }
 
 fn validate_ptr(ptr: u64) -> bool {
-    ptr >= 0x100000 && ptr < 0x7FFFFFFFFFFF && (ptr % 8 == 0)
+    (0x100000..0x7FFFFFFFFFFF).contains(&ptr) && ptr.is_multiple_of(8)
 }
 
 fn print_hex(val: u64) {

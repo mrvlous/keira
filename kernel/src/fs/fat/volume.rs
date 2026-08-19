@@ -47,7 +47,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
 
     let fat_start_sector = reserved_sector_count as u32;
     let root_dir_start_sector = fat_start_sector + (num_fats as u32 * sectors_per_fat as u32);
-    let root_dir_size_sectors = ((root_entry_count as u32 * 32) + 511) / 512;
+    let root_dir_size_sectors = (root_entry_count as u32 * 32).div_ceil(512);
     let data_start_sector = root_dir_start_sector + root_dir_size_sectors;
 
     let vol = Fat16Volume {

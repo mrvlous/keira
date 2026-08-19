@@ -225,6 +225,9 @@ pub unsafe fn spawn_user(
 }
 
 /// Clones the currently running task into a new child process (fork).
+///
+/// # Safety
+/// Reads and writes to global mutable task scheduler state `TASKS`.
 pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
     let parent_idx = CURRENT_TASK_IDX;
 
@@ -295,6 +298,9 @@ pub unsafe fn exit_current() {
 }
 
 /// Wait for a child task to terminate (non-blocking yield)
+///
+/// # Safety
+/// Reads and writes to global mutable scheduler state `TASKS`.
 pub unsafe fn wait_for_task(child_id: usize) {
     let current_id = CURRENT_TASK_IDX;
 
@@ -536,6 +542,9 @@ fn print_decimal(val: u64) {
 }
 
 /// Terminate task by PID (e.g. SIGKILL=9, SIGTERM=15, SIGINT=2)
+///
+/// # Safety
+/// Mutates process control blocks in global `TASKS` array.
 pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
     if pid >= MAX_TASKS {
         return Err("Invalid process ID");

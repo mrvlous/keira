@@ -101,11 +101,12 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
     // 1. Check Dynamic DNS Cache Table
     for i in 0..16 {
         let entry = &mut DNS_CACHE[i];
-        if entry.valid && entry.domain_len == domain_bytes.len() {
-            if &entry.domain[..entry.domain_len] == domain_bytes {
-                entry.hits += 1;
-                return Ok(entry.ip);
-            }
+        if entry.valid
+            && entry.domain_len == domain_bytes.len()
+            && &entry.domain[..entry.domain_len] == domain_bytes
+        {
+            entry.hits += 1;
+            return Ok(entry.ip);
         }
     }
 

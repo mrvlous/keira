@@ -33,7 +33,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         };
         let mut ms = 0u64;
         for &b in arg.as_bytes() {
-            if b >= b'0' && b <= b'9' {
+            if (b'0'..=b'9').contains(&b) {
                 ms = (ms * 10) + (b - b'0') as u64;
             } else {
                 vga::print_str("Error: Invalid number.\n");

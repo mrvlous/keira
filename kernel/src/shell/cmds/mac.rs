@@ -36,9 +36,5 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
 /// Verify path-based Mandatory Access Control security rules
 pub fn is_path_access_allowed(path: &str, write_op: bool) -> bool {
-    if write_op && path.starts_with("/system/bin/") {
-        false
-    } else {
-        true
-    }
+    !(write_op && path.starts_with("/system/bin/"))
 }

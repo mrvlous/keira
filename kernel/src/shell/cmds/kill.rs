@@ -32,8 +32,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let mut pid_str = arg1;
 
     if let Some(first) = arg1 {
-        if first.starts_with('-') {
-            let sig_name = &first[1..];
+        if let Some(sig_name) = first.strip_prefix('-') {
             sig = match sig_name {
                 "9" | "SIGKILL" | "KILL" => signal::SIGKILL,
                 "2" | "SIGINT" | "INT" => signal::SIGINT,

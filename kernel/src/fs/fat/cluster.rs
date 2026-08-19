@@ -37,7 +37,7 @@ pub unsafe fn alloc_cluster(vol: &Fat16Volume) -> Result<u16, &'static str> {
 
         let entries = sector_data.as_mut_ptr() as *mut u16;
         for i in 0..256 {
-            let cluster_idx = (s as u16 * 256) + i as u16;
+            let cluster_idx = (s * 256) + i as u16;
             if cluster_idx < 2 {
                 // Skip reserved clusters 0 and 1
                 continue;
@@ -77,7 +77,7 @@ pub unsafe fn free_cluster_chain(
 ) -> Result<(), &'static str> {
     let mut current_cluster = start_cluster;
 
-    while current_cluster >= 2 && current_cluster < 0xFFF8 {
+    while (2..0xFFF8).contains(&current_cluster) {
         let fat_offset = current_cluster as u32 * 2;
         let s = fat_offset / 512;
         let offset = (fat_offset % 512) as usize;

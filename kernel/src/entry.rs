@@ -112,7 +112,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
         let fb_height = crate::io::vga::FRAMEBUFFER_HEIGHT;
         if fb_addr != 0 {
             let fb_size = fb_height as u64 * fb_pitch as u64;
-            let page_count = (fb_size + 4095) / 4096;
+            let page_count = fb_size.div_ceil(4096);
             for i in 0..page_count {
                 let offset = i * 4096;
                 let phys = fb_addr + offset;

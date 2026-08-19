@@ -104,6 +104,9 @@ pub unsafe fn init_user_mode() {
 }
 
 /// Dynamically updates the TSS RSP0 stack pointer loaded when switching from Ring 3 to Ring 0.
+///
+/// # Safety
+/// The caller must ensure `rsp0` points to a valid 16-byte aligned kernel stack.
 pub unsafe fn set_kernel_stack(rsp0: u64) {
     TSS.rsp0 = rsp0;
 }
