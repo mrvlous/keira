@@ -8,36 +8,39 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-#ifndef KEIRA_USER_LIB_STDIO_H
-#define KEIRA_USER_LIB_STDIO_H
+#ifndef _STDIO_H
+#define _STDIO_H
 
+#include <stdarg.h>
 #include <stddef.h>
+#include <sys/types.h>
 
-/**
- * Keira User-Space Standard I/O Interface (stdio)
- */
+#define EOF (-1)
 
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
-typedef struct FILE {
+typedef struct {
     int fd;
     int flags;
-    long pos;
-    int eof;
-    int err;
 } FILE;
 
-int printf(const char *fmt, ...);
+extern FILE *stdin;
+extern FILE *stdout;
+extern FILE *stderr;
 
-FILE *fopen(const char *filename, const char *mode);
+int printf(const char *format, ...);
+int sprintf(char *str, const char *format, ...);
+int snprintf(char *str, size_t size, const char *format, ...);
+int vprintf(const char *format, va_list ap);
+int vsprintf(char *str, const char *format, va_list ap);
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
+int putchar(int c);
+int puts(const char *s);
+
+FILE *fopen(const char *pathname, const char *mode);
+int fclose(FILE *stream);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-int fclose(FILE *stream);
 int fseek(FILE *stream, long offset, int whence);
 long ftell(FILE *stream);
-int feof(FILE *stream);
-int remove(const char *filename);
 
-#endif /* KEIRA_USER_LIB_STDIO_H */
+#endif /* _STDIO_H */

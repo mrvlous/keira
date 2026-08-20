@@ -8,25 +8,13 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-/**
- * Keira Userland C Library: math.h
- *
- * C mathematical functions declarations for user-space programs.
- */
+#ifndef _MATH_H
+#define _MATH_H
 
-#ifndef KEIRA_USER_LIB_MATH_H
-#define KEIRA_USER_LIB_MATH_H
+int isqrt(int x);
+int ipow(int base, int exp);
+int min(int a, int b);
+int max(int a, int b);
+int clamp(int val, int min_val, int max_val);
 
-#define M_PI 3.14159265358979323846
-#define M_E 2.71828182845904523536
-
-double fabs(double x);
-double sqrt(double x);
-double pow(double base, double exp);
-double sin(double x);
-double cos(double x);
-double floor(double x);
-double ceil(double x);
-int abs(int j);
-
-#endif /* KEIRA_USER_LIB_MATH_H */
+#endif /* _MATH_H */

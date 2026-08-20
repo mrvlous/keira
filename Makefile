@@ -240,18 +240,19 @@ size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
 objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 	$(Q)objdump -h $(KERNEL_BIN)
 # User-space compilation configuration
-USER_LIB_SRCS := user/lib/syscall.c user/lib/string.c user/lib/stdio.c user/lib/stdlib.c user/lib/malloc.c
-USER_CC_FLAGS  := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
+USER_LIB_SRCS := $(shell find user/lib -type f -name "*.c")
+USER_KCC_SRCS := $(shell find user/bin/kcc -type f -name "*.c")
+USER_CC_FLAGS  := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
 
-user: build/gcc.elf ## Build user-space C compiler (gcc.elf)
+user: build/kcc.elf ## Build user-space C compiler (kcc.elf)
 
-build/gcc.elf: user/bin/gcc.c $(USER_LIB_SRCS) user/linker.ld | dirs
-	@$(LOG_INFO) "Building user space program: gcc (gcc.elf)..."
-	$(Q)$(CC) $(USER_CC_FLAGS) user/bin/gcc.c $(USER_LIB_SRCS) -o build/gcc.elf
+build/kcc.elf: $(USER_KCC_SRCS) $(USER_LIB_SRCS) user/linker.ld | dirs
+	@$(LOG_INFO) "Building user space program: kcc (kcc.elf)..."
+	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o build/kcc.elf
 
 disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
-$(DISK_IMG): build/gcc.elf
+$(DISK_IMG): build/kcc.elf
 	@rm -f $(DISK_IMG)
 	@$(LOG_DISK) "Creating $(DISK_SIZE)MB FAT16 disk image..."
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
@@ -281,14 +282,14 @@ $(DISK_IMG): build/gcc.elf
 	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(BUILD_DIR)/boot.cfg
 	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/boot.cfg ::/config/boot/boot.cfg
 	@$(LOG_DISK) "Copying binaries and configuration files..."
-	$(Q)mcopy -o -i $(DISK_IMG) build/gcc.elf ::/apps/bin/gcc.elf
+	$(Q)mcopy -o -i $(DISK_IMG) build/kcc.elf ::/apps/bin/kcc.elf
 	$(Q)mkdir -p $(BUILD_DIR)/data
-	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira GCC Userland!\\n");\n}\n' > $(BUILD_DIR)/data/main.c
+	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira KCC Userland!\\n");\n}\n' > $(BUILD_DIR)/data/main.c
 	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/data/main.c ::/data/main.c
 	$(Q)for header in stdio.h stdlib.h string.h syscall.h socket.h math.h time.h malloc.h fcntl.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
 initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
 
-$(BUILD_DIR)/initrd.tar: build/gcc.elf
+$(BUILD_DIR)/initrd.tar: build/kcc.elf
 	@$(LOG_INFO) "Building RAM Disk (Initrd)..."
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/bin
 	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/drivers
@@ -318,8 +319,8 @@ $(BUILD_DIR)/initrd.tar: build/gcc.elf
 	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/initrd_root/system/drivers/sound.sys
 	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(BUILD_DIR)/initrd_root/system/drivers/e1000.sys
 	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(BUILD_DIR)/initrd_root/config/boot/boot.cfg
-	$(Q)cp build/gcc.elf $(BUILD_DIR)/initrd_root/apps/bin/gcc.elf
-	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira GCC Userland!\\n");\n}\n' > $(BUILD_DIR)/initrd_root/data/main.c
+	$(Q)cp build/kcc.elf $(BUILD_DIR)/initrd_root/apps/bin/kcc.elf
+	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira KCC Userland!\\n");\n}\n' > $(BUILD_DIR)/initrd_root/data/main.c
 	$(Q)cp user/include/*.h $(BUILD_DIR)/initrd_root/system/include/
 	$(Q)cd $(BUILD_DIR)/initrd_root && tar -cf ../initrd.tar *
 iso: $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
@@ -401,5 +402,5 @@ format: ## Format Rust and C source code
 
 lint: ## Static analysis of C code using clang-tidy
 	@$(LOG_INFO) "Linting C code..."
-	$(Q)find drivers arch/x86 user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I include -I drivers -I arch/x86/include -I user/include -ffreestanding -m64 \;
+	$(Q)find drivers arch/x86 user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I include -I drivers -I arch/x86/include -I user/include -I user/bin/kcc/include -ffreestanding -m64 \;
 	@$(LOG_DONE) "Linting complete"

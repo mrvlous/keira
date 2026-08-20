@@ -19,4 +19,4 @@ python3 -c "import subprocess; subprocess.run(['make', 'all'])"
 ```
 
 ## 20-Cycle Stress Testing
-The 20-cycle automated stress test verifies that repeated execution of kernel commands, userland Ring 3 ELF compilations (`run /apps/bin/gcc.elf`), and VMM address space cloning does not leak physical memory or trigger kernel panics.
+The 20-cycle automated stress test verifies that repeated execution of kernel commands, userland Ring 3 ELF compilations (`run /apps/bin/kcc.elf`), and VMM address space cloning does not leak physical memory or trigger kernel panics.

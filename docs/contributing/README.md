@@ -24,4 +24,4 @@ Welcome to the Keira Kernel development guide! Keira is a freestanding, modular 
 
 1. **Hyper-Modular Separation**: Subsystems reside in their designated `crates/*` package with minimal public surface.
 2. **Deterministic Safety**: All `unsafe` blocks must document a formal `# Safety` contract.
-3. **Zero Userland Bloat**: Keep the userland footprint minimal, focused, and clean (`gcc.elf` compiler binary).
+3. **Zero Userland Bloat**: Keep the userland footprint minimal, focused, and clean (`kcc.elf` compiler binary).

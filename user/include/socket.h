@@ -8,26 +8,9 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-/**
- * Keira Userland C Library: socket.h
- *
- * POSIX socket definitions and constants for user-space networking.
- */
+#ifndef _SOCKET_H
+#define _SOCKET_H
 
-#ifndef KEIRA_USER_LIB_SOCKET_H
-#define KEIRA_USER_LIB_SOCKET_H
+#include <sys/socket.h>
 
-#include "syscall.h"
-
-#define AF_INET 2
-#define SOCK_STREAM 1
-#define SOCK_DGRAM 2
-
-struct sockaddr_in {
-    unsigned short sin_family;
-    unsigned short sin_port;
-    unsigned int sin_addr;
-    char sin_zero[8];
-};
-
-#endif /* KEIRA_USER_LIB_SOCKET_H */
+#endif /* _SOCKET_H */

@@ -26,4 +26,4 @@ Keira Kernel utilizes x86_64 4-level hierarchical paging (PML4 -> PDPT -> PD -> 
 ```
 
 ## Address Space Cloning
-When launching userland programs (`run /apps/bin/gcc.elf`), `vmm::clone_kernel_pml4()` creates an isolated PML4 table that retains kernel identity mappings in `PDPT[0]` and framebuffer MMIO in `PDPT[3]`, but provides dedicated, isolated user pages.
+When launching userland programs (`run /apps/bin/kcc.elf`), `vmm::clone_kernel_pml4()` creates an isolated PML4 table that retains kernel identity mappings in `PDPT[0]` and framebuffer MMIO in `PDPT[3]`, but provides dedicated, isolated user pages.

@@ -8,20 +8,9 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-/**
- * Keira Userland C Library: fcntl.h
- *
- * POSIX file control options and file creation/access mode flags.
- */
+#ifndef _FCNTL_H
+#define _FCNTL_H
 
-#ifndef KEIRA_USER_LIB_FCNTL_H
-#define KEIRA_USER_LIB_FCNTL_H
+#include <sys/fcntl.h>
 
-#define O_RDONLY 0
-#define O_WRONLY 1
-#define O_RDWR 2
-#define O_CREAT 64
-#define O_TRUNC 512
-#define O_APPEND 1024
-
-#endif /* KEIRA_USER_LIB_FCNTL_H */
+#endif /* _FCNTL_H */

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
+
 <!--
 SPDX-License-Identifier: GPL-2.0-only
 
@@ -27,7 +29,7 @@ The user-space memory allocator ([malloc.h](../../user/include/malloc.h)) manage
 ---
 
 ## 3. POSIX File I/O Operations ([stdio.h](../../user/include/stdio.h))
-Standard file stream operations provided for C userland programs (`gcc.c` output binaries):
+Standard file stream operations provided for C userland programs (`kcc` output binaries):
 *   `FILE *fopen(const char *filename, const char *mode)`: Opens a file stream for reading, writing, or appending.
 *   `size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)`: Reads data elements from stream.
 *   `size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)`: Writes data elements to stream.

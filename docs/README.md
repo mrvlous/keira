@@ -46,7 +46,7 @@ Explore the dedicated technical guides for each of the 12 workspace member crate
 
 ### 4. Userland Subsystems & C SDK (`docs/userland/`)
 *   [C SDK Header Catalog](userland/c_sdk.md): Freestanding C library (`stdio.h`, `stdlib.h`, `string.h`, `syscall.h`, `socket.h`, `fcntl.h`, `time.h`).
-*   [In-Kernel GCC Compiler Toolchain](userland/gcc_compiler.md): In-kernel freestanding GCC compiler binary (`/apps/bin/gcc.elf`).
+*   [In-Kernel KCC Compiler Toolchain](userland/kcc_compiler.md): In-kernel freestanding KCC compiler binary (`/apps/bin/kcc.elf`).
 *   [Ring 3 ELF Execution & Memory Isolation](userland/elf_execution.md): ELF loading, isolated PML4 tables, and process lifecycles.
 *   [User Runtime Library](userland/runtime.md): Dynamic memory allocation, environment variables, and POSIX file I/O.
 *   [Multi-User Accounts & System Hostname](userland/users.md): User authentication, privilege separation, and persistent hostname configuration.

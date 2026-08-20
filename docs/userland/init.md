@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
+
 <!--
 SPDX-License-Identifier: GPL-2.0-only
 
@@ -26,7 +28,7 @@ The kernel shell subsystem performs the initial user session initialization:
 ---
 
 ## 3. Userland Program Execution
-User applications (such as [gcc](../../user/bin/gcc.c)) are launched directly from disk/initrd:
+User applications (such as [kcc](../../user/bin/kcc/main.c)) are launched directly from disk/initrd:
 *   **Invocation**: Via the `run` command or `sys_exec` / `sys_spawn` system calls.
 *   **Address Space**: Isolated address space cloned from kernel page tables with a dedicated 64 KB user stack.
 *   **Privilege Level**: Executes in Ring 3 (User Mode) with fast syscall dispatch.

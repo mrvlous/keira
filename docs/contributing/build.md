@@ -21,7 +21,7 @@ crates/* (Rust)  --> [ Cargo ] --> libkeira_kernel.a ──┘        │
 
 - `make all`: Compiles all assembly, C drivers, Rust crates, packages initrd, and builds bootable ISO.
 - `make rust`: Compiles `keira-kernel` static library for target `x86_64-keira-none`.
-- `make user`: Compiles freestanding userland C compiler (`build/gcc.elf`).
+- `make user`: Compiles freestanding userland C compiler (`build/kcc.elf`).
 - `make disk`: Creates and formats the FAT16 hard disk image (`build/disk.img`).
 - `make initrd`: Builds the USTAR RAM disk archive (`build/initrd.tar`).
 - `make iso`: Packages bootable ISO with GRUB Multiboot2 bootloader.

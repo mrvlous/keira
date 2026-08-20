@@ -8,45 +8,24 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-#ifndef KEIRA_USER_LIB_STDLIB_H
-#define KEIRA_USER_LIB_STDLIB_H
+#ifndef _STDLIB_H
+#define _STDLIB_H
 
+#include <malloc.h>
 #include <stddef.h>
 
-/**
- * Keira User-Space Standard Utility Interface (stdlib)
- */
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
 
-void *malloc(size_t size);
-void free(void *ptr);
-void *realloc(void *ptr, size_t size);
+int atoi(const char *nptr);
+long atol(const char *nptr);
+void itoa(int value, char *str, int base);
+void exit(int status);
+void abort(void);
+int abs(int j);
+long labs(long j);
+long long llabs(long long j);
+int rand(void);
+void srand(unsigned int seed);
 
-/**
- * getenv - Retrieve environment variable string by name.
- * @name: Null-terminated variable key string.
- *
- * Return: Value string pointer or NULL if key is not defined.
- */
-char *getenv(const char *name);
-
-/**
- * setenv - Set or overwrite environment variable value.
- * @name: Null-terminated variable key string.
- * @value: Null-terminated variable value string.
- * @overwrite: 1 to overwrite existing key, 0 to keep existing key.
- *
- * Return: 0 on success, negative on error.
- */
-int setenv(const char *name, const char *value, int overwrite);
-
-/**
- * http_get - Fetch HTTP URL resource payload into buffer.
- * @url: Target URL string.
- * @buf: Destination memory buffer pointer.
- * @max_len: Maximum capacity limit in bytes.
- *
- * Return: Length of response bytes received.
- */
-int http_get(const char *url, void *buf, int max_len);
-
-#endif /* KEIRA_USER_LIB_STDLIB_H */
+#endif /* _STDLIB_H */
