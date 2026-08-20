@@ -7,8 +7,8 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License.
 
-This is at least a partial credits file of people who have contributed to the
-Keira Kernel project.
+This is at least a partial credits file of people and projects that have
+contributed to or inspired the Keira Kernel project.
 
 The fields are:
 	N: Name
@@ -18,8 +18,76 @@ The fields are:
 	S: Snail mail address
 	P: PGP key ID and fingerprint
 
+----------
+
 N: Moh. Ananda Firmansyah Putra
 E: mrvlous@proton.me
 W: https://github.com/mrvlous
 D: Founder and Lead Kernel Architect
 S: Indonesia
+
+----------
+
+Special Acknowledgements & Upstream Foundations:
+
+* Linux Kernel Developers & Linus Torvalds
+  For architectural inspiration, POSIX system call design, VFS architecture,
+  subsystem abstractions, and documentation conventions.
+  https://www.kernel.org
+
+* Dennis Ritchie, Ken Thompson & Bell Labs
+  For the creation of the C programming language and foundational Unix
+  operating system architecture and design principles.
+
+* GNU Project & Free Software Foundation (FSF)
+  For the GNU General Public License (GPLv2), compiler toolchains (GCC),
+  and POSIX userland specifications.
+  https://www.gnu.org
+
+* Rust Language & Compiler Team
+  For the Rust programming language, core library (no_std), and freestanding
+  bare-metal development capabilities.
+  https://www.rust-lang.org
+
+* LLVM / Clang Project
+  For the LLVM compiler infrastructure, code formatting (clang-format),
+  and static analysis tools (clang-tidy).
+  https://llvm.org
+
+* Intel Corporation & Advanced Micro Devices (AMD)
+  For comprehensive x86_64 / AMD64 Software Developer Manuals, Local APIC /
+  IOAPIC architectures, and hardware virtualization specifications (VMX/SVM).
+  https://www.intel.com | https://www.amd.com
+
+* POSIX, IEEE & The Open Group
+  For the Portable Operating System Interface (POSIX.1) standard and Single
+  UNIX Specification API conventions.
+  https://www.opengroup.org
+
+* Internet Engineering Task Force (IETF) & RFC Authors
+  For defining open internet protocol standards implemented in Keira's network
+  stack (IPv4 RFC 791, ICMP RFC 792, UDP RFC 768, TCP RFC 793, DNS RFC 1035,
+  DHCP RFC 2131, TLS 1.3 RFC 8446).
+  https://www.ietf.org
+
+* Linux Man-Pages Project (Michael Kerrisk & Contributors)
+  For authoritative documentation of system calls, standard C library routines,
+  and Linux kernel APIs.
+  https://www.kernel.org/doc/man-pages/
+
+* OSDev Community
+  For comprehensive hardware specifications, x86_64 architecture documentation,
+  and operating system development knowledge bases.
+  https://wiki.osdev.org
+
+* GNU GRUB & Multiboot Specification Developers
+  For the Multiboot2 boot protocol specification and bootable ISO image tooling.
+  https://www.gnu.org/software/grub
+
+* Netwide Assembler (NASM) Project
+  For the x86/x86_64 assembler used to compile low-level boot trampolines.
+  https://www.nasm.us
+
+* QEMU Project
+  For the open-source hardware emulator and virtualization platform.
+  https://www.qemu.org
