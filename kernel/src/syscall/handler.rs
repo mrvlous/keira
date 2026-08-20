@@ -140,6 +140,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 if crate::fs::vfs::create_file(path_str).is_err() {
                     return u64::MAX;
                 }
+            } else if write_mode {
+                let _ = crate::fs::vfs::write_file(path_str, &[]);
             }
 
             unsafe {
@@ -249,6 +251,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task =
                     &mut crate::task::scheduler::TASKS[crate::task::scheduler::CURRENT_TASK_IDX];
                 if let Some(t) = task {
+                    // Standard I/O fallback: stdout (1) and stderr (2) write to console if not redirected to a file
+                    if (fd == 1 || fd == 2) && !t.fds[fd].is_open {
+                        for i in 0..(len as usize) {
+                            let c = *buf_ptr.add(i);
+                            crate::io::vga::putchar(c);
+                        }
+                        return len;
+                    }
+
                     if t.fds[fd].is_open && t.fds[fd].write_mode {
                         let path_str =
                             match core::str::from_utf8(&t.fds[fd].path[..t.fds[fd].path_len]) {

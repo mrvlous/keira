@@ -76,7 +76,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         let prefixes = ["/apps/bin/", "/initrd/apps/bin/", "/"];
-        let suffixes = ["", ".elf", "_test.elf"];
+        let suffixes = ["", ".elf"];
 
         if !found {
             'outer: for &pref in &prefixes {
@@ -87,18 +87,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                             found = true;
                             break 'outer;
                         }
-                    }
-                }
-            }
-        }
-
-        if !found && arg == "init" {
-            for &pref in &prefixes {
-                if let Some(p) = write_path(pref, "user_test", ".elf") {
-                    if crate::fs::vfs::exists(p) {
-                        resolved_str = p;
-                        found = true;
-                        break;
                     }
                 }
             }

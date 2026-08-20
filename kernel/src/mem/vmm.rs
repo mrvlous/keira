@@ -215,10 +215,11 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     let new_pdpt_phys = pmm::alloc_frame().ok_or("Out of memory for new PDPT")?;
     let new_pdpt = new_pdpt_phys as *mut u64;
 
-    // Copy only PDPT[0] (kernel identity map: first 1GB via 2MB huge pages)
-    *new_pdpt = *boot_pdpt;
+    // Copy kernel identity map (PDPT[0]: 0..1GB) and kernel MMIO/Framebuffer (PDPT[3]: 3..4GB)
+    *new_pdpt.add(0) = *boot_pdpt.add(0);
+    *new_pdpt.add(3) = *boot_pdpt.add(3);
 
-    // PDPT[1..511] are zeroed by alloc_frame - user space starts fresh
+    // PDPT[1..2] are zeroed by alloc_frame - user space starts fresh
 
     // Set new PML4[0] = new PDPT with present + writable + user flags
     *new_pml4 = new_pdpt_phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
@@ -254,8 +255,12 @@ pub unsafe fn free_user_pages(pml4_phys: u64, program_break: u64) {
         addr += pmm::PAGE_SIZE;
     }
 
-    // 3. Free user stack page
-    let _ = free_and_unmap_page(0x7FFFFFFF0000);
+    // 3. Free user stack pages (0x7FFFFFE00000 .. 0x7FFFFFFF0000 = 64KB range)
+    let mut stack_addr: u64 = 0x7FFFFFE00000;
+    while stack_addr < 0x7FFFFFFF0000 {
+        let _ = free_and_unmap_page(stack_addr);
+        stack_addr += pmm::PAGE_SIZE;
+    }
 
     // Switch back to the caller's address space
     switch_address_space(saved_cr3);
@@ -267,8 +272,9 @@ pub unsafe fn free_user_pages(pml4_phys: u64, program_break: u64) {
         let pdpt_phys = pml4_0 & !0xFFF;
         let pdpt = pdpt_phys as *const u64;
 
-        // Free page table structures under PDPT[1..511] (user code area under PML4[0])
-        for i in 1..512 {
+        // Free user page table structures under PDPT[1..2] only (user code area under PML4[0]).
+        // Do NOT free PDPT[0] (kernel identity map) or PDPT[3] (kernel MMIO/framebuffer).
+        for i in 1..3 {
             let pdpt_entry = *pdpt.add(i);
             if (pdpt_entry & PAGE_PRESENT) != 0 {
                 // level 2 = PD

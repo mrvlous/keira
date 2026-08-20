@@ -11,7 +11,7 @@
 # Name of the Rust package
 name = "keira"
 # Current package version
-version = "0.28.5"
+version = "0.28.6"
 # Target Rust edition
 edition = "2021"
 # List of project authors and contact emails

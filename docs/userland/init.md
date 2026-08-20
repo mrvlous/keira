@@ -5,30 +5,28 @@ Keira Kernel - Operating System Kernel
 Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 -->
 
-# The Init Process
+# System Initialization & Userland Process Bootstrap
 
-This document details the initialization sequence of the first user-space process (`bin/init`) spawned during system boot.
+This document details the kernel initialization sequence and interactive shell bootstrapping during system boot.
 
-## 1. Process Spawn
-After completing kernel initialization, the scheduler spawns the first user-space process:
-*   **Source File**: [init.c](../../user/bin/init.c)
-*   **Virtual Mapping**: The kernel loads the compiled ELF binary of `init` and maps it into the user space virtual memory area.
-*   **Privilege Level**: Starts in Ring 3.
-
----
-
-## 2. Bootstrapping and Process Spawning
-The entry point `_start` in `init.c` performs the following operations:
-1.  **Welcome Message**: Outputs system messages indicating user-space initialization.
-2.  **Mount Verification**: Assures that filesystem partitions (e.g. `/disk`) are mounted and available.
-3.  **Shell Spawn**: Spawns `/system/bin/shell` processes:
-    *   Calls the `fork()` system call to clone the active process context.
-    *   In the child process, calls `exec()` to replace the memory space with the interactive shell executable.
+## 1. Kernel Bootstrapping
+After completing early hardware initialization, memory management, and storage mounting, the kernel prepares the execution environment:
+*   **Kernel Entry**: [entry.rs](../../kernel/src/entry.rs)
+*   **Virtual Memory**: Page-Map Level-4 (PML4) paging structures are configured with isolated user-space segments and Ring 3 protection.
+*   **Task State Segment (TSS)**: Configured with dedicated `RSP0` kernel privilege transition stacks and Model Specific Registers (STAR, LSTAR, SFMASK) for `syscall` / `sysret`.
 
 ---
 
-## 3. System Task Monitoring
-After launching system services, the `init` thread enters an infinite monitoring loop:
-*   **Orphan Cleanups**: Acts as the parent process to adopt orphan threads when their creators exit.
-*   **Task Waiting**: Calls the `wait()` system call to block until child processes exit, reading their status codes to perform task cleanup.
-*   **Crash Recovery**: If a critical shell process exits or crashes, the monitoring loop automatically spawns a new shell instance to maintain system availability.
+## 2. Interactive Shell Bootstrap
+The kernel shell subsystem performs the initial user session initialization:
+1.  **Banner & Terminal Display**: Outputs kernel version and active TTY identifier (`tty1`).
+2.  **Startup Script Execution**: Executes `/config/boot/boot.cfg` and environment setup.
+3.  **Prompt Dispatch**: Initializes default user session (`admin@keira ~ >`) and enters the interrupt-driven event loop.
+
+---
+
+## 3. Userland Program Execution
+User applications (such as [gcc](../../user/bin/gcc.c)) are launched directly from disk/initrd:
+*   **Invocation**: Via the `run` command or `sys_exec` / `sys_spawn` system calls.
+*   **Address Space**: Isolated address space cloned from kernel page tables with a dedicated 64 KB user stack.
+*   **Privilege Level**: Executes in Ring 3 (User Mode) with fast syscall dispatch.

@@ -18,5 +18,5 @@ Welcome to the Userland documentation section for Keira Kernel.
 * [System Hostname Configuration](hostname.md): System hostname configuration (`hostname`) persisted to `/system/etc/hostname`.
 * [POSIX File Security & Attributes](permissions.md): POSIX file security & protection flags (`protect`, `fileinfo`).
 * [Multi-Virtual Terminal Subsystem](tty.md): Virtual terminal switching (`tty1`..`tty4`) and console screen buffers.
-* [The Init Process](init.md): User-space initialization sequence (`bin/init`) spawning system processes.
-* [Self-Hosting C Compiler](gcc.md): Parser, lexer, AST builder, and helper structures inside the built-in C compiler (`bin/gcc`).
+* [System Initialization & Userland Bootstrap](init.md): Kernel userland bootstrapping and interactive shell session initialization.
+* [Self-Hosting C Compiler](gcc.md): Parser, lexer, AST builder, and ELF64 code emission inside the built-in C compiler (`gcc.c`).

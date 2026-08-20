@@ -110,8 +110,8 @@ When an exception occurs, the CPU pushes an `ExceptionStackFrame` containing:
 *   An error code (pushed for specific exceptions like Page Faults).
 
 ### Exception Handlers
-*   **Page Fault (Vector 14)**: Triggers when accessing unmapped virtual memory. The CR2 register is queried to obtain the faulting address. If the fault occurs in a user process, the scheduler terminates the task; if it occurs in kernel space, a kernel panic is triggered.
-*   **General Protection Fault (Vector 13)**: Triggers on privilege violations, invalid segment references, or general instruction execution issues. Prints the registers and halts execution.
+*   **Page Fault (Vector 14)**: Triggers when accessing unmapped virtual memory. The CR2 register is queried to obtain the faulting address. If the fault occurs in a user process (Ring 3), the kernel prints the crash diagnostics and safely unwinds execution via `abort_user_mode` without halting; if it occurs in kernel space (Ring 0), a kernel panic is triggered.
+*   **General Protection Fault (Vector 13)**: Triggers on privilege violations, invalid segment references, or instruction execution issues. User-space faults are aborted cleanly while kernel faults halt the CPU.
 
 ---
 

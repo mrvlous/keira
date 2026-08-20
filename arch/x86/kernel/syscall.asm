@@ -111,14 +111,19 @@ syscall_handler_asm:
     o64 sysret
 
 .exit_user_mode:
+global abort_user_mode
+abort_user_mode:
     mov rsp, [rel kernel_stack_temp]
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
     pop r15
     pop r14
     pop r13
     pop r12
     pop rbx
     pop rbp
-    sti
     ret
 
 ; jump_to_user - Lower execution privilege level from Ring 0 to Ring 3

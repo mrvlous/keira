@@ -82,8 +82,8 @@ To help you navigate the codebase, the documentation is divided into 9 modular c
 *   [System Hostname Configuration](userland/hostname.md): System hostname configuration (`hostname`) persisted to `/system/etc/hostname`.
 *   [POSIX File Security & Attributes](userland/permissions.md): POSIX file security & protection flags (`protect`, `fileinfo`).
 *   [Multi-Virtual Terminal Subsystem](userland/tty.md): Virtual terminal switching (`tty1`..`tty4`) and console screen buffers.
-*   [The Init Process](userland/init.md): User-space initialization sequence (`bin/init`) spawning system processes.
-*   [Self-Hosting C Compiler](userland/gcc.md): Parser, lexer, AST builder, and helper structures inside the built-in C compiler (`bin/gcc`).
+*   [System Initialization & Userland Bootstrap](userland/init.md): Kernel userland bootstrapping and interactive shell session initialization.
+*   [Self-Hosting C Compiler](userland/gcc.md): Parser, lexer, AST builder, and ELF64 code emission inside the built-in C compiler (`gcc.c`).
 
 ### 9. Contribution Guidelines (`docs/contributing/`)
 *   [Workspace Setup](contributing/setup.md): Installing the toolchain, cross-compiler packages, Rust nightly, and emulator targets.

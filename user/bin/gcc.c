@@ -181,8 +181,10 @@ void k_memset(char *dest, int val, int n) {
  * @s: Pointer to the null-terminated string.
  */
 void print_str(char *s) {
-    int len = k_strlen(s);
-    sys_write(1, s, len);
+    while (*s != 0) {
+        sys_print_char(*s);
+        s = s + 1;
+    }
 }
 
 /**
@@ -363,17 +365,31 @@ void add_function(char *name, int address) {
 }
 
 /**
- * skip_whitespace - Advance the source cursor past spaces, tabs, and preprocessor lines.
+ * skip_whitespace - Advance the source cursor past spaces, tabs, comments, and preprocessor lines.
  */
 void skip_whitespace(void) {
-    while (*src_ptr == ' ' || *src_ptr == '\t' || *src_ptr == '\r' || *src_ptr == '\n' ||
-           *src_ptr == '#') {
-        if (*src_ptr == '#') {
+    while (1) {
+        if (*src_ptr == ' ' || *src_ptr == '\t' || *src_ptr == '\r' || *src_ptr == '\n') {
+            src_ptr = src_ptr + 1;
+        } else if (*src_ptr == '#') {
             while (*src_ptr && *src_ptr != '\n') {
                 src_ptr = src_ptr + 1;
             }
+        } else if (*src_ptr == '/' && *(src_ptr + 1) == '/') {
+            src_ptr = src_ptr + 2;
+            while (*src_ptr && *src_ptr != '\n') {
+                src_ptr = src_ptr + 1;
+            }
+        } else if (*src_ptr == '/' && *(src_ptr + 1) == '*') {
+            src_ptr = src_ptr + 2;
+            while (*src_ptr && !(*src_ptr == '*' && *(src_ptr + 1) == '/')) {
+                src_ptr = src_ptr + 1;
+            }
+            if (*src_ptr) {
+                src_ptr = src_ptr + 2;
+            }
         } else {
-            src_ptr = src_ptr + 1;
+            break;
         }
     }
 }
@@ -409,8 +425,6 @@ int next_token(void) {
             return TOK_CHAR;
         if (k_strcmp(token_string, "void") == 0)
             return TOK_VOID;
-        if (k_strcmp(token_string, "main") == 0)
-            return TOK_MAIN;
         if (k_strcmp(token_string, "printf") == 0)
             return TOK_PRINTF;
         if (k_strcmp(token_string, "return") == 0)
@@ -1424,35 +1438,39 @@ void compile_global_declarations(void) {
                 if (tok != TOK_RPAREN) {
                     int p_type = tok;
                     match(p_type);
-                    int p_is_ptr = 0;
-                    if (tok == TOK_STAR) {
-                        match(TOK_STAR);
-                        p_is_ptr = 1;
-                    }
-                    (void)p_is_ptr;
-                    char p_name[256];
-                    k_strcpy(p_name, token_string);
-                    match(TOK_IDENT);
-
-                    add_local(p_name);
-                    param_count = param_count + 1;
-
-                    while (tok == TOK_COMMA) {
-                        match(TOK_COMMA);
-                        int next_p_type = tok;
-                        match(next_p_type);
-                        int next_p_is_ptr = 0;
+                    if (p_type == TOK_VOID && tok == TOK_RPAREN) {
+                        /* Empty (void) parameter list */
+                    } else {
+                        int p_is_ptr = 0;
                         if (tok == TOK_STAR) {
                             match(TOK_STAR);
-                            next_p_is_ptr = 1;
+                            p_is_ptr = 1;
                         }
-                        (void)next_p_is_ptr;
-                        char next_p_name[256];
-                        k_strcpy(next_p_name, token_string);
+                        (void)p_is_ptr;
+                        char p_name[256];
+                        k_strcpy(p_name, token_string);
                         match(TOK_IDENT);
 
-                        add_local(next_p_name);
+                        add_local(p_name);
                         param_count = param_count + 1;
+
+                        while (tok == TOK_COMMA) {
+                            match(TOK_COMMA);
+                            int next_p_type = tok;
+                            match(next_p_type);
+                            int next_p_is_ptr = 0;
+                            if (tok == TOK_STAR) {
+                                match(TOK_STAR);
+                                next_p_is_ptr = 1;
+                            }
+                            (void)next_p_is_ptr;
+                            char next_p_name[256];
+                            k_strcpy(next_p_name, token_string);
+                            match(TOK_IDENT);
+
+                            add_local(next_p_name);
+                            param_count = param_count + 1;
+                        }
                     }
                 }
                 match(TOK_RPAREN);

@@ -72,8 +72,14 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         vga::print_str("\nTerminating crashed user process...\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-        // Terminate the active task
-        crate::task::scheduler::exit_current();
+        if crate::task::scheduler::CURRENT_TASK_IDX != 0 {
+            crate::task::scheduler::exit_current();
+        } else {
+            extern "C" {
+                fn abort_user_mode() -> !;
+            }
+            abort_user_mode();
+        }
     }
 
     // Set VGA color to red on black for Kernel Panic

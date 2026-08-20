@@ -30,10 +30,10 @@ To run the kernel in an emulator or on physical hardware, we construct a bootabl
 
 ## 3. FAT16 Disk Image
 A 32MB FAT16 disk image (`build/disk.img`) is created and populated with the Keira directory hierarchy:
-*   `/system/bin/`: 91 native shell command binaries.
+*   `/system/bin/`: 74 native shell command binaries.
 *   `/system/drivers/`: Hardware driver descriptor files (`.sys`).
 *   `/system/include/`: C header files for userland programs.
-*   `/apps/bin/`: Compiled user-space ELF binaries (`user_test.elf`, `gcc.elf`).
+*   `/apps/bin/`: Compiled user-space ELF binary (`gcc.elf`).
 *   `/users/`, `/temp/`, `/data/`: User directories, temporary storage, and persistent data.
 
 ---
@@ -48,7 +48,7 @@ The Makefile provides the following automation targets:
 | `make iso` | Re-run the GRUB rescue ISO packaging process. |
 | `make disk` | Create and populate the FAT16 hard disk image. |
 | `make initrd` | Build the RAM Disk USTAR archive. |
-| `make user` | Build user-space programs (`init`, `gcc`). |
+| `make user` | Build user-space C compiler (`gcc.elf`). |
 | `make rust` | Build the Rust kernel static library. |
 
 ### Emulator Targets

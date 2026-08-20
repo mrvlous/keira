@@ -40,6 +40,10 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         return Err("Only 64-bit Little Endian ELF binaries are supported");
     }
 
+    if header.entry == 0 {
+        return Err("Invalid ELF entry point (0x0)");
+    }
+
     let ph_size = core::mem::size_of::<ProgramHeader>();
 
     // Iterate program headers
@@ -133,27 +137,28 @@ pub unsafe fn spawn_user_program(filename: &str) -> Result<usize, &'static str> 
         }
     };
 
-    // 4. Allocate and map user stack
-    let stack_frame = match pmm::alloc_frame() {
-        Some(f) => f,
-        None => {
-            vmm::switch_address_space(parent_pml4);
-            vmm::free_user_pages(child_pml4, 0x600000000000);
-            return Err("Out of memory for user stack frame");
-        }
-    };
-    let user_stack_vaddr: u64 = 0x7FFFFFFF0000;
-    vmm::map_page(
-        user_stack_vaddr,
-        stack_frame,
-        vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-    )?;
-
-    // Clear user stack
-    let stack_ptr = user_stack_vaddr as *mut u64;
-    for i in 0..512 {
-        *stack_ptr.add(i) = 0;
+    // 4. Allocate and map 64KB User Stack (16 pages: 0x7FFFFFE00000 .. 0x7FFFFFFF0000)
+    let stack_pages = 16;
+    let stack_bottom_vaddr: u64 = 0x7FFFFFE00000;
+    for p in 0..stack_pages {
+        let page_vaddr = stack_bottom_vaddr + (p * pmm::PAGE_SIZE);
+        let stack_frame = match pmm::alloc_frame() {
+            Some(f) => f,
+            None => {
+                vmm::switch_address_space(parent_pml4);
+                vmm::free_user_pages(child_pml4, 0x600000000000);
+                return Err("Out of memory for user stack frame");
+            }
+        };
+        vmm::map_page(
+            page_vaddr,
+            stack_frame,
+            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
+        )?;
+        let ptr = page_vaddr as *mut u8;
+        core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
     }
+    let user_stack_top_vaddr: u64 = stack_bottom_vaddr + (stack_pages * pmm::PAGE_SIZE);
 
     // 5. Switch back to parent's address space
     vmm::switch_address_space(parent_pml4);
@@ -162,7 +167,7 @@ pub unsafe fn spawn_user_program(filename: &str) -> Result<usize, &'static str> 
     let task_id = crate::task::scheduler::spawn_user(
         "user_app",
         entry_point,
-        user_stack_vaddr + pmm::PAGE_SIZE,
+        user_stack_top_vaddr - 16,
         child_pml4,
     )?;
 
@@ -190,27 +195,28 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         }
     };
 
-    // 4. Allocate and map user stack (4KB at 0x7FFFFFFF0000)
-    let stack_frame = match pmm::alloc_frame() {
-        Some(f) => f,
-        None => {
-            vmm::switch_address_space(parent_pml4);
-            vmm::free_user_pages(child_pml4, 0x600000000000);
-            return Err("Out of memory for user stack frame");
-        }
-    };
-    let user_stack_vaddr: u64 = 0x7FFFFFFF0000;
-    vmm::map_page(
-        user_stack_vaddr,
-        stack_frame,
-        vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-    )?;
-
-    // Clear user stack
-    let stack_ptr = user_stack_vaddr as *mut u64;
-    for i in 0..512 {
-        *stack_ptr.add(i) = 0;
+    // 4. Allocate and map 64KB User Stack (16 pages: 0x7FFFFFE00000 .. 0x7FFFFFFF0000)
+    let stack_pages = 16;
+    let stack_bottom_vaddr: u64 = 0x7FFFFFE00000;
+    for p in 0..stack_pages {
+        let page_vaddr = stack_bottom_vaddr + (p * pmm::PAGE_SIZE);
+        let stack_frame = match pmm::alloc_frame() {
+            Some(f) => f,
+            None => {
+                vmm::switch_address_space(parent_pml4);
+                vmm::free_user_pages(child_pml4, 0x600000000000);
+                return Err("Out of memory for user stack frame");
+            }
+        };
+        vmm::map_page(
+            page_vaddr,
+            stack_frame,
+            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
+        )?;
+        let ptr = page_vaddr as *mut u8;
+        core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
     }
+    let user_stack_top_vaddr: u64 = stack_bottom_vaddr + (stack_pages * pmm::PAGE_SIZE);
 
     // 5. Initialize Task 0 state for user program execution
     if let Some(ref mut task) = crate::task::scheduler::TASKS[0] {
@@ -225,15 +231,35 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
     crate::task::scheduler::SCHEDULER_INITIALIZED = false;
 
     // 7. Jump to user space (Ring 3) and execute!
-    jump_to_user(entry_point, user_stack_vaddr + pmm::PAGE_SIZE - 16);
+    jump_to_user(entry_point, user_stack_top_vaddr - 16);
 
-    // 8. Re-enable scheduler and restore parent address space after user mode program exits (via sys_exit -> 0xDEADBEEF)
-    crate::task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
-    if let Some(ref mut task) = crate::task::scheduler::TASKS[0] {
-        task.pml4_phys = parent_pml4;
-    }
+    // 8. Restore parent kernel address space IMMEDIATELY upon return from user mode!
     vmm::switch_address_space(parent_pml4);
-    vmm::free_user_pages(child_pml4, 0x600000000000);
+
+    let mut final_brk = 0x600000000000;
+    if let Some(ref mut task) = crate::task::scheduler::TASKS[0] {
+        final_brk = task.program_break;
+        task.pml4_phys = parent_pml4;
+        for fd in 0..8 {
+            if task.fds[fd].is_open {
+                if task.fds[fd].write_mode {
+                    if let Ok(path_str) =
+                        core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
+                    {
+                        crate::fs::lock::release_lock(path_str, 0);
+                    }
+                }
+                task.fds[fd].is_open = false;
+            }
+        }
+    }
+
+    // 9. Free child process user pages while safely running on parent kernel PML4
+    vmm::free_user_pages(child_pml4, final_brk);
+
+    // 10. Restore scheduler state and safely re-enable interrupts
+    crate::task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+    core::arch::asm!("sti");
 
     Ok(())
 }
