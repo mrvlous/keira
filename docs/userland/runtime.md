@@ -1,12 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-<!--
-SPDX-License-Identifier: GPL-2.0-only
-
-Keira Kernel - Operating System Kernel
-Copyright (C) 2026 Moh. Ananda Firmansyah Putra
--->
-
 # User Runtime Library (libc)
 
 This document details the user-space C standard library interfaces, dynamic memory management, POSIX file I/O, environment variables, and system call wrapper mechanics in Keira Kernel.
