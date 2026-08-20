@@ -7,34 +7,63 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! PC Speaker PIT Channel 2 sound synthesizer and sleep timers.
+//! Pure Rust PC Speaker PIT Channel 2 sound synthesizer and sleep timers.
 
 use core::arch::asm;
+use keira_arch::cpu::{inb, outb};
+use keira_arch::timers::pit::uptime_ms;
 
-extern "C" {
-    fn sound_play(freq: u32);
-    fn sound_stop();
-    fn get_uptime_ms() -> u64;
-}
+const PIT_BASE_FREQ: u32 = 1193182;
+const PIT_CHANNEL2_DATA: u16 = 0x42;
+const PIT_COMMAND_PORT: u16 = 0x43;
+const PC_SPEAKER_PORT: u16 = 0x61;
 
-/// Play a tone at specified frequency (in Hz) on the PC Speaker.
+/// Play a tone at specified frequency (in Hz) on the PC Speaker in pure Rust.
 pub fn play_sound(freq: u32) {
+    if freq == 0 {
+        stop_sound();
+        return;
+    }
+
+    let divisor = (PIT_BASE_FREQ / freq.max(1)).min(65535) as u16;
+
     unsafe {
-        sound_play(freq);
+        // Set PIT Channel 2 to Mode 3 (Square wave generator)
+        outb(PIT_COMMAND_PORT, 0xB6);
+        outb(PIT_CHANNEL2_DATA, (divisor & 0xFF) as u8);
+        outb(PIT_CHANNEL2_DATA, ((divisor >> 8) & 0xFF) as u8);
+
+        // Enable PC Speaker gate and output bits (bits 0 and 1)
+        let state = inb(PC_SPEAKER_PORT);
+        if (state & 0x03) != 0x03 {
+            outb(PC_SPEAKER_PORT, state | 0x03);
+        }
     }
 }
 
 /// Stop all sound output on the PC Speaker.
 pub fn stop_sound() {
     unsafe {
-        sound_stop();
+        let state = inb(PC_SPEAKER_PORT);
+        outb(PC_SPEAKER_PORT, state & 0xFC);
     }
 }
 
-/// Sleep for specified duration in milliseconds.
+// C-compatible exports
+#[no_mangle]
+pub extern "C" fn sound_play(freq: u32) {
+    play_sound(freq);
+}
+
+#[no_mangle]
+pub extern "C" fn sound_stop() {
+    stop_sound();
+}
+
+/// Sleep for specified duration in milliseconds using pure Rust PIT uptime.
 pub fn sleep_ms(ms: u64) {
-    let start = unsafe { get_uptime_ms() };
-    while unsafe { get_uptime_ms() } < start + ms {
+    let start = uptime_ms();
+    while uptime_ms() < start + ms {
         unsafe {
             asm!("hlt");
         }

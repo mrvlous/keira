@@ -18,7 +18,10 @@ pub mod swap;
 pub mod vmm;
 
 pub use dma::{alloc_dma_buffer, DmaBuffer, ScatterGatherEntry};
-pub use heap::{heap_get_alloc_count, heap_get_peak, heap_init, kfree, kmalloc};
+pub use heap::{
+    heap_get_alloc_count, heap_get_free, heap_get_peak, heap_get_total, heap_get_used, heap_init,
+    kfree, kmalloc,
+};
 pub use pmm::{
     alloc_frame, free_frame, get_stats, init as pmm_init, KERNEL_BASE_1MB, PAGE_SIZE, PAGE_SIZE_4K,
 };

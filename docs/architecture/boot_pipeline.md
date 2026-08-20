@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Tri-Language Boot Pipeline
+# Pure Rust Kernel Boot Pipeline
 
-Keira Kernel's boot sequence progresses through three language environments:
+Keira Kernel's boot sequence transitions directly from assembly trampolines to the pure Rust kernel:
 
 ```
 [ BIOS / GRUB ]
@@ -14,8 +14,12 @@ Keira Kernel's boot sequence progresses through three language environments:
 [ arch/x86/boot/entry64.asm ]  --> Enables Long Mode (EFER.LME, CR0.PG), loads GDT64, sets RSP
       │
       v
-[ arch/x86/kernel/hw_init.c ]  --> C Drivers: Serial, VGA, IDT, PIC, PIT, PS/2 Keyboard/Mouse, C Heap
-      │
-      v
-[ crates/kernel/src/entry.rs ] --> Rust kernel_main(): PMM, VMM, Scheduler, PCI, AHCI, e1000, FAT16, Shell
+[ crates/kernel/src/entry.rs ] --> Pure Rust kernel_main():
+                                   - keira-arch (IDT, PIC, PIT 1000Hz)
+                                   - keira-io (PS/2 Keyboard, Mouse, CMOS RTC, Serial, VGA)
+                                   - keira-mem (PMM, VMM, Pure Rust Bump Heap)
+                                   - keira-task (Scheduler)
+                                   - keira-fs / keira-net (PCI, AHCI, e1000, FAT16)
+                                   - keira-syscall (Syscall MSRs, Ring 3)
+                                   - keira-shell (Interactive Terminal Shell)
 ```

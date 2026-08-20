@@ -7,14 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Interrupt controllers, Local APIC, Dual 8259 PIC, IDT, and SMP.
+//! PS/2 Keyboard and Mouse peripheral subsystem.
 
-pub mod apic;
-pub mod idt;
-pub mod pic;
-pub mod smp;
+pub mod keyboard;
+pub mod mouse;
 
-pub use apic::*;
-pub use idt::{isr_handler, set_gate, IdtEntry, IdtPtr};
-pub use pic::{clear_mask as pic_clear_mask, send_eoi as pic_send_eoi, set_mask as pic_set_mask};
-pub use smp::*;
+pub use keyboard::{init as keyboard_init, keyboard_handler};
+pub use mouse::{init as mouse_init, mouse_handler, set_resolution as mouse_set_resolution};

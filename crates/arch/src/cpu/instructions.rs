@@ -47,6 +47,12 @@ pub unsafe fn outb(port: u16, val: u8) {
     asm!("out dx, al", in("dx") port, in("al") val, options(nomem, nostack, preserves_flags));
 }
 
+/// Wait a very small amount of time for I/O operations to complete (port 0x80 write).
+#[inline(always)]
+pub unsafe fn io_wait() {
+    outb(0x80, 0);
+}
+
 /// Read a byte from an 8-bit I/O port.
 #[inline(always)]
 pub unsafe fn inb(port: u16) -> u8 {

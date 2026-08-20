@@ -13,6 +13,6 @@ pub mod hpet;
 pub mod pit;
 pub mod posix;
 
-pub use hpet::*;
-pub use pit::*;
+pub use hpet::{is_initialized as hpet_is_initialized, HPET_BASE_ADDR, HPET_INITIALIZED};
+pub use pit::{get_uptime_ms, pit_handler, set_frequency as set_pit_frequency, uptime_ms};
 pub use posix::*;

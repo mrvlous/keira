@@ -16,13 +16,11 @@
 ;   1. Reload 64-bit data segment selectors (DS, ES, SS, FS, GS)
 ;   2. Establish 64-bit stack frame pointer (RSP)
 ;   3. Zero-initialize uninitialized kernel BSS memory region
-;   4. Initialize hardware peripherals via C routine hw_init()
-;   5. Transfer control to the main Rust kernel entry point kernel_main()
-;   6. Halt CPU execution if kernel_main returns
+;   4. Transfer control directly to the 64-bit pure Rust kernel entry point kernel_main()
+;   5. Halt CPU execution if kernel_main returns
 
 %include "constants.inc"
 
-extern hw_init
 extern kernel_main
 extern __bss_start
 extern __bss_end
@@ -55,10 +53,7 @@ _start64:
     xor al, al
     rep stosb
 
-    ; Step 4: Perform early C hardware initialization
-    call hw_init
-
-    ; Step 5: Transfer execution to Rust kernel main routine
+    ; Step 4: Transfer execution directly to 64-bit Rust kernel entry point
     mov rdi, r12
     call kernel_main
 

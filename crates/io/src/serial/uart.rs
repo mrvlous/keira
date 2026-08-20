@@ -7,17 +7,63 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! 16550A Serial UART COM1 port driver for kernel logs and host terminal debugging.
+//! Pure Rust 16550A Serial UART COM1 port driver for kernel logs and host terminal debugging.
 
-extern "C" {
-    fn serial_putchar(c: core::ffi::c_char);
+use keira_arch::cpu::{inb, outb};
+
+const COM1: u16 = 0x3F8;
+
+static mut SERIAL_INITIALIZED: bool = false;
+
+/// Initialize COM1 16550A UART serial port (115200 baud, 8N1, FIFO enabled).
+pub fn init() {
+    unsafe {
+        // 1. Disable all interrupts
+        outb(COM1 + 1, 0x00);
+
+        // 2. Enable DLAB (set baud rate divisor)
+        outb(COM1 + 3, 0x80);
+
+        // 3. Set divisor to 1 (lobyte 0x01, hibyte 0x00) -> 115200 baud
+        outb(COM1 + 0, 0x01);
+        outb(COM1 + 1, 0x00);
+
+        // 4. 8 bits, no parity, 1 stop bit
+        outb(COM1 + 3, 0x03);
+
+        // 5. Enable FIFO, clear TX/RX FIFOs, 14-byte threshold
+        outb(COM1 + 2, 0xC7);
+
+        // 6. Set RTS/DSR, Auxiliary Output 2 (IRQs enabled)
+        outb(COM1 + 4, 0x0B);
+
+        SERIAL_INITIALIZED = true;
+    }
 }
 
-/// Write a single ASCII byte to the COM1 serial port.
+/// Check if the serial transmitter buffer is empty and ready for a new byte.
+#[inline(always)]
+fn is_transmit_empty() -> bool {
+    unsafe { (inb(COM1 + 5) & 0x20) != 0 }
+}
+
+/// Write a single ASCII byte to the COM1 serial port in pure Rust.
 pub fn putchar(c: u8) {
     unsafe {
-        serial_putchar(c as core::ffi::c_char);
+        if !SERIAL_INITIALIZED {
+            init();
+        }
+        while !is_transmit_empty() {
+            core::hint::spin_loop();
+        }
+        outb(COM1, c);
     }
+}
+
+/// C-compatible export for serial write.
+#[no_mangle]
+pub extern "C" fn serial_putchar(c: u8) {
+    putchar(c);
 }
 
 /// Write a byte string to the COM1 serial port.

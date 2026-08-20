@@ -9,11 +9,11 @@
 
 # Master Build System Architecture
 #
-# Orchestrates the tri-language kernel compilation pipeline:
+# Orchestrates the pure Rust kernel and assembly bootstrap compilation pipeline:
 #   1. NASM (Assembly)  : Compiles 32-bit and 64-bit boot trampolines & ISR stubs.
-#   2. GCC (C Driver)   : Compiles hardware drivers, PIC/PIT, and C heap allocator.
-#   3. Cargo (Rust Core): Compiles `no_std` kernel core static library (`.a`).
-#   4. LD (Linker)      : Links object files into a single ELF64 kernel executable.
+#   2. Cargo (Rust Core): Compiles `no_std` 100% Pure Rust kernel static library (`.a`).
+#   3. LD (Linker)      : Links object files into a single ELF64 kernel executable.
+#   4. Userland (KCC/C) : Compiles userland C compiler (kcc.elf) and standard library.
 #   5. GRUB (Bootloader): Packages kernel and USTAR initrd into a bootable ISO.
 # Directory layout paths
 BUILD_DIR     := build
@@ -23,7 +23,7 @@ DISK_IMG      := $(BUILD_DIR)/disk.img
 
 # Project naming & versioning extracted from Cargo.toml
 KERNEL_NAME   := keira
-VERSION       := $(shell grep -m 1 '^version = ' Cargo.toml | cut -d '"' -f 2)
+VERSION       := $(shell grep -m 1 '^version = ' crates/kernel/Cargo.toml | cut -d '"' -f 2)
 KERNEL_BIN    := $(BUILD_DIR)/$(KERNEL_NAME).bin
 DATE_SUFFIX   := $(shell date +%Y-%m-%d)
 KERNEL_ISO    := $(BUILD_DIR)/$(KERNEL_NAME)-$(DATE_SUFFIX).iso
@@ -46,30 +46,6 @@ else
 endif
 # Assembler flags: ELF64 output format with assembly include path
 ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
-
-# C Compiler flags: freestanding 64-bit kernel mode without red zone or SSE
-CC_FLAGS      := -ffreestanding \
-	         -mno-red-zone \
-	         -mno-mmx \
-	         -mno-sse \
-	         -mno-sse2 \
-	         -mno-sse3 \
-	         -mno-ssse3 \
-	         -mno-sse4.1 \
-	         -mno-sse4.2 \
-	         -mno-avx \
-	         -mno-avx2 \
-	         -msoft-float \
-	         -mcmodel=large \
-	         -fno-stack-protector \
-	         -fno-pic \
-	         -nostdlib \
-	         -m64 \
-	         -I include \
-	         -I arch/x86/include \
-	         -I drivers \
-	         -Wall -Wextra \
-	         -O2
 
 # Linker flags: large code model linking using custom linker script
 LD_FLAGS      := -n \
@@ -141,23 +117,8 @@ ASM_SRCS      := arch/x86/boot/multiboot2_header.asm \
 	         arch/x86/kernel/isr.asm \
 	         arch/x86/kernel/syscall.asm
 
-C_SRCS        := drivers/serial/serial.c \
-	         drivers/vga/vga.c \
-	         drivers/sound/sound.c \
-	         drivers/sound/hda.c \
-	         arch/x86/kernel/idt.c \
-	         arch/x86/kernel/pic.c \
-	         arch/x86/kernel/pit.c \
-	         drivers/keyboard/keyboard.c \
-	         drivers/mouse/mouse.c \
-	         drivers/rtc/rtc.c \
-	         drivers/net/e1000.c \
-	         mm/heap.c \
-	         arch/x86/kernel/hw_init.c
-
 ASM_OBJS      := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
-C_OBJS        := $(patsubst %.c,$(OBJ_DIR)/%.c.o,$(C_SRCS))
-ALL_OBJS      := $(ASM_OBJS) $(C_OBJS)
+ALL_OBJS      := $(ASM_OBJS)
 
 # Shell command binaries to populate filesystem images
 SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
@@ -205,7 +166,7 @@ info: ## Display build configuration and toolchain versions
 	@printf "    QEMU         : $(CLR_CYAN)$(shell $(QEMU) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n\n"
 	@printf "  $(CLR_BOLD)Source Files$(CLR_RESET)\n"
 	@printf "    Assembly     : $(CLR_CYAN)$(words $(ASM_SRCS)) files$(CLR_RESET)\n"
-	@printf "    C Drivers    : $(CLR_CYAN)$(words $(C_SRCS)) files$(CLR_RESET)\n"
+	@printf "    Kernel Core  : $(CLR_CYAN)Pure Rust (12 crates)$(CLR_RESET)\n"
 	@printf "    Shell Cmds   : $(CLR_CYAN)$(words $(SHELL_CMDS)) commands$(CLR_RESET)\n"
 	@printf "    Drivers      : $(CLR_CYAN)$(words $(DRIVER_FILES)) descriptors$(CLR_RESET)\n\n"
 	@printf "  $(CLR_BOLD)Rust Target$(CLR_RESET)\n"
@@ -341,7 +302,7 @@ $(KERNEL_ISO): $(KERNEL_BIN) $(BUILD_DIR)/initrd.tar | dirs
 	$(Q)grub-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
 	@$(LOG_DONE) "$(KERNEL_ISO) ready"
 # Link final kernel ELF64 binary executable
-$(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) arch/x86/linker.ld | dirs
+$(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) arch/x86/linker.ld FORCE | dirs
 	@$(LOG_LD) "Linking kernel..."
 	$(Q)$(LD) $(LD_FLAGS) -o $(KERNEL_BIN) $(ALL_OBJS) $(RUST_LIB)
 	@$(LOG_DONE) "$(KERNEL_BIN) ready"
@@ -351,7 +312,9 @@ rust: | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
-$(RUST_LIB): rust
+$(RUST_LIB): rust FORCE
+
+FORCE:
 
 # Compile Assembly source files (.asm -> .o)
 $(OBJ_DIR)/%.asm.o: %.asm | dirs
@@ -359,15 +322,10 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
-# Compile C source files (.c -> .o)
-$(OBJ_DIR)/%.c.o: %.c | dirs
-	@$(LOG_CC) "$<"
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(CC_FLAGS) -c -o $@ $<
-
 # Create target build directories
 dirs:
 	$(Q)mkdir -p $(BUILD_DIR) $(OBJ_DIR)
+
 run: all ## Launch Keira in QEMU virtual machine
 	@$(LOG_INFO) "Launching Keira in QEMU..."
 	$(Q)$(QEMU) $(QEMU_FLAGS)
@@ -400,7 +358,7 @@ format: ## Format Rust and C source code
 	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
 	@$(LOG_DONE) "Formatting complete"
 
-lint: ## Static analysis of C code using clang-tidy
-	@$(LOG_INFO) "Linting C code..."
-	$(Q)find drivers arch/x86 user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I include -I drivers -I arch/x86/include -I user/include -I user/bin/kcc/include -ffreestanding -m64 \;
+lint: ## Static analysis of C userland code using clang-tidy
+	@$(LOG_INFO) "Linting userland C code..."
+	$(Q)find user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I user/include -I user/bin/kcc/include -ffreestanding -m64 \;
 	@$(LOG_DONE) "Linting complete"

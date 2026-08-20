@@ -16,18 +16,136 @@ use super::cursor::{
 };
 use super::font::FONT_DATA;
 
-extern "C" {
-    fn vga_putchar(c: core::ffi::c_char);
-    fn vga_set_color(fg: u8, bg: u8);
-    fn vga_init();
-    fn vga_set_cursor_pos(row: u16, col: u16);
-    fn vga_get_cursor_col() -> u16;
-    fn vga_get_cursor_row() -> u16;
-    fn vga_print_n(str: *const core::ffi::c_char, len: u64);
-    fn vga_backspace();
-    fn vga_clear_line_from(col: u16);
-    fn vga_draw_mouse_text(x: u16, y: u16);
-    fn vga_clear_mouse_text(x: u16, y: u16);
+use keira_arch::cpu::outb;
+
+static mut TEXT_CURSOR_X: u16 = 0;
+static mut TEXT_CURSOR_Y: u16 = 0;
+static mut TEXT_COLOR: u8 = 0x07;
+
+unsafe fn vga_set_hardware_cursor(col: u16, row: u16) {
+    let pos = (row * 80 + col) as u16;
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (pos & 0xFF) as u8);
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, ((pos >> 8) & 0xFF) as u8);
+}
+
+#[no_mangle]
+pub extern "C" fn vga_init() {
+    unsafe {
+        let buf = 0xB8000 as *mut u16;
+        let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+        for i in 0..(80 * 25) {
+            *buf.offset(i) = blank;
+        }
+        TEXT_CURSOR_X = 0;
+        TEXT_CURSOR_Y = 0;
+        vga_set_hardware_cursor(0, 0);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_set_color(fg: u8, bg: u8) {
+    unsafe {
+        TEXT_COLOR = ((bg & 0x0F) << 4) | (fg & 0x0F);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_set_cursor_pos(row: u16, col: u16) {
+    unsafe {
+        TEXT_CURSOR_X = col.min(79);
+        TEXT_CURSOR_Y = row.min(24);
+        vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_get_cursor_col() -> u16 {
+    unsafe { TEXT_CURSOR_X }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_get_cursor_row() -> u16 {
+    unsafe { TEXT_CURSOR_Y }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
+    let byte = c as u8;
+    unsafe {
+        let buf = 0xB8000 as *mut u16;
+        if byte == b'\n' {
+            TEXT_CURSOR_X = 0;
+            TEXT_CURSOR_Y += 1;
+        } else if byte == b'\r' {
+            TEXT_CURSOR_X = 0;
+        } else if byte == 0x08 {
+            if TEXT_CURSOR_X > 0 {
+                TEXT_CURSOR_X -= 1;
+            } else if TEXT_CURSOR_Y > 0 {
+                TEXT_CURSOR_Y -= 1;
+                TEXT_CURSOR_X = 79;
+            }
+            let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
+            *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+        } else {
+            let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
+            *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (byte as u16);
+            TEXT_CURSOR_X += 1;
+            if TEXT_CURSOR_X >= 80 {
+                TEXT_CURSOR_X = 0;
+                TEXT_CURSOR_Y += 1;
+            }
+        }
+
+        while TEXT_CURSOR_Y >= 25 {
+            core::ptr::copy(buf.offset(80), buf, 80 * 24);
+            let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+            for x in 0..80 {
+                *buf.offset(80 * 24 + x) = blank;
+            }
+            TEXT_CURSOR_Y -= 1;
+        }
+        vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_print_n(str: *const core::ffi::c_char, len: u64) {
+    for i in 0..len {
+        unsafe {
+            vga_putchar(*str.offset(i as isize));
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_backspace() {
+    vga_putchar(0x08 as core::ffi::c_char);
+}
+
+#[no_mangle]
+pub extern "C" fn vga_clear_line_from(col: u16) {
+    unsafe {
+        let buf = 0xB8000 as *mut u16;
+        let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+        for x in (col.min(79))..80 {
+            *buf.offset((TEXT_CURSOR_Y * 80 + x) as isize) = blank;
+        }
+        TEXT_CURSOR_X = col.min(79);
+        vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn vga_draw_mouse_text(_x: u16, _y: u16) {
+    // Text-mode mouse indicator
+}
+
+#[no_mangle]
+pub extern "C" fn vga_clear_mouse_text(_x: u16, _y: u16) {
+    // Text-mode mouse indicator clear
 }
 
 // Redirection globals
@@ -435,49 +553,8 @@ pub fn putchar(c: u8) {
 
 /// Print a raw byte slice to console.
 pub fn print(s: &[u8]) {
-    if s.is_empty() {
-        return;
-    }
-    unsafe {
-        VGA_BUSY = true;
-        CURSOR_BLINK_STATE = true;
-        if REDIRECT_TO_FILE {
-            let to_copy = core::cmp::min(s.len(), 4096 - REDIRECT_LEN);
-            REDIRECT_BUFFER[REDIRECT_LEN..REDIRECT_LEN + to_copy].copy_from_slice(&s[..to_copy]);
-            REDIRECT_LEN += to_copy;
-        } else if fb_active() {
-            hide_mouse_graphics();
-            draw_cursor(false);
-
-            for &c in s {
-                if c == b'\n' {
-                    CURSOR_X = 0;
-                    CURSOR_Y += 1;
-                } else if c == b'\r' {
-                    CURSOR_X = 0;
-                } else {
-                    draw_char(c, CURSOR_X, CURSOR_Y, ACTIVE_FG_COLOR, ACTIVE_BG_COLOR);
-                    CURSOR_X += 1;
-                    let max_cols = FRAMEBUFFER_WIDTH / 8;
-                    if CURSOR_X >= max_cols {
-                        CURSOR_X = 0;
-                        CURSOR_Y += 1;
-                    }
-                }
-
-                let max_rows = FRAMEBUFFER_HEIGHT / 16;
-                while CURSOR_Y >= max_rows {
-                    scroll_up();
-                    CURSOR_Y -= 1;
-                }
-            }
-
-            draw_cursor(true);
-            show_mouse_graphics();
-        } else {
-            vga_print_n(s.as_ptr() as *const core::ffi::c_char, s.len() as u64);
-        }
-        VGA_BUSY = false;
+    for &c in s {
+        putchar(c);
     }
 }
 
@@ -540,17 +617,31 @@ pub fn set_color(fg: Color, bg: Color) {
 
 /// Print formatted boot milestone status log.
 pub fn print_boot_log(msg: &str, status: u8) {
+    let len = msg.len();
+    let mut padding = 69 - len as isize;
+    if padding < 1 {
+        padding = 1;
+    }
+
+    // 1. Output colored boot log to COM1 Serial (for host terminal stdout)
+    crate::serial::uart::print_str("\x1b[1;36m::\x1b[0m ");
+    crate::serial::uart::print_str(msg);
+    for _ in 0..padding {
+        crate::serial::uart::print_str(" ");
+    }
+    match status {
+        0 => crate::serial::uart::print_str("\x1b[1;32m[ OK ]\x1b[0m\r\n"),
+        1 => crate::serial::uart::print_str("\x1b[1;33m[ WARN ]\x1b[0m\r\n"),
+        _ => crate::serial::uart::print_str("\x1b[1;31m[ FAIL ]\x1b[0m\r\n"),
+    }
+
+    // 2. Render to VGA display
     set_color(Color::LightBlue, Color::Black);
     print_str(":: ");
 
     set_color(Color::White, Color::Black);
     print_str(msg);
 
-    let len = msg.len();
-    let mut padding = 69 - len as isize;
-    if padding < 1 {
-        padding = 1;
-    }
     for _ in 0..padding {
         print_str(" ");
     }

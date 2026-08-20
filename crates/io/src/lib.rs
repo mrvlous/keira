@@ -13,6 +13,8 @@
 
 pub mod bus;
 pub mod framebuffer;
+pub mod ps2;
+pub mod rtc;
 pub mod serial;
 pub mod sound;
 pub mod storage;

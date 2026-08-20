@@ -13,6 +13,7 @@
 
 pub mod cpu;
 pub mod debug;
+pub mod init;
 pub mod interrupts;
 pub mod perf;
 pub mod power;
@@ -22,6 +23,7 @@ pub mod virt;
 pub use cpu::*;
 pub use debug::unwind;
 pub use debug::*;
+pub use init::init;
 pub use interrupts::*;
 pub use perf::pmu as perf_pmu;
 pub use perf::*;

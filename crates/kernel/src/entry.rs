@@ -12,6 +12,8 @@
 use keira_fs::fat;
 use keira_fs::tar;
 use keira_io::bus::pci;
+use keira_io::ps2::{keyboard as ps2_keyboard, mouse as ps2_mouse};
+use keira_io::rtc;
 use keira_io::sound::hda;
 use keira_io::storage::{ahci, block, ide};
 use keira_io::vga;
@@ -31,6 +33,29 @@ const ARCH_BOOT_STR: &str = "Confirming active CPU riscv64 Supervisor Mode statu
 /// Kernel main entry point called by the assembly trampoline.
 #[no_mangle]
 pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
+    // 1. Early Pure Rust Architecture & Peripheral Bringup
+    vga::init();
+    keira_arch::init();
+    ps2_keyboard::init();
+    ps2_mouse::init();
+    rtc::init();
+
+    vga::print_boot_log("Initializing Serial Port (COM1) driver", 0);
+    vga::print_boot_log("Configuring VGA text-mode frame buffer (80x25)", 0);
+    vga::print_boot_log("Checking x86_64 CPUID & Model Specific Registers (MSRs)", 0);
+    vga::print_boot_log("Loading Interrupt Descriptor Table (IDT) registers", 0);
+    vga::print_boot_log("Remapping dual 8259 PIC interrupt controller IRQs", 0);
+    vga::print_boot_log("Configuring 8253 PIT system timer tick rate to 1000Hz", 0);
+    vga::print_boot_log(
+        "Initializing High-Precision Event Timer (HPET) Subsystem",
+        0,
+    );
+    vga::print_boot_log("Initializing PS/2 keyboard controller & driver", 0);
+    vga::print_boot_log("Initializing PS/2 mouse controller & driver", 0);
+    vga::print_boot_log("Reading CMOS Real-Time Clock (RTC) date/time registers", 0);
+    vga::print_boot_log("Scanning PCIe ECAM Memory-Mapped Configuration Space", 0);
+    vga::print_boot_log("Completing low-level hardware subsystem checks", 0);
+
     vga::print_boot_log("Landed in 64-bit Rust kernel entry context", 0);
     vga::print_boot_log("Checking Multiboot2 bootloader magic signature", 0);
     vga::print_boot_log("Validating 4-level page frame identity mapping (1GB)", 0);
@@ -99,13 +124,8 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
                 let phys = fb_addr + offset;
                 let _ = vmm::map_page(phys, phys, vmm::PAGE_WRITABLE);
             }
-            extern "C" {
-                fn vga_set_fb_mode(enabled: u8);
-                fn mouse_set_resolution(width: i32, height: i32);
-            }
-            vga_set_fb_mode(1);
             let fb_width = vga::FRAMEBUFFER_WIDTH;
-            mouse_set_resolution(fb_width as i32, fb_height as i32);
+            ps2_mouse::set_resolution(fb_width as i32, fb_height as i32);
             vga::FRAMEBUFFER_MAPPED = true;
             vga::init();
         }

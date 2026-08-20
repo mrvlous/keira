@@ -7,15 +7,13 @@
 #
 # Provides compilation settings and header search paths for the Clangd LSP.
 # This ensures code intelligence tools can resolve headers and provide correct
-# diagnostics, code navigation, and autocomplete in C files.
+# diagnostics, code navigation, and autocomplete in userland C files.
 
 CompileFlags:
   Add:
-    # Main kernel-wide common header directory
-    - "-Iinclude"
-    # Device driver-specific header directory
-    - "-Idrivers"
-    # x86 architecture-specific header directory
-    - "-Iarch/x86/include"
     # User-space application and library header directory
     - "-Iuser/include"
+    # KCC C compiler internal header directory
+    - "-Iuser/bin/kcc/include"
+    - "-ffreestanding"
+    - "-m64"
