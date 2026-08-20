@@ -1,22 +1,13 @@
-<!--
-SPDX-License-Identifier: GPL-2.0-only
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-Keira Kernel - Operating System Kernel
-Copyright (C) 2026 Moh. Ananda Firmansyah Putra
--->
+# Keira Kernel Userland & C SDK
 
-# Userland Subsystems & Toolchain
-
-Welcome to the Userland documentation section for Keira Kernel.
+Documentation for the Ring 3 userland execution environment, freestanding C runtime library, and compiler toolchain.
 
 ## Documents
 
-* [User Runtime Library (libc & Extensions)](runtime.md): Dynamic memory allocation (malloc), POSIX stdio file I/O, environment variables, socket programming (`socket.h`), C Math (`math.h`) & Time (`time.h`), and system call wrappers.
-* [ELF64 Binary Loader & Userland Execution](elf_loader.md): Ring 3 user mode execution, PML4 address space isolation, segment mapping, and stack frame initialization.
-* [POSIX File Descriptors & Stream I/O](posix_io.md): Standard POSIX file descriptor table (0..1024), access mode flags (`fcntl.h`), and stream system call vectors.
-* [Multi-User Account Management](users.md): Persistent user management (`user`), password storage (`/system/etc/passwd`), dynamic prompt, 3-attempt retry fallback, and UNIX privilege separation.
-* [System Hostname Configuration](hostname.md): System hostname configuration (`hostname`) persisted to `/system/etc/hostname`.
-* [POSIX File Security & Attributes](permissions.md): POSIX file security & protection flags (`protect`, `fileinfo`).
-* [Multi-Virtual Terminal Subsystem](tty.md): Virtual terminal switching (`tty1`..`tty4`) and console screen buffers.
-* [System Initialization & Userland Bootstrap](init.md): Kernel userland bootstrapping and interactive shell session initialization.
-* [Self-Hosting C Compiler](gcc.md): Parser, lexer, AST builder, and ELF64 code emission inside the built-in C compiler (`gcc.c`).
+| Document | Description |
+| :--- | :--- |
+| **[`c_sdk.md`](c_sdk.md)** | Freestanding C Runtime Library (`stdio.h`, `stdlib.h`, `string.h`, `syscall.h`) |
+| **[`gcc_compiler.md`](gcc_compiler.md)** | In-Kernel Freestanding GCC Compiler Binary (`/apps/bin/gcc.elf`) |
+| **[`elf_execution.md`](elf_execution.md)** | Ring 3 Process Lifecycle, Memory Isolation, and Syscall Interface |

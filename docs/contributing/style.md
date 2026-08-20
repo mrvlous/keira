@@ -1,119 +1,36 @@
-<!--
-SPDX-License-Identifier: GPL-2.0-only
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-Keira Kernel - Operating System Kernel
-Copyright (C) 2026 Moh. Ananda Firmansyah Putra
--->
+# Coding Style & Documentation Standards
 
-# Coding, Comment, and License Style Guidelines
+Standards for writing clean, maintainable, and safe kernel code.
 
-To maintain code quality, security, and maintainability across the **Keira Kernel** codebase, all contributions must adhere to the style and licensing standards outlined below.
+## License Header Policy
+Every source file (`.rs`, `.c`, `.h`, `.asm`), build script, and markdown file MUST begin with a license header.
+**Do NOT include author email addresses in file headers.**
 
-## 1. Rust and C Formatting Rules
-
-- **Rust Edition**: Rust 2021 (no_std, freestanding).
-- **Line Length**: 100 characters maximum (enforced via `rustfmt.toml`).
-- **Indentation**: 4 spaces, no hard tabs.
-- **C Block Comments**: Single-line C++ style comments (`//`) in C source files are strictly forbidden. Use C-style block comments (`/* ... */`).
-
-## 2. License Comment Header & Copyright Attribution Rules
-
-Every file in the repository must begin with the standardized GPL-2.0-only license header adapted to the language comment syntax.
-
-### Copyright Attribution Guidelines
-* **License Identifier**: `SPDX-License-Identifier: GPL-2.0-only` is mandatory for all contributions.
-* **Project Name**: `Keira Kernel - Operating System Kernel` is the standard project identifier line.
-* **Author / Copyright Line**: `Copyright (C) <Year> <Your Name or Entity>` (do not include email addresses in the file header).
-  * **New Files**: When authoring a new file, put **your own name** (or organization) and the current year on the Copyright line (e.g., `Copyright (C) 2026 Jane Doe`).
-  * **Existing Files**: If making major contributions or rewrites to an existing file, you may append an additional Copyright line for yourself below the original author's line.
-  * **Contributor Recognition & Contact Info**: All contributors are invited to add their name and contact email to the [CREDITS](../../CREDITS) and [MAINTAINERS](../../MAINTAINERS) files in the repository root.
-
-### Source Files (`.rs`, `.c`, `.h`, `.asm`, `.inc`, `.ld`), `Makefile`, & `Cargo.toml`
-Must include the standard 1-paragraph GPL-2.0-only license block:
-
-* **Rust Files (`.rs`)**:
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
-// Copyright (C) 2026 <Author Name>
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 ```
 
-* **C and Linker Files (`.c`, `.h`, `.ld`)**:
-```c
-/* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Operating System Kernel
- * Copyright (C) 2026 <Author Name>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
-```
-
-* **Assembly Files (`.asm`, `.inc`)**:
-```nasm
-; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Operating System Kernel
-; Copyright (C) 2026 <Author Name>
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
-```
-
-* **Build & Package Configurations (`Makefile`, `Cargo.toml`)**:
-```toml
-# SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Operating System Kernel
-# Copyright (C) 2026 <Author Name>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-```
-
-### Configuration Files (`.gitignore`, `rust-toolchain.toml`, `rustfmt.toml`, `.clang-format`)
-Must include the 4-line concise copyright comment block:
-```toml
-# SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Operating System Kernel
-# Copyright (C) 2026 <Author Name>
-```
-
-### Markdown Documentation Files (`docs/**/*.md`)
-Must include the HTML comment block:
+For Markdown files:
 ```markdown
-<!--
-SPDX-License-Identifier: GPL-2.0-only
-
-Keira Kernel - Operating System Kernel
-Copyright (C) 2026 <Author Name>
--->
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
 ```
 
-*(Note: Root `README` and auto-generated `Cargo.lock` are kept clean without header blocks).*
+## Rust Conventions
+- Use `snake_case` for modules, functions, and variables.
+- Use `UpperCamelCase` for structs, enums, traits, and type aliases.
+- Use `SCREAMING_SNAKE_CASE` for global constants and static variables.
+- Write formal, clear English rustdoc comments (`///`) on all public types and functions.
+- Run `cargo fmt --all` before committing.
 
-### `LICENSE` File
-Contains the full GNU General Public License v2.0 text.
-
-## 3. Documentation Style Rules
-
-- **Module-Level Rustdocs (`//!`)**: Required at top of every Rust source file after the license header.
-- **Item Rustdocs (`///`)**: Required for all public structs, enums, fields, and functions.
-- **No Decorative Symbols**: Never use decorative divider lines such as `---` or `===` within code comments.
-- **Grammar**: Use formal, technical English. Zero non-English code comments permitted.
-
-## 4. Git Commit & Release Tagging Conventions
-
-- **Release Commits**: Standard release commit message format is `Keira <version>` (e.g. `Keira 0.28.6`).
-- **Release Tags**: Annotated git tag format is `v<version>` with message `Keira <version>` (e.g. `git tag -a v0.28.6 -m "Keira 0.28.6"`).
-- **Patch Bumps**: When advancing versions, update both `Cargo.toml` and `Cargo.lock` synchronously.
+## C Conventions
+- Follow Linux kernel C style guidelines (4-space indentation, braces on new line for functions).
+- Run `make format` to run `clang-format` on all C and header files.

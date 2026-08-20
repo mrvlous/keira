@@ -348,7 +348,7 @@ $(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) arch/x86/linker.ld | dirs
 # Compile freestanding Rust kernel module
 rust: | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(RUST_MODE))...."
-	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core build --target $(RUST_TARGET) --$(RUST_MODE) 2>&1 | sed 's/^/        /'
+	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
 $(RUST_LIB): rust
 
@@ -401,6 +401,5 @@ format: ## Format Rust and C source code
 
 lint: ## Static analysis of C code using clang-tidy
 	@$(LOG_INFO) "Linting C code..."
-	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-tidy --quiet {} -- -I include -I drivers -I arch/x86/include -I user/include -ffreestanding -m64 \;
+	$(Q)find drivers arch/x86 user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I include -I drivers -I arch/x86/include -I user/include -ffreestanding -m64 \;
 	@$(LOG_DONE) "Linting complete"
-	

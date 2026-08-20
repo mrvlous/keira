@@ -11,7 +11,7 @@ This document details the kernel initialization sequence and interactive shell b
 
 ## 1. Kernel Bootstrapping
 After completing early hardware initialization, memory management, and storage mounting, the kernel prepares the execution environment:
-*   **Kernel Entry**: [entry.rs](../../kernel/src/entry.rs)
+*   **Kernel Entry**: [entry.rs](../../crates/kernel/src/entry.rs)
 *   **Virtual Memory**: Page-Map Level-4 (PML4) paging structures are configured with isolated user-space segments and Ring 3 protection.
 *   **Task State Segment (TSS)**: Configured with dedicated `RSP0` kernel privilege transition stacks and Model Specific Registers (STAR, LSTAR, SFMASK) for `syscall` / `sysret`.
 

@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+[package]
+name = "keira-ipc"
+version = "0.29.0"
+edition = "2021"
+authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
+license = "GPL-2.0-only"
+description = "Pipes, Futex, Epoll, EventFD, MQueue, Splice, POSIX SHM, and io_uring for Keira Kernel"
+
+[dependencies]
+keira-core = { path = "../core" }
+keira-arch = { path = "../arch" }
+keira-mem = { path = "../mem" }
+keira-io = { path = "../io" }
+keira-fs = { path = "../fs" }
+keira-task = { path = "../task" }

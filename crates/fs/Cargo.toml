@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+[package]
+name = "keira-fs"
+version = "0.29.0"
+edition = "2021"
+authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
+license = "GPL-2.0-only"
+description = "Virtual Filesystem (VFS), FAT12/16/32, EXT4, TAR initrd, LVM/RAID, and ELF64 loader for Keira Kernel"
+
+[dependencies]
+keira-core = { path = "../core" }
+keira-arch = { path = "../arch" }
+keira-mem = { path = "../mem" }
+keira-io = { path = "../io" }

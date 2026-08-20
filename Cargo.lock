@@ -3,5 +3,128 @@
 version = 4
 
 [[package]]
-name = "keira"
-version = "0.28.6"
+name = "keira-arch"
+version = "0.29.0"
+dependencies = [
+ "keira-core",
+]
+
+[[package]]
+name = "keira-core"
+version = "0.29.0"
+
+[[package]]
+name = "keira-crypto"
+version = "0.29.0"
+dependencies = [
+ "keira-core",
+]
+
+[[package]]
+name = "keira-fs"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-io",
+ "keira-mem",
+]
+
+[[package]]
+name = "keira-io"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-mem",
+]
+
+[[package]]
+name = "keira-ipc"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-fs",
+ "keira-io",
+ "keira-mem",
+ "keira-task",
+]
+
+[[package]]
+name = "keira-kernel"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-crypto",
+ "keira-fs",
+ "keira-io",
+ "keira-ipc",
+ "keira-mem",
+ "keira-net",
+ "keira-shell",
+ "keira-syscall",
+ "keira-task",
+]
+
+[[package]]
+name = "keira-mem"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+]
+
+[[package]]
+name = "keira-net"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-crypto",
+ "keira-io",
+ "keira-mem",
+]
+
+[[package]]
+name = "keira-shell"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-crypto",
+ "keira-fs",
+ "keira-io",
+ "keira-ipc",
+ "keira-mem",
+ "keira-net",
+ "keira-syscall",
+ "keira-task",
+]
+
+[[package]]
+name = "keira-syscall"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-crypto",
+ "keira-fs",
+ "keira-io",
+ "keira-ipc",
+ "keira-mem",
+ "keira-net",
+ "keira-task",
+]
+
+[[package]]
+name = "keira-task"
+version = "0.29.0"
+dependencies = [
+ "keira-arch",
+ "keira-core",
+ "keira-fs",
+ "keira-io",
+ "keira-mem",
+]
