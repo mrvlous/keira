@@ -16,19 +16,27 @@ To maintain code quality, security, and maintainability across the **Keira Kerne
 - **Indentation**: 4 spaces, no hard tabs.
 - **C Block Comments**: Single-line C++ style comments (`//`) in C source files are strictly forbidden. Use C-style block comments (`/* ... */`).
 
-## 2. License Comment Header Rules
+## 2. License Comment Header & Copyright Attribution Rules
 
-Every file in the repository must begin with the appropriate standardized GPL-2.0-only license header:
+Every file in the repository must begin with the standardized GPL-2.0-only license header adapted to the language comment syntax.
+
+### Copyright Attribution Guidelines
+* **License Identifier**: `SPDX-License-Identifier: GPL-2.0-only` is mandatory for all contributions.
+* **Project Name**: `Keira Kernel - Operating System Kernel` is the standard project identifier line.
+* **Author / Copyright Line**: `Copyright (C) <Year> <Your Name or Entity>` (do not include email addresses in the file header).
+  * **New Files**: When authoring a new file, put **your own name** (or organization) and the current year on the Copyright line (e.g., `Copyright (C) 2026 Jane Doe`).
+  * **Existing Files**: If making major contributions or rewrites to an existing file, you may append an additional Copyright line for yourself below the original author's line.
+  * **Contributor Recognition & Contact Info**: All contributors are invited to add their name and contact email to the [CREDITS](../../CREDITS) and [MAINTAINERS](../../MAINTAINERS) files in the repository root.
 
 ### Source Files (`.rs`, `.c`, `.h`, `.asm`, `.inc`, `.ld`), `Makefile`, & `Cargo.toml`
-Must include the standard 1-paragraph GPL-2.0-only license block adapted to the file comment syntax:
+Must include the standard 1-paragraph GPL-2.0-only license block:
 
 * **Rust Files (`.rs`)**:
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
 //
 // Keira Kernel - Operating System Kernel
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+// Copyright (C) 2026 <Author Name>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +48,7 @@ Must include the standard 1-paragraph GPL-2.0-only license block adapted to the 
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Keira Kernel - Operating System Kernel
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+ * Copyright (C) 2026 <Author Name>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +61,7 @@ Must include the standard 1-paragraph GPL-2.0-only license block adapted to the 
 ; SPDX-License-Identifier: GPL-2.0-only
 ;
 ; Keira Kernel - Operating System Kernel
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+; Copyright (C) 2026 <Author Name>
 ;
 ; This program is free software; you can redistribute it and/or modify
 ; it under the terms of the GNU General Public License as published by
@@ -65,7 +73,7 @@ Must include the standard 1-paragraph GPL-2.0-only license block adapted to the 
 # SPDX-License-Identifier: GPL-2.0-only
 #
 # Keira Kernel - Operating System Kernel
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+# Copyright (C) 2026 <Author Name>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,7 +86,7 @@ Must include the 4-line concise copyright comment block:
 # SPDX-License-Identifier: GPL-2.0-only
 #
 # Keira Kernel - Operating System Kernel
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+# Copyright (C) 2026 <Author Name>
 ```
 
 ### Markdown Documentation Files (`docs/**/*.md`)
@@ -88,7 +96,7 @@ Must include the HTML comment block:
 SPDX-License-Identifier: GPL-2.0-only
 
 Keira Kernel - Operating System Kernel
-Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+Copyright (C) 2026 <Author Name>
 -->
 ```
 

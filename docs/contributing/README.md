@@ -13,4 +13,5 @@ Welcome to the Contribution and Development Guidelines section for Keira Kernel.
 
 * [Workspace Setup](setup.md): Installing the toolchain, cross-compiler packages, Rust nightly, and emulator targets.
 * [Building and Running](build.md): Makefile targets for compilation, ISO creation, disk image partitioning, and QEMU configuration.
-* [Coding Style Standards](style.md): Style rules, comment standards for C/Assembly/Rust, and linter configurations.
+* [Coding Style Standards](style.md): Style rules, comment standards for C/Assembly/Rust, copyright attribution, and linter configurations.
+* [Contribution & Patch Workflow](workflow.md): Step-by-step developer guide for branching, local testing, formatting, and submitting pull requests.

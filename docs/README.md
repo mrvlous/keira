@@ -88,4 +88,5 @@ To help you navigate the codebase, the documentation is divided into 9 modular c
 ### 9. Contribution Guidelines (`docs/contributing/`)
 *   [Workspace Setup](contributing/setup.md): Installing the toolchain, cross-compiler packages, Rust nightly, and emulator targets.
 *   [Building and Running](contributing/build.md): Makefile targets for compilation, ISO creation, disk image partitioning, and QEMU configuration.
-*   [Coding Style Standards](contributing/style.md): Style rules, comment standards for C/Assembly/Rust, and linter configurations.
+*   [Coding Style Standards](contributing/style.md): Style rules, comment standards for C/Assembly/Rust, copyright attribution, and linter configurations.
+*   [Contribution & Patch Workflow](contributing/workflow.md): Step-by-step developer guide for branching, local testing, formatting, and submitting pull requests.

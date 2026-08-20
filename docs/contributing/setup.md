@@ -7,7 +7,7 @@ Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 
 # Workspace Setup Guide
 
-This document describes how to install target toolchains, cross-compilers, and package dependencies required to compile and build Keira Kernel.
+This document describes how to install target toolchains, cross-compilers, and package dependencies required to compile, build, and contribute to **Keira Kernel**.
 
 ---
 
@@ -21,22 +21,47 @@ Keira Kernel is a freestanding 64-bit x86_64 kernel consisting of:
 ---
 
 ## 2. Package Dependencies
-Before building, ensure the following core tools are installed on your development machine:
-*   **NASM**: Assembly compiler for boot trampolines.
-*   **GCC / G++**: GNU Compiler Collection for C drivers and heap code.
-*   **GRUB-PC / GRUB-EFI**: Bootloader utilities to generate boot images.
-*   **Xorriso**: ISO filesystem creation tool used by GRUB.
-*   **QEMU**: Emulator to launch and run the generated kernel image.
 
-### Installing Dependencies on Ubuntu/Debian
+Before building, ensure the following core tools are installed on your host system:
+*   **NASM**: Assembly compiler for 32-bit and 64-bit boot trampolines and ISR stubs.
+*   **GCC / LD**: GNU C Compiler Collection and linker for C hardware drivers, PIC/PIT, and C heap allocator.
+*   **GRUB-PC / GRUB-EFI**: Bootloader utilities to package the bootable kernel ISO.
+*   **Xorriso**: ISO filesystem creation tool utilized by `grub-mkrescue`.
+*   **QEMU (`qemu-system-x86_64`)**: Machine emulator for local debugging and smoke testing.
+*   **Mtools & dosfstools**: `mcopy`, `mmd`, and `mkfs.fat` for FAT16 disk image creation.
+*   **Clang-Format & Clang-Tidy**: Formatting and static analysis for C driver code.
+
+### Installing Dependencies
+
+#### Ubuntu / Debian / Pop!_OS / WSL2
 ```bash
 sudo apt update
-sudo apt install build-essential nasm grub-pc-bin xorriso qemu-system-x86 git
+sudo apt install -y build-essential nasm grub-pc-bin grub-common xorriso \
+                    qemu-system-x86 mtools dosfstools clang-format clang-tidy git tar
+```
+
+#### Arch Linux / Manjaro
+```bash
+sudo pacman -Syu --needed base-devel nasm grub xorriso qemu-system-x86 \
+                          mtools dosfstools clang git tar
+```
+
+#### Fedora / RHEL
+```bash
+sudo dnf install -y @development-tools nasm grub2-tools grub2-tools-extra \
+                    xorriso qemu-system-x86 mtools dosfstools clang git tar
+```
+
+#### macOS (with Homebrew)
+```bash
+brew install nasm xorriso qemu mtools dosfstools llvm
+# Note: A cross-compiler (x86_64-elf-gcc) is recommended for macOS host builds.
 ```
 
 ---
 
 ## 3. Rust Toolchain Configuration
+
 The kernel core requires a nightly Rust installation to compile in a freestanding `no_std` environment.
 
 ### Installation Steps
@@ -44,7 +69,53 @@ The kernel core requires a nightly Rust installation to compile in a freestandin
     ```bash
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     ```
-2.  **Verify Toolchain**:
-    The workspace root contains `rust-toolchain.toml`, which automatically sets the toolchain to the correct nightly version when compiling within this directory.
-3.  **Rust Targets**:
-    The kernel compiles for a custom target spec `targets/x86_64-keira-none.json`. This target tells the compiler to disable the standard library and avoid using SIMD registers during kernel compilation.
+2.  **Nightly Toolchain**:
+    The repository includes [rust-toolchain.toml](../../rust-toolchain.toml), which automatically selects and pins the exact nightly compiler version upon entering the workspace.
+3.  **Rust Source Components**:
+    Ensure the `rust-src` component is available for building standard library primitives:
+    ```bash
+    rustup component add rust-src llvm-tools-preview rustfmt clippy
+    ```
+
+---
+
+## 4. Validating Workspace Setup
+
+Run the automated dependency checker to verify that all required host utilities are detected:
+
+```bash
+make check
+```
+
+Expected output:
+```text
+  [OK]    nasm
+  [OK]    gcc
+  [OK]    ld
+  [OK]    cargo
+  [OK]    rustc
+  [OK]    grub-mkrescue
+  [OK]    xorriso
+  [OK]    qemu-system-x86_64
+  [OK]    clang-format
+  [OK]    clang-tidy
+  [OK]    mkfs.fat
+  [OK]    mmd
+  [OK]    mcopy
+  [OK]    tar
+  [OK]    dd
+
+[DONE]  All dependencies satisfied
+```
+
+---
+
+## 5. Recommended Editor Setup
+
+*   **Visual Studio Code**:
+    *   `rust-analyzer`: Real-time Rust code intelligence.
+    *   `clangd`: Real-time C driver autocompletion and diagnostic warnings (configured via [.clangd](../../.clangd)).
+*   **Formatting Integration**:
+    *   Rust code formatting is governed by [rustfmt.toml](../../rustfmt.toml).
+    *   C code formatting is governed by [.clang-format](../../.clang-format).
+    *   You can run `make format` anytime to auto-format the entire codebase.
