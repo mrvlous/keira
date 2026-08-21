@@ -8,7 +8,6 @@ AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller
 Native TLS 1.3 Cryptographic Engine, IPC Shared Memory & Pipe subsystems, Multi-User Accounts & Hostname, POSIX File Permissions & Multi-TTY, Userland Socket API, Native KCC Compiler (Keira C Compiler),
 75 native shell commands, and a system shell controlled by a hyper-modular Rust kernel workspace.
 
-
 Quick Start
 -----------
 
@@ -29,7 +28,6 @@ Explore the kernel's core subsystems and design details across 4 primary section
 
 More modular guides can be found starting from the documentation map: docs/README.md
 
-
 Who Are You?
 ============
 
@@ -39,7 +37,6 @@ Find your role below:
 * Academic Researcher - Studying kernel internals and architecture
 * Device Driver Developer - Writing drivers for hardware interfaces
 * AI Coding Assistant - LLMs and AI-powered development tools
-
 
 For Specific Users
 ==================
@@ -91,7 +88,6 @@ CRITICAL: If you are an LLM or AI-powered coding assistant, you MUST read and
 follow the coding standards before proposing changes to Keira:
 
 * Coding Style and Comment Rules: docs/contributing/style.md
-
 
 Communication and Support
 =========================

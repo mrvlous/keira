@@ -145,4 +145,3 @@ isr44:
     call mouse_handler
     popaq
     iretq
-    

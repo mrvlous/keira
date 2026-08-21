@@ -61,4 +61,3 @@ _start64:
     cli
     hlt
     jmp .hang
-    

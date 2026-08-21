@@ -60,4 +60,3 @@ setup_page_tables:
     jne .map_loop
 
     ret
-    
