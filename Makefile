@@ -211,79 +211,87 @@ build/kcc.elf: $(USER_KCC_SRCS) $(USER_LIB_SRCS) user/linker.ld | dirs
 	@$(LOG_INFO) "Building user space program: kcc (kcc.elf)..."
 	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o build/kcc.elf
 
+FS_ROOT := $(BUILD_DIR)/fs_root
+
+# Populate standardized canonical root filesystem tree
+fs-root: build/kcc.elf | dirs
+	@$(LOG_INFO) "Populating canonical root filesystem..."
+	$(Q)rm -rf $(FS_ROOT)
+	$(Q)mkdir -p $(FS_ROOT)/system/bin
+	$(Q)mkdir -p $(FS_ROOT)/system/dev
+	$(Q)mkdir -p $(FS_ROOT)/system/drivers
+	$(Q)mkdir -p $(FS_ROOT)/system/include/sys
+	$(Q)mkdir -p $(FS_ROOT)/apps/bin
+	$(Q)mkdir -p $(FS_ROOT)/apps/src
+	$(Q)mkdir -p $(FS_ROOT)/config/boot
+	$(Q)mkdir -p $(FS_ROOT)/config/sys
+	$(Q)mkdir -p $(FS_ROOT)/users/admin
+	$(Q)mkdir -p $(FS_ROOT)/users/default
+	$(Q)mkdir -p $(FS_ROOT)/users/guest
+	$(Q)mkdir -p $(FS_ROOT)/data/log
+	$(Q)mkdir -p $(FS_ROOT)/data/save
+	$(Q)mkdir -p $(FS_ROOT)/temp
+	$(Q)for cmd in $(SHELL_CMDS); do \
+	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd; \
+	done
+	$(Q)echo "Keira Null Device Node" > $(FS_ROOT)/system/dev/null
+	$(Q)echo "Keira Zero Device Node" > $(FS_ROOT)/system/dev/zero
+	$(Q)echo "Keira Random Device Node" > $(FS_ROOT)/system/dev/random
+	$(Q)echo "Keira TTY Console Node" > $(FS_ROOT)/system/dev/tty
+	$(Q)echo "Keira SATA Storage Block Device Node (Port 0)" > $(FS_ROOT)/system/dev/sda0
+	$(Q)echo "Keira IDE Storage Block Device Node (Primary Master)" > $(FS_ROOT)/system/dev/hda
+	$(Q)echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(FS_ROOT)/system/drivers/serial.sys
+	$(Q)echo "Keira VGA Text & Framebuffer Console Driver (color support)" > $(FS_ROOT)/system/drivers/vga.sys
+	$(Q)echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(FS_ROOT)/system/drivers/keyboard.sys
+	$(Q)echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(FS_ROOT)/system/drivers/mouse.sys
+	$(Q)echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(FS_ROOT)/system/drivers/rtc.sys
+	$(Q)echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(FS_ROOT)/system/drivers/ide.sys
+	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(FS_ROOT)/system/drivers/ahci.sys
+	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(FS_ROOT)/system/drivers/sound.sys
+	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(FS_ROOT)/system/drivers/e1000.sys
+	$(Q)cp user/include/*.h $(FS_ROOT)/system/include/
+	$(Q)cp user/include/sys/*.h $(FS_ROOT)/system/include/sys/ 2>/dev/null || true
+	$(Q)cp build/kcc.elf $(FS_ROOT)/apps/bin/kcc.elf
+	$(Q)printf '/* Keira Userland C Application */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira OS userland application!\\n");\n}\n' > $(FS_ROOT)/apps/src/hello.c
+	$(Q)printf '/* Simple Arithmetic Calculator */\n#include <stdio.h>\n\nvoid main(void) {\n    int a = 42, b = 13;\n    printf("Calculating: %%d + %%d = %%d\\n", a, b, a + b);\n    printf("Calculating: %%d * %%d = %%d\\n", a, b, a * b);\n}\n' > $(FS_ROOT)/apps/src/calc.c
+	$(Q)printf '/* System Information Diagnostic Utility */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("=== Keira OS System Information ===\\n");\n    printf("OS: Keira Kernel $(VERSION)\\n");\n    printf("Arch: x86_64 Long Mode (Ring 3 Userland)\\n");\n}\n' > $(FS_ROOT)/apps/src/sysinfo.c
+	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(FS_ROOT)/config/boot/boot.cfg
+	$(Q)echo "keira" > $(FS_ROOT)/config/sys/hostname.cfg
+	$(Q)echo "$(VERSION)" > $(FS_ROOT)/config/sys/version.cfg
+	$(Q)echo "dhcp=1\nip=10.0.2.15\ngateway=10.0.2.2" > $(FS_ROOT)/config/sys/network.cfg
+	$(Q)echo "admin:keira" > $(FS_ROOT)/config/sys/passwd
+	$(Q)echo "export PATH=/system/bin:/apps/bin\nexport HOME=/users/admin\nexport USER=admin" > $(FS_ROOT)/users/admin/.profile
+	$(Q)echo "Welcome to Keira OS!\nRun 'help' for available shell commands.\nUse 'run /apps/bin/kcc.elf' to compile C source code." > $(FS_ROOT)/users/admin/notes.txt
+	$(Q)echo "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default" > $(FS_ROOT)/users/default/.profile
+	$(Q)echo "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest" > $(FS_ROOT)/users/guest/.profile
+	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira KCC Userland!\\n");\n}\n' > $(FS_ROOT)/data/main.c
+	$(Q)echo "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully." > $(FS_ROOT)/data/log/boot.log
+	$(Q)echo "[System Event Log]\nKernel Ring 0 initialized. Shell ready." > $(FS_ROOT)/data/log/system.log
+	$(Q)echo "KEY=VALUE" > $(FS_ROOT)/data/save/session.dat
+	$(Q)touch $(FS_ROOT)/temp/.keep
+
 disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
-$(DISK_IMG): build/kcc.elf
+$(DISK_IMG): fs-root
 	@rm -f $(DISK_IMG)
 	@$(LOG_DISK) "Creating $(DISK_SIZE)MB FAT16 disk image..."
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/drivers ::/system/include ::/apps ::/apps/bin ::/apps/games ::/apps/src ::/config ::/config/boot ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
-	@$(LOG_DISK) "Populating directories with command binaries..."
-	$(Q)mkdir -p $(BUILD_DIR)/system_bin
-	$(Q)for cmd in $(SHELL_CMDS); do \
-	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(BUILD_DIR)/system_bin/$$cmd; \
-	    mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/system_bin/$$cmd ::/system/bin/$$cmd; \
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
+	@$(LOG_DISK) "Populating disk image with system files..."
+	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
+	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \
 	done
-	@$(LOG_DISK) "Copying driver files and system config..."
-	$(Q)mkdir -p $(BUILD_DIR)/drivers
-	$(Q)echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(BUILD_DIR)/drivers/serial.sys
-	$(Q)echo "Keira VGA Text Console Driver (80x25 characters, color support)" > $(BUILD_DIR)/drivers/vga.sys
-	$(Q)echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(BUILD_DIR)/drivers/keyboard.sys
-	$(Q)echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(BUILD_DIR)/drivers/mouse.sys
-	$(Q)echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(BUILD_DIR)/drivers/rtc.sys
-	$(Q)echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(BUILD_DIR)/drivers/ide.sys
-	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/drivers/ahci.sys
-	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/drivers/sound.sys
-	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(BUILD_DIR)/drivers/e1000.sys
-	$(Q)for driver in $(DRIVER_FILES); do \
-	    mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/drivers/$$driver ::/system/drivers/$$driver; \
-	done
-	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(BUILD_DIR)/boot.cfg
-	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/boot.cfg ::/config/boot/boot.cfg
-	@$(LOG_DISK) "Copying binaries and configuration files..."
-	$(Q)mcopy -o -i $(DISK_IMG) build/kcc.elf ::/apps/bin/kcc.elf
-	$(Q)mkdir -p $(BUILD_DIR)/data
-	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira KCC Userland!\\n");\n}\n' > $(BUILD_DIR)/data/main.c
-	$(Q)mcopy -o -i $(DISK_IMG) $(BUILD_DIR)/data/main.c ::/data/main.c
-	$(Q)for header in stdio.h stdlib.h string.h syscall.h socket.h math.h time.h malloc.h fcntl.h; do mcopy -o -i $(DISK_IMG) user/include/$$header ::/system/include/$$header; done
+	@$(LOG_DONE) "$(DISK_IMG) ready"
+
 initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
 
-$(BUILD_DIR)/initrd.tar: build/kcc.elf
+$(BUILD_DIR)/initrd.tar: fs-root
 	@$(LOG_INFO) "Building RAM Disk (Initrd)..."
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/bin
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/drivers
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/dev
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/system/include
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/apps/bin
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/config/boot
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/admin
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/default
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/users/guest
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/temp
-	$(Q)mkdir -p $(BUILD_DIR)/initrd_root/data
-	$(Q)echo "Keira Null Device Node" > $(BUILD_DIR)/initrd_root/system/dev/null
-	$(Q)echo "Keira Zero Device Node" > $(BUILD_DIR)/initrd_root/system/dev/zero
-	$(Q)echo "Keira Random Device Node" > $(BUILD_DIR)/initrd_root/system/dev/random
-	$(Q)echo "Keira TTY Console Node" > $(BUILD_DIR)/initrd_root/system/dev/tty
-	$(Q)for cmd in $(SHELL_CMDS); do \
-	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(BUILD_DIR)/initrd_root/system/bin/$$cmd; \
-	done
-	$(Q)echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(BUILD_DIR)/initrd_root/system/drivers/serial.sys
-	$(Q)echo "Keira VGA Text & Widescreen Console Driver (color support)" > $(BUILD_DIR)/initrd_root/system/drivers/vga.sys
-	$(Q)echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(BUILD_DIR)/initrd_root/system/drivers/keyboard.sys
-	$(Q)echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(BUILD_DIR)/initrd_root/system/drivers/mouse.sys
-	$(Q)echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(BUILD_DIR)/initrd_root/system/drivers/rtc.sys
-	$(Q)echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ide.sys
-	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(BUILD_DIR)/initrd_root/system/drivers/ahci.sys
-	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(BUILD_DIR)/initrd_root/system/drivers/sound.sys
-	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(BUILD_DIR)/initrd_root/system/drivers/e1000.sys
-	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(BUILD_DIR)/initrd_root/config/boot/boot.cfg
-	$(Q)cp build/kcc.elf $(BUILD_DIR)/initrd_root/apps/bin/kcc.elf
-	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira KCC Userland!\\n");\n}\n' > $(BUILD_DIR)/initrd_root/data/main.c
-	$(Q)cp user/include/*.h $(BUILD_DIR)/initrd_root/system/include/
-	$(Q)cd $(BUILD_DIR)/initrd_root && tar -cf ../initrd.tar *
+	$(Q)cd $(FS_ROOT) && tar -cf ../initrd.tar *
+	@$(LOG_DONE) "$(BUILD_DIR)/initrd.tar ready"
+
 iso: $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
 
 $(KERNEL_ISO): $(KERNEL_BIN) $(BUILD_DIR)/initrd.tar | dirs

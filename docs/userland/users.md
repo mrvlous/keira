@@ -8,16 +8,16 @@ This document details user account management, password hashing, and login authe
 
 ## 1. Subsystem Overview
 
-Keira Kernel provides multi-user privilege separation (`user` command) backed by `/system/etc/passwd` storage on FAT16 disk storage.
+Keira Kernel provides multi-user privilege separation (`user` command) backed by `/config/sys/passwd` storage on FAT16 disk storage.
 
 ---
 
 ## 2. Password Database Format
 
-Entries in `/system/etc/passwd` follow standard UNIX format:
+Entries in `/config/sys/passwd` follow standard UNIX format:
 ```text
-username:password_hash:uid:gid:home_dir:shell
-admin:$sha256$...:0:0:/users/admin:/system/bin/shell
+username:password
+admin:keira
 ```
 
 ---

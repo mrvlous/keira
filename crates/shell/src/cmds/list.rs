@@ -24,7 +24,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: list [path] [-a|-all|--all]\n\n");
                 vga::print_str("Description:\n  List files and directories located in the specified path or active working directory on FAT16 storage.\n\n");
                 vga::print_str("Options:\n  -a, -all, --all    Show hidden/system files and dot/dotdot entries\n  -h, --help         Show this help message and exit\n\n");
-                vga::print_str("Examples:\n  list\n  list /system/etc -a\n");
+                vga::print_str("Examples:\n  list\n  list /config/sys -a\n");
                 return;
             } else if part == "-a" || part == "-all" || part == "--all" {
                 show_all = true;

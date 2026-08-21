@@ -11,13 +11,13 @@
 
 //!
 //! Multi-user account management with persistent storage on FAT16 disk.
-//! Accounts are stored in `/system/etc/passwd` (format: `username:password` per line).
+//! Accounts are stored in `/config/sys/passwd` (format: `username:password` per line).
 
 use crate::executor::*;
 use crate::state::*;
 use keira_io::vga;
 
-const PASSWD_PATH: &str = "/system/etc/passwd";
+const PASSWD_PATH: &str = "/config/sys/passwd";
 const MAX_USERS: usize = 16;
 
 struct UserEntry {
@@ -95,8 +95,8 @@ fn serialize_passwd(entries: &[UserEntry; MAX_USERS], count: usize, buf: &mut [u
 
 fn ensure_passwd_exists() {
     unsafe {
-        let _ = keira_fs::fat::create_dir("/system");
-        let _ = keira_fs::fat::create_dir("/system/etc");
+        let _ = keira_fs::fat::create_dir("/config");
+        let _ = keira_fs::fat::create_dir("/config/sys");
         let _ = keira_fs::fat::create_dir("/users");
         let _ = keira_fs::fat::create_file(PASSWD_PATH);
 
@@ -109,7 +109,7 @@ fn ensure_passwd_exists() {
     }
 }
 
-/// Lookup a user in /system/etc/passwd and return (found, password_bytes, password_len)
+/// Lookup a user in /config/sys/passwd and return (found, password_bytes, password_len)
 pub fn lookup_user(username: &str) -> (bool, [u8; 16], usize) {
     unsafe {
         let mut buf = [0u8; 1024];

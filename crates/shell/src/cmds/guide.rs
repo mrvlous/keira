@@ -175,10 +175,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: login <username>\nSwitch active user context. Admin logs in without password. Other users require password.\n");
             }
             Some("user") => {
-                vga::print_str("Usage: user <create|delete|list|password|info>\nManage user accounts. Accounts stored in /system/etc/passwd on FAT16 disk.\n");
+                vga::print_str("Usage: user <create|delete|list|password|info>\nManage user accounts. Accounts stored in /config/sys/passwd on FAT16 disk.\n");
             }
             Some("hostname") => {
-                vga::print_str("Usage: hostname [new_name]\nView or set the system hostname. Persisted to /system/etc/hostname on FAT16 disk.\n");
+                vga::print_str("Usage: hostname [new_name]\nView or set the system hostname. Persisted to /config/sys/hostname.cfg on FAT16 disk.\n");
             }
             Some("run") => {
                 vga::print_str("Usage: run <program.elf>\nLoad and execute a freestanding user mode ELF program in Ring 3.\n");

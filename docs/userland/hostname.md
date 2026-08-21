@@ -8,7 +8,7 @@ This document details hostname configuration and persistent network identity in 
 
 ## 1. Subsystem Overview
 
-Keira Kernel allows viewing and modifying the active system hostname (`hostname` command), persisted to `/system/etc/hostname` on storage disk.
+Keira Kernel allows viewing and modifying the active system hostname (`hostname` command), persisted to `/config/sys/hostname.cfg` on storage disk.
 
 ---
 

@@ -80,3 +80,34 @@ user/
   - `sys_sleep(ms)`
   - `sys_uptime()`
   - `sys_print_char(c)`
+
+---
+
+## Standard Runtime Root Filesystem Layout
+
+Keira OS organizes all system, configuration, application, and user assets into a canonical 6-directory hierarchy:
+
+```text
+/
+├── system/                       # Core Operating System Assets
+│   ├── bin/                      # Shell commands and built-in binaries (67 tools)
+│   ├── dev/                      # Device nodes (null, zero, random, tty, sda0, hda)
+│   ├── drivers/                  # Hardware driver descriptors (*.sys)
+│   └── include/                  # Freestanding C SDK headers (<stdio.h>, <sys/types.h>, etc.)
+├── apps/                         # Userland Applications & Developer Tooling
+│   ├── bin/                      # Compiled ELF executable binaries (kcc.elf)
+│   └── src/                      # Sample C applications (hello.c, calc.c, sysinfo.c)
+├── config/                       # System & Boot Configuration
+│   ├── boot/                     # Bootloader configuration (boot.cfg)
+│   └── sys/                      # System identity & network config (hostname.cfg, version.cfg, network.cfg, passwd)
+├── users/                        # Multi-User Home Directories
+│   ├── admin/                    # System administrator home (.profile, notes.txt)
+│   ├── default/                  # Default user home (.profile)
+│   └── guest/                    # Restricted guest home (.profile)
+├── data/                         # Persistent Storage & Logs
+│   ├── main.c                    # Default C source code template for KCC
+│   ├── log/                      # Boot and kernel diagnostic logs (boot.log, system.log)
+│   └── save/                     # Application session data (session.dat)
+└── temp/                         # Scratch & Temporary Runtime Workspace
+    └── .keep
+```
