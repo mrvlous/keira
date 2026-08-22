@@ -99,6 +99,36 @@ void print_num(int val) {
     print_str(buf + idx);
 }
 
+void print_hex(unsigned long val) {
+    char buf[20];
+    int idx = 19;
+    buf[19] = 0;
+    if (val == 0) {
+        print_str("0x0");
+        return;
+    }
+    while (val > 0) {
+        idx = idx - 1;
+        int d = (int)(val & 15);
+        if (d < 10)
+            buf[idx] = 48 + d;
+        else
+            buf[idx] = 'a' + (d - 10);
+        val = val >> 4;
+    }
+    idx = idx - 1;
+    buf[idx] = 'x';
+    idx = idx - 1;
+    buf[idx] = '0';
+    print_str(buf + idx);
+}
+
+void error_msg(const char *msg) {
+    print_str("Error: ");
+    print_str(msg);
+    print_str("\n");
+}
+
 void write_u8(char *buf, int offset, int val) {
     buf[offset] = val;
 }

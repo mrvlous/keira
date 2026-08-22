@@ -14,9 +14,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define MAX_CODE_SIZE 16384
-#define MAX_DATA_SIZE 8192
-#define MAX_SOURCE_SIZE 32768
+#define MAX_CODE_SIZE 65536
+#define MAX_DATA_SIZE 32768
+#define MAX_SOURCE_SIZE 65536
 
 extern char src_buf[MAX_SOURCE_SIZE];
 extern unsigned char code_buf[MAX_CODE_SIZE];
@@ -32,6 +32,8 @@ void k_memset(char *dest, int val, int n);
 
 void print_str(const char *s);
 void print_num(int val);
+void print_hex(unsigned long val);
+void error_msg(const char *msg);
 
 void write_u8(char *buf, int offset, int val);
 void write_u16(char *buf, int offset, int val);

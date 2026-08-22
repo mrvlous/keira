@@ -11,48 +11,104 @@
 #ifndef _KCC_LEXER_H
 #define _KCC_LEXER_H
 
-#define TOK_EOF 0
-#define TOK_INT 1
-#define TOK_VOID 2
-#define TOK_MAIN 3
-#define TOK_PRINTF 4
-#define TOK_RETURN 5
-#define TOK_IDENT 6
-#define TOK_NUM 7
-#define TOK_STRING 8
-#define TOK_LPAREN 9
-#define TOK_RPAREN 10
-#define TOK_LBRACE 11
-#define TOK_RBRACE 12
-#define TOK_SEMICOLON 13
-#define TOK_IF 14
-#define TOK_ELSE 15
-#define TOK_WHILE 16
-#define TOK_ASSIGN 17
-#define TOK_PLUS 18
-#define TOK_MINUS 19
-#define TOK_STAR 20
-#define TOK_SLASH 21
-#define TOK_LT 22
-#define TOK_GT 23
-#define TOK_EQ 24
-#define TOK_NEQ 25
-#define TOK_COMMA 26
-#define TOK_LBRACKET 27
-#define TOK_RBRACKET 28
-#define TOK_CHAR 29
-#define TOK_FOR 30
-#define TOK_LEQ 31
-#define TOK_GEQ 32
-#define TOK_AND 33
-#define TOK_OR 34
+/* Token Categories */
+enum TokenType {
+    TOK_EOF = 0,
+    TOK_IDENT,
+    TOK_NUM,
+    TOK_STRING,
+
+    /* Types & Storage */
+    TOK_INT,
+    TOK_CHAR,
+    TOK_VOID,
+    TOK_SHORT,
+    TOK_LONG,
+    TOK_UNSIGNED,
+    TOK_SIGNED,
+
+    /* Control Flow Keywords */
+    TOK_RETURN,
+    TOK_IF,
+    TOK_ELSE,
+    TOK_WHILE,
+    TOK_FOR,
+    TOK_DO,
+    TOK_BREAK,
+    TOK_CONTINUE,
+    TOK_SIZEOF,
+
+    /* Built-in Utility Keywords */
+    TOK_PRINTF,
+    TOK_SYSCALL,
+
+    /* Delimiters & Grouping */
+    TOK_LPAREN,    /* ( */
+    TOK_RPAREN,    /* ) */
+    TOK_LBRACE,    /* { */
+    TOK_RBRACE,    /* } */
+    TOK_LBRACKET,  /* [ */
+    TOK_RBRACKET,  /* ] */
+    TOK_SEMICOLON, /* ; */
+    TOK_COMMA,     /* , */
+    TOK_COLON,     /* : */
+    TOK_QUESTION,  /* ? */
+
+    /* Arithmetic Operators */
+    TOK_PLUS,  /* + */
+    TOK_MINUS, /* - */
+    TOK_STAR,  /* * */
+    TOK_SLASH, /* / */
+    TOK_MOD,   /* % */
+
+    /* Bitwise Operators */
+    TOK_AMP,   /* & */
+    TOK_PIPE,  /* | */
+    TOK_CARET, /* ^ */
+    TOK_TILDE, /* ~ */
+    TOK_SHL,   /* << */
+    TOK_SHR,   /* >> */
+
+    /* Logical Operators */
+    TOK_AND, /* && */
+    TOK_OR,  /* || */
+    TOK_NOT, /* ! */
+
+    /* Relational & Equality */
+    TOK_LT,  /* < */
+    TOK_GT,  /* > */
+    TOK_LEQ, /* <= */
+    TOK_GEQ, /* >= */
+    TOK_EQ,  /* == */
+    TOK_NEQ, /* != */
+
+    /* Increment / Decrement */
+    TOK_INC, /* ++ */
+    TOK_DEC, /* -- */
+
+    /* Assignments */
+    TOK_ASSIGN,     /* = */
+    TOK_ADD_ASSIGN, /* += */
+    TOK_SUB_ASSIGN, /* -= */
+    TOK_MUL_ASSIGN, /* *= */
+    TOK_DIV_ASSIGN, /* /= */
+    TOK_MOD_ASSIGN, /* %= */
+    TOK_AND_ASSIGN, /* &= */
+    TOK_OR_ASSIGN,  /* |= */
+    TOK_XOR_ASSIGN, /* ^= */
+    TOK_SHL_ASSIGN, /* <<= */
+    TOK_SHR_ASSIGN  /* >>= */
+};
 
 extern char *src_ptr;
+extern int line_num;
 extern char token_string[256];
-extern int token_num;
+extern long token_num;
 extern int tok;
 
+void init_lexer(char *src);
 void skip_whitespace(void);
 int next_token(void);
+const char *token_name(int token);
 
 #endif /* _KCC_LEXER_H */

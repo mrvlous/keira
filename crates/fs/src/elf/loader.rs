@@ -13,7 +13,7 @@ use super::types::{ElfHeader, ProgramHeader, PT_LOAD};
 use crate::vfs;
 use keira_mem::{pmm, vmm};
 
-static mut ELF_FILE_BUF: [u8; 65536] = [0u8; 65536];
+static mut ELF_FILE_BUF: [u8; 524288] = [0u8; 524288];
 
 extern "C" {
     fn jump_to_user(entry: u64, stack: u64);

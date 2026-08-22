@@ -253,8 +253,8 @@ fs-root: build/kcc.elf | dirs
 	$(Q)cp user/include/sys/*.h $(FS_ROOT)/system/include/sys/ 2>/dev/null || true
 	$(Q)cp build/kcc.elf $(FS_ROOT)/apps/bin/kcc.elf
 	$(Q)printf '/* Keira Userland C Application */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira OS userland application!\\n");\n}\n' > $(FS_ROOT)/apps/src/hello.c
-	$(Q)printf '/* Simple Arithmetic Calculator */\n#include <stdio.h>\n\nvoid main(void) {\n    int a = 42, b = 13;\n    printf("Calculating: %%d + %%d = %%d\\n", a, b, a + b);\n    printf("Calculating: %%d * %%d = %%d\\n", a, b, a * b);\n}\n' > $(FS_ROOT)/apps/src/calc.c
-	$(Q)printf '/* System Information Diagnostic Utility */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("=== Keira OS System Information ===\\n");\n    printf("OS: Keira Kernel $(VERSION)\\n");\n    printf("Arch: x86_64 Long Mode (Ring 3 Userland)\\n");\n}\n' > $(FS_ROOT)/apps/src/sysinfo.c
+	$(Q)printf '/* Simple Arithmetic & Bitwise Calculator */\n#include <stdio.h>\n\nvoid main(void) {\n    int a = 42, b = 13;\n    int sum = a + b;\n    int prod = a * b;\n    int mod = a %% b;\n    int bit = (a ^ b) & 255;\n    printf("KCC Calculator Output: Complete\\n");\n}\n' > $(FS_ROOT)/apps/src/calc.c
+	$(Q)printf '/* System Information Diagnostic Utility */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Keira OS System Information\\n");\n    printf("OS: Keira Kernel $(VERSION)\\n");\n    printf("Arch: x86_64 Long Mode (Ring 3 Userland)\\n");\n}\n' > $(FS_ROOT)/apps/src/sysinfo.c
 	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(FS_ROOT)/config/boot/boot.cfg
 	$(Q)echo "keira" > $(FS_ROOT)/config/sys/hostname.cfg
 	$(Q)echo "$(VERSION)" > $(FS_ROOT)/config/sys/version.cfg
@@ -264,7 +264,7 @@ fs-root: build/kcc.elf | dirs
 	$(Q)echo "Welcome to Keira OS!\nRun 'help' for available shell commands.\nUse 'run /apps/bin/kcc.elf' to compile C source code." > $(FS_ROOT)/users/admin/notes.txt
 	$(Q)echo "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default" > $(FS_ROOT)/users/default/.profile
 	$(Q)echo "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest" > $(FS_ROOT)/users/guest/.profile
-	$(Q)printf '/* Keira Sample C Program */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira KCC Userland!\\n");\n}\n' > $(FS_ROOT)/data/main.c
+	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n#include <stdio.h>\n#include <syscall.h>\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
 	$(Q)echo "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully." > $(FS_ROOT)/data/log/boot.log
 	$(Q)echo "[System Event Log]\nKernel Ring 0 initialized. Shell ready." > $(FS_ROOT)/data/log/system.log
 	$(Q)echo "KEY=VALUE" > $(FS_ROOT)/data/save/session.dat

@@ -1,0 +1,643 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * Keira Kernel - Operating System Kernel
+ * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ */
+
+#include "codegen.h"
+
+#include "lexer.h"
+#include "symbols.h"
+
+/* Byte emission primitives */
+void emit_u8(unsigned char val) {
+    if (code_idx >= MAX_CODE_SIZE) {
+        error_msg("Code segment overflow");
+        return;
+    }
+    code_buf[code_idx++] = val;
+}
+
+void emit_u16(unsigned short val) {
+    emit_u8((unsigned char)(val & 0xFF));
+    emit_u8((unsigned char)((val >> 8) & 0xFF));
+}
+
+void emit_u32(unsigned int val) {
+    emit_u8((unsigned char)(val & 0xFF));
+    emit_u8((unsigned char)((val >> 8) & 0xFF));
+    emit_u8((unsigned char)((val >> 16) & 0xFF));
+    emit_u8((unsigned char)((val >> 24) & 0xFF));
+}
+
+void emit_u64(unsigned long val) {
+    emit_u32((unsigned int)(val & 0xFFFFFFFF));
+    emit_u32((unsigned int)((val >> 32) & 0xFFFFFFFF));
+}
+
+/* Register & Immediate Operations */
+void emit_load_imm(long val) {
+    /* mov rax, imm64 */
+    emit_u8(0x48);
+    emit_u8(0xb8);
+    emit_u64((unsigned long)val);
+}
+
+void emit_push_rax(void) {
+    emit_u8(0x50); /* push rax */
+}
+
+void emit_pop_rax(void) {
+    emit_u8(0x58); /* pop rax */
+}
+
+void emit_pop_rcx(void) {
+    emit_u8(0x59); /* pop rcx */
+}
+
+void emit_pop_rdx(void) {
+    emit_u8(0x5a); /* pop rdx */
+}
+
+void emit_pop_rsi(void) {
+    emit_u8(0x5e); /* pop rsi */
+}
+
+void emit_pop_rdi(void) {
+    emit_u8(0x5f); /* pop rdi */
+}
+
+void emit_pop_r8(void) {
+    emit_u8(0x41);
+    emit_u8(0x58); /* pop r8 */
+}
+
+void emit_pop_r9(void) {
+    emit_u8(0x41);
+    emit_u8(0x59); /* pop r9 */
+}
+
+/* Binary Arithmetic (rcx = LHS, rax = RHS) */
+void emit_add(void) {
+    /* add rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x01);
+    emit_u8(0xc8);
+}
+
+void emit_sub(void) {
+    /* sub rcx, rax; mov rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x29);
+    emit_u8(0xc1);
+    emit_u8(0x48);
+    emit_u8(0x89);
+    emit_u8(0xc8);
+}
+
+void emit_imul(void) {
+    /* imul rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x0f);
+    emit_u8(0xaf);
+    emit_u8(0xc1);
+}
+
+void emit_idiv(void) {
+    /* xchg rax, rcx; cqo; idiv rcx (rax = quotient) */
+    emit_u8(0x48);
+    emit_u8(0x91); /* xchg rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x99); /* cqo */
+    emit_u8(0x48);
+    emit_u8(0xf7);
+    emit_u8(0xf9); /* idiv rcx */
+}
+
+void emit_imod(void) {
+    /* xchg rax, rcx; cqo; idiv rcx; mov rax, rdx (rax = remainder) */
+    emit_u8(0x48);
+    emit_u8(0x91); /* xchg rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x99); /* cqo */
+    emit_u8(0x48);
+    emit_u8(0xf7);
+    emit_u8(0xf9); /* idiv rcx */
+    emit_u8(0x48);
+    emit_u8(0x89);
+    emit_u8(0xd0); /* mov rax, rdx */
+}
+
+/* Bitwise Operations (rcx = LHS, rax = RHS) */
+void emit_bit_and(void) {
+    /* and rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x21);
+    emit_u8(0xc8);
+}
+
+void emit_bit_or(void) {
+    /* or rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x09);
+    emit_u8(0xc8);
+}
+
+void emit_bit_xor(void) {
+    /* xor rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0x31);
+    emit_u8(0xc8);
+}
+
+void emit_bit_not(void) {
+    /* not rax */
+    emit_u8(0x48);
+    emit_u8(0xf7);
+    emit_u8(0xd0);
+}
+
+void emit_shl(void) {
+    /* xchg rax, rcx; shl rax, cl */
+    emit_u8(0x48);
+    emit_u8(0x91); /* xchg rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0xd3);
+    emit_u8(0xe0); /* shl rax, cl */
+}
+
+void emit_shr(void) {
+    /* xchg rax, rcx; sar rax, cl */
+    emit_u8(0x48);
+    emit_u8(0x91); /* xchg rax, rcx */
+    emit_u8(0x48);
+    emit_u8(0xd3);
+    emit_u8(0xf8); /* sar rax, cl */
+}
+
+/* Logical & Unary Operations */
+void emit_log_and(void) {
+    /* test rcx, rcx; setne cl; test rax, rax; setne al; and al, cl; movzx rax, al */
+    emit_u8(0x48);
+    emit_u8(0x85);
+    emit_u8(0xc9); /* test rcx, rcx */
+    emit_u8(0x0f);
+    emit_u8(0x95);
+    emit_u8(0xc1); /* setne cl */
+    emit_u8(0x48);
+    emit_u8(0x85);
+    emit_u8(0xc0); /* test rax, rax */
+    emit_u8(0x0f);
+    emit_u8(0x95);
+    emit_u8(0xc0); /* setne al */
+    emit_u8(0x20);
+    emit_u8(0xc8); /* and al, cl */
+    emit_u8(0x48);
+    emit_u8(0x0f);
+    emit_u8(0xb6);
+    emit_u8(0xc0); /* movzx rax, al */
+}
+
+void emit_log_or(void) {
+    /* or rcx, rax; test rcx, rcx; setne al; movzx rax, al */
+    emit_u8(0x48);
+    emit_u8(0x09);
+    emit_u8(0xc1); /* or rcx, rax */
+    emit_u8(0x48);
+    emit_u8(0x85);
+    emit_u8(0xc9); /* test rcx, rcx */
+    emit_u8(0x0f);
+    emit_u8(0x95);
+    emit_u8(0xc0); /* setne al */
+    emit_u8(0x48);
+    emit_u8(0x0f);
+    emit_u8(0xb6);
+    emit_u8(0xc0); /* movzx rax, al */
+}
+
+void emit_log_not(void) {
+    /* test rax, rax; sete al; movzx rax, al */
+    emit_u8(0x48);
+    emit_u8(0x85);
+    emit_u8(0xc0);
+    emit_u8(0x0f);
+    emit_u8(0x94);
+    emit_u8(0xc0);
+    emit_u8(0x48);
+    emit_u8(0x0f);
+    emit_u8(0xb6);
+    emit_u8(0xc0);
+}
+
+void emit_neg(void) {
+    /* neg rax */
+    emit_u8(0x48);
+    emit_u8(0xf7);
+    emit_u8(0xd8);
+}
+
+/* Comparison and Relational Sets (rcx = LHS, rax = RHS) */
+void emit_cmp_set(int op_tok) {
+    /* cmp rcx, rax */
+    emit_u8(0x48);
+    emit_u8(0x39);
+    emit_u8(0xc1);
+
+    switch (op_tok) {
+    case TOK_EQ:
+        emit_u8(0x0f);
+        emit_u8(0x94);
+        emit_u8(0xc0); /* sete al */
+        break;
+    case TOK_NEQ:
+        emit_u8(0x0f);
+        emit_u8(0x95);
+        emit_u8(0xc0); /* setne al */
+        break;
+    case TOK_LT:
+        emit_u8(0x0f);
+        emit_u8(0x9c);
+        emit_u8(0xc0); /* setl al */
+        break;
+    case TOK_GT:
+        emit_u8(0x0f);
+        emit_u8(0x9f);
+        emit_u8(0xc0); /* setg al */
+        break;
+    case TOK_LEQ:
+        emit_u8(0x0f);
+        emit_u8(0x9e);
+        emit_u8(0xc0); /* setle al */
+        break;
+    case TOK_GEQ:
+        emit_u8(0x0f);
+        emit_u8(0x9d);
+        emit_u8(0xc0); /* setge al */
+        break;
+    default:
+        break;
+    }
+    emit_u8(0x48);
+    emit_u8(0x0f);
+    emit_u8(0xb6);
+    emit_u8(0xc0); /* movzx rax, al */
+}
+
+/* Local Variables & Stack Frame Handling */
+void emit_load_local(int offset, int size) {
+    if (size == 1) {
+        /* movzx rax, byte ptr [rbp + offset] */
+        emit_u8(0x48);
+        emit_u8(0x0f);
+        emit_u8(0xb6);
+        if (offset >= -128 && offset <= 127) {
+            emit_u8(0x45);
+            emit_u8((unsigned char)offset);
+        } else {
+            emit_u8(0x85);
+            emit_u32((unsigned int)offset);
+        }
+    } else {
+        /* mov rax, qword ptr [rbp + offset] */
+        emit_u8(0x48);
+        emit_u8(0x8b);
+        if (offset >= -128 && offset <= 127) {
+            emit_u8(0x45);
+            emit_u8((unsigned char)offset);
+        } else {
+            emit_u8(0x85);
+            emit_u32((unsigned int)offset);
+        }
+    }
+}
+
+void emit_store_local(int offset, int size) {
+    if (size == 1) {
+        /* mov byte ptr [rbp + offset], al */
+        emit_u8(0x88);
+        if (offset >= -128 && offset <= 127) {
+            emit_u8(0x45);
+            emit_u8((unsigned char)offset);
+        } else {
+            emit_u8(0x85);
+            emit_u32((unsigned int)offset);
+        }
+    } else {
+        /* mov qword ptr [rbp + offset], rax */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        if (offset >= -128 && offset <= 127) {
+            emit_u8(0x45);
+            emit_u8((unsigned char)offset);
+        } else {
+            emit_u8(0x85);
+            emit_u32((unsigned int)offset);
+        }
+    }
+}
+
+void emit_addr_local(int offset) {
+    /* lea rax, [rbp + offset] */
+    emit_u8(0x48);
+    emit_u8(0x8d);
+    if (offset >= -128 && offset <= 127) {
+        emit_u8(0x45);
+        emit_u8((unsigned char)offset);
+    } else {
+        emit_u8(0x85);
+        emit_u32((unsigned int)offset);
+    }
+}
+
+void emit_inc_local(int offset, int is_post, int is_dec) {
+    emit_load_local(offset, 8);
+    if (is_post) {
+        emit_push_rax(); /* save original value for expression result */
+    }
+    if (is_dec) {
+        emit_u8(0x48);
+        emit_u8(0xff);
+        emit_u8(0xc8); /* dec rax */
+    } else {
+        emit_u8(0x48);
+        emit_u8(0xff);
+        emit_u8(0xc0); /* inc rax */
+    }
+    emit_store_local(offset, 8);
+    if (is_post) {
+        emit_pop_rax(); /* return original */
+    }
+}
+
+/* Global Variables & Data Segment Addressing */
+void emit_addr_global(int offset) {
+    /* movabs rax, (dummy_target) with patch tracking */
+    emit_u8(0x48);
+    emit_u8(0xb8);
+    int patch_pos = code_idx;
+    emit_u64((unsigned long)offset);
+
+    if (val_patch_count < MAX_VAL_PATCHES) {
+        val_patch_addresses[val_patch_count] = patch_pos;
+        val_patch_offsets[val_patch_count] = offset;
+        val_patch_count++;
+    }
+}
+
+void emit_load_global(int offset, int size) {
+    emit_addr_global(offset);
+    emit_deref(size);
+}
+
+void emit_store_global(int offset, int size) {
+    /* rax has value to store */
+    emit_push_rax();
+    emit_addr_global(offset);
+    /* rax = address, top of stack = value */
+    emit_u8(0x48);
+    emit_u8(0x89);
+    emit_u8(0xc2);  /* mov rdx, rax (address) */
+    emit_pop_rax(); /* rax = value */
+    emit_store_deref(size);
+}
+
+/* Pointer Dereferencing */
+void emit_deref(int size) {
+    if (size == 1) {
+        /* movzx rax, byte ptr [rax] */
+        emit_u8(0x48);
+        emit_u8(0x0f);
+        emit_u8(0xb6);
+        emit_u8(0x00);
+    } else {
+        /* mov rax, qword ptr [rax] */
+        emit_u8(0x48);
+        emit_u8(0x8b);
+        emit_u8(0x00);
+    }
+}
+
+void emit_store_deref(int size) {
+    /* rdx has pointer address, rax has value to write */
+    if (size == 1) {
+        /* mov byte ptr [rdx], al */
+        emit_u8(0x88);
+        emit_u8(0x02);
+    } else {
+        /* mov qword ptr [rdx], rax */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        emit_u8(0x02);
+    }
+}
+
+/* Function Prologue, Epilogue & Calling Conventions */
+void emit_func_prologue(void) {
+    /* push rbp; mov rbp, rsp; sub rsp, 1024 */
+    emit_u8(0x55);
+    emit_u8(0x48);
+    emit_u8(0x89);
+    emit_u8(0xe5);
+    emit_u8(0x48);
+    emit_u8(0x81);
+    emit_u8(0xec);
+    emit_u32(1024);
+}
+
+void emit_func_epilogue(int is_main) {
+    /* mov rsp, rbp; pop rbp */
+    emit_u8(0x48);
+    emit_u8(0x89);
+    emit_u8(0xec);
+    emit_u8(0x5d);
+
+    if (is_main) {
+        /* sys_exit(rax): mov rdi, rax; mov rax, 2; syscall; jmp $ */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        emit_u8(0xc7); /* mov rdi, rax */
+        emit_u8(0xb8);
+        emit_u32(2); /* sys_exit syscall nr = 2 */
+        emit_u8(0x0f);
+        emit_u8(0x05); /* syscall */
+        emit_u8(0xeb);
+        emit_u8(0xfe); /* jmp $ */
+    } else {
+        emit_u8(0xc3); /* ret */
+    }
+}
+
+void emit_param_save(int param_idx, int local_offset) {
+    /* Store incoming register into [rbp + local_offset] */
+    switch (param_idx) {
+    case 0: /* rdi */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        emit_u8(0x7d);
+        emit_u8((unsigned char)local_offset);
+        break;
+    case 1: /* rsi */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        emit_u8(0x75);
+        emit_u8((unsigned char)local_offset);
+        break;
+    case 2: /* rdx */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        emit_u8(0x55);
+        emit_u8((unsigned char)local_offset);
+        break;
+    case 3: /* rcx */
+        emit_u8(0x48);
+        emit_u8(0x89);
+        emit_u8(0x4d);
+        emit_u8((unsigned char)local_offset);
+        break;
+    case 4: /* r8 */
+        emit_u8(0x4c);
+        emit_u8(0x89);
+        emit_u8(0x45);
+        emit_u8((unsigned char)local_offset);
+        break;
+    case 5: /* r9 */
+        emit_u8(0x4c);
+        emit_u8(0x89);
+        emit_u8(0x4d);
+        emit_u8((unsigned char)local_offset);
+        break;
+    default:
+        break;
+    }
+}
+
+void emit_call(const char *name, int arg_count) {
+    /* Pop stack arguments into calling registers in reverse order */
+    if (arg_count >= 6)
+        emit_pop_r9();
+    if (arg_count >= 5)
+        emit_pop_r8();
+    if (arg_count >= 4)
+        emit_pop_rcx();
+    if (arg_count >= 3)
+        emit_pop_rdx();
+    if (arg_count >= 2)
+        emit_pop_rsi();
+    if (arg_count >= 1)
+        emit_pop_rdi();
+
+    /* emit call rel32 */
+    emit_u8(0xe8);
+    int patch_pos = code_idx;
+    emit_u32(0);
+
+    if (patch_count < MAX_PATCHES) {
+        k_strcpy(patch_names + patch_count * 32, name);
+        patch_addresses[patch_count] = patch_pos;
+        patch_count++;
+    }
+}
+
+void emit_syscall_stub(void) {
+    /* Syscall convention: rax, rdi, rsi, rdx, r10, r8 */
+    /* Stack had args pushed: syscall nr, arg1, arg2, arg3 */
+    emit_pop_rdx();
+    emit_pop_rsi();
+    emit_pop_rdi();
+    emit_pop_rax();
+    emit_u8(0x0f);
+    emit_u8(0x05); /* syscall */
+}
+
+void emit_printf_stub(int fmt_offset, int arg_count) {
+    /* If extra arguments were pushed on stack, pop them into rsi, rdx, rcx, r8, r9 */
+    if (arg_count >= 5)
+        emit_pop_r9();
+    if (arg_count >= 4)
+        emit_pop_r8();
+    if (arg_count >= 3)
+        emit_pop_rcx();
+    if (arg_count >= 2)
+        emit_pop_rdx();
+    if (arg_count >= 1)
+        emit_pop_rsi();
+
+    /* Format string address in rsi */
+    emit_addr_global(fmt_offset);
+    emit_u8(0x48);
+    emit_u8(0x89);
+    emit_u8(0xc6); /* mov rsi, rax */
+
+    int loop_top = code_idx;
+    emit_u8(0x0f);
+    emit_u8(0xb6);
+    emit_u8(0x3e); /* movzx edi, byte ptr [rsi] */
+    emit_u8(0x85);
+    emit_u8(0xff); /* test edi, edi */
+
+    /* Emit raw jz rel32 (0x0f 0x84 imm32) */
+    emit_u8(0x0f);
+    emit_u8(0x84);
+    int exit_jz = code_idx;
+    emit_u32(0);
+
+    /* sys_print_char (syscall nr = 1, arg1 = edi) */
+    emit_u8(0xb8);
+    emit_u32(1);
+    emit_u8(0x0f);
+    emit_u8(0x05); /* syscall */
+
+    emit_u8(0x48);
+    emit_u8(0xff);
+    emit_u8(0xc6); /* inc rsi */
+
+    emit_jmp_backward(loop_top);
+    patch_jump(exit_jz, code_idx);
+}
+
+/* Control Flow, Branches & Jump Patching */
+int emit_jmp_forward(void) {
+    emit_u8(0xe9);
+    int patch_pos = code_idx;
+    emit_u32(0);
+    return patch_pos;
+}
+
+void emit_jmp_backward(int target_addr) {
+    emit_u8(0xe9);
+    int rel = target_addr - (code_idx + 4);
+    emit_u32((unsigned int)rel);
+}
+
+int emit_jz_forward(void) {
+    /* test rax, rax; jz rel32 */
+    emit_u8(0x48);
+    emit_u8(0x85);
+    emit_u8(0xc0);
+    emit_u8(0x0f);
+    emit_u8(0x84);
+    int patch_pos = code_idx;
+    emit_u32(0);
+    return patch_pos;
+}
+
+int emit_jnz_forward(void) {
+    /* test rax, rax; jnz rel32 */
+    emit_u8(0x48);
+    emit_u8(0x85);
+    emit_u8(0xc0);
+    emit_u8(0x0f);
+    emit_u8(0x85);
+    int patch_pos = code_idx;
+    emit_u32(0);
+    return patch_pos;
+}
+
+void patch_jump(int patch_pos, int target_pos) {
+    int rel_offset = target_pos - (patch_pos + 4);
+    k_memcpy((char *)(code_buf + patch_pos), (char *)&rel_offset, 4);
+}
