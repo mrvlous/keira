@@ -7,8 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! PML4 Address space cloning preserving kernel identity map, MMIO, and user space memory.
+//! PML4 Address space cloning preserving kernel identity map, MMIO, and user space memory with failure rollback.
 
+use super::free::free_user_pages;
 use super::paging::{
     active_pml4, map_page_in_pml4, switch_address_space, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
     PAGE_WRITABLE,
@@ -36,7 +37,13 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     let boot_pdpt = boot_pdpt_phys as *const u64;
 
     // Allocate a new PDPT for the child process
-    let new_pdpt_phys = pmm::alloc_frame().ok_or("Out of memory for new PDPT")?;
+    let new_pdpt_phys = match pmm::alloc_frame() {
+        Some(p) => p,
+        None => {
+            pmm::free_frame(new_pml4_phys);
+            return Err("Out of memory for new PDPT");
+        }
+    };
     let new_pdpt = new_pdpt_phys as *mut u64;
 
     // Copy kernel identity map (PDPT[0]: 0..1GB) and kernel MMIO/Framebuffer (PDPT[3]: 3..4GB)
@@ -51,6 +58,7 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
 
 /// Deep clone an entire parent process address space (kernel mappings + user pages).
 /// Allocates separate physical frames for every mapped user page to guarantee isolation.
+/// Cleans up and rolls back completely on any allocation or mapping failure.
 pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'static str> {
     let child_pml4_phys = clone_kernel_pml4()?;
 
@@ -110,6 +118,8 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                         Some(f) => f,
                         None => {
                             switch_address_space(current_pml4);
+                            free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
+                            pmm::free_frame(child_pml4_phys);
                             return Err("Out of physical memory cloning user page");
                         }
                     };
@@ -123,6 +133,8 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                     {
                         pmm::free_frame(child_frame);
                         switch_address_space(current_pml4);
+                        free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
+                        pmm::free_frame(child_pml4_phys);
                         return Err(e);
                     }
 

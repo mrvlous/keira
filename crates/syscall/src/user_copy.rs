@@ -51,9 +51,12 @@ pub unsafe fn validate_user_ptr(ptr: u64, len: u64, require_writable: bool) -> R
         return Err(EFAULT);
     }
 
-    // Verify all pages spanned by the buffer are mapped with proper permissions
+    // Verify all pages spanned by the buffer are mapped with proper permissions (overflow-checked)
     let mut page_start = ptr & !(pmm::PAGE_SIZE - 1);
-    let page_end = (end + pmm::PAGE_SIZE - 1) & !(pmm::PAGE_SIZE - 1);
+    let page_end = match end.checked_add(pmm::PAGE_SIZE - 1) {
+        Some(e) => e & !(pmm::PAGE_SIZE - 1),
+        None => return Err(EFAULT),
+    };
 
     while page_start < page_end {
         if !vmm::is_user_page_mapped(page_start, require_writable) {
@@ -87,7 +90,7 @@ pub unsafe fn copy_from_user(dest: &mut [u8], src_user_ptr: u64) -> Result<(), i
     Ok(())
 }
 
-/// Safely read a null-terminated string from user space memory into kernel buffer.
+/// Safely read a null-terminated string from user space memory, checking each page mapping before read.
 pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, i64> {
     if ptr.is_null() {
         return Err(EFAULT);
@@ -95,11 +98,24 @@ pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, 
 
     let mut len = 0;
     let max_len = buf.len();
+    let mut current_page: u64 = 0;
 
     while len < max_len - 1 {
-        let addr = (ptr as u64).checked_add(len as u64).ok_or(EFAULT)?;
+        let addr = match (ptr as u64).checked_add(len as u64) {
+            Some(a) => a,
+            None => return Err(EFAULT),
+        };
+
         if addr < USER_MIN_ADDR || addr > USER_MAX_ADDR {
             return Err(EFAULT);
+        }
+
+        let page_addr = addr & !(pmm::PAGE_SIZE - 1);
+        if page_addr != current_page {
+            if !vmm::is_user_page_mapped(page_addr, false) {
+                return Err(EFAULT);
+            }
+            current_page = page_addr;
         }
 
         let c = *ptr.add(len);

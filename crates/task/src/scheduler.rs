@@ -236,7 +236,13 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
         let stack_top = stack_frame + pmm::PAGE_SIZE;
 
         // Clone parent address space with full deep-copy of user pages
-        let pml4_phys = vmm::clone_user_address_space(parent.pml4_phys)?;
+        let pml4_phys = match vmm::clone_user_address_space(parent.pml4_phys) {
+            Ok(p) => p,
+            Err(e) => {
+                pmm::free_frame(stack_frame);
+                return Err(e);
+            }
+        };
 
         // Copy register context to child stack
         let context_size = core::mem::size_of::<InterruptContext>() as u64;
@@ -306,12 +312,26 @@ pub unsafe fn exit_current(exit_code: i32) {
     }
 }
 
-/// Wait for a child process to change state (waitpid), reaping zombies.
+/// Wait for a child process to change state (waitpid), reaping zombies with safe pointer validation.
 pub unsafe fn sys_waitpid(
     target_pid: i64,
     status_ptr: *mut i32,
-    _options: u32,
+    options: u32,
 ) -> Result<usize, &'static str> {
+    if options != 0 {
+        return Err("EINVAL");
+    }
+
+    if !status_ptr.is_null() {
+        let ptr_val = status_ptr as u64;
+        if ptr_val < 0x10000
+            || ptr_val > 0x0000_7FFF_FFFF_FFFF
+            || !vmm::is_user_page_mapped(ptr_val, true)
+        {
+            return Err("EFAULT");
+        }
+    }
+
     let parent_idx = CURRENT_TASK_IDX;
 
     // 1. Search for matching zombie child

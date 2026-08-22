@@ -393,10 +393,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
 
                     if new_page_top > old_page_top {
                         let mut curr_page = old_page_top;
+                        let mut mapped_in_call = 0u64;
+                        let mut failed = false;
                         while curr_page < new_page_top {
                             let frame = match pmm::alloc_frame() {
                                 Some(f) => f,
-                                None => return errno_to_ret(ENOMEM),
+                                None => {
+                                    failed = true;
+                                    break;
+                                }
                             };
                             if vmm::map_page(
                                 curr_page,
@@ -406,11 +411,23 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                             .is_err()
                             {
                                 pmm::free_frame(frame);
-                                return errno_to_ret(ENOMEM);
+                                failed = true;
+                                break;
                             }
                             let ptr = curr_page as *mut u8;
                             core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
                             curr_page += pmm::PAGE_SIZE;
+                            mapped_in_call += pmm::PAGE_SIZE;
+                        }
+
+                        if failed {
+                            // Atomic rollback of all pages mapped in this sbrk request
+                            let mut rollback_page = old_page_top;
+                            while rollback_page < old_page_top + mapped_in_call {
+                                let _ = vmm::free_and_unmap_page(rollback_page);
+                                rollback_page += pmm::PAGE_SIZE;
+                            }
+                            return errno_to_ret(ENOMEM);
                         }
                     }
 
@@ -420,14 +437,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             errno_to_ret(ENOMEM)
         }
-        // Syscall 12: spawn
-        12 => {
-            let fn_ptr: fn() = unsafe { core::mem::transmute(arg1 as usize) };
-            match unsafe { keira_task::scheduler::spawn("bg_task", fn_ptr) } {
-                Ok(pid) => pid as u64,
-                Err(_) => errno_to_ret(ENOMEM),
-            }
-        }
+        // Syscall 12: spawn (Restricted: user cannot pass arbitrary kernel function pointers)
+        12 => errno_to_ret(ENOSYS),
         // Syscall 13: waitpid
         13 => {
             let child_id = arg1 as usize;
@@ -596,13 +607,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             keira_ipc::futex::sys_futex(uaddr, futex_op, val, 0, core::ptr::null_mut(), 0)
                 .unwrap_or(-1) as u64
         }
-        // Syscall 41: clone_thread
-        41 => unsafe {
-            match fork_current_task() {
-                Ok(pid) => pid as u64,
-                Err(_) => errno_to_ret(ENOMEM),
-            }
-        },
+        // Syscall 41: clone_thread (Not implemented: return ENOSYS rather than false fork)
+        41 => errno_to_ret(ENOSYS),
         // Syscall 42: kvm_create_vm
         42 => errno_to_ret(ENOSYS),
         // Syscall 43: kvm_run_vcpu
@@ -652,11 +658,19 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         60 => 0,
         // Syscall 61: setuid
         61 => 0,
-        // Syscall 62: waitpid (True POSIX process wait with zombie reaping)
+        // Syscall 62: waitpid (True POSIX process wait with zombie reaping and error classification)
         62 => unsafe {
             match sys_waitpid(arg1 as i64, arg2 as *mut i32, arg3 as u32) {
                 Ok(reaped_pid) => reaped_pid as u64,
-                Err(_) => errno_to_ret(ECHILD),
+                Err(e) => {
+                    if e == "EINVAL" {
+                        errno_to_ret(EINVAL)
+                    } else if e == "EFAULT" {
+                        errno_to_ret(EFAULT)
+                    } else {
+                        errno_to_ret(ECHILD)
+                    }
+                }
             }
         },
         // Syscall 63: getppid
