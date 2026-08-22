@@ -44,6 +44,8 @@ pub unsafe fn init() {
         cwd_len: 1,
         parent_id: 0,
         pml4_phys: boot_pml4,
+        exit_code: 0,
+        is_user: false,
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;
@@ -113,6 +115,8 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         cwd_len: parent_cwd_len,
         parent_id,
         pml4_phys: parent_pml4,
+        exit_code: 0,
+        is_user: false,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -193,6 +197,8 @@ pub unsafe fn spawn_user(
         cwd_len: parent_cwd_len,
         parent_id,
         pml4_phys,
+        exit_code: 0,
+        is_user: true,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -227,12 +233,26 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
     let ptr = &raw const TASKS;
     if let Some(ref parent) = (*ptr)[parent_idx] {
         let stack_frame = pmm::alloc_frame().ok_or("Out of memory for child stack")?;
-        let pml4_phys = vmm::clone_kernel_pml4()?;
+        let stack_top = stack_frame + pmm::PAGE_SIZE;
+
+        // Clone parent address space with full deep-copy of user pages
+        let pml4_phys = vmm::clone_user_address_space(parent.pml4_phys)?;
+
+        // Copy register context to child stack
+        let context_size = core::mem::size_of::<InterruptContext>() as u64;
+        let child_context_ptr = (stack_top - context_size) as *mut InterruptContext;
+
+        if parent.rsp != 0 {
+            let parent_context = parent.rsp as *const InterruptContext;
+            core::ptr::copy_nonoverlapping(parent_context, child_context_ptr, 1);
+            // In child process, fork() returns 0 in RAX
+            (*child_context_ptr).rax = 0;
+        }
 
         let child_task = Task {
             id: slot_idx,
             name: "fork_child",
-            rsp: parent.rsp,
+            rsp: child_context_ptr as u64,
             stack_addr: stack_frame,
             state: TaskState::Ready,
             fds: parent.fds,
@@ -242,6 +262,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             cwd_len: parent.cwd_len,
             parent_id: parent_idx,
             pml4_phys,
+            exit_code: 0,
+            is_user: parent.is_user,
         };
 
         TASKS[slot_idx] = Some(child_task);
@@ -251,16 +273,28 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
     }
 }
 
-/// Terminate the currently running task.
-pub unsafe fn exit_current() {
+/// Terminate the currently running task with an exit code, transitioning to Zombie.
+pub unsafe fn exit_current(exit_code: i32) {
     core::arch::asm!("cli");
     let idx = CURRENT_TASK_IDX;
     if idx != 0 {
         if let Some(ref mut task) = TASKS[idx] {
-            task.state = TaskState::Terminated;
+            task.exit_code = exit_code;
+            task.state = TaskState::Zombie(exit_code);
+
+            // Wake up parent if blocked
+            let parent_id = task.parent_id;
+            if parent_id < MAX_TASKS {
+                if let Some(ref mut parent) = TASKS[parent_id] {
+                    if parent.state == TaskState::Blocked {
+                        parent.state = TaskState::Ready;
+                    }
+                }
+            }
+
             serial::print_str("Scheduler: Task '");
             serial::print_str(task.name);
-            serial::print_str("' exited\n");
+            serial::print_str("' exited (Zombie)\n");
         }
 
         core::arch::asm!("sti");
@@ -272,15 +306,92 @@ pub unsafe fn exit_current() {
     }
 }
 
-/// Wait for a child task to terminate.
-pub unsafe fn wait_for_task(child_id: usize) {
-    let current_id = CURRENT_TASK_IDX;
+/// Wait for a child process to change state (waitpid), reaping zombies.
+pub unsafe fn sys_waitpid(
+    target_pid: i64,
+    status_ptr: *mut i32,
+    _options: u32,
+) -> Result<usize, &'static str> {
+    let parent_idx = CURRENT_TASK_IDX;
 
-    if let Some(ref mut task) = TASKS[current_id] {
-        task.state = TaskState::WaitChild(child_id);
+    // 1. Search for matching zombie child
+    for i in 1..MAX_TASKS {
+        if let Some(ref child) = TASKS[i] {
+            if child.parent_id == parent_idx {
+                if target_pid == -1 || child.id == target_pid as usize {
+                    if let TaskState::Zombie(code) = child.state {
+                        let reaped_id = child.id;
+                        if !status_ptr.is_null() {
+                            *status_ptr = code;
+                        }
+
+                        // Release child locks and memory
+                        release_all_locks_for_task(reaped_id);
+                        if child.stack_addr != 0 {
+                            vmm::free_user_pages(child.pml4_phys, child.program_break);
+                            pmm::free_frame(child.stack_addr);
+                        }
+                        TASKS[i] = None;
+                        return Ok(reaped_id);
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Check if any matching child is still alive
+    let mut has_living_child = false;
+    for i in 1..MAX_TASKS {
+        if let Some(ref child) = TASKS[i] {
+            if child.parent_id == parent_idx
+                && (target_pid == -1 || child.id == target_pid as usize)
+            {
+                has_living_child = true;
+                break;
+            }
+        }
+    }
+
+    if !has_living_child {
+        return Err("No child processes");
+    }
+
+    // 3. Block parent until a child exits
+    if let Some(ref mut parent) = TASKS[parent_idx] {
+        parent.state = TaskState::Blocked;
     }
 
     core::arch::asm!("int 32");
+
+    // Retry reaping after waking up
+    for i in 1..MAX_TASKS {
+        if let Some(ref child) = TASKS[i] {
+            if child.parent_id == parent_idx {
+                if target_pid == -1 || child.id == target_pid as usize {
+                    if let TaskState::Zombie(code) = child.state {
+                        let reaped_id = child.id;
+                        if !status_ptr.is_null() {
+                            *status_ptr = code;
+                        }
+                        release_all_locks_for_task(reaped_id);
+                        if child.stack_addr != 0 {
+                            vmm::free_user_pages(child.pml4_phys, child.program_break);
+                            pmm::free_frame(child.stack_addr);
+                        }
+                        TASKS[i] = None;
+                        return Ok(reaped_id);
+                    }
+                }
+            }
+        }
+    }
+
+    Err("Interrupted wait")
+}
+
+/// Wait for a child task to terminate.
+pub unsafe fn wait_for_task(child_id: usize) {
+    let _ = sys_waitpid(child_id as i64, core::ptr::null_mut(), 0);
 }
 
 /// Preemptive scheduler tick called from PIT timer interrupt.
@@ -292,27 +403,13 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
         return current_rsp;
     }
 
-    for i in 0..MAX_TASKS {
-        if let Some(ref mut task) = TASKS[i] {
-            if let TaskState::WaitChild(child_id) = task.state {
-                let child_exited = child_id >= MAX_TASKS || TASKS[child_id].is_none();
-                if child_exited {
-                    task.state = TaskState::Ready;
-                }
-            }
-        }
-    }
-
     let current_idx = CURRENT_TASK_IDX;
 
-    let mut current_terminated = false;
     if let Some(ref mut task) = TASKS[current_idx] {
-        if task.state == TaskState::Terminated {
-            current_terminated = true;
-        } else if task.state == TaskState::Running {
+        if task.state == TaskState::Running {
             task.rsp = current_rsp;
             task.state = TaskState::Ready;
-        } else if let TaskState::WaitChild(_) = task.state {
+        } else if task.state == TaskState::Blocked {
             task.rsp = current_rsp;
         }
     }
@@ -324,17 +421,6 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
             if task.state == TaskState::Ready {
                 task.state = TaskState::Running;
                 CURRENT_TASK_IDX = next_idx;
-
-                if current_terminated {
-                    if let Some(ref prev_task) = TASKS[current_idx] {
-                        release_all_locks_for_task(prev_task.id);
-                        if prev_task.stack_addr != 0 {
-                            vmm::free_user_pages(prev_task.pml4_phys, prev_task.program_break);
-                            pmm::free_frame(prev_task.stack_addr);
-                        }
-                    }
-                    TASKS[current_idx] = None;
-                }
 
                 vmm::switch_address_space(task.pml4_phys);
                 if task.stack_addr != 0 {
@@ -349,36 +435,10 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
         }
     }
 
-    let mut current_runnable = false;
-    if let Some(ref task) = TASKS[current_idx] {
-        if task.state == TaskState::Running || task.state == TaskState::Ready {
-            current_runnable = true;
-        }
-    }
-
-    if current_runnable && !current_terminated {
-        if let Some(ref mut task) = TASKS[current_idx] {
-            task.state = TaskState::Running;
-        }
-        return current_rsp;
-    }
-
     if let Some(ref mut main_task) = TASKS[0] {
         if current_idx != 0 {
             main_task.state = TaskState::Running;
             CURRENT_TASK_IDX = 0;
-
-            if current_terminated {
-                if let Some(ref prev_task) = TASKS[current_idx] {
-                    release_all_locks_for_task(prev_task.id);
-                    if prev_task.stack_addr != 0 {
-                        vmm::free_user_pages(prev_task.pml4_phys, prev_task.program_break);
-                        pmm::free_frame(prev_task.stack_addr);
-                    }
-                }
-                TASKS[current_idx] = None;
-            }
-
             vmm::switch_address_space(main_task.pml4_phys);
             return main_task.rsp;
         }
@@ -395,12 +455,44 @@ pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str> {
     for i in 1..MAX_TASKS {
         if let Some(ref mut task) = TASKS[i] {
             if task.id == pid {
-                task.state = TaskState::Terminated;
+                task.state = TaskState::Zombie(-9);
                 return Ok(());
             }
         }
     }
     Err("Task PID not found")
+}
+
+/// Deliver a POSIX-like signal to a target task PID.
+pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
+    if pid >= MAX_TASKS {
+        return Err("Target PID out of scheduler table range");
+    }
+    if pid == 0 {
+        return Err("Signal delivery to bootstrap kernel shell is restricted");
+    }
+
+    if let Some(ref mut task) = TASKS[pid] {
+        match sig {
+            9 | 15 => {
+                task.state = TaskState::Zombie(sig as i32);
+                Ok(())
+            }
+            18 => {
+                if task.state == TaskState::Blocked {
+                    task.state = TaskState::Ready;
+                }
+                Ok(())
+            }
+            19 => {
+                task.state = TaskState::Blocked;
+                Ok(())
+            }
+            _ => Err("Unsupported or invalid POSIX signal number"),
+        }
+    } else {
+        Err("Process with specified PID does not exist")
+    }
 }
 
 /// List all registered tasks.
@@ -431,6 +523,10 @@ pub unsafe fn list_tasks() {
             }
 
             match task.state {
+                TaskState::Created => {
+                    vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                    vga::print_str("CREATED\n");
+                }
                 TaskState::Running => {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("RUNNING\n");
@@ -439,58 +535,38 @@ pub unsafe fn list_tasks() {
                     vga::set_color(vga::Color::LightBlue, vga::Color::Black);
                     vga::print_str("READY\n");
                 }
-                TaskState::Terminated => {
-                    vga::set_color(vga::Color::Red, vga::Color::Black);
-                    vga::print_str("TERMINATED\n");
-                }
-                TaskState::WaitChild(_) => {
+                TaskState::Blocked => {
                     vga::set_color(vga::Color::Magenta, vga::Color::Black);
-                    vga::print_str("WAITING\n");
+                    vga::print_str("BLOCKED\n");
+                }
+                TaskState::Exited(c) | TaskState::Zombie(c) => {
+                    vga::set_color(vga::Color::Red, vga::Color::Black);
+                    vga::print_str("ZOMBIE (exit ");
+                    vga::print_u64(c as u64);
+                    vga::print_str(")\n");
                 }
             }
-            vga::set_color(vga::Color::White, vga::Color::Black);
         }
     }
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 }
 
-fn print_decimal(val: u64) {
-    let mut buf = [0u8; 20];
-    let mut idx = 20;
-    let mut temp = val;
-    if temp == 0 {
+unsafe fn print_decimal(mut val: u64) {
+    if val == 0 {
         serial::print_str("0");
         return;
     }
-    while temp > 0 {
+    let mut buf = [0u8; 20];
+    let mut idx = 0;
+    while val > 0 {
+        buf[idx] = b'0' + (val % 10) as u8;
+        val /= 10;
+        idx += 1;
+    }
+    while idx > 0 {
         idx -= 1;
-        buf[idx] = b'0' + (temp % 10) as u8;
-        temp /= 10;
-    }
-    if let Ok(s) = core::str::from_utf8(&buf[idx..]) {
-        serial::print_str(s);
-    }
-}
-
-/// Terminate task by PID with standard signal code.
-pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
-    if pid >= MAX_TASKS {
-        return Err("Invalid process ID");
-    }
-
-    if let Some(ref mut task) = TASKS[pid] {
-        if pid == 0 {
-            return Err("Cannot terminate root kernel shell process");
+        let s = [buf[idx]];
+        if let Ok(st) = core::str::from_utf8(&s) {
+            serial::print_str(st);
         }
-        match sig {
-            2 | 9 | 15 => {
-                task.state = TaskState::Terminated;
-                TASKS[pid] = None;
-                Ok(())
-            }
-            _ => Err("Unsupported signal type"),
-        }
-    } else {
-        Err("Process ID not found")
     }
 }

@@ -131,7 +131,7 @@ Keira uses two consistent commit message formats:
 ```text
 Keira <version>
 ```
-*Example: `Keira 0.32.1`*
+*Example: `Keira 0.33.0`*
 
 ### B. Standard Conventional Commits:
 ```text

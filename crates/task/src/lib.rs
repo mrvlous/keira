@@ -23,8 +23,8 @@ pub use cgroups::{
 };
 pub use scheduler::{
     exit_current, fork_current_task, init as scheduler_init, list_tasks, schedule_tick,
-    send_signal, spawn, spawn_user, stop_task, wait_for_task, CURRENT_TASK_IDX, MAX_TASKS,
-    SCHEDULER_INITIALIZED, TASKS,
+    send_signal, spawn, spawn_user, stop_task, sys_waitpid, wait_for_task, CURRENT_TASK_IDX,
+    MAX_TASKS, SCHEDULER_INITIALIZED, TASKS,
 };
 pub use security as seccomp;
 pub use security::{

@@ -7,15 +7,17 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and task states.
+//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
 
 /// Lifecycle states of an OS execution thread or process.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TaskState {
+    Created,
     Ready,
     Running,
-    Terminated,
-    WaitChild(usize),
+    Blocked,
+    Exited(i32),
+    Zombie(i32),
 }
 
 /// Process file descriptor handle.
@@ -60,6 +62,8 @@ pub struct Task {
     pub cwd_len: usize,
     pub parent_id: usize,
     pub pml4_phys: u64,
+    pub exit_code: i32,
+    pub is_user: bool,
 }
 
 /// Pushed CPU register context during interrupt or system call transitions.

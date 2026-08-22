@@ -7,12 +7,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Virtual Memory Management (VMM), 4-level paging, PML4 cloning, and user space isolation.
+//! Virtual Memory Management (VMM) subsystem.
 
 pub mod clone;
 pub mod free;
+pub mod mmap;
 pub mod paging;
 
-pub use clone::clone_kernel_pml4;
-pub use free::free_user_pages;
+pub use clone::*;
+pub use free::*;
+pub use mmap::*;
 pub use paging::*;

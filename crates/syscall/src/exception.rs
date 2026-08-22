@@ -67,7 +67,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
         if CURRENT_TASK_IDX != 0 {
-            exit_current();
+            exit_current(-11);
         } else {
             extern "C" {
                 fn abort_user_mode() -> !;
