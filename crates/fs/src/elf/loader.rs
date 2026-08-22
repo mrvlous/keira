@@ -8,6 +8,14 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Hardened 64-bit ELF binary loader with strict overflow checks, page-aligned overlap rejection, W^X, and atomic rollback.
+//!
+//! ### Kernel Security & Loading Invariants:
+//! 1. **Page-Aligned Isolation**: PT_LOAD segments sharing a 4KB page boundary are strictly rejected to prevent permission aliasing
+//!    between executable code (`PF_X`) and writable data (`PF_W`).
+//! 2. **Deterministic Bounded Capacity**: `MAX_LOAD_SEGMENTS` is intentionally fixed to 16 segments, allowing static zero-heap
+//!    allocation during bootstrap and deterministic bounded execution time.
+//! 3. **Failure-Atomic Rollback**: If frame allocation or page mapping fails at any stage, every physical frame and page mapping
+//!    allocated by the loader is completely released before returning `Err`.
 
 use super::types::{ElfHeader, ProgramHeader, PF_W, PF_X, PT_LOAD, USER_MAX_VADDR, USER_MIN_VADDR};
 use crate::vfs;
@@ -19,14 +27,17 @@ extern "C" {
     fn jump_to_user(entry: u64, stack: u64);
 }
 
+/// Bounded maximum number of PT_LOAD segments supported in a single ELF binary.
+pub const MAX_LOAD_SEGMENTS: usize = 16;
+
 #[derive(Clone, Copy, Debug)]
 struct SegmentMapping {
     aligned_start: u64,
     aligned_end: u64,
     total_bytes: u64,
     mapped_bytes: u64,
-    p_vaddr: u64,
-    p_memsz: u64,
+    p_vaddr_start: u64,
+    p_vaddr_end: u64,
     p_offset: u64,
     p_filesz: u64,
     p_flags: u32,
@@ -84,14 +95,13 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     }
 
     // 4. Pre-scan PT_LOAD segments: validate boundaries, page-aligned non-overlap, and entry point
-    const MAX_LOAD_SEGMENTS: usize = 16;
     let mut segments: [SegmentMapping; MAX_LOAD_SEGMENTS] = [SegmentMapping {
         aligned_start: 0,
         aligned_end: 0,
         total_bytes: 0,
         mapped_bytes: 0,
-        p_vaddr: 0,
-        p_memsz: 0,
+        p_vaddr_start: 0,
+        p_vaddr_end: 0,
         p_offset: 0,
         p_filesz: 0,
         p_flags: 0,
@@ -165,7 +175,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 return Err("Segment aligned end exceeds canonical user space boundary");
             }
 
-            // Check for page-aligned collision with existing segments
+            // Check for page-aligned collision with existing segments to strictly prevent W^X permission aliasing
             for j in 0..segment_count {
                 let existing = segments[j];
                 if !(aligned_end <= existing.aligned_start || aligned_start >= existing.aligned_end)
@@ -181,8 +191,8 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 aligned_end,
                 total_bytes,
                 mapped_bytes: 0,
-                p_vaddr: ph.p_vaddr,
-                p_memsz: ph.p_memsz,
+                p_vaddr_start: ph.p_vaddr,
+                p_vaddr_end: seg_mem_end,
                 p_offset: ph.p_offset,
                 p_filesz: ph.p_filesz,
                 p_flags: ph.p_flags,
@@ -192,10 +202,10 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         }
     }
 
-    // 5. Verify that entry point resides inside an executable PT_LOAD segment
+    // 5. Verify that entry point resides inside a validated executable PT_LOAD segment
     let mut entry_valid = false;
     for s in &segments[..segment_count] {
-        if s.is_executable && header.entry >= s.p_vaddr && header.entry < s.p_vaddr + s.p_memsz {
+        if s.is_executable && header.entry >= s.p_vaddr_start && header.entry < s.p_vaddr_end {
             entry_valid = true;
             break;
         }
@@ -218,13 +228,13 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             page_flags |= vmm::PAGE_NO_EXECUTE;
         }
 
-        let page_offset = seg.p_vaddr % pmm::PAGE_SIZE;
+        let page_offset = seg.p_vaddr_start % pmm::PAGE_SIZE;
 
         while seg.mapped_bytes < seg.total_bytes {
             let vaddr = match seg.aligned_start.checked_add(seg.mapped_bytes) {
                 Some(v) => v,
                 None => {
-                    rollback_all_segments(&segments[..=seg_idx]);
+                    let _ = rollback_all_segments(&segments[..=seg_idx]);
                     return Err("Integer overflow calculating page virtual address");
                 }
             };
@@ -232,7 +242,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             let frame = match pmm::alloc_frame() {
                 Some(f) => f,
                 None => {
-                    rollback_all_segments(&segments[..=seg_idx]);
+                    let _ = rollback_all_segments(&segments[..=seg_idx]);
                     return Err("Out of physical memory during ELF segment loading");
                 }
             };
@@ -240,7 +250,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             // Map page with strict permissions
             if let Err(e) = vmm::map_page(vaddr, frame, page_flags) {
                 pmm::free_frame(frame);
-                rollback_all_segments(&segments[..=seg_idx]);
+                let _ = rollback_all_segments(&segments[..=seg_idx]);
                 return Err(e);
             }
 
@@ -248,7 +258,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             seg.mapped_bytes = match seg.mapped_bytes.checked_add(pmm::PAGE_SIZE) {
                 Some(b) => b,
                 None => {
-                    rollback_all_segments(&segments[..=seg_idx]);
+                    let _ = rollback_all_segments(&segments[..=seg_idx]);
                     return Err("Integer overflow updating mapped bytes");
                 }
             };
@@ -284,7 +294,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 let src_offset = match seg.p_offset.checked_add(segment_data_offset) {
                     Some(off) => off,
                     None => {
-                        rollback_all_segments(&segments[..=seg_idx]);
+                        let _ = rollback_all_segments(&segments[..=seg_idx]);
                         return Err("Integer overflow in segment data source offset");
                     }
                 };
@@ -300,18 +310,30 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
 }
 
 /// Rollback all mapped ELF segments and clean up virtual and physical memory on failure.
-unsafe fn rollback_all_segments(segments: &[SegmentMapping]) {
+/// Returns Ok(()) if all mapped pages were successfully unmapped and freed, or an error on failure.
+unsafe fn rollback_all_segments(segments: &[SegmentMapping]) -> Result<(), &'static str> {
+    let mut first_err: Option<&'static str> = None;
     for seg in segments {
         let mut off = 0u64;
         while off < seg.mapped_bytes {
             if let Some(vaddr) = seg.aligned_start.checked_add(off) {
-                let _ = vmm::free_and_unmap_page(vaddr);
+                if let Err(e) = vmm::free_and_unmap_page(vaddr) {
+                    if first_err.is_none() {
+                        first_err = Some(e);
+                    }
+                }
             }
             off = match off.checked_add(pmm::PAGE_SIZE) {
                 Some(next_off) => next_off,
                 None => break,
             };
         }
+    }
+
+    if let Some(err) = first_err {
+        Err(err)
+    } else {
+        Ok(())
     }
 }
 
