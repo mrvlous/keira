@@ -49,8 +49,6 @@ static mut VMA_TABLE: [Vma; MAX_VMAS] = [Vma {
     is_active: false,
 }; MAX_VMAS];
 
-static mut NEXT_MMAP_ADDR: u64 = MMAP_START;
-
 /// Clean up all active VMAs belonging to a specific address space.
 pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
     if pml4_phys == 0 {
@@ -59,6 +57,37 @@ pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
     for i in 0..MAX_VMAS {
         if VMA_TABLE[i].is_active && VMA_TABLE[i].pml4_phys == pml4_phys {
             VMA_TABLE[i].is_active = false;
+        }
+    }
+}
+
+/// Find the lowest available non-overlapping virtual memory range within [MMAP_START, MMAP_END)
+/// for the specified address space (cur_pml4).
+pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u64> {
+    let mut candidate = MMAP_START;
+    loop {
+        let end = match candidate.checked_add(aligned_len) {
+            Some(e) => e,
+            None => return None,
+        };
+        if end > MMAP_END {
+            return None;
+        }
+
+        let mut collision = false;
+        for i in 0..MAX_VMAS {
+            let vma = VMA_TABLE[i];
+            if vma.is_active && vma.pml4_phys == cur_pml4 {
+                if candidate < vma.end && end > vma.start {
+                    candidate = vma.end;
+                    collision = true;
+                    break;
+                }
+            }
+        }
+
+        if !collision {
+            return Some(candidate);
         }
     }
 }
@@ -77,6 +106,11 @@ pub unsafe fn sys_mmap(
     // Validate protection bits
     if (prot & !SUPPORTED_PROT) != 0 {
         return Err("Invalid protection flags (EINVAL)");
+    }
+
+    // Strict W^X policy enforcement
+    if (prot & PROT_WRITE) != 0 && (prot & PROT_EXEC) != 0 {
+        return Err("W^X violation: simultaneous PROT_WRITE and PROT_EXEC prohibited");
     }
 
     let aligned_len = match length.checked_add(pmm::PAGE_SIZE - 1) {
@@ -113,19 +147,13 @@ pub unsafe fn sys_mmap(
         }
         hint_addr
     } else {
-        let vaddr = NEXT_MMAP_ADDR;
-        let next = match vaddr.checked_add(aligned_len) {
-            Some(n) => n,
-            None => return Err("Integer overflow allocating mmap virtual address"),
-        };
-        if next > MMAP_END {
-            return Err("Out of virtual address space in mmap region");
+        match find_free_mmap_range(cur_pml4, aligned_len) {
+            Some(vaddr) => vaddr,
+            None => return Err("Out of virtual address space in mmap region"),
         }
-        NEXT_MMAP_ADDR = next;
-        vaddr
     };
 
-    // Find free VMA slot
+    // Find and reserve free VMA slot before touching physical memory or page tables
     let mut vma_slot = None;
     for i in 0..MAX_VMAS {
         if !VMA_TABLE[i].is_active {
@@ -282,6 +310,11 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
         return Err("Invalid protection flags (EINVAL)");
     }
 
+    // Strict W^X policy enforcement
+    if (prot & PROT_WRITE) != 0 && (prot & PROT_EXEC) != 0 {
+        return Err("W^X violation: simultaneous PROT_WRITE and PROT_EXEC prohibited");
+    }
+
     if addr < MMAP_START || addr >= MMAP_END {
         return Err("Address outside user mmap region");
     }
@@ -354,11 +387,29 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
         page_flags |= PAGE_NO_EXECUTE;
     }
 
-    // Apply new protection flags across virtual pages
+    let orig_page_flags = {
+        let mut f = 0u64;
+        if (orig_vma.prot & PROT_WRITE) != 0 {
+            f |= PAGE_WRITABLE;
+        }
+        if (orig_vma.prot & PROT_EXEC) == 0 {
+            f |= PAGE_NO_EXECUTE;
+        }
+        f
+    };
+
+    // Apply new protection flags across virtual pages with rollback on intermediate failure
     let mut offset = 0u64;
     while offset < aligned_len {
         let vaddr = addr + offset;
-        mprotect_page(vaddr, page_flags)?;
+        if let Err(e) = mprotect_page(vaddr, page_flags) {
+            let mut rollback_offset = 0u64;
+            while rollback_offset < offset {
+                let _ = mprotect_page(addr + rollback_offset, orig_page_flags);
+                rollback_offset += pmm::PAGE_SIZE;
+            }
+            return Err(e);
+        }
         offset += pmm::PAGE_SIZE;
     }
 
@@ -390,7 +441,7 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
             is_active: true,
         };
     } else if is_middle {
-        // Middle split into 3: [orig.start, addr) old, [addr, target_end) new, [target_end, orig.end) old
+        // Middle split: [orig_vma.start, addr) old, [addr, target_end) new, [target_end, orig_vma.end) old
         let slot1 = found_slots[0];
         let slot2 = found_slots[1];
         VMA_TABLE[vma_idx].end = addr;
@@ -466,5 +517,34 @@ mod tests {
         assert!(validate_virt_addr_range(0x5000_0000_0000, 0x2000).is_ok());
         assert!(validate_virt_addr_range(0, 0x1000).is_err());
         assert!(validate_virt_addr_range(0x0000_8000_0000_0000, 0x1000).is_err());
+    }
+
+    #[test]
+    fn test_find_free_mmap_range() {
+        unsafe {
+            cleanup_vmas_for_pml4(0x1000);
+            let free_addr = find_free_mmap_range(0x1000, 0x2000);
+            assert_eq!(free_addr, Some(MMAP_START));
+        }
+    }
+
+    #[test]
+    fn test_wx_violation_rejection() {
+        unsafe {
+            let res = sys_mmap(0, 0x1000, PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS);
+            assert!(res.is_err());
+            assert_eq!(
+                res.unwrap_err(),
+                "W^X violation: simultaneous PROT_WRITE and PROT_EXEC prohibited"
+            );
+        }
+    }
+
+    #[test]
+    fn test_mmap_arg_validation() {
+        unsafe {
+            assert!(sys_mmap(0, 0, PROT_READ, MAP_ANONYMOUS).is_err());
+            assert!(sys_mmap(0, 0x1000, 0xFF, MAP_ANONYMOUS).is_err());
+        }
     }
 }

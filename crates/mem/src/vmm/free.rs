@@ -10,7 +10,7 @@
 //! Tree-based user-space memory page and page-table deallocation with strict kernel mapping preservation.
 
 use super::mmap::cleanup_vmas_for_pml4;
-use super::paging::{PAGE_PRESENT, PTE_ADDR_MASK};
+use super::paging::{PAGE_PRESENT, PAGE_USER, PTE_ADDR_MASK};
 use crate::pmm;
 
 /// Free all user-owned mapped pages and user page-table frames from a process's PML4.
@@ -42,8 +42,10 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
             }
         }
 
-        // Free the child process's dedicated PDPT frame
-        pmm::free_frame(pdpt_phys);
+        // Free the child process's dedicated PDPT frame if dynamically allocated
+        if pdpt_phys >= pmm::KERNEL_BASE_1MB {
+            pmm::free_frame(pdpt_phys);
+        }
     }
 
     // 2. Clean up user regions under PML4[1..512] (User heap, mmap, stack)
@@ -57,27 +59,29 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
     // 3. Clean up process VMA metadata
     cleanup_vmas_for_pml4(pml4_phys);
 
-    // 4. Free the PML4 root frame itself
-    pmm::free_frame(pml4_phys);
+    // 4. Free the PML4 root frame itself if dynamically allocated
+    if pml4_phys >= pmm::KERNEL_BASE_1MB {
+        pmm::free_frame(pml4_phys);
+    }
 }
 
-/// Recursively walk a user page table tree, freeing all mapped physical page frames (at level 1)
-/// and all intermediate page table frames (at levels 2 and 3).
+/// Recursively walk a user page table tree, freeing all user-owned mapped physical page frames
+/// (at level 1) and all intermediate page table frames (at levels 2 and 3).
 /// Level 3 = PDPT, Level 2 = PD, Level 1 = PT
 unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
-    if table_phys == 0 {
+    if table_phys < pmm::KERNEL_BASE_1MB {
         return;
     }
 
     let table = table_phys as *const u64;
 
     if level == 1 {
-        // Level 1: Page Table (PT). Each present entry is a mapped 4KB user physical frame.
+        // Level 1: Page Table (PT). Each present user entry is a mapped 4KB user physical frame.
         for i in 0..512 {
             let entry = *table.add(i);
-            if (entry & PAGE_PRESENT) != 0 {
+            if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
                 let frame = entry & PTE_ADDR_MASK;
-                if frame != 0 {
+                if frame >= pmm::KERNEL_BASE_1MB {
                     pmm::free_frame(frame);
                 }
             }
@@ -87,15 +91,21 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
         for i in 0..512 {
             let entry = *table.add(i);
             if (entry & PAGE_PRESENT) != 0 {
-                // If it's a huge page (2MB page at PD level), free the 2MB physical frame
-                if (entry & (1 << 7)) != 0 {
-                    let frame = entry & PTE_ADDR_MASK;
-                    if frame != 0 {
-                        pmm::free_frame(frame);
+                let is_huge = (entry & (1 << 7)) != 0;
+                if is_huge {
+                    // Huge page (2MB at level 2, 1GB at level 3) is a LEAF frame, not a child page table!
+                    if (entry & PAGE_USER) != 0 {
+                        let frame = entry & PTE_ADDR_MASK;
+                        if frame >= pmm::KERNEL_BASE_1MB {
+                            pmm::free_frame(frame);
+                        }
                     }
                 } else {
-                    // Traverse next lower level
-                    free_user_page_table_subtree(entry & PTE_ADDR_MASK, level - 1);
+                    // Non-huge entry: traverse child page table
+                    let child_phys = entry & PTE_ADDR_MASK;
+                    if child_phys >= pmm::KERNEL_BASE_1MB {
+                        free_user_page_table_subtree(child_phys, level - 1);
+                    }
                 }
             }
         }

@@ -35,8 +35,8 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         }
     };
 
-    let stack_pages = 64;
-    let stack_bottom_vaddr: u64 = 0x7FFFFFE00000;
+    let stack_pages = 256;
+    let stack_bottom_vaddr: u64 = 0x7FFFFFD80000;
     for p in 0..stack_pages {
         let page_vaddr = stack_bottom_vaddr + (p * pmm::PAGE_SIZE);
         let stack_frame = match pmm::alloc_frame() {
@@ -55,7 +55,7 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         let ptr = page_vaddr as *mut u8;
         core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
     }
-    let user_stack_midpoint: u64 = stack_bottom_vaddr + (stack_pages / 2 * pmm::PAGE_SIZE);
+    let initial_user_rsp: u64 = 0x7FFFFFE00000 - 16;
 
     if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
         task.program_break = 0x600000000000;
@@ -67,7 +67,7 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
     let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
     keira_task::scheduler::SCHEDULER_INITIALIZED = false;
 
-    jump_to_user(entry_point, user_stack_midpoint - 16);
+    jump_to_user(entry_point, initial_user_rsp);
 
     vmm::switch_address_space(parent_pml4);
 

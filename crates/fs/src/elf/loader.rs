@@ -276,7 +276,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 }
             };
 
-            let frame_ptr = vaddr as *mut u8;
+            let frame_ptr = frame as *mut u8;
             core::ptr::write_bytes(frame_ptr, 0, pmm::PAGE_SIZE as usize);
 
             let current_seg_offset = match seg.mapped_bytes.checked_sub(pmm::PAGE_SIZE) {

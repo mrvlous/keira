@@ -28,11 +28,11 @@ pub use pmm::{
 pub use swap::pager as swap_pager;
 pub use swap::{is_active as swap_is_active, swapoff, swapon, sys_swapoff, sys_swapon};
 pub use vmm::{
-    active_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, free_and_unmap_page, free_user_pages,
-    get_kaslr_offset, get_phys_addr, madvise_pages, map_page, mmap_anonymous, mprotect_pages,
-    munmap_pages, switch_address_space, sys_mmap, sys_mprotect, sys_munmap, unmap_page,
-    validate_virt_addr_range, GB_1_IDENTITY_MAP, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
-    PAGE_WRITABLE, PTE_ADDR_MASK,
+    active_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, find_free_mmap_range,
+    free_and_unmap_page, free_user_pages, get_kaslr_offset, get_phys_addr, madvise_pages, map_page,
+    mmap_anonymous, mprotect_pages, munmap_pages, switch_address_space, sys_mmap, sys_mprotect,
+    sys_munmap, unmap_page, validate_virt_addr_range, GB_1_IDENTITY_MAP, PAGE_NO_EXECUTE,
+    PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 
 /// Initialize the PMM and VMM subsystems.
