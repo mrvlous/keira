@@ -12,7 +12,7 @@
 use super::free::free_user_pages;
 use super::paging::{
     active_pml4, map_page_in_pml4, switch_address_space, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
-    PAGE_WRITABLE,
+    PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 
@@ -33,7 +33,7 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
         return Err("Boot PML4[0] is not present");
     }
 
-    let boot_pdpt_phys = boot_pml4_0 & !0xFFF;
+    let boot_pdpt_phys = boot_pml4_0 & PTE_ADDR_MASK;
     let boot_pdpt = boot_pdpt_phys as *const u64;
 
     // Allocate a new PDPT for the child process
@@ -51,7 +51,7 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     *new_pdpt.add(3) = *boot_pdpt.add(3);
 
     // Set new PML4[0] = new PDPT with present + writable + user flags
-    *new_pml4 = new_pdpt_phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+    *new_pml4 = (new_pdpt_phys & PTE_ADDR_MASK) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
 
     Ok(new_pml4_phys)
 }
@@ -74,7 +74,7 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
             continue;
         }
 
-        let pdpt_phys = pml4_entry & !0xFFF;
+        let pdpt_phys = pml4_entry & PTE_ADDR_MASK;
         let pdpt = pdpt_phys as *const u64;
 
         for pdpt_idx in 0..512 {
@@ -88,7 +88,7 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                 continue;
             }
 
-            let pd_phys = pdpt_entry & !0xFFF;
+            let pd_phys = pdpt_entry & PTE_ADDR_MASK;
             let pd = pd_phys as *const u64;
 
             for pd_idx in 0..512 {
@@ -97,7 +97,7 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                     continue;
                 }
 
-                let pt_phys = pd_entry & !0xFFF;
+                let pt_phys = pd_entry & PTE_ADDR_MASK;
                 let pt = pt_phys as *const u64;
 
                 for pt_idx in 0..512 {

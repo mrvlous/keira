@@ -18,6 +18,10 @@ pub const PAGE_USER: u64 = 1 << 2;
 pub const PAGE_NO_EXECUTE: u64 = 1 << 63;
 pub const GB_1_IDENTITY_MAP: u64 = 0x4000_0000;
 
+/// Canonical x86_64 physical address mask for page table entries (bits 12..51).
+/// Strips lower 12-bit flags (Present, Writable, User, Huge) and upper bits including PAGE_NO_EXECUTE (bit 63).
+pub const PTE_ADDR_MASK: u64 = 0x000F_FFFF_FFFF_F000;
+
 pub static mut KASLR_SLIDE_OFFSET: u64 = 0x200000;
 
 /// Return current KASLR slide offset.
@@ -27,7 +31,7 @@ pub fn get_kaslr_offset() -> u64 {
 
 /// Get the physical base address of the active PML4 table from the CR3 register.
 pub unsafe fn active_pml4() -> u64 {
-    read_cr3() & !0xFFF
+    read_cr3() & PTE_ADDR_MASK
 }
 
 /// Switch the active address space by writing a new PML4 physical address to CR3.
@@ -73,7 +77,7 @@ pub unsafe fn map_page_in_pml4(
         if (flags & PAGE_USER) != 0 {
             *pml4.add(pml4_idx) |= PAGE_USER;
         }
-        pdpt_entry & !0xFFF
+        pdpt_entry & PTE_ADDR_MASK
     };
     let pdpt = pdpt_addr as *mut u64;
 
@@ -87,7 +91,7 @@ pub unsafe fn map_page_in_pml4(
         if (flags & PAGE_USER) != 0 {
             *pdpt.add(pdpt_idx) |= PAGE_USER;
         }
-        pd_entry & !0xFFF
+        pd_entry & PTE_ADDR_MASK
     };
     let pd = pd_addr as *mut u64;
 
@@ -101,12 +105,12 @@ pub unsafe fn map_page_in_pml4(
         if (flags & PAGE_USER) != 0 {
             *pd.add(pd_idx) |= PAGE_USER;
         }
-        pt_entry & !0xFFF
+        pt_entry & PTE_ADDR_MASK
     };
     let pt = pt_addr as *mut u64;
 
     // 4. Set PT entry
-    *pt.add(pt_idx) = physical_addr | flags | PAGE_PRESENT;
+    *pt.add(pt_idx) = (physical_addr & PTE_ADDR_MASK) | flags | PAGE_PRESENT;
 
     // 5. Invalidate page in TLB if modifying active PML4
     if pml4_phys == active_pml4() {
@@ -134,26 +138,26 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
     if (pdpt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PDPT missing)");
     }
-    let pdpt = (pdpt_entry & !0xFFF) as *mut u64;
+    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
 
     let pd_entry = *pdpt.add(pdpt_idx);
     if (pd_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PD missing)");
     }
-    let pd = (pd_entry & !0xFFF) as *mut u64;
+    let pd = (pd_entry & PTE_ADDR_MASK) as *mut u64;
 
     let pt_entry = *pd.add(pd_idx);
     if (pt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PT missing)");
     }
-    let pt = (pt_entry & !0xFFF) as *mut u64;
+    let pt = (pt_entry & PTE_ADDR_MASK) as *mut u64;
 
     let entry = *pt.add(pt_idx);
     if (entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped");
     }
 
-    let phys_frame = entry & !0xFFF & !(PAGE_NO_EXECUTE);
+    let phys_frame = entry & PTE_ADDR_MASK;
     *pt.add(pt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER;
 
     invlpg(virtual_addr);
@@ -173,19 +177,19 @@ pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> 
         return false;
     }
 
-    let pdpt = (pdpt_entry & !0xFFF) as *const u64;
+    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
     let pd_entry = *pdpt.add(pdpt_idx);
     if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_USER) == 0 {
         return false;
     }
 
-    let pd = (pd_entry & !0xFFF) as *const u64;
+    let pd = (pd_entry & PTE_ADDR_MASK) as *const u64;
     let pt_entry = *pd.add(pd_idx);
     if (pt_entry & PAGE_PRESENT) == 0 || (pt_entry & PAGE_USER) == 0 {
         return false;
     }
 
-    let pt = (pt_entry & !0xFFF) as *const u64;
+    let pt = (pt_entry & PTE_ADDR_MASK) as *const u64;
     let entry = *pt.add(pt_idx);
     if (entry & PAGE_PRESENT) == 0 || (entry & PAGE_USER) == 0 {
         return false;
@@ -216,19 +220,19 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if (pdpt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PDPT missing)");
     }
-    let pdpt = (pdpt_entry & !0xFFF) as *mut u64;
+    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
 
     let pd_entry = *pdpt.add(pdpt_idx);
     if (pd_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PD missing)");
     }
-    let pd = (pd_entry & !0xFFF) as *mut u64;
+    let pd = (pd_entry & PTE_ADDR_MASK) as *mut u64;
 
     let pt_entry = *pd.add(pd_idx);
     if (pt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PT missing)");
     }
-    let pt = (pt_entry & !0xFFF) as *mut u64;
+    let pt = (pt_entry & PTE_ADDR_MASK) as *mut u64;
 
     let entry = *pt.add(pt_idx);
     if (entry & PAGE_PRESENT) == 0 {
@@ -244,15 +248,16 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
 /// Unmap a virtual page and free its underlying physical frame.
 pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if let Some(phys) = get_phys_addr(virtual_addr) {
+        let frame = phys & PTE_ADDR_MASK;
         unmap_page(virtual_addr)?;
-        pmm::free_frame(phys);
+        pmm::free_frame(frame);
         Ok(())
     } else {
         Err("Virtual address not mapped")
     }
 }
 
-/// Translate a virtual address to its corresponding physical address.
+/// Translate a virtual address to its corresponding physical address, stripping all PTE flag and NX bits.
 pub unsafe fn get_phys_addr(virtual_addr: u64) -> Option<u64> {
     let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
     let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
@@ -265,23 +270,44 @@ pub unsafe fn get_phys_addr(virtual_addr: u64) -> Option<u64> {
         return None;
     }
 
-    let pdpt = (pdpt_entry & !0xFFF) as *const u64;
+    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
     let pd_entry = *pdpt.add(pdpt_idx);
     if (pd_entry & PAGE_PRESENT) == 0 {
         return None;
     }
 
-    let pd = (pd_entry & !0xFFF) as *const u64;
+    let pd = (pd_entry & PTE_ADDR_MASK) as *const u64;
     let pt_entry = *pd.add(pd_idx);
     if (pt_entry & PAGE_PRESENT) == 0 {
         return None;
     }
 
-    let pt = (pt_entry & !0xFFF) as *const u64;
+    let pt = (pt_entry & PTE_ADDR_MASK) as *const u64;
     let entry = *pt.add(pt_idx);
     if (entry & PAGE_PRESENT) == 0 {
         return None;
     }
 
-    Some((entry & !0xFFF) | (virtual_addr & 0xFFF))
+    Some((entry & PTE_ADDR_MASK) | (virtual_addr & 0xFFF))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pte_addr_mask_strips_nx_and_flags() {
+        let frame: u64 = 0x0000_0000_1234_5000;
+        let pte_rwx = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+        let pte_nx = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_NO_EXECUTE;
+        let pte_ro_nx = frame | PAGE_PRESENT | PAGE_USER | PAGE_NO_EXECUTE;
+
+        assert_eq!(pte_rwx & PTE_ADDR_MASK, frame);
+        assert_eq!(pte_nx & PTE_ADDR_MASK, frame);
+        assert_eq!(pte_ro_nx & PTE_ADDR_MASK, frame);
+        assert_eq!(
+            (0x8000_0000_1234_5007u64 & PTE_ADDR_MASK),
+            0x0000_0000_1234_5000u64
+        );
+    }
 }

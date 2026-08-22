@@ -31,7 +31,7 @@ pub use vmm::{
     active_pml4, clone_kernel_pml4, free_and_unmap_page, free_user_pages, get_kaslr_offset,
     get_phys_addr, madvise_pages, map_page, mmap_anonymous, mprotect_pages, munmap_pages,
     switch_address_space, unmap_page, validate_virt_addr_range, GB_1_IDENTITY_MAP, PAGE_NO_EXECUTE,
-    PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE,
+    PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 
 /// Initialize the PMM and VMM subsystems.

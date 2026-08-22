@@ -9,7 +9,9 @@
 
 //! Safe bounded user-space memory page and page table tree deallocation.
 
-use super::paging::{active_pml4, free_and_unmap_page, switch_address_space, PAGE_PRESENT};
+use super::paging::{
+    active_pml4, free_and_unmap_page, switch_address_space, PAGE_PRESENT, PTE_ADDR_MASK,
+};
 use crate::pmm;
 
 /// Free all user-space pages and page table frames from a process's PML4.
@@ -45,7 +47,7 @@ pub unsafe fn free_user_pages(pml4_phys: u64, program_break: u64) {
     let pml4 = pml4_phys as *const u64;
     let pml4_0 = *pml4;
     if (pml4_0 & PAGE_PRESENT) != 0 {
-        let pdpt_phys = pml4_0 & !0xFFF;
+        let pdpt_phys = pml4_0 & PTE_ADDR_MASK;
         let pdpt = pdpt_phys as *const u64;
 
         // Free user page table structures under PDPT[1..2] only (user code area under PML4[0]).
@@ -53,7 +55,7 @@ pub unsafe fn free_user_pages(pml4_phys: u64, program_break: u64) {
         for i in 1..3 {
             let pdpt_entry = *pdpt.add(i);
             if (pdpt_entry & PAGE_PRESENT) != 0 {
-                free_page_table_tree(pdpt_entry & !0xFFF, 2);
+                free_page_table_tree(pdpt_entry & PTE_ADDR_MASK, 2);
             }
         }
         pmm::free_frame(pdpt_phys);
@@ -63,7 +65,7 @@ pub unsafe fn free_user_pages(pml4_phys: u64, program_break: u64) {
     for i in 1..512 {
         let entry = *pml4.add(i);
         if (entry & PAGE_PRESENT) != 0 {
-            free_page_table_tree(entry & !0xFFF, 3);
+            free_page_table_tree(entry & PTE_ADDR_MASK, 3);
         }
     }
 
@@ -81,7 +83,7 @@ unsafe fn free_page_table_tree(table_phys: u64, level: u32) {
             if (entry & PAGE_PRESENT) != 0 {
                 // Skip huge pages (bit 7)
                 if (entry & (1 << 7)) == 0 {
-                    free_page_table_tree(entry & !0xFFF, level - 1);
+                    free_page_table_tree(entry & PTE_ADDR_MASK, level - 1);
                 }
             }
         }
