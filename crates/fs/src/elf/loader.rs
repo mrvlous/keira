@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Hardened 64-bit ELF binary loader with strict overflow checks, overlap rejection, W^X, and atomic rollback.
+//! Hardened 64-bit ELF binary loader with strict overflow checks, page-aligned overlap rejection, W^X, and atomic rollback.
 
 use super::types::{ElfHeader, ProgramHeader, PF_W, PF_X, PT_LOAD, USER_MAX_VADDR, USER_MIN_VADDR};
 use crate::vfs;
@@ -19,10 +19,17 @@ extern "C" {
     fn jump_to_user(entry: u64, stack: u64);
 }
 
-#[derive(Clone, Copy)]
-struct SegmentRange {
-    vaddr_start: u64,
-    vaddr_end: u64,
+#[derive(Clone, Copy, Debug)]
+struct SegmentMapping {
+    aligned_start: u64,
+    aligned_end: u64,
+    total_bytes: u64,
+    mapped_bytes: u64,
+    p_vaddr: u64,
+    p_memsz: u64,
+    p_offset: u64,
+    p_filesz: u64,
+    p_flags: u32,
     is_executable: bool,
 }
 
@@ -76,11 +83,18 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         return Err("Program header table extends beyond file boundary");
     }
 
-    // 4. Pre-scan PT_LOAD segments: validate boundaries, non-overlap, and entry point
+    // 4. Pre-scan PT_LOAD segments: validate boundaries, page-aligned non-overlap, and entry point
     const MAX_LOAD_SEGMENTS: usize = 16;
-    let mut segments: [SegmentRange; MAX_LOAD_SEGMENTS] = [SegmentRange {
-        vaddr_start: 0,
-        vaddr_end: 0,
+    let mut segments: [SegmentMapping; MAX_LOAD_SEGMENTS] = [SegmentMapping {
+        aligned_start: 0,
+        aligned_end: 0,
+        total_bytes: 0,
+        mapped_bytes: 0,
+        p_vaddr: 0,
+        p_memsz: 0,
+        p_offset: 0,
+        p_filesz: 0,
+        p_flags: 0,
         is_executable: false,
     }; MAX_LOAD_SEGMENTS];
     let mut segment_count: usize = 0;
@@ -102,7 +116,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             }
 
             if segment_count >= MAX_LOAD_SEGMENTS {
-                return Err("Too many PT_LOAD segments in ELF binary");
+                return Err("Too many PT_LOAD segments in ELF binary (max 16 supported)");
             }
 
             let seg_file_end = match ph.p_offset.checked_add(ph.p_filesz) {
@@ -115,7 +129,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             }
 
             if ph.p_filesz > ph.p_memsz {
-                return Err("Segment file size exceeds memory size");
+                return Err("Segment file size exceeds memory size (p_filesz > p_memsz)");
             }
 
             let seg_mem_end = match ph.p_vaddr.checked_add(ph.p_memsz) {
@@ -127,17 +141,51 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 return Err("Segment memory range resides outside canonical user space");
             }
 
-            // Check for segment overlap with previously registered segments
+            let page_offset = ph.p_vaddr % pmm::PAGE_SIZE;
+            let aligned_start = match ph.p_vaddr.checked_sub(page_offset) {
+                Some(s) => s,
+                None => return Err("Underflow calculating segment aligned start"),
+            };
+
+            let total_bytes = match ph
+                .p_memsz
+                .checked_add(page_offset)
+                .and_then(|s| s.checked_add(pmm::PAGE_SIZE - 1))
+            {
+                Some(t) => t & !(pmm::PAGE_SIZE - 1),
+                None => return Err("Integer overflow calculating segment total bytes"),
+            };
+
+            let aligned_end = match aligned_start.checked_add(total_bytes) {
+                Some(e) => e,
+                None => return Err("Integer overflow calculating segment aligned end"),
+            };
+
+            if aligned_end > USER_MAX_VADDR {
+                return Err("Segment aligned end exceeds canonical user space boundary");
+            }
+
+            // Check for page-aligned collision with existing segments
             for j in 0..segment_count {
                 let existing = segments[j];
-                if !(seg_mem_end <= existing.vaddr_start || ph.p_vaddr >= existing.vaddr_end) {
-                    return Err("Conflicting overlapping PT_LOAD segments detected");
+                if !(aligned_end <= existing.aligned_start || aligned_start >= existing.aligned_end)
+                {
+                    return Err(
+                        "Conflicting overlapping page ranges detected between PT_LOAD segments",
+                    );
                 }
             }
 
-            segments[segment_count] = SegmentRange {
-                vaddr_start: ph.p_vaddr,
-                vaddr_end: seg_mem_end,
+            segments[segment_count] = SegmentMapping {
+                aligned_start,
+                aligned_end,
+                total_bytes,
+                mapped_bytes: 0,
+                p_vaddr: ph.p_vaddr,
+                p_memsz: ph.p_memsz,
+                p_offset: ph.p_offset,
+                p_filesz: ph.p_filesz,
+                p_flags: ph.p_flags,
                 is_executable: (ph.p_flags & PF_X) != 0,
             };
             segment_count += 1;
@@ -147,7 +195,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     // 5. Verify that entry point resides inside an executable PT_LOAD segment
     let mut entry_valid = false;
     for s in &segments[..segment_count] {
-        if s.is_executable && header.entry >= s.vaddr_start && header.entry < s.vaddr_end {
+        if s.is_executable && header.entry >= s.p_vaddr && header.entry < s.p_vaddr + s.p_memsz {
             entry_valid = true;
             break;
         }
@@ -157,104 +205,94 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         return Err("ELF entry point does not reside inside an executable PT_LOAD segment");
     }
 
-    // 6. Map PT_LOAD Segments with full atomic range rollback on failure
-    let mut mapped_segments_count: usize = 0;
-    let mut current_seg_offset: u64 = 0;
+    // 6. Map PT_LOAD Segments with failure-atomic tracked rollback
+    for seg_idx in 0..segment_count {
+        let seg = &mut segments[seg_idx];
 
-    for i in 0..header.phnum {
-        let ph_offset = match (i as u64)
-            .checked_mul(phentsize)
-            .and_then(|off| header.phoff.checked_add(off))
-        {
-            Some(o) => o,
-            None => {
-                rollback_all_segments(&segments[..mapped_segments_count], current_seg_offset);
-                return Err("Integer overflow calculating program header offset");
-            }
-        };
+        // Derive segment permissions: W^X enforcement
+        let mut page_flags = vmm::PAGE_USER | vmm::PAGE_PRESENT;
+        if (seg.p_flags & PF_W) != 0 {
+            page_flags |= vmm::PAGE_WRITABLE;
+        }
+        if (seg.p_flags & PF_X) == 0 {
+            page_flags |= vmm::PAGE_NO_EXECUTE;
+        }
 
-        let ph = &*(file_buf.as_ptr().add(ph_offset as usize) as *const ProgramHeader);
+        let page_offset = seg.p_vaddr % pmm::PAGE_SIZE;
 
-        if ph.p_type == PT_LOAD && ph.p_memsz > 0 {
-            // Derive segment permissions: W^X enforcement
-            let mut page_flags = vmm::PAGE_USER | vmm::PAGE_PRESENT;
-            if (ph.p_flags & PF_W) != 0 {
-                page_flags |= vmm::PAGE_WRITABLE;
-            }
-            if (ph.p_flags & PF_X) == 0 {
-                page_flags |= vmm::PAGE_NO_EXECUTE;
-            }
-
-            let start_vaddr = ph.p_vaddr;
-            let mem_size = ph.p_memsz;
-            let page_offset = start_vaddr % pmm::PAGE_SIZE;
-            let aligned_start = start_vaddr - page_offset;
-            let total_size = match mem_size.checked_add(page_offset) {
-                Some(s) => s,
+        while seg.mapped_bytes < seg.total_bytes {
+            let vaddr = match seg.aligned_start.checked_add(seg.mapped_bytes) {
+                Some(v) => v,
                 None => {
-                    rollback_all_segments(&segments[..mapped_segments_count], current_seg_offset);
-                    return Err("Integer overflow in segment total size");
+                    rollback_all_segments(&segments[..=seg_idx]);
+                    return Err("Integer overflow calculating page virtual address");
                 }
             };
 
-            current_seg_offset = 0;
-
-            while current_seg_offset < total_size {
-                let vaddr = aligned_start + current_seg_offset;
-
-                let frame = match pmm::alloc_frame() {
-                    Some(f) => f,
-                    None => {
-                        rollback_all_segments(
-                            &segments[..mapped_segments_count],
-                            current_seg_offset,
-                        );
-                        return Err("Out of physical memory during ELF segment loading");
-                    }
-                };
-
-                // Map page with strict permissions
-                if let Err(e) = vmm::map_page(vaddr, frame, page_flags) {
-                    pmm::free_frame(frame);
-                    rollback_all_segments(&segments[..mapped_segments_count], current_seg_offset);
-                    return Err(e);
+            let frame = match pmm::alloc_frame() {
+                Some(f) => f,
+                None => {
+                    rollback_all_segments(&segments[..=seg_idx]);
+                    return Err("Out of physical memory during ELF segment loading");
                 }
+            };
 
-                let frame_ptr = vaddr as *mut u8;
-                core::ptr::write_bytes(frame_ptr, 0, pmm::PAGE_SIZE as usize);
-
-                let mut page_offset_in_data = 0;
-                let mut data_len_to_copy = pmm::PAGE_SIZE;
-
-                if current_seg_offset == 0 {
-                    page_offset_in_data = page_offset;
-                    data_len_to_copy = pmm::PAGE_SIZE - page_offset;
-                }
-
-                let segment_data_offset = if current_seg_offset == 0 {
-                    0
-                } else {
-                    current_seg_offset - page_offset
-                };
-
-                if segment_data_offset < ph.p_filesz {
-                    let mut bytes_left = ph.p_filesz - segment_data_offset;
-                    if bytes_left > data_len_to_copy {
-                        bytes_left = data_len_to_copy;
-                    }
-
-                    let src_ptr = file_buf
-                        .as_ptr()
-                        .add((ph.p_offset + segment_data_offset) as usize);
-                    let dst_ptr = frame_ptr.add(page_offset_in_data as usize);
-                    core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, bytes_left as usize);
-                }
-
-                current_seg_offset += pmm::PAGE_SIZE;
+            // Map page with strict permissions
+            if let Err(e) = vmm::map_page(vaddr, frame, page_flags) {
+                pmm::free_frame(frame);
+                rollback_all_segments(&segments[..=seg_idx]);
+                return Err(e);
             }
 
-            mapped_segments_count += 1;
-            current_seg_offset = 0;
+            // Successfully mapped page: update tracked progress immediately
+            seg.mapped_bytes = match seg.mapped_bytes.checked_add(pmm::PAGE_SIZE) {
+                Some(b) => b,
+                None => {
+                    rollback_all_segments(&segments[..=seg_idx]);
+                    return Err("Integer overflow updating mapped bytes");
+                }
+            };
+
+            let frame_ptr = vaddr as *mut u8;
+            core::ptr::write_bytes(frame_ptr, 0, pmm::PAGE_SIZE as usize);
+
+            let current_seg_offset = match seg.mapped_bytes.checked_sub(pmm::PAGE_SIZE) {
+                Some(off) => off,
+                None => 0,
+            };
+
+            let mut page_offset_in_data = 0u64;
+            let mut data_len_to_copy = pmm::PAGE_SIZE;
+
+            if current_seg_offset == 0 {
+                page_offset_in_data = page_offset;
+                data_len_to_copy = pmm::PAGE_SIZE - page_offset;
+            }
+
+            let segment_data_offset = if current_seg_offset == 0 {
+                0
+            } else {
+                current_seg_offset - page_offset
+            };
+
+            if segment_data_offset < seg.p_filesz {
+                let mut bytes_left = seg.p_filesz - segment_data_offset;
+                if bytes_left > data_len_to_copy {
+                    bytes_left = data_len_to_copy;
+                }
+
+                let src_offset = match seg.p_offset.checked_add(segment_data_offset) {
+                    Some(off) => off,
+                    None => {
+                        rollback_all_segments(&segments[..=seg_idx]);
+                        return Err("Integer overflow in segment data source offset");
+                    }
+                };
+
+                let src_ptr = file_buf.as_ptr().add(src_offset as usize);
+                let dst_ptr = frame_ptr.add(page_offset_in_data as usize);
+                core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, bytes_left as usize);
+            }
         }
     }
 
@@ -262,25 +300,17 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
 }
 
 /// Rollback all mapped ELF segments and clean up virtual and physical memory on failure.
-unsafe fn rollback_all_segments(completed_segments: &[SegmentRange], partial_offset: u64) {
-    for seg in completed_segments {
-        let page_offset = seg.vaddr_start % pmm::PAGE_SIZE;
-        let aligned_start = seg.vaddr_start - page_offset;
-        let total = (seg.vaddr_end - seg.vaddr_start) + page_offset;
+unsafe fn rollback_all_segments(segments: &[SegmentMapping]) {
+    for seg in segments {
         let mut off = 0u64;
-        while off < total {
-            let _ = vmm::free_and_unmap_page(aligned_start + off);
-            off += pmm::PAGE_SIZE;
-        }
-    }
-
-    if partial_offset > 0 && !completed_segments.is_empty() {
-        // Rollback any in-progress segment
-        let in_progress_start = completed_segments.last().map(|s| s.vaddr_end).unwrap_or(0);
-        let mut off = 0u64;
-        while off < partial_offset {
-            let _ = vmm::free_and_unmap_page(in_progress_start + off);
-            off += pmm::PAGE_SIZE;
+        while off < seg.mapped_bytes {
+            if let Some(vaddr) = seg.aligned_start.checked_add(off) {
+                let _ = vmm::free_and_unmap_page(vaddr);
+            }
+            off = match off.checked_add(pmm::PAGE_SIZE) {
+                Some(next_off) => next_off,
+                None => break,
+            };
         }
     }
 }
