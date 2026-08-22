@@ -10,11 +10,12 @@
 //! Hardened 64-bit ELF binary loader with strict overflow checks, page-aligned overlap rejection, W^X, and atomic rollback.
 //!
 //! ### Kernel Security & Loading Invariants:
-//! 1. **Page-Aligned Isolation**: PT_LOAD segments sharing a 4KB page boundary are strictly rejected to prevent permission aliasing
+//! 1. **Strict W^X Enforcement**: Any PT_LOAD segment requesting both `PF_W` and `PF_X` is strictly rejected before mapping.
+//! 2. **Page-Aligned Isolation**: PT_LOAD segments sharing a 4KB page boundary are strictly rejected to prevent permission aliasing
 //!    between executable code (`PF_X`) and writable data (`PF_W`).
-//! 2. **Deterministic Bounded Capacity**: `MAX_LOAD_SEGMENTS` is intentionally fixed to 16 segments, allowing static zero-heap
+//! 3. **Deterministic Bounded Capacity**: `MAX_LOAD_SEGMENTS` is intentionally fixed to 16 segments, allowing static zero-heap
 //!    allocation during bootstrap and deterministic bounded execution time.
-//! 3. **Failure-Atomic Rollback**: If frame allocation or page mapping fails at any stage, every physical frame and page mapping
+//! 4. **Failure-Atomic Rollback**: If frame allocation or page mapping fails at any stage, every physical frame and page mapping
 //!    allocated by the loader is completely released before returning `Err`.
 
 use super::types::{ElfHeader, ProgramHeader, PF_W, PF_X, PT_LOAD, USER_MAX_VADDR, USER_MIN_VADDR};
@@ -94,7 +95,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         return Err("Program header table extends beyond file boundary");
     }
 
-    // 4. Pre-scan PT_LOAD segments: validate boundaries, page-aligned non-overlap, and entry point
+    // 4. Pre-scan PT_LOAD segments: validate boundaries, strict W^X, page-aligned non-overlap, and entry point
     let mut segments: [SegmentMapping; MAX_LOAD_SEGMENTS] = [SegmentMapping {
         aligned_start: 0,
         aligned_end: 0,
@@ -127,6 +128,13 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
 
             if segment_count >= MAX_LOAD_SEGMENTS {
                 return Err("Too many PT_LOAD segments in ELF binary (max 16 supported)");
+            }
+
+            // Strict W^X Policy: reject simultaneous writable and executable segment
+            if (ph.p_flags & PF_W) != 0 && (ph.p_flags & PF_X) != 0 {
+                return Err(
+                    "W^X violation: PT_LOAD segment cannot be simultaneously writable and executable (PF_W | PF_X)",
+                );
             }
 
             let seg_file_end = match ph.p_offset.checked_add(ph.p_filesz) {
@@ -234,32 +242,37 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             let vaddr = match seg.aligned_start.checked_add(seg.mapped_bytes) {
                 Some(v) => v,
                 None => {
-                    let _ = rollback_all_segments(&segments[..=seg_idx]);
-                    return Err("Integer overflow calculating page virtual address");
+                    return Err(handle_load_failure(
+                        &segments[..=seg_idx],
+                        "Integer overflow calculating page virtual address",
+                    ));
                 }
             };
 
             let frame = match pmm::alloc_frame() {
                 Some(f) => f,
                 None => {
-                    let _ = rollback_all_segments(&segments[..=seg_idx]);
-                    return Err("Out of physical memory during ELF segment loading");
+                    return Err(handle_load_failure(
+                        &segments[..=seg_idx],
+                        "Out of physical memory during ELF segment loading",
+                    ));
                 }
             };
 
             // Map page with strict permissions
             if let Err(e) = vmm::map_page(vaddr, frame, page_flags) {
                 pmm::free_frame(frame);
-                let _ = rollback_all_segments(&segments[..=seg_idx]);
-                return Err(e);
+                return Err(handle_load_failure(&segments[..=seg_idx], e));
             }
 
             // Successfully mapped page: update tracked progress immediately
             seg.mapped_bytes = match seg.mapped_bytes.checked_add(pmm::PAGE_SIZE) {
                 Some(b) => b,
                 None => {
-                    let _ = rollback_all_segments(&segments[..=seg_idx]);
-                    return Err("Integer overflow updating mapped bytes");
+                    return Err(handle_load_failure(
+                        &segments[..=seg_idx],
+                        "Integer overflow updating mapped bytes",
+                    ));
                 }
             };
 
@@ -294,8 +307,10 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 let src_offset = match seg.p_offset.checked_add(segment_data_offset) {
                     Some(off) => off,
                     None => {
-                        let _ = rollback_all_segments(&segments[..=seg_idx]);
-                        return Err("Integer overflow in segment data source offset");
+                        return Err(handle_load_failure(
+                            &segments[..=seg_idx],
+                            "Integer overflow in segment data source offset",
+                        ));
                     }
                 };
 
@@ -309,8 +324,16 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     Ok(header.entry)
 }
 
+/// Handle an ELF mapping failure by executing rollback and returning the appropriate error.
+unsafe fn handle_load_failure(segments: &[SegmentMapping], load_err: &'static str) -> &'static str {
+    match rollback_all_segments(segments) {
+        Ok(()) => load_err,
+        Err(rollback_err) => rollback_err,
+    }
+}
+
 /// Rollback all mapped ELF segments and clean up virtual and physical memory on failure.
-/// Returns Ok(()) if all mapped pages were successfully unmapped and freed, or an error on failure.
+/// Ensures all pages across all segments continue to be reclaimed even if an intermediate unmap fails.
 unsafe fn rollback_all_segments(segments: &[SegmentMapping]) -> Result<(), &'static str> {
     let mut first_err: Option<&'static str> = None;
     for seg in segments {

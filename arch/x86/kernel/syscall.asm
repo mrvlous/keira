@@ -31,10 +31,10 @@ bits 64
 
 ; init_syscall_msrs - Configure Model-Specific Registers for fast system calls
 init_syscall_msrs:
-    ; Enable System Call Extensions (SCE) in EFER MSR (0xC0000080)
+    ; Enable System Call Extensions (SCE) and No-Execute (NXE) in EFER MSR (0xC0000080)
     mov ecx, 0xC0000080
     rdmsr
-    or eax, 1
+    or eax, ((1 << 0) | (1 << 11))
     wrmsr
 
     ; Configure STAR MSR (0xC0000081) selector bases

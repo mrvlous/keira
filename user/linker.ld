@@ -11,14 +11,17 @@
 /*
  * Linker Script Specification for Ring 3 User Space Programs
  *
- * Configures the execution environment, segment organization, and load addresses
- * for standalone Keira user-space applications.
+ * Enforces strict W^X separation between executable code (.text/.rodata) and writable data (.data/.bss).
  *
  * Virtual Base: 1 GiB (0x40000000)
- * Section Layout: .text -> .data -> .bss
  */
 
 ENTRY(_start)
+
+PHDRS {
+    text PT_LOAD FLAGS(5); /* PF_R | PF_X (Read + Execute) */
+    data PT_LOAD FLAGS(6); /* PF_R | PF_W (Read + Write) */
+}
 
 SECTIONS {
     . = 0x40000000;
@@ -28,16 +31,18 @@ SECTIONS {
         *(.text.*)
         *(.rodata)
         *(.rodata.*)
-    }
+    } :text
+
+    . = ALIGN(0x1000);
 
     .data : {
         *(.data)
         *(.data.*)
-    }
+    } :data
 
     .bss : {
         *(.bss)
         *(.bss.*)
         *(COMMON)
-    }
+    } :data
 }

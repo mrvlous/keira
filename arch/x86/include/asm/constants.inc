@@ -38,6 +38,7 @@ CR4_PAE_BIT             equ (1 << 5)
 
 EFER_MSR                equ 0xC0000080
 EFER_LONG_MODE_BIT      equ (1 << 8)
+EFER_NXE_BIT            equ (1 << 11)
 
 ; Page Table Architecture Flags
 PAGE_PRESENT            equ (1 << 0)

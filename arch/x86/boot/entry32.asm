@@ -67,10 +67,10 @@ _start:
     or  eax, CR4_PAE_BIT
     mov cr4, eax
 
-    ; Step 7: Enable Long Mode in Extended Feature Enable Register (IA32_EFER MSR)
+    ; Step 7: Enable Long Mode and No-Execute (NXE) in Extended Feature Enable Register (IA32_EFER MSR)
     mov ecx, EFER_MSR
     rdmsr
-    or  eax, EFER_LONG_MODE_BIT
+    or  eax, (EFER_LONG_MODE_BIT | EFER_NXE_BIT)
     wrmsr
 
     ; Step 8: Enable paging in CR0 register to activate 64-bit long mode

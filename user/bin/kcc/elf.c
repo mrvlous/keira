@@ -65,9 +65,9 @@ int write_elf_executable(const char *output_path) {
     write_u16(header_buf, 54, 56);
     write_u16(header_buf, 56, 1);
 
-    /* Phdr: p_type (PT_LOAD = 1), p_flags (PF_R | PF_W | PF_X = 7) */
+    /* Phdr: p_type (PT_LOAD = 1), p_flags (PF_R | PF_X = 5) */
     write_u32(header_buf, 64, 1);
-    write_u32(header_buf, 68, 7);
+    write_u32(header_buf, 68, 5);
 
     /* Phdr: p_offset (0), p_vaddr, p_paddr */
     write_u64(header_buf, 72, 0);
