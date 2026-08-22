@@ -9,7 +9,7 @@
 
 [package]
 name = "keira-core"
-version = "0.32.0"
+version = "0.32.1"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
 license = "GPL-2.0-only"

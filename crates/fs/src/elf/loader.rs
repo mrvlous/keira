@@ -66,7 +66,11 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 let vaddr = aligned_start + offset_in_segment;
                 let frame = pmm::alloc_frame().ok_or("Out of memory during ELF loading")?;
 
-                vmm::map_page(vaddr, frame, vmm::PAGE_USER | vmm::PAGE_WRITABLE)?;
+                vmm::map_page(
+                    vaddr,
+                    frame,
+                    vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
+                )?;
 
                 let frame_ptr = vaddr as *mut u8;
                 core::ptr::write_bytes(frame_ptr, 0, pmm::PAGE_SIZE as usize);

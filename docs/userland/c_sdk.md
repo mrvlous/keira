@@ -85,7 +85,7 @@ user/
 
 ## Standard Runtime Root Filesystem Layout
 
-Keira OS organizes all system, configuration, application, and user assets into a canonical 6-directory hierarchy:
+Keira Kernel organizes all system, configuration, application, and user assets into a canonical 6-directory hierarchy:
 
 ```text
 /

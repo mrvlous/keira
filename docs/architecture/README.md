@@ -8,6 +8,7 @@ High-level architectural blueprints, memory models, security boundaries, and exe
 
 | Document | Topic |
 | :--- | :--- |
+| **[`hal.md`](hal.md)** | Hardware Abstraction Layer (HAL) Traits (`Cpu`, `Mmu`, `Timer`, `InterruptController`, `SerialPort`) |
 | **[`memory_model.md`](memory_model.md)** | 4-Level Paging, Address Space Layout, Identity Mappings, and KASLR |
 | **[`privilege_rings.md`](privilege_rings.md)** | Ring 0 Kernel vs. Ring 3 Userland Privilege Transitions, TSS & IST |
 | **[`scheduling_model.md`](scheduling_model.md)** | Preemptive Multitasking, Context Switches, Timer Ticks, and Task States |

@@ -38,6 +38,7 @@ Explore the dedicated technical guides for each of the 12 workspace member crate
 *   [Tutorial: Adding Hardware Drivers](contributing/adding_drivers.md): Step-by-step tutorial for developing hardware and block drivers.
 
 ### 3. System Architecture & Blueprints (`docs/architecture/`)
+*   [Hardware Abstraction Layer (HAL)](architecture/hal.md): Architecture-independent traits (`Cpu`, `Mmu`, `Timer`, `InterruptController`, `SerialPort`).
 *   [Memory Model & Virtual Paging](architecture/memory_model.md): 4-level paging, address space layout, identity mappings, and KASLR.
 *   [Privilege Rings & Hardware Isolation](architecture/privilege_rings.md): Ring 0 vs Ring 3 privilege transitions, GDT, TSS, and syscall MSRs.
 *   [Scheduling Model](architecture/scheduling_model.md): Preemptive multitasking, context switches, timer ticks, and task states.
