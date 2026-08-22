@@ -46,11 +46,14 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     };
     let new_pdpt = new_pdpt_phys as *mut u64;
 
-    // Copy kernel identity map (PDPT[0]: 0..1GB) and kernel MMIO/Framebuffer (PDPT[3]: 3..4GB)
-    *new_pdpt.add(0) = *boot_pdpt.add(0);
-    *new_pdpt.add(3) = *boot_pdpt.add(3);
+    // Copy kernel identity map (PDPT[0]: 0..1GB) and kernel MMIO/Framebuffer (PDPT[3]: 3..4GB).
+    // Enforce strictly that kernel mappings remain Supervisor-Only (U/S bit = 0).
+    // Architectural Invariant: Effective Ring 3 User access requires U/S=1 across all hierarchy levels.
+    // Because PDPT[0] and PDPT[3] have U/S=0, Ring 3 cannot access kernel identity memory or MMIO.
+    *new_pdpt.add(0) = (*boot_pdpt.add(0)) & !PAGE_USER;
+    *new_pdpt.add(3) = (*boot_pdpt.add(3)) & !PAGE_USER;
 
-    // Set new PML4[0] = new PDPT with present + writable + user flags
+    // Set new PML4[0] = new PDPT with present + writable + user flags so userland under PDPT[1..2] is accessible
     *new_pml4 = (new_pdpt_phys & PTE_ADDR_MASK) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
 
     Ok(new_pml4_phys)

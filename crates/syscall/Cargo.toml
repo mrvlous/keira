@@ -9,7 +9,7 @@
 
 [package]
 name = "keira-syscall"
-version = "0.33.3"
+version = "0.33.4"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
 license = "GPL-2.0-only"

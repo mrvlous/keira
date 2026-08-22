@@ -91,7 +91,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                         }
                     };
 
-                    let stack_pages = 16;
+                    let stack_pages = 64;
                     let stack_bottom: u64 = 0x7FFFFFE00000;
                     for p in 0..stack_pages {
                         let page_vaddr = stack_bottom + (p * pmm::PAGE_SIZE);
@@ -105,10 +105,16 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                             core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
                         }
                     }
-                    let user_stack_top: u64 = stack_bottom + (stack_pages * pmm::PAGE_SIZE);
+                    let user_stack_midpoint: u64 =
+                        stack_bottom + (stack_pages / 2 * pmm::PAGE_SIZE);
                     vmm::switch_address_space(parent_pml4);
 
-                    match spawn_user("user_app", entry_point, user_stack_top - 16, child_pml4) {
+                    match spawn_user(
+                        "user_app",
+                        entry_point,
+                        user_stack_midpoint - 16,
+                        child_pml4,
+                    ) {
                         Ok(pid) => pid as u64,
                         Err(_) => errno_to_ret(ENOMEM),
                     }

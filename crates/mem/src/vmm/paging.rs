@@ -69,9 +69,11 @@ pub unsafe fn map_page_in_pml4(
 
     // 1. Traverse / Allocate PDPT
     let pdpt_entry = *pml4.add(pml4_idx);
+    let mut newly_allocated_pdpt: Option<u64> = None;
     let pdpt_addr = if (pdpt_entry & PAGE_PRESENT) == 0 {
         let frame = pmm::alloc_frame().ok_or("Out of physical memory for PDPT")?;
         *pml4.add(pml4_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+        newly_allocated_pdpt = Some(frame);
         frame
     } else {
         if (flags & PAGE_USER) != 0 {
@@ -83,9 +85,20 @@ pub unsafe fn map_page_in_pml4(
 
     // 2. Traverse / Allocate PD
     let pd_entry = *pdpt.add(pdpt_idx);
+    let mut newly_allocated_pd: Option<u64> = None;
     let pd_addr = if (pd_entry & PAGE_PRESENT) == 0 {
-        let frame = pmm::alloc_frame().ok_or("Out of physical memory for PD")?;
+        let frame = match pmm::alloc_frame() {
+            Some(f) => f,
+            None => {
+                if let Some(pdpt_frame) = newly_allocated_pdpt {
+                    *pml4.add(pml4_idx) = 0;
+                    pmm::free_frame(pdpt_frame);
+                }
+                return Err("Out of physical memory for PD");
+            }
+        };
         *pdpt.add(pdpt_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+        newly_allocated_pd = Some(frame);
         frame
     } else {
         if (flags & PAGE_USER) != 0 {
@@ -98,7 +111,20 @@ pub unsafe fn map_page_in_pml4(
     // 3. Traverse / Allocate PT
     let pt_entry = *pd.add(pd_idx);
     let pt_addr = if (pt_entry & PAGE_PRESENT) == 0 {
-        let frame = pmm::alloc_frame().ok_or("Out of physical memory for PT")?;
+        let frame = match pmm::alloc_frame() {
+            Some(f) => f,
+            None => {
+                if let Some(pd_frame) = newly_allocated_pd {
+                    *pdpt.add(pdpt_idx) = 0;
+                    pmm::free_frame(pd_frame);
+                }
+                if let Some(pdpt_frame) = newly_allocated_pdpt {
+                    *pml4.add(pml4_idx) = 0;
+                    pmm::free_frame(pdpt_frame);
+                }
+                return Err("Out of physical memory for PT");
+            }
+        };
         *pd.add(pd_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
         frame
     } else {

@@ -7,11 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! User virtual memory area (VMA) allocator, authoritative VMA tracking, mmap, munmap, and mprotect.
+//! User virtual memory area (VMA) allocator, per-address-space VMA tracking, mmap, partial munmap, and partial mprotect.
 
 use super::paging::{
-    free_and_unmap_page, map_page, mprotect_page, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
-    PAGE_WRITABLE,
+    active_pml4, free_and_unmap_page, map_page, mprotect_page, PAGE_NO_EXECUTE, PAGE_PRESENT,
+    PAGE_USER, PAGE_WRITABLE,
 };
 use crate::pmm;
 
@@ -29,8 +29,9 @@ pub const MAP_ANONYMOUS: u32 = 1 << 5;
 pub const MMAP_START: u64 = 0x5000_0000_0000;
 pub const MMAP_END: u64 = 0x7000_0000_0000;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Vma {
+    pub pml4_phys: u64,
     pub start: u64,
     pub end: u64,
     pub prot: u32,
@@ -38,8 +39,9 @@ pub struct Vma {
     pub is_active: bool,
 }
 
-pub const MAX_VMAS: usize = 32;
+pub const MAX_VMAS: usize = 64;
 static mut VMA_TABLE: [Vma; MAX_VMAS] = [Vma {
+    pml4_phys: 0,
     start: 0,
     end: 0,
     prot: 0,
@@ -49,7 +51,19 @@ static mut VMA_TABLE: [Vma; MAX_VMAS] = [Vma {
 
 static mut NEXT_MMAP_ADDR: u64 = MMAP_START;
 
-/// Allocate and map an anonymous virtual memory region for user space with VMA bookkeeping.
+/// Clean up all active VMAs belonging to a specific address space.
+pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
+    if pml4_phys == 0 {
+        return;
+    }
+    for i in 0..MAX_VMAS {
+        if VMA_TABLE[i].is_active && VMA_TABLE[i].pml4_phys == pml4_phys {
+            VMA_TABLE[i].is_active = false;
+        }
+    }
+}
+
+/// Allocate and map an anonymous virtual memory region for user space with per-process VMA bookkeeping.
 pub unsafe fn sys_mmap(
     hint_addr: u64,
     length: u64,
@@ -70,6 +84,8 @@ pub unsafe fn sys_mmap(
         None => return Err("Integer overflow calculating mmap length"),
     };
 
+    let cur_pml4 = active_pml4();
+
     let start_vaddr = if (flags & MAP_FIXED) != 0 {
         if hint_addr < MMAP_START || hint_addr >= MMAP_END {
             return Err("MAP_FIXED address outside user mmap region");
@@ -85,10 +101,13 @@ pub unsafe fn sys_mmap(
             return Err("MAP_FIXED range exceeds user mmap boundary");
         }
 
-        // Check for collision with existing active VMAs
+        // Check for collision with existing active VMAs in the same address space
         for i in 0..MAX_VMAS {
             let vma = VMA_TABLE[i];
-            if vma.is_active && !(fixed_end <= vma.start || hint_addr >= vma.end) {
+            if vma.is_active
+                && vma.pml4_phys == cur_pml4
+                && !(fixed_end <= vma.start || hint_addr >= vma.end)
+            {
                 return Err("MAP_FIXED collision with existing VMA mapping");
             }
         }
@@ -155,8 +174,9 @@ pub unsafe fn sys_mmap(
         allocated_pages += pmm::PAGE_SIZE;
     }
 
-    // Record authoritative VMA
+    // Record authoritative VMA tagged with active PML4 ownership
     VMA_TABLE[slot_idx] = Vma {
+        pml4_phys: cur_pml4,
         start: start_vaddr,
         end: start_vaddr + aligned_len,
         prot,
@@ -167,7 +187,7 @@ pub unsafe fn sys_mmap(
     Ok(start_vaddr)
 }
 
-/// Unmap a user virtual memory region and release underlying physical frames after VMA ownership validation.
+/// Unmap a user virtual memory region and release underlying physical frames with VMA splitting.
 pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
     if length == 0 || !addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Invalid address alignment or zero length for munmap");
@@ -187,18 +207,38 @@ pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
         None => return Err("Integer overflow in target unmap range"),
     };
 
-    // Verify range resides inside an active VMA
+    let cur_pml4 = active_pml4();
+
+    // Verify range resides inside an active VMA belonging to current address space
     let mut matching_vma = None;
     for i in 0..MAX_VMAS {
         let vma = VMA_TABLE[i];
-        if vma.is_active && addr >= vma.start && target_end <= vma.end {
+        if vma.is_active && vma.pml4_phys == cur_pml4 && addr >= vma.start && target_end <= vma.end
+        {
             matching_vma = Some(i);
             break;
         }
     }
 
     let vma_idx = matching_vma.ok_or("No matching active user VMA for munmap range")?;
+    let orig_vma = VMA_TABLE[vma_idx];
 
+    // If middle split is required, verify that a free VMA slot exists before modifying state
+    let is_middle_split = addr > orig_vma.start && target_end < orig_vma.end;
+    let split_slot = if is_middle_split {
+        let mut free_slot = None;
+        for i in 0..MAX_VMAS {
+            if !VMA_TABLE[i].is_active {
+                free_slot = Some(i);
+                break;
+            }
+        }
+        Some(free_slot.ok_or("Max VMA capacity reached during partial munmap split")?)
+    } else {
+        None
+    };
+
+    // Unmap physical pages
     let mut offset = 0u64;
     while offset < aligned_len {
         let vaddr = addr + offset;
@@ -206,15 +246,33 @@ pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
         offset += pmm::PAGE_SIZE;
     }
 
-    // Clean up VMA entry
-    if addr == VMA_TABLE[vma_idx].start && target_end == VMA_TABLE[vma_idx].end {
+    // Update VMA metadata: exact match, front trim, back trim, or middle split
+    if addr == orig_vma.start && target_end == orig_vma.end {
+        // Case 1: Exact match -> deactivate
         VMA_TABLE[vma_idx].is_active = false;
+    } else if addr == orig_vma.start && target_end < orig_vma.end {
+        // Case 2: Front trim -> shrink start
+        VMA_TABLE[vma_idx].start = target_end;
+    } else if addr > orig_vma.start && target_end == orig_vma.end {
+        // Case 3: Back trim -> shrink end
+        VMA_TABLE[vma_idx].end = addr;
+    } else if let Some(new_idx) = split_slot {
+        // Case 4: Middle split -> left half stays in vma_idx, right half in new_idx
+        VMA_TABLE[vma_idx].end = addr;
+        VMA_TABLE[new_idx] = Vma {
+            pml4_phys: orig_vma.pml4_phys,
+            start: target_end,
+            end: orig_vma.end,
+            prot: orig_vma.prot,
+            flags: orig_vma.flags,
+            is_active: true,
+        };
     }
 
     Ok(())
 }
 
-/// Change protection flags on an existing mapped user memory range after VMA validation.
+/// Change protection flags on an existing mapped user memory range with VMA splitting.
 pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'static str> {
     if length == 0 || !addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Invalid address alignment or zero length for mprotect");
@@ -238,17 +296,55 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
         None => return Err("Integer overflow in target mprotect range"),
     };
 
-    // Verify range resides inside an active VMA
+    let cur_pml4 = active_pml4();
+
+    // Verify range resides inside an active VMA belonging to current address space
     let mut matching_vma = None;
     for i in 0..MAX_VMAS {
         let vma = VMA_TABLE[i];
-        if vma.is_active && addr >= vma.start && target_end <= vma.end {
+        if vma.is_active && vma.pml4_phys == cur_pml4 && addr >= vma.start && target_end <= vma.end
+        {
             matching_vma = Some(i);
             break;
         }
     }
 
     let vma_idx = matching_vma.ok_or("No matching active user VMA for mprotect range")?;
+    let orig_vma = VMA_TABLE[vma_idx];
+
+    // If protection is identical, no metadata update or splitting needed
+    if orig_vma.prot == prot {
+        return Ok(());
+    }
+
+    // Check required free slots before modifying page protections
+    let is_exact = addr == orig_vma.start && target_end == orig_vma.end;
+    let is_middle = addr > orig_vma.start && target_end < orig_vma.end;
+
+    let required_slots = if is_exact {
+        0
+    } else if is_middle {
+        2
+    } else {
+        1
+    };
+
+    let mut found_slots = [0usize; 2];
+    let mut found_count = 0;
+    if required_slots > 0 {
+        for i in 0..MAX_VMAS {
+            if !VMA_TABLE[i].is_active {
+                found_slots[found_count] = i;
+                found_count += 1;
+                if found_count == required_slots {
+                    break;
+                }
+            }
+        }
+        if found_count < required_slots {
+            return Err("Max VMA capacity reached during partial mprotect split");
+        }
+    }
 
     let mut page_flags = 0u64;
     if (prot & PROT_WRITE) != 0 {
@@ -258,6 +354,7 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
         page_flags |= PAGE_NO_EXECUTE;
     }
 
+    // Apply new protection flags across virtual pages
     let mut offset = 0u64;
     while offset < aligned_len {
         let vaddr = addr + offset;
@@ -265,7 +362,56 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
         offset += pmm::PAGE_SIZE;
     }
 
-    VMA_TABLE[vma_idx].prot = prot;
+    // Split VMA metadata
+    if is_exact {
+        VMA_TABLE[vma_idx].prot = prot;
+    } else if addr == orig_vma.start && target_end < orig_vma.end {
+        // Front split: [addr, target_end) with new prot, [target_end, orig_vma.end) with old prot
+        let new_slot = found_slots[0];
+        VMA_TABLE[vma_idx].start = target_end;
+        VMA_TABLE[new_slot] = Vma {
+            pml4_phys: orig_vma.pml4_phys,
+            start: addr,
+            end: target_end,
+            prot,
+            flags: orig_vma.flags,
+            is_active: true,
+        };
+    } else if addr > orig_vma.start && target_end == orig_vma.end {
+        // Back split: [orig_vma.start, addr) with old prot, [addr, target_end) with new prot
+        let new_slot = found_slots[0];
+        VMA_TABLE[vma_idx].end = addr;
+        VMA_TABLE[new_slot] = Vma {
+            pml4_phys: orig_vma.pml4_phys,
+            start: addr,
+            end: target_end,
+            prot,
+            flags: orig_vma.flags,
+            is_active: true,
+        };
+    } else if is_middle {
+        // Middle split into 3: [orig.start, addr) old, [addr, target_end) new, [target_end, orig.end) old
+        let slot1 = found_slots[0];
+        let slot2 = found_slots[1];
+        VMA_TABLE[vma_idx].end = addr;
+        VMA_TABLE[slot1] = Vma {
+            pml4_phys: orig_vma.pml4_phys,
+            start: addr,
+            end: target_end,
+            prot,
+            flags: orig_vma.flags,
+            is_active: true,
+        };
+        VMA_TABLE[slot2] = Vma {
+            pml4_phys: orig_vma.pml4_phys,
+            start: target_end,
+            end: orig_vma.end,
+            prot: orig_vma.prot,
+            flags: orig_vma.flags,
+            is_active: true,
+        };
+    }
+
     Ok(())
 }
 
@@ -307,5 +453,18 @@ pub fn validate_virt_addr_range(addr: u64, length: u64) -> Result<(), &'static s
         Ok(())
     } else {
         Err("Address range resides outside user space boundaries")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vma_range_validation() {
+        assert!(validate_virt_addr_range(0x40000000, 0x1000).is_ok());
+        assert!(validate_virt_addr_range(0x5000_0000_0000, 0x2000).is_ok());
+        assert!(validate_virt_addr_range(0, 0x1000).is_err());
+        assert!(validate_virt_addr_range(0x0000_8000_0000_0000, 0x1000).is_err());
     }
 }
