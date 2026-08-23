@@ -24,9 +24,24 @@ pub const GB_1_IDENTITY_MAP: u64 = 0x4000_0000;
 pub const USER_MIN_VADDR: u64 = 0x0000_0000_0001_0000; // 64 KiB (Null trap guard boundary)
 pub const USER_MAX_VADDR: u64 = 0x0000_7FFF_FFFF_FFFF; // Upper limit of canonical 47-bit lower half
 
-/// Canonical x86_64 physical address mask for page table entries (bits 12..51).
-/// Strips lower 12-bit flags (Present, Writable, User, Huge) and upper bits including PAGE_NO_EXECUTE (bit 63).
-pub const PTE_ADDR_MASK: u64 = 0x000F_FFFF_FFFF_F000;
+/// Canonical physical address mask for standard 4KB page table entries (bits 12..51).
+pub const PTE_ADDR_MASK_4K: u64 = 0x000F_FFFF_FFFF_F000;
+/// Canonical physical address mask for 2MB huge page directory entries (bits 21..51).
+pub const PTE_ADDR_MASK_2M: u64 = 0x000F_FFFF_FFE0_0000;
+/// Canonical physical address mask for 1GB huge page directory pointer entries (bits 30..51).
+pub const PTE_ADDR_MASK_1G: u64 = 0x000F_FFFF_C000_0000;
+
+/// Default canonical physical address mask alias for 4KB page tables.
+pub const PTE_ADDR_MASK: u64 = PTE_ADDR_MASK_4K;
+
+/// Resolve physical address from a page table entry and virtual address given the page level (3 = 1GiB, 2 = 2MiB, 1 = 4KiB).
+pub fn translate_pte_to_phys(pte: u64, virtual_addr: u64, level: u8) -> u64 {
+    match level {
+        3 => (pte & PTE_ADDR_MASK_1G) | (virtual_addr & 0x3FFF_FFFF),
+        2 => (pte & PTE_ADDR_MASK_2M) | (virtual_addr & 0x1F_FFFF),
+        _ => (pte & PTE_ADDR_MASK_4K) | (virtual_addr & 0xFFF),
+    }
+}
 
 pub static mut KASLR_SLIDE_OFFSET: u64 = 0x200000;
 
@@ -166,30 +181,48 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
     let pml4_addr = active_pml4();
     let pml4 = pml4_addr as *mut u64;
 
-    let pdpt_entry = *pml4.add(pml4_idx);
-    if (pdpt_entry & PAGE_PRESENT) == 0 {
+    let pml4_entry = *pml4.add(pml4_idx);
+    if (pml4_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PDPT missing)");
     }
-    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
+    let pdpt = (pml4_entry & PTE_ADDR_MASK) as *mut u64;
 
-    let pd_entry = *pdpt.add(pdpt_idx);
-    if (pd_entry & PAGE_PRESENT) == 0 {
+    let pdpt_entry = *pdpt.add(pdpt_idx);
+    if (pdpt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PD missing)");
     }
-    let pd = (pd_entry & PTE_ADDR_MASK) as *mut u64;
+    if (pdpt_entry & PAGE_HUGE) != 0 {
+        if virtual_addr.is_multiple_of(0x4000_0000) {
+            let phys_frame = pdpt_entry & PTE_ADDR_MASK_1G;
+            *pdpt.add(pdpt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
+            invlpg(virtual_addr);
+            return Ok(());
+        }
+        return Err("Cannot mprotect sub-page of 1GB huge page without splitting");
+    }
+    let pd = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
 
-    let pt_entry = *pd.add(pd_idx);
-    if (pt_entry & PAGE_PRESENT) == 0 {
+    let pd_entry = *pd.add(pd_idx);
+    if (pd_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PT missing)");
     }
-    let pt = (pt_entry & PTE_ADDR_MASK) as *mut u64;
+    if (pd_entry & PAGE_HUGE) != 0 {
+        if virtual_addr.is_multiple_of(0x20_0000) {
+            let phys_frame = pd_entry & PTE_ADDR_MASK_2M;
+            *pd.add(pd_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
+            invlpg(virtual_addr);
+            return Ok(());
+        }
+        return Err("Cannot mprotect sub-page of 2MB huge page without splitting");
+    }
+    let pt = (pd_entry & PTE_ADDR_MASK) as *mut u64;
 
-    let entry = *pt.add(pt_idx);
-    if (entry & PAGE_PRESENT) == 0 {
+    let pt_entry = *pt.add(pt_idx);
+    if (pt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped");
     }
 
-    let phys_frame = entry & PTE_ADDR_MASK;
+    let phys_frame = pt_entry & PTE_ADDR_MASK;
     *pt.add(pt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER;
 
     invlpg(virtual_addr);
@@ -204,30 +237,42 @@ pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> 
     let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
 
     let pml4 = active_pml4() as *const u64;
-    let pdpt_entry = *pml4.add(pml4_idx);
+    let pml4_entry = *pml4.add(pml4_idx);
+    if (pml4_entry & PAGE_PRESENT) == 0 || (pml4_entry & PAGE_USER) == 0 {
+        return false;
+    }
+
+    let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+    let pdpt_entry = *pdpt.add(pdpt_idx);
     if (pdpt_entry & PAGE_PRESENT) == 0 || (pdpt_entry & PAGE_USER) == 0 {
         return false;
     }
+    if (pdpt_entry & PAGE_HUGE) != 0 {
+        if require_writable && (pdpt_entry & PAGE_WRITABLE) == 0 {
+            return false;
+        }
+        return true;
+    }
 
-    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
-    let pd_entry = *pdpt.add(pdpt_idx);
+    let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+    let pd_entry = *pd.add(pd_idx);
     if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_USER) == 0 {
         return false;
     }
+    if (pd_entry & PAGE_HUGE) != 0 {
+        if require_writable && (pd_entry & PAGE_WRITABLE) == 0 {
+            return false;
+        }
+        return true;
+    }
 
-    let pd = (pd_entry & PTE_ADDR_MASK) as *const u64;
-    let pt_entry = *pd.add(pd_idx);
+    let pt = (pd_entry & PTE_ADDR_MASK) as *const u64;
+    let pt_entry = *pt.add(pt_idx);
     if (pt_entry & PAGE_PRESENT) == 0 || (pt_entry & PAGE_USER) == 0 {
         return false;
     }
 
-    let pt = (pt_entry & PTE_ADDR_MASK) as *const u64;
-    let entry = *pt.add(pt_idx);
-    if (entry & PAGE_PRESENT) == 0 || (entry & PAGE_USER) == 0 {
-        return false;
-    }
-
-    if require_writable && (entry & PAGE_WRITABLE) == 0 {
+    if require_writable && (pt_entry & PAGE_WRITABLE) == 0 {
         return false;
     }
 
@@ -248,26 +293,42 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     let pml4_addr = active_pml4();
     let pml4 = pml4_addr as *mut u64;
 
-    let pdpt_entry = *pml4.add(pml4_idx);
-    if (pdpt_entry & PAGE_PRESENT) == 0 {
+    let pml4_entry = *pml4.add(pml4_idx);
+    if (pml4_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PDPT missing)");
     }
-    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
+    let pdpt = (pml4_entry & PTE_ADDR_MASK) as *mut u64;
 
-    let pd_entry = *pdpt.add(pdpt_idx);
-    if (pd_entry & PAGE_PRESENT) == 0 {
+    let pdpt_entry = *pdpt.add(pdpt_idx);
+    if (pdpt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PD missing)");
     }
-    let pd = (pd_entry & PTE_ADDR_MASK) as *mut u64;
+    if (pdpt_entry & PAGE_HUGE) != 0 {
+        if virtual_addr.is_multiple_of(0x4000_0000) {
+            *pdpt.add(pdpt_idx) = 0;
+            invlpg(virtual_addr);
+            return Ok(());
+        }
+        return Err("Cannot unmap sub-page of 1GB huge page without splitting");
+    }
+    let pd = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
 
-    let pt_entry = *pd.add(pd_idx);
-    if (pt_entry & PAGE_PRESENT) == 0 {
+    let pd_entry = *pd.add(pd_idx);
+    if (pd_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped (PT missing)");
     }
-    let pt = (pt_entry & PTE_ADDR_MASK) as *mut u64;
+    if (pd_entry & PAGE_HUGE) != 0 {
+        if virtual_addr.is_multiple_of(0x20_0000) {
+            *pd.add(pd_idx) = 0;
+            invlpg(virtual_addr);
+            return Ok(());
+        }
+        return Err("Cannot unmap sub-page of 2MB huge page without splitting");
+    }
+    let pt = (pd_entry & PTE_ADDR_MASK) as *mut u64;
 
-    let entry = *pt.add(pt_idx);
-    if (entry & PAGE_PRESENT) == 0 {
+    let pt_entry = *pt.add(pt_idx);
+    if (pt_entry & PAGE_PRESENT) == 0 {
         return Err("Page not mapped");
     }
 
@@ -279,10 +340,30 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
 
 /// Unmap a virtual page and free its underlying physical frame.
 pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
-    if let Some(phys) = get_phys_addr(virtual_addr) {
-        let frame = phys & PTE_ADDR_MASK;
+    if let Some(entry) = get_pte_in_pml4(active_pml4(), virtual_addr) {
+        if (entry & PAGE_HUGE) != 0 {
+            let is_1gb = virtual_addr.is_multiple_of(0x4000_0000);
+            let frame = if is_1gb {
+                entry & PTE_ADDR_MASK_1G
+            } else {
+                entry & PTE_ADDR_MASK_2M
+            };
+            unmap_page(virtual_addr)?;
+            if (entry & PAGE_USER) != 0 && frame >= pmm::KERNEL_BASE_1MB {
+                let frame_count = if is_1gb {
+                    512 * 512 // 1GB in 4KB frames
+                } else {
+                    512 // 2MB in 4KB frames
+                };
+                pmm::free_contiguous_frames(frame, frame_count);
+            }
+            return Ok(());
+        }
+        let frame = entry & PTE_ADDR_MASK;
         unmap_page(virtual_addr)?;
-        pmm::free_frame(frame);
+        if frame >= pmm::KERNEL_BASE_1MB {
+            pmm::free_frame(frame);
+        }
         Ok(())
     } else {
         Err("Virtual address not mapped")
@@ -307,34 +388,38 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
         let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
 
         let pml4 = pml4_phys as *const u64;
-        let pdpt_entry = *pml4.add(pml4_idx);
-        if (pdpt_entry & PAGE_PRESENT) == 0 {
+        let pml4_entry = *pml4.add(pml4_idx);
+        if (pml4_entry & PAGE_PRESENT) == 0 {
             return None;
         }
 
-        let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
-        let pd_entry = *pdpt.add(pdpt_idx);
+        let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+        let pdpt_entry = *pdpt.add(pdpt_idx);
+        if (pdpt_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+        if (pdpt_entry & PAGE_HUGE) != 0 {
+            // 1GB huge page entry at PDPT level
+            return Some(pdpt_entry);
+        }
+
+        let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 {
             return None;
         }
         if (pd_entry & PAGE_HUGE) != 0 {
-            // 2MB huge page entry
+            // 2MB huge page entry at PD level
             return Some(pd_entry);
         }
 
-        let pd = (pd_entry & PTE_ADDR_MASK) as *const u64;
-        let pt_entry = *pd.add(pd_idx);
+        let pt = (pd_entry & PTE_ADDR_MASK) as *const u64;
+        let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 {
             return None;
         }
 
-        let pt = (pt_entry & PTE_ADDR_MASK) as *const u64;
-        let entry = *pt.add(pt_idx);
-        if (entry & PAGE_PRESENT) == 0 {
-            return None;
-        }
-
-        Some(entry)
+        Some(pt_entry)
     }
 }
 
@@ -343,10 +428,60 @@ pub unsafe fn is_page_mapped_in_pml4(pml4_phys: u64, virtual_addr: u64) -> bool 
     get_pte_in_pml4(pml4_phys, virtual_addr).is_some()
 }
 
+/// Translate a virtual address to its corresponding physical address within a specific PML4 table.
+pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> {
+    #[cfg(test)]
+    {
+        let _ = (pml4_phys, virtual_addr);
+        return None;
+    }
+    #[cfg(not(test))]
+    {
+        if pml4_phys == 0 {
+            return None;
+        }
+        let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
+        let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
+        let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
+        let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
+
+        let pml4 = pml4_phys as *const u64;
+        let pml4_entry = *pml4.add(pml4_idx);
+        if (pml4_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+        let pdpt_entry = *pdpt.add(pdpt_idx);
+        if (pdpt_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+        if (pdpt_entry & PAGE_HUGE) != 0 {
+            return Some(translate_pte_to_phys(pdpt_entry, virtual_addr, 3));
+        }
+
+        let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_entry = *pd.add(pd_idx);
+        if (pd_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+        if (pd_entry & PAGE_HUGE) != 0 {
+            return Some(translate_pte_to_phys(pd_entry, virtual_addr, 2));
+        }
+
+        let pt = (pd_entry & PTE_ADDR_MASK) as *const u64;
+        let pt_entry = *pt.add(pt_idx);
+        if (pt_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        Some(translate_pte_to_phys(pt_entry, virtual_addr, 1))
+    }
+}
+
 /// Translate a virtual address to its corresponding physical address, stripping all PTE flag and NX bits.
 pub unsafe fn get_phys_addr(virtual_addr: u64) -> Option<u64> {
-    let entry = get_pte_in_pml4(active_pml4(), virtual_addr)?;
-    Some((entry & PTE_ADDR_MASK) | (virtual_addr & 0xFFF))
+    get_phys_addr_in_pml4(active_pml4(), virtual_addr)
 }
 
 #[cfg(test)]
@@ -367,5 +502,34 @@ mod tests {
             (0x8000_0000_1234_5007u64 & PTE_ADDR_MASK),
             0x0000_0000_1234_5000u64
         );
+    }
+
+    #[test]
+    fn test_translate_4k_page() {
+        let frame: u64 = 0x0000_0000_1234_5000;
+        let pte = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_NO_EXECUTE;
+        let vaddr: u64 = 0x5000_0000_1ABC;
+        let phys = translate_pte_to_phys(pte, vaddr, 1);
+        assert_eq!(phys, 0x0000_0000_1234_5ABC);
+    }
+
+    #[test]
+    fn test_translate_2mib_huge_page() {
+        let frame: u64 = 0x0000_0000_2000_0000; // 2MB aligned
+        let pde = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_HUGE;
+        let vaddr: u64 = 0x5000_0012_3456;
+        let phys = translate_pte_to_phys(pde, vaddr, 2);
+        // Offset within 2MB: 0x12_3456. Result: 0x2012_3456
+        assert_eq!(phys, 0x0000_0000_2012_3456);
+    }
+
+    #[test]
+    fn test_translate_1gib_huge_page() {
+        let frame: u64 = 0x0000_0000_8000_0000; // 1GB aligned
+        let pdpte = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_HUGE;
+        let vaddr: u64 = 0x5000_1234_5678;
+        let phys = translate_pte_to_phys(pdpte, vaddr, 3);
+        // Offset within 1GB: 0x1234_5678. Result: 0x9234_5678
+        assert_eq!(phys, 0x0000_0000_9234_5678);
     }
 }

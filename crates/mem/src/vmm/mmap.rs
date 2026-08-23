@@ -247,28 +247,29 @@ pub unsafe fn sys_mmap(
     Ok(start_vaddr)
 }
 
-/// Unmap a user virtual memory region and release underlying physical frames with VMA splitting.
-pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
+/// Extended sys_munmap returning the exact number of bytes successfully unmapped.
+/// Returns `Ok(unmapped_bytes)` on complete success, or `Err((error_message, unmapped_bytes))` on partial failure.
+pub unsafe fn sys_munmap_ext(addr: u64, length: u64) -> Result<u64, (&'static str, u64)> {
     if length == 0 || addr % pmm::PAGE_SIZE != 0 {
-        return Err("Invalid address alignment or zero length for munmap");
+        return Err(("Invalid address alignment or zero length for munmap", 0));
     }
 
     if addr < MMAP_START || addr >= MMAP_END {
-        return Err("Address outside user mmap region");
+        return Err(("Address outside user mmap region", 0));
     }
 
     let aligned_len = match length.checked_add(pmm::PAGE_SIZE - 1) {
         Some(l) => l & !(pmm::PAGE_SIZE - 1),
-        None => return Err("Integer overflow in munmap length"),
+        None => return Err(("Integer overflow in munmap length", 0)),
     };
 
     if aligned_len == 0 {
-        return Err("Invalid aligned munmap length");
+        return Err(("Invalid aligned munmap length", 0));
     }
 
     let target_end = match addr.checked_add(aligned_len) {
         Some(e) => e,
-        None => return Err("Integer overflow in target unmap range"),
+        None => return Err(("Integer overflow in target unmap range", 0)),
     };
 
     let cur_pml4 = active_pml4();
@@ -284,7 +285,10 @@ pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
         }
     }
 
-    let vma_idx = matching_vma.ok_or("No matching active user VMA for munmap range")?;
+    let vma_idx = match matching_vma {
+        Some(i) => i,
+        None => return Err(("No matching active user VMA for munmap range", 0)),
+    };
     let orig_vma = VMA_TABLE[vma_idx];
 
     // If middle split is required, verify that a free VMA slot exists before modifying state
@@ -297,7 +301,10 @@ pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
                 break;
             }
         }
-        Some(free_slot.ok_or("Max VMA capacity reached during partial munmap split")?)
+        match free_slot {
+            Some(s) => Some(s),
+            None => return Err(("Max VMA capacity reached during partial munmap split", 0)),
+        }
     } else {
         None
     };
@@ -343,10 +350,18 @@ pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
     }
 
     if let Some(e) = unmap_err {
-        return Err(e);
+        return Err((e, actual_unmapped_len));
     }
 
-    Ok(())
+    Ok(actual_unmapped_len)
+}
+
+/// Unmap a user virtual memory region and release underlying physical frames with VMA splitting.
+pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
+    match sys_munmap_ext(addr, length) {
+        Ok(_) => Ok(()),
+        Err((err, _)) => Err(err),
+    }
 }
 
 /// Change protection flags on an existing mapped user memory range with VMA splitting.
@@ -519,11 +534,13 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
     Ok(())
 }
 
-/// Verify that all active VMAs for a given address space match the underlying page table states.
+/// Verify that all active VMAs for a given address space match the underlying page table states,
+/// and detect any orphan page table mappings in the user mmap address space.
 pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static str> {
     if pml4_phys == 0 {
         return Ok(());
     }
+    // 1. Forward check: verify each active VMA against page table attributes
     for i in 0..MAX_VMAS {
         let vma = VMA_TABLE[i];
         if vma.is_active && vma.pml4_phys == pml4_phys {
@@ -554,6 +571,121 @@ pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static s
             }
         }
     }
+
+    // 2. Reverse check: ensure present user mappings in MMAP range belong to an active VMA
+    #[cfg(not(test))]
+    {
+        let pml4 = pml4_phys as *const u64;
+
+        // Traverse all canonical user PML4 slots (1..256)
+        for pml4_idx in 1..256 {
+            let pml4_entry = *pml4.add(pml4_idx);
+            if (pml4_entry & PAGE_PRESENT) == 0 {
+                continue;
+            }
+            let pdpt_phys = pml4_entry & super::paging::PTE_ADDR_MASK;
+            let pdpt = pdpt_phys as *const u64;
+
+            for pdpt_idx in 0..512 {
+                let pdpt_entry = *pdpt.add(pdpt_idx);
+                if (pdpt_entry & PAGE_PRESENT) == 0 {
+                    continue;
+                }
+                if (pdpt_entry & super::paging::PAGE_HUGE) != 0 {
+                    let page_start = ((pml4_idx as u64) << 39) | ((pdpt_idx as u64) << 30);
+                    let page_end = page_start + 0x4000_0000;
+                    // Check range-overlap with MMAP space
+                    if page_start < MMAP_END && page_end > MMAP_START {
+                        let mut in_vma = false;
+                        for i in 0..MAX_VMAS {
+                            let v = VMA_TABLE[i];
+                            if v.is_active
+                                && v.pml4_phys == pml4_phys
+                                && page_start < v.end
+                                && page_end > v.start
+                            {
+                                in_vma = true;
+                                break;
+                            }
+                        }
+                        if !in_vma {
+                            return Err("VMA invariant violation: Orphan 1GB huge page overlaps mmap region without active VMA");
+                        }
+                    }
+                    continue;
+                }
+
+                let pd_phys = pdpt_entry & super::paging::PTE_ADDR_MASK;
+                let pd = pd_phys as *const u64;
+
+                for pd_idx in 0..512 {
+                    let pd_entry = *pd.add(pd_idx);
+                    if (pd_entry & PAGE_PRESENT) == 0 {
+                        continue;
+                    }
+                    if (pd_entry & super::paging::PAGE_HUGE) != 0 {
+                        let page_start = ((pml4_idx as u64) << 39)
+                            | ((pdpt_idx as u64) << 30)
+                            | ((pd_idx as u64) << 21);
+                        let page_end = page_start + 0x20_0000;
+                        // Check range-overlap with MMAP space
+                        if page_start < MMAP_END && page_end > MMAP_START {
+                            let mut in_vma = false;
+                            for i in 0..MAX_VMAS {
+                                let v = VMA_TABLE[i];
+                                if v.is_active
+                                    && v.pml4_phys == pml4_phys
+                                    && page_start < v.end
+                                    && page_end > v.start
+                                {
+                                    in_vma = true;
+                                    break;
+                                }
+                            }
+                            if !in_vma {
+                                return Err("VMA invariant violation: Orphan 2MB huge page overlaps mmap region without active VMA");
+                            }
+                        }
+                        continue;
+                    }
+
+                    let pt_phys = pd_entry & super::paging::PTE_ADDR_MASK;
+                    let pt = pt_phys as *const u64;
+
+                    for pt_idx in 0..512 {
+                        let pt_entry = *pt.add(pt_idx);
+                        if (pt_entry & PAGE_PRESENT) != 0
+                            && (pt_entry & super::paging::PAGE_USER) != 0
+                        {
+                            let page_start = ((pml4_idx as u64) << 39)
+                                | ((pdpt_idx as u64) << 30)
+                                | ((pd_idx as u64) << 21)
+                                | ((pt_idx as u64) << 12);
+                            let page_end = page_start + pmm::PAGE_SIZE;
+                            if page_start < MMAP_END && page_end > MMAP_START {
+                                let mut in_vma = false;
+                                for i in 0..MAX_VMAS {
+                                    let v = VMA_TABLE[i];
+                                    if v.is_active
+                                        && v.pml4_phys == pml4_phys
+                                        && page_start < v.end
+                                        && page_end > v.start
+                                    {
+                                        in_vma = true;
+                                        break;
+                                    }
+                                }
+                                if !in_vma {
+                                    return Err("VMA invariant violation: Orphan PTE exists in mmap region without active VMA");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -1125,5 +1257,106 @@ mod tests {
 
             reset_vma_table_for(TEST_PML4);
         }
+    }
+
+    #[test]
+    fn test_munmap_ext_exact_bytes_exposed() {
+        unsafe {
+            reset_vma_table_for(TEST_PML4);
+
+            inject_vma(
+                0,
+                TEST_PML4,
+                MMAP_START,
+                MMAP_START + 0x4000,
+                PROT_READ,
+                MAP_PRIVATE | MAP_ANONYMOUS,
+            );
+
+            // In test mode without mapped pages, munmap fails at page level on first page,
+            // so actual_unmapped_len is 0.
+            let res = sys_munmap_ext(MMAP_START, 0x2000);
+            assert!(res.is_err());
+            let (msg, unmapped) = res.unwrap_err();
+            assert_eq!(unmapped, 0);
+            assert_eq!(msg, "Virtual address not mapped");
+
+            reset_vma_table_for(TEST_PML4);
+        }
+    }
+
+    #[test]
+    fn test_munmap_ext_validation_errors() {
+        unsafe {
+            // Zero length
+            let res0 = sys_munmap_ext(MMAP_START, 0);
+            assert!(res0.is_err());
+            assert_eq!(res0.unwrap_err().1, 0);
+
+            // Unaligned address
+            let res_unaligned = sys_munmap_ext(MMAP_START + 1, 0x1000);
+            assert!(res_unaligned.is_err());
+            assert_eq!(res_unaligned.unwrap_err().1, 0);
+
+            // Out of bounds address
+            let res_oob = sys_munmap_ext(0x1000_0000, 0x1000);
+            assert!(res_oob.is_err());
+            assert_eq!(res_oob.unwrap_err().1, 0);
+        }
+    }
+
+    #[test]
+    fn test_page_table_level_huge_page_invariants() {
+        // Test simulated 4-level page table integrity:
+        // 1GB huge page lives in PDPT[pdpt_idx]
+        // 2MB huge page lives in PD[pd_idx]
+        // 4KB page lives in PT[pt_idx]
+        let mut mock_pml4 = [0u64; 512];
+        let mut mock_pdpt = [0u64; 512];
+        let mut mock_pd = [0u64; 512];
+        let mut mock_pt = [0u64; 512];
+
+        let pml4_phys = mock_pml4.as_mut_ptr() as u64;
+        let pdpt_phys = mock_pdpt.as_mut_ptr() as u64;
+        let pd_phys = mock_pd.as_mut_ptr() as u64;
+        let pt_phys = mock_pt.as_mut_ptr() as u64;
+
+        // Link PML4[1] -> PDPT
+        mock_pml4[1] = pdpt_phys | super::paging::PAGE_PRESENT | super::paging::PAGE_USER;
+
+        // Set 1GB Huge Page in PDPT[0]
+        let frame_1gb = 0x4000_0000u64;
+        mock_pdpt[0] = frame_1gb
+            | super::paging::PAGE_PRESENT
+            | super::paging::PAGE_USER
+            | super::paging::PAGE_HUGE;
+
+        // Verify that PDPT[0] holds the 1GB entry, while PML4[1] still points to PDPT
+        assert_eq!(mock_pml4[1] & super::paging::PTE_ADDR_MASK, pdpt_phys);
+        assert_eq!(mock_pdpt[0] & super::paging::PTE_ADDR_MASK_1G, frame_1gb);
+
+        // Unmapping 1GB huge page clears PDPT[0], PML4[1] MUST remain intact!
+        mock_pdpt[0] = 0;
+        assert_eq!(mock_pdpt[0], 0);
+        assert_eq!(mock_pml4[1] & super::paging::PTE_ADDR_MASK, pdpt_phys);
+
+        // Link PDPT[1] -> PD
+        mock_pdpt[1] = pd_phys | super::paging::PAGE_PRESENT | super::paging::PAGE_USER;
+
+        // Set 2MB Huge Page in PD[0]
+        let frame_2mb = 0x20_0000u64;
+        mock_pd[0] = frame_2mb
+            | super::paging::PAGE_PRESENT
+            | super::paging::PAGE_USER
+            | super::paging::PAGE_HUGE;
+
+        // Verify that PD[0] holds the 2MB entry, while PDPT[1] still points to PD
+        assert_eq!(mock_pdpt[1] & super::paging::PTE_ADDR_MASK, pd_phys);
+        assert_eq!(mock_pd[0] & super::paging::PTE_ADDR_MASK_2M, frame_2mb);
+
+        // Unmapping 2MB huge page clears PD[0], PDPT[1] MUST remain intact!
+        mock_pd[0] = 0;
+        assert_eq!(mock_pd[0], 0);
+        assert_eq!(mock_pdpt[1] & super::paging::PTE_ADDR_MASK, pd_phys);
     }
 }

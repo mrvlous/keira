@@ -173,6 +173,13 @@ pub fn free_frame(frame: u64) {
     }
 }
 
+/// Free multiple contiguous physical page frames.
+pub fn free_contiguous_frames(start_frame: u64, count: usize) {
+    for i in 0..count {
+        free_frame(start_frame + (i as u64) * PAGE_SIZE);
+    }
+}
+
 /// Query total detected physical memory in bytes.
 pub fn total_memory() -> u64 {
     unsafe { TOTAL_PHYS_MEM }

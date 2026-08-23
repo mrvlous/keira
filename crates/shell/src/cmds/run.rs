@@ -34,15 +34,31 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
 
     vmm::switch_address_space(child_pml4);
 
+    let cleanup_and_restore = |child: u64, brk: u64| {
+        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+            task.pml4_phys = parent_pml4;
+            for fd in 0..8 {
+                if task.fds[fd].is_open {
+                    if task.fds[fd].write_mode {
+                        if let Ok(path_str) =
+                            core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
+                        {
+                            keira_fs::lock::release_lock(path_str, 0);
+                        }
+                    }
+                    task.fds[fd].is_open = false;
+                }
+            }
+        }
+        vmm::switch_address_space(parent_pml4);
+        keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+        vmm::free_user_pages(child, brk);
+    };
+
     let entry_point = match load_elf(filename) {
         Ok(ep) => ep,
         Err(e) => {
-            if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-                task.pml4_phys = parent_pml4;
-            }
-            vmm::switch_address_space(parent_pml4);
-            keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
-            vmm::free_user_pages(child_pml4, 0x600000000000);
+            cleanup_and_restore(child_pml4, 0x600000000000);
             return Err(e);
         }
     };
@@ -54,20 +70,19 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         let stack_frame = match pmm::alloc_frame() {
             Some(f) => f,
             None => {
-                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-                    task.pml4_phys = parent_pml4;
-                }
-                vmm::switch_address_space(parent_pml4);
-                keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
-                vmm::free_user_pages(child_pml4, 0x600000000000);
+                cleanup_and_restore(child_pml4, 0x600000000000);
                 return Err("Out of memory for user stack frame");
             }
         };
-        vmm::map_page(
+        if let Err(e) = vmm::map_page(
             page_vaddr,
             stack_frame,
             vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-        )?;
+        ) {
+            pmm::free_frame(stack_frame);
+            cleanup_and_restore(child_pml4, 0x600000000000);
+            return Err(e);
+        }
         let ptr = page_vaddr as *mut u8;
         core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
     }
@@ -84,25 +99,9 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
 
     if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
         brk_end = task.program_break;
-        task.pml4_phys = parent_pml4;
-        for fd in 0..8 {
-            if task.fds[fd].is_open {
-                if task.fds[fd].write_mode {
-                    if let Ok(path_str) =
-                        core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
-                    {
-                        keira_fs::lock::release_lock(path_str, 0);
-                    }
-                }
-                task.fds[fd].is_open = false;
-            }
-        }
     }
 
-    vmm::switch_address_space(parent_pml4);
-    keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
-
-    vmm::free_user_pages(child_pml4, brk_end);
+    cleanup_and_restore(child_pml4, brk_end);
 
     core::arch::asm!("sti");
 

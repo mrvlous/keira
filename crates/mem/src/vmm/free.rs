@@ -93,11 +93,22 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
             if (entry & PAGE_PRESENT) != 0 {
                 if (entry & PAGE_HUGE) != 0 {
                     // Huge page (2MB at level 2, 1GB at level 3) is a leaf frame.
-                    // The 4KB frame allocator cannot reclaim 2MB/1GB huge pages without
-                    // corrupting the free list, so skip them entirely. Boot-time huge
-                    // pages (identity map, MMIO) are already excluded by the PDPT[0]/PDPT[3]
-                    // guard above. Any remaining user huge pages are left intentionally
-                    // unfreed since this kernel does not dynamically allocate huge pages.
+                    // Reclaim underlying physical frames if dynamically allocated and owned by user.
+                    if (entry & PAGE_USER) != 0 {
+                        let frame = if level == 3 {
+                            entry & super::paging::PTE_ADDR_MASK_1G
+                        } else {
+                            entry & super::paging::PTE_ADDR_MASK_2M
+                        };
+                        if frame >= pmm::KERNEL_BASE_1MB {
+                            let count = if level == 3 {
+                                512 * 512 // 1GB in 4KB frames
+                            } else {
+                                512 // 2MB in 4KB frames
+                            };
+                            pmm::free_contiguous_frames(frame, count);
+                        }
+                    }
                 } else {
                     let child_phys = entry & PTE_ADDR_MASK;
                     if child_phys >= pmm::KERNEL_BASE_1MB {
