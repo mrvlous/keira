@@ -244,8 +244,10 @@ pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> 
         return Err("Network card offline");
     }
 
-    let hostname = if url.starts_with("http://") {
-        &url[7..]
+    let hostname = if let Some(stripped) = url.strip_prefix("http://") {
+        stripped
+    } else if let Some(stripped) = url.strip_prefix("https://") {
+        stripped
     } else {
         url
     };

@@ -17,7 +17,13 @@ Keira Kernel provides **74 built-in native shell commands** organized by categor
 - `run`, `script`, `go`, `env`, `hostname`, `user`, `login`, `please`, `reset`.
 
 ## 5. Network & Cryptography
-- `network`, `download`, `https`, `firewall`, `iptables`, `bpf`, `tpm`.
+- `network`: Interface status, MAC/IP telemetry, and link state.
+- `download`: Fetch network payloads over HTTPS (Native TLS 1.3 on port 443) or plain HTTP (port 80) with automatic fallback and save directly to FAT16 disk storage.
+- `https`: Query TLS 1.3 engine info, run SHA-256 self-test, or perform encrypted GET requests.
+- `firewall`: Manage stateful IPv4 netfilter packet filtering rules.
+- `iptables`: Netfilter rule table manipulation.
+- `bpf`: In-kernel eBPF bytecode execution and packet filters.
+- `tpm`: TPM 2.0 security enclave hardware interface.
 
 ## 6. IPC & Diagnostics
 - `ipcs`, `ipcrm`, `futex`, `eventfd`, `epoll`, `mqueue`, `lkm`, `syslog`, `timer`, `kvm`, `guide`, `help`, `history`, `drivers`, `use`, `write`.
