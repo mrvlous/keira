@@ -1005,10 +1005,9 @@ mod tests {
     #[test]
     #[should_panic(expected = "Recursive PMM lock detected")]
     fn test_recursive_pmm_lock_debug_detection() {
-        let lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         set_test_cpu_id(0);
         let _g1 = PmmGuard::lock();
-        drop(lock);
         let _g2 = PmmGuard::lock();
     }
 
@@ -1028,6 +1027,7 @@ mod tests {
             assert_eq!(holder, 0);
             assert!(PMM_LOCK.load(Ordering::Relaxed));
             assert_ne!(holder, cur_cpu); // MUST NOT panic as recursive
+            clear_test_cpu_id();
         });
 
         handle.join().unwrap();
@@ -1095,6 +1095,7 @@ mod tests {
                         assert!(!is_frame_allocated(frame));
                     }
                 }
+                clear_test_cpu_id();
             });
             handles.push(handle);
         }
@@ -1122,6 +1123,7 @@ mod tests {
                         let _ = free_frame(frame);
                     }
                 }
+                clear_test_cpu_id();
             });
             handles.push(h);
         }
@@ -1153,6 +1155,7 @@ mod tests {
                         assert!(free_frame(frame));
                     }
                 }
+                clear_test_cpu_id();
             });
             handles.push(handle);
         }
