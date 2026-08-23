@@ -20,23 +20,94 @@ const BITMAP_WORDS: usize = MAX_TRACKED_FRAMES / 64; // 16,384 words (128 KiB in
 
 static PMM_LOCK: AtomicBool = AtomicBool::new(false);
 
-struct PmmGuard;
+#[cfg(not(test))]
+#[allow(dead_code)]
+static PMM_HOLDER_CORE: core::sync::atomic::AtomicIsize = core::sync::atomic::AtomicIsize::new(-1);
+
+#[cfg(test)]
+thread_local! {
+    static CURRENT_THREAD_HOLDS_PMM: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+}
+
+pub struct PmmGuard {
+    #[allow(dead_code)]
+    irq_state: bool,
+}
 
 impl PmmGuard {
-    fn lock() -> Self {
+    pub fn lock() -> Self {
+        #[cfg(target_os = "none")]
+        let irq_state = unsafe {
+            let rflags = keira_arch::cpu::read_rflags();
+            let enabled = (rflags & 0x200) != 0;
+            if enabled {
+                keira_arch::cpu::cli();
+            }
+            enabled
+        };
+        #[cfg(not(target_os = "none"))]
+        let irq_state = false;
+
+        // Recursive lock debug detection
+        #[cfg(debug_assertions)]
+        {
+            #[cfg(test)]
+            {
+                if CURRENT_THREAD_HOLDS_PMM.with(|c| c.get()) {
+                    panic!("Recursive PMM lock detected: allocator is non-reentrant");
+                }
+            }
+            #[cfg(all(not(test), target_os = "none"))]
+            {
+                if PMM_LOCK.load(Ordering::Relaxed) && PMM_HOLDER_CORE.load(Ordering::Relaxed) == 0
+                {
+                    panic!("Recursive PMM lock detected: allocator is non-reentrant");
+                }
+            }
+        }
+
         while PMM_LOCK
             .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
             .is_err()
         {
             core::hint::spin_loop();
         }
-        PmmGuard
+
+        #[cfg(debug_assertions)]
+        {
+            #[cfg(test)]
+            {
+                CURRENT_THREAD_HOLDS_PMM.with(|c| c.set(true));
+            }
+            #[cfg(all(not(test), target_os = "none"))]
+            {
+                PMM_HOLDER_CORE.store(0, Ordering::Relaxed);
+            }
+        }
+
+        PmmGuard { irq_state }
     }
 }
 
 impl Drop for PmmGuard {
     fn drop(&mut self) {
+        #[cfg(debug_assertions)]
+        {
+            #[cfg(test)]
+            {
+                CURRENT_THREAD_HOLDS_PMM.with(|c| c.set(false));
+            }
+            #[cfg(all(not(test), target_os = "none"))]
+            {
+                PMM_HOLDER_CORE.store(-1, Ordering::Relaxed);
+            }
+        }
         PMM_LOCK.store(false, Ordering::Release);
+
+        #[cfg(target_os = "none")]
+        if self.irq_state {
+            keira_arch::cpu::sti();
+        }
     }
 }
 
@@ -167,6 +238,7 @@ pub fn alloc_frame() -> Option<u64> {
     let _guard = PmmGuard::lock();
     unsafe {
         // 1. Check LIFO free list first
+        #[cfg(not(test))]
         if FREE_LIST_HEAD != 0 {
             let frame = FREE_LIST_HEAD;
             FREE_LIST_HEAD = *(frame as *const u64);
@@ -189,9 +261,12 @@ pub fn alloc_frame() -> Option<u64> {
                 mark_frame_allocated(frame);
                 USED_FRAMES_COUNT += 1;
 
-                let ptr = frame as *mut u64;
-                for i in 0..512 {
-                    *ptr.add(i) = 0;
+                #[cfg(not(test))]
+                {
+                    let ptr = frame as *mut u64;
+                    for i in 0..512 {
+                        *ptr.add(i) = 0;
+                    }
                 }
                 return Some(frame);
             }
@@ -272,7 +347,7 @@ pub fn reset_pmm_stats() {
     }
 }
 
-/// Set a mock physical RAM region for testing environments.
+/// Set a mock physical RAM region for testing environments where all frames start as allocated.
 pub fn set_test_ram_region(start: u64, end: u64) {
     let _guard = PmmGuard::lock();
     unsafe {
@@ -292,6 +367,35 @@ pub fn set_test_ram_region(start: u64, end: u64) {
             USED_FRAMES_COUNT = count as u64;
             for i in 0..count {
                 mark_frame_allocated(capped_start + (i as u64) * PAGE_SIZE);
+            }
+        } else {
+            REGION_COUNT = 0;
+            TOTAL_USABLE_RAM = 0;
+            MAX_PHYS_ADDR = 0;
+            USED_FRAMES_COUNT = 0;
+        }
+    }
+}
+
+/// Set a mock physical RAM region for testing environments where all frames start as unallocated (ready to be allocated).
+pub fn set_test_ram_region_empty(start: u64, end: u64) {
+    let _guard = PmmGuard::lock();
+    unsafe {
+        let capped_start = start.min(MAX_PHYS_ADDR_LIMIT);
+        let capped_end = end.min(MAX_PHYS_ADDR_LIMIT);
+        let size = capped_end.saturating_sub(capped_start);
+        if size >= PAGE_SIZE {
+            REGIONS[0] = UsableRegion {
+                start: capped_start,
+                end: capped_end,
+                current: capped_start,
+            };
+            REGION_COUNT = 1;
+            TOTAL_USABLE_RAM = size;
+            MAX_PHYS_ADDR = capped_end;
+            USED_FRAMES_COUNT = 0;
+            for i in 0..BITMAP_WORDS {
+                ALLOCATION_BITMAP[i] = 0;
             }
         } else {
             REGION_COUNT = 0;
@@ -479,6 +583,58 @@ pub fn get_stats() -> (u64, u64, u64) {
     (total_memory(), used_memory(), free_memory())
 }
 
+/// Validate all PMM memory management invariants:
+/// 1. Total allocated frames in bitmap == USED_FRAMES_COUNT
+/// 2. Sum of used_memory + free_memory == total_memory
+/// 3. All free list nodes are within physical memory bounds (< 4 GiB, >= 1 MiB)
+pub fn verify_pmm_invariants() -> Result<(), &'static str> {
+    let _guard = PmmGuard::lock();
+    unsafe {
+        let mut bitmap_allocated_count: u64 = 0;
+        for i in 0..BITMAP_WORDS {
+            bitmap_allocated_count += ALLOCATION_BITMAP[i].count_ones() as u64;
+        }
+
+        if bitmap_allocated_count != USED_FRAMES_COUNT {
+            return Err("Invariant violation: bitmap allocated count != USED_FRAMES_COUNT");
+        }
+
+        let total = TOTAL_USABLE_RAM;
+        let used = USED_FRAMES_COUNT * PAGE_SIZE;
+        if used > total {
+            return Err("Invariant violation: used memory exceeds total memory");
+        }
+
+        #[cfg(not(test))]
+        {
+            let mut curr = FREE_LIST_HEAD;
+            let mut visited = 0;
+            while curr != 0 {
+                if curr >= MAX_PHYS_ADDR_LIMIT || curr < KERNEL_BASE_1MB {
+                    return Err("Invariant violation: free-list node out of physical bounds");
+                }
+                let frame_idx = (curr / PAGE_SIZE) as usize;
+                if frame_idx < MAX_TRACKED_FRAMES {
+                    let word_idx = frame_idx / 64;
+                    let bit_idx = frame_idx % 64;
+                    if (ALLOCATION_BITMAP[word_idx] & (1u64 << bit_idx)) != 0 {
+                        return Err(
+                            "Invariant violation: free-list frame is marked allocated in bitmap",
+                        );
+                    }
+                }
+                curr = *(curr as *const u64);
+                visited += 1;
+                if visited > MAX_TRACKED_FRAMES {
+                    return Err("Invariant violation: cyclic free-list detected");
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 pub static TEST_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -488,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_is_valid_ram_range_checks() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         unsafe {
             REGIONS[0] = UsableRegion {
@@ -525,7 +681,7 @@ mod tests {
 
     #[test]
     fn test_is_valid_ram_range_early_boot_fallback() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         unsafe {
             REGION_COUNT = 0;
@@ -542,7 +698,7 @@ mod tests {
 
     #[test]
     fn test_multiple_usable_regions_and_reserved_hole() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         unsafe {
             // Region 0: 256MB .. 512MB
@@ -579,7 +735,7 @@ mod tests {
 
     #[test]
     fn test_total_memory_vs_max_physical_address() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         unsafe {
             REGIONS[0] = UsableRegion {
@@ -604,7 +760,7 @@ mod tests {
 
     #[test]
     fn test_1gib_boundary_and_exact_reclaim() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         set_test_ram_region(0x4000_0000, 0x8000_0000);
 
@@ -626,7 +782,7 @@ mod tests {
 
     #[test]
     fn test_partial_overlap_free_atomic_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         // Setup 6 frames: A, B, C, D, E, F (0x20_0000 .. 0x20_6000)
         set_test_ram_region(0x20_0000, 0x20_6000);
@@ -661,7 +817,7 @@ mod tests {
 
     #[test]
     fn test_double_free_middle_of_free_list_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         // Setup 3 frames: A, B, C (0x20_0000, 0x20_1000, 0x20_2000)
         set_test_ram_region(0x20_0000, 0x20_3000);
@@ -685,7 +841,7 @@ mod tests {
 
     #[test]
     fn test_double_free_multiple_free_list_nodes() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         // Setup 5 frames: F0, F1, F2, F3, F4 (0x20_0000 .. 0x20_5000)
         set_test_ram_region(0x20_0000, 0x20_5000);
@@ -713,7 +869,7 @@ mod tests {
 
     #[test]
     fn test_double_free_contiguous_range_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         set_test_ram_region(0x20_0000, 0x40_0000); // 512 frames
 
@@ -734,7 +890,7 @@ mod tests {
 
     #[test]
     fn test_ram_greater_than_4gib_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
 
         // 4 GiB boundary (0x1_0000_0000)
@@ -746,7 +902,7 @@ mod tests {
 
     #[test]
     fn test_double_free_frame_greater_than_4gib_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
 
         assert!(!free_frame(0x1_0000_0000));
@@ -756,7 +912,7 @@ mod tests {
 
     #[test]
     fn test_contiguous_free_greater_than_4gib_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
 
         assert!(!free_contiguous_frames(0x1_0000_0000, 512));
@@ -766,7 +922,7 @@ mod tests {
 
     #[test]
     fn test_region_crossing_4gib_boundary_capped_or_rejected() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
 
         // Region starting at 3.5GB (0xE000_0000) and extending to 4.5GB (0x1_2000_0000)
@@ -791,7 +947,7 @@ mod tests {
 
     #[test]
     fn test_free_contiguous_frames_malformed_safely_ignored() {
-        let _lock = TEST_MUTEX.lock().unwrap();
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         reset_pmm_stats();
         let prev_freed = get_freed_frame_count();
 
@@ -814,5 +970,97 @@ mod tests {
         let res_oob = free_contiguous_frames(0xF000_0000_0000, 512);
         assert!(!res_oob);
         assert_eq!(get_freed_frame_count(), prev_freed);
+    }
+
+    #[test]
+    #[should_panic(expected = "Recursive PMM lock detected")]
+    fn test_recursive_pmm_lock_debug_detection() {
+        let lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        let _g1 = PmmGuard::lock();
+        drop(lock);
+        let _g2 = PmmGuard::lock();
+    }
+
+    #[test]
+    fn test_pmm_invariants_verification() {
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        reset_pmm_stats();
+        assert!(verify_pmm_invariants().is_ok());
+
+        set_test_ram_region(0x20_0000, 0x40_0000); // 512 frames
+        assert!(verify_pmm_invariants().is_ok());
+
+        // Free 256 frames
+        let res = free_contiguous_frames(0x20_0000, 256);
+        assert!(res);
+        assert!(verify_pmm_invariants().is_ok());
+
+        // Free remaining 256 frames
+        let res2 = free_contiguous_frames(0x30_0000, 256);
+        assert!(res2);
+        assert!(verify_pmm_invariants().is_ok());
+    }
+
+    #[test]
+    fn test_concurrent_alloc_free_stress() {
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        reset_pmm_stats();
+        set_test_ram_region_empty(0x20_0000, 0x820_0000); // 128MB = 32768 frames
+
+        let num_threads = 8;
+        let iters_per_thread = 50;
+        let mut handles = std::vec::Vec::new();
+
+        for _ in 0..num_threads {
+            let handle = std::thread::spawn(move || {
+                for _ in 0..iters_per_thread {
+                    let f1 = alloc_frame();
+                    let f2 = alloc_frame();
+                    if let Some(frame) = f1 {
+                        assert!(is_frame_allocated(frame));
+                        assert!(free_frame(frame));
+                        assert!(!is_frame_allocated(frame));
+                    }
+                    if let Some(frame) = f2 {
+                        assert!(is_frame_allocated(frame));
+                        assert!(free_frame(frame));
+                        assert!(!is_frame_allocated(frame));
+                    }
+                }
+            });
+            handles.push(handle);
+        }
+
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        assert!(verify_pmm_invariants().is_ok());
+    }
+
+    #[test]
+    fn test_concurrent_alloc_free_race() {
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        reset_pmm_stats();
+        set_test_ram_region_empty(0x20_0000, 0x220_0000); // 32MB = 8192 frames
+
+        let mut handles = std::vec::Vec::new();
+        for _ in 0..4 {
+            let h = std::thread::spawn(|| {
+                for _ in 0..100 {
+                    let f = alloc_frame();
+                    if let Some(frame) = f {
+                        let _ = free_frame(frame);
+                    }
+                }
+            });
+            handles.push(h);
+        }
+
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        assert!(verify_pmm_invariants().is_ok());
     }
 }

@@ -28,9 +28,9 @@ pub use pmm::TEST_MUTEX;
 pub use pmm::{
     alloc_frame, free_contiguous_frames, free_frame, get_freed_frame_count, get_stats,
     init as pmm_init, is_frame_allocated, is_valid_ram_range, mark_frame_allocated,
-    mark_frame_free, max_physical_address, reset_pmm_stats, set_test_ram_region, total_memory,
-    total_usable_memory, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES, PAGE_SIZE,
-    PAGE_SIZE_4K,
+    mark_frame_free, max_physical_address, reset_pmm_stats, set_test_ram_region,
+    set_test_ram_region_empty, total_memory, total_usable_memory, verify_pmm_invariants,
+    KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use swap::pager as swap_pager;
 pub use swap::{is_active as swap_is_active, swapoff, swapon, sys_swapoff, sys_swapon};

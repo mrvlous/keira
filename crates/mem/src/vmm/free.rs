@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_free_user_pages_with_1gib_huge_mapping_under_pml4_0() {
-        let _lock = pmm::TEST_MUTEX.lock().unwrap();
+        let _lock = pmm::TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         pmm::reset_pmm_stats();
         let frame_1gb = 0x4000_0000u64;
 
