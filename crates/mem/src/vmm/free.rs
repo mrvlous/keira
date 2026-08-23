@@ -10,7 +10,7 @@
 //! Tree-based user-space memory page and page-table deallocation with strict kernel mapping preservation.
 
 use super::mmap::cleanup_vmas_for_pml4;
-use super::paging::{PAGE_PRESENT, PAGE_USER, PTE_ADDR_MASK};
+use super::paging::{PAGE_HUGE, PAGE_PRESENT, PAGE_USER, PTE_ADDR_MASK};
 use crate::pmm;
 
 /// Free all user-owned mapped pages and user page-table frames from a process's PML4.
@@ -48,8 +48,8 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
         }
     }
 
-    // 2. Clean up user regions under PML4[1..512] (User heap, mmap, stack)
-    for i in 1..512 {
+    // 2. Clean up user regions under PML4[1..256] (User heap, mmap, stack in lower canonical half)
+    for i in 1..256 {
         let entry = *pml4.add(i);
         if (entry & PAGE_PRESENT) != 0 {
             free_user_page_table_subtree(entry & PTE_ADDR_MASK, 3);
@@ -91,17 +91,14 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
         for i in 0..512 {
             let entry = *table.add(i);
             if (entry & PAGE_PRESENT) != 0 {
-                let is_huge = (entry & (1 << 7)) != 0;
-                if is_huge {
-                    // Huge page (2MB at level 2, 1GB at level 3) is a LEAF frame, not a child page table!
-                    if (entry & PAGE_USER) != 0 {
-                        let frame = entry & PTE_ADDR_MASK;
-                        if frame >= pmm::KERNEL_BASE_1MB {
-                            pmm::free_frame(frame);
-                        }
-                    }
+                if (entry & PAGE_HUGE) != 0 {
+                    // Huge page (2MB at level 2, 1GB at level 3) is a leaf frame.
+                    // The 4KB frame allocator cannot reclaim 2MB/1GB huge pages without
+                    // corrupting the free list, so skip them entirely. Boot-time huge
+                    // pages (identity map, MMIO) are already excluded by the PDPT[0]/PDPT[3]
+                    // guard above. Any remaining user huge pages are left intentionally
+                    // unfreed since this kernel does not dynamically allocate huge pages.
                 } else {
-                    // Non-huge entry: traverse child page table
                     let child_phys = entry & PTE_ADDR_MASK;
                     if child_phys >= pmm::KERNEL_BASE_1MB {
                         free_user_page_table_subtree(child_phys, level - 1);

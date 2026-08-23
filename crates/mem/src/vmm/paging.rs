@@ -16,7 +16,13 @@ pub const PAGE_PRESENT: u64 = 1 << 0;
 pub const PAGE_WRITABLE: u64 = 1 << 1;
 pub const PAGE_USER: u64 = 1 << 2;
 pub const PAGE_NO_EXECUTE: u64 = 1 << 63;
+/// Page Size (PS) flag indicating a 2MB huge page (PD level) or 1GB huge page (PDPT level).
+pub const PAGE_HUGE: u64 = 1 << 7;
 pub const GB_1_IDENTITY_MAP: u64 = 0x4000_0000;
+
+/// Canonical User Space Virtual Address Boundaries (x86_64 48-bit canonical addressing).
+pub const USER_MIN_VADDR: u64 = 0x0000_0000_0001_0000; // 64 KiB (Null trap guard boundary)
+pub const USER_MAX_VADDR: u64 = 0x0000_7FFF_FFFF_FFFF; // Upper limit of canonical 47-bit lower half
 
 /// Canonical x86_64 physical address mask for page table entries (bits 12..51).
 /// Strips lower 12-bit flags (Present, Writable, User, Huge) and upper bits including PAGE_NO_EXECUTE (bit 63).
@@ -283,37 +289,63 @@ pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str>
     }
 }
 
+/// Retrieve the raw page table entry (PTE) for a virtual address in a specific PML4 table.
+pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> {
+    #[cfg(test)]
+    {
+        let _ = (pml4_phys, virtual_addr);
+        return None;
+    }
+    #[cfg(not(test))]
+    {
+        if pml4_phys == 0 {
+            return None;
+        }
+        let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
+        let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
+        let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
+        let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
+
+        let pml4 = pml4_phys as *const u64;
+        let pdpt_entry = *pml4.add(pml4_idx);
+        if (pdpt_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_entry = *pdpt.add(pdpt_idx);
+        if (pd_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+        if (pd_entry & PAGE_HUGE) != 0 {
+            // 2MB huge page entry
+            return Some(pd_entry);
+        }
+
+        let pd = (pd_entry & PTE_ADDR_MASK) as *const u64;
+        let pt_entry = *pd.add(pd_idx);
+        if (pt_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        let pt = (pt_entry & PTE_ADDR_MASK) as *const u64;
+        let entry = *pt.add(pt_idx);
+        if (entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        Some(entry)
+    }
+}
+
+/// Check if a virtual address is present in the specified PML4 table.
+pub unsafe fn is_page_mapped_in_pml4(pml4_phys: u64, virtual_addr: u64) -> bool {
+    get_pte_in_pml4(pml4_phys, virtual_addr).is_some()
+}
+
 /// Translate a virtual address to its corresponding physical address, stripping all PTE flag and NX bits.
 pub unsafe fn get_phys_addr(virtual_addr: u64) -> Option<u64> {
-    let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
-    let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
-    let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
-    let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
-
-    let pml4 = active_pml4() as *const u64;
-    let pdpt_entry = *pml4.add(pml4_idx);
-    if (pdpt_entry & PAGE_PRESENT) == 0 {
-        return None;
-    }
-
-    let pdpt = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
-    let pd_entry = *pdpt.add(pdpt_idx);
-    if (pd_entry & PAGE_PRESENT) == 0 {
-        return None;
-    }
-
-    let pd = (pd_entry & PTE_ADDR_MASK) as *const u64;
-    let pt_entry = *pd.add(pd_idx);
-    if (pt_entry & PAGE_PRESENT) == 0 {
-        return None;
-    }
-
-    let pt = (pt_entry & PTE_ADDR_MASK) as *const u64;
-    let entry = *pt.add(pt_idx);
-    if (entry & PAGE_PRESENT) == 0 {
-        return None;
-    }
-
+    let entry = get_pte_in_pml4(active_pml4(), virtual_addr)?;
     Some((entry & PTE_ADDR_MASK) | (virtual_addr & 0xFFF))
 }
 

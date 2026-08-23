@@ -62,6 +62,16 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
             core::arch::asm!("mov {}, cr2", out(reg) cr2);
             vga::print_str(" | Faulting Address: 0x");
             print_hex(cr2);
+
+            keira_io::serial::print_str("\n[PAGE FAULT] RIP: 0x");
+            keira_io::serial::print_u64(frame.rip);
+            keira_io::serial::print_str(" | CR2: 0x");
+            keira_io::serial::print_u64(cr2);
+            keira_io::serial::print_str(" | RSP: 0x");
+            keira_io::serial::print_u64(frame.rsp);
+            keira_io::serial::print_str(" | Error Code: 0x");
+            keira_io::serial::print_u64(frame.error_code);
+            keira_io::serial::print_str("\n");
         }
         vga::print_str("\nTerminating crashed user process...\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

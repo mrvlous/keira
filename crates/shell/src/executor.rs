@@ -462,6 +462,11 @@ pub fn execute_command_inner(cmd: &str) {
         "iptables" => super::cmds::iptables::run(&mut parts),
         "firewall" => super::cmds::firewall::run(&mut parts),
         _ => {
+            // First check if this is an executable binary or path
+            if super::cmds::run::run_direct(command) {
+                return;
+            }
+
             // Check if the command exists on disk/initrd at /system/bin/
             let found_in_path = unsafe {
                 let mut path_buf = [0u8; 64];

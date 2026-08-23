@@ -9,62 +9,119 @@
 
 //! x86_64 Control Register (CR0, CR2, CR3, CR4) and RFLAGS accessors.
 
+#[cfg(target_os = "none")]
 use core::arch::asm;
 
 /// Read CR0 control register.
 #[inline(always)]
 pub unsafe fn read_cr0() -> u64 {
-    let cr0: u64;
-    asm!("mov {}, cr0", out(reg) cr0, options(nomem, nostack, preserves_flags));
-    cr0
+    #[cfg(not(target_os = "none"))]
+    {
+        0x8000_0001
+    }
+    #[cfg(target_os = "none")]
+    {
+        let cr0: u64;
+        asm!("mov {}, cr0", out(reg) cr0, options(nomem, nostack, preserves_flags));
+        cr0
+    }
 }
 
 /// Write CR0 control register.
 #[inline(always)]
 pub unsafe fn write_cr0(val: u64) {
-    asm!("mov cr0, {}", in(reg) val, options(nomem, nostack, preserves_flags));
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = val;
+    }
+    #[cfg(target_os = "none")]
+    {
+        asm!("mov cr0, {}", in(reg) val, options(nomem, nostack, preserves_flags));
+    }
 }
 
 /// Read CR2 (Page Fault Linear Address) register.
 #[inline(always)]
 pub unsafe fn read_cr2() -> u64 {
-    let cr2: u64;
-    asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
-    cr2
+    #[cfg(not(target_os = "none"))]
+    {
+        0
+    }
+    #[cfg(target_os = "none")]
+    {
+        let cr2: u64;
+        asm!("mov {}, cr2", out(reg) cr2, options(nomem, nostack, preserves_flags));
+        cr2
+    }
 }
 
 /// Read CR3 (Page-Map Level-4 Base Address) register.
 #[inline(always)]
 pub unsafe fn read_cr3() -> u64 {
-    let cr3: u64;
-    asm!("mov {}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
-    cr3
+    #[cfg(not(target_os = "none"))]
+    {
+        0x1000
+    }
+    #[cfg(target_os = "none")]
+    {
+        let cr3: u64;
+        asm!("mov {}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
+        cr3
+    }
 }
 
 /// Write CR3 (Page-Map Level-4 Base Address) register and flush non-global TLB.
 #[inline(always)]
 pub unsafe fn write_cr3(val: u64) {
-    asm!("mov cr3, {}", in(reg) val, options(nomem, nostack, preserves_flags));
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = val;
+    }
+    #[cfg(target_os = "none")]
+    {
+        asm!("mov cr3, {}", in(reg) val, options(nomem, nostack, preserves_flags));
+    }
 }
 
 /// Read CR4 control register.
 #[inline(always)]
 pub unsafe fn read_cr4() -> u64 {
-    let cr4: u64;
-    asm!("mov {}, cr4", out(reg) cr4, options(nomem, nostack, preserves_flags));
-    cr4
+    #[cfg(not(target_os = "none"))]
+    {
+        0x20
+    }
+    #[cfg(target_os = "none")]
+    {
+        let cr4: u64;
+        asm!("mov {}, cr4", out(reg) cr4, options(nomem, nostack, preserves_flags));
+        cr4
+    }
 }
 
 /// Write CR4 control register.
 #[inline(always)]
 pub unsafe fn write_cr4(val: u64) {
-    asm!("mov cr4, {}", in(reg) val, options(nomem, nostack, preserves_flags));
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = val;
+    }
+    #[cfg(target_os = "none")]
+    {
+        asm!("mov cr4, {}", in(reg) val, options(nomem, nostack, preserves_flags));
+    }
 }
 
 /// Read processor RFLAGS status register.
 #[inline(always)]
 pub unsafe fn read_rflags() -> u64 {
-    let rflags: u64;
-    asm!("pushfq; pop {}", out(reg) rflags, options(nomem, preserves_flags));
-    rflags
+    #[cfg(not(target_os = "none"))]
+    {
+        0x202
+    }
+    #[cfg(target_os = "none")]
+    {
+        let rflags: u64;
+        asm!("pushfq; pop {}", out(reg) rflags, options(nomem, preserves_flags));
+        rflags
+    }
 }

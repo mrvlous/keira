@@ -20,16 +20,28 @@ extern "C" {
 }
 
 /// Execute a freestanding user mode ELF program in an isolated address space.
+
 pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
-    let child_pml4 = vmm::clone_kernel_pml4()?;
     let parent_pml4 = vmm::active_pml4();
+    let child_pml4 = vmm::clone_kernel_pml4()?;
+
+    let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
+    keira_task::scheduler::SCHEDULER_INITIALIZED = false;
+
+    if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+        task.pml4_phys = child_pml4;
+    }
 
     vmm::switch_address_space(child_pml4);
 
     let entry_point = match load_elf(filename) {
         Ok(ep) => ep,
         Err(e) => {
+            if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                task.pml4_phys = parent_pml4;
+            }
             vmm::switch_address_space(parent_pml4);
+            keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
             vmm::free_user_pages(child_pml4, 0x600000000000);
             return Err(e);
         }
@@ -42,7 +54,11 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         let stack_frame = match pmm::alloc_frame() {
             Some(f) => f,
             None => {
+                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                    task.pml4_phys = parent_pml4;
+                }
                 vmm::switch_address_space(parent_pml4);
+                keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
                 vmm::free_user_pages(child_pml4, 0x600000000000);
                 return Err("Out of memory for user stack frame");
             }
@@ -57,23 +73,17 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
     }
     let initial_user_rsp: u64 = 0x7FFFFFE00000 - 16;
 
+    let mut brk_end = 0x600000000000;
     if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
         task.program_break = 0x600000000000;
         task.program_break_start = 0x600000000000;
-        task.fds = [keira_task::types::FileDescriptor::new(); 8];
         task.pml4_phys = child_pml4;
     }
 
-    let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
-    keira_task::scheduler::SCHEDULER_INITIALIZED = false;
-
     jump_to_user(entry_point, initial_user_rsp);
 
-    vmm::switch_address_space(parent_pml4);
-
-    let mut final_brk = 0x600000000000;
     if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-        final_brk = task.program_break;
+        brk_end = task.program_break;
         task.pml4_phys = parent_pml4;
         for fd in 0..8 {
             if task.fds[fd].is_open {
@@ -89,31 +99,19 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         }
     }
 
-    vmm::free_user_pages(child_pml4, final_brk);
-
+    vmm::switch_address_space(parent_pml4);
     keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+
+    vmm::free_user_pages(child_pml4, brk_end);
+
     core::arch::asm!("sti");
 
     Ok(())
 }
 
-pub fn run(parts: &mut core::str::SplitWhitespace) {
+/// Resolve an ELF binary path and execute it, returning true if found.
+pub fn run_direct(arg: &str) -> bool {
     unsafe {
-        let arg = match parts.next() {
-            Some("-h") | Some("--help") => {
-                vga::print_str("Usage: run <program.elf>\n\n");
-                vga::print_str("Description:\n  Load and execute a freestanding user mode x86_64 ELF binary program in Ring 3 user space.\n\n");
-                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-                vga::print_str("Examples:\n  run hello.elf\n  run kcc\n");
-                return;
-            }
-            Some(s) => s,
-            None => {
-                vga::print_str("Usage: run <program.elf>\n");
-                return;
-            }
-        };
-
         let mut path_buf = [0u8; 128];
         let mut resolved_str = "";
         let mut found = false;
@@ -174,10 +172,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         if !found {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str("Error executing program: file not found\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            return;
+            return false;
         }
 
         vga::print_str("Loading ELF binary: ");
@@ -198,5 +193,30 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
         }
+
+        true
+    }
+}
+
+pub fn run(parts: &mut core::str::SplitWhitespace) {
+    let arg = match parts.next() {
+        Some("-h") | Some("--help") => {
+            vga::print_str("Usage: run <program.elf>\n\n");
+            vga::print_str("Description:\n  Load and execute a freestanding user mode x86_64 ELF binary program in Ring 3 user space.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  run hello.elf\n  run kcc\n");
+            return;
+        }
+        Some(s) => s,
+        None => {
+            vga::print_str("Usage: run <program.elf>\n");
+            return;
+        }
+    };
+
+    if !run_direct(arg) {
+        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+        vga::print_str("Error executing program: file not found\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

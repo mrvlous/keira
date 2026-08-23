@@ -7,12 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-#![no_std]
-#![no_main]
-
 //! Master kernel assembly crate linking all modular subsystems into a freestanding binary.
 
+#![cfg_attr(target_os = "none", no_std)]
+#![cfg_attr(target_os = "none", no_main)]
+
 pub mod entry;
+#[cfg(target_os = "none")]
 pub mod panic;
 
 pub use keira_arch as arch;
