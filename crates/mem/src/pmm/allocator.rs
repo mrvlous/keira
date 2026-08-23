@@ -10,8 +10,35 @@
 //! Hardened physical page frame allocator supporting multiple memory regions and reserved zones.
 
 use super::types::{KERNEL_BASE_1MB, PAGE_SIZE};
+use core::sync::atomic::{AtomicBool, Ordering};
 
 const MAX_REGIONS: usize = 16;
+/// Maximum physical address supported by the 128 KiB frame bitmap (4 GiB = 0x1_0000_0000).
+pub const MAX_PHYS_ADDR_LIMIT: u64 = 4 * 1024 * 1024 * 1024;
+pub const MAX_TRACKED_FRAMES: usize = (MAX_PHYS_ADDR_LIMIT / PAGE_SIZE) as usize; // 1,048,576 frames
+const BITMAP_WORDS: usize = MAX_TRACKED_FRAMES / 64; // 16,384 words (128 KiB in BSS)
+
+static PMM_LOCK: AtomicBool = AtomicBool::new(false);
+
+struct PmmGuard;
+
+impl PmmGuard {
+    fn lock() -> Self {
+        while PMM_LOCK
+            .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            core::hint::spin_loop();
+        }
+        PmmGuard
+    }
+}
+
+impl Drop for PmmGuard {
+    fn drop(&mut self) {
+        PMM_LOCK.store(false, Ordering::Release);
+    }
+}
 
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
@@ -33,9 +60,11 @@ static mut FREE_LIST_HEAD: u64 = 0;
 static mut TOTAL_USABLE_RAM: u64 = 0;
 static mut MAX_PHYS_ADDR: u64 = 0;
 static mut USED_FRAMES_COUNT: u64 = 0;
+static mut ALLOCATION_BITMAP: [u64; BITMAP_WORDS] = [0; BITMAP_WORDS];
 
 /// Initialize the Physical Memory Manager parsing all usable Multiboot2 memory regions.
 pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
+    let _guard = PmmGuard::lock();
     let mut mmap_tag_ptr: u64 = 0;
 
     let mut addr = multiboot_info_ptr + 8;
@@ -55,14 +84,15 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
     if mmap_tag_ptr == 0 {
         let start = (kernel_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
         let size = 32 * 1024 * 1024;
+        let capped_end = (start + size).min(MAX_PHYS_ADDR_LIMIT);
         REGIONS[0] = UsableRegion {
             start,
-            end: start + size,
+            end: capped_end,
             current: start,
         };
         REGION_COUNT = 1;
-        TOTAL_USABLE_RAM = size;
-        MAX_PHYS_ADDR = start + size;
+        TOTAL_USABLE_RAM = capped_end.saturating_sub(start);
+        MAX_PHYS_ADDR = capped_end;
         return;
     }
 
@@ -82,12 +112,12 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
 
         let seg_end = base_addr.saturating_add(length);
         if seg_end > MAX_PHYS_ADDR {
-            MAX_PHYS_ADDR = seg_end;
+            MAX_PHYS_ADDR = seg_end.min(MAX_PHYS_ADDR_LIMIT);
         }
 
         // entry_type == 1 indicates usable RAM
-        if entry_type == 1 && length >= PAGE_SIZE {
-            TOTAL_USABLE_RAM += length;
+        if entry_type == 1 && length >= PAGE_SIZE && base_addr < MAX_PHYS_ADDR_LIMIT {
+            let capped_seg_end = seg_end.min(MAX_PHYS_ADDR_LIMIT);
 
             // Reserve first 1MB and kernel code/data/BSS
             let safe_start = if base_addr < aligned_kernel_end {
@@ -98,9 +128,9 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
                 (base_addr + PAGE_SIZE - 1) & !(PAGE_SIZE - 1)
             };
 
-            let seg_end = base_addr + length;
-            if seg_end > safe_start && (seg_end - safe_start) >= PAGE_SIZE {
-                let aligned_end = seg_end & !(PAGE_SIZE - 1);
+            if capped_seg_end > safe_start && (capped_seg_end - safe_start) >= PAGE_SIZE {
+                let aligned_end = capped_seg_end & !(PAGE_SIZE - 1);
+                TOTAL_USABLE_RAM += aligned_end - safe_start;
                 if REGION_COUNT < MAX_REGIONS {
                     REGIONS[REGION_COUNT] = UsableRegion {
                         start: safe_start,
@@ -119,19 +149,22 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
     if REGION_COUNT == 0 {
         let start = aligned_kernel_end;
         let size = 32 * 1024 * 1024;
+        let capped_end = (start + size).min(MAX_PHYS_ADDR_LIMIT);
         REGIONS[0] = UsableRegion {
             start,
-            end: start + size,
+            end: capped_end,
             current: start,
         };
         REGION_COUNT = 1;
-        TOTAL_USABLE_RAM = size;
-        MAX_PHYS_ADDR = start + size;
+        TOTAL_USABLE_RAM = capped_end.saturating_sub(start);
+        MAX_PHYS_ADDR = capped_end;
     }
 }
 
 /// Allocate a 4KB physical page frame zero-cleared for safety.
+/// Entire sequence is executed inside a single synchronized critical section.
 pub fn alloc_frame() -> Option<u64> {
+    let _guard = PmmGuard::lock();
     unsafe {
         // 1. Check LIFO free list first
         if FREE_LIST_HEAD != 0 {
@@ -169,16 +202,15 @@ pub fn alloc_frame() -> Option<u64> {
     }
 }
 
-const MAX_TRACKED_FRAMES: usize = 1024 * 1024; // 1,048,576 frames = 4 GiB
-const BITMAP_WORDS: usize = MAX_TRACKED_FRAMES / 64; // 16,384 words (128 KiB in BSS)
-
-static mut ALLOCATION_BITMAP: [u64; BITMAP_WORDS] = [0; BITMAP_WORDS];
-
 /// Check if a physical frame is currently marked as allocated in the PMM bitmap.
+/// Frames >= MAX_PHYS_ADDR_LIMIT are explicitly rejected.
 pub fn is_frame_allocated(frame: u64) -> bool {
+    if frame >= MAX_PHYS_ADDR_LIMIT || !frame.is_multiple_of(PAGE_SIZE) {
+        return false;
+    }
     let frame_idx = (frame / PAGE_SIZE) as usize;
     if frame_idx >= MAX_TRACKED_FRAMES {
-        return is_valid_ram_range(frame, PAGE_SIZE);
+        return false;
     }
     let word_idx = frame_idx / 64;
     let bit_idx = frame_idx % 64;
@@ -187,6 +219,9 @@ pub fn is_frame_allocated(frame: u64) -> bool {
 
 /// Mark a physical frame as allocated in the PMM bitmap.
 pub fn mark_frame_allocated(frame: u64) {
+    if frame >= MAX_PHYS_ADDR_LIMIT {
+        return;
+    }
     let frame_idx = (frame / PAGE_SIZE) as usize;
     if frame_idx < MAX_TRACKED_FRAMES {
         let word_idx = frame_idx / 64;
@@ -199,6 +234,9 @@ pub fn mark_frame_allocated(frame: u64) {
 
 /// Mark a physical frame as free in the PMM bitmap.
 pub fn mark_frame_free(frame: u64) {
+    if frame >= MAX_PHYS_ADDR_LIMIT {
+        return;
+    }
     let frame_idx = (frame / PAGE_SIZE) as usize;
     if frame_idx < MAX_TRACKED_FRAMES {
         let word_idx = frame_idx / 64;
@@ -213,11 +251,13 @@ static mut FREED_FRAME_COUNT: u64 = 0;
 
 /// Query the total count of freed frames since last reset (useful for verification and tests).
 pub fn get_freed_frame_count() -> u64 {
+    let _guard = PmmGuard::lock();
     unsafe { FREED_FRAME_COUNT }
 }
 
 /// Reset PMM allocator stats, allocation bitmap, and free counters (used in unit tests).
 pub fn reset_pmm_stats() {
+    let _guard = PmmGuard::lock();
     unsafe {
         FREE_LIST_HEAD = 0;
         USED_FRAMES_COUNT = 0;
@@ -234,30 +274,46 @@ pub fn reset_pmm_stats() {
 
 /// Set a mock physical RAM region for testing environments.
 pub fn set_test_ram_region(start: u64, end: u64) {
+    let _guard = PmmGuard::lock();
     unsafe {
-        let size = end.saturating_sub(start);
-        REGIONS[0] = UsableRegion {
-            start,
-            end,
-            current: start,
-        };
-        REGION_COUNT = 1;
-        TOTAL_USABLE_RAM = size;
-        MAX_PHYS_ADDR = end;
-        let count = (size / PAGE_SIZE) as usize;
-        USED_FRAMES_COUNT = count as u64;
-        for i in 0..count {
-            mark_frame_allocated(start + (i as u64) * PAGE_SIZE);
+        let capped_start = start.min(MAX_PHYS_ADDR_LIMIT);
+        let capped_end = end.min(MAX_PHYS_ADDR_LIMIT);
+        let size = capped_end.saturating_sub(capped_start);
+        if size >= PAGE_SIZE {
+            REGIONS[0] = UsableRegion {
+                start: capped_start,
+                end: capped_end,
+                current: capped_start,
+            };
+            REGION_COUNT = 1;
+            TOTAL_USABLE_RAM = size;
+            MAX_PHYS_ADDR = capped_end;
+            let count = (size / PAGE_SIZE) as usize;
+            USED_FRAMES_COUNT = count as u64;
+            for i in 0..count {
+                mark_frame_allocated(capped_start + (i as u64) * PAGE_SIZE);
+            }
+        } else {
+            REGION_COUNT = 0;
+            TOTAL_USABLE_RAM = 0;
+            MAX_PHYS_ADDR = 0;
+            USED_FRAMES_COUNT = 0;
         }
     }
 }
 
 /// Free a previously allocated physical frame and push it onto the LIFO free list.
-/// Returns true if the frame was valid and successfully returned, false on double-free or invalid address.
+/// Validation, bitmap update, and free-list update form a single atomic critical section.
+/// Returns true if the frame was valid and successfully returned, false on double-free, invalid address, or >4GiB.
 pub fn free_frame(frame: u64) -> bool {
-    if !frame.is_multiple_of(PAGE_SIZE) || frame == 0 || frame < KERNEL_BASE_1MB {
+    if !frame.is_multiple_of(PAGE_SIZE)
+        || frame == 0
+        || frame < KERNEL_BASE_1MB
+        || frame >= MAX_PHYS_ADDR_LIMIT
+    {
         return false;
     }
+    let _guard = PmmGuard::lock();
     if !is_valid_ram_range(frame, PAGE_SIZE) {
         return false;
     }
@@ -285,6 +341,7 @@ pub fn free_frame(frame: u64) -> bool {
 /// Validate whether a physical memory range falls inside registered usable RAM regions.
 /// When regions are configured (REGION_COUNT > 0), the range MUST be entirely contained within
 /// a single continuous usable region and must never bridge across reserved holes or unmapped spans.
+/// Any range exceeding MAX_PHYS_ADDR_LIMIT is rejected.
 pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
     if size == 0 || !start.is_multiple_of(PAGE_SIZE) {
         return false;
@@ -293,7 +350,7 @@ pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
         Some(e) => e,
         None => return false,
     };
-    if start < KERNEL_BASE_1MB {
+    if start < KERNEL_BASE_1MB || end > MAX_PHYS_ADDR_LIMIT {
         return false;
     }
     unsafe {
@@ -316,15 +373,29 @@ pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
 
 /// Free multiple contiguous physical page frames with physical-memory boundary, ownership, and alignment validation.
 /// Uses native batch chaining when executing in kernel runtime.
-/// Returns true if all frames were valid and reclaimed, false on double-free/underflow/out-of-bounds.
+/// Validation, bitmap update, and free-list update form a single atomic critical section.
+/// Returns true if all frames were valid and reclaimed, false on double-free/underflow/out-of-bounds/>4GiB.
 pub fn free_contiguous_frames(start_frame: u64, count: usize) -> bool {
-    if count == 0 || !start_frame.is_multiple_of(PAGE_SIZE) || start_frame < KERNEL_BASE_1MB {
+    if count == 0
+        || !start_frame.is_multiple_of(PAGE_SIZE)
+        || start_frame < KERNEL_BASE_1MB
+        || start_frame >= MAX_PHYS_ADDR_LIMIT
+    {
         return false;
     }
     let total_bytes = match (count as u64).checked_mul(PAGE_SIZE) {
         Some(b) => b,
         None => return false,
     };
+    let end_addr = match start_frame.checked_add(total_bytes) {
+        Some(e) => e,
+        None => return false,
+    };
+    if end_addr > MAX_PHYS_ADDR_LIMIT {
+        return false;
+    }
+
+    let _guard = PmmGuard::lock();
     if !is_valid_ram_range(start_frame, total_bytes) {
         return false;
     }
@@ -370,28 +441,32 @@ pub fn free_contiguous_frames(start_frame: u64, count: usize) -> bool {
 
 /// Query total detected usable physical RAM in bytes.
 pub fn total_memory() -> u64 {
+    let _guard = PmmGuard::lock();
     unsafe { TOTAL_USABLE_RAM }
 }
 
 /// Query total detected usable physical RAM in bytes.
 pub fn total_usable_memory() -> u64 {
-    unsafe { TOTAL_USABLE_RAM }
+    total_memory()
 }
 
 /// Query the highest physical memory address detected in system memory map.
 pub fn max_physical_address() -> u64 {
+    let _guard = PmmGuard::lock();
     unsafe { MAX_PHYS_ADDR }
 }
 
 /// Query currently allocated physical memory in bytes.
 pub fn used_memory() -> u64 {
+    let _guard = PmmGuard::lock();
     unsafe { USED_FRAMES_COUNT * PAGE_SIZE }
 }
 
 /// Query currently free physical memory in bytes.
 pub fn free_memory() -> u64 {
-    let total = total_memory();
-    let used = used_memory();
+    let _guard = PmmGuard::lock();
+    let total = unsafe { TOTAL_USABLE_RAM };
+    let used = unsafe { USED_FRAMES_COUNT * PAGE_SIZE };
     if total > used {
         total - used
     } else {
@@ -655,6 +730,63 @@ mod tests {
         assert!(!res2);
         assert_eq!(get_freed_frame_count(), 512); // Count unchanged
         assert_eq!(used_memory(), 0); // Not corrupted
+    }
+
+    #[test]
+    fn test_ram_greater_than_4gib_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+
+        // 4 GiB boundary (0x1_0000_0000)
+        assert!(!is_valid_ram_range(0x1_0000_0000, 0x1000));
+        assert!(!is_valid_ram_range(0x2_0000_0000, 0x1000));
+        assert!(!is_frame_allocated(0x1_0000_0000));
+        assert!(!is_frame_allocated(0x2_0000_0000));
+    }
+
+    #[test]
+    fn test_double_free_frame_greater_than_4gib_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+
+        assert!(!free_frame(0x1_0000_0000));
+        assert!(!free_frame(0x2_0000_0000));
+        assert_eq!(get_freed_frame_count(), 0);
+    }
+
+    #[test]
+    fn test_contiguous_free_greater_than_4gib_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+
+        assert!(!free_contiguous_frames(0x1_0000_0000, 512));
+        assert!(!free_contiguous_frames(0x2_0000_0000, 512));
+        assert_eq!(get_freed_frame_count(), 0);
+    }
+
+    #[test]
+    fn test_region_crossing_4gib_boundary_capped_or_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+
+        // Region starting at 3.5GB (0xE000_0000) and extending to 4.5GB (0x1_2000_0000)
+        set_test_ram_region(0xE000_0000, 0x1_2000_0000);
+
+        // Portion inside <= 4GB (0xE000_0000 .. 0x1_0000_0000) is valid (512MB)
+        assert!(is_valid_ram_range(0xE000_0000, 0x2000_0000));
+
+        // Portion crossing 4GB is rejected
+        assert!(!is_valid_ram_range(0xE000_0000, 0x2000_1000));
+        assert!(!is_valid_ram_range(0x1_0000_0000, 0x1000));
+
+        // Freeing valid 512MB inside 4GB succeeds
+        let ok = free_contiguous_frames(0xE000_0000, (0x2000_0000 / PAGE_SIZE) as usize);
+        assert!(ok);
+        assert_eq!(get_freed_frame_count(), (0x2000_0000 / PAGE_SIZE) as u64);
+
+        // Attempting to free any frame in the >4GB portion is rejected
+        assert!(!free_frame(0x1_0000_0000));
+        assert!(!free_contiguous_frames(0x1_0000_0000, 512));
     }
 
     #[test]
