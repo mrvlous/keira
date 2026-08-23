@@ -7,9 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
-//! Physical memory management, 4-level virtual paging, DMA, and swap for Keira Kernel.
+#[cfg(test)]
+extern crate std;
 
 pub mod dma;
 pub mod heap;
@@ -22,11 +23,13 @@ pub use heap::{
     heap_get_alloc_count, heap_get_free, heap_get_peak, heap_get_total, heap_get_used, heap_init,
     kfree, kmalloc,
 };
+#[cfg(test)]
+pub use pmm::TEST_MUTEX;
 pub use pmm::{
     alloc_frame, free_contiguous_frames, free_frame, get_freed_frame_count, get_stats,
-    init as pmm_init, is_valid_ram_range, max_physical_address, reset_pmm_stats,
-    set_test_ram_region, total_memory, total_usable_memory, KERNEL_BASE_1MB, PAGE_SIZE,
-    PAGE_SIZE_4K,
+    init as pmm_init, is_frame_allocated, is_valid_ram_range, mark_frame_allocated,
+    mark_frame_free, max_physical_address, reset_pmm_stats, set_test_ram_region, total_memory,
+    total_usable_memory, KERNEL_BASE_1MB, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use swap::pager as swap_pager;
 pub use swap::{is_active as swap_is_active, swapoff, swapon, sys_swapoff, sys_swapon};

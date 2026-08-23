@@ -137,6 +137,7 @@ pub fn alloc_frame() -> Option<u64> {
         if FREE_LIST_HEAD != 0 {
             let frame = FREE_LIST_HEAD;
             FREE_LIST_HEAD = *(frame as *const u64);
+            mark_frame_allocated(frame);
             USED_FRAMES_COUNT += 1;
 
             let ptr = frame as *mut u64;
@@ -152,6 +153,7 @@ pub fn alloc_frame() -> Option<u64> {
             if region.current < region.end {
                 let frame = region.current;
                 region.current += PAGE_SIZE;
+                mark_frame_allocated(frame);
                 USED_FRAMES_COUNT += 1;
 
                 let ptr = frame as *mut u64;
@@ -167,6 +169,46 @@ pub fn alloc_frame() -> Option<u64> {
     }
 }
 
+const MAX_TRACKED_FRAMES: usize = 1024 * 1024; // 1,048,576 frames = 4 GiB
+const BITMAP_WORDS: usize = MAX_TRACKED_FRAMES / 64; // 16,384 words (128 KiB in BSS)
+
+static mut ALLOCATION_BITMAP: [u64; BITMAP_WORDS] = [0; BITMAP_WORDS];
+
+/// Check if a physical frame is currently marked as allocated in the PMM bitmap.
+pub fn is_frame_allocated(frame: u64) -> bool {
+    let frame_idx = (frame / PAGE_SIZE) as usize;
+    if frame_idx >= MAX_TRACKED_FRAMES {
+        return is_valid_ram_range(frame, PAGE_SIZE);
+    }
+    let word_idx = frame_idx / 64;
+    let bit_idx = frame_idx % 64;
+    unsafe { (ALLOCATION_BITMAP[word_idx] & (1u64 << bit_idx)) != 0 }
+}
+
+/// Mark a physical frame as allocated in the PMM bitmap.
+pub fn mark_frame_allocated(frame: u64) {
+    let frame_idx = (frame / PAGE_SIZE) as usize;
+    if frame_idx < MAX_TRACKED_FRAMES {
+        let word_idx = frame_idx / 64;
+        let bit_idx = frame_idx % 64;
+        unsafe {
+            ALLOCATION_BITMAP[word_idx] |= 1u64 << bit_idx;
+        }
+    }
+}
+
+/// Mark a physical frame as free in the PMM bitmap.
+pub fn mark_frame_free(frame: u64) {
+    let frame_idx = (frame / PAGE_SIZE) as usize;
+    if frame_idx < MAX_TRACKED_FRAMES {
+        let word_idx = frame_idx / 64;
+        let bit_idx = frame_idx % 64;
+        unsafe {
+            ALLOCATION_BITMAP[word_idx] &= !(1u64 << bit_idx);
+        }
+    }
+}
+
 static mut FREED_FRAME_COUNT: u64 = 0;
 
 /// Query the total count of freed frames since last reset (useful for verification and tests).
@@ -174,7 +216,7 @@ pub fn get_freed_frame_count() -> u64 {
     unsafe { FREED_FRAME_COUNT }
 }
 
-/// Reset PMM allocator stats and free counters (used in unit tests).
+/// Reset PMM allocator stats, allocation bitmap, and free counters (used in unit tests).
 pub fn reset_pmm_stats() {
     unsafe {
         FREE_LIST_HEAD = 0;
@@ -184,6 +226,9 @@ pub fn reset_pmm_stats() {
         CURRENT_REGION_IDX = 0;
         TOTAL_USABLE_RAM = 0;
         MAX_PHYS_ADDR = 0;
+        for i in 0..BITMAP_WORDS {
+            ALLOCATION_BITMAP[i] = 0;
+        }
     }
 }
 
@@ -199,7 +244,11 @@ pub fn set_test_ram_region(start: u64, end: u64) {
         REGION_COUNT = 1;
         TOTAL_USABLE_RAM = size;
         MAX_PHYS_ADDR = end;
-        USED_FRAMES_COUNT = size / PAGE_SIZE;
+        let count = (size / PAGE_SIZE) as usize;
+        USED_FRAMES_COUNT = count as u64;
+        for i in 0..count {
+            mark_frame_allocated(start + (i as u64) * PAGE_SIZE);
+        }
     }
 }
 
@@ -212,17 +261,17 @@ pub fn free_frame(frame: u64) -> bool {
     if !is_valid_ram_range(frame, PAGE_SIZE) {
         return false;
     }
+    // Individual per-frame allocation ownership check via bitmap
+    if !is_frame_allocated(frame) {
+        return false;
+    }
 
     unsafe {
-        if USED_FRAMES_COUNT == 0 {
-            return false;
-        }
-        if FREE_LIST_HEAD == frame {
-            return false;
-        }
-
+        mark_frame_free(frame);
         FREED_FRAME_COUNT += 1;
-        USED_FRAMES_COUNT -= 1;
+        if USED_FRAMES_COUNT > 0 {
+            USED_FRAMES_COUNT -= 1;
+        }
 
         #[cfg(not(test))]
         {
@@ -258,7 +307,7 @@ pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
             return false;
         }
         // Fallback only during early boot initialization before regions are populated
-        if TOTAL_USABLE_RAM > 0 && end <= TOTAL_USABLE_RAM {
+        if MAX_PHYS_ADDR > 0 && end <= MAX_PHYS_ADDR {
             return true;
         }
     }
@@ -280,16 +329,27 @@ pub fn free_contiguous_frames(start_frame: u64, count: usize) -> bool {
         return false;
     }
 
-    unsafe {
-        if USED_FRAMES_COUNT < count as u64 {
-            return false;
+    // 1. ATOMIC VALIDATION: Check that EVERY SINGLE FRAME in the range is currently allocated
+    for i in 0..count {
+        let f = start_frame + (i as u64) * PAGE_SIZE;
+        if !is_frame_allocated(f) {
+            return false; // ATOMIC REJECTION: If any frame is already free, reject entire batch!
         }
-        if FREE_LIST_HEAD == start_frame {
-            return false;
-        }
+    }
 
+    // 2. Mark all frames as free in the bitmap
+    for i in 0..count {
+        let f = start_frame + (i as u64) * PAGE_SIZE;
+        mark_frame_free(f);
+    }
+
+    unsafe {
         FREED_FRAME_COUNT += count as u64;
-        USED_FRAMES_COUNT -= count as u64;
+        if USED_FRAMES_COUNT >= count as u64 {
+            USED_FRAMES_COUNT -= count as u64;
+        } else {
+            USED_FRAMES_COUNT = 0;
+        }
 
         #[cfg(not(test))]
         {
@@ -345,11 +405,15 @@ pub fn get_stats() -> (u64, u64, u64) {
 }
 
 #[cfg(test)]
+pub static TEST_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_is_valid_ram_range_checks() {
+        let _lock = TEST_MUTEX.lock().unwrap();
         reset_pmm_stats();
         unsafe {
             REGIONS[0] = UsableRegion {
@@ -385,7 +449,25 @@ mod tests {
     }
 
     #[test]
+    fn test_is_valid_ram_range_early_boot_fallback() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+        unsafe {
+            REGION_COUNT = 0;
+            MAX_PHYS_ADDR = 0x8000_0000; // 2GB
+
+            // Within address limit
+            assert!(is_valid_ram_range(0x10_0000, 0x1000));
+            assert!(is_valid_ram_range(0x7FFF_F000, 0x1000));
+
+            // Exceeds address limit
+            assert!(!is_valid_ram_range(0x8000_0000, 0x1000));
+        }
+    }
+
+    #[test]
     fn test_multiple_usable_regions_and_reserved_hole() {
+        let _lock = TEST_MUTEX.lock().unwrap();
         reset_pmm_stats();
         unsafe {
             // Region 0: 256MB .. 512MB
@@ -422,6 +504,7 @@ mod tests {
 
     #[test]
     fn test_total_memory_vs_max_physical_address() {
+        let _lock = TEST_MUTEX.lock().unwrap();
         reset_pmm_stats();
         unsafe {
             REGIONS[0] = UsableRegion {
@@ -446,6 +529,7 @@ mod tests {
 
     #[test]
     fn test_1gib_boundary_and_exact_reclaim() {
+        let _lock = TEST_MUTEX.lock().unwrap();
         reset_pmm_stats();
         set_test_ram_region(0x4000_0000, 0x8000_0000);
 
@@ -466,7 +550,95 @@ mod tests {
     }
 
     #[test]
+    fn test_partial_overlap_free_atomic_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+        // Setup 6 frames: A, B, C, D, E, F (0x20_0000 .. 0x20_6000)
+        set_test_ram_region(0x20_0000, 0x20_6000);
+
+        let frame_a = 0x20_0000u64;
+        let frame_c = 0x20_2000u64;
+        let frame_e = 0x20_4000u64;
+        let frame_f = 0x20_5000u64;
+
+        // 1. Free A..D (4 frames: A, B, C, D) -> succeeds
+        let res_ad = free_contiguous_frames(frame_a, 4);
+        assert!(res_ad);
+        assert_eq!(get_freed_frame_count(), 4);
+        assert!(!is_frame_allocated(frame_a));
+        assert!(!is_frame_allocated(frame_c));
+        assert!(is_frame_allocated(frame_e));
+        assert!(is_frame_allocated(frame_f));
+
+        // 2. Free C..F (4 frames: C, D, E, F) -> C and D are already free!
+        // MUST ATOMICALLY REJECT: neither E nor F should be modified or freed
+        let res_cf = free_contiguous_frames(frame_c, 4);
+        assert!(!res_cf);
+        assert_eq!(get_freed_frame_count(), 4); // Count unchanged!
+        assert!(is_frame_allocated(frame_e)); // E is still allocated
+        assert!(is_frame_allocated(frame_f)); // F is still allocated
+
+        // 3. Now freeing remaining non-overlapping E..F (2 frames) succeeds
+        let res_ef = free_contiguous_frames(frame_e, 2);
+        assert!(res_ef);
+        assert_eq!(get_freed_frame_count(), 6);
+    }
+
+    #[test]
+    fn test_double_free_middle_of_free_list_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+        // Setup 3 frames: A, B, C (0x20_0000, 0x20_1000, 0x20_2000)
+        set_test_ram_region(0x20_0000, 0x20_3000);
+
+        let frame_a = 0x20_0000u64;
+        let frame_b = 0x20_1000u64;
+        let frame_c = 0x20_2000u64;
+
+        // Free B, then C, then A
+        assert!(free_frame(frame_b));
+        assert!(free_frame(frame_c));
+        assert!(free_frame(frame_a));
+        assert_eq!(get_freed_frame_count(), 3);
+
+        // Target B is at the tail/middle of free list (not HEAD)
+        // Freeing B again MUST be rejected via bitmap allocation ownership!
+        let res_double_b = free_frame(frame_b);
+        assert!(!res_double_b);
+        assert_eq!(get_freed_frame_count(), 3);
+    }
+
+    #[test]
+    fn test_double_free_multiple_free_list_nodes() {
+        let _lock = TEST_MUTEX.lock().unwrap();
+        reset_pmm_stats();
+        // Setup 5 frames: F0, F1, F2, F3, F4 (0x20_0000 .. 0x20_5000)
+        set_test_ram_region(0x20_0000, 0x20_5000);
+
+        let f0 = 0x20_0000u64;
+        let f2 = 0x20_2000u64;
+        let f4 = 0x20_4000u64;
+
+        // Free F0, F2, F4
+        assert!(free_frame(f0));
+        assert!(free_frame(f2));
+        assert!(free_frame(f4));
+        assert_eq!(get_freed_frame_count(), 3);
+
+        // Attempt double-free on any of the already freed frames
+        assert!(!free_frame(f0));
+        assert!(!free_frame(f2));
+        assert!(!free_frame(f4));
+        assert_eq!(get_freed_frame_count(), 3);
+
+        // Contiguous free covering (f0, 3) must be rejected because f0 and f2 are free
+        assert!(!free_contiguous_frames(f0, 3));
+        assert_eq!(get_freed_frame_count(), 3);
+    }
+
+    #[test]
     fn test_double_free_contiguous_range_rejected() {
+        let _lock = TEST_MUTEX.lock().unwrap();
         reset_pmm_stats();
         set_test_ram_region(0x20_0000, 0x40_0000); // 512 frames
 
@@ -486,28 +658,8 @@ mod tests {
     }
 
     #[test]
-    fn test_free_overlapping_ranges_rejected() {
-        reset_pmm_stats();
-        set_test_ram_region(0x20_0000, 0x60_0000); // 1024 frames total
-
-        // Free first 512 frames (0x20_0000 .. 0x40_0000)
-        let res1 = free_contiguous_frames(0x20_0000, 512);
-        assert!(res1);
-        assert_eq!(get_freed_frame_count(), 512);
-
-        // Free second non-overlapping 512 frames (0x40_0000 .. 0x60_0000)
-        let res2 = free_contiguous_frames(0x40_0000, 512);
-        assert!(res2);
-        assert_eq!(get_freed_frame_count(), 1024);
-
-        // Attempt to free overlapping range (0x30_0000 .. 0x50_0000) when all frames are already freed
-        let res_overlap = free_contiguous_frames(0x30_0000, 512);
-        assert!(!res_overlap);
-        assert_eq!(get_freed_frame_count(), 1024);
-    }
-
-    #[test]
     fn test_free_contiguous_frames_malformed_safely_ignored() {
+        let _lock = TEST_MUTEX.lock().unwrap();
         reset_pmm_stats();
         let prev_freed = get_freed_frame_count();
 

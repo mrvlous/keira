@@ -137,31 +137,47 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
 mod tests {
     use super::*;
 
+    #[repr(align(4096))]
+    struct AlignedTable([u64; 512]);
+
+    static mut TEST_PML4: AlignedTable = AlignedTable([0; 512]);
+    static mut TEST_PDPT: AlignedTable = AlignedTable([0; 512]);
+
     #[test]
     fn test_free_user_pages_with_1gib_huge_mapping_under_pml4_0() {
+        let _lock = pmm::TEST_MUTEX.lock().unwrap();
         pmm::reset_pmm_stats();
-        let mut mock_pml4 = [0u64; 512];
-        let mut mock_pdpt = [0u64; 512];
-
         let frame_1gb = 0x4000_0000u64;
-        mock_pdpt[1] = frame_1gb | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
-
-        let pdpt_phys = mock_pdpt.as_mut_ptr() as u64;
-        mock_pml4[0] = pdpt_phys | PAGE_PRESENT | PAGE_USER;
-
-        let pml4_phys = mock_pml4.as_mut_ptr() as u64;
-
-        // Register usable physical RAM region covering the 1GB huge page
-        pmm::set_test_ram_region(0x4000_0000, 0x8000_0000);
-
-        // Verify that 0 frames were freed before
-        assert_eq!(pmm::get_freed_frame_count(), 0);
 
         unsafe {
-            free_user_pages(pml4_phys, 0x600000000000);
-        }
+            let pdpt_ptr = core::ptr::addr_of_mut!(TEST_PDPT.0).cast::<u64>();
+            let pml4_ptr = core::ptr::addr_of_mut!(TEST_PML4.0).cast::<u64>();
 
-        // Verify that the 1GB huge page (262,144 4KB frames) was completely reclaimed
-        assert_eq!(pmm::get_freed_frame_count(), 262_144);
+            for i in 0..512 {
+                *pml4_ptr.add(i) = 0;
+                *pdpt_ptr.add(i) = 0;
+            }
+
+            *pdpt_ptr.add(1) = frame_1gb | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
+
+            let pdpt_phys = pdpt_ptr as u64;
+            assert_eq!(pdpt_phys % 4096, 0);
+
+            *pml4_ptr = pdpt_phys | PAGE_PRESENT | PAGE_USER;
+
+            let pml4_phys = pml4_ptr as u64;
+            assert_eq!(pml4_phys % 4096, 0);
+
+            // Register usable physical RAM region covering the 1GB huge page
+            pmm::set_test_ram_region(0x4000_0000, 0x8000_0000);
+
+            // Verify that 0 frames were freed before
+            assert_eq!(pmm::get_freed_frame_count(), 0);
+
+            free_user_pages(pml4_phys, 0x600000000000);
+
+            // Verify that the 1GB huge page (262,144 4KB frames) was completely reclaimed
+            assert_eq!(pmm::get_freed_frame_count(), 262_144);
+        }
     }
 }
