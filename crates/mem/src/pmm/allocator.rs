@@ -9,7 +9,7 @@
 
 //! Hardened physical page frame allocator supporting multiple memory regions and reserved zones.
 
-use super::types::PAGE_SIZE;
+use super::types::{KERNEL_BASE_1MB, PAGE_SIZE};
 
 const MAX_REGIONS: usize = 16;
 
@@ -173,8 +173,44 @@ pub fn free_frame(frame: u64) {
     }
 }
 
-/// Free multiple contiguous physical page frames.
+/// Validate whether a physical memory range falls inside registered usable RAM regions.
+pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
+    if size == 0 || !start.is_multiple_of(PAGE_SIZE) {
+        return false;
+    }
+    let end = match start.checked_add(size) {
+        Some(e) => e,
+        None => return false,
+    };
+    if start < KERNEL_BASE_1MB {
+        return false;
+    }
+    unsafe {
+        for i in 0..REGION_COUNT {
+            let region = REGIONS[i];
+            if start >= region.start && end <= region.end {
+                return true;
+            }
+        }
+        if TOTAL_PHYS_MEM > 0 && end <= TOTAL_PHYS_MEM {
+            return true;
+        }
+    }
+    false
+}
+
+/// Free multiple contiguous physical page frames with physical-memory boundary and alignment validation.
 pub fn free_contiguous_frames(start_frame: u64, count: usize) {
+    if count == 0 || !start_frame.is_multiple_of(PAGE_SIZE) || start_frame < KERNEL_BASE_1MB {
+        return;
+    }
+    let total_bytes = match (count as u64).checked_mul(PAGE_SIZE) {
+        Some(b) => b,
+        None => return,
+    };
+    if !is_valid_ram_range(start_frame, total_bytes) {
+        return;
+    }
     for i in 0..count {
         free_frame(start_frame + (i as u64) * PAGE_SIZE);
     }
@@ -204,4 +240,66 @@ pub fn free_memory() -> u64 {
 /// Query memory statistics as a tuple (total_bytes, used_bytes, free_bytes).
 pub fn get_stats() -> (u64, u64, u64) {
     (total_memory(), used_memory(), free_memory())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_valid_ram_range_checks() {
+        unsafe {
+            REGIONS[0] = UsableRegion {
+                start: 0x100000, // 1MB
+                end: 0x8000000,  // 128MB
+                current: 0x100000,
+            };
+            REGION_COUNT = 1;
+            TOTAL_PHYS_MEM = 0x8000000;
+
+            // Valid range
+            assert!(is_valid_ram_range(0x100000, 0x200000));
+            assert!(is_valid_ram_range(0x2000000, 0x4000000));
+
+            // Below 1MB
+            assert!(!is_valid_ram_range(0x0, 0x1000));
+            assert!(!is_valid_ram_range(0x80000, 0x1000));
+
+            // Unaligned start
+            assert!(!is_valid_ram_range(0x100001, 0x1000));
+
+            // Zero size
+            assert!(!is_valid_ram_range(0x100000, 0));
+
+            // Exceeds region end / boundary
+            assert!(!is_valid_ram_range(0x7F00000, 0x200000));
+            assert!(!is_valid_ram_range(0x8000000, 0x1000));
+
+            // Integer overflow
+            assert!(!is_valid_ram_range(0xFFFF_FFFF_FFFF_F000, 0x2000));
+        }
+    }
+
+    #[test]
+    fn test_free_contiguous_frames_malformed_safely_ignored() {
+        unsafe {
+            let prev_head = FREE_LIST_HEAD;
+
+            // Malformed unaligned frame address
+            free_contiguous_frames(0x100001, 512);
+            assert_eq!(FREE_LIST_HEAD, prev_head);
+
+            // Zero frame count
+            free_contiguous_frames(0x200000, 0);
+            assert_eq!(FREE_LIST_HEAD, prev_head);
+
+            // Frame below 1MB
+            free_contiguous_frames(0x0, 512);
+            assert_eq!(FREE_LIST_HEAD, prev_head);
+
+            // Frame outside physical memory bounds
+            free_contiguous_frames(0xF000_0000_0000, 512);
+            assert_eq!(FREE_LIST_HEAD, prev_head);
+        }
+    }
 }

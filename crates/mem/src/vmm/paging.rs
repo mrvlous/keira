@@ -532,4 +532,19 @@ mod tests {
         // Offset within 1GB: 0x1234_5678. Result: 0x9234_5678
         assert_eq!(phys, 0x0000_0000_9234_5678);
     }
+
+    #[test]
+    fn test_huge_page_masks_and_alignment() {
+        let frame_1gb = 0x4000_0000u64;
+        let pte_1gb = frame_1gb | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_HUGE;
+        assert_eq!(pte_1gb & PTE_ADDR_MASK_1G, frame_1gb);
+
+        let frame_2mb = 0x20_0000u64;
+        let pte_2mb = frame_2mb | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_HUGE;
+        assert_eq!(pte_2mb & PTE_ADDR_MASK_2M, frame_2mb);
+
+        let frame_4k = 0x1000u64;
+        let pte_4k = frame_4k | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+        assert_eq!(pte_4k & PTE_ADDR_MASK_4K, frame_4k);
+    }
 }

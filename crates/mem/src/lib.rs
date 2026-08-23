@@ -23,8 +23,8 @@ pub use heap::{
     kfree, kmalloc,
 };
 pub use pmm::{
-    alloc_frame, free_contiguous_frames, free_frame, get_stats, init as pmm_init, KERNEL_BASE_1MB,
-    PAGE_SIZE, PAGE_SIZE_4K,
+    alloc_frame, free_contiguous_frames, free_frame, get_stats, init as pmm_init,
+    is_valid_ram_range, KERNEL_BASE_1MB, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use swap::pager as swap_pager;
 pub use swap::{is_active as swap_is_active, swapoff, swapon, sys_swapoff, sys_swapon};
