@@ -24,8 +24,9 @@ pub use heap::{
 };
 pub use pmm::{
     alloc_frame, free_contiguous_frames, free_frame, get_freed_frame_count, get_stats,
-    init as pmm_init, is_valid_ram_range, reset_pmm_stats, set_test_ram_region, KERNEL_BASE_1MB,
-    PAGE_SIZE, PAGE_SIZE_4K,
+    init as pmm_init, is_valid_ram_range, max_physical_address, reset_pmm_stats,
+    set_test_ram_region, total_memory, total_usable_memory, KERNEL_BASE_1MB, PAGE_SIZE,
+    PAGE_SIZE_4K,
 };
 pub use swap::pager as swap_pager;
 pub use swap::{is_active as swap_is_active, swapoff, swapon, sys_swapoff, sys_swapon};
