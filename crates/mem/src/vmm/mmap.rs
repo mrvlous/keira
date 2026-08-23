@@ -732,6 +732,7 @@ pub fn validate_virt_addr_range(addr: u64, length: u64) -> Result<(), &'static s
 
 #[cfg(test)]
 mod tests {
+    use super::super::paging;
     use super::*;
 
     #[test]
@@ -948,7 +949,7 @@ mod tests {
             }
 
             // A new allocation should fail because all 64 VMA slots are occupied
-            let result = find_free_mmap_range(TEST_PML4, 0x1000);
+            let _result = find_free_mmap_range(TEST_PML4, 0x1000);
             // find_free_mmap_range itself should still find a gap, but sys_mmap
             // should reject because no VMA slot is available.
             // We cannot call sys_mmap directly in test (no real page tables),
@@ -1307,56 +1308,44 @@ mod tests {
 
     #[test]
     fn test_page_table_level_huge_page_invariants() {
-        // Test simulated 4-level page table integrity:
-        // 1GB huge page lives in PDPT[pdpt_idx]
-        // 2MB huge page lives in PD[pd_idx]
-        // 4KB page lives in PT[pt_idx]
+        // Test simulated 4-level page table integrity using page-aligned physical addresses
+        let pdpt_phys = 0x1000_0000u64;
+        let pd_phys = 0x1001_0000u64;
+
         let mut mock_pml4 = [0u64; 512];
         let mut mock_pdpt = [0u64; 512];
         let mut mock_pd = [0u64; 512];
-        let mut mock_pt = [0u64; 512];
-
-        let pml4_phys = mock_pml4.as_mut_ptr() as u64;
-        let pdpt_phys = mock_pdpt.as_mut_ptr() as u64;
-        let pd_phys = mock_pd.as_mut_ptr() as u64;
-        let pt_phys = mock_pt.as_mut_ptr() as u64;
 
         // Link PML4[1] -> PDPT
-        mock_pml4[1] = pdpt_phys | super::paging::PAGE_PRESENT | super::paging::PAGE_USER;
+        mock_pml4[1] = pdpt_phys | paging::PAGE_PRESENT | paging::PAGE_USER;
 
         // Set 1GB Huge Page in PDPT[0]
         let frame_1gb = 0x4000_0000u64;
-        mock_pdpt[0] = frame_1gb
-            | super::paging::PAGE_PRESENT
-            | super::paging::PAGE_USER
-            | super::paging::PAGE_HUGE;
+        mock_pdpt[0] = frame_1gb | paging::PAGE_PRESENT | paging::PAGE_USER | paging::PAGE_HUGE;
 
         // Verify that PDPT[0] holds the 1GB entry, while PML4[1] still points to PDPT
-        assert_eq!(mock_pml4[1] & super::paging::PTE_ADDR_MASK, pdpt_phys);
-        assert_eq!(mock_pdpt[0] & super::paging::PTE_ADDR_MASK_1G, frame_1gb);
+        assert_eq!(mock_pml4[1] & paging::PTE_ADDR_MASK, pdpt_phys);
+        assert_eq!(mock_pdpt[0] & paging::PTE_ADDR_MASK_1G, frame_1gb);
 
         // Unmapping 1GB huge page clears PDPT[0], PML4[1] MUST remain intact!
         mock_pdpt[0] = 0;
         assert_eq!(mock_pdpt[0], 0);
-        assert_eq!(mock_pml4[1] & super::paging::PTE_ADDR_MASK, pdpt_phys);
+        assert_eq!(mock_pml4[1] & paging::PTE_ADDR_MASK, pdpt_phys);
 
         // Link PDPT[1] -> PD
-        mock_pdpt[1] = pd_phys | super::paging::PAGE_PRESENT | super::paging::PAGE_USER;
+        mock_pdpt[1] = pd_phys | paging::PAGE_PRESENT | paging::PAGE_USER;
 
         // Set 2MB Huge Page in PD[0]
         let frame_2mb = 0x20_0000u64;
-        mock_pd[0] = frame_2mb
-            | super::paging::PAGE_PRESENT
-            | super::paging::PAGE_USER
-            | super::paging::PAGE_HUGE;
+        mock_pd[0] = frame_2mb | paging::PAGE_PRESENT | paging::PAGE_USER | paging::PAGE_HUGE;
 
         // Verify that PD[0] holds the 2MB entry, while PDPT[1] still points to PD
-        assert_eq!(mock_pdpt[1] & super::paging::PTE_ADDR_MASK, pd_phys);
-        assert_eq!(mock_pd[0] & super::paging::PTE_ADDR_MASK_2M, frame_2mb);
+        assert_eq!(mock_pdpt[1] & paging::PTE_ADDR_MASK, pd_phys);
+        assert_eq!(mock_pd[0] & paging::PTE_ADDR_MASK_2M, frame_2mb);
 
         // Unmapping 2MB huge page clears PD[0], PDPT[1] MUST remain intact!
         mock_pd[0] = 0;
         assert_eq!(mock_pd[0], 0);
-        assert_eq!(mock_pdpt[1] & super::paging::PTE_ADDR_MASK, pd_phys);
+        assert_eq!(mock_pdpt[1] & paging::PTE_ADDR_MASK, pd_phys);
     }
 }

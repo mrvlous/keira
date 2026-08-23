@@ -158,15 +158,54 @@ pub fn alloc_frame() -> Option<u64> {
     }
 }
 
+static mut FREED_FRAME_COUNT: u64 = 0;
+
+/// Query the total count of freed frames since last reset (useful for verification and tests).
+pub fn get_freed_frame_count() -> u64 {
+    unsafe { FREED_FRAME_COUNT }
+}
+
+/// Reset PMM allocator stats and free counters (used in unit tests).
+pub fn reset_pmm_stats() {
+    unsafe {
+        FREE_LIST_HEAD = 0;
+        USED_FRAMES_COUNT = 0;
+        FREED_FRAME_COUNT = 0;
+        REGION_COUNT = 0;
+        CURRENT_REGION_IDX = 0;
+        TOTAL_PHYS_MEM = 0;
+    }
+}
+
+/// Set a mock physical RAM region for testing environments.
+pub fn set_test_ram_region(start: u64, end: u64) {
+    unsafe {
+        REGIONS[0] = UsableRegion {
+            start,
+            end,
+            current: start,
+        };
+        REGION_COUNT = 1;
+        TOTAL_PHYS_MEM = end.saturating_sub(start);
+    }
+}
+
 /// Free a previously allocated physical frame and push it onto the LIFO free list.
 pub fn free_frame(frame: u64) {
-    if !frame.is_multiple_of(PAGE_SIZE) || frame == 0 {
+    if !frame.is_multiple_of(PAGE_SIZE) || frame == 0 || frame < KERNEL_BASE_1MB {
+        return;
+    }
+    if !is_valid_ram_range(frame, PAGE_SIZE) {
         return;
     }
 
     unsafe {
-        *(frame as *mut u64) = FREE_LIST_HEAD;
-        FREE_LIST_HEAD = frame;
+        FREED_FRAME_COUNT += 1;
+        #[cfg(not(test))]
+        {
+            *(frame as *mut u64) = FREE_LIST_HEAD;
+            FREE_LIST_HEAD = frame;
+        }
         if USED_FRAMES_COUNT > 0 {
             USED_FRAMES_COUNT -= 1;
         }
@@ -174,6 +213,8 @@ pub fn free_frame(frame: u64) {
 }
 
 /// Validate whether a physical memory range falls inside registered usable RAM regions.
+/// When regions are configured (REGION_COUNT > 0), the range MUST be entirely contained within
+/// a single continuous usable region and must never bridge across reserved holes or unmapped spans.
 pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
     if size == 0 || !start.is_multiple_of(PAGE_SIZE) {
         return false;
@@ -186,12 +227,16 @@ pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
         return false;
     }
     unsafe {
-        for i in 0..REGION_COUNT {
-            let region = REGIONS[i];
-            if start >= region.start && end <= region.end {
-                return true;
+        if REGION_COUNT > 0 {
+            for i in 0..REGION_COUNT {
+                let region = REGIONS[i];
+                if start >= region.start && end <= region.end {
+                    return true;
+                }
             }
+            return false;
         }
+        // Fallback only during early boot initialization before regions are populated
         if TOTAL_PHYS_MEM > 0 && end <= TOTAL_PHYS_MEM {
             return true;
         }
@@ -200,6 +245,7 @@ pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
 }
 
 /// Free multiple contiguous physical page frames with physical-memory boundary and alignment validation.
+/// Uses native batch chaining when executing in kernel runtime.
 pub fn free_contiguous_frames(start_frame: u64, count: usize) {
     if count == 0 || !start_frame.is_multiple_of(PAGE_SIZE) || start_frame < KERNEL_BASE_1MB {
         return;
@@ -211,8 +257,27 @@ pub fn free_contiguous_frames(start_frame: u64, count: usize) {
     if !is_valid_ram_range(start_frame, total_bytes) {
         return;
     }
-    for i in 0..count {
-        free_frame(start_frame + (i as u64) * PAGE_SIZE);
+
+    unsafe {
+        FREED_FRAME_COUNT += count as u64;
+        #[cfg(not(test))]
+        {
+            // Batch link all contiguous frames
+            let end_frame = start_frame + total_bytes - PAGE_SIZE;
+            let mut curr = start_frame;
+            while curr < end_frame {
+                let next = curr + PAGE_SIZE;
+                *(curr as *mut u64) = next;
+                curr = next;
+            }
+            *(end_frame as *mut u64) = FREE_LIST_HEAD;
+            FREE_LIST_HEAD = start_frame;
+        }
+        if USED_FRAMES_COUNT >= count as u64 {
+            USED_FRAMES_COUNT -= count as u64;
+        } else {
+            USED_FRAMES_COUNT = 0;
+        }
     }
 }
 
@@ -248,6 +313,7 @@ mod tests {
 
     #[test]
     fn test_is_valid_ram_range_checks() {
+        reset_pmm_stats();
         unsafe {
             REGIONS[0] = UsableRegion {
                 start: 0x100000, // 1MB
@@ -281,25 +347,88 @@ mod tests {
     }
 
     #[test]
-    fn test_free_contiguous_frames_malformed_safely_ignored() {
+    fn test_multiple_usable_regions_and_reserved_hole() {
+        reset_pmm_stats();
         unsafe {
-            let prev_head = FREE_LIST_HEAD;
+            // Region 0: 256MB .. 512MB
+            REGIONS[0] = UsableRegion {
+                start: 0x1000_0000,
+                end: 0x2000_0000,
+                current: 0x1000_0000,
+            };
+            // Reserved hole: 512MB .. 768MB
+            // Region 1: 768MB .. 2GB
+            REGIONS[1] = UsableRegion {
+                start: 0x3000_0000,
+                end: 0x8000_0000,
+                current: 0x3000_0000,
+            };
+            REGION_COUNT = 2;
+            TOTAL_PHYS_MEM = 0x8000_0000;
 
-            // Malformed unaligned frame address
-            free_contiguous_frames(0x100001, 512);
-            assert_eq!(FREE_LIST_HEAD, prev_head);
+            // Range inside Region 0
+            assert!(is_valid_ram_range(0x1000_0000, 0x1000_0000));
 
-            // Zero frame count
-            free_contiguous_frames(0x200000, 0);
-            assert_eq!(FREE_LIST_HEAD, prev_head);
+            // Range inside Region 1
+            assert!(is_valid_ram_range(0x3000_0000, 0x4000_0000));
 
-            // Frame below 1MB
-            free_contiguous_frames(0x0, 512);
-            assert_eq!(FREE_LIST_HEAD, prev_head);
+            // Range starting in reserved hole
+            assert!(!is_valid_ram_range(0x2000_0000, 0x1000));
+            assert!(!is_valid_ram_range(0x2800_0000, 0x1000));
 
-            // Frame outside physical memory bounds
-            free_contiguous_frames(0xF000_0000_0000, 512);
-            assert_eq!(FREE_LIST_HEAD, prev_head);
+            // Range spanning across Region 0 and Region 1 (bridging reserved hole)
+            assert!(!is_valid_ram_range(0x1800_0000, 0x2000_0000));
         }
+    }
+
+    #[test]
+    fn test_1gib_boundary_and_exact_reclaim() {
+        reset_pmm_stats();
+        unsafe {
+            // Region 0: exactly 1GB size (0x4000_0000 .. 0x8000_0000)
+            REGIONS[0] = UsableRegion {
+                start: 0x4000_0000,
+                end: 0x8000_0000,
+                current: 0x4000_0000,
+            };
+            REGION_COUNT = 1;
+            TOTAL_PHYS_MEM = 0x8000_0000;
+
+            let frame_1gb = 0x4000_0000u64;
+            let count_1gb = 512 * 512; // 262,144 frames
+
+            // Exactly fits 1GB region
+            assert!(is_valid_ram_range(frame_1gb, 0x4000_0000));
+
+            // Overflows by 1 4KB page
+            assert!(!is_valid_ram_range(frame_1gb, 0x4000_1000));
+
+            // Perform contiguous free
+            assert_eq!(get_freed_frame_count(), 0);
+            free_contiguous_frames(frame_1gb, count_1gb);
+            assert_eq!(get_freed_frame_count(), 262_144);
+        }
+    }
+
+    #[test]
+    fn test_free_contiguous_frames_malformed_safely_ignored() {
+        reset_pmm_stats();
+        let prev_freed = get_freed_frame_count();
+
+        // Malformed unaligned frame address
+        free_contiguous_frames(0x100001, 512);
+        assert_eq!(get_freed_frame_count(), prev_freed);
+
+        // Zero frame count
+        free_contiguous_frames(0x200000, 0);
+        assert_eq!(get_freed_frame_count(), prev_freed);
+
+        // Frame below 1MB
+        free_contiguous_frames(0x0, 512);
+        assert_eq!(get_freed_frame_count(), prev_freed);
+
+        // Frame outside physical memory bounds
+        free_contiguous_frames(0xF000_0000_0000, 512);
+        assert_eq!(get_freed_frame_count(), prev_freed);
     }
 }

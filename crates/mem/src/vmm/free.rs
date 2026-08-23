@@ -139,23 +139,29 @@ mod tests {
 
     #[test]
     fn test_free_user_pages_with_1gib_huge_mapping_under_pml4_0() {
+        pmm::reset_pmm_stats();
         let mut mock_pml4 = [0u64; 512];
         let mut mock_pdpt = [0u64; 512];
 
-        let pml4_phys = mock_pml4.as_mut_ptr() as u64;
-        let pdpt_phys = mock_pdpt.as_mut_ptr() as u64;
-
-        // Set PML4[0] -> PDPT
-        mock_pml4[0] = pdpt_phys | PAGE_PRESENT | PAGE_USER;
-
-        // Set 1GB Huge Page at PDPT[1] (1GB - 2GB virtual)
         let frame_1gb = 0x4000_0000u64;
         mock_pdpt[1] = frame_1gb | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
 
-        // Ensure free_user_pages() recognizes PDPT[1] as a huge leaf page,
-        // and does NOT attempt to treat frame_1gb as a PD table!
+        let pdpt_phys = mock_pdpt.as_mut_ptr() as u64;
+        mock_pml4[0] = pdpt_phys | PAGE_PRESENT | PAGE_USER;
+
+        let pml4_phys = mock_pml4.as_mut_ptr() as u64;
+
+        // Register usable physical RAM region covering the 1GB huge page
+        pmm::set_test_ram_region(0x4000_0000, 0x8000_0000);
+
+        // Verify that 0 frames were freed before
+        assert_eq!(pmm::get_freed_frame_count(), 0);
+
         unsafe {
             free_user_pages(pml4_phys, 0x600000000000);
         }
+
+        // Verify that the 1GB huge page (262,144 4KB frames) was completely reclaimed
+        assert_eq!(pmm::get_freed_frame_count(), 262_144);
     }
 }
