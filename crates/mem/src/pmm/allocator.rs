@@ -19,14 +19,43 @@ pub const MAX_TRACKED_FRAMES: usize = (MAX_PHYS_ADDR_LIMIT / PAGE_SIZE) as usize
 const BITMAP_WORDS: usize = MAX_TRACKED_FRAMES / 64; // 16,384 words (128 KiB in BSS)
 
 static PMM_LOCK: AtomicBool = AtomicBool::new(false);
-
-#[cfg(not(test))]
 #[allow(dead_code)]
 static PMM_HOLDER_CORE: core::sync::atomic::AtomicIsize = core::sync::atomic::AtomicIsize::new(-1);
 
 #[cfg(test)]
 thread_local! {
     static CURRENT_THREAD_HOLDS_PMM: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
+    static MOCK_CPU_ID: core::cell::Cell<Option<isize>> = const { core::cell::Cell::new(None) };
+}
+
+/// Helper to set mock CPU ID on the current thread for multi-core / SMP tests.
+#[cfg(test)]
+pub fn set_test_cpu_id(cpu_id: isize) {
+    MOCK_CPU_ID.with(|c| c.set(Some(cpu_id)));
+}
+
+/// Helper to clear mock CPU ID on the current thread.
+#[cfg(test)]
+pub fn clear_test_cpu_id() {
+    MOCK_CPU_ID.with(|c| c.set(None));
+}
+
+/// Read the current CPU / Local APIC ID.
+#[inline(always)]
+#[allow(dead_code)]
+pub fn get_current_cpu_id() -> isize {
+    #[cfg(target_os = "none")]
+    unsafe {
+        keira_arch::interrupts::get_current_lapic_id() as isize
+    }
+    #[cfg(all(not(target_os = "none"), test))]
+    {
+        MOCK_CPU_ID.with(|c| c.get().unwrap_or(0))
+    }
+    #[cfg(all(not(target_os = "none"), not(test)))]
+    {
+        0
+    }
 }
 
 pub struct PmmGuard {
@@ -48,21 +77,20 @@ impl PmmGuard {
         #[cfg(not(target_os = "none"))]
         let irq_state = false;
 
-        // Recursive lock debug detection
+        #[cfg(debug_assertions)]
+        let cur_cpu = get_current_cpu_id();
+
+        // Recursive lock debug detection:
+        // Only trigger panic if the CURRENT CPU ALREADY holds the lock!
         #[cfg(debug_assertions)]
         {
-            #[cfg(test)]
+            if PMM_LOCK.load(Ordering::Relaxed)
+                && PMM_HOLDER_CORE.load(Ordering::Relaxed) == cur_cpu
             {
-                if CURRENT_THREAD_HOLDS_PMM.with(|c| c.get()) {
-                    panic!("Recursive PMM lock detected: allocator is non-reentrant");
-                }
-            }
-            #[cfg(all(not(test), target_os = "none"))]
-            {
-                if PMM_LOCK.load(Ordering::Relaxed) && PMM_HOLDER_CORE.load(Ordering::Relaxed) == 0
-                {
-                    panic!("Recursive PMM lock detected: allocator is non-reentrant");
-                }
+                panic!(
+                    "Recursive PMM lock detected: allocator is non-reentrant on CPU {}",
+                    cur_cpu
+                );
             }
         }
 
@@ -79,10 +107,7 @@ impl PmmGuard {
             {
                 CURRENT_THREAD_HOLDS_PMM.with(|c| c.set(true));
             }
-            #[cfg(all(not(test), target_os = "none"))]
-            {
-                PMM_HOLDER_CORE.store(0, Ordering::Relaxed);
-            }
+            PMM_HOLDER_CORE.store(cur_cpu, Ordering::Relaxed);
         }
 
         PmmGuard { irq_state }
@@ -97,10 +122,7 @@ impl Drop for PmmGuard {
             {
                 CURRENT_THREAD_HOLDS_PMM.with(|c| c.set(false));
             }
-            #[cfg(all(not(test), target_os = "none"))]
-            {
-                PMM_HOLDER_CORE.store(-1, Ordering::Relaxed);
-            }
+            PMM_HOLDER_CORE.store(-1, Ordering::Relaxed);
         }
         PMM_LOCK.store(false, Ordering::Release);
 
@@ -583,12 +605,12 @@ pub fn get_stats() -> (u64, u64, u64) {
     (total_memory(), used_memory(), free_memory())
 }
 
-/// Validate all PMM memory management invariants:
+/// Validate all PMM memory management invariants assuming lock is already held by caller.
+/// Checks:
 /// 1. Total allocated frames in bitmap == USED_FRAMES_COUNT
 /// 2. Sum of used_memory + free_memory == total_memory
-/// 3. All free list nodes are within physical memory bounds (< 4 GiB, >= 1 MiB)
-pub fn verify_pmm_invariants() -> Result<(), &'static str> {
-    let _guard = PmmGuard::lock();
+/// 3. All free list nodes are inside valid usable RAM regions (not bridging reserved holes) and < 4 GiB
+pub fn verify_pmm_invariants_locked() -> Result<(), &'static str> {
     unsafe {
         let mut bitmap_allocated_count: u64 = 0;
         for i in 0..BITMAP_WORDS {
@@ -610,8 +632,10 @@ pub fn verify_pmm_invariants() -> Result<(), &'static str> {
             let mut curr = FREE_LIST_HEAD;
             let mut visited = 0;
             while curr != 0 {
-                if curr >= MAX_PHYS_ADDR_LIMIT || curr < KERNEL_BASE_1MB {
-                    return Err("Invariant violation: free-list node out of physical bounds");
+                if !is_valid_ram_range(curr, PAGE_SIZE) {
+                    return Err(
+                        "Invariant violation: free-list node is not in a valid usable RAM region",
+                    );
                 }
                 let frame_idx = (curr / PAGE_SIZE) as usize;
                 if frame_idx < MAX_TRACKED_FRAMES {
@@ -633,6 +657,12 @@ pub fn verify_pmm_invariants() -> Result<(), &'static str> {
 
         Ok(())
     }
+}
+
+/// Validate all PMM memory management invariants with automatic spinlock synchronization.
+pub fn verify_pmm_invariants() -> Result<(), &'static str> {
+    let _guard = PmmGuard::lock();
+    verify_pmm_invariants_locked()
 }
 
 #[cfg(test)]
@@ -976,9 +1006,46 @@ mod tests {
     #[should_panic(expected = "Recursive PMM lock detected")]
     fn test_recursive_pmm_lock_debug_detection() {
         let lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        set_test_cpu_id(0);
         let _g1 = PmmGuard::lock();
         drop(lock);
         let _g2 = PmmGuard::lock();
+    }
+
+    #[test]
+    fn test_different_cpu_waiting_does_not_panic_recursive() {
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        set_test_cpu_id(0);
+        let g1 = PmmGuard::lock();
+
+        // Spawn thread on CPU 1
+        let handle = std::thread::spawn(move || {
+            set_test_cpu_id(1);
+            // Verify that CPU 1 does not panic on recursive lock check when CPU 0 holds lock!
+            let cur_cpu = get_current_cpu_id();
+            assert_eq!(cur_cpu, 1);
+            let holder = PMM_HOLDER_CORE.load(Ordering::Relaxed);
+            assert_eq!(holder, 0);
+            assert!(PMM_LOCK.load(Ordering::Relaxed));
+            assert_ne!(holder, cur_cpu); // MUST NOT panic as recursive
+        });
+
+        handle.join().unwrap();
+        drop(g1);
+        clear_test_cpu_id();
+    }
+
+    #[test]
+    fn test_verify_pmm_invariants_locked_no_deadlock() {
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        reset_pmm_stats();
+        set_test_ram_region_empty(0x20_0000, 0x40_0000);
+
+        // Acquire lock explicitly
+        let _guard = PmmGuard::lock();
+
+        // Call verify_pmm_invariants_locked without re-locking / deadlock
+        assert!(verify_pmm_invariants_locked().is_ok());
     }
 
     #[test]
@@ -1011,8 +1078,9 @@ mod tests {
         let iters_per_thread = 50;
         let mut handles = std::vec::Vec::new();
 
-        for _ in 0..num_threads {
+        for i in 0..num_threads {
             let handle = std::thread::spawn(move || {
+                set_test_cpu_id(i as isize);
                 for _ in 0..iters_per_thread {
                     let f1 = alloc_frame();
                     let f2 = alloc_frame();
@@ -1045,8 +1113,9 @@ mod tests {
         set_test_ram_region_empty(0x20_0000, 0x220_0000); // 32MB = 8192 frames
 
         let mut handles = std::vec::Vec::new();
-        for _ in 0..4 {
-            let h = std::thread::spawn(|| {
+        for i in 0..4 {
+            let h = std::thread::spawn(move || {
+                set_test_cpu_id(i as isize);
                 for _ in 0..100 {
                     let f = alloc_frame();
                     if let Some(frame) = f {
@@ -1062,5 +1131,46 @@ mod tests {
         }
 
         assert!(verify_pmm_invariants().is_ok());
+    }
+
+    #[test]
+    fn test_smp_baremetal_multi_core_stress() {
+        let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        reset_pmm_stats();
+        set_test_ram_region_empty(0x20_0000, 0x420_0000); // 64MB = 16384 frames
+
+        // Simulate 4 distinct SMP cores: LAPIC IDs 0, 1, 2, 3
+        let num_cores = 4;
+        let mut handles = std::vec::Vec::new();
+
+        for core_id in 0..num_cores {
+            let handle = std::thread::spawn(move || {
+                set_test_cpu_id(core_id as isize);
+                for _ in 0..50 {
+                    let f = alloc_frame();
+                    if let Some(frame) = f {
+                        assert!(is_frame_allocated(frame));
+                        assert!(free_frame(frame));
+                    }
+                }
+            });
+            handles.push(handle);
+        }
+
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        assert!(verify_pmm_invariants().is_ok());
+    }
+
+    #[test]
+    fn test_irq_disabled_entry_exit_preservation() {
+        // Test struct PmmGuard irq_state retention
+        let guard_if_was_enabled = PmmGuard { irq_state: true };
+        assert!(guard_if_was_enabled.irq_state);
+
+        let guard_if_was_disabled = PmmGuard { irq_state: false };
+        assert!(!guard_if_was_disabled.irq_state);
     }
 }

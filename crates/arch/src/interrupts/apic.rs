@@ -42,3 +42,9 @@ pub unsafe fn write_reg(offset: u32, val: u32) {
     let reg_ptr = (LAPIC_DEFAULT_BASE + offset as u64) as *mut u32;
     core::ptr::write_volatile(reg_ptr, val);
 }
+
+/// Read the current Local APIC ID (CPU ID).
+#[inline(always)]
+pub unsafe fn get_current_lapic_id() -> u32 {
+    (read_reg(LAPIC_ID_REG) >> 24) & 0xFF
+}
