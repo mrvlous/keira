@@ -346,3 +346,73 @@ pub unsafe fn fetch_https(
         Err(e) => Err(e),
     }
 }
+
+/// Fetch an HTTPS resource over native TLS 1.3 streaming state machine with progress callback.
+pub unsafe fn fetch_https_stream<F>(
+    hostname: &str,
+    target_path: &str,
+    mut on_progress: F,
+) -> Result<(&'static [u8], Option<usize>), &'static str>
+where
+    F: FnMut(usize, Option<usize>),
+{
+    if !E1000_FOUND {
+        return Err("Network card offline");
+    }
+
+    let target_ip = crate::dns::resolver::resolve_domain(hostname).unwrap_or([10, 0, 2, 2]);
+    let session = tls_connect(hostname)?;
+
+    let mut req_buf = [0u8; 256];
+    let mut req_len = 0;
+    let req_str = b"GET ";
+    req_buf[req_len..req_len + req_str.len()].copy_from_slice(req_str);
+    req_len += req_str.len();
+
+    let p_bytes = target_path.as_bytes();
+    let to_copy_p = core::cmp::min(p_bytes.len(), 64);
+    req_buf[req_len..req_len + to_copy_p].copy_from_slice(&p_bytes[..to_copy_p]);
+    req_len += to_copy_p;
+
+    let host_prefix = b" HTTP/1.1\r\nHost: ";
+    req_buf[req_len..req_len + host_prefix.len()].copy_from_slice(host_prefix);
+    req_len += host_prefix.len();
+
+    let h_bytes = hostname.as_bytes();
+    let to_copy_h = core::cmp::min(h_bytes.len(), 64);
+    req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
+    req_len += to_copy_h;
+
+    let req_end = concat!(
+        "\r\nUser-Agent: Keira/",
+        env!("CARGO_PKG_VERSION"),
+        "\r\nConnection: close\r\n\r\n"
+    )
+    .as_bytes();
+    req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
+    req_len += req_end.len();
+
+    let mut enc_buf = [0u8; 256];
+    let (enc_len, _tag) = session.encrypt_record(&req_buf[..req_len], &mut enc_buf);
+
+    match crate::tcp::stream::fetch_stream_download(
+        target_ip,
+        443,
+        &enc_buf[..enc_len],
+        &mut on_progress,
+    ) {
+        Ok((payload, cl)) => Ok((payload, cl)),
+        Err(e) => {
+            if target_ip != [10, 0, 2, 2] {
+                crate::tcp::stream::fetch_stream_download(
+                    [10, 0, 2, 2],
+                    443,
+                    &enc_buf[..enc_len],
+                    on_progress,
+                )
+            } else {
+                Err(e)
+            }
+        }
+    }
+}

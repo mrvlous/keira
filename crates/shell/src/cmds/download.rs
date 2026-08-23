@@ -7,14 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//!
-//! Implementation of the 'download' shell command to fetch network resources over
-//! encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save payloads to FAT16 storage.
+//! Implementation of the 'download' shell command to stream network resources over
+//! encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save payloads directly to FAT16 storage.
 
 use crate::executor::*;
 use keira_io::vga;
-use keira_net::tcp::fetch_http;
-use keira_net::tls::fetch_https;
+use keira_net::tcp::fetch_http_stream;
+use keira_net::tls::fetch_https_stream;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if !unsafe { is_admin_mode() } {
@@ -29,9 +28,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let url = match parts.next() {
         Some("-h") | Some("--help") => {
             vga::print_str("Usage: download <URL> <target_file_path>\n\n");
-            vga::print_str("Description:\n  Fetch network resources over encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save received payload data stream directly to FAT16 disk storage.\n\n");
+            vga::print_str("Description:\n  Stream network resources over encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save received payload data stream directly to FAT16 disk storage.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-            vga::print_str("Examples:\n  download https://google.com page.html\n  download http://10.0.2.2/test.txt data.txt\n");
+            vga::print_str("Examples:\n  download https://example.com/app.elf /apps/app.elf\n  download http://208.95.112.1/json ip.json\n");
             return;
         }
         Some(u) => u,
@@ -72,27 +71,55 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         None => (raw_url, "/"),
     };
 
+    let on_progress = |received: usize, total_opt: Option<usize>| {
+        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        if let Some(total) = total_opt {
+            if total > 0 {
+                let percent = (received * 100) / total;
+                vga::print_str("Downloading [");
+                let filled = (percent * 20) / 100;
+                for _ in 0..filled {
+                    vga::print_str("=");
+                }
+                if filled < 20 {
+                    vga::print_str(">");
+                    for _ in filled + 1..20 {
+                        vga::print_str(" ");
+                    }
+                }
+                vga::print_str("] ");
+                vga::print_u64(percent as u64);
+                vga::print_str("% (");
+                vga::print_u64(received as u64);
+                vga::print_str("/");
+                vga::print_u64(total as u64);
+                vga::print_str(" bytes)\n");
+            }
+        }
+        vga::set_color(vga::Color::White, vga::Color::Black);
+    };
+
     if is_https {
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
         vga::print_str("Connecting to https://");
         vga::print_str(host);
-        vga::print_str(":443 (TLS 1.3 Encrypted) ...\n");
+        vga::print_str(":443 (TLS 1.3 Encrypted Stream) ...\n");
         vga::set_color(vga::Color::White, vga::Color::Black);
 
-        match unsafe { fetch_https(host, path) } {
-            Ok((payload, len)) => unsafe {
-                save_or_print_payload(&payload[..len], target_file, true);
+        match unsafe { fetch_https_stream(host, path, on_progress) } {
+            Ok((payload, _cl)) => unsafe {
+                save_or_print_payload(payload, target_file, true);
             },
             Err(err) => {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);
                 vga::print_str("TLS 1.3: ");
                 vga::print_str(err);
-                vga::print_str("\nConnecting via HTTP (Port 80) ...\n");
+                vga::print_str("\nConnecting via HTTP Stream (Port 80) ...\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
 
-                match unsafe { fetch_http(raw_url) } {
-                    Ok((payload, len)) => unsafe {
-                        save_or_print_payload(&payload[..len], target_file, false);
+                match unsafe { fetch_http_stream(raw_url, on_progress) } {
+                    Ok((payload, _cl)) => unsafe {
+                        save_or_print_payload(payload, target_file, false);
                     },
                     Err(http_err) => {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
@@ -107,12 +134,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::LightCyan, vga::Color::Black);
         vga::print_str("Connecting to http://");
         vga::print_str(host);
-        vga::print_str(":80 ...\n");
+        vga::print_str(":80 (HTTP Stream) ...\n");
         vga::set_color(vga::Color::White, vga::Color::Black);
 
-        match unsafe { fetch_http(raw_url) } {
-            Ok((payload, len)) => unsafe {
-                save_or_print_payload(&payload[..len], target_file, false);
+        match unsafe { fetch_http_stream(raw_url, on_progress) } {
+            Ok((payload, _cl)) => unsafe {
+                save_or_print_payload(payload, target_file, false);
             },
             Err(err) => {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
@@ -141,7 +168,7 @@ unsafe fn save_or_print_payload(payload: &[u8], dest_path: &str, is_encrypted: b
         Ok(_) => {
             keira_fs::fat::clear_cache();
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-            vga::print_str("Saved network payload to ");
+            vga::print_str("Saved network stream to ");
             vga::print_str(dest_path);
             vga::print_str(" in current directory (FAT16 Disk Storage)\n");
         }
@@ -161,9 +188,9 @@ unsafe fn save_or_print_payload(payload: &[u8], dest_path: &str, is_encrypted: b
 
     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
     if is_encrypted {
-        vga::print_str("\n[TLS 1.3 Encrypted Download Complete: ");
+        vga::print_str("\n[TLS 1.3 Encrypted Stream Download Complete: ");
     } else {
-        vga::print_str("\n[Download Complete: ");
+        vga::print_str("\n[Stream Download Complete: ");
     }
     vga::print_u64(payload.len() as u64);
     vga::print_str(" bytes received]\n");

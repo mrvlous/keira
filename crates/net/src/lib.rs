@@ -56,10 +56,11 @@ pub use socket::sock::{
     AF_UNSPEC, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
 };
 pub use tcp::stream::{
-    fetch_http, parse_tcp_payload, tcp_checksum, tcp_send_and_receive, TcpHeader, TcpState,
-    TCP_FLAG_ACK, TCP_FLAG_FIN, TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
+    fetch_http, fetch_http_stream, fetch_stream_download, parse_tcp_payload, tcp_checksum,
+    tcp_send_and_receive, TcpHeader, TcpState, STREAM_DOWNLOAD_BUFFER, TCP_FLAG_ACK, TCP_FLAG_FIN,
+    TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
 };
 pub use tls::native::{
-    fetch_https, tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256,
+    fetch_https, fetch_https_stream, tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256,
     TLS_CONTENT_APPLICATION_DATA, TLS_CONTENT_HANDSHAKE, TLS_VERSION_12, TLS_VERSION_13,
 };

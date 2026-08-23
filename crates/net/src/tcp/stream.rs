@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Transmission Control Protocol (TCP) stream, 3-way handshake, state machine, and HTTP fetch.
+//! Transmission Control Protocol (TCP) stream, 3-way handshake, continuous streaming, and HTTP fetch.
 
 use crate::arp::table::send_arp_announcement;
 use crate::driver::e1000::{self, E1000_FOUND, E1000_MAC};
@@ -43,6 +43,12 @@ pub const TCP_FLAG_SYN: u8 = 0x02;
 pub const TCP_FLAG_RST: u8 = 0x04;
 pub const TCP_FLAG_PSH: u8 = 0x08;
 pub const TCP_FLAG_ACK: u8 = 0x10;
+
+/// Buffer capacity for streaming downloads (256 KB)
+pub const STREAM_BUFFER_CAPACITY: usize = 262144;
+
+/// Global static buffer for streaming download payloads (up to 256 KB)
+pub static mut STREAM_DOWNLOAD_BUFFER: [u8; STREAM_BUFFER_CAPACITY] = [0u8; STREAM_BUFFER_CAPACITY];
 
 /// Compute standard TCP checksum with IPv4 pseudo-header.
 pub fn tcp_checksum(src_ip: [u8; 4], dst_ip: [u8; 4], tcp_data: &[u8]) -> u16 {
@@ -238,8 +244,273 @@ pub unsafe fn tcp_send_and_receive(
     Err("Connection timed out: Remote host did not return data payload")
 }
 
-/// Fetch an HTTP resource over the network stack (Ethernet -> IPv4 -> TCP:80 -> HTTP GET).
-pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> {
+/// Download a network resource using a full continuous TCP stream state machine.
+/// Handles multi-packet reception, active sequence ACK replies, Content-Length tracking,
+/// and live progress callback.
+pub unsafe fn fetch_stream_download<F>(
+    target_ip: [u8; 4],
+    target_port: u16,
+    request_data: &[u8],
+    mut on_progress: F,
+) -> Result<(&'static [u8], Option<usize>), &'static str>
+where
+    F: FnMut(usize, Option<usize>),
+{
+    if !E1000_FOUND {
+        return Err("Network card offline");
+    }
+
+    let src_port = 49152u16;
+    let initial_seq = 0x10000000u32;
+    let mac = E1000_MAC;
+
+    send_arp_announcement();
+
+    // 1. Send SYN
+    let mut syn_frame = [0u8; 60];
+    syn_frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+    syn_frame[6..12].copy_from_slice(&mac);
+    syn_frame[12..14].copy_from_slice(&[0x08, 0x00]);
+
+    syn_frame[14] = 0x45;
+    syn_frame[18..20].copy_from_slice(&0x1234u16.to_be_bytes());
+    syn_frame[20..22].copy_from_slice(&[0x40, 0x00]);
+    syn_frame[22] = 64;
+    syn_frame[23] = 0x06;
+    syn_frame[26..30].copy_from_slice(&[10, 0, 2, 15]);
+    syn_frame[30..34].copy_from_slice(&target_ip);
+    let ip_len = 40u16;
+    syn_frame[16..18].copy_from_slice(&ip_len.to_be_bytes());
+    let ip_csum = ip_checksum(&syn_frame[14..34]);
+    syn_frame[24..26].copy_from_slice(&ip_csum.to_be_bytes());
+
+    syn_frame[34..36].copy_from_slice(&src_port.to_be_bytes());
+    syn_frame[36..38].copy_from_slice(&target_port.to_be_bytes());
+    syn_frame[38..42].copy_from_slice(&initial_seq.to_be_bytes());
+    syn_frame[42..46].copy_from_slice(&0u32.to_be_bytes());
+    syn_frame[46] = 5 << 4;
+    syn_frame[47] = 0x02; // SYN
+    syn_frame[48..50].copy_from_slice(&65535u16.to_be_bytes());
+    let tcp_csum_val = tcp_checksum([10, 0, 2, 15], target_ip, &syn_frame[34..54]);
+    syn_frame[50..52].copy_from_slice(&tcp_csum_val.to_be_bytes());
+
+    e1000::transmit_raw_frame(&syn_frame[..54])?;
+
+    // 2. Wait for SYN-ACK
+    let mut server_seq = 0u32;
+    let mut synack_received = false;
+    let mut rx_buf = [0u8; 2048];
+    let start_tick = get_uptime_ms();
+
+    while get_uptime_ms() < start_tick + 2500 {
+        if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
+            if bytes >= 54
+                && rx_buf[12] == 0x08
+                && rx_buf[13] == 0x00
+                && rx_buf[23] == 0x06
+                && rx_buf[30..34] == [10, 0, 2, 15]
+            {
+                let tcp_flags = rx_buf[47];
+                if (tcp_flags & 0x12) == 0x12 || (tcp_flags & 0x02) != 0 {
+                    server_seq =
+                        u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
+                    synack_received = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    let mut ack_seq = if synack_received {
+        server_seq.wrapping_add(1)
+    } else {
+        1
+    };
+
+    // 3. Send PSH-ACK with request data
+    let mut data_frame = [0u8; 1024];
+    data_frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+    data_frame[6..12].copy_from_slice(&mac);
+    data_frame[12..14].copy_from_slice(&[0x08, 0x00]);
+
+    data_frame[14] = 0x45;
+    data_frame[18..20].copy_from_slice(&0x1235u16.to_be_bytes());
+    data_frame[20..22].copy_from_slice(&[0x40, 0x00]);
+    data_frame[22] = 64;
+    data_frame[23] = 0x06;
+    data_frame[26..30].copy_from_slice(&[10, 0, 2, 15]);
+    data_frame[30..34].copy_from_slice(&target_ip);
+
+    let total_tcp_data_len = 20 + request_data.len();
+    let ip_total_len = (20 + total_tcp_data_len) as u16;
+    data_frame[16..18].copy_from_slice(&ip_total_len.to_be_bytes());
+    let ip_csum_val = ip_checksum(&data_frame[14..34]);
+    data_frame[24..26].copy_from_slice(&ip_csum_val.to_be_bytes());
+
+    data_frame[34..36].copy_from_slice(&src_port.to_be_bytes());
+    data_frame[36..38].copy_from_slice(&target_port.to_be_bytes());
+    data_frame[38..42].copy_from_slice(&initial_seq.wrapping_add(1).to_be_bytes());
+    data_frame[42..46].copy_from_slice(&ack_seq.to_be_bytes());
+    data_frame[46] = 5 << 4;
+    data_frame[47] = 0x18; // PSH | ACK
+    data_frame[48..50].copy_from_slice(&65535u16.to_be_bytes());
+
+    let frame_len = 54 + request_data.len();
+    if frame_len <= data_frame.len() {
+        data_frame[54..frame_len].copy_from_slice(request_data);
+    }
+
+    let tcp_csum_d = tcp_checksum([10, 0, 2, 15], target_ip, &data_frame[34..frame_len]);
+    data_frame[50..52].copy_from_slice(&tcp_csum_d.to_be_bytes());
+
+    e1000::transmit_raw_frame(&data_frame[..frame_len])?;
+
+    // Helper to send TCP ACK
+    let send_ack = |client_seq: u32, ack_num: u32| -> Result<(), &'static str> {
+        let mut ack_frame = [0u8; 54];
+        ack_frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+        ack_frame[6..12].copy_from_slice(&mac);
+        ack_frame[12..14].copy_from_slice(&[0x08, 0x00]);
+
+        ack_frame[14] = 0x45;
+        ack_frame[16..18].copy_from_slice(&40u16.to_be_bytes());
+        ack_frame[18..20].copy_from_slice(&0x1236u16.to_be_bytes());
+        ack_frame[20..22].copy_from_slice(&[0x40, 0x00]);
+        ack_frame[22] = 64;
+        ack_frame[23] = 0x06;
+        ack_frame[26..30].copy_from_slice(&[10, 0, 2, 15]);
+        ack_frame[30..34].copy_from_slice(&target_ip);
+        let csum = ip_checksum(&ack_frame[14..34]);
+        ack_frame[24..26].copy_from_slice(&csum.to_be_bytes());
+
+        ack_frame[34..36].copy_from_slice(&src_port.to_be_bytes());
+        ack_frame[36..38].copy_from_slice(&target_port.to_be_bytes());
+        ack_frame[38..42].copy_from_slice(&client_seq.to_be_bytes());
+        ack_frame[42..46].copy_from_slice(&ack_num.to_be_bytes());
+        ack_frame[46] = 5 << 4;
+        ack_frame[47] = 0x10; // ACK
+        ack_frame[48..50].copy_from_slice(&65535u16.to_be_bytes());
+        let tc = tcp_checksum([10, 0, 2, 15], target_ip, &ack_frame[34..54]);
+        ack_frame[50..52].copy_from_slice(&tc.to_be_bytes());
+
+        e1000::transmit_raw_frame(&ack_frame)
+    };
+
+    // 4. Continuous Streaming Receive Loop
+    let mut total_downloaded = 0usize;
+    let mut content_length: Option<usize> = None;
+    let mut headers_stripped = false;
+    let mut last_packet_time = get_uptime_ms();
+    let client_cur_seq = initial_seq.wrapping_add(1 + request_data.len() as u32);
+
+    while get_uptime_ms() < last_packet_time + 3500 {
+        if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
+            if bytes >= 54
+                && rx_buf[12] == 0x08
+                && rx_buf[13] == 0x00
+                && rx_buf[23] == 0x06
+                && rx_buf[26..30] == target_ip
+                && rx_buf[30..34] == [10, 0, 2, 15]
+            {
+                let tcp_flags = rx_buf[47];
+                let rx_seq = u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
+
+                if (tcp_flags & TCP_FLAG_RST) != 0 {
+                    break;
+                }
+
+                if let Some(payload) = parse_tcp_payload(&rx_buf[..bytes]) {
+                    if !payload.is_empty() {
+                        last_packet_time = get_uptime_ms();
+
+                        let data_to_append = if !headers_stripped {
+                            let mut body_start = None;
+                            for i in 0..payload.len().saturating_sub(3) {
+                                if &payload[i..i + 4] == b"\r\n\r\n" {
+                                    body_start = Some(i + 4);
+                                    if let Ok(hdr_str) = core::str::from_utf8(&payload[..i]) {
+                                        for line in hdr_str.lines() {
+                                            if let Some(cl_str) =
+                                                line.strip_prefix("Content-Length: ")
+                                            {
+                                                if let Ok(cl) = cl_str.trim().parse::<usize>() {
+                                                    content_length = Some(cl);
+                                                }
+                                            } else if let Some(cl_str) =
+                                                line.strip_prefix("content-length: ")
+                                            {
+                                                if let Ok(cl) = cl_str.trim().parse::<usize>() {
+                                                    content_length = Some(cl);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                            headers_stripped = true;
+                            if let Some(bs) = body_start {
+                                &payload[bs..]
+                            } else {
+                                payload
+                            }
+                        } else {
+                            payload
+                        };
+
+                        let available = STREAM_BUFFER_CAPACITY.saturating_sub(total_downloaded);
+                        let copy_len = core::cmp::min(data_to_append.len(), available);
+                        if copy_len > 0 {
+                            let buf_ptr = (&raw mut STREAM_DOWNLOAD_BUFFER) as *mut u8;
+                            core::ptr::copy_nonoverlapping(
+                                data_to_append.as_ptr(),
+                                buf_ptr.add(total_downloaded),
+                                copy_len,
+                            );
+                            total_downloaded += copy_len;
+                            on_progress(total_downloaded, content_length);
+                        }
+
+                        // Send TCP ACK
+                        ack_seq = rx_seq.wrapping_add(payload.len() as u32);
+                        let _ = send_ack(client_cur_seq, ack_seq);
+
+                        if let Some(cl) = content_length {
+                            if total_downloaded >= cl {
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (tcp_flags & TCP_FLAG_FIN) != 0 {
+                    let _ = send_ack(client_cur_seq, rx_seq.wrapping_add(1));
+                    break;
+                }
+            }
+        }
+    }
+
+    if total_downloaded == 0 {
+        return Err("Connection timed out: Remote host did not return data payload");
+    }
+
+    let out_slice = core::slice::from_raw_parts(
+        (&raw const STREAM_DOWNLOAD_BUFFER) as *const u8,
+        total_downloaded,
+    );
+
+    Ok((out_slice, content_length))
+}
+
+/// Fetch an HTTP resource using continuous TCP streaming, returns downloaded payload slice and optional Content-Length.
+pub unsafe fn fetch_http_stream<F>(
+    url: &str,
+    on_progress: F,
+) -> Result<(&'static [u8], Option<usize>), &'static str>
+where
+    F: FnMut(usize, Option<usize>),
+{
     if !E1000_FOUND {
         return Err("Network card offline");
     }
@@ -256,7 +527,15 @@ pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> 
         None => (hostname, "/"),
     };
 
-    let target_ip = crate::dns::resolver::resolve_domain(host).unwrap_or([10, 0, 2, 2]);
+    let (host_str, target_port) = if let Some(colon) = host.find(':') {
+        let h = &host[..colon];
+        let p = host[colon + 1..].parse::<u16>().unwrap_or(80);
+        (h, p)
+    } else {
+        (host, 80)
+    };
+
+    let target_ip = crate::dns::resolver::resolve_domain(host_str).unwrap_or([10, 0, 2, 2]);
 
     let mut req_buf = [0u8; 256];
     let mut req_len = 0;
@@ -287,11 +566,85 @@ pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> 
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
-    match tcp_send_and_receive(target_ip, 80, &req_buf[..req_len]) {
+    match fetch_stream_download(target_ip, target_port, &req_buf[..req_len], on_progress) {
         Ok(res) => Ok(res),
         Err(err) => {
             if target_ip != [10, 0, 2, 2] {
-                tcp_send_and_receive([10, 0, 2, 2], 80, &req_buf[..req_len])
+                fetch_stream_download(
+                    [10, 0, 2, 2],
+                    target_port,
+                    &req_buf[..req_len],
+                    |_cur, _total| {},
+                )
+            } else {
+                Err(err)
+            }
+        }
+    }
+}
+
+/// Fetch an HTTP resource over the network stack (Ethernet -> IPv4 -> TCP:80 -> HTTP GET).
+pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> {
+    if !E1000_FOUND {
+        return Err("Network card offline");
+    }
+
+    let hostname = if let Some(stripped) = url.strip_prefix("http://") {
+        stripped
+    } else if let Some(stripped) = url.strip_prefix("https://") {
+        stripped
+    } else {
+        url
+    };
+    let (host, path) = match hostname.find('/') {
+        Some(idx) => (&hostname[..idx], &hostname[idx..]),
+        None => (hostname, "/"),
+    };
+
+    let (host_str, target_port) = if let Some(colon) = host.find(':') {
+        let h = &host[..colon];
+        let p = host[colon + 1..].parse::<u16>().unwrap_or(80);
+        (h, p)
+    } else {
+        (host, 80)
+    };
+
+    let target_ip = crate::dns::resolver::resolve_domain(host_str).unwrap_or([10, 0, 2, 2]);
+
+    let mut req_buf = [0u8; 256];
+    let mut req_len = 0;
+    let req_str = b"GET ";
+    req_buf[req_len..req_len + req_str.len()].copy_from_slice(req_str);
+    req_len += req_str.len();
+
+    let p_bytes = path.as_bytes();
+    let to_copy_p = core::cmp::min(p_bytes.len(), 64);
+    req_buf[req_len..req_len + to_copy_p].copy_from_slice(&p_bytes[..to_copy_p]);
+    req_len += to_copy_p;
+
+    let host_prefix = b" HTTP/1.1\r\nHost: ";
+    req_buf[req_len..req_len + host_prefix.len()].copy_from_slice(host_prefix);
+    req_len += host_prefix.len();
+
+    let h_bytes = host.as_bytes();
+    let to_copy_h = core::cmp::min(h_bytes.len(), 64);
+    req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
+    req_len += to_copy_h;
+
+    let req_end = concat!(
+        "\r\nUser-Agent: Keira/",
+        env!("CARGO_PKG_VERSION"),
+        "\r\nConnection: close\r\n\r\n"
+    )
+    .as_bytes();
+    req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
+    req_len += req_end.len();
+
+    match tcp_send_and_receive(target_ip, target_port, &req_buf[..req_len]) {
+        Ok(res) => Ok(res),
+        Err(err) => {
+            if target_ip != [10, 0, 2, 2] {
+                tcp_send_and_receive([10, 0, 2, 2], target_port, &req_buf[..req_len])
             } else {
                 Err(err)
             }
