@@ -9,7 +9,7 @@
 
 [package]
 name = "keira-task"
-version = "0.33.7"
+version = "0.34.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
 license = "GPL-2.0-only"

@@ -59,7 +59,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         if args.has_flag('v', "version") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Keira Kernel 0.33.7-keira-1 (x86_64-unknown-none)\n");
+            vga::print_str("Keira Kernel 0.34.0-keira-1 (x86_64-unknown-none)\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             vga::print_str("Compiled with rustc 1.85+ (LLVM 19), GPL-2.0-only\n");
             vga::print_str("Author: Moh. Ananda Firmansyah Putra\n");
@@ -68,7 +68,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         if args.has_flag('s', "summary") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Keira v0.33.7 | x86_64 | Up: ");
+            vga::print_str("Keira v0.34.0 | x86_64 | Up: ");
             vga::print_u64(hours);
             vga::print_str("h ");
             vga::print_u64(minutes);
