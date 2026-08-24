@@ -105,8 +105,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
                 let default_keys = [
-                    "USER", "HOME", "PATH", "SHELL", "TERM", "LANG", "KERNEL", "OSTYPE",
-                    "HOSTTYPE",
+                    "USER", "HOME", "PATH", "SHELL", "TERM", "LANG", "KERNEL", "OSTYPE", "HOSTTYPE",
                 ];
                 for k in default_keys.iter() {
                     let mut buf = [0u8; 128];

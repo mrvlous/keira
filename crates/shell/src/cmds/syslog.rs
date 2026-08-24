@@ -27,8 +27,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Kernel Diagnostic Syslog Buffer (dmesg - Syscall 44)\n");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("[OK] Querying kernel syslog ring buffer...\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("Querying kernel syslog ring buffer...\n");
         let mut buf = [0u8; 128];
         let _ = sys_syslog_read(buf.as_mut_ptr(), 128);
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

@@ -27,8 +27,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("NVMe PCIe Controller Subsystem Status\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("  Status      : ");
         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("  Status      : [OK] Active (Admin SQ/CQ Ready)\n");
+        vga::print_str("[OK]");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str(" Active (Admin SQ/CQ Ready)\n");
         vga::print_str("  Namespaces  : 1 Active NVMe Namespace (/dev/nvme0n1)\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
