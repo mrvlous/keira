@@ -13,7 +13,7 @@ use keira_io::vga;
 
 /// Splice data between two file descriptors without copying to userland (Syscall 47).
 pub fn sys_splice(fd_in: u64, fd_out: u64, len: usize, _flags: u32) -> Result<usize, &'static str> {
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[SPLICE] Spliced ");
     vga::print_u64(len as u64);
     vga::print_str(" bytes zero-copy between FD ");

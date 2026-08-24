@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Fast Userspace Mutex (Futex) Subsystem (Syscall 40):\n");
         let _ = keira_ipc::futex::sys_futex(
             0x400000 as *mut u32,

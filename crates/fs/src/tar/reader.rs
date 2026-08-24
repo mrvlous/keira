@@ -44,7 +44,7 @@ pub fn list_files() {
         return;
     }
 
-    vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Files in Initrd:\n");
     while addr < end {
         let name_ptr = addr as *const u8;
@@ -69,17 +69,14 @@ pub fn list_files() {
         let typeflag = unsafe { *((addr + 156) as *const u8) };
 
         if typeflag == b'0' || typeflag == 0 {
-            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             vga::print_str("  [file] ");
-            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str(name);
-
-            vga::set_color(vga::Color::DarkGrey, vga::Color::Black);
             vga::print_str(" (");
             vga::print_u64(size);
             vga::print_str(" bytes)\n");
         } else if typeflag == b'5' {
-            vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("  [dir]  ");
             vga::print_str(name);
             vga::print_str("\n");

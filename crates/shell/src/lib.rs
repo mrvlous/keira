@@ -45,7 +45,7 @@ pub fn print_logo() {
     vga::print_str("-keira-1 (tty1)\n\n");
 }
 
-/// Print the shell prompt and record cursor position.
+/// Print the shell prompt and record cursor position in authentic Linux console style.
 pub fn print_prompt() {
     unsafe {
         let in_ed = &raw const IN_EDITOR_MODE;
@@ -53,48 +53,41 @@ pub fn print_prompt() {
             return;
         }
 
-        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         if let Ok(user_str) = core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
             vga::print_str(user_str);
         } else {
             vga::print_str("default");
         }
 
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
         vga::print_str("@");
         if let Ok(hostname_str) = core::str::from_utf8(&HOSTNAME[..HOSTNAME_LEN]) {
             vga::print_str(hostname_str);
         } else {
             vga::print_str("keira");
         }
-        vga::print_str(" ");
+        vga::print_str(":");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
         let current_path = core::str::from_utf8(&SHELL_PATH[..SHELL_PATH_LEN]).unwrap_or_default();
         let home_path = get_current_user_home();
 
         if current_path.is_empty() {
-            vga::print_str("/ ");
+            vga::print_str("/");
         } else if current_path == home_path {
             vga::putchar(b'~');
-            vga::print_str(" ");
         } else if current_path.starts_with(home_path)
             && current_path.len() > home_path.len()
             && current_path.as_bytes()[home_path.len()] == b'/'
         {
             vga::putchar(b'~');
             vga::print_str(&current_path[home_path.len()..]);
-            vga::print_str(" ");
         } else {
             vga::print_str("/");
             vga::print_str(current_path);
-            vga::print_str(" ");
         }
 
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::putchar(b'>');
-        vga::print_str(" ");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("$ ");
+        vga::set_color(vga::Color::White, vga::Color::Black);
 
         PROMPT_COL = vga::get_cursor_col();
         PROMPT_ROW = vga::get_cursor_row();

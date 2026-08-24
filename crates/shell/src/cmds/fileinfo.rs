@@ -43,26 +43,26 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 }
             };
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("KEIRA FILE METADATA INSPECTOR:\n");
             vga::print_str("  Path            : ");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str(p);
             vga::print_str("\n");
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("  File Size       : ");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_u64(entry.entry.file_size as u64);
             vga::print_str(" Bytes\n");
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("  First Cluster   : 0x");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_hex(entry.entry.first_cluster_lo as u64);
             vga::print_str("\n");
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("  Attribute Flags : 0x");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_hex(entry.entry.attr as u64);

@@ -25,10 +25,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Resource Control Groups (cgroups) & PID Namespaces\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("  Default cgroup : Max Memory 64MB ");
         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("  Default cgroup : Max Memory 64MB (Active)\n");
+        vga::print_str("(Active)\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

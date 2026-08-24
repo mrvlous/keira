@@ -35,7 +35,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         unsafe {
             rtc_get_time(&mut time as *mut RtcTime);
         }
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Date: ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_u64(time.year as u64);

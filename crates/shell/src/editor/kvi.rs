@@ -371,7 +371,7 @@ pub unsafe fn editor_redraw() {
                     if fg_override {
                         vga::Color::Black
                     } else {
-                        vga::Color::LightMagenta
+                        vga::Color::White
                     },
                     bg_color,
                 );
@@ -426,9 +426,9 @@ pub unsafe fn editor_redraw() {
                     let w_fg = if highlight_remaining > 0 {
                         vga::Color::Black
                     } else if is_keyword {
-                        vga::Color::LightBlue
-                    } else {
                         vga::Color::White
+                    } else {
+                        vga::Color::LightGrey
                     };
                     vga::set_color(w_fg, w_bg);
 

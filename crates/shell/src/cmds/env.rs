@@ -44,7 +44,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             (Some(k), None) => {
                 let mut buf = [0u8; 128];
                 if let Ok(len) = get_env_var(k, &mut buf) {
-                    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str(k);
                     vga::print_str("=");
                     vga::set_color(vga::Color::White, vga::Color::Black);
@@ -61,7 +61,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             _ => {
-                vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("ENVIRONMENT VARIABLES:\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
 
@@ -69,7 +69,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 let mut buf = [0u8; 128];
                 for k in keys {
                     if let Ok(len) = get_env_var(k, &mut buf) {
-                        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                        vga::set_color(vga::Color::White, vga::Color::Black);
                         vga::print_str("  ");
                         vga::print_str(k);
                         vga::print_str("=");

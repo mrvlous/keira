@@ -39,10 +39,10 @@ pub static KERNEL_SYMBOLS: [KernelSymbol; 4] = [
 
 pub fn list_modules() {
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Dynamically Resolved Kernel Symbols (kallsyms):\n");
         for sym in KERNEL_SYMBOLS.iter() {
-            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             vga::print_str("  0x");
             vga::print_hex(sym.addr);
             vga::print_str(" - ");

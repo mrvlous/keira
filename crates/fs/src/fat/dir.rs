@@ -451,7 +451,7 @@ pub unsafe fn get_dir_cluster(path: &str) -> Result<u16, &'static str> {
 
 /// Print formatted file listings in target directory cluster.
 pub unsafe fn list_files_in_dir(dir_cluster: u16, show_all: bool) -> Result<(), &'static str> {
-    vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Directory of IDE disk:\n");
     vga::set_color(vga::Color::White, vga::Color::Black);
 
@@ -468,7 +468,7 @@ pub unsafe fn list_files_in_dir(dir_cluster: u16, show_all: bool) -> Result<(), 
             }
 
             if (parsed.entry.attr & 0x10) != 0 {
-                vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("  [dir]  ");
                 vga::print_str(name_str);
             } else {

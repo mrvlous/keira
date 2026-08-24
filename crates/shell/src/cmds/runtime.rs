@@ -29,7 +29,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let minutes = (ms % 3600000) / 60000;
         let seconds = (ms % 60000) / 1000;
         let millis = ms % 1000;
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("System runtime: ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_u64(hours);

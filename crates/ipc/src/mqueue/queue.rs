@@ -19,7 +19,7 @@ pub struct MessageQueue {
 
 /// Open or create a POSIX message queue (Syscall 58).
 pub fn sys_mq_open(_name_ptr: *const u8, _oflag: i32, mode: u32) -> Result<u64, &'static str> {
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[MQUEUE] Opened POSIX Message Queue (MQFD #58, Mode: 0o");
     vga::print_u64(mode as u64);
     vga::print_str(")\n");

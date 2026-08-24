@@ -78,7 +78,7 @@ pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
 /// Send POSIX signal to target process PID (Syscall 72: sys_kill).
 pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("[SIGNAL] Dispatched POSIX Signal ");
         vga::print_u64(sig as u64);
         vga::print_str(" -> PID ");

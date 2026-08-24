@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("EventFD & SignalFD Subsystem Status (Syscall 50 & 51)\n");
         let _ = keira_ipc::eventfd::sys_eventfd(0, 0);
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

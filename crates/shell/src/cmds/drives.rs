@@ -23,7 +23,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             return;
         }
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("NAME      TYPE      SIZE (KB)   STATUS\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         keira_io::block::for_each_device(|dev, is_mounted| {

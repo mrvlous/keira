@@ -23,7 +23,7 @@ pub fn check_path_access(pid: u64, path: &str, _mask: u32) -> bool {
     if !unsafe { *mac_ptr } {
         return true;
     }
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[MAC] Security check passed for Process #");
     vga::print_u64(pid);
     vga::print_str(" on path '");
@@ -38,7 +38,7 @@ pub fn sys_seccomp(op: u32, _flags: u32, _args_ptr: u64) -> Result<u64, &'static
     unsafe {
         SECCOMP_STRICT_ACTIVE = true;
     }
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[SECCOMP] Enforced Seccomp BPF Syscall Filter Sandbox (Op: ");
     vga::print_u64(op as u64);
     vga::print_str(")\n");

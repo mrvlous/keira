@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("Subcommands:\n  info    Query VBE base address, resolution, pitch, and status\n  test    Execute linear framebuffer graphics primitive test\n");
         }
         Some("info") => unsafe {
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("KEIRA VBE LINEAR FRAMEBUFFER INFO:\n");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("  Base Address : 0x");

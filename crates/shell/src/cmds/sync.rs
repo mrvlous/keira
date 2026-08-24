@@ -26,7 +26,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Flushing dirty filesystem sectors to storage...\n");
         match fat::flush_dirty_sectors() {
             Ok(count) => {

@@ -73,7 +73,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
 pub unsafe fn print_disk_info() {
     if let Some(dev) = get_mounted_device() {
         let sectors = dev.get_size_sectors();
-        keira_io::vga::set_color(keira_io::vga::Color::LightBlue, keira_io::vga::Color::Black);
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_str("Active Drive (");
         keira_io::vga::print_str(dev.get_name());
         keira_io::vga::print_str(") Size: ");
@@ -91,12 +91,12 @@ pub unsafe fn print_disk_info() {
 
     let vol_ptr = &raw const VOLUME;
     if let Some(vol) = unsafe { (*vol_ptr).as_ref() } {
-        keira_io::vga::set_color(keira_io::vga::Color::LightBlue, keira_io::vga::Color::Black);
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_str("Filesystem:     ");
         keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_str("FAT16\n");
 
-        keira_io::vga::set_color(keira_io::vga::Color::LightBlue, keira_io::vga::Color::Black);
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_str("Cluster Size:   ");
         keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_u64(vol.sectors_per_cluster as u64 * 512);
@@ -104,13 +104,13 @@ pub unsafe fn print_disk_info() {
         keira_io::vga::print_u64(vol.sectors_per_cluster as u64);
         keira_io::vga::print_str(" sectors)\n");
 
-        keira_io::vga::set_color(keira_io::vga::Color::LightBlue, keira_io::vga::Color::Black);
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_str("Reserved Secs:  ");
         keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_u64(vol.reserved_sector_count as u64);
         keira_io::vga::print_str("\n");
 
-        keira_io::vga::set_color(keira_io::vga::Color::LightBlue, keira_io::vga::Color::Black);
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_str("Root Directory: ");
         keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         keira_io::vga::print_u64(vol.root_entry_count as u64);

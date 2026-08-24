@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Zero-Copy BPF Packet Filter Engine Status\n");
         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
         vga::print_str("  Interpreter : [OK] Active (e1000 Raw Socket Support)\n");

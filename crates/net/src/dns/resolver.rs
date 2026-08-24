@@ -232,7 +232,7 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
 
 /// Display active Dynamic DNS Cache Table.
 pub unsafe fn print_dns_cache() {
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("DYNAMIC DNS CACHE TABLE (16 Slots)\n");
     vga::set_color(vga::Color::White, vga::Color::Black);
 

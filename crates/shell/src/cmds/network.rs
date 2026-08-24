@@ -68,7 +68,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     return;
                 }
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Configuring network interface eth0 via DHCP...\n");
                 let mac = e1000::E1000_MAC;
                 match keira_net::dhcp::dhcp_auto_configure(&mac) {
@@ -109,7 +109,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     return;
                 }
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Resolving domain ");
                 vga::print_str(domain);
                 vga::print_str(" via UDP 53 DNS...\n");
@@ -151,7 +151,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     return;
                 }
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("PING ");
                 vga::print_str(target);
                 vga::print_str(" (56 bytes of data):\n");
@@ -184,7 +184,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             _ => {
                 e1000::init();
-                vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str(
                     "INTERFACE  MAC ADDRESS        STATUS      IP ADDRESS      PACKETS (TX/RX)\n",
                 );

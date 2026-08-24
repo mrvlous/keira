@@ -18,7 +18,7 @@ pub struct EventFd {
 
 /// Create an eventfd file descriptor for event notification (Syscall 50).
 pub fn sys_eventfd(init_val: u32, _flags: u32) -> Result<u64, &'static str> {
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[EVENTFD] Created EventFD (Init Val: ");
     vga::print_u64(init_val as u64);
     vga::print_str(", FD #50)\n");

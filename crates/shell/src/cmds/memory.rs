@@ -30,7 +30,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
     let (phys_total, phys_used, phys_free) = keira_mem::pmm::get_stats();
 
-    vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Memory Statistics:\n");
     vga::print_str("REGION            TOTAL          USED           FREE\n");
 
@@ -104,7 +104,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let (alloc_count, peak_bytes) =
         unsafe { (heap_get_alloc_count() as u64, heap_get_peak() as u64) };
 
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Heap Allocator Statistics:\n");
     vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("  Total Allocations : ");

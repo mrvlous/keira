@@ -337,7 +337,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
                 let count = parse_passwd(&buf, len, &mut entries);
 
-                vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Registered Users:\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
 
@@ -360,7 +360,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                         }
 
                         if uname == "admin" {
-                            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                            vga::set_color(vga::Color::White, vga::Color::Black);
                             vga::print_str(" [admin]");
                             vga::set_color(vga::Color::White, vga::Color::Black);
                         }
@@ -448,7 +448,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 let user_str =
                     core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]).unwrap_or("unknown");
 
-                vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Active User Information:\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
 

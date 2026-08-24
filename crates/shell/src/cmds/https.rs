@@ -37,7 +37,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Subcommands:\n  info    Query Native TLS 1.3 cryptographic engine parameters and status\n  sha256  Execute FIPS 180-4 SHA-256 digest self-test\n");
             }
             Some("info") | None => {
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("KEIRA NATIVE TLS 1.3 ENGINE\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("  Protocol    : TLS 1.3 (RFC 8446)\n");
@@ -56,7 +56,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 // Demo: compute SHA-256 of test string
                 let test = b"Keira Kernel";
                 let hash = keira_crypto::sha256::sha256(test);
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("SHA-256 DIGEST TEST\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("  Input  : \"Keira Kernel\"\n");
@@ -80,7 +80,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
                 keira_net::driver::e1000::init();
 
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("TLS 1.3 Handshake: ");
                 vga::print_str(hostname);
                 vga::print_str(":443\n");

@@ -138,14 +138,14 @@ pub unsafe fn get_shm_frame(shmid: usize) -> Option<u64> {
 pub unsafe fn sys_shm_sem(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
     match cmd {
         SHM_CMD_INFO => {
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active POSIX Shared Memory Segments:\n");
             for i in 0..SHM_TABLE.len() {
                 let seg = &SHM_TABLE[i];
                 if !seg.in_use {
                     continue;
                 }
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("[SHM ID ");
                 vga::print_u64(seg.id as u64);
                 vga::print_str("] Key: ");
@@ -161,14 +161,14 @@ pub unsafe fn sys_shm_sem(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'sta
                 vga::print_str("\n");
             }
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active POSIX Counting Semaphores:\n");
             for i in 0..SEM_TABLE.len() {
                 let sem = &SEM_TABLE[i];
                 if !sem.in_use {
                     continue;
                 }
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("[SEM ID ");
                 vga::print_u64(sem.id as u64);
                 vga::print_str("] Key: ");
@@ -179,6 +179,7 @@ pub unsafe fn sys_shm_sem(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'sta
                 vga::print_u64(sem.waiters as u64);
                 vga::print_str("\n");
             }
+
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             Ok(0)
         }

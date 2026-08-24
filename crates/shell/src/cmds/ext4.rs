@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Native Linux EXT4 Filesystem Driver Status\n");
         let _ = keira_fs::ext4::init();
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

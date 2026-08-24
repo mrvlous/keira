@@ -43,7 +43,7 @@ pub static mut CQ_ENTRIES: [CompletionQueueEntry; 32] = [CompletionQueueEntry {
 
 /// Setup io_uring submission & completion ring buffers.
 pub fn setup_ring(entries: u32) -> Result<u64, &'static str> {
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[IO_URING] Initialized SQ/CQ Ring Buffers (");
     vga::print_u64(entries as u64);
     vga::print_str(" slots).\n");

@@ -615,51 +615,48 @@ pub fn set_color(fg: Color, bg: Color) {
     }
 }
 
-/// Print formatted boot milestone status log.
+/// Print formatted boot milestone status log in authentic Linux/systemd style.
 pub fn print_boot_log(msg: &str, status: u8) {
-    let len = msg.len();
-    let mut padding = 69 - len as isize;
-    if padding < 1 {
-        padding = 1;
-    }
-
     // 1. Output colored boot log to COM1 Serial (for host terminal stdout)
-    crate::serial::uart::print_str("\x1b[1;36m::\x1b[0m ");
-    crate::serial::uart::print_str(msg);
-    for _ in 0..padding {
-        crate::serial::uart::print_str(" ");
-    }
     match status {
-        0 => crate::serial::uart::print_str("\x1b[1;32m[ OK ]\x1b[0m\r\n"),
-        1 => crate::serial::uart::print_str("\x1b[1;33m[ WARN ]\x1b[0m\r\n"),
-        _ => crate::serial::uart::print_str("\x1b[1;31m[ FAIL ]\x1b[0m\r\n"),
+        0 => {
+            crate::serial::uart::print_str("[\x1b[1;32m  OK  \x1b[0m] ");
+        }
+        1 => {
+            crate::serial::uart::print_str("[\x1b[1;33m WARN \x1b[0m] ");
+        }
+        _ => {
+            crate::serial::uart::print_str("[\x1b[1;31mFAILED\x1b[0m] ");
+        }
     }
+    crate::serial::uart::print_str(msg);
+    crate::serial::uart::print_str("\r\n");
 
     // 2. Render to VGA display
-    set_color(Color::LightBlue, Color::Black);
-    print_str(":: ");
-
     set_color(Color::White, Color::Black);
-    print_str(msg);
-
-    for _ in 0..padding {
-        print_str(" ");
-    }
+    print_str("[");
 
     match status {
         0 => {
             set_color(Color::LightGreen, Color::Black);
-            print_str("[ OK ]\n");
+            print_str("  OK  ");
         }
         1 => {
             set_color(Color::Yellow, Color::Black);
-            print_str("[ WARN ]\n");
+            print_str(" WARN ");
         }
         _ => {
             set_color(Color::LightRed, Color::Black);
-            print_str("[ FAIL ]\n");
+            print_str("FAILED");
         }
     }
+
+    set_color(Color::White, Color::Black);
+    print_str("] ");
+
+    set_color(Color::White, Color::Black);
+    print_str(msg);
+    print_str("\n");
 
     set_color(Color::LightGrey, Color::Black);
 }

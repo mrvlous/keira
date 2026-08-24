@@ -22,7 +22,7 @@ pub struct EpollInstance {
 
 /// Create an epoll file descriptor for scalable I/O event polling (Syscall 55).
 pub fn sys_epoll_create(size: i32) -> Result<u64, &'static str> {
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[EPOLL] Created Epoll Instance (EPFD #55, Size: ");
     vga::print_u64(size as u64);
     vga::print_str(")\n");

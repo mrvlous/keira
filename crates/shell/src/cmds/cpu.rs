@@ -46,13 +46,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vendor[8..12].copy_from_slice(&ecx.to_le_bytes());
         let vendor_str = core::str::from_utf8(&vendor).unwrap_or("UnknownCPU");
 
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("x86_64 Processor Hardware CPUID Info:\n");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("  Vendor String : ");
         vga::print_str(vendor_str);
         vga::print_str("\n  Architecture  : x86_64 Long Mode (64-bit)\n");
         vga::print_str("  Feature Flags : SSE2, AVX2, VMX/SVM, AES-NI, NX-Bit, KASLR\n");
+
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

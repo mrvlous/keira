@@ -47,7 +47,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Scanning PCI Bus for USB Host Controllers (Syscall 73)...\n");
                 let _ = usb_storage::sys_usb_device(usb_storage::USB_CMD_SCAN, 0, 0);
 
-                vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("  Bus  Slot  Func  Vendor ID  Device ID  Type\n");
                 vga::print_str(
                     "  ---  ----  ----  ---------  ---------  -------------------------\n",

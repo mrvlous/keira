@@ -130,7 +130,7 @@ static mut RAID_ARRAYS: [RaidArray; 2] = [
 pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
     match cmd {
         LVM_CMD_INFO => {
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("LVM Volume Group Topology:\n");
             for i in 0..VOL_GROUPS.len() {
                 let vg = &VOL_GROUPS[i];
@@ -140,7 +140,7 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
                 let vg_name = core::str::from_utf8(&vg.name)
                     .unwrap_or("vg0")
                     .trim_matches('\0');
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("VG ");
                 vga::print_str(vg_name);
                 vga::print_str(" (Total: ");
@@ -202,7 +202,7 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
             Ok(1)
         }
         LVM_CMD_RAID_STATUS => {
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Software RAID State Table:\n");
             for i in 0..RAID_ARRAYS.len() {
                 let raid = &RAID_ARRAYS[i];
@@ -212,8 +212,9 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
                 let rname = core::str::from_utf8(&raid.name)
                     .unwrap_or("md0")
                     .trim_matches('\0');
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("[RAID] Device /dev/");
+
                 vga::print_str(rname);
                 vga::print_str(" (RAID-");
                 vga::print_u64(raid.level as u64);

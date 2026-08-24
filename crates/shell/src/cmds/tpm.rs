@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("TPM 2.0 Hardware Security Enclave Status\n");
         keira_crypto::tpm::init();
         let _ = keira_crypto::tpm::read_pcr(0);

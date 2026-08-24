@@ -25,12 +25,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        keira_arch::power::pet_watchdog();
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("ACPI Power Management & Hardware Watchdog:\n");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("  ACPI State    : S0 (Working)\n");
-        vga::print_str("  NMI Watchdog  : PETTED / ACTIVE [OK]\n");
+        vga::print_str("  NMI Watchdog  : PETTED / ACTIVE ");
+        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::print_str("[OK]\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

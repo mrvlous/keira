@@ -43,22 +43,22 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         let heap_total = heap_get_total() as u64;
         let heap_used = heap_get_used() as u64;
 
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("System Specifications & Kernel Information\n");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  OS System Version : ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Keira Kernel v");
         vga::print_str(env!("CARGO_PKG_VERSION"));
         vga::print_str("\n");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  Architecture      : ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("x86_64 Long Mode (Freestanding)\n");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  CPU Vendor        : ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         if let Ok(v_str) = core::str::from_utf8(&vendor) {
@@ -66,7 +66,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
         vga::print_str("\n");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  System Uptime     : ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_u64(hours);
@@ -78,7 +78,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_u64(millis);
         vga::print_str("ms\n");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  Heap Memory       : ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_u64(heap_used / 1024);
@@ -86,7 +86,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_u64(heap_total / 1024);
         vga::print_str(" KB\n");
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  PCI Devices       : ");
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_u64(pci_count);

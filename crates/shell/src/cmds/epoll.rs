@@ -25,7 +25,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Epoll Scalable I/O Event Engine Status (Syscall 55 & 56)\n");
         let _ = keira_ipc::epoll::sys_epoll_create(1024);
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

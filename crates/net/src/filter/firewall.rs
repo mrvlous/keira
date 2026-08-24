@@ -143,7 +143,7 @@ pub fn bpf_filter_packet(pkt: &[u8], insns: &[BpfInstruction]) -> bool {
     if insns.is_empty() {
         return true;
     }
-    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("[BPF] Filtered Network Packet (Length: ");
     vga::print_u64(pkt.len() as u64);
     vga::print_str(" bytes, ");
@@ -157,7 +157,7 @@ pub fn bpf_filter_packet(pkt: &[u8], insns: &[BpfInstruction]) -> bool {
 pub unsafe fn sys_netfilter(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
     match cmd {
         NETFILTER_CMD_STATUS => {
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Stateful IPv4 Netfilter Firewall Status:\n");
             vga::print_str("Engine State: ");
             if NETFILTER_ENABLED {
@@ -168,7 +168,7 @@ pub unsafe fn sys_netfilter(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'s
                 vga::print_str("DISABLED\n");
             }
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active Firewall Chain Rules:\n");
             for i in 0..RULE_TABLE.len() {
                 let rule = &RULE_TABLE[i];
@@ -191,7 +191,7 @@ pub unsafe fn sys_netfilter(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'s
                     .unwrap_or("")
                     .trim_matches('\0');
 
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("[Rule ");
                 vga::print_u64(i as u64 + 1);
                 vga::print_str("] Chain ");
@@ -211,7 +211,7 @@ pub unsafe fn sys_netfilter(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'s
                 vga::print_str(")\n");
             }
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active Connection Tracking (CONNTRACK):\n");
             for i in 0..CONNTRACK_TABLE.len() {
                 let conn = &CONNTRACK_TABLE[i];
@@ -231,7 +231,7 @@ pub unsafe fn sys_netfilter(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'s
                     .unwrap_or("")
                     .trim_matches('\0');
 
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("[CONN] ");
                 vga::print_str(proto);
                 vga::print_str(" ");
@@ -246,6 +246,7 @@ pub unsafe fn sys_netfilter(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'s
                 vga::print_u64(conn.packets as u64);
                 vga::print_str(")\n");
             }
+
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             Ok(0)
         }

@@ -25,11 +25,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Active Kernel Hardware Drivers:\n");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("  [C Driver] Serial UART COM1 (115200 8N1)\n");
         vga::print_str("  [C Driver] VGA Text Mode (80x25 / 80x50)\n");
+
         vga::print_str("  [C Driver] Intel e1000 Gigabit Ethernet NIC\n");
         vga::print_str("  [C Driver] PS/2 Keyboard & Mouse Controller\n");
         vga::print_str("  [C Driver] CMOS Real Time Clock (RTC)\n");

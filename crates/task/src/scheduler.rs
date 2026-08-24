@@ -517,7 +517,7 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
 
 /// List all registered tasks.
 pub unsafe fn list_tasks() {
-    vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("PID    TASK NAME             STATE\n");
     vga::set_color(vga::Color::White, vga::Color::Black);
     for i in 0..MAX_TASKS {
@@ -552,11 +552,11 @@ pub unsafe fn list_tasks() {
                     vga::print_str("RUNNING\n");
                 }
                 TaskState::Ready => {
-                    vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str("READY\n");
                 }
                 TaskState::Blocked => {
-                    vga::set_color(vga::Color::Magenta, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str("BLOCKED\n");
                 }
                 TaskState::Exited(c) | TaskState::Zombie(c) => {

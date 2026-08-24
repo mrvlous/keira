@@ -46,7 +46,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         // Initialize/rescan the PCI bus
         keira_io::pci::init();
 
-        vga::set_color(vga::Color::LightBlue, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("BUS   SLOT  FUNC  VENDOR  DEVICE  CLASS TYPE\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 

@@ -72,7 +72,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     };
 
     let on_progress = |received: usize, total_opt: Option<usize>| {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         if let Some(total) = total_opt {
             if total > 0 {
                 let percent = (received * 100) / total;
@@ -100,7 +100,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     };
 
     if is_https {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Connecting to https://");
         vga::print_str(host);
         vga::print_str(":443 (TLS 1.3 Encrypted Stream) ...\n");
@@ -131,7 +131,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
         }
     } else {
-        vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Connecting to http://");
         vga::print_str(host);
         vga::print_str(":80 (HTTP Stream) ...\n");
