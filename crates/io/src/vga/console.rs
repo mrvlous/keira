@@ -336,6 +336,28 @@ pub fn get_cursor_row() -> u16 {
     }
 }
 
+/// Get the number of text columns available on the display.
+pub fn get_text_cols() -> u16 {
+    unsafe {
+        if fb_active() {
+            (FRAMEBUFFER_WIDTH / 8) as u16
+        } else {
+            80
+        }
+    }
+}
+
+/// Get the number of text rows available on the display.
+pub fn get_text_rows() -> u16 {
+    unsafe {
+        if fb_active() {
+            (FRAMEBUFFER_HEIGHT / 16) as u16
+        } else {
+            25
+        }
+    }
+}
+
 /// Erase previous character and move cursor left.
 pub fn backspace() {
     unsafe {
@@ -380,6 +402,20 @@ pub fn clear_line_from(col: u16) {
             vga_clear_line_from(col);
         }
         VGA_BUSY = false;
+    }
+}
+
+/// Draw a character cell directly with foreground and background colors.
+pub fn draw_cell(row: u16, col: u16, ch: u8, fg: Color, bg: Color) {
+    unsafe {
+        if fb_active() {
+            draw_char(ch, col as u32, row as u32, fg.to_rgb(), bg.to_rgb());
+        } else if row < 25 && col < 80 {
+            let buf = 0xB8000 as *mut u16;
+            let attr = ((bg as u8 & 0x0F) << 4) | (fg as u8 & 0x0F);
+            let val = ((attr as u16) << 8) | (ch as u16);
+            core::ptr::write_volatile(buf.add((row * 80 + col) as usize), val);
+        }
     }
 }
 

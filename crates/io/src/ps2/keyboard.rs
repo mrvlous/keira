@@ -27,6 +27,7 @@ const KEY_F10: u8 = 0x44;
 
 static SHIFT_PRESSED: AtomicBool = AtomicBool::new(false);
 static CTRL_PRESSED: AtomicBool = AtomicBool::new(false);
+static EXTENDED_SCANCODE: AtomicBool = AtomicBool::new(false);
 
 const KBD_US_LAYOUT: [u8; 128] = [
     0, 27, b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'0', b'-', b'=', b'\x08', b'\t',
@@ -61,20 +62,34 @@ pub extern "C" fn keyboard_handler() {
     unsafe {
         let scancode = inb(KBD_DATA_PORT);
 
+        if scancode == 0xE0 {
+            EXTENDED_SCANCODE.store(true, Ordering::Relaxed);
+            pic::send_eoi(1);
+            return;
+        }
+
+        let is_extended = EXTENDED_SCANCODE.swap(false, Ordering::Relaxed);
+
         if (scancode & 0x80) != 0 {
             // Key release event
-            if scancode == (KEY_LSHIFT | 0x80) || scancode == (KEY_RSHIFT | 0x80) {
-                SHIFT_PRESSED.store(false, Ordering::Relaxed);
-            } else if scancode == (KEY_LCTRL | 0x80) {
-                CTRL_PRESSED.store(false, Ordering::Relaxed);
+            if !is_extended {
+                if scancode == (KEY_LSHIFT | 0x80) || scancode == (KEY_RSHIFT | 0x80) {
+                    SHIFT_PRESSED.store(false, Ordering::Relaxed);
+                } else if scancode == (KEY_LCTRL | 0x80) {
+                    CTRL_PRESSED.store(false, Ordering::Relaxed);
+                }
             }
         } else {
             // Key press event
-            if scancode == KEY_LSHIFT || scancode == KEY_RSHIFT {
-                SHIFT_PRESSED.store(true, Ordering::Relaxed);
-            } else if scancode == KEY_LCTRL {
-                CTRL_PRESSED.store(true, Ordering::Relaxed);
-            } else if scancode == KEY_UP {
+            if !is_extended {
+                if scancode == KEY_LSHIFT || scancode == KEY_RSHIFT {
+                    SHIFT_PRESSED.store(true, Ordering::Relaxed);
+                } else if scancode == KEY_LCTRL {
+                    CTRL_PRESSED.store(true, Ordering::Relaxed);
+                }
+            }
+
+            if scancode == KEY_UP {
                 shell_handle_keypress(0x80);
             } else if scancode == KEY_DOWN {
                 shell_handle_keypress(0x81);

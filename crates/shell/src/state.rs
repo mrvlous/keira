@@ -32,18 +32,30 @@ pub static mut PROMPT_ROW: u16 = 0;
 
 // Editor state variables
 pub static mut IN_EDITOR_MODE: bool = false;
-pub static mut EDITOR_GRID: [[u8; 80]; 128] = [[b' '; 80]; 128];
+pub static mut EDITOR_GRID: [[u8; 256]; 128] = [[b' '; 256]; 128];
 pub static mut LINE_LENS: [u16; 128] = [0; 128];
-pub static mut EDIT_FILENAME: [u8; 12] = [0; 12];
+pub static mut EDIT_FILENAME: [u8; 64] = [0; 64];
 pub static mut EDIT_FILENAME_LEN: usize = 0;
 pub static mut EDIT_CUR_X: u16 = 0;
 pub static mut EDIT_CUR_Y: u16 = 0;
 pub static mut EDIT_SCROLL_Y: u16 = 0;
+pub static mut EDITOR_MODIFIED: bool = false;
 pub static mut EDITOR_CONFIRM_SAVE: bool = false;
 pub static mut EDITOR_CONFIRM_EXIT: bool = false;
-pub static mut EDITOR_STATUS_MSG: [u8; 40] = [0; 40];
+pub static mut EDITOR_HELP_MODE: bool = false;
+pub static mut EDITOR_CUT_BUFFER: [u8; 256] = [b' '; 256];
+pub static mut EDITOR_CUT_LEN: u16 = 0;
+pub static mut EDITOR_HAS_CUT: bool = false;
+pub static mut EDITOR_STATUS_MSG: [u8; 256] = [0; 256];
 pub static mut EDITOR_STATUS_LEN: usize = 0;
 pub static mut EDITOR_STATUS_COLOR: vga::Color = vga::Color::LightGreen;
+pub static mut EDITOR_FILE_BUF: [u8; 16384] = [0; 16384];
+pub static mut EDITOR_SCREEN_CHARS: [[u8; 160]; 64] = [[b' '; 160]; 64];
+pub static mut EDITOR_SCREEN_FG: [[vga::Color; 160]; 64] = [[vga::Color::LightGrey; 160]; 64];
+pub static mut EDITOR_SCREEN_BG: [[vga::Color; 160]; 64] = [[vga::Color::Black; 160]; 64];
+pub static mut IN_SEARCH_MODE: bool = false;
+pub static mut SEARCH_BUFFER: [u8; 16] = [0; 16];
+pub static mut SEARCH_LEN: usize = 0;
 
 pub static mut SHELL_PATH: [u8; 80] = [0u8; 80];
 pub static mut SHELL_PATH_LEN: usize = 0;
@@ -64,11 +76,6 @@ pub static mut IS_ADMIN: bool = false;
 // System Hostname
 pub static mut HOSTNAME: [u8; 32] = *b"keira                           ";
 pub static mut HOSTNAME_LEN: usize = 5;
-
-// Editor Search Mode States
-pub static mut IN_SEARCH_MODE: bool = false;
-pub static mut SEARCH_BUFFER: [u8; 16] = [0; 16];
-pub static mut SEARCH_LEN: usize = 0;
 
 // Environment Variables Table
 pub static mut ENV_PATH: [u8; 64] = [

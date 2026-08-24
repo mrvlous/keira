@@ -419,7 +419,7 @@ pub fn execute_command_inner(cmd: &str) {
         "create" => super::cmds::create::run(&mut parts),
         "folder" => super::cmds::folder::run(&mut parts),
         "delete" => super::cmds::delete::run(&mut parts),
-        "edit" => super::cmds::edit::run(&mut parts),
+        "edit" | "nano" => super::cmds::edit::run(&mut parts),
         "copy" => super::cmds::copy::run(&mut parts),
         "help" => super::cmds::help::run(&mut parts),
         "history" => super::cmds::history::run(&mut parts),
