@@ -17,6 +17,7 @@ pub mod cmds;
 pub mod editor;
 pub mod executor;
 pub mod history;
+pub mod service;
 pub mod state;
 
 pub use args::CliArgs;
@@ -111,6 +112,8 @@ pub fn run_boot_script() {
             SHELL_PATH[..initial_path.len()].copy_from_slice(initial_path.as_bytes());
             SHELL_PATH_LEN = initial_path.len();
         }
+
+        service::auto_start_enabled_services();
     }
 }
 
@@ -237,9 +240,11 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
     }
 }
 
-/// Process any pending shell commands.
+/// Process any pending shell commands and background service ticks.
 pub fn process_pending() {
     unsafe {
+        service::tick_all();
+
         if !COMMAND_READY {
             return;
         }

@@ -230,6 +230,7 @@ fs-root: build/kcc.elf | dirs
 	$(Q)mkdir -p $(FS_ROOT)/users/guest
 	$(Q)mkdir -p $(FS_ROOT)/data/log
 	$(Q)mkdir -p $(FS_ROOT)/data/save
+	$(Q)mkdir -p $(FS_ROOT)/data/www
 	$(Q)mkdir -p $(FS_ROOT)/temp
 	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd; \
@@ -255,20 +256,27 @@ fs-root: build/kcc.elf | dirs
 	$(Q)printf '/* Keira Userland C Application */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira userland application!\\n");\n}\n' > $(FS_ROOT)/apps/src/hello.c
 	$(Q)printf '/* Simple Arithmetic & Bitwise Calculator */\n#include <stdio.h>\n\nvoid main(void) {\n    int a = 42, b = 13;\n    int sum = a + b;\n    int prod = a * b;\n    int mod = a %% b;\n    int bit = (a ^ b) & 255;\n    printf("KCC Calculator Output: Complete\\n");\n}\n' > $(FS_ROOT)/apps/src/calc.c
 	$(Q)printf '/* System Information Diagnostic Utility */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Keira Kernel System Information\\n");\n    printf("OS: Keira Kernel $(VERSION)\\n");\n    printf("Arch: x86_64 Long Mode (Ring 3 Userland)\\n");\n}\n' > $(FS_ROOT)/apps/src/sysinfo.c
-	$(Q)echo "boot_mode=kernel\nconsole=vga\ncursor=block" > $(FS_ROOT)/config/boot/boot.cfg
-	$(Q)echo "keira" > $(FS_ROOT)/config/sys/hostname.cfg
-	$(Q)echo "$(VERSION)" > $(FS_ROOT)/config/sys/version.cfg
-	$(Q)echo "dhcp=1\nip=10.0.2.15\ngateway=10.0.2.2" > $(FS_ROOT)/config/sys/network.cfg
-	$(Q)echo "admin:keira" > $(FS_ROOT)/config/sys/passwd
-	$(Q)echo "export PATH=/system/bin:/apps/bin\nexport HOME=/users/admin\nexport USER=admin" > $(FS_ROOT)/users/admin/.profile
-	$(Q)echo "Welcome to Keira Kernel!\nRun 'help' for available shell commands.\nUse 'run /apps/bin/kcc.elf' to compile C source code." > $(FS_ROOT)/users/admin/notes.txt
-	$(Q)echo "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default" > $(FS_ROOT)/users/default/.profile
-	$(Q)echo "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest" > $(FS_ROOT)/users/guest/.profile
+	$(Q)printf "boot_mode=kernel\nconsole=vga\ncursor=block\n" > $(FS_ROOT)/config/boot/boot.cfg
+	$(Q)printf "keira\n" > $(FS_ROOT)/config/sys/hostname.cfg
+	$(Q)printf "$(VERSION)\n" > $(FS_ROOT)/config/sys/version.cfg
+	$(Q)printf "dhcp=1\nip=10.0.2.15\ngateway=10.0.2.2\n" > $(FS_ROOT)/config/sys/network.cfg
+	$(Q)printf "admin:keira\n" > $(FS_ROOT)/config/sys/passwd
+	$(Q)printf "# Keira Service Configuration\nname=httpd\ndescription=Native Micro Web & REST API Server\nenabled=1\nport=80\nauto_restart=1\n" > $(FS_ROOT)/config/sys/httpd.conf
+	$(Q)printf "# Keira Service Configuration\nname=syncd\ndescription=FAT16 Auto-Sync & Cache Flush Daemon\nenabled=1\ninterval=15\nauto_restart=1\n" > $(FS_ROOT)/config/sys/syncd.conf
+	$(Q)printf "# Keira Service Configuration\nname=syslogd\ndescription=Kernel Event & Audit Logger Service\nenabled=1\ninterval=5\nauto_restart=1\n" > $(FS_ROOT)/config/sys/syslogd.conf
+	$(Q)printf "# Keira Service Configuration\nname=watchdogd\ndescription=Memory & Task Health Watchdog\nenabled=0\ninterval=10\nauto_restart=1\n" > $(FS_ROOT)/config/sys/watchdogd.conf
+	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/admin\nexport USER=admin\n" > $(FS_ROOT)/users/admin/.profile
+	$(Q)printf "Welcome to Keira Kernel!\nRun 'help' for available shell commands.\nUse 'run /apps/bin/kcc.elf' to compile C source code.\n" > $(FS_ROOT)/users/admin/notes.txt
+	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default\n" > $(FS_ROOT)/users/default/.profile
+	$(Q)printf "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest\n" > $(FS_ROOT)/users/guest/.profile
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n#include <stdio.h>\n#include <syscall.h>\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
-	$(Q)echo "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully." > $(FS_ROOT)/data/log/boot.log
-	$(Q)echo "[System Event Log]\nKernel Ring 0 initialized. Shell ready." > $(FS_ROOT)/data/log/system.log
-	$(Q)echo "KEY=VALUE" > $(FS_ROOT)/data/save/session.dat
+	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/data/log/boot.log
+	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
+	$(Q)printf "[INFO] Keira Service Controller (ksvc) system logger initialized.\n" > $(FS_ROOT)/data/log/syslog.log
+	$(Q)printf "KEY=VALUE\n" > $(FS_ROOT)/data/save/session.dat
+	$(Q)printf "<!DOCTYPE html><html><head><title>Keira Kernel OS</title></head><body style=\"background:#111;color:#eee;font-family:sans-serif;padding:40px;\"><h1>Keira Kernel v$(VERSION)</h1><p>Native Background Web &amp; REST API Server (httpd)</p><p>Status: <strong>Active &amp; Serving</strong></p></body></html>\n" > $(FS_ROOT)/data/www/index.html
 	$(Q)touch $(FS_ROOT)/temp/.keep
+
 
 disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
@@ -278,7 +286,8 @@ $(DISK_IMG): fs-root
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save ::/data/www 2>/dev/null || true
+
 	@$(LOG_DISK) "Populating disk image with system files..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \

@@ -461,6 +461,7 @@ pub fn execute_command_inner(cmd: &str) {
         "ipcrm" => super::cmds::ipcrm::run(&mut parts),
         "iptables" => super::cmds::iptables::run(&mut parts),
         "firewall" => super::cmds::firewall::run(&mut parts),
+        "service" | "ksvc" => super::cmds::service::run(&mut parts),
         _ => {
             // First check if this is an executable binary or path
             if super::cmds::run::run_direct(command) {

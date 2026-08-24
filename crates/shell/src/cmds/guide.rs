@@ -55,7 +55,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  tasks     stop      wait      script    run       cgroups\n");
                 vga::print_str("  futex     seccomp   epoll     eventfd   mqueue    kill\n");
-                vga::print_str("  jobs      fg        bg\n\n");
+                vga::print_str("  jobs      fg        bg        service\n\n");
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Networking & IPC:\n");
@@ -299,6 +299,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("seccomp") => {
                 vga::print_str("Usage: seccomp [status|strict|filter|load]\nConfigure kernel syscall filtering sandbox and security boundaries.\n");
             }
+            Some("service") | Some("ksvc") => {
+                vga::print_str("Usage: service [list|start|stop|restart|status|enable|disable|edit|create] [name]\nManage background daemon services and .conf files under /config/sys/.\n");
+            }
+
             Some("swap") => {
                 vga::print_str("Usage: swap [status|on|off|info]\nManage virtual memory paging swap space and disk swap partitions.\n");
             }
