@@ -149,3 +149,28 @@ Keira <version>
 * `style`: Formatting, comment syntax, or whitespace adjustments.
 * `test`: Automated test harness additions or QEMU test improvements.
 * `chore`: Build system, Makefile, or repository maintenance.
+
+---
+
+## 6. Console Output & CLI Styling Standards
+
+All shell commands, driver logging, and terminal output must strictly adhere to the **Standard 3 Monochrome Linux Console Palette**:
+
+### A. Color Palette Matrix:
+| Element / Role | Color Constant | Hex RGB | Semantic Usage |
+| :--- | :--- | :--- | :--- |
+| **Headers & Prompts** | `vga::Color::White` | `#FFFFFF` | Table column headers, command prompts (`admin@keira:~$`), titles, category headings. |
+| **Body & Data Lines** | `vga::Color::LightGrey` | `#AAAAAA` | Default stdout, file listings, telemetry metrics, register values, memory addresses. |
+| **Success Badges** | `vga::Color::LightGreen` | `#55FF55` | Minimal status tokens: `[OK]`, `[Mounted]`, `RUNNING`, `UP (e1000)`, `Connecting`, `Downloading`, `Finished`. |
+| **Warning Badges** | `vga::Color::Yellow` | `#FFFF55` | Alerts, cache invalidations, fallback notices: `[ WARN ]`, `[REBUILDING]`, `Warning`. |
+| **Error Messages** | `vga::Color::LightRed` | `#FF5555` | Critical failures, permission errors: `[FAILED]`, `Error`, `error`. |
+
+> [!CAUTION]
+> **Strict Prohibition**: Never use recreational or non-standard console colors (`Cyan`, `LightCyan`, `Magenta`, `LightBlue`, `Brown`). The console palette must remain austere, professional, and consistent with the Linux monochrome standard.
+
+### B. CLI Argument & Flag Parser Conventions:
+- Shell commands with flags must utilize the `#![no_std]` [`CliArgs`](file:///crates/shell/src/args.rs) parser engine.
+- Support standard POSIX single-letter short flags (`-l`, `-a`, `-c`, `-m`, `-s`, `-v`, `-u`, `-f`, `-r`, `-d`, `-t`, `-n`, `-L`) and GNU long flags (`--long`, `--all`, `--version`, `--help`).
+- Commands without arguments or configurations (`sync`, `reset`, `unwind`, `runtime`, `wipe`) execute immediately without blocking on `-h` boilerplate.
+- Network download and streaming progress bars must adhere to the `rustc`/`cargo` compiler format with 12-character right-aligned status tags (`Connecting`, `Downloading`, `Downloaded`, `Finished`) and size metrics (`Bytes`, `KiB`, `MiB`).
+
