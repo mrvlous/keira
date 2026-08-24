@@ -74,7 +74,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     }
                 }
                 if !found {
-                    vga::set_color(vga::Color::DarkGrey, vga::Color::Black);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     vga::print_str("  (No PCI USB host controllers detected)\n");
                 }
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
