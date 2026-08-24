@@ -12,18 +12,7 @@
 //!
 //! Trigger kernel stack frame unwinder backtrace (Syscall 37).
 
-use keira_io::vga;
-
 #[inline(never)]
-pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if let Some("-h") | Some("--help") = parts.next() {
-        unsafe {
-            vga::print_str("Usage: unwind [backtrace]\n\n");
-            vga::print_str("Description:\n  Trigger kernel stack frame unwinder backtrace & ptrace tracing (Syscall 37).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-        }
-        return;
-    }
-
+pub fn run(_parts: &mut core::str::SplitWhitespace) {
     keira_arch::unwind::unwind_stack();
 }

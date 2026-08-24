@@ -11,12 +11,15 @@
 
 //! Interactive system shell, text editor, tab auto-completion, and native commands.
 
+pub mod args;
 pub mod autocomplete;
 pub mod cmds;
 pub mod editor;
 pub mod executor;
 pub mod history;
 pub mod state;
+
+pub use args::CliArgs;
 
 pub const KEY_UP: u8 = 0x80;
 pub const KEY_DOWN: u8 = 0x81;

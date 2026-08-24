@@ -15,45 +15,30 @@
 use crate::executor::*;
 use keira_io::vga;
 
-pub fn run(parts: &mut core::str::SplitWhitespace) {
+pub fn run(_parts: &mut core::str::SplitWhitespace) {
     unsafe {
-        if let Some("-h") | Some("--help") = parts.next() {
-            vga::print_str("Usage: reset\n\n");
-            vga::print_str("Description:\n  Reboot the system using a PS/2 keyboard controller hardware reset.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        if !is_admin_mode() {
+            vga::set_color(vga::Color::LightRed, vga::Color::Black);
+            vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             return;
         }
 
-        unsafe {
-            if !is_admin_mode() {
-                vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
-            }
-        }
-        vga::print_str("Rebooting...\n");
-        unsafe {
-            core::arch::asm!(
-                "out dx, al",
-                in("dx") 0x64u16,
-                in("al") 0xFEu8,
-                options(nomem, nostack, preserves_flags)
-            );
-        }
-        unsafe {
-            let null_idt: [u8; 6] = [0; 6];
-            core::arch::asm!(
-                "lidt [{}]",
-                "int3",
-                in(reg) &null_idt,
-                options(nostack)
-            );
-        }
-        loop {
-            unsafe {
-                core::arch::asm!("hlt");
-            }
-        }
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Rebooting Keira Kernel via PS/2 controller...\n");
+        core::arch::asm!(
+            "out dx, al",
+            in("dx") 0x64u16,
+            in("al") 0xFEu8,
+            options(nomem, nostack, preserves_flags)
+        );
+
+        let null_idt: [u8; 6] = [0; 6];
+        core::arch::asm!(
+            "lidt [{}]",
+            "int3",
+            in(reg) null_idt.as_ptr(),
+            options(noreturn)
+        );
     }
 }

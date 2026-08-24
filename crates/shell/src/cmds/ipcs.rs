@@ -12,15 +12,24 @@
 //!
 //! Query active POSIX shared memory segments and semaphores.
 
+use crate::args::CliArgs;
 use keira_io::vga;
 use keira_ipc::shm;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if let Some("-h") | Some("--help") = parts.next() {
+    let args = CliArgs::parse(parts);
+
+    if args.has_flag('h', "help") {
         unsafe {
-            vga::print_str("Usage: ipcs [-m|-s|-a]\n\n");
-            vga::print_str("Description:\n  Inspect active POSIX shared memory IPC segments and semaphores (Syscall 75).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Usage: ipcs [-m] [-s] [-a]\n\n");
+            vga::print_str("Description:\n  Inspect active POSIX shared memory segments and counting semaphores.\n\n");
+            vga::print_str("Options:\n");
+            vga::print_str("  -m, --shm      Display shared memory segments\n");
+            vga::print_str("  -s, --sem      Display counting semaphores\n");
+            vga::print_str("  -a, --all      Display all active IPC facilities (default)\n");
+            vga::print_str("  -h, --help     Show this help message and exit\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
         return;
     }

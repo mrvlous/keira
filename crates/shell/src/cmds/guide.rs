@@ -27,11 +27,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             None => {
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Keira Kernel System Guide\n");
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("Type 'guide <command>' to view detailed usage instructions.\n\n");
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("System & Hardware:\n");
-                vga::set_color(vga::Color::White, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str(
                     "  system    cpu       runtime   time      memory    devices   network\n",
                 );
@@ -43,7 +44,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Storage & Filesystem:\n");
-                vga::set_color(vga::Color::White, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  drives    use       disk      ramdisk   list      go\n");
                 vga::print_str("  view      create    folder    delete    edit      write\n");
                 vga::print_str("  copy      move      initrd    search    sync      protect\n");
@@ -51,24 +52,24 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Process & Execution:\n");
-                vga::set_color(vga::Color::White, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  tasks     stop      wait      script    run       cgroups\n");
                 vga::print_str("  futex     seccomp   epoll     eventfd   mqueue    kill\n");
                 vga::print_str("  jobs      fg        bg\n\n");
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Networking & IPC:\n");
-                vga::set_color(vga::Color::White, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  ipcs      ipcrm     iptables  firewall\n\n");
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("User Account & Privileges:\n");
-                vga::set_color(vga::Color::White, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  login     user      hostname\n\n");
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Utilities & Console:\n");
-                vga::set_color(vga::Color::White, bg);
+                vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  guide     help      history   wipe      reset\n");
                 vga::set_color(vga::Color::LightGrey, bg);
             }

@@ -15,23 +15,16 @@
 use crate::executor::*;
 use keira_io::vga;
 
-pub fn run(parts: &mut core::str::SplitWhitespace) {
+pub fn run(_parts: &mut core::str::SplitWhitespace) {
     unsafe {
-        if let Some("-h") | Some("--help") = parts.next() {
-            vga::print_str("Usage: runtime\n\n");
-            vga::print_str("Description:\n  Display high-precision system uptime since kernel boot in hours, minutes, seconds, and milliseconds.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-            return;
-        }
-
-        let ms = unsafe { get_uptime_ms() };
+        let ms = get_uptime_ms();
         let hours = ms / 3600000;
         let minutes = (ms % 3600000) / 60000;
         let seconds = (ms % 60000) / 1000;
         let millis = ms % 1000;
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("System runtime: ");
-        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_u64(hours);
         vga::print_str("h ");
         vga::print_u64(minutes);
@@ -40,6 +33,5 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str("s ");
         vga::print_u64(millis);
         vga::print_str("ms\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

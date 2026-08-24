@@ -472,12 +472,9 @@ pub unsafe fn list_files_in_dir(dir_cluster: u16, show_all: bool) -> Result<(), 
                 vga::print_str("  [dir]  ");
                 vga::print_str(name_str);
             } else {
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("  [file] ");
-                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str(name_str);
-
-                vga::set_color(vga::Color::DarkGrey, vga::Color::Black);
                 vga::print_str(" (");
                 vga::print_u64(parsed.entry.file_size as u64);
                 vga::print_str(" bytes)");

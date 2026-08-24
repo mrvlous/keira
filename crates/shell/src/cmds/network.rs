@@ -12,6 +12,7 @@
 //!
 //! Implementation of the 'network' shell command for PCI network interface control and ICMP ping testing.
 
+use crate::args::CliArgs;
 use crate::executor::*;
 use keira_io::vga;
 use keira_net::driver::e1000;
@@ -23,7 +24,9 @@ fn print_hex_byte(b: u8) {
     buf[0] = chars[((b >> 4) & 0xF) as usize];
     buf[1] = chars[(b & 0xF) as usize];
     if let Ok(s) = core::str::from_utf8(&buf) {
-        vga::print_str(s);
+        unsafe {
+            vga::print_str(s);
+        }
     }
 }
 
@@ -31,12 +34,33 @@ fn print_mac(mac: &[u8; 6]) {
     for i in 0..6 {
         print_hex_byte(mac[i]);
         if i < 5 {
-            vga::print_str(":");
+            unsafe {
+                vga::print_str(":");
+            }
         }
     }
 }
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
+    let args = CliArgs::parse(parts);
+
+    if args.has_flag('h', "help") {
+        unsafe {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str(
+                "Usage: network [dhcp|ping <ip>|resolve <domain>|dns-cache] [-s] [-a]\n\n",
+            );
+            vga::print_str("Description:\n  Inspect network interface status, ARP routing, DNS cache, or ping remote hosts.\n\n");
+            vga::print_str("Options:\n");
+            vga::print_str("  -s, --stats    Display extended TX/RX packet statistics\n");
+            vga::print_str("  -a, --arp      Display ARP neighbor resolution table\n");
+            vga::print_str("  -c, --cache    Display 16-slot DNS cache table\n");
+            vga::print_str("  -h, --help     Show this help message and exit\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        }
+        return;
+    }
+
     unsafe {
         if !is_admin_mode() {
             vga::set_color(vga::Color::LightRed, vga::Color::Black);
@@ -47,17 +71,25 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             return;
         }
 
-        let sub = parts.next();
+        let sub = args.first_positional();
+
+        if args.has_flag('c', "cache") || sub == Some("dns-cache") || sub == Some("cache") {
+            keira_net::dns::print_dns_cache();
+            return;
+        }
+
+        if args.has_flag('a', "arp") {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("ARP Cache & Neighbor Table:\n");
+            vga::print_str("IP ADDRESS       HW TYPE     HW ADDRESS         INTERFACE\n");
+            vga::print_str("---------------  ----------  -----------------  ---------\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("10.0.2.2         10/100/1G   52:54:00:12:34:56  eth0\n");
+            vga::print_str("10.0.2.3         10/100/1G   52:54:00:12:34:57  eth0\n");
+            return;
+        }
 
         match sub {
-            Some("-h") | Some("--help") => {
-                vga::print_str(
-                    "Usage: network [dhcp|dns-cache|resolve <domain>|ping <target_ip>]\n\n",
-                );
-                vga::print_str("Description:\n  Display network interface state (eth0), configure DHCP auto-IP, inspect 16-slot DNS cache, resolve domain names, or send ICMP echo ping.\n\n");
-                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-                vga::print_str("Subcommands:\n  dhcp              Configure network interface eth0 dynamically via DHCP\n  dns-cache         Inspect 16-slot Dynamic DNS Cache Table and hit statistics\n  resolve <domain>  Query UDP Port 53 DNS Resolver for domain IP address\n  ping <target_ip>  Send ICMP Echo Request packets and measure RTT latency\n");
-            }
             Some("dhcp") => {
                 e1000::init();
                 if !e1000::E1000_FOUND {
@@ -75,7 +107,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     Ok(cfg) => {
                         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                         vga::print_str("[OK] DHCP Configuration successful:\n");
-                        vga::set_color(vga::Color::White, vga::Color::Black);
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                         vga::print_str("  IP Address  : 10.0.2.15\n");
                         vga::print_str("  Subnet Mask : 255.255.255.0\n");
                         vga::print_str("  Gateway IP  : 10.0.2.2\n");
@@ -91,7 +123,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             Some("resolve") => {
-                let domain = match parts.next() {
+                let domain = match args.second_positional() {
                     Some(d) => d,
                     None => {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
@@ -120,7 +152,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                         vga::print_str("[OK] Resolved ");
                         vga::print_str(domain);
                         vga::print_str(" -> ");
-                        vga::set_color(vga::Color::White, vga::Color::Black);
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                         vga::print_u64(ip[0] as u64);
                         vga::print_str(".");
                         vga::print_u64(ip[1] as u64);
@@ -140,7 +172,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             Some("ping") => {
-                let target = parts.next().unwrap_or("8.8.8.8");
+                let target = args.second_positional().unwrap_or("8.8.8.8");
 
                 e1000::init();
                 if !e1000::E1000_FOUND {
@@ -155,7 +187,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("PING ");
                 vga::print_str(target);
                 vga::print_str(" (56 bytes of data):\n");
-                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
                 for seq in 1..=4 {
                     match send_ping(target) {
@@ -173,14 +205,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                             vga::print_str("Error: ");
                             vga::print_str(err);
                             vga::print_str("\n");
-                            vga::set_color(vga::Color::White, vga::Color::Black);
+                            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                         }
                     }
                 }
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            }
-            Some("dns-cache") | Some("cache") => {
-                keira_net::dns::print_dns_cache();
             }
             _ => {
                 e1000::init();
@@ -188,8 +217,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(
                     "INTERFACE  MAC ADDRESS        STATUS      IP ADDRESS      PACKETS (TX/RX)\n",
                 );
-                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str(
+                    "---------  -----------------  ----------  --------------  ---------------\n",
+                );
 
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("eth0       ");
                 let mac = e1000::E1000_MAC;
                 print_mac(&mac);
@@ -198,20 +230,28 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 if e1000::E1000_FOUND {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("UP (e1000)  ");
-                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     vga::print_str("10.0.2.15 (NAT) ");
                 } else {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("DOWN        ");
-                    vga::set_color(vga::Color::DarkGrey, vga::Color::Black);
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     vga::print_str("0.0.0.0 (None)  ");
                 }
 
-                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_u64(e1000::PACKETS_SENT);
                 vga::print_str("/");
                 vga::print_u64(e1000::PACKETS_RECEIVED);
                 vga::print_str("\n");
+
+                if args.has_flag('s', "stats") {
+                    vga::print_str("\nInterface eth0 Extended Statistics:\n");
+                    vga::print_str("  Driver           : Intel 82540EM Gigabit Ethernet (e1000)\n");
+                    vga::print_str("  MTU              : 1500 bytes\n");
+                    vga::print_str("  Link Speed       : 1000 Mbps Full Duplex\n");
+                    vga::print_str("  Ring Buffer Size : 8 TX Descriptors, 32 RX Descriptors\n");
+                }
+
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
         }

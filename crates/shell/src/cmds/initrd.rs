@@ -12,12 +12,23 @@
 //!
 //! Implementation of the 'initrd' shell command.
 
+use crate::args::CliArgs;
+use keira_io::vga;
+
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if let Some("-h") | Some("--help") = parts.next() {
+    let args = CliArgs::parse(parts);
+
+    if args.has_flag('h', "help") {
         unsafe {
-            keira_io::vga::print_str("Usage: initrd\n\n");
-            keira_io::vga::print_str("Description:\n  List all preloaded files and sizes stored in the read-only Initrd TAR RAM disk.\n\n");
-            keira_io::vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Usage: initrd [-c]\n\n");
+            vga::print_str(
+                "Description:\n  Inspect files stored in the read-only Initrd TAR archive.\n\n",
+            );
+            vga::print_str("Options:\n");
+            vga::print_str("  -c, --count    Count total files and directories in Initrd\n");
+            vga::print_str("  -h, --help     Show this help message and exit\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
         return;
     }

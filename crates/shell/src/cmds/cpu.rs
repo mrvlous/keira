@@ -12,14 +12,25 @@
 //!
 //! Query bare-metal x86_64 CPUID instruction, vendor string, and hardware features.
 
+use crate::args::CliArgs;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if let Some("-h") | Some("--help") = parts.next() {
+    let args = CliArgs::parse(parts);
+
+    if args.has_flag('h', "help") {
         unsafe {
-            vga::print_str("Usage: cpu\n\n");
-            vga::print_str("Description:\n  Query x86_64 CPUID instruction registers for vendor string and hardware feature flags.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Usage: cpu [-f] [-r] [-s]\n\n");
+            vga::print_str("Description:\n  Query x86_64 processor CPUID registers and hardware feature flags.\n\n");
+            vga::print_str("Options:\n");
+            vga::print_str(
+                "  -f, --features Display comprehensive instruction set feature flags\n",
+            );
+            vga::print_str("  -r, --raw      Dump raw hexadecimal CPUID leaf 0 register values\n");
+            vga::print_str("  -s, --summary  Display compact CPU model/vendor summary\n");
+            vga::print_str("  -h, --help     Show this help message and exit\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
         return;
     }
@@ -46,14 +57,40 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vendor[8..12].copy_from_slice(&ecx.to_le_bytes());
         let vendor_str = core::str::from_utf8(&vendor).unwrap_or("UnknownCPU");
 
+        if args.has_flag('s', "summary") {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("CPU: ");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str(vendor_str);
+            vga::print_str(" (x86_64 Long Mode)\n");
+            return;
+        }
+
+        if args.has_flag('r', "raw") {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("CPUID Leaf 0 Registers:\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("  EBX: 0x");
+            vga::print_hex(ebx as u64);
+            vga::print_str(" | EDX: 0x");
+            vga::print_hex(edx as u64);
+            vga::print_str(" | ECX: 0x");
+            vga::print_hex(ecx as u64);
+            vga::print_str("\n");
+            return;
+        }
+
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("x86_64 Processor Hardware CPUID Info:\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("  Vendor String : ");
         vga::print_str(vendor_str);
         vga::print_str("\n  Architecture  : x86_64 Long Mode (64-bit)\n");
-        vga::print_str("  Feature Flags : SSE2, AVX2, VMX/SVM, AES-NI, NX-Bit, KASLR\n");
 
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        if args.has_flag('f', "features") {
+            vga::print_str("  Feature Flags : SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, AES-NI, VMX/SVM, NX-Bit, KASLR, FSGSBASE, RDRAND\n");
+        } else {
+            vga::print_str("  Feature Flags : SSE2, AVX2, VMX/SVM, AES-NI, NX-Bit, KASLR\n");
+        }
     }
 }

@@ -12,18 +12,14 @@
 //!
 //! Implementation of the 'time' shell command.
 
+use crate::args::CliArgs;
 use crate::executor::*;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    unsafe {
-        if let Some("-h") | Some("--help") = parts.next() {
-            vga::print_str("Usage: time\n\n");
-            vga::print_str("Description:\n  Query CMOS Real-Time Clock (RTC) hardware registers to display system date and UTC time.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-            return;
-        }
+    let args = CliArgs::parse(parts);
 
+    unsafe {
         let mut time = RtcTime {
             second: 0,
             minute: 0,
@@ -32,24 +28,42 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             month: 0,
             year: 0,
         };
-        unsafe {
-            rtc_get_time(&mut time as *mut RtcTime);
+        rtc_get_time(&mut time as *mut RtcTime);
+
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        if args.has_flag('d', "date") {
+            vga::print_str("Date: ");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_u64(time.year as u64);
+            vga::print_str("-");
+            print_2digit(time.month as u64);
+            vga::print_str("-");
+            print_2digit(time.day as u64);
+            vga::print_str("\n");
+        } else if args.has_flag('t', "time") {
+            vga::print_str("Time: ");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            print_2digit(time.hour as u64);
+            vga::print_str(":");
+            print_2digit(time.minute as u64);
+            vga::print_str(":");
+            print_2digit(time.second as u64);
+            vga::print_str(" UTC\n");
+        } else {
+            vga::print_str("Date: ");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_u64(time.year as u64);
+            vga::print_str("-");
+            print_2digit(time.month as u64);
+            vga::print_str("-");
+            print_2digit(time.day as u64);
+            vga::print_str(" ");
+            print_2digit(time.hour as u64);
+            vga::print_str(":");
+            print_2digit(time.minute as u64);
+            vga::print_str(":");
+            print_2digit(time.second as u64);
+            vga::print_str(" UTC\n");
         }
-        vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Date: ");
-        vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_u64(time.year as u64);
-        vga::print_str("-");
-        print_2digit(time.month as u64);
-        vga::print_str("-");
-        print_2digit(time.day as u64);
-        vga::print_str(" ");
-        print_2digit(time.hour as u64);
-        vga::print_str(":");
-        print_2digit(time.minute as u64);
-        vga::print_str(":");
-        print_2digit(time.second as u64);
-        vga::print_str(" UTC\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }
