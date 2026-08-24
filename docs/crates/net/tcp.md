@@ -9,6 +9,7 @@ Documentation for TCP stream management in [`crates/net/src/tcp/`](../../../crat
 - **Continuous Multi-Packet Streaming**: Reassembles consecutive MTU segments over an active stream until `TCP_FLAG_FIN` or timeout.
 - **Dynamic ACK Feedback Loop**: Automatically computes incremental acknowledgment sequence numbers and transmits TCP `ACK` reply frames to the remote host for incoming data packets.
 - **HTTP Header Stripping & Content-Length Extraction**: Automatically parses `Content-Length: <bytes>` and isolates the binary payload body.
-- **Arbitrary Port Support**: Supports URLs with custom destination ports (e.g. `http://host:port/path`).
+- **In-Place HTTP Chunked Transfer Decoding (`dechunk_in_place`)**: Automatically detects and decodes `Transfer-Encoding: chunked` HTTP/1.1 streams in-place, stripping hexadecimal chunk headers and zero-terminators without allocations.
+- **Arbitrary Port & REST Query Support**: Supports URLs with custom destination ports (e.g. `http://host:port/path`) and long query parameter strings up to 512 bytes.
 - **Live Progress Callback**: Provides `fetch_stream_download()` with continuous byte counter and total size reporting.
 - **Reliable Teardown**: Gracefully responds to remote `FIN` flags with `ACK` completion.
