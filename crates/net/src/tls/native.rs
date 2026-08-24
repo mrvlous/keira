@@ -363,14 +363,14 @@ where
     let target_ip = crate::dns::resolver::resolve_domain(hostname).unwrap_or([10, 0, 2, 2]);
     let session = tls_connect(hostname)?;
 
-    let mut req_buf = [0u8; 256];
+    let mut req_buf = [0u8; 512];
     let mut req_len = 0;
     let req_str = b"GET ";
     req_buf[req_len..req_len + req_str.len()].copy_from_slice(req_str);
     req_len += req_str.len();
 
     let p_bytes = target_path.as_bytes();
-    let to_copy_p = core::cmp::min(p_bytes.len(), 64);
+    let to_copy_p = core::cmp::min(p_bytes.len(), 256);
     req_buf[req_len..req_len + to_copy_p].copy_from_slice(&p_bytes[..to_copy_p]);
     req_len += to_copy_p;
 
@@ -379,7 +379,7 @@ where
     req_len += host_prefix.len();
 
     let h_bytes = hostname.as_bytes();
-    let to_copy_h = core::cmp::min(h_bytes.len(), 64);
+    let to_copy_h = core::cmp::min(h_bytes.len(), 128);
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
@@ -392,7 +392,7 @@ where
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
-    let mut enc_buf = [0u8; 256];
+    let mut enc_buf = [0u8; 512];
     let (enc_len, _tag) = session.encrypt_record(&req_buf[..req_len], &mut enc_buf);
 
     match crate::tcp::stream::fetch_stream_download(

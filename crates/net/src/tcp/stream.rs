@@ -495,12 +495,99 @@ where
         return Err("Connection timed out: Remote host did not return data payload");
     }
 
-    let out_slice = core::slice::from_raw_parts(
-        (&raw const STREAM_DOWNLOAD_BUFFER) as *const u8,
+    let buf_slice = core::slice::from_raw_parts_mut(
+        (&raw mut STREAM_DOWNLOAD_BUFFER) as *mut u8,
         total_downloaded,
     );
+    let final_len = dechunk_in_place(buf_slice, total_downloaded);
+
+    let out_slice =
+        core::slice::from_raw_parts((&raw const STREAM_DOWNLOAD_BUFFER) as *const u8, final_len);
 
     Ok((out_slice, content_length))
+}
+
+/// In-place HTTP Transfer-Encoding chunked decoder.
+pub fn dechunk_in_place(buf: &mut [u8], len: usize) -> usize {
+    if len < 3 {
+        return len;
+    }
+
+    // Check if the payload starts with a hex chunk header (e.g. "67\r\n{...")
+    let mut is_chunked = false;
+    let mut first_crlf = None;
+    for i in 0..core::cmp::min(10, len.saturating_sub(1)) {
+        if &buf[i..i + 2] == b"\r\n" {
+            first_crlf = Some(i);
+            break;
+        }
+    }
+
+    if let Some(pos) = first_crlf {
+        if pos > 0 {
+            if let Ok(s) = core::str::from_utf8(&buf[..pos]) {
+                if usize::from_str_radix(s.trim(), 16).is_ok() {
+                    is_chunked = true;
+                }
+            }
+        }
+    }
+
+    if !is_chunked {
+        return len;
+    }
+
+    let mut read_idx = 0;
+    let mut write_idx = 0;
+
+    while read_idx < len {
+        let mut crlf_pos = None;
+        for i in read_idx..core::cmp::min(read_idx + 16, len.saturating_sub(1)) {
+            if &buf[i..i + 2] == b"\r\n" {
+                crlf_pos = Some(i);
+                break;
+            }
+        }
+
+        let header_end = match crlf_pos {
+            Some(p) => p,
+            None => break,
+        };
+
+        let hex_str = match core::str::from_utf8(&buf[read_idx..header_end]) {
+            Ok(s) => s.trim(),
+            Err(_) => break,
+        };
+
+        let chunk_size = match usize::from_str_radix(hex_str, 16) {
+            Ok(sz) => sz,
+            Err(_) => break,
+        };
+
+        if chunk_size == 0 {
+            break;
+        }
+
+        read_idx = header_end + 2;
+        let chunk_data_end = core::cmp::min(read_idx + chunk_size, len);
+        let actual_chunk_len = chunk_data_end - read_idx;
+
+        if actual_chunk_len > 0 {
+            buf.copy_within(read_idx..chunk_data_end, write_idx);
+            write_idx += actual_chunk_len;
+        }
+
+        read_idx = chunk_data_end;
+        if read_idx + 2 <= len && &buf[read_idx..read_idx + 2] == b"\r\n" {
+            read_idx += 2;
+        }
+    }
+
+    if write_idx > 0 {
+        write_idx
+    } else {
+        len
+    }
 }
 
 /// Fetch an HTTP resource using continuous TCP streaming, returns downloaded payload slice and optional Content-Length.
@@ -537,14 +624,14 @@ where
 
     let target_ip = crate::dns::resolver::resolve_domain(host_str).unwrap_or([10, 0, 2, 2]);
 
-    let mut req_buf = [0u8; 256];
+    let mut req_buf = [0u8; 512];
     let mut req_len = 0;
     let req_str = b"GET ";
     req_buf[req_len..req_len + req_str.len()].copy_from_slice(req_str);
     req_len += req_str.len();
 
     let p_bytes = path.as_bytes();
-    let to_copy_p = core::cmp::min(p_bytes.len(), 64);
+    let to_copy_p = core::cmp::min(p_bytes.len(), 256);
     req_buf[req_len..req_len + to_copy_p].copy_from_slice(&p_bytes[..to_copy_p]);
     req_len += to_copy_p;
 
@@ -553,7 +640,7 @@ where
     req_len += host_prefix.len();
 
     let h_bytes = host.as_bytes();
-    let to_copy_h = core::cmp::min(h_bytes.len(), 64);
+    let to_copy_h = core::cmp::min(h_bytes.len(), 128);
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 

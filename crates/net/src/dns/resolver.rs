@@ -150,7 +150,7 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
     let start_tick = get_uptime_ms();
     let mut resolved_ip: Option<[u8; 4]> = None;
 
-    while get_uptime_ms() < start_tick + 2000 {
+    while get_uptime_ms() < start_tick + 4000 {
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
             if bytes >= 42 && rx_buf[12] == 0x08 && rx_buf[13] == 0x00 && rx_buf[23] == 17 {
                 let dns_data = &rx_buf[42..bytes];
