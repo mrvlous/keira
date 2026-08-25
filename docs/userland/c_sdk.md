@@ -90,12 +90,12 @@ Keira Kernel organizes all system, configuration, application, and user assets i
 ```text
 /
 ├── system/                       # Core Operating System Assets
-│   ├── bin/                      # Shell commands and built-in binaries (67 tools)
+│   ├── bin/                      # Shell commands and native compiler (kcc.elf)
 │   ├── dev/                      # Device nodes (null, zero, random, tty, sda0, hda)
 │   ├── drivers/                  # Hardware driver descriptors (*.sys)
 │   └── include/                  # Freestanding C SDK headers (<stdio.h>, <sys/types.h>, etc.)
 ├── apps/                         # Userland Applications & Developer Tooling
-│   ├── bin/                      # Compiled ELF executable binaries (kcc.elf)
+│   ├── bin/                      # Compiled userland ELF executable binaries (app.elf)
 │   └── src/                      # Sample C applications (hello.c, calc.c, sysinfo.c)
 ├── config/                       # System & Boot Configuration
 │   ├── boot/                     # Bootloader configuration (boot.cfg)

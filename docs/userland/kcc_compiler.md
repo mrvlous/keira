@@ -2,7 +2,7 @@
 
 # In-Kernel KCC Compiler Toolchain
 
-Keira Kernel includes a native freestanding in-kernel C compiler executable (`/apps/bin/kcc.elf`) organized in a hyper-modular architecture under `user/bin/kcc/`.
+Keira Kernel includes a native freestanding in-kernel C compiler executable (`/system/bin/kcc.elf`) organized in a hyper-modular architecture under `user/bin/kcc/`. KCC compiles native C source code directly on Keira into Ring 3 ELF executables on both `x86_64` and `i686` architectures.
 
 ## Modular Architecture
 
@@ -12,15 +12,15 @@ user/bin/kcc/
 │   ├── common.h          # Global compiler state, buffers & diagnostic helpers
 │   ├── lexer.h           # Token types (TOK_*), scanner variables & token prototypes
 │   ├── symbols.h         # Global/local symbol tables, address resolution & loop stacks
-│   ├── codegen.h         # x86_64 machine code generator & System V AMD64 ABI declarations
+│   ├── codegen.h         # Dual-architecture machine code generator & ABI declarations
 │   ├── parser.h          # Recursive descent expression & statement parser
-│   └── elf.h             # ELF64 binary generator prototypes
+│   └── elf.h             # ELF32/ELF64 binary generator prototypes
 ├── common.c              # Buffer allocations & diagnostic helpers
 ├── lexer.c               # Character scanner, string/number literals & line tracking
 ├── symbols.c             # Variable offsets, function addresses & relocation tables
-├── codegen.c             # x86_64 instruction encoder, register management & jumps
+├── codegen.c             # x86_64 / i686 instruction encoder, register management & jumps
 ├── parser.c              # AST parsing, operator precedence & control flow generation
-├── elf.c                 # ELF64 header, segment builder & binary writer
+├── elf.c                 # ELF32/ELF64 header, segment builder & binary writer
 └── main.c                # Compiler entry point (`_start`), file I/O & pipeline driver
 ```
 
@@ -31,11 +31,18 @@ graph TD
     A["/data/main.c (Source Code)"] --> B["lexer.c (Token Stream & Line Tracking)"]
     B --> C["parser.c (Recursive Descent Parser)"]
     C --> D["symbols.c (Symbol & Scope Resolution)"]
-    C --> E["codegen.c (x86_64 Machine Code Emitter)"]
+    C --> E["codegen.c (Dual-Arch Machine Code Emitter)"]
     D --> E
-    E --> F["elf.c (ELF64 Executable Packaging)"]
+    E --> F["elf.c (ELF32/ELF64 Binary Packaging)"]
     F --> G["/apps/bin/app.elf (Executable Output)"]
 ```
+
+## Architecture Matrix
+
+| Target Architecture | Output Format | Base Virtual Address | Syscall Mechanism | Linker Script |
+| :--- | :--- | :--- | :--- | :--- |
+| **`x86_64`** | ELF64 Executable | `0x40000000` (1 GiB) | Native `syscall` / LSTAR | `user/linker.ld` |
+| **`i686`** | ELF32 Executable | `0x01000000` (16 MiB) | `int $0x80` Interrupt Vector | `user/linker32.ld` |
 
 ## Supported Language Features & Syntax
 
@@ -50,8 +57,8 @@ graph TD
 | **Increment/Decrement** | `++var`, `--var`, `var++`, `var--` |
 | **Pointers & Memory** | `&var` (address-of), `*ptr` (read/write dereference), `arr[i]` (byte/index addressing) |
 | **Control Flow** | `if` / `else`, `while`, `for`, `do ... while`, `break;`, `continue;`, `return` |
-| **ABI & Calls** | System V AMD64 ABI (up to 6 parameters: `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`), `syscall(...)` |
-| **Built-ins** | `sizeof(type\|var)`, `printf("format", ...)` |
+| **ABI & Calls** | System V AMD64 ABI (x86_64) / cdecl stack parameters (i686), `syscall(...)` |
+| **Built-ins** | `sizeof(type|var)`, `printf("format", ...)` |
 
 ## Compiler Execution
 
@@ -75,9 +82,10 @@ graph TD
    ```
 2. Execute the native compiler from the Keira shell:
    ```bash
-   run /apps/bin/kcc.elf
+   run /system/bin/kcc.elf
    ```
-3. Execute the resulting compiled ELF64 binary:
+3. Execute the resulting compiled ELF binary in Ring 3 user mode:
    ```bash
    run /apps/bin/app.elf
    ```
+
