@@ -173,3 +173,40 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 - Support standard POSIX single-letter short flags (`-l`, `-a`, `-c`, `-m`, `-s`, `-v`, `-u`, `-f`, `-r`, `-d`, `-t`, `-n`, `-L`) and GNU long flags (`--long`, `--all`, `--version`, `--help`).
 - Commands without arguments or configurations (`sync`, `reset`, `unwind`, `runtime`, `wipe`) execute immediately without blocking on `-h` boilerplate.
 - Network download and streaming progress bars must adhere to the `rustc`/`cargo` compiler format with 12-character right-aligned status tags (`Connecting`, `Downloading`, `Downloaded`, `Finished`) and size metrics (`Bytes`, `KiB`, `MiB`).
+
+---
+
+## 7. Whitespace, Newline & Formatting Standards
+
+1. **Single Trailing Newline**:
+   - Every file (`.rs`, `.c`, `.h`, `.asm`, `.inc`, `.md`, `.toml`, `.json`, `.ld`, `Makefile`) **MUST** end with exactly one newline (`\n`).
+   - No missing trailing newline and no multiple trailing newlines at the end of files.
+2. **Consecutive Blank Lines Policy**:
+   - Multiple consecutive blank lines (`\n\n\n+`) are strictly prohibited across all source code, documentation, and build scripts.
+   - Use at most one blank line between function declarations, struct definitions, and markdown paragraphs.
+3. **No Trailing Whitespace**:
+   - Lines must never contain trailing whitespace characters (`\s+$`).
+   - Enforced automatically via `cargo fmt`, `clang-format`, and `make format`.
+
+---
+
+## 8. Language & Grammar Standards
+
+1. **Strict 100% English Policy**:
+   - All code comments, docstrings (`//!`, `///`), documentation files, commit messages, and terminal outputs **MUST** be written in formal, grammatically correct English.
+   - Non-English comments or phrases (e.g. Indonesian) are strictly forbidden in the codebase.
+2. **Grammar & Tone**:
+   - Write clear, concise, and professional documentation and docstrings.
+   - Use imperative mood for commit summaries (e.g. `"feat(user): add dual-architecture support..."`) and spell out words like `"and"` instead of ampersands (`&`) in commit subjects.
+
+---
+
+## 9. Multi-Architecture Target Organization
+
+1. **Target Specification Layout**:
+   - Architecture JSON specification files must be organized in architecture-specific subdirectories under `targets/`:
+     - `targets/x86/x86_64-keira-none.json` (64-bit Long Mode)
+     - `targets/x86/i686-keira-none.json` (32-bit Protected Mode)
+2. **Linker Scripts**:
+   - Kernel Linkers: `arch/x86/linker.ld` (`x86_64`) and `arch/x86/linker32.ld` (`i686`).
+   - Userland Linkers: `user/linker.ld` (`x86_64` base `0x40000000`) and `user/linker32.ld` (`i686` base `0x01000000`).

@@ -13,9 +13,10 @@ Quick Start
 
 * Get the latest code: https://github.com/mrvlous/keira
 * Setup the workspace: See docs/contributing/setup.md
-* Build & run 64-bit kernel: `make run`
-* Build & run 32-bit kernel: `make ARCH=i686 run`
-* Automated test suite: `make test`
+* Build & run 64-bit kernel: `make run` (or `make run-64`)
+* Build & run 32-bit kernel: `make ARCH=i686 run` (or `make run-32`)
+* Build all architectures: `make full`
+* Automated multi-architecture test suite: `make test-all`
 
 Architecture & Documentation Map
 --------------------------------

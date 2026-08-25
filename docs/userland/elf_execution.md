@@ -56,4 +56,3 @@ sequenceDiagram
    - Exceptions occurring inside Ring 3 (General Protection Fault `#GP`, Page Fault `#PF`, Division by Zero `#DE`) are cleanly caught by kernel interrupt service routines and terminate the faulty user process without destabilizing the kernel.
 3. **Safe Memory Validation (`user_copy`)**:
    - All pointer arguments passed into syscalls (`SYS_READ`, `SYS_WRITE`, `SYS_OPEN`) are validated against userland address boundaries before kernel dereferencing.
-

@@ -88,4 +88,3 @@ graph TD
    ```bash
    run /apps/bin/app.elf
    ```
-

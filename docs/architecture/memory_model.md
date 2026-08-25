@@ -39,4 +39,3 @@ In 32-bit Protected Mode, Keira operates with flat segmentation and hardware-enf
 * **Userland Binary Base**: `0x01000000` (16 MiB boundary linked via `user/linker32.ld`).
 * **Userland Stack Top**: `0x07FFF000 - 16` (~128 MiB boundary within standard physical bounds).
 * **Segment Selectors**: User Code `CS=0x1B` (GDT index 3, RPL 3) and User Data `DS/SS=0x23` (GDT index 4, RPL 3).
-
