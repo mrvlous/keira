@@ -19,8 +19,8 @@ user/* (C SDK)   --> [ GCC ]   --> build/kcc.elf ──────────�
 ## Architecture Parameter & Targets
 
 Keira supports two bare-metal target architectures:
-- **`x86_64` (Default)**: 64-bit Long Mode target (`targets/x86_64-keira-none.json`), linked via `arch/x86/linker.ld`, emulated via `qemu-system-x86_64`.
-- **`i686`**: Pure 32-bit Protected Mode target (`targets/i686-keira-none.json`), linked via `arch/x86/linker32.ld`, emulated via `qemu-system-i386`.
+- **`x86_64` (Default)**: 64-bit Long Mode target (`targets/x86/x86_64-keira-none.json`), linked via `arch/x86/linker.ld`, emulated via `qemu-system-x86_64`.
+- **`i686`**: Pure 32-bit Protected Mode target (`targets/x86/i686-keira-none.json`), linked via `arch/x86/linker32.ld`, emulated via `qemu-system-i386`.
 
 ```bash
 # Build 64-bit kernel (default)

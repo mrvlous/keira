@@ -30,6 +30,6 @@ Each commit must follow the standard convention:
 ## Pull Request Checklist
 Before opening a PR, ensure:
 1. `make check` passes with all tools detected.
-2. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
+2. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
 3. `make all` and `make test` pass cleanly.
 4. All new files contain clean GPL-2.0-only license headers without email addresses.

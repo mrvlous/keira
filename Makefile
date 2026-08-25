@@ -52,7 +52,7 @@ endif
 ifeq ($(ARCH),i686)
     ASM_FLAGS     := -f elf32 -I arch/x86/include/asm/ -DTARGET_ARCH_X86
     LD_FLAGS      := -m elf_i386 -n -T arch/x86/linker32.ld --gc-sections --no-warn-rwx-segments
-    RUST_TARGET   := targets/i686-keira-none.json
+    RUST_TARGET   := targets/x86/i686-keira-none.json
     RUST_MODE     := release
     RUST_LIB      := target/i686-keira-none/$(RUST_MODE)/libkeira_kernel.a
     QEMU          := qemu-system-i386
@@ -66,7 +66,7 @@ ifeq ($(ARCH),i686)
 else
     ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
     LD_FLAGS      := -n -T arch/x86/linker.ld --gc-sections --no-warn-rwx-segments
-    RUST_TARGET   := targets/x86_64-keira-none.json
+    RUST_TARGET   := targets/x86/x86_64-keira-none.json
     RUST_MODE     := release
     RUST_LIB      := target/x86_64-keira-none/$(RUST_MODE)/libkeira_kernel.a
     QEMU          := qemu-system-x86_64
