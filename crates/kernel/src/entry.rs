@@ -23,6 +23,8 @@ use keira_shell as shell;
 use keira_syscall::init_user_mode;
 use keira_task::scheduler::init as scheduler_init;
 
+#[cfg(target_arch = "x86")]
+const ARCH_BOOT_STR: &str = "Confirming active CPU x86 32-bit Protected Mode status";
 #[cfg(target_arch = "x86_64")]
 const ARCH_BOOT_STR: &str = "Confirming active CPU x86_64 Long Mode status";
 #[cfg(target_arch = "aarch64")]
@@ -30,9 +32,16 @@ const ARCH_BOOT_STR: &str = "Confirming active CPU aarch64 Exception Level statu
 #[cfg(target_arch = "riscv64")]
 const ARCH_BOOT_STR: &str = "Confirming active CPU riscv64 Supervisor Mode status";
 
+#[cfg(target_arch = "x86")]
+const ENTRY_CONTEXT_STR: &str = "Landed in 32-bit Rust kernel entry context";
+#[cfg(target_arch = "x86_64")]
+const ENTRY_CONTEXT_STR: &str = "Landed in 64-bit Rust kernel entry context";
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+const ENTRY_CONTEXT_STR: &str = "Landed in Rust kernel entry context";
+
 /// Kernel main entry point called by the assembly trampoline.
 #[no_mangle]
-pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
+pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
     // 1. Early Pure Rust Architecture & Peripheral Bringup
     vga::init();
     keira_arch::init();
@@ -42,7 +51,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
 
     vga::print_boot_log("Initializing Serial Port (COM1) driver", 0);
     vga::print_boot_log("Configuring VGA text-mode frame buffer (80x25)", 0);
-    vga::print_boot_log("Checking x86_64 CPUID & Model Specific Registers (MSRs)", 0);
+    vga::print_boot_log("Checking x86 CPUID & Model Specific Registers (MSRs)", 0);
     vga::print_boot_log("Loading Interrupt Descriptor Table (IDT) registers", 0);
     vga::print_boot_log("Remapping dual 8259 PIC interrupt controller IRQs", 0);
     vga::print_boot_log("Configuring 8253 PIT system timer tick rate to 1000Hz", 0);
@@ -56,12 +65,16 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     vga::print_boot_log("Scanning PCIe ECAM Memory-Mapped Configuration Space", 0);
     vga::print_boot_log("Completing low-level hardware subsystem checks", 0);
 
-    vga::print_boot_log("Landed in 64-bit Rust kernel entry context", 0);
+    vga::print_boot_log(ENTRY_CONTEXT_STR, 0);
     vga::print_boot_log("Checking Multiboot2 bootloader magic signature", 0);
-    vga::print_boot_log("Validating 4-level page frame identity mapping (1GB)", 0);
+    vga::print_boot_log("Validating page frame identity mapping", 0);
     vga::print_boot_log(ARCH_BOOT_STR, 0);
 
+    #[cfg(target_arch = "x86_64")]
     let cpuid = core::arch::x86_64::__cpuid(0);
+    #[cfg(target_arch = "x86")]
+    let cpuid = core::arch::x86::__cpuid(0);
+
     let mut vendor = [0u8; 12];
     vendor[0..4].copy_from_slice(&cpuid.ebx.to_le_bytes());
     vendor[4..8].copy_from_slice(&cpuid.edx.to_le_bytes());
@@ -95,7 +108,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
                 vga::FRAMEBUFFER_HEIGHT = *((addr + 24) as *const u32);
                 vga::FRAMEBUFFER_BPP = *((addr + 28) as *const u8);
             }
-            addr += ((tag_size as u64) + 7) & !7;
+            addr += ((tag_size as usize) + 7) & !7;
         }
     }
 
@@ -111,7 +124,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: u64) -> ! {
     }
     let heap_end_addr = unsafe { &__heap_end as *const u8 as u64 };
     unsafe {
-        keira_mem::init(multiboot_info_ptr, initrd_end, heap_end_addr);
+        keira_mem::init(multiboot_info_ptr as u64, initrd_end, heap_end_addr);
 
         let fb_addr = vga::FRAMEBUFFER_ADDR;
         let fb_pitch = vga::FRAMEBUFFER_PITCH;

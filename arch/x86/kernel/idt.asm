@@ -8,16 +8,26 @@
 ; the Free Software Foundation; version 2 of the License.
 
 ; Interrupt Descriptor Table (IDT) Register Loader
-;
-; Invokes the `lidt` instruction to inform the CPU of the IDT location and limit.
+
+%ifdef TARGET_ARCH_X86
+
+section .text
+bits 32
+
+global idt_load
+idt_load:
+    mov eax, [esp + 4]
+    lidt [eax]
+    ret
+
+%else
 
 section .text
 bits 64
 
 global idt_load
-
-; idt_load - Loads the IDT structure into IDTR register
-; RDI: Linear physical address of idt_ptr structure
 idt_load:
     lidt [rdi]
     ret
+
+%endif

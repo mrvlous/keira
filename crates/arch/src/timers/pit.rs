@@ -11,7 +11,7 @@
 
 use crate::cpu::outb;
 use crate::interrupts::pic;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub const PIT_CHANNEL0_DATA: u16 = 0x40;
 pub const PIT_CHANNEL1_DATA: u16 = 0x41;
@@ -19,7 +19,7 @@ pub const PIT_CHANNEL2_DATA: u16 = 0x42;
 pub const PIT_COMMAND_PORT: u16 = 0x43;
 pub const PIT_BASE_FREQUENCY: u32 = 1193182;
 
-static TIMER_TICKS_MS: AtomicU64 = AtomicU64::new(0);
+static TIMER_TICKS_MS: AtomicUsize = AtomicUsize::new(0);
 
 /// Set PIT Channel 0 operating frequency in Hertz and unmask IRQ0.
 pub fn set_frequency(hz: u32) {
@@ -47,7 +47,7 @@ pub extern "C" fn pit_handler() {
 
 /// Read uptime duration in milliseconds.
 pub fn uptime_ms() -> u64 {
-    TIMER_TICKS_MS.load(Ordering::Relaxed)
+    TIMER_TICKS_MS.load(Ordering::Relaxed) as u64
 }
 
 /// Legacy C-compatible export for uptime queries.

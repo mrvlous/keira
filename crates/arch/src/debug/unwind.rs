@@ -9,24 +9,40 @@
 
 //! Stack frame pointer walking and callstack backtrace unwinder.
 
+#[cfg(target_os = "none")]
 use core::arch::asm;
 
 /// Captured instruction and frame pointer stack frame.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct StackFrame {
     pub rip: u64,
     pub rbp: u64,
 }
 
-/// Walk active kernel stack frame pointers using inline RBP register.
+/// Walk active kernel stack frame pointers using inline frame pointer register.
 #[inline(never)]
 pub fn capture_backtrace(frames: &mut [StackFrame]) -> usize {
-    let mut rbp: u64;
-    unsafe { asm!("mov {}, rbp", out(reg) rbp) };
-    let mut rip: u64;
-    unsafe { asm!("lea {}, [rip]", out(reg) rip) };
-
-    capture_from_frame(rbp, rip, frames)
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = frames;
+        0
+    }
+    #[cfg(all(target_os = "none", target_arch = "x86_64"))]
+    {
+        let rbp: u64;
+        unsafe { asm!("mov {}, rbp", out(reg) rbp) };
+        let rip: u64;
+        unsafe { asm!("lea {}, [rip]", out(reg) rip) };
+        capture_from_frame(rbp, rip, frames)
+    }
+    #[cfg(all(target_os = "none", target_arch = "x86"))]
+    {
+        let ebp: u32;
+        unsafe { asm!("mov {}, ebp", out(reg) ebp) };
+        let eip: u32;
+        unsafe { asm!("call 2f; 2: pop {}", out(reg) eip) };
+        capture_from_frame(ebp as u64, eip as u64, frames)
+    }
 }
 
 /// Walk kernel stack frame pointers from specific RBP/RIP context.
@@ -49,12 +65,13 @@ pub fn capture_from_frame(
     let mut depth = 1;
 
     while rbp != 0 && depth < frames.len() {
-        let next_rbp_ptr = rbp as *const u64;
-        let rip_ptr = (rbp + 8) as *const u64;
+        let ptr_size = core::mem::size_of::<usize>() as u64;
+        let next_rbp_ptr = rbp as *const usize;
+        let rip_ptr = (rbp + ptr_size) as *const usize;
 
         if validate_ptr(rip_ptr as u64) && validate_ptr(next_rbp_ptr as u64) {
-            let rip = unsafe { *rip_ptr };
-            let next_rbp = unsafe { *next_rbp_ptr };
+            let rip = unsafe { *rip_ptr } as u64;
+            let next_rbp = unsafe { *next_rbp_ptr } as u64;
 
             frames[depth] = StackFrame { rip, rbp: next_rbp };
             depth += 1;
@@ -83,5 +100,6 @@ pub fn unwind_stack() {
 }
 
 fn validate_ptr(ptr: u64) -> bool {
-    (0x100000..0x7FFFFFFFFFFF).contains(&ptr) && ptr.is_multiple_of(8)
+    let ptr_size = core::mem::size_of::<usize>() as u64;
+    (0x100000..0x7FFFFFFFFFFF).contains(&ptr) && (ptr & (ptr_size - 1) == 0)
 }

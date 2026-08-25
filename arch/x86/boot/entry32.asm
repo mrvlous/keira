@@ -17,19 +17,8 @@
 ;   - Paging: Disabled
 ;   - Interrupts: Disabled
 ;   - A20 Line: Enabled
-;
-; This code verifies bootloader validity, constructs the identity-mapped page tables,
-; enables Physical Address Extension (PAE), transitions into 64-bit long mode via
-; the IA32_EFER Model-Specific Register (MSR), loads the 64-bit Global Descriptor Table
-; (GDT), and performs a far jump into 64-bit long mode.
-;
-; Reference: Multiboot2 Specification, Section 3.3 (Machine State)
 
 %include "constants.inc"
-
-extern setup_page_tables
-extern gdt_descriptor
-extern _start64
 
 section .bss
 align 16
@@ -42,6 +31,50 @@ stack_top:
 section .text
 bits 32
 global _start
+
+%ifdef TARGET_ARCH_X86
+
+extern kernel_main
+extern gdt_descriptor
+
+_start:
+    ; Step 1: Initialize temporary bootstrap stack pointer
+    mov esp, stack_top
+
+    ; Step 2: Validate Multiboot2 magic signature in EAX
+    cmp eax, MULTIBOOT2_BOOTLOADER
+    jne .halt_no_multiboot
+
+    ; Step 3: Load 32-bit Global Descriptor Table (GDT)
+    lgdt [gdt_descriptor]
+    jmp 0x08:.reload_cs
+
+.reload_cs:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    ; Step 4: Pass Multiboot2 info pointer in EBX and jump to Rust kernel
+    push ebx
+    call kernel_main
+
+.halt:
+    cli
+    hlt
+    jmp .halt
+
+.halt_no_multiboot:
+    mov dword [VGA_BUFFER_ADDR], 0x4F4D
+    jmp .halt
+
+%else
+
+extern setup_page_tables
+extern gdt_descriptor
+extern _start64
 
 _start:
     ; Step 1: Initialize temporary bootstrap stack pointer
@@ -93,3 +126,5 @@ _start:
     cli
     hlt
     jmp .halt
+
+%endif

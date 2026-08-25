@@ -57,9 +57,18 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             return;
         }
 
+        #[cfg(target_arch = "x86")]
+        const ARCH_NAME: &str = "i686";
+        #[cfg(target_arch = "x86_64")]
+        const ARCH_NAME: &str = "x86_64";
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        const ARCH_NAME: &str = "unknown";
+
         if args.has_flag('v', "version") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Keira Kernel 0.34.0-keira-1 (x86_64-unknown-none)\n");
+            vga::print_str("Keira Kernel 0.34.0-keira-1 (");
+            vga::print_str(ARCH_NAME);
+            vga::print_str("-unknown-none)\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             vga::print_str("Compiled with rustc 1.85+ (LLVM 19), GPL-2.0-only\n");
             vga::print_str("Author: Moh. Ananda Firmansyah Putra\n");
@@ -68,7 +77,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         if args.has_flag('s', "summary") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Keira v0.34.0 | x86_64 | Up: ");
+            vga::print_str("Keira v0.34.0 | ");
+            vga::print_str(ARCH_NAME);
+            vga::print_str(" | Up: ");
             vga::print_u64(hours);
             vga::print_str("h ");
             vga::print_u64(minutes);
@@ -78,7 +89,18 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             return;
         }
 
+        #[cfg(target_arch = "x86_64")]
         let cpuid = core::arch::x86_64::__cpuid(0);
+        #[cfg(target_arch = "x86")]
+        let cpuid = core::arch::x86::__cpuid(0);
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        let cpuid = core::arch::x86_64::CpuidResult {
+            eax: 0,
+            ebx: 0,
+            ecx: 0,
+            edx: 0,
+        };
+
         let mut vendor = [0u8; 12];
         vendor[0..4].copy_from_slice(&cpuid.ebx.to_le_bytes());
         vendor[4..8].copy_from_slice(&cpuid.edx.to_le_bytes());
@@ -100,7 +122,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  Architecture      : ");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        #[cfg(target_arch = "x86_64")]
         vga::print_str("x86_64 Long Mode (Freestanding)\n");
+        #[cfg(target_arch = "x86")]
+        vga::print_str("i686 Protected Mode (Freestanding)\n");
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        vga::print_str("Unknown (Freestanding)\n");
 
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  CPU Vendor        : ");

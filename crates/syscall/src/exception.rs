@@ -58,8 +58,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         vga::print_str("\nRIP: 0x");
         print_hex(frame.rip);
         if frame.vector == 14 {
-            let cr2: u64;
-            core::arch::asm!("mov {}, cr2", out(reg) cr2);
+            let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
             vga::print_str(" | Faulting Address: 0x");
             print_hex(cr2);
 
@@ -106,8 +105,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         13 => vga::print_str("General Protection Fault (#GP)"),
         14 => {
             vga::print_str("Page Fault (#PF)");
-            let cr2: u64;
-            core::arch::asm!("mov {}, cr2", out(reg) cr2);
+            let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
             vga::print_str("\nFaulting Virtual Address (CR2): 0x");
             print_hex(cr2);
         }

@@ -52,12 +52,12 @@ pub fn get_kaslr_offset() -> u64 {
 
 /// Get the physical base address of the active PML4 table from the CR3 register.
 pub unsafe fn active_pml4() -> u64 {
-    read_cr3() & PTE_ADDR_MASK
+    (read_cr3() as u64) & PTE_ADDR_MASK
 }
 
 /// Switch the active address space by writing a new PML4 physical address to CR3.
 pub unsafe fn switch_address_space(pml4_phys: u64) {
-    write_cr3(pml4_phys);
+    write_cr3(pml4_phys as usize);
 }
 
 /// Map a virtual page to a physical frame in the active PML4 table.
@@ -161,7 +161,7 @@ pub unsafe fn map_page_in_pml4(
 
     // 5. Invalidate page in TLB if modifying active PML4
     if pml4_phys == active_pml4() {
-        invlpg(virtual_addr);
+        invlpg(virtual_addr as usize);
     }
 
     Ok(())
@@ -195,7 +195,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
         if virtual_addr.is_multiple_of(0x4000_0000) {
             let phys_frame = pdpt_entry & PTE_ADDR_MASK_1G;
             *pdpt.add(pdpt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
-            invlpg(virtual_addr);
+            invlpg(virtual_addr as usize);
             return Ok(());
         }
         return Err("Cannot mprotect sub-page of 1GB huge page without splitting");
@@ -210,7 +210,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
         if virtual_addr.is_multiple_of(0x20_0000) {
             let phys_frame = pd_entry & PTE_ADDR_MASK_2M;
             *pd.add(pd_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
-            invlpg(virtual_addr);
+            invlpg(virtual_addr as usize);
             return Ok(());
         }
         return Err("Cannot mprotect sub-page of 2MB huge page without splitting");
@@ -225,7 +225,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
     let phys_frame = pt_entry & PTE_ADDR_MASK;
     *pt.add(pt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER;
 
-    invlpg(virtual_addr);
+    invlpg(virtual_addr as usize);
     Ok(())
 }
 
@@ -306,7 +306,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if (pdpt_entry & PAGE_HUGE) != 0 {
         if virtual_addr.is_multiple_of(0x4000_0000) {
             *pdpt.add(pdpt_idx) = 0;
-            invlpg(virtual_addr);
+            invlpg(virtual_addr as usize);
             return Ok(());
         }
         return Err("Cannot unmap sub-page of 1GB huge page without splitting");
@@ -320,7 +320,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if (pd_entry & PAGE_HUGE) != 0 {
         if virtual_addr.is_multiple_of(0x20_0000) {
             *pd.add(pd_idx) = 0;
-            invlpg(virtual_addr);
+            invlpg(virtual_addr as usize);
             return Ok(());
         }
         return Err("Cannot unmap sub-page of 2MB huge page without splitting");
@@ -333,7 +333,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     }
 
     *pt.add(pt_idx) = 0;
-    invlpg(virtual_addr);
+    invlpg(virtual_addr as usize);
 
     Ok(())
 }

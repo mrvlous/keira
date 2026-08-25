@@ -24,5 +24,5 @@ pub fn send_ipi(dest_apic_id: u8, vector: u8) {
 
 /// Execute cross-core TLB Shootdown to invalidate page address across all CPU cores.
 pub fn tlb_shootdown(vaddr: u64) {
-    invlpg(vaddr);
+    invlpg(vaddr as usize);
 }

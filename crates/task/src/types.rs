@@ -68,7 +68,7 @@ pub struct Task {
 
 /// Pushed CPU register context during interrupt or system call transitions.
 #[repr(C, packed)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct InterruptContext {
     pub r15: u64,
     pub r14: u64,

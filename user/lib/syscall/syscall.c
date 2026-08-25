@@ -10,6 +10,66 @@
 
 #include <sys/syscall.h>
 
+#if defined(__i386__) || defined(__i686__)
+
+int64_t syscall0(uint64_t num) {
+    int32_t ret;
+    __asm__ volatile("int $0x80" : "=a"(ret) : "a"((uint32_t)num) : "memory");
+    return (int64_t)ret;
+}
+
+int64_t syscall1(uint64_t num, uint64_t a1) {
+    int32_t ret;
+    __asm__ volatile("int $0x80" : "=a"(ret) : "a"((uint32_t)num), "b"((uint32_t)a1) : "memory");
+    return (int64_t)ret;
+}
+
+int64_t syscall2(uint64_t num, uint64_t a1, uint64_t a2) {
+    int32_t ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"((uint32_t)num), "b"((uint32_t)a1), "c"((uint32_t)a2)
+                     : "memory");
+    return (int64_t)ret;
+}
+
+int64_t syscall3(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3) {
+    int32_t ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"((uint32_t)num), "b"((uint32_t)a1), "c"((uint32_t)a2), "d"((uint32_t)a3)
+                     : "memory");
+    return (int64_t)ret;
+}
+
+int64_t syscall4(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4) {
+    int32_t ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"((uint32_t)num), "b"((uint32_t)a1), "c"((uint32_t)a2), "d"((uint32_t)a3),
+                       "S"((uint32_t)a4)
+                     : "memory");
+    return (int64_t)ret;
+}
+
+int64_t syscall5(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5) {
+    int32_t ret;
+    __asm__ volatile("int $0x80"
+                     : "=a"(ret)
+                     : "a"((uint32_t)num), "b"((uint32_t)a1), "c"((uint32_t)a2), "d"((uint32_t)a3),
+                       "S"((uint32_t)a4), "D"((uint32_t)a5)
+                     : "memory");
+    return (int64_t)ret;
+}
+
+int64_t syscall6(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5,
+                 uint64_t a6) {
+    (void)a6;
+    return syscall5(num, a1, a2, a3, a4, a5);
+}
+
+#else
+
 int64_t syscall0(uint64_t num) {
     int64_t ret;
     __asm__ volatile("syscall" : "=a"(ret) : "a"(num) : "rcx", "r11", "memory");
@@ -71,6 +131,8 @@ int64_t syscall6(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a
     return ret;
 }
 
+#endif
+
 void sys_print_char(char c) {
     syscall1(SYS_PUTC, (uint64_t)(unsigned char)c);
 }
@@ -84,17 +146,17 @@ void sys_exit(int status) {
 }
 
 ssize_t sys_read(int fd, void *buf, size_t count) {
-    return (ssize_t)syscall3(SYS_READ, (uint64_t)fd, (uint64_t)buf, (uint64_t)count);
+    return (ssize_t)syscall3(SYS_READ, (uint64_t)fd, (uint64_t)(uintptr_t)buf, (uint64_t)count);
 }
 
 ssize_t sys_write(int fd, const void *buf, size_t count) {
-    return (ssize_t)syscall3(SYS_WRITE, (uint64_t)fd, (uint64_t)buf, (uint64_t)count);
+    return (ssize_t)syscall3(SYS_WRITE, (uint64_t)fd, (uint64_t)(uintptr_t)buf, (uint64_t)count);
 }
 
 int sys_open(const char *filename, int flags, int mode) {
     (void)mode;
     uint64_t write_flag = (flags != 0) ? 1 : 0;
-    return (int)syscall2(SYS_OPEN, (uint64_t)filename, write_flag);
+    return (int)syscall2(SYS_OPEN, (uint64_t)(uintptr_t)filename, write_flag);
 }
 
 int sys_close(int fd) {
@@ -114,11 +176,11 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
     (void)flags;
     (void)fd;
     (void)offset;
-    return (void *)syscall2(SYS_MMAP, (uint64_t)addr, (uint64_t)length);
+    return (void *)(uintptr_t)syscall2(SYS_MMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length);
 }
 
 int sys_munmap(void *addr, size_t length) {
-    return (int)syscall2(SYS_MUNMAP, (uint64_t)addr, (uint64_t)length);
+    return (int)syscall2(SYS_MUNMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length);
 }
 
 void sys_sleep(uint32_t ms) {

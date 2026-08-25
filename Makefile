@@ -12,21 +12,25 @@
 # Orchestrates the pure Rust kernel and assembly bootstrap compilation pipeline:
 #   1. NASM (Assembly)  : Compiles 32-bit and 64-bit boot trampolines & ISR stubs.
 #   2. Cargo (Rust Core): Compiles `no_std` 100% Pure Rust kernel static library (`.a`).
-#   3. LD (Linker)      : Links object files into a single ELF64 kernel executable.
+#   3. LD (Linker)      : Links object files into a single ELF kernel executable.
 #   4. Userland (KCC/C) : Compiles userland C compiler (kcc.elf) and standard library.
 #   5. GRUB (Bootloader): Packages kernel and USTAR initrd into a bootable ISO.
+
+# Target Architecture: x86_64 (default) or i686 (pure 32-bit x86)
+ARCH          ?= x86_64
+
 # Directory layout paths
 BUILD_DIR     := build
-OBJ_DIR       := $(BUILD_DIR)/obj
+OBJ_DIR       := $(BUILD_DIR)/obj/$(ARCH)
 ISO_DIR       := $(BUILD_DIR)/isofiles
 DISK_IMG      := $(BUILD_DIR)/disk.img
 
 # Project naming & versioning extracted from Cargo.toml
 KERNEL_NAME   := keira
 VERSION       := $(shell grep -m 1 '^version = ' crates/kernel/Cargo.toml | cut -d '"' -f 2)
-KERNEL_BIN    := $(BUILD_DIR)/$(KERNEL_NAME).bin
+KERNEL_BIN    := $(BUILD_DIR)/$(KERNEL_NAME)-$(ARCH).bin
 DATE_SUFFIX   := $(shell date +%Y-%m-%d)
-KERNEL_ISO    := $(BUILD_DIR)/$(KERNEL_NAME)-$(DATE_SUFFIX).iso
+KERNEL_ISO    := $(BUILD_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
 
 # Toolchain executables
 ASM           := nasm
@@ -44,20 +48,39 @@ ifeq ($(V),1)
 else
     Q := @
 endif
-# Assembler flags: ELF64 output format with assembly include path
-ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
 
-# Linker flags: large code model linking using custom linker script
-LD_FLAGS      := -n \
-	         -T arch/x86/linker.ld \
-	         --gc-sections \
-	         --no-warn-rwx-segments
+ifeq ($(ARCH),i686)
+    ASM_FLAGS     := -f elf32 -I arch/x86/include/asm/ -DTARGET_ARCH_X86
+    LD_FLAGS      := -m elf_i386 -n -T arch/x86/linker32.ld --gc-sections --no-warn-rwx-segments
+    RUST_TARGET   := targets/i686-keira-none.json
+    RUST_MODE     := release
+    RUST_LIB      := target/i686-keira-none/$(RUST_MODE)/libkeira_kernel.a
+    QEMU          := qemu-system-i386
+    ASM_SRCS      := arch/x86/boot/multiboot2_header.asm \
+	             arch/x86/boot/entry32.asm \
+	             arch/x86/kernel/gdt.asm \
+	             arch/x86/kernel/idt.asm \
+	             arch/x86/kernel/isr.asm \
+	             arch/x86/kernel/syscall.asm
+    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 -mno-sse -mno-sse2 -mno-mmx -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie -lgcc
+else
+    ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
+    LD_FLAGS      := -n -T arch/x86/linker.ld --gc-sections --no-warn-rwx-segments
+    RUST_TARGET   := targets/x86_64-keira-none.json
+    RUST_MODE     := release
+    RUST_LIB      := target/x86_64-keira-none/$(RUST_MODE)/libkeira_kernel.a
+    QEMU          := qemu-system-x86_64
+    ASM_SRCS      := arch/x86/boot/multiboot2_header.asm \
+	             arch/x86/boot/entry32.asm \
+	             arch/x86/boot/entry64.asm \
+	             arch/x86/kernel/gdt.asm \
+	             arch/x86/kernel/paging.asm \
+	             arch/x86/kernel/idt.asm \
+	             arch/x86/kernel/isr.asm \
+	             arch/x86/kernel/syscall.asm
+    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
+endif
 
-# Rust freestanding compilation target & output library
-RUST_TARGET   := targets/x86_64-keira-none.json
-RUST_MODE     := release
-RUST_LIB      := target/x86_64-keira-none/$(RUST_MODE)/libkeira_kernel.a
-QEMU          := qemu-system-x86_64
 QEMU_FLAGS    := -cdrom $(KERNEL_ISO) \
 	         -device ahci,id=ahci0 \
 	         -drive file=$(DISK_IMG),format=raw,id=sata0,if=none \
@@ -73,6 +96,7 @@ QEMU_FLAGS    := -cdrom $(KERNEL_ISO) \
 
 # QEMU with e1000 NIC emulation for network testing
 QEMU_NET_FLAGS := $(QEMU_FLAGS)
+
 # ANSI color codes for terminal feedback
 ifeq ($(COLOR),0)
     CLR_RESET   :=
@@ -108,14 +132,6 @@ LOG_WARN    := printf "$(CLR_YELLOW)$(CLR_BOLD)[WARN]$(CLR_RESET)  %s\n"
 LOG_ERR     := printf "$(CLR_RED)$(CLR_BOLD)[ERR]$(CLR_RESET)   %s\n"
 LOG_CHECK   := printf "  $(CLR_GREEN)$(CLR_BOLD)[OK]$(CLR_RESET)    %s\n"
 LOG_MISS    := printf "  $(CLR_RED)$(CLR_BOLD)[MISS]$(CLR_RESET)  %s\n"
-ASM_SRCS      := arch/x86/boot/multiboot2_header.asm \
-	         arch/x86/boot/entry32.asm \
-	         arch/x86/boot/entry64.asm \
-	         arch/x86/kernel/gdt.asm \
-	         arch/x86/kernel/paging.asm \
-	         arch/x86/kernel/idt.asm \
-	         arch/x86/kernel/isr.asm \
-	         arch/x86/kernel/syscall.asm
 
 ASM_OBJS      := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS      := $(ASM_OBJS)
@@ -133,6 +149,7 @@ SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
 # Driver descriptor files for filesystem images
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
                  ide.sys ahci.sys sound.sys e1000.sys
+
 .PHONY: all run debug clean rust iso dirs format lint user disk initrd \
         help info check size objdump qemu-net
 
@@ -140,19 +157,22 @@ DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
 all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image
 
 help: ## Display all available Makefile targets
-	@printf "$(CLR_BOLD)Keira Kernel Build System$(CLR_RESET)  $(CLR_CYAN)v$(VERSION)$(CLR_RESET)\n\n"
-	@printf "  $(CLR_BOLD)Usage$(CLR_RESET): make <target> [V=1] [COLOR=0] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
-	@printf "$(CLR_BOLD)  Build Targets:$(CLR_RESET)\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    $(CLR_CYAN)%-15s$(CLR_RESET) %s\n", $$1, $$2}'
-	@printf "\n$(CLR_BOLD)  Variables:$(CLR_RESET)\n"
+	@printf "\n$(CLR_BOLD)Keira Kernel Build System$(CLR_RESET)  v$(VERSION) ($(ARCH))\n\n"
+	@printf "  $(CLR_BOLD)Usage:$(CLR_RESET) make $(CLR_CYAN)<target>$(CLR_RESET) [ARCH=x86_64|i686] [V=1] [COLOR=0] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
+	@printf "  $(CLR_BOLD)Build Targets:$(CLR_RESET)\n"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    $(CLR_CYAN)%-15s$(CLR_RESET) %s\n", $$1, $$2}'
+	@printf "\n  $(CLR_BOLD)Variables:$(CLR_RESET)\n"
+	@printf "    $(CLR_CYAN)ARCH=x86_64|i686$(CLR_RESET) Target architecture (default: x86_64)\n"
 	@printf "    $(CLR_CYAN)V=1$(CLR_RESET)             Show raw commands (verbose mode)\n"
 	@printf "    $(CLR_CYAN)COLOR=0$(CLR_RESET)         Disable colored output\n"
 	@printf "    $(CLR_CYAN)DISK_SIZE=N$(CLR_RESET)     FAT16 disk size in MB (default: 32)\n"
 	@printf "    $(CLR_CYAN)QEMU_MEM=NM$(CLR_RESET)     QEMU guest memory (default: 128M)\n\n"
+
 info: ## Display build configuration and toolchain versions
 	@printf "$(CLR_BOLD)Keira Kernel Build Info$(CLR_RESET)\n\n"
 	@printf "  $(CLR_BOLD)Kernel$(CLR_RESET)\n"
 	@printf "    Version      : $(CLR_CYAN)$(VERSION)$(CLR_RESET)\n"
+	@printf "    Architecture : $(CLR_CYAN)$(ARCH)$(CLR_RESET)\n"
 	@printf "    Name         : $(CLR_CYAN)$(KERNEL_NAME)$(CLR_RESET)\n"
 	@printf "    Binary       : $(CLR_CYAN)$(KERNEL_BIN)$(CLR_RESET)\n"
 	@printf "    ISO          : $(CLR_CYAN)$(KERNEL_ISO)$(CLR_RESET)\n"
@@ -161,7 +181,7 @@ info: ## Display build configuration and toolchain versions
 	@printf "    NASM         : $(CLR_CYAN)$(shell $(ASM) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
 	@printf "    GCC          : $(CLR_CYAN)$(shell $(CC) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
 	@printf "    LD           : $(CLR_CYAN)$(shell $(LD) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
-	@printf "    Cargo        : $(CLR_CYAN)$(shell $(CARGO) --version 2>/dev/null || echo 'not found')$(CLR_RESET)\n"
+	@printf "    Cargo        : $(CLR_CYAN)$(shell $(CARGO) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
 	@printf "    Rustc        : $(CLR_CYAN)$(shell rustc --version 2>/dev/null || echo 'not found')$(CLR_RESET)\n"
 	@printf "    QEMU         : $(CLR_CYAN)$(shell $(QEMU) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n\n"
 	@printf "  $(CLR_BOLD)Source Files$(CLR_RESET)\n"
@@ -176,7 +196,7 @@ info: ## Display build configuration and toolchain versions
 
 check: ## Verify all required build dependencies are installed
 	@MISSING=0; \
-	for tool in nasm gcc ld cargo rustc grub-mkrescue xorriso qemu-system-x86_64 \
+	for tool in nasm gcc ld cargo rustc grub-mkrescue xorriso $(QEMU) \
 	            clang-format clang-tidy mkfs.fat mmd mcopy tar dd; do \
 	    if command -v $$tool >/dev/null 2>&1; then \
 	        $(LOG_CHECK) "$$tool"; \
@@ -200,10 +220,10 @@ size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
 
 objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 	$(Q)objdump -h $(KERNEL_BIN)
+
 # User-space compilation configuration
 USER_LIB_SRCS := $(shell find user/lib -type f -name "*.c")
 USER_KCC_SRCS := $(shell find user/bin/kcc -type f -name "*.c")
-USER_CC_FLAGS  := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
 
 user: build/kcc.elf ## Build user-space C compiler (kcc.elf)
 
@@ -228,45 +248,37 @@ fs-root: build/kcc.elf | dirs
 	$(Q)mkdir -p $(FS_ROOT)/users/admin
 	$(Q)mkdir -p $(FS_ROOT)/users/default
 	$(Q)mkdir -p $(FS_ROOT)/users/guest
+	$(Q)mkdir -p $(FS_ROOT)/temp
 	$(Q)mkdir -p $(FS_ROOT)/data/log
 	$(Q)mkdir -p $(FS_ROOT)/data/save
 	$(Q)mkdir -p $(FS_ROOT)/data/www
-	$(Q)mkdir -p $(FS_ROOT)/temp
+	$(Q)cp build/kcc.elf $(FS_ROOT)/system/bin/kcc.elf
 	$(Q)for cmd in $(SHELL_CMDS); do \
-	    printf '#!/system/bin\n# Keira built-in command: %s\n# Type: kernel-mode binary\n# Path: /system/bin/%s\n' "$$cmd" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd; \
+	    printf "ELF\x02\x01\x01\x00Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
+	    chmod +x $(FS_ROOT)/system/bin/$$cmd.elf; \
 	done
-	$(Q)echo "Keira Null Device Node" > $(FS_ROOT)/system/dev/null
-	$(Q)echo "Keira Zero Device Node" > $(FS_ROOT)/system/dev/zero
-	$(Q)echo "Keira Random Device Node" > $(FS_ROOT)/system/dev/random
-	$(Q)echo "Keira TTY Console Node" > $(FS_ROOT)/system/dev/tty
-	$(Q)echo "Keira SATA Storage Block Device Node (Port 0)" > $(FS_ROOT)/system/dev/sda0
-	$(Q)echo "Keira IDE Storage Block Device Node (Primary Master)" > $(FS_ROOT)/system/dev/hda
-	$(Q)echo "Keira Serial Port Driver (COM1, 115200bps, 8N1)" > $(FS_ROOT)/system/drivers/serial.sys
-	$(Q)echo "Keira VGA Text & Framebuffer Console Driver (color support)" > $(FS_ROOT)/system/drivers/vga.sys
-	$(Q)echo "Keira PS/2 Keyboard Driver (US QWERTY layout)" > $(FS_ROOT)/system/drivers/keyboard.sys
-	$(Q)echo "Keira PS/2 Mouse Driver (basic coordinate tracking)" > $(FS_ROOT)/system/drivers/mouse.sys
-	$(Q)echo "Keira Real-Time Clock Driver (CMOS direct port communication)" > $(FS_ROOT)/system/drivers/rtc.sys
-	$(Q)echo "Keira IDE Storage Controller Driver (LBA28 read/write)" > $(FS_ROOT)/system/drivers/ide.sys
-	$(Q)echo "Keira AHCI SATA Storage Controller Driver (DMA read/write)" > $(FS_ROOT)/system/drivers/ahci.sys
-	$(Q)echo "Keira PC Speaker Sound Subsystem Driver (PIT Channel 2)" > $(FS_ROOT)/system/drivers/sound.sys
-	$(Q)echo "Keira Intel e1000 Network Interface Controller Driver (PCI DMA)" > $(FS_ROOT)/system/drivers/e1000.sys
-	$(Q)cp user/include/*.h $(FS_ROOT)/system/include/
-	$(Q)cp user/include/sys/*.h $(FS_ROOT)/system/include/sys/ 2>/dev/null || true
-	$(Q)cp build/kcc.elf $(FS_ROOT)/apps/bin/kcc.elf
-	$(Q)printf '/* Keira Userland C Application */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Hello from Keira userland application!\\n");\n}\n' > $(FS_ROOT)/apps/src/hello.c
-	$(Q)printf '/* Simple Arithmetic & Bitwise Calculator */\n#include <stdio.h>\n\nvoid main(void) {\n    int a = 42, b = 13;\n    int sum = a + b;\n    int prod = a * b;\n    int mod = a %% b;\n    int bit = (a ^ b) & 255;\n    printf("KCC Calculator Output: Complete\\n");\n}\n' > $(FS_ROOT)/apps/src/calc.c
-	$(Q)printf '/* System Information Diagnostic Utility */\n#include <stdio.h>\n#include <syscall.h>\n\nvoid main(void) {\n    printf("Keira Kernel System Information\\n");\n    printf("OS: Keira Kernel $(VERSION)\\n");\n    printf("Arch: x86_64 Long Mode (Ring 3 Userland)\\n");\n}\n' > $(FS_ROOT)/apps/src/sysinfo.c
-	$(Q)printf "boot_mode=kernel\nconsole=vga\ncursor=block\n" > $(FS_ROOT)/config/boot/boot.cfg
-	$(Q)printf "keira\n" > $(FS_ROOT)/config/sys/hostname.cfg
-	$(Q)printf "$(VERSION)\n" > $(FS_ROOT)/config/sys/version.cfg
-	$(Q)printf "dhcp=1\nip=10.0.2.15\ngateway=10.0.2.2\n" > $(FS_ROOT)/config/sys/network.cfg
-	$(Q)printf "admin:keira\n" > $(FS_ROOT)/config/sys/passwd
-	$(Q)printf "# Keira Service Configuration\nname=httpd\ndescription=Native Micro Web & REST API Server\nenabled=1\nport=80\nauto_restart=1\n" > $(FS_ROOT)/config/sys/httpd.conf
-	$(Q)printf "# Keira Service Configuration\nname=syncd\ndescription=FAT16 Auto-Sync & Cache Flush Daemon\nenabled=1\ninterval=15\nauto_restart=1\n" > $(FS_ROOT)/config/sys/syncd.conf
-	$(Q)printf "# Keira Service Configuration\nname=syslogd\ndescription=Kernel Event & Audit Logger Service\nenabled=1\ninterval=5\nauto_restart=1\n" > $(FS_ROOT)/config/sys/syslogd.conf
-	$(Q)printf "# Keira Service Configuration\nname=watchdogd\ndescription=Memory & Task Health Watchdog\nenabled=0\ninterval=10\nauto_restart=1\n" > $(FS_ROOT)/config/sys/watchdogd.conf
+	$(Q)for drv in $(DRIVER_FILES); do \
+	    printf "KEIRA_DRIVER\x01\x00[Driver: %s]\nStatus=Active\nType=KernelSubsystem\n" "$$drv" > $(FS_ROOT)/system/drivers/$$drv; \
+	done
+	$(Q)printf "console\nnull\nzero\nrandom\nurandom\nptmx\ntty\nfb0\nsda\nsda1\n" > $(FS_ROOT)/system/dev/devices.list
+	$(Q)cp user/include/stdio.h $(FS_ROOT)/system/include/stdio.h
+	$(Q)cp user/include/stdlib.h $(FS_ROOT)/system/include/stdlib.h
+	$(Q)cp user/include/string.h $(FS_ROOT)/system/include/string.h
+	$(Q)cp user/include/syscall.h $(FS_ROOT)/system/include/syscall.h
+	$(Q)cp user/include/sys/types.h $(FS_ROOT)/system/include/sys/types.h
+	$(Q)cp user/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
+	$(Q)cp user/bin/kcc/main.c $(FS_ROOT)/apps/src/kcc_main.c
+	$(Q)cp user/bin/kcc/lexer.c $(FS_ROOT)/apps/src/lexer.c
+	$(Q)cp user/bin/kcc/parser.c $(FS_ROOT)/apps/src/parser.c
+	$(Q)cp user/bin/kcc/codegen.c $(FS_ROOT)/apps/src/codegen.c
+	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
+	$(Q)printf "HOSTNAME=keira\nTIMEZONE=UTC\nKEYMAP=us\nINIT_RUNLEVEL=3\n" > $(FS_ROOT)/config/sys/os-release
+	$(Q)printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > $(FS_ROOT)/config/sys/resolv.conf
+	$(Q)printf "127.0.0.1\tlocalhost\n127.0.1.1\tkeira\n" > $(FS_ROOT)/config/sys/hosts
+	$(Q)printf "admin:x:0:0:System Administrator:/users/admin:/system/bin/shell\ndefault:x:1000:1000:Default User:/users/default:/system/bin/shell\nguest:x:1001:1001:Guest Account:/users/guest:/system/bin/shell\n" > $(FS_ROOT)/config/sys/passwd
+	$(Q)printf "admin:x:0:admin\ndefault:x:1000:default\nguest:x:1001:guest\n" > $(FS_ROOT)/config/sys/group
+	$(Q)printf "# Keira System Services Configuration\n[httpd]\nenabled=true\nport=80\nroot=/data/www\n\n[syslogd]\nenabled=true\nfile=/data/log/syslog.log\n\n[syncd]\nenabled=true\ninterval=30\n\n[watchdogd]\nenabled=true\ntimeout=60\n" > $(FS_ROOT)/config/sys/services.conf
 	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/admin\nexport USER=admin\n" > $(FS_ROOT)/users/admin/.profile
-	$(Q)printf "Welcome to Keira Kernel!\nRun 'help' for available shell commands.\nUse 'run /apps/bin/kcc.elf' to compile C source code.\n" > $(FS_ROOT)/users/admin/notes.txt
 	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default\n" > $(FS_ROOT)/users/default/.profile
 	$(Q)printf "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest\n" > $(FS_ROOT)/users/guest/.profile
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n#include <stdio.h>\n#include <syscall.h>\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
@@ -286,7 +298,6 @@ $(DISK_IMG): fs-root
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure..."
 	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save ::/data/www 2>/dev/null || true
-
 	@$(LOG_DISK) "Populating disk image with system files..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \
@@ -295,7 +306,7 @@ $(DISK_IMG): fs-root
 
 initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
 
-$(BUILD_DIR)/initrd.tar: fs-root
+$(BUILD_DIR)/initrd.tar: fs-root | dirs
 	@$(LOG_INFO) "Building RAM Disk (Initrd)..."
 	$(Q)cd $(FS_ROOT) && tar -cf ../initrd.tar *
 	@$(LOG_DONE) "$(BUILD_DIR)/initrd.tar ready"
@@ -317,15 +328,16 @@ $(KERNEL_ISO): $(KERNEL_BIN) $(BUILD_DIR)/initrd.tar | dirs
 	$(Q)echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
 	$(Q)grub-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
 	@$(LOG_DONE) "$(KERNEL_ISO) ready"
-# Link final kernel ELF64 binary executable
-$(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) arch/x86/linker.ld FORCE | dirs
-	@$(LOG_LD) "Linking kernel..."
+
+# Link final kernel ELF binary executable
+$(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) FORCE | dirs
+	@$(LOG_LD) "Linking kernel ($(ARCH))..."
 	$(Q)$(LD) $(LD_FLAGS) -o $(KERNEL_BIN) $(ALL_OBJS) $(RUST_LIB)
 	@$(LOG_DONE) "$(KERNEL_BIN) ready"
 
 # Compile freestanding Rust kernel module
 rust: | dirs ## Build Rust kernel static library
-	@$(LOG_CARGO) "Building Rust kernel ($(RUST_MODE))...."
+	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
 $(RUST_LIB): rust FORCE
@@ -334,7 +346,7 @@ FORCE:
 
 # Compile Assembly source files (.asm -> .o)
 $(OBJ_DIR)/%.asm.o: %.asm | dirs
-	@$(LOG_ASM) "$<"
+	@$(LOG_ASM) "$< ($(ARCH))"
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
@@ -343,26 +355,26 @@ dirs:
 	$(Q)mkdir -p $(BUILD_DIR) $(OBJ_DIR)
 
 run: all ## Launch Keira in QEMU virtual machine
-	@$(LOG_INFO) "Launching Keira in QEMU..."
+	@$(LOG_INFO) "Launching Keira in QEMU ($(ARCH))..."
 	$(Q)$(QEMU) $(QEMU_FLAGS)
 
 debug: all ## Launch Keira in QEMU debug mode (GDB on :1234)
 	@$(LOG_INFO) "Launching Keira (debug mode, waiting for GDB on :1234)..."
-	$(Q)$(QEMU) $(QEMU_FLAGS) -S -s
+	$(Q)$(QEMU) $(QEMU_FLAGS) -s -S
 
 qemu-net: all ## Launch Keira in QEMU with e1000 NIC emulation
-	@$(LOG_INFO) "Launching Keira with e1000 network (QEMU)..."
+	@$(LOG_INFO) "Launching Keira in QEMU with e1000 NIC..."
 	$(Q)$(QEMU) $(QEMU_NET_FLAGS)
 
 test: all ## Run automated headless QEMU smoke test
-	@$(LOG_INFO) "Running headless QEMU automated test..."
-	$(Q)timeout 5s $(QEMU) -cdrom $(KERNEL_ISO) -drive file=$(DISK_IMG),format=raw,if=ide -m 128M -serial stdio -display none -device isa-debug-exit,iobase=0xf4,iosize=0x04 >/dev/null 2>&1 || true
+	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
+	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > build/test.log 2>&1 || true
 	@$(LOG_DONE) "Automated smoke test complete"
 
 clean: ## Remove build directory and compiled artifacts
-	@$(LOG_INFO) "Removing build artifacts..."
-	$(Q)rm -rf $(BUILD_DIR) target/
-	$(Q)$(CARGO) clean 2>/dev/null || true
+	@$(LOG_INFO) "Cleaning build artifacts..."
+	$(Q)rm -rf $(BUILD_DIR)
+	$(Q)$(CARGO) clean
 	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"

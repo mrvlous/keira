@@ -47,7 +47,7 @@ pub fn sti() {
 
 /// Invalidate Translation Lookaside Buffer (TLB) entry for a specific virtual address.
 #[inline(always)]
-pub fn invlpg(vaddr: u64) {
+pub fn invlpg(vaddr: usize) {
     #[cfg(not(target_os = "none"))]
     {
         let _ = vaddr;

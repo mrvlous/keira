@@ -28,9 +28,12 @@ pub const EINVAL: i64 = 22;
 pub const ENOSYS: i64 = 38;
 
 pub const USER_MIN_ADDR: u64 = 0x10000;
+#[cfg(target_arch = "x86_64")]
 pub const USER_MAX_ADDR: u64 = 0x0000_7FFF_FFFF_FFFF;
+#[cfg(target_arch = "x86")]
+pub const USER_MAX_ADDR: u64 = 0xBFFF_FFFF; // 3GB user virtual address space
 
-/// Convert POSIX errno to 64-bit unsigned syscall return value (-errno as u64).
+/// Convert POSIX errno to unsigned syscall return value (-errno as u64).
 #[inline]
 pub fn errno_to_ret(err: i64) -> u64 {
     (-err) as u64

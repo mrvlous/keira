@@ -10,7 +10,7 @@
 #![allow(unused_variables, unused_unsafe)]
 
 //!
-//! Query bare-metal x86_64 CPUID instruction, vendor string, and hardware features.
+//! Implementation of the 'cpu' shell command.
 
 use crate::args::CliArgs;
 use keira_io::vga;
@@ -22,7 +22,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         unsafe {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: cpu [-f] [-r] [-s]\n\n");
-            vga::print_str("Description:\n  Query x86_64 processor CPUID registers and hardware feature flags.\n\n");
+            vga::print_str(
+                "Description:\n  Query processor CPUID registers and hardware feature flags.\n\n",
+            );
             vga::print_str("Options:\n");
             vga::print_str(
                 "  -f, --features Display comprehensive instruction set feature flags\n",
@@ -36,20 +38,21 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        let mut ebx: u32;
-        let mut edx: u32;
-        let mut ecx: u32;
-        core::arch::asm!(
-            "push rbx",
-            "cpuid",
-            "mov {0:e}, ebx",
-            "pop rbx",
-            out(reg) ebx,
-            out("edx") edx,
-            out("ecx") ecx,
-            inout("eax") 0u32 => _,
-            options(nomem, preserves_flags)
-        );
+        #[cfg(target_arch = "x86_64")]
+        let cpuid_res = core::arch::x86_64::__cpuid(0);
+        #[cfg(target_arch = "x86")]
+        let cpuid_res = core::arch::x86::__cpuid(0);
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        let cpuid_res = core::arch::x86_64::CpuidResult {
+            eax: 0,
+            ebx: 0,
+            ecx: 0,
+            edx: 0,
+        };
+
+        let ebx = cpuid_res.ebx;
+        let edx = cpuid_res.edx;
+        let ecx = cpuid_res.ecx;
 
         let mut vendor = [0u8; 12];
         vendor[0..4].copy_from_slice(&ebx.to_le_bytes());
@@ -62,7 +65,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("CPU: ");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             vga::print_str(vendor_str);
+            #[cfg(target_arch = "x86_64")]
             vga::print_str(" (x86_64 Long Mode)\n");
+            #[cfg(target_arch = "x86")]
+            vga::print_str(" (i686 Protected Mode)\n");
+            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+            vga::print_str("\n");
             return;
         }
 
@@ -81,16 +89,29 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("x86_64 Processor Hardware CPUID Info:\n");
+        vga::print_str("Processor & Architecture Telemetry:\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("  Vendor String : ");
         vga::print_str(vendor_str);
+        #[cfg(target_arch = "x86_64")]
         vga::print_str("\n  Architecture  : x86_64 Long Mode (64-bit)\n");
+        #[cfg(target_arch = "x86")]
+        vga::print_str("\n  Architecture  : i686 Protected Mode (32-bit)\n");
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        vga::print_str("\n  Architecture  : Unknown\n");
 
         if args.has_flag('f', "features") {
+            #[cfg(target_arch = "x86_64")]
             vga::print_str("  Feature Flags : SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, AES-NI, VMX/SVM, NX-Bit, KASLR, FSGSBASE, RDRAND\n");
+            #[cfg(target_arch = "x86")]
+            vga::print_str(
+                "  Feature Flags : MMX, SSE, SSE2, PAE, PSE, TSC, MSR, CX8, APIC, PGE, CMOV, PAT\n",
+            );
         } else {
+            #[cfg(target_arch = "x86_64")]
             vga::print_str("  Feature Flags : SSE2, AVX2, VMX/SVM, AES-NI, NX-Bit, KASLR\n");
+            #[cfg(target_arch = "x86")]
+            vga::print_str("  Feature Flags : MMX, SSE, SSE2, PAE, APIC, CMOV\n");
         }
     }
 }

@@ -20,8 +20,10 @@ pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'
             Ok(buf.len())
         }
         "random" => {
-            let mut tsc: u64;
-            core::arch::asm!("rdtsc", out("rax") tsc, out("rdx") _);
+            let lo: u32;
+            let hi: u32;
+            core::arch::asm!("rdtsc", out("eax") lo, out("edx") hi);
+            let tsc = ((hi as u64) << 32) | (lo as u64);
             for (idx, slot) in buf.iter_mut().enumerate() {
                 let shift = (idx % 8) * 8;
                 let byte = ((tsc >> shift) ^ (idx as u64 * 0x9E37_79B9)) as u8;

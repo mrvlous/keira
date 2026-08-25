@@ -1,7 +1,7 @@
 Keira Kernel
 ============
 
-Keira is a freestanding, 100% pure Rust x86_64 kernel in Ring 0. It
+Keira is a freestanding, 100% pure Rust operating system kernel in Ring 0 supporting both 64-bit (x86_64) and pure 32-bit (i686) bare-metal architectures. It
 manages system hardware resources, coordinates modular Rust device drivers, and
 provides a preemptive priority multitasking scheduler, 62 system calls,
 AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller, LKM, HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR, Futex Threading, cgroups, EXT4 Driver, KVM Hypervisor, TPM 2.0, BPF Engine, DMA Allocator, Syslog Buffer, MAC Security, POSIX Timers, Pipe Splice, ACPI Power, PMU Counters, EventFD, Seccomp BPF, Swap Space, Epoll, Message Queues, POSIX Signals & Job Control, USB Mass Storage & HID Subsystem, Hardware RAID & LVM, POSIX Shared Memory IPC, Stateful Netfilter IPv4 Firewall Engine,
@@ -13,7 +13,8 @@ Quick Start
 
 * Get the latest code: https://github.com/mrvlous/keira
 * Setup the workspace: See docs/contributing/setup.md
-* Build & run the kernel: `make run`
+* Build & run 64-bit kernel: `make run`
+* Build & run 32-bit kernel: `make ARCH=i686 run`
 * Automated test suite: `make test`
 
 Architecture & Documentation Map

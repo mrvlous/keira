@@ -8,9 +8,76 @@
 ; the Free Software Foundation; version 2 of the License.
 
 ; Low-Level System Call Trampolines and User Mode Privilege Transitions
-;
-; Initializes system call Model-Specific Registers (IA32_STAR, IA32_LSTAR, IA32_SFMASK),
-; provides high-speed `syscall` entry stubs, and manages Ring 0 to Ring 3 privilege switches.
+
+%ifdef TARGET_ARCH_X86
+
+global jump_to_user
+global user_rsp_temp
+global kernel_stack_temp
+
+extern syscall_dispatcher
+
+section .data
+align 4
+user_rsp_temp:     dd 0
+kernel_stack_temp: dd 0
+
+section .text
+bits 32
+
+; jump_to_user - Lower execution privilege level from Ring 0 to Ring 3 (32-bit)
+; [esp+4] = entry_point (EIP)
+; [esp+8] = user_stack (ESP)
+jump_to_user:
+    push ebp
+    push ebx
+    push esi
+    push edi
+
+    mov [kernel_stack_temp], esp
+    cli
+
+    mov edx, [esp + 20]   ; entry_point
+    mov ecx, [esp + 24]   ; user_stack
+
+    ; Set User Data Segment (0x20 | 3 = 0x23)
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Push iretd frame: SS, ESP, EFLAGS, CS, EIP
+    push dword 0x23       ; User SS
+    push ecx              ; User ESP
+    push dword 0x202      ; EFLAGS (IF enabled)
+    push dword 0x1B       ; User CS (0x18 | 3 = 0x1B)
+    push edx              ; User EIP
+
+    xor eax, eax
+    xor ebx, ebx
+    xor ecx, ecx
+    xor edx, edx
+    xor esi, esi
+    xor edi, edi
+    xor ebp, ebp
+
+    iretd
+
+global abort_user_mode
+abort_user_mode:
+    mov esp, [kernel_stack_temp]
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    pop edi
+    pop esi
+    pop ebx
+    pop ebp
+    ret
+
+%else
 
 global init_syscall_msrs
 global syscall_handler_asm
@@ -163,3 +230,5 @@ jump_to_user:
     xor r15, r15
 
     iretq
+
+%endif

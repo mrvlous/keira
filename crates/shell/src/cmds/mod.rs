@@ -69,7 +69,6 @@ pub mod search;
 pub mod seccomp;
 pub mod service;
 pub mod stop;
-
 pub mod swap;
 pub mod sync;
 pub mod syslog;
