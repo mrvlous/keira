@@ -37,8 +37,8 @@ jump_to_user:
     mov [kernel_stack_temp], esp
     cli
 
-    mov edx, [esp + 20]   ; entry_point
-    mov ecx, [esp + 24]   ; user_stack
+    mov edx, [esp + 20]   ; entry_point (low 32-bit of u64)
+    mov ecx, [esp + 28]   ; user_stack (low 32-bit of u64)
 
     ; Set User Data Segment (0x20 | 3 = 0x23)
     mov ax, 0x23
@@ -64,6 +64,55 @@ jump_to_user:
 
     iretd
 
+global isr128
+isr128:
+    push ebp
+    push edi
+    push esi
+    push edx
+    push ecx
+    push ebx
+
+    push eax
+
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    pop eax
+
+    push dword 0
+    push edx
+    push dword 0
+    push ecx
+    push dword 0
+    push ebx
+    push dword 0
+    push eax
+
+    call syscall_dispatcher
+    add esp, 32
+
+    cmp eax, 0xDEADBEEF
+    je .exit_user_mode
+
+    mov dx, 0x23
+    mov ds, dx
+    mov es, dx
+    mov fs, dx
+    mov gs, dx
+
+    pop ebx
+    pop ecx
+    pop edx
+    pop esi
+    pop edi
+    pop ebp
+    iretd
+
+.exit_user_mode:
 global abort_user_mode
 abort_user_mode:
     mov esp, [kernel_stack_temp]

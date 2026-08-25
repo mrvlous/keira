@@ -13,6 +13,12 @@
 #include "lexer.h"
 #include "symbols.h"
 
+#if defined(__i386__) || defined(__i686__)
+#define REX_W()
+#else
+#define REX_W() emit_u8(0x48)
+#endif
+
 /* Byte emission primitives */
 void emit_u8(unsigned char val) {
     if (code_idx >= MAX_CODE_SIZE) {
@@ -41,34 +47,40 @@ void emit_u64(unsigned long val) {
 
 /* Register & Immediate Operations */
 void emit_load_imm(long val) {
+#if defined(__i386__) || defined(__i686__)
+    /* mov eax, imm32 */
+    emit_u8(0xb8);
+    emit_u32((unsigned int)val);
+#else
     /* mov rax, imm64 */
     emit_u8(0x48);
     emit_u8(0xb8);
     emit_u64((unsigned long)val);
+#endif
 }
 
 void emit_push_rax(void) {
-    emit_u8(0x50); /* push rax */
+    emit_u8(0x50); /* push rax / eax */
 }
 
 void emit_pop_rax(void) {
-    emit_u8(0x58); /* pop rax */
+    emit_u8(0x58); /* pop rax / eax */
 }
 
 void emit_pop_rcx(void) {
-    emit_u8(0x59); /* pop rcx */
+    emit_u8(0x59); /* pop rcx / ecx */
 }
 
 void emit_pop_rdx(void) {
-    emit_u8(0x5a); /* pop rdx */
+    emit_u8(0x5a); /* pop rdx / edx */
 }
 
 void emit_pop_rsi(void) {
-    emit_u8(0x5e); /* pop rsi */
+    emit_u8(0x5e); /* pop rsi / esi */
 }
 
 void emit_pop_rdi(void) {
-    emit_u8(0x5f); /* pop rdi */
+    emit_u8(0x5f); /* pop rdi / edi */
 }
 
 void emit_pop_r8(void) {
@@ -83,167 +95,167 @@ void emit_pop_r9(void) {
 
 /* Binary Arithmetic (rcx = LHS, rax = RHS) */
 void emit_add(void) {
-    /* add rax, rcx */
-    emit_u8(0x48);
+    /* add rax/eax, rcx/ecx */
+    REX_W();
     emit_u8(0x01);
     emit_u8(0xc8);
 }
 
 void emit_sub(void) {
-    /* sub rcx, rax; mov rax, rcx */
-    emit_u8(0x48);
+    /* sub rcx/ecx, rax/eax; mov rax/eax, rcx/ecx */
+    REX_W();
     emit_u8(0x29);
     emit_u8(0xc1);
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x89);
     emit_u8(0xc8);
 }
 
 void emit_imul(void) {
-    /* imul rax, rcx */
-    emit_u8(0x48);
+    /* imul rax/eax, rcx/ecx */
+    REX_W();
     emit_u8(0x0f);
     emit_u8(0xaf);
     emit_u8(0xc1);
 }
 
 void emit_idiv(void) {
-    /* xchg rax, rcx; cqo; idiv rcx (rax = quotient) */
-    emit_u8(0x48);
-    emit_u8(0x91); /* xchg rax, rcx */
-    emit_u8(0x48);
-    emit_u8(0x99); /* cqo */
-    emit_u8(0x48);
+    /* xchg rax, rcx; cqo/cdq; idiv rcx */
+    REX_W();
+    emit_u8(0x91); /* xchg rax/eax, rcx/ecx */
+    REX_W();
+    emit_u8(0x99); /* cqo / cdq */
+    REX_W();
     emit_u8(0xf7);
-    emit_u8(0xf9); /* idiv rcx */
+    emit_u8(0xf9); /* idiv rcx/ecx */
 }
 
 void emit_imod(void) {
-    /* xchg rax, rcx; cqo; idiv rcx; mov rax, rdx (rax = remainder) */
-    emit_u8(0x48);
-    emit_u8(0x91); /* xchg rax, rcx */
-    emit_u8(0x48);
-    emit_u8(0x99); /* cqo */
-    emit_u8(0x48);
+    /* xchg rax, rcx; cqo/cdq; idiv rcx; mov rax, rdx */
+    REX_W();
+    emit_u8(0x91); /* xchg rax/eax, rcx/ecx */
+    REX_W();
+    emit_u8(0x99); /* cqo / cdq */
+    REX_W();
     emit_u8(0xf7);
-    emit_u8(0xf9); /* idiv rcx */
-    emit_u8(0x48);
+    emit_u8(0xf9); /* idiv rcx/ecx */
+    REX_W();
     emit_u8(0x89);
-    emit_u8(0xd0); /* mov rax, rdx */
+    emit_u8(0xd0); /* mov rax/eax, rdx/edx */
 }
 
 /* Bitwise Operations (rcx = LHS, rax = RHS) */
 void emit_bit_and(void) {
-    /* and rax, rcx */
-    emit_u8(0x48);
+    /* and rax/eax, rcx/ecx */
+    REX_W();
     emit_u8(0x21);
     emit_u8(0xc8);
 }
 
 void emit_bit_or(void) {
-    /* or rax, rcx */
-    emit_u8(0x48);
+    /* or rax/eax, rcx/ecx */
+    REX_W();
     emit_u8(0x09);
     emit_u8(0xc8);
 }
 
 void emit_bit_xor(void) {
-    /* xor rax, rcx */
-    emit_u8(0x48);
+    /* xor rax/eax, rcx/ecx */
+    REX_W();
     emit_u8(0x31);
     emit_u8(0xc8);
 }
 
 void emit_bit_not(void) {
-    /* not rax */
-    emit_u8(0x48);
+    /* not rax/eax */
+    REX_W();
     emit_u8(0xf7);
     emit_u8(0xd0);
 }
 
 void emit_shl(void) {
-    /* xchg rax, rcx; shl rax, cl */
-    emit_u8(0x48);
-    emit_u8(0x91); /* xchg rax, rcx */
-    emit_u8(0x48);
+    /* xchg rax/eax, rcx/ecx; shl rax/eax, cl */
+    REX_W();
+    emit_u8(0x91); /* xchg */
+    REX_W();
     emit_u8(0xd3);
-    emit_u8(0xe0); /* shl rax, cl */
+    emit_u8(0xe0); /* shl */
 }
 
 void emit_shr(void) {
-    /* xchg rax, rcx; sar rax, cl */
-    emit_u8(0x48);
-    emit_u8(0x91); /* xchg rax, rcx */
-    emit_u8(0x48);
+    /* xchg rax/eax, rcx/ecx; sar rax/eax, cl */
+    REX_W();
+    emit_u8(0x91); /* xchg */
+    REX_W();
     emit_u8(0xd3);
-    emit_u8(0xf8); /* sar rax, cl */
+    emit_u8(0xf8); /* sar */
 }
 
 /* Logical & Unary Operations */
 void emit_log_and(void) {
     /* test rcx, rcx; setne cl; test rax, rax; setne al; and al, cl; movzx rax, al */
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x85);
-    emit_u8(0xc9); /* test rcx, rcx */
+    emit_u8(0xc9); /* test rcx/ecx, rcx/ecx */
     emit_u8(0x0f);
     emit_u8(0x95);
     emit_u8(0xc1); /* setne cl */
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x85);
-    emit_u8(0xc0); /* test rax, rax */
+    emit_u8(0xc0); /* test rax/eax, rax/eax */
     emit_u8(0x0f);
     emit_u8(0x95);
     emit_u8(0xc0); /* setne al */
     emit_u8(0x20);
     emit_u8(0xc8); /* and al, cl */
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x0f);
     emit_u8(0xb6);
-    emit_u8(0xc0); /* movzx rax, al */
+    emit_u8(0xc0); /* movzx rax/eax, al */
 }
 
 void emit_log_or(void) {
     /* or rcx, rax; test rcx, rcx; setne al; movzx rax, al */
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x09);
-    emit_u8(0xc1); /* or rcx, rax */
-    emit_u8(0x48);
+    emit_u8(0xc1); /* or rcx/ecx, rax/eax */
+    REX_W();
     emit_u8(0x85);
-    emit_u8(0xc9); /* test rcx, rcx */
+    emit_u8(0xc9); /* test rcx/ecx, rcx/ecx */
     emit_u8(0x0f);
     emit_u8(0x95);
     emit_u8(0xc0); /* setne al */
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x0f);
     emit_u8(0xb6);
-    emit_u8(0xc0); /* movzx rax, al */
+    emit_u8(0xc0); /* movzx rax/eax, al */
 }
 
 void emit_log_not(void) {
     /* test rax, rax; sete al; movzx rax, al */
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x85);
     emit_u8(0xc0);
     emit_u8(0x0f);
     emit_u8(0x94);
     emit_u8(0xc0);
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x0f);
     emit_u8(0xb6);
     emit_u8(0xc0);
 }
 
 void emit_neg(void) {
-    /* neg rax */
-    emit_u8(0x48);
+    /* neg rax/eax */
+    REX_W();
     emit_u8(0xf7);
     emit_u8(0xd8);
 }
 
 /* Comparison and Relational Sets (rcx = LHS, rax = RHS) */
 void emit_cmp_set(int op_tok) {
-    /* cmp rcx, rax */
-    emit_u8(0x48);
+    /* cmp rcx/ecx, rax/eax */
+    REX_W();
     emit_u8(0x39);
     emit_u8(0xc1);
 
@@ -281,17 +293,17 @@ void emit_cmp_set(int op_tok) {
     default:
         break;
     }
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x0f);
     emit_u8(0xb6);
-    emit_u8(0xc0); /* movzx rax, al */
+    emit_u8(0xc0); /* movzx rax/eax, al */
 }
 
 /* Local Variables & Stack Frame Handling */
 void emit_load_local(int offset, int size) {
     if (size == 1) {
-        /* movzx rax, byte ptr [rbp + offset] */
-        emit_u8(0x48);
+        /* movzx rax/eax, byte ptr [rbp/ebp + offset] */
+        REX_W();
         emit_u8(0x0f);
         emit_u8(0xb6);
         if (offset >= -128 && offset <= 127) {
@@ -302,8 +314,8 @@ void emit_load_local(int offset, int size) {
             emit_u32((unsigned int)offset);
         }
     } else {
-        /* mov rax, qword ptr [rbp + offset] */
-        emit_u8(0x48);
+        /* mov rax/eax, [rbp/ebp + offset] */
+        REX_W();
         emit_u8(0x8b);
         if (offset >= -128 && offset <= 127) {
             emit_u8(0x45);
@@ -317,7 +329,7 @@ void emit_load_local(int offset, int size) {
 
 void emit_store_local(int offset, int size) {
     if (size == 1) {
-        /* mov byte ptr [rbp + offset], al */
+        /* mov byte ptr [rbp/ebp + offset], al */
         emit_u8(0x88);
         if (offset >= -128 && offset <= 127) {
             emit_u8(0x45);
@@ -327,8 +339,8 @@ void emit_store_local(int offset, int size) {
             emit_u32((unsigned int)offset);
         }
     } else {
-        /* mov qword ptr [rbp + offset], rax */
-        emit_u8(0x48);
+        /* mov [rbp/ebp + offset], rax/eax */
+        REX_W();
         emit_u8(0x89);
         if (offset >= -128 && offset <= 127) {
             emit_u8(0x45);
@@ -341,8 +353,8 @@ void emit_store_local(int offset, int size) {
 }
 
 void emit_addr_local(int offset) {
-    /* lea rax, [rbp + offset] */
-    emit_u8(0x48);
+    /* lea rax/eax, [rbp/ebp + offset] */
+    REX_W();
     emit_u8(0x8d);
     if (offset >= -128 && offset <= 127) {
         emit_u8(0x45);
@@ -359,13 +371,13 @@ void emit_inc_local(int offset, int is_post, int is_dec) {
         emit_push_rax(); /* save original value for expression result */
     }
     if (is_dec) {
-        emit_u8(0x48);
+        REX_W();
         emit_u8(0xff);
-        emit_u8(0xc8); /* dec rax */
+        emit_u8(0xc8); /* dec rax/eax */
     } else {
-        emit_u8(0x48);
+        REX_W();
         emit_u8(0xff);
-        emit_u8(0xc0); /* inc rax */
+        emit_u8(0xc0); /* inc rax/eax */
     }
     emit_store_local(offset, 8);
     if (is_post) {
@@ -375,11 +387,16 @@ void emit_inc_local(int offset, int is_post, int is_dec) {
 
 /* Global Variables & Data Segment Addressing */
 void emit_addr_global(int offset) {
-    /* movabs rax, (dummy_target) with patch tracking */
+#if defined(__i386__) || defined(__i686__)
+    emit_u8(0xb8);
+    int patch_pos = code_idx;
+    emit_u32((unsigned int)offset);
+#else
     emit_u8(0x48);
     emit_u8(0xb8);
     int patch_pos = code_idx;
     emit_u64((unsigned long)offset);
+#endif
 
     if (val_patch_count < MAX_VAL_PATCHES) {
         val_patch_addresses[val_patch_count] = patch_pos;
@@ -394,42 +411,42 @@ void emit_load_global(int offset, int size) {
 }
 
 void emit_store_global(int offset, int size) {
-    /* rax has value to store */
+    /* rax/eax has value to store */
     emit_push_rax();
     emit_addr_global(offset);
-    /* rax = address, top of stack = value */
-    emit_u8(0x48);
+    /* rax/eax = address, top of stack = value */
+    REX_W();
     emit_u8(0x89);
-    emit_u8(0xc2);  /* mov rdx, rax (address) */
-    emit_pop_rax(); /* rax = value */
+    emit_u8(0xc2);  /* mov rdx/edx, rax/eax (address) */
+    emit_pop_rax(); /* rax/eax = value */
     emit_store_deref(size);
 }
 
 /* Pointer Dereferencing */
 void emit_deref(int size) {
     if (size == 1) {
-        /* movzx rax, byte ptr [rax] */
-        emit_u8(0x48);
+        /* movzx rax/eax, byte ptr [rax/eax] */
+        REX_W();
         emit_u8(0x0f);
         emit_u8(0xb6);
         emit_u8(0x00);
     } else {
-        /* mov rax, qword ptr [rax] */
-        emit_u8(0x48);
+        /* mov rax/eax, [rax/eax] */
+        REX_W();
         emit_u8(0x8b);
         emit_u8(0x00);
     }
 }
 
 void emit_store_deref(int size) {
-    /* rdx has pointer address, rax has value to write */
+    /* rdx/edx has pointer address, rax/eax has value to write */
     if (size == 1) {
-        /* mov byte ptr [rdx], al */
+        /* mov byte ptr [rdx/edx], al */
         emit_u8(0x88);
         emit_u8(0x02);
     } else {
-        /* mov qword ptr [rdx], rax */
-        emit_u8(0x48);
+        /* mov [rdx/edx], rax/eax */
+        REX_W();
         emit_u8(0x89);
         emit_u8(0x02);
     }
@@ -437,25 +454,36 @@ void emit_store_deref(int size) {
 
 /* Function Prologue, Epilogue & Calling Conventions */
 void emit_func_prologue(void) {
-    /* push rbp; mov rbp, rsp; sub rsp, 1024 */
+    /* push rbp/ebp; mov rbp/ebp, rsp/esp; sub rsp/esp, 1024 */
     emit_u8(0x55);
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x89);
     emit_u8(0xe5);
-    emit_u8(0x48);
+    REX_W();
     emit_u8(0x81);
     emit_u8(0xec);
     emit_u32(1024);
 }
 
 void emit_func_epilogue(int is_main) {
-    /* mov rsp, rbp; pop rbp */
-    emit_u8(0x48);
+    /* mov rsp/esp, rbp/ebp; pop rbp/ebp */
+    REX_W();
     emit_u8(0x89);
     emit_u8(0xec);
     emit_u8(0x5d);
 
     if (is_main) {
+#if defined(__i386__) || defined(__i686__)
+        /* sys_exit(eax): mov ebx, eax; mov eax, 2; int $0x80; jmp $ */
+        emit_u8(0x89);
+        emit_u8(0xc3); /* mov ebx, eax */
+        emit_u8(0xb8);
+        emit_u32(2); /* sys_exit syscall nr = 2 */
+        emit_u8(0xcd);
+        emit_u8(0x80); /* int $0x80 */
+        emit_u8(0xeb);
+        emit_u8(0xfe); /* jmp $ */
+#else
         /* sys_exit(rax): mov rdi, rax; mov rax, 2; syscall; jmp $ */
         emit_u8(0x48);
         emit_u8(0x89);
@@ -466,12 +494,22 @@ void emit_func_epilogue(int is_main) {
         emit_u8(0x05); /* syscall */
         emit_u8(0xeb);
         emit_u8(0xfe); /* jmp $ */
+#endif
     } else {
         emit_u8(0xc3); /* ret */
     }
 }
 
 void emit_param_save(int param_idx, int local_offset) {
+#if defined(__i386__) || defined(__i686__)
+    int caller_arg_offset = 8 + param_idx * 4;
+    emit_u8(0x8b);
+    emit_u8(0x45);
+    emit_u8((unsigned char)caller_arg_offset);
+    emit_u8(0x89);
+    emit_u8(0x45);
+    emit_u8((unsigned char)local_offset);
+#else
     /* Store incoming register into [rbp + local_offset] */
     switch (param_idx) {
     case 0: /* rdi */
@@ -513,9 +551,28 @@ void emit_param_save(int param_idx, int local_offset) {
     default:
         break;
     }
+#endif
 }
 
 void emit_call(const char *name, int arg_count) {
+#if defined(__i386__) || defined(__i686__)
+    /* emit call rel32 */
+    emit_u8(0xe8);
+    int patch_pos = code_idx;
+    emit_u32(0);
+
+    if (arg_count > 0) {
+        emit_u8(0x83);
+        emit_u8(0xc4);
+        emit_u8((unsigned char)(arg_count * 4));
+    }
+
+    if (patch_count < MAX_PATCHES) {
+        k_strcpy(patch_names + patch_count * 32, name);
+        patch_addresses[patch_count] = patch_pos;
+        patch_count++;
+    }
+#else
     /* Pop stack arguments into calling registers in reverse order */
     if (arg_count >= 6)
         emit_pop_r9();
@@ -540,9 +597,19 @@ void emit_call(const char *name, int arg_count) {
         patch_addresses[patch_count] = patch_pos;
         patch_count++;
     }
+#endif
 }
 
 void emit_syscall_stub(void) {
+#if defined(__i386__) || defined(__i686__)
+    /* Stack had args pushed: syscall nr, arg1, arg2, arg3 */
+    emit_pop_rdx(); /* arg3 in edx */
+    emit_pop_rcx(); /* arg2 in ecx */
+    emit_u8(0x5b);  /* pop ebx (arg1) */
+    emit_pop_rax(); /* syscall nr in eax */
+    emit_u8(0xcd);
+    emit_u8(0x80); /* int $0x80 */
+#else
     /* Syscall convention: rax, rdi, rsi, rdx, r10, r8 */
     /* Stack had args pushed: syscall nr, arg1, arg2, arg3 */
     emit_pop_rdx();
@@ -551,9 +618,45 @@ void emit_syscall_stub(void) {
     emit_pop_rax();
     emit_u8(0x0f);
     emit_u8(0x05); /* syscall */
+#endif
 }
 
 void emit_printf_stub(int fmt_offset, int arg_count) {
+#if defined(__i386__) || defined(__i686__)
+    for (int a = 0; a < arg_count; a++) {
+        emit_pop_rax();
+    }
+
+    /* Format string address in esi */
+    emit_addr_global(fmt_offset);
+    emit_u8(0x89);
+    emit_u8(0xc6); /* mov esi, eax */
+
+    int loop_top = code_idx;
+    emit_u8(0x0f);
+    emit_u8(0xb6);
+    emit_u8(0x1e); /* movzx ebx, byte ptr [esi] */
+    emit_u8(0x85);
+    emit_u8(0xdb); /* test ebx, ebx */
+
+    /* Emit raw jz rel32 (0x0f 0x84 imm32) */
+    emit_u8(0x0f);
+    emit_u8(0x84);
+    int exit_jz = code_idx;
+    emit_u32(0);
+
+    /* sys_print_char (syscall nr = 1, arg1 = ebx) */
+    emit_u8(0xb8);
+    emit_u32(1);
+    emit_u8(0xcd);
+    emit_u8(0x80); /* int $0x80 */
+
+    emit_u8(0xff);
+    emit_u8(0xc6); /* inc esi */
+
+    emit_jmp_backward(loop_top);
+    patch_jump(exit_jz, code_idx);
+#else
     /* If extra arguments were pushed on stack, pop them into rsi, rdx, rcx, r8, r9 */
     if (arg_count >= 5)
         emit_pop_r9();
@@ -597,6 +700,7 @@ void emit_printf_stub(int fmt_offset, int arg_count) {
 
     emit_jmp_backward(loop_top);
     patch_jump(exit_jz, code_idx);
+#endif
 }
 
 /* Control Flow, Branches & Jump Patching */
@@ -614,8 +718,8 @@ void emit_jmp_backward(int target_addr) {
 }
 
 int emit_jz_forward(void) {
-    /* test rax, rax; jz rel32 */
-    emit_u8(0x48);
+    /* test rax/eax, rax/eax; jz rel32 */
+    REX_W();
     emit_u8(0x85);
     emit_u8(0xc0);
     emit_u8(0x0f);
@@ -626,8 +730,8 @@ int emit_jz_forward(void) {
 }
 
 int emit_jnz_forward(void) {
-    /* test rax, rax; jnz rel32 */
-    emit_u8(0x48);
+    /* test rax/eax, rax/eax; jnz rel32 */
+    REX_W();
     emit_u8(0x85);
     emit_u8(0xc0);
     emit_u8(0x0f);

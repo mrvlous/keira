@@ -13,99 +13,130 @@
 
 use keira_fs::elf::loader::load_elf;
 use keira_io::vga;
+#[cfg(target_arch = "x86_64")]
 use keira_mem::{pmm, vmm};
 
 extern "C" {
     fn jump_to_user(entry: u64, stack: u64);
 }
 
+#[cfg(target_arch = "x86")]
+const USER_STACK_TOP: u64 = 0x07FFF000 - 16;
+
+#[cfg(target_arch = "x86_64")]
+const USER_DEFAULT_BRK: u64 = 0x600000000000;
+#[cfg(target_arch = "x86_64")]
+const USER_STACK_BOTTOM: u64 = 0x7FFFFFD80000;
+#[cfg(target_arch = "x86_64")]
+const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
+#[cfg(target_arch = "x86_64")]
+const USER_STACK_PAGES: u64 = 256;
+
 /// Execute a freestanding user mode ELF program in an isolated address space.
-
 pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
-    let parent_pml4 = vmm::active_pml4();
-    let child_pml4 = vmm::clone_kernel_pml4()?;
+    #[cfg(target_arch = "x86")]
+    {
+        let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
+        keira_task::scheduler::SCHEDULER_INITIALIZED = false;
 
-    let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
-    keira_task::scheduler::SCHEDULER_INITIALIZED = false;
+        let entry_point = load_elf(filename)?;
+        let initial_user_rsp: u64 = USER_STACK_TOP;
 
-    if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-        task.pml4_phys = child_pml4;
+        jump_to_user(entry_point, initial_user_rsp);
+
+        keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+        core::arch::asm!("sti");
+
+        return Ok(());
     }
 
-    vmm::switch_address_space(child_pml4);
+    #[cfg(target_arch = "x86_64")]
+    {
+        let parent_pml4 = vmm::active_pml4();
+        let child_pml4 = vmm::clone_kernel_pml4()?;
 
-    let cleanup_and_restore = |child: u64, brk: u64| {
+        let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
+        keira_task::scheduler::SCHEDULER_INITIALIZED = false;
+
         if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            task.pml4_phys = parent_pml4;
-            for fd in 0..8 {
-                if task.fds[fd].is_open {
-                    if task.fds[fd].write_mode {
-                        if let Ok(path_str) =
-                            core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
-                        {
-                            keira_fs::lock::release_lock(path_str, 0);
+            task.pml4_phys = child_pml4;
+        }
+
+        vmm::switch_address_space(child_pml4);
+
+        let cleanup_and_restore = |child: u64, brk: u64| {
+            if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                task.pml4_phys = parent_pml4;
+                for fd in 0..8 {
+                    if task.fds[fd].is_open {
+                        if task.fds[fd].write_mode {
+                            if let Ok(path_str) =
+                                core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
+                            {
+                                keira_fs::lock::release_lock(path_str, 0);
+                            }
                         }
+                        task.fds[fd].is_open = false;
                     }
-                    task.fds[fd].is_open = false;
                 }
             }
-        }
-        vmm::switch_address_space(parent_pml4);
-        keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
-        vmm::free_user_pages(child, brk);
-    };
+            vmm::switch_address_space(parent_pml4);
+            keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+            vmm::free_user_pages(child, brk);
+        };
 
-    let entry_point = match load_elf(filename) {
-        Ok(ep) => ep,
-        Err(e) => {
-            cleanup_and_restore(child_pml4, 0x600000000000);
-            return Err(e);
-        }
-    };
-
-    let stack_pages = 256;
-    let stack_bottom_vaddr: u64 = 0x7FFFFFD80000;
-    for p in 0..stack_pages {
-        let page_vaddr = stack_bottom_vaddr + (p * pmm::PAGE_SIZE);
-        let stack_frame = match pmm::alloc_frame() {
-            Some(f) => f,
-            None => {
-                cleanup_and_restore(child_pml4, 0x600000000000);
-                return Err("Out of memory for user stack frame");
+        let entry_point = match load_elf(filename) {
+            Ok(ep) => ep,
+            Err(e) => {
+                cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+                return Err(e);
             }
         };
-        if let Err(e) = vmm::map_page(
-            page_vaddr,
-            stack_frame,
-            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-        ) {
-            pmm::free_frame(stack_frame);
-            cleanup_and_restore(child_pml4, 0x600000000000);
-            return Err(e);
+
+        let stack_pages = USER_STACK_PAGES;
+        let stack_bottom_vaddr: u64 = USER_STACK_BOTTOM;
+        for p in 0..stack_pages {
+            let page_vaddr = stack_bottom_vaddr + (p * pmm::PAGE_SIZE);
+            let stack_frame = match pmm::alloc_frame() {
+                Some(f) => f,
+                None => {
+                    cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+                    return Err("Out of memory for user stack frame");
+                }
+            };
+            if let Err(e) = vmm::map_page(
+                page_vaddr,
+                stack_frame,
+                vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
+            ) {
+                pmm::free_frame(stack_frame);
+                cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+                return Err(e);
+            }
+            let ptr = page_vaddr as *mut u8;
+            core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
         }
-        let ptr = page_vaddr as *mut u8;
-        core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
+        let initial_user_rsp: u64 = USER_STACK_TOP;
+
+        let mut brk_end = USER_DEFAULT_BRK;
+        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+            task.program_break = USER_DEFAULT_BRK;
+            task.program_break_start = USER_DEFAULT_BRK;
+            task.pml4_phys = child_pml4;
+        }
+
+        jump_to_user(entry_point, initial_user_rsp);
+
+        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+            brk_end = task.program_break;
+        }
+
+        cleanup_and_restore(child_pml4, brk_end);
+
+        core::arch::asm!("sti");
+
+        Ok(())
     }
-    let initial_user_rsp: u64 = 0x7FFFFFE00000 - 16;
-
-    let mut brk_end = 0x600000000000;
-    if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-        task.program_break = 0x600000000000;
-        task.program_break_start = 0x600000000000;
-        task.pml4_phys = child_pml4;
-    }
-
-    jump_to_user(entry_point, initial_user_rsp);
-
-    if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-        brk_end = task.program_break;
-    }
-
-    cleanup_and_restore(child_pml4, brk_end);
-
-    core::arch::asm!("sti");
-
-    Ok(())
 }
 
 /// Resolve an ELF binary path and execute it, returning true if found.

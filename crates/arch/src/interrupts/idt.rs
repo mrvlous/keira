@@ -80,6 +80,9 @@ extern "C" {
     fn isr33();
     fn isr44();
 
+    #[cfg(target_arch = "x86")]
+    fn isr128();
+
     fn exception0();
     fn exception1();
     fn exception2();
@@ -201,6 +204,9 @@ pub fn init() {
         set_gate(32, isr32 as *const () as usize, 0x08, 0x8E, 0);
         set_gate(33, isr33 as *const () as usize, 0x08, 0x8E, 0);
         set_gate(44, isr44 as *const () as usize, 0x08, 0x8E, 0);
+
+        #[cfg(target_arch = "x86")]
+        set_gate(128, isr128 as *const () as usize, 0x08, 0xEE, 0);
 
         idt_load(core::ptr::addr_of!(IDTR) as usize);
     }

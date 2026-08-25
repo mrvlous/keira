@@ -9,8 +9,8 @@
 
 //! Centralized safe user space memory validation, range checking, and copying primitives.
 
-use keira_mem::pmm;
-use keira_mem::vmm;
+#[cfg(target_arch = "x86_64")]
+use keira_mem::{pmm, vmm};
 
 pub const EPERM: i64 = 1;
 pub const ENOENT: i64 = 2;
@@ -54,18 +54,26 @@ pub unsafe fn validate_user_ptr(ptr: u64, len: u64, require_writable: bool) -> R
         return Err(EFAULT);
     }
 
-    // Verify all pages spanned by the buffer are mapped with proper permissions (overflow-checked)
-    let mut page_start = ptr & !(pmm::PAGE_SIZE - 1);
-    let page_end = match end.checked_add(pmm::PAGE_SIZE - 1) {
-        Some(e) => e & !(pmm::PAGE_SIZE - 1),
-        None => return Err(EFAULT),
-    };
+    #[cfg(target_arch = "x86_64")]
+    {
+        // Verify all pages spanned by the buffer are mapped with proper permissions (overflow-checked)
+        let mut page_start = ptr & !(pmm::PAGE_SIZE - 1);
+        let page_end = match end.checked_add(pmm::PAGE_SIZE - 1) {
+            Some(e) => e & !(pmm::PAGE_SIZE - 1),
+            None => return Err(EFAULT),
+        };
 
-    while page_start < page_end {
-        if !vmm::is_user_page_mapped(page_start, require_writable) {
-            return Err(EFAULT);
+        while page_start < page_end {
+            if !vmm::is_user_page_mapped(page_start, require_writable) {
+                return Err(EFAULT);
+            }
+            page_start += pmm::PAGE_SIZE;
         }
-        page_start += pmm::PAGE_SIZE;
+    }
+
+    #[cfg(target_arch = "x86")]
+    {
+        let _ = require_writable;
     }
 
     Ok(())
@@ -101,6 +109,7 @@ pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, 
 
     let mut len = 0;
     let max_len = buf.len();
+    #[cfg(target_arch = "x86_64")]
     let mut current_page: u64 = 0;
 
     while len < max_len - 1 {
@@ -113,12 +122,15 @@ pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, 
             return Err(EFAULT);
         }
 
-        let page_addr = addr & !(pmm::PAGE_SIZE - 1);
-        if page_addr != current_page {
-            if !vmm::is_user_page_mapped(page_addr, false) {
-                return Err(EFAULT);
+        #[cfg(target_arch = "x86_64")]
+        {
+            let page_addr = addr & !(pmm::PAGE_SIZE - 1);
+            if page_addr != current_page {
+                if !vmm::is_user_page_mapped(page_addr, false) {
+                    return Err(EFAULT);
+                }
+                current_page = page_addr;
             }
-            current_page = page_addr;
         }
 
         let c = *ptr.add(len);

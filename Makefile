@@ -62,7 +62,7 @@ ifeq ($(ARCH),i686)
 	             arch/x86/kernel/idt.asm \
 	             arch/x86/kernel/isr.asm \
 	             arch/x86/kernel/syscall.asm
-    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 -mno-sse -mno-sse2 -mno-mmx -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie -lgcc
+    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 -mno-sse -mno-sse2 -mno-mmx -Iuser/include -Iuser/bin/kcc/include -T user/linker32.ld -Wl,--no-warn-rwx-segments -static -no-pie -lgcc
 else
     ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
     LD_FLAGS      := -n -T arch/x86/linker.ld --gc-sections --no-warn-rwx-segments
@@ -233,16 +233,18 @@ objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 USER_LIB_SRCS := $(shell find user/lib -type f -name "*.c")
 USER_KCC_SRCS := $(shell find user/bin/kcc -type f -name "*.c")
 
-user: build/kcc.elf ## Build user-space C compiler (kcc.elf)
+USER_ELF := build/kcc-$(ARCH).elf
 
-build/kcc.elf: $(USER_KCC_SRCS) $(USER_LIB_SRCS) user/linker.ld | dirs
-	@$(LOG_INFO) "Building user space program: kcc (kcc.elf)..."
-	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o build/kcc.elf
+user: $(USER_ELF) ## Build user-space C compiler (kcc.elf)
+
+$(USER_ELF): $(USER_KCC_SRCS) $(USER_LIB_SRCS) user/linker.ld | dirs
+	@$(LOG_INFO) "Building user space program: kcc ($(notdir $(USER_ELF)))..."
+	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o $(USER_ELF)
 
 FS_ROOT := $(BUILD_DIR)/fs_root
 
 # Populate standardized canonical root filesystem tree
-fs-root: build/kcc.elf | dirs
+fs-root: $(USER_ELF) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem..."
 	$(Q)rm -rf $(FS_ROOT)
 	$(Q)mkdir -p $(FS_ROOT)/system/bin
@@ -260,7 +262,8 @@ fs-root: build/kcc.elf | dirs
 	$(Q)mkdir -p $(FS_ROOT)/data/log
 	$(Q)mkdir -p $(FS_ROOT)/data/save
 	$(Q)mkdir -p $(FS_ROOT)/data/www
-	$(Q)cp build/kcc.elf $(FS_ROOT)/system/bin/kcc.elf
+	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
+	$(Q)cp $(USER_ELF) $(FS_ROOT)/apps/bin/kcc.elf
 	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf "ELF\x02\x01\x01\x00Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
 	    chmod +x $(FS_ROOT)/system/bin/$$cmd.elf; \

@@ -87,9 +87,11 @@ exception_common:
 isr32:
     pushad
     call pit_handler
-    push esp
+    mov eax, esp
+    push dword 0
+    push eax
     call schedule_tick
-    add esp, 4
+    add esp, 8
     mov esp, eax
     popad
     iretd

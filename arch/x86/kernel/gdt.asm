@@ -60,8 +60,6 @@ tss_descriptor:
     db 10001001b
     db 0x00
     db 0x00
-    db 0x00
-    db 0x00
 
 gdt_end:
 

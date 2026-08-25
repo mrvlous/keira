@@ -14,6 +14,7 @@ use keira_io::serial;
 use keira_io::vga;
 use keira_task::scheduler::{exit_current, CURRENT_TASK_IDX};
 
+#[cfg(target_arch = "x86_64")]
 #[repr(C, packed)]
 pub struct ExceptionStackFrame {
     pub r15: u64,
@@ -40,36 +41,92 @@ pub struct ExceptionStackFrame {
     pub ss: u64,
 }
 
+#[cfg(target_arch = "x86")]
+#[repr(C, packed)]
+pub struct ExceptionStackFrame {
+    pub edi: u32,
+    pub esi: u32,
+    pub ebp: u32,
+    pub esp_dummy: u32,
+    pub ebx: u32,
+    pub edx: u32,
+    pub ecx: u32,
+    pub eax: u32,
+    pub vector: u32,
+    pub error_code: u32,
+    pub eip: u32,
+    pub cs: u32,
+    pub eflags: u32,
+    pub user_esp: u32,
+    pub user_ss: u32,
+}
+
 /// CPU exception dispatcher invoked by low-level assembly ISR stubs.
 #[no_mangle]
 pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFrame) {
     let frame = &*frame_ptr;
 
-    if (frame.cs & 3) == 3 {
+    #[cfg(target_arch = "x86_64")]
+    let (vector, error_code, rip, rsp, cs, ss, rflags, rax, rbx, rcx, rdx, rsi, rdi, rbp) = (
+        frame.vector,
+        frame.error_code,
+        frame.rip,
+        frame.rsp,
+        frame.cs,
+        frame.ss,
+        frame.rflags,
+        frame.rax,
+        frame.rbx,
+        frame.rcx,
+        frame.rdx,
+        frame.rsi,
+        frame.rdi,
+        frame.rbp,
+    );
+
+    #[cfg(target_arch = "x86")]
+    let (vector, error_code, rip, rsp, cs, ss, rflags, rax, rbx, rcx, rdx, rsi, rdi, rbp) = (
+        frame.vector as u64,
+        frame.error_code as u64,
+        frame.eip as u64,
+        frame.user_esp as u64,
+        frame.cs as u64,
+        frame.user_ss as u64,
+        frame.eflags as u64,
+        frame.eax as u64,
+        frame.ebx as u64,
+        frame.ecx as u64,
+        frame.edx as u64,
+        frame.esi as u64,
+        frame.edi as u64,
+        frame.ebp as u64,
+    );
+
+    if (cs & 3) == 3 {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("\n*** USER PROCESS CRASHED ***\n");
         vga::print_str("Exception Vector: ");
-        vga::print_u64(frame.vector);
-        if frame.vector == 14 {
+        vga::print_u64(vector);
+        if vector == 14 {
             vga::print_str(" (Page Fault)");
-        } else if frame.vector == 13 {
+        } else if vector == 13 {
             vga::print_str(" (General Protection Fault)");
         }
         vga::print_str("\nRIP: 0x");
-        print_hex(frame.rip);
-        if frame.vector == 14 {
+        print_hex(rip);
+        if vector == 14 {
             let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
             vga::print_str(" | Faulting Address: 0x");
             print_hex(cr2);
 
             keira_io::serial::print_str("\n[PAGE FAULT] RIP: 0x");
-            keira_io::serial::print_u64(frame.rip);
+            keira_io::serial::print_u64(rip);
             keira_io::serial::print_str(" | CR2: 0x");
             keira_io::serial::print_u64(cr2);
             keira_io::serial::print_str(" | RSP: 0x");
-            keira_io::serial::print_u64(frame.rsp);
+            keira_io::serial::print_u64(rsp);
             keira_io::serial::print_str(" | Error Code: 0x");
-            keira_io::serial::print_u64(frame.error_code);
+            keira_io::serial::print_u64(error_code);
             keira_io::serial::print_str("\n");
         }
         vga::print_str("\nTerminating crashed user process...\n");
@@ -88,7 +145,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
     vga::set_color(vga::Color::LightRed, vga::Color::Black);
     vga::print_str("\n*** KERNEL PANIC ***\n");
     vga::print_str("UNHANDLED CPU EXCEPTION: ");
-    match frame.vector {
+    match vector {
         0 => vga::print_str("Division by Zero (#DE)"),
         1 => vga::print_str("Debug Exception (#DB)"),
         2 => vga::print_str("Non-Maskable Interrupt (NMI)"),
@@ -124,73 +181,76 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
     vga::print_str("\n");
 
     vga::print_str("Error Code: 0x");
-    print_hex(frame.error_code);
+    print_hex(error_code);
     vga::print_str("\n");
 
     vga::print_str("\nRegister Dump:\n");
     vga::print_str("  RIP: 0x");
-    print_hex(frame.rip);
+    print_hex(rip);
     vga::print_str("   RSP: 0x");
-    print_hex(frame.rsp);
+    print_hex(rsp);
     vga::print_str("\n");
     vga::print_str("  CS:  0x");
-    print_hex(frame.cs);
+    print_hex(cs);
     vga::print_str("   SS:  0x");
-    print_hex(frame.ss);
+    print_hex(ss);
     vga::print_str("   RFLAGS: 0x");
-    print_hex(frame.rflags);
+    print_hex(rflags);
     vga::print_str("\n");
     vga::print_str("  RAX: 0x");
-    print_hex(frame.rax);
+    print_hex(rax);
     vga::print_str("   RBX: 0x");
-    print_hex(frame.rbx);
+    print_hex(rbx);
     vga::print_str("\n");
     vga::print_str("  RCX: 0x");
-    print_hex(frame.rcx);
+    print_hex(rcx);
     vga::print_str("   RDX: 0x");
-    print_hex(frame.rdx);
+    print_hex(rdx);
     vga::print_str("\n");
     vga::print_str("  RSI: 0x");
-    print_hex(frame.rsi);
+    print_hex(rsi);
     vga::print_str("   RDI: 0x");
-    print_hex(frame.rdi);
+    print_hex(rdi);
     vga::print_str("\n");
     vga::print_str("  RBP: 0x");
-    print_hex(frame.rbp);
-    vga::print_str("   R8:  0x");
-    print_hex(frame.r8);
-    vga::print_str("\n");
-    vga::print_str("  R9:  0x");
-    print_hex(frame.r9);
-    vga::print_str("   R10: 0x");
-    print_hex(frame.r10);
-    vga::print_str("\n");
-    vga::print_str("  R11: 0x");
-    print_hex(frame.r11);
-    vga::print_str("   R12: 0x");
-    print_hex(frame.r12);
-    vga::print_str("\n");
-    vga::print_str("  R13: 0x");
-    print_hex(frame.r13);
-    vga::print_str("   R14: 0x");
-    print_hex(frame.r14);
-    vga::print_str("   R15: 0x");
-    print_hex(frame.r15);
+    print_hex(rbp);
+    #[cfg(target_arch = "x86_64")]
+    {
+        vga::print_str("   R8:  0x");
+        print_hex(frame.r8);
+        vga::print_str("\n");
+        vga::print_str("  R9:  0x");
+        print_hex(frame.r9);
+        vga::print_str("   R10: 0x");
+        print_hex(frame.r10);
+        vga::print_str("\n");
+        vga::print_str("  R11: 0x");
+        print_hex(frame.r11);
+        vga::print_str("   R12: 0x");
+        print_hex(frame.r12);
+        vga::print_str("\n");
+        vga::print_str("  R13: 0x");
+        print_hex(frame.r13);
+        vga::print_str("   R14: 0x");
+        print_hex(frame.r14);
+        vga::print_str("   R15: 0x");
+        print_hex(frame.r15);
+    }
     vga::print_str("\n");
     vga::print_str("\nSystem halted. Please reboot/reset your computer.\n");
 
     serial::print_str("\n*** KERNEL PANIC ***\n");
     serial::print_str("Unhandled exception vector: ");
-    print_decimal_serial(frame.vector);
+    print_decimal_serial(vector);
     serial::print_str("\nRIP: 0x");
-    print_hex_serial(frame.rip);
+    print_hex_serial(rip);
     serial::print_str("\nRSP: 0x");
-    print_hex_serial(frame.rsp);
+    print_hex_serial(rsp);
     serial::print_str("\nError Code: 0x");
-    print_hex_serial(frame.error_code);
+    print_hex_serial(error_code);
     serial::print_str("\n");
 
-    unwind_from_frame(frame.rbp, frame.rip);
+    unwind_from_frame(rbp, rip);
 
     loop {
         core::arch::asm!("cli; hlt");

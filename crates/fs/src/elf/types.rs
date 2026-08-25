@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! 64-bit Executable and Linkable Format (ELF64) header and program header types.
+//! 32-bit and 64-bit Executable and Linkable Format (ELF) header and program header types.
 
 /// 64-bit ELF file header.
 #[repr(C)]
@@ -41,6 +41,40 @@ pub struct ProgramHeader {
     pub p_filesz: u64,
     pub p_memsz: u64,
     pub p_align: u64,
+}
+
+/// 32-bit ELF file header.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Elf32Header {
+    pub ident: [u8; 16],
+    pub elf_type: u16,
+    pub machine: u16,
+    pub version: u32,
+    pub entry: u32,
+    pub phoff: u32,
+    pub shoff: u32,
+    pub flags: u32,
+    pub ehsize: u16,
+    pub phentsize: u16,
+    pub phnum: u16,
+    pub shentsize: u16,
+    pub shnum: u16,
+    pub shstrndx: u16,
+}
+
+/// 32-bit ELF program header segment descriptor.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Program32Header {
+    pub p_type: u32,
+    pub p_offset: u32,
+    pub p_vaddr: u32,
+    pub p_paddr: u32,
+    pub p_filesz: u32,
+    pub p_memsz: u32,
+    pub p_flags: u32,
+    pub p_align: u32,
 }
 
 pub const PT_LOAD: u32 = 1;
