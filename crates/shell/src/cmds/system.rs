@@ -66,7 +66,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         if args.has_flag('v', "version") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Keira Kernel 0.34.0-keira-1 (");
+            vga::print_str("Keira Kernel ");
+            vga::print_str(env!("CARGO_PKG_VERSION"));
+            vga::print_str("-keira-1 (");
             vga::print_str(ARCH_NAME);
             vga::print_str("-unknown-none)\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -77,7 +79,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
         if args.has_flag('s', "summary") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Keira v0.34.0 | ");
+            vga::print_str("Keira v");
+            vga::print_str(env!("CARGO_PKG_VERSION"));
+            vga::print_str(" | ");
             vga::print_str(ARCH_NAME);
             vga::print_str(" | Up: ");
             vga::print_u64(hours);
