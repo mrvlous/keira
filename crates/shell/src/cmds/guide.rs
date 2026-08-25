@@ -133,7 +133,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: edit <filename>\nOpen the text editor to create or edit a file on the active storage drive.\n");
             }
             Some("go") => {
-                vga::print_str("Usage: go <path>\nChange the current working directory on the active drive (supports '.' and '..').\n");
+                vga::print_str("Usage: go [path]\nChange the current working directory (supports '.', '..', and '~' for home).\n");
             }
             Some("script") => {
                 vga::print_str("Usage: script <filename.sh>\nRead and execute commands from specified file line-by-line.\n");

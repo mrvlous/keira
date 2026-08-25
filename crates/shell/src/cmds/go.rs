@@ -19,71 +19,95 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let arg = match parts.next() {
             Some("-h") | Some("--help") => {
-                vga::print_str("Usage: go <path>\n\n");
-                vga::print_str("Description:\n  Change current working directory on the active FAT16 volume. Supports relative (., ..) and absolute paths.\n\n");
+                vga::print_str("Usage: go [path]\n\n");
+                vga::print_str("Description:\n  Change current working directory on the active FAT16 volume. Supports relative (., ..), absolute paths, and tilde (~).\n\n");
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-                vga::print_str("Examples:\n  go /users/admin\n  go ..\n");
+                vga::print_str("Examples:\n  go ~\n  go /users/admin\n  go ..\n");
                 return;
             }
             Some(s) => s,
-            None => {
-                vga::print_str("Usage: go <path>\n");
-                return;
-            }
+            None => "~",
         };
-        unsafe {
-            match keira_fs::fat::change_directory(arg) {
-                Ok(_) => {
-                    let mut temp_path = [0u8; 80];
-                    let mut temp_len = 0;
 
-                    if !arg.starts_with('/') {
-                        temp_path[..SHELL_PATH_LEN].copy_from_slice(&SHELL_PATH[..SHELL_PATH_LEN]);
-                        temp_len = SHELL_PATH_LEN;
+        // Tilde expansion to current user's home directory (/users/<username>)
+        let mut path_buf = [0u8; 80];
+
+        let resolved_arg = if arg == "~" || arg.starts_with("~/") {
+            let prefix = b"/users/";
+            path_buf[..prefix.len()].copy_from_slice(prefix);
+            let mut path_len = prefix.len();
+            let ubytes = &CURRENT_USER[..CURRENT_USER_LEN];
+            if ubytes.is_empty() {
+                let default_user = b"admin";
+                path_buf[path_len..path_len + default_user.len()].copy_from_slice(default_user);
+                path_len += default_user.len();
+            } else {
+                let copy_len = core::cmp::min(ubytes.len(), 80 - path_len);
+                path_buf[path_len..path_len + copy_len].copy_from_slice(&ubytes[..copy_len]);
+                path_len += copy_len;
+            }
+
+            if arg.starts_with("~/") {
+                let rest = &arg[1..]; // includes leading '/' from "~/..."
+                let rest_bytes = rest.as_bytes();
+                let copy_len = core::cmp::min(rest_bytes.len(), 80 - path_len);
+                path_buf[path_len..path_len + copy_len].copy_from_slice(&rest_bytes[..copy_len]);
+                path_len += copy_len;
+            }
+            core::str::from_utf8(&path_buf[..path_len]).unwrap_or("/users/admin")
+        } else {
+            arg
+        };
+
+        match keira_fs::fat::change_directory(resolved_arg) {
+            Ok(_) => {
+                let mut temp_path = [0u8; 80];
+                let mut temp_len = 0;
+
+                if !resolved_arg.starts_with('/') {
+                    temp_path[..SHELL_PATH_LEN].copy_from_slice(&SHELL_PATH[..SHELL_PATH_LEN]);
+                    temp_len = SHELL_PATH_LEN;
+                }
+
+                for segment in resolved_arg.split('/') {
+                    if segment.is_empty() || segment == "." {
+                        continue;
                     }
-
-                    for segment in arg.split('/') {
-                        if segment.is_empty() || segment == "." {
-                            continue;
-                        }
-                        if segment == ".." {
-                            if temp_len > 0 {
-                                let mut i = temp_len;
-                                while i > 0 && temp_path[i - 1] != b'/' {
-                                    i -= 1;
-                                }
-                                if i > 0 {
-                                    temp_len = i - 1;
-                                } else {
-                                    temp_len = 0;
-                                }
+                    if segment == ".." {
+                        if temp_len > 0 {
+                            let mut i = temp_len;
+                            while i > 0 && temp_path[i - 1] != b'/' {
+                                i -= 1;
                             }
-                        } else {
-                            if temp_len > 0 {
-                                if temp_len + 1 + segment.len() <= 80 {
-                                    temp_path[temp_len] = b'/';
-                                    temp_path[temp_len + 1..temp_len + 1 + segment.len()]
-                                        .copy_from_slice(segment.as_bytes());
-                                    temp_len += 1 + segment.len();
-                                }
+                            if i > 0 {
+                                temp_len = i - 1;
                             } else {
-                                if segment.len() <= 80 {
-                                    temp_path[..segment.len()].copy_from_slice(segment.as_bytes());
-                                    temp_len = segment.len();
-                                }
+                                temp_len = 0;
                             }
                         }
+                    } else {
+                        if temp_len > 0 {
+                            if temp_len + 1 + segment.len() <= 80 {
+                                temp_path[temp_len] = b'/';
+                                temp_path[temp_len + 1..temp_len + 1 + segment.len()]
+                                    .copy_from_slice(segment.as_bytes());
+                                temp_len += 1 + segment.len();
+                            }
+                        } else if segment.len() <= 80 {
+                            temp_path[..segment.len()].copy_from_slice(segment.as_bytes());
+                            temp_len = segment.len();
+                        }
                     }
+                }
 
-                    SHELL_PATH = [0u8; 80];
-                    SHELL_PATH[..temp_len].copy_from_slice(&temp_path[..temp_len]);
-                    SHELL_PATH_LEN = temp_len;
-                }
-                Err(e) => {
-                    vga::print_str("go: ");
-                    vga::print_str(e);
-                    vga::print_str("\n");
-                }
+                SHELL_PATH = [0u8; 80];
+                SHELL_PATH[..temp_len].copy_from_slice(&temp_path[..temp_len]);
+                SHELL_PATH_LEN = temp_len;
+            }
+            Err(e) => {
+                vga::print_str("go: ");
+                vga::print_str(e);
+                vga::print_str("\n");
             }
         }
     }
