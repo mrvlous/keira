@@ -277,7 +277,6 @@ fs-root: build/kcc.elf | dirs
 	$(Q)printf "<!DOCTYPE html><html><head><title>Keira Kernel OS</title></head><body style=\"background:#111;color:#eee;font-family:sans-serif;padding:40px;\"><h1>Keira Kernel v$(VERSION)</h1><p>Native Background Web &amp; REST API Server (httpd)</p><p>Status: <strong>Active &amp; Serving</strong></p></body></html>\n" > $(FS_ROOT)/data/www/index.html
 	$(Q)touch $(FS_ROOT)/temp/.keep
 
-
 disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
 $(DISK_IMG): fs-root
