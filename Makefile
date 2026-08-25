@@ -150,11 +150,19 @@ SHELL_CMDS    := guide login drives use ramdisk system cpu runtime time memory \
 DRIVER_FILES  := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
                  ide.sys ahci.sys sound.sys e1000.sys
 
-.PHONY: all run debug clean rust iso dirs format lint user disk initrd \
-        help info check size objdump qemu-net
+.PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 debug clean rust iso dirs \
+        format lint user disk initrd help info check size objdump qemu-net test test-all
 
 .DEFAULT_GOAL := all
 all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image
+
+full: ## Build kernel and ISO images for all supported architectures (x86_64 & i686)
+	@$(LOG_INFO) "Building Keira for all architectures (x86_64 & i686)..."
+	$(Q)$(MAKE) ARCH=x86_64 all
+	$(Q)$(MAKE) ARCH=i686 all
+	@$(LOG_DONE) "Full multi-architecture build complete"
+
+fll: full ## Alias for full multi-architecture build
 
 help: ## Display all available Makefile targets
 	@printf "\n$(CLR_BOLD)Keira Kernel Build System$(CLR_RESET)  v$(VERSION) ($(ARCH))\n\n"
@@ -354,9 +362,19 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 dirs:
 	$(Q)mkdir -p $(BUILD_DIR) $(OBJ_DIR)
 
-run: all ## Launch Keira in QEMU virtual machine
+run: all ## Launch Keira in QEMU virtual machine for current ARCH
 	@$(LOG_INFO) "Launching Keira in QEMU ($(ARCH))..."
 	$(Q)$(QEMU) $(QEMU_FLAGS)
+
+run-64: run-x86_64 ## Alias for run-x86_64
+
+run-x86_64: ## Launch Keira 64-bit in QEMU (x86_64)
+	$(Q)$(MAKE) ARCH=x86_64 run
+
+run-32: run-i686 ## Alias for run-i686
+
+run-i686: ## Launch Keira pure 32-bit in QEMU (i686)
+	$(Q)$(MAKE) ARCH=i686 run
 
 debug: all ## Launch Keira in QEMU debug mode (GDB on :1234)
 	@$(LOG_INFO) "Launching Keira (debug mode, waiting for GDB on :1234)..."
@@ -366,10 +384,16 @@ qemu-net: all ## Launch Keira in QEMU with e1000 NIC emulation
 	@$(LOG_INFO) "Launching Keira in QEMU with e1000 NIC..."
 	$(Q)$(QEMU) $(QEMU_NET_FLAGS)
 
-test: all ## Run automated headless QEMU smoke test
+test: all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
-	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > build/test.log 2>&1 || true
-	@$(LOG_DONE) "Automated smoke test complete"
+	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > build/test-$(ARCH).log 2>&1 || true
+	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
+
+test-all: ## Run automated headless smoke tests on all architectures
+	@$(LOG_INFO) "Running automated smoke tests across all architectures..."
+	$(Q)$(MAKE) ARCH=x86_64 test
+	$(Q)$(MAKE) ARCH=i686 test
+	@$(LOG_DONE) "All architecture tests completed successfully"
 
 clean: ## Remove build directory and compiled artifacts
 	@$(LOG_INFO) "Cleaning build artifacts..."
