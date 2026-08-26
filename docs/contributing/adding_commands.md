@@ -5,7 +5,7 @@
 Step-by-step guide for adding a new built-in command to `keira-shell`.
 
 ## Step 1: Create Command File
-Create a new file under [`crates/shell/src/cmds/mycmd.rs`](../../crates/shell/src/cmds):
+Select the appropriate category subfolder in `crates/shell/src/cmds/` (`fs`, `sys`, `proc`, `net`, `sec`, `dev`, or `util`), and create a new file under [`crates/shell/src/cmds/<category>/mycmd.rs`](../../crates/shell/src/cmds):
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
 //
@@ -31,7 +31,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 }
 ```
 
-## Step 2: Register in `cmds/mod.rs` & `executor.rs`
-1. Add `pub mod mycmd;` to `crates/shell/src/cmds/mod.rs`.
-2. Add `"mycmd" => cmds::mycmd::run(parts)` inside `crates/shell/src/executor.rs`.
-3. Add `"mycmd"` to `SHELL_CMDS` list in `Makefile`.
+## Step 2: Register in `cmds/<category>/mod.rs` & `executor.rs`
+1. Add `pub mod mycmd;` to `crates/shell/src/cmds/<category>/mod.rs`.
+2. Add `"mycmd" => super::cmds::mycmd::run(&mut parts),` inside `crates/shell/src/executor.rs`.
+3. Add `mycmd` to the `SHELL_CMDS` manifest in [`Makefile`](../../Makefile).

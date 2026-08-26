@@ -7,21 +7,18 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Categorized modular shell command handlers for the Keira Kernel.
+//! System configuration, telemetry, services, and power shell commands.
 
-pub mod dev;
-pub mod fs;
-pub mod net;
-pub mod proc;
-pub mod sec;
-pub mod sys;
-pub mod util;
-
-// Flat re-exports for backward-compatibility and direct access
-pub use dev::*;
-pub use fs::*;
-pub use net::*;
-pub use proc::*;
-pub use sec::*;
-pub use sys::*;
-pub use util::*;
+pub mod cpu;
+pub mod env;
+pub mod hostname;
+pub mod memory;
+pub mod power;
+pub mod reset;
+pub mod runtime;
+pub mod service;
+pub mod sync;
+pub mod syslog;
+pub mod system;
+pub mod time;
+pub mod unwind;

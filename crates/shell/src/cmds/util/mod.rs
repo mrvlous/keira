@@ -7,21 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Categorized modular shell command handlers for the Keira Kernel.
+//! General shell utilities, navigation, scripts, and help manuals.
 
-pub mod dev;
-pub mod fs;
-pub mod net;
-pub mod proc;
-pub mod sec;
-pub mod sys;
-pub mod util;
-
-// Flat re-exports for backward-compatibility and direct access
-pub use dev::*;
-pub use fs::*;
-pub use net::*;
-pub use proc::*;
-pub use sec::*;
-pub use sys::*;
-pub use util::*;
+pub mod go;
+pub mod guide;
+pub mod help;
+pub mod history;
+pub mod script;
+pub mod search;
+pub mod wait;
+pub mod wipe;
