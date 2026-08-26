@@ -12,7 +12,7 @@ make debug
 
 In a separate terminal, attach GDB:
 ```bash
-gdb build/keira.bin
+gdb build/x86_64/bin/keira.bin
 (gdb) target remote localhost:1234
 (gdb) break kernel_main
 (gdb) continue
@@ -21,5 +21,5 @@ gdb build/keira.bin
 ## COM1 Serial Tracing
 All early boot messages and panic dumps are mirrored to COM1 serial (`-serial stdio`). Redirect output to a log file:
 ```bash
-qemu-system-x86_64 -cdrom build/keira-*.iso -serial file:serial.log -display none
+qemu-system-x86_64 -cdrom build/x86_64/iso/keira-x86_64-*.iso -serial file:serial.log -display none
 ```

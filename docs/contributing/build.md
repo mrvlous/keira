@@ -7,14 +7,23 @@ Keira Kernel utilizes a pure Rust kernel build pipeline with assembly bootstrap 
 ## Pipeline Overview
 
 ```
-arch/x86/*.asm   --> [ NASM ]  --> build/obj/<arch>/*.asm.o ──┐
-crates/* (Rust)  --> [ Cargo ] --> libkeira_kernel.a ─────────┼─> [ LD ] ─> build/keira-<arch>.bin
-                                                              │        │
-user/* (C SDK)   --> [ GCC ]   --> build/kcc.elf ─────────────┤        v
-                                                              │   [ grub-mkrescue ]
-                                                              │        │
-                                                              └─> build/keira-<arch>-<date>.iso
+arch/x86/*.asm   --> [ NASM ]  --> build/<arch>/obj/*.asm.o ──┐
+crates/* (Rust)  --> [ Cargo ] --> libkeira_kernel.a ─────────┼─> [ LD ] ─> build/<arch>/bin/keira.bin
+                                                              │                 │
+user/* (C SDK)   --> [ GCC ]   --> build/<arch>/bin/kcc.elf ──┤                 v
+                                                              │        [ grub-mkrescue ]
+                                                              │                 │
+                                                              └───────> build/<arch>/iso/keira-<arch>-<date>.iso
 ```
+
+## Architecture-Isolated Build Directory Layout
+
+The build output is isolated per architecture under `build/<arch>/`:
+- `build/<arch>/bin/`: Compiled ELF executables (`keira.bin`, `kcc.elf`).
+- `build/<arch>/iso/`: Bootable Multiboot2 ISO images (`keira-<arch>-<date>.iso`).
+- `build/<arch>/disk/`: Architecture-specific FAT16 hard disk image (`disk.img`) and USTAR RAM disk (`initrd.tar`).
+- `build/<arch>/obj/`: Intermediate assembly object files (`*.asm.o`).
+- `build/<arch>/staging/`: Isolated filesystem staging workspaces (`staging/fs_root/`, `staging/isofiles/`).
 
 ## Architecture Parameter & Targets
 
@@ -40,10 +49,10 @@ make ARCH=i686 all
 - `make test`: Runs headless automated QEMU smoke test for selected architecture.
 - `make test-all`: Runs headless automated smoke tests across both architectures (`x86_64` and `i686`).
 - `make rust`: Compiles `keira-kernel` static library for selected architecture (`ARCH=x86_64|i686`).
-- `make user`: Compiles freestanding userland C compiler (`build/kcc.elf`).
-- `make disk`: Creates and formats the FAT16 hard disk image (`build/disk.img`).
-- `make initrd`: Builds the USTAR RAM disk archive (`build/initrd.tar`).
-- `make iso`: Packages bootable ISO with GRUB Multiboot2 bootloader.
+- `make user`: Compiles freestanding userland C compiler (`build/<arch>/bin/kcc.elf`).
+- `make disk`: Creates and formats the FAT16 hard disk image (`build/<arch>/disk/disk.img`).
+- `make initrd`: Builds the USTAR RAM disk archive (`build/<arch>/disk/initrd.tar`).
+- `make iso`: Packages bootable ISO with GRUB Multiboot2 bootloader (`build/<arch>/iso/`).
 - `make info`: Displays active build configuration and toolchain versions.
 - `make check`: Verifies all 15 build toolchain dependencies.
 - `make format`: Formats all Rust and C code via `cargo fmt` and `clang-format`.

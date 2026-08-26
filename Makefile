@@ -30,16 +30,22 @@ KERNEL_NAME     := keira
 VERSION         := $(shell grep -m 1 '^version = ' crates/kernel/Cargo.toml | cut -d '"' -f 2)
 DATE_SUFFIX     := $(shell date +%Y-%m-%d)
 
-# Directory layout paths
-BUILD_DIR       := build
-OBJ_DIR         := $(BUILD_DIR)/obj/$(ARCH)
-ISO_DIR         := $(BUILD_DIR)/isofiles
-FS_ROOT         := $(BUILD_DIR)/fs_root
-DISK_IMG        := $(BUILD_DIR)/disk.img
+# Architecture-isolated build directory hierarchy
+BUILD_ROOT      := build
+BUILD_DIR       := $(BUILD_ROOT)/$(ARCH)
+BIN_DIR         := $(BUILD_DIR)/bin
+ISO_OUT_DIR     := $(BUILD_DIR)/iso
+DISK_DIR        := $(BUILD_DIR)/disk
+OBJ_DIR         := $(BUILD_DIR)/obj
+STAGING_DIR     := $(BUILD_DIR)/staging
+ISO_DIR         := $(STAGING_DIR)/isofiles
+FS_ROOT         := $(STAGING_DIR)/fs_root
 
-KERNEL_BIN      := $(BUILD_DIR)/$(KERNEL_NAME)-$(ARCH).bin
-KERNEL_ISO      := $(BUILD_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
-USER_ELF        := $(BUILD_DIR)/kcc-$(ARCH).elf
+KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
+KERNEL_ISO      := $(ISO_OUT_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
+USER_ELF        := $(BIN_DIR)/kcc.elf
+DISK_IMG        := $(DISK_DIR)/disk.img
+INITRD_TAR      := $(DISK_DIR)/initrd.tar
 
 # Configurable build parameters
 DISK_SIZE       ?= 32
@@ -154,11 +160,11 @@ LOG_MISS        := printf "  $(CLR_RED)$(CLR_BOLD)[MISS]$(CLR_RESET)  %s\n"
 SHELL_CMDS      := guide login drives use ramdisk system cpu runtime time memory \
                    devices wait initrd wipe reset run write tasks disk list \
                    go script view create folder delete edit copy help history \
-                   move please search download network stop env sync \
+                   move search download network stop env sync \
                    protect fileinfo framebuffer usb https user hostname syslog kvm \
                    nvme ext4 cgroups futex bpf tpm swap seccomp epoll \
                    drivers lkm unwind power perf timer eventfd mac mqueue \
-                   kill jobs fg bg lvm raid ipcs ipcrm iptables firewall
+                   kill jobs fg bg lvm raid ipcs ipcrm iptables firewall service
 
 DRIVER_FILES    := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
                    ide.sys ahci.sys sound.sys e1000.sys
@@ -170,7 +176,7 @@ DRIVER_FILES    := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
 .DEFAULT_GOAL   := all
 
 # Primary build targets
-all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image
+all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image for current ARCH
 
 full: ## Build kernel and ISO images for all supported architectures (x86_64 & i686)
 	@$(LOG_INFO) "Building Keira for all architectures (x86_64 & i686)..."
@@ -184,7 +190,7 @@ iso: $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
 
 disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
-initrd: $(BUILD_DIR)/initrd.tar ## Build RAM Disk USTAR archive
+initrd: $(INITRD_TAR) ## Build RAM Disk USTAR archive
 
 user: $(USER_ELF) ## Build user-space C compiler (kcc.elf)
 
@@ -192,15 +198,15 @@ rust: | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
-dirs: ## Create build output directory hierarchy
-	$(Q)mkdir -p $(BUILD_DIR) $(OBJ_DIR)
+dirs: ## Create architecture-isolated build output directory hierarchy
+	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR)
 
 # Binary & ISO construction rules
-$(KERNEL_ISO): $(KERNEL_BIN) $(BUILD_DIR)/initrd.tar | dirs
-	@$(LOG_ISO) "Creating bootable ISO..."
+$(KERNEL_ISO): $(KERNEL_BIN) $(INITRD_TAR) | dirs
+	@$(LOG_ISO) "Creating bootable ISO ($(ARCH))..."
 	$(Q)mkdir -p $(ISO_DIR)/boot/grub
 	$(Q)cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_NAME).bin
-	$(Q)cp $(BUILD_DIR)/initrd.tar $(ISO_DIR)/boot/initrd.tar
+	$(Q)cp $(INITRD_TAR) $(ISO_DIR)/boot/initrd.tar
 	$(Q)echo 'set timeout=0' > $(ISO_DIR)/boot/grub/grub.cfg
 	$(Q)echo 'set default=0' >> $(ISO_DIR)/boot/grub/grub.cfg
 	$(Q)echo '' >> $(ISO_DIR)/boot/grub/grub.cfg
@@ -227,12 +233,12 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
 $(USER_ELF): $(USER_KCC_SRCS) $(USER_LIB_SRCS) user/linker.ld | dirs
-	@$(LOG_INFO) "Building user space program: kcc ($(notdir $(USER_ELF)))..."
+	@$(LOG_INFO) "Building user space program: kcc ($(ARCH))..."
 	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o $(USER_ELF)
 
 # Canonical root filesystem & disk image rules
 fs-root: $(USER_ELF) | dirs
-	@$(LOG_INFO) "Populating canonical root filesystem..."
+	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT)
 	$(Q)mkdir -p $(FS_ROOT)/system/bin
 	$(Q)mkdir -p $(FS_ROOT)/system/dev
@@ -289,21 +295,21 @@ fs-root: $(USER_ELF) | dirs
 
 $(DISK_IMG): fs-root
 	@rm -f $(DISK_IMG)
-	@$(LOG_DISK) "Creating $(DISK_SIZE)MB FAT16 disk image..."
+	@$(LOG_DISK) "Creating $(DISK_SIZE)MB FAT16 disk image ($(ARCH))..."
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
-	@$(LOG_DISK) "Creating nested Keira directory structure..."
+	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
 	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save ::/data/www 2>/dev/null || true
-	@$(LOG_DISK) "Populating disk image with system files..."
+	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \
 	done
 	@$(LOG_DONE) "$(DISK_IMG) ready"
 
-$(BUILD_DIR)/initrd.tar: fs-root | dirs
-	@$(LOG_INFO) "Building RAM Disk (Initrd)..."
-	$(Q)cd $(FS_ROOT) && tar -cf ../initrd.tar *
-	@$(LOG_DONE) "$(BUILD_DIR)/initrd.tar ready"
+$(INITRD_TAR): fs-root | dirs
+	@$(LOG_INFO) "Building RAM Disk (Initrd) ($(ARCH))..."
+	$(Q)cd $(FS_ROOT) && tar -cf $(CURDIR)/$(INITRD_TAR) *
+	@$(LOG_DONE) "$(INITRD_TAR) ready"
 
 # QEMU execution & debugging targets
 run: all ## Launch Keira in QEMU virtual machine for current ARCH
@@ -331,7 +337,7 @@ qemu-net: all ## Launch Keira in QEMU with e1000 NIC emulation
 # Automated testing & verification
 test: all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
-	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > build/test-$(ARCH).log 2>&1 || true
+	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > $(BUILD_DIR)/test.log 2>&1 || true
 	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
 
 test-all: ## Run automated headless smoke tests on all architectures
@@ -343,7 +349,7 @@ test-all: ## Run automated headless smoke tests on all architectures
 # Code hygiene, formatting, and linting
 clean: ## Remove build directory and compiled artifacts
 	@$(LOG_INFO) "Cleaning build artifacts..."
-	$(Q)rm -rf $(BUILD_DIR)
+	$(Q)rm -rf $(BUILD_ROOT)
 	$(Q)$(CARGO) clean
 	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -363,9 +369,9 @@ lint: ## Static analysis of C userland code using clang-tidy
 
 # Inspection & diagnostic utilities
 size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
-	@printf "  $(CLR_BOLD)Section Sizes:$(CLR_RESET)\n"
+	@printf "  $(CLR_BOLD)Section Sizes ($(ARCH)):$(CLR_RESET)\n"
 	$(Q)size $(KERNEL_BIN) | sed 's/^/    /'
-	@printf "\n  $(CLR_BOLD)File Size:$(CLR_RESET)\n"
+	@printf "\n  $(CLR_BOLD)File Size ($(ARCH)):$(CLR_RESET)\n"
 	@printf "    $(CLR_CYAN)%s$(CLR_RESET)\n\n" "$$(du -h $(KERNEL_BIN) | cut -f1) ($(KERNEL_BIN))"
 
 objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
