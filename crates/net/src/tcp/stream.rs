@@ -260,9 +260,17 @@ where
         return Err("Network card offline");
     }
 
-    let src_port = 49152u16;
-    let initial_seq = 0x10000000u32;
+    let src_port = 49152u16.wrapping_add((get_uptime_ms() as u16) % 16384);
+    let initial_seq = 0x10000000u32.wrapping_add((get_uptime_ms() as u32).wrapping_mul(1103515245));
     let mac = E1000_MAC;
+
+    // Drain any lingering stale packets from RX queue
+    let mut drain_buf = [0u8; 2048];
+    for _ in 0..16 {
+        if e1000::receive_raw_frame(&mut drain_buf).is_err() {
+            break;
+        }
+    }
 
     send_arp_announcement();
 
@@ -302,20 +310,24 @@ where
     let mut rx_buf = [0u8; 2048];
     let start_tick = get_uptime_ms();
 
-    while get_uptime_ms() < start_tick + 2500 {
+    while get_uptime_ms() < start_tick + 3500 {
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
             if bytes >= 54
                 && rx_buf[12] == 0x08
                 && rx_buf[13] == 0x00
                 && rx_buf[23] == 0x06
                 && rx_buf[30..34] == [10, 0, 2, 15]
+                && (rx_buf[26..30] == target_ip || rx_buf[26..30] == [10, 0, 2, 2])
             {
-                let tcp_flags = rx_buf[47];
-                if (tcp_flags & 0x12) == 0x12 || (tcp_flags & 0x02) != 0 {
-                    server_seq =
-                        u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
-                    synack_received = true;
-                    break;
+                let dst_p = u16::from_be_bytes([rx_buf[36], rx_buf[37]]);
+                if dst_p == src_port {
+                    let tcp_flags = rx_buf[47];
+                    if (tcp_flags & 0x12) == 0x12 || (tcp_flags & 0x02) != 0 {
+                        server_seq =
+                            u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
+                        synack_received = true;
+                        break;
+                    }
                 }
             }
         }
@@ -403,89 +415,93 @@ where
     let mut last_packet_time = get_uptime_ms();
     let client_cur_seq = initial_seq.wrapping_add(1 + request_data.len() as u32);
 
-    while get_uptime_ms() < last_packet_time + 3500 {
+    while get_uptime_ms() < last_packet_time + 4000 {
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
             if bytes >= 54
                 && rx_buf[12] == 0x08
                 && rx_buf[13] == 0x00
                 && rx_buf[23] == 0x06
-                && rx_buf[26..30] == target_ip
+                && (rx_buf[26..30] == target_ip || rx_buf[26..30] == [10, 0, 2, 2])
                 && rx_buf[30..34] == [10, 0, 2, 15]
             {
-                let tcp_flags = rx_buf[47];
-                let rx_seq = u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
+                let dst_p = u16::from_be_bytes([rx_buf[36], rx_buf[37]]);
+                if dst_p == src_port {
+                    let tcp_flags = rx_buf[47];
+                    let rx_seq =
+                        u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
 
-                if (tcp_flags & TCP_FLAG_RST) != 0 {
-                    break;
-                }
+                    if (tcp_flags & TCP_FLAG_RST) != 0 {
+                        break;
+                    }
 
-                if let Some(payload) = parse_tcp_payload(&rx_buf[..bytes]) {
-                    if !payload.is_empty() {
-                        last_packet_time = get_uptime_ms();
+                    if let Some(payload) = parse_tcp_payload(&rx_buf[..bytes]) {
+                        if !payload.is_empty() {
+                            last_packet_time = get_uptime_ms();
 
-                        let data_to_append = if !headers_stripped {
-                            let mut body_start = None;
-                            for i in 0..payload.len().saturating_sub(3) {
-                                if &payload[i..i + 4] == b"\r\n\r\n" {
-                                    body_start = Some(i + 4);
-                                    if let Ok(hdr_str) = core::str::from_utf8(&payload[..i]) {
-                                        for line in hdr_str.lines() {
-                                            if let Some(cl_str) =
-                                                line.strip_prefix("Content-Length: ")
-                                            {
-                                                if let Ok(cl) = cl_str.trim().parse::<usize>() {
-                                                    content_length = Some(cl);
-                                                }
-                                            } else if let Some(cl_str) =
-                                                line.strip_prefix("content-length: ")
-                                            {
-                                                if let Ok(cl) = cl_str.trim().parse::<usize>() {
-                                                    content_length = Some(cl);
+                            let data_to_append = if !headers_stripped {
+                                let mut body_start = None;
+                                for i in 0..payload.len().saturating_sub(3) {
+                                    if &payload[i..i + 4] == b"\r\n\r\n" {
+                                        body_start = Some(i + 4);
+                                        if let Ok(hdr_str) = core::str::from_utf8(&payload[..i]) {
+                                            for line in hdr_str.lines() {
+                                                if let Some(cl_str) =
+                                                    line.strip_prefix("Content-Length: ")
+                                                {
+                                                    if let Ok(cl) = cl_str.trim().parse::<usize>() {
+                                                        content_length = Some(cl);
+                                                    }
+                                                } else if let Some(cl_str) =
+                                                    line.strip_prefix("content-length: ")
+                                                {
+                                                    if let Ok(cl) = cl_str.trim().parse::<usize>() {
+                                                        content_length = Some(cl);
+                                                    }
                                                 }
                                             }
                                         }
+                                        break;
                                     }
+                                }
+                                headers_stripped = true;
+                                if let Some(bs) = body_start {
+                                    &payload[bs..]
+                                } else {
+                                    payload
+                                }
+                            } else {
+                                payload
+                            };
+
+                            let available = STREAM_BUFFER_CAPACITY.saturating_sub(total_downloaded);
+                            let copy_len = core::cmp::min(data_to_append.len(), available);
+                            if copy_len > 0 {
+                                let buf_ptr = (&raw mut STREAM_DOWNLOAD_BUFFER) as *mut u8;
+                                core::ptr::copy_nonoverlapping(
+                                    data_to_append.as_ptr(),
+                                    buf_ptr.add(total_downloaded),
+                                    copy_len,
+                                );
+                                total_downloaded += copy_len;
+                                on_progress(total_downloaded, content_length);
+                            }
+
+                            // Send TCP ACK
+                            ack_seq = rx_seq.wrapping_add(payload.len() as u32);
+                            let _ = send_ack(client_cur_seq, ack_seq);
+
+                            if let Some(cl) = content_length {
+                                if total_downloaded >= cl {
                                     break;
                                 }
                             }
-                            headers_stripped = true;
-                            if let Some(bs) = body_start {
-                                &payload[bs..]
-                            } else {
-                                payload
-                            }
-                        } else {
-                            payload
-                        };
-
-                        let available = STREAM_BUFFER_CAPACITY.saturating_sub(total_downloaded);
-                        let copy_len = core::cmp::min(data_to_append.len(), available);
-                        if copy_len > 0 {
-                            let buf_ptr = (&raw mut STREAM_DOWNLOAD_BUFFER) as *mut u8;
-                            core::ptr::copy_nonoverlapping(
-                                data_to_append.as_ptr(),
-                                buf_ptr.add(total_downloaded),
-                                copy_len,
-                            );
-                            total_downloaded += copy_len;
-                            on_progress(total_downloaded, content_length);
-                        }
-
-                        // Send TCP ACK
-                        ack_seq = rx_seq.wrapping_add(payload.len() as u32);
-                        let _ = send_ack(client_cur_seq, ack_seq);
-
-                        if let Some(cl) = content_length {
-                            if total_downloaded >= cl {
-                                break;
-                            }
                         }
                     }
-                }
 
-                if (tcp_flags & TCP_FLAG_FIN) != 0 {
-                    let _ = send_ack(client_cur_seq, rx_seq.wrapping_add(1));
-                    break;
+                    if (tcp_flags & TCP_FLAG_FIN) != 0 {
+                        let _ = send_ack(client_cur_seq, rx_seq.wrapping_add(1));
+                        break;
+                    }
                 }
             }
         }

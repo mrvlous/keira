@@ -243,6 +243,13 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
 /// Process any pending shell commands and background service ticks.
 pub fn process_pending() {
     unsafe {
+        while keira_io::serial::has_byte() {
+            let c = keira_io::serial::read_byte();
+            if c != 0 {
+                shell_handle_keypress(c);
+            }
+        }
+
         service::tick_all();
 
         if !COMMAND_READY {

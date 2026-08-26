@@ -47,6 +47,29 @@ fn is_transmit_empty() -> bool {
     unsafe { (inb(COM1 + 5) & 0x20) != 0 }
 }
 
+/// Check if a byte has been received on the COM1 serial port (Data Ready).
+#[inline(always)]
+pub fn has_byte() -> bool {
+    unsafe {
+        if !SERIAL_INITIALIZED {
+            init();
+        }
+        (inb(COM1 + 5) & 0x01) != 0
+    }
+}
+
+/// Read a single received byte from the COM1 serial port.
+#[inline(always)]
+pub fn read_byte() -> u8 {
+    unsafe {
+        if has_byte() {
+            inb(COM1)
+        } else {
+            0
+        }
+    }
+}
+
 /// Write a single ASCII byte to the COM1 serial port in pure Rust.
 pub fn putchar(c: u8) {
     unsafe {
