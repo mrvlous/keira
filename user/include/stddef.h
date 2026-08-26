@@ -15,7 +15,8 @@
 #define NULL ((void *)0)
 #endif
 
-#if defined(__x86_64__) || defined(__LP64__) || (defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ == 8)
+#if defined(__x86_64__) || defined(__LP64__) || \
+    (defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ == 8)
 typedef unsigned long long size_t;
 typedef long long ptrdiff_t;
 #else
