@@ -18,7 +18,11 @@ typedef int32_t pid_t;
 typedef int32_t uid_t;
 typedef int32_t gid_t;
 typedef int64_t off_t;
+#if defined(__x86_64__) || defined(__LP64__) || (defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ == 8)
 typedef int64_t ssize_t;
+#else
+typedef int32_t ssize_t;
+#endif
 typedef uint32_t mode_t;
 typedef int64_t time_t;
 

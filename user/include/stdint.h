@@ -21,8 +21,13 @@ typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
 
+#if defined(__x86_64__) || defined(__LP64__) || (defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ == 8)
 typedef long long intptr_t;
 typedef unsigned long long uintptr_t;
+#else
+typedef int intptr_t;
+typedef unsigned int uintptr_t;
+#endif
 
 typedef int64_t intmax_t;
 typedef uint64_t uintmax_t;

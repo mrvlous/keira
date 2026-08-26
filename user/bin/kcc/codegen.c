@@ -40,7 +40,7 @@ void emit_u32(unsigned int val) {
     emit_u8((unsigned char)((val >> 24) & 0xFF));
 }
 
-void emit_u64(unsigned long val) {
+void emit_u64(uint64_t val) {
     emit_u32((unsigned int)(val & 0xFFFFFFFF));
     emit_u32((unsigned int)((val >> 32) & 0xFFFFFFFF));
 }

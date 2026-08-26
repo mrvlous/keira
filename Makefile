@@ -62,7 +62,7 @@ ifeq ($(ARCH),i686)
 	             arch/x86/kernel/idt.asm \
 	             arch/x86/kernel/isr.asm \
 	             arch/x86/kernel/syscall.asm
-    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 -mno-sse -mno-sse2 -mno-mmx -Iuser/include -Iuser/bin/kcc/include -T user/linker32.ld -Wl,--no-warn-rwx-segments -static -no-pie -lgcc
+    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 -mno-sse -mno-sse2 -mno-mmx -Iuser/include -Iuser/bin/kcc/include -T user/linker32.ld -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
     ASM_FLAGS     := -f elf64 -I arch/x86/include/asm/
     LD_FLAGS      := -n -T arch/x86/linker.ld --gc-sections --no-warn-rwx-segments
@@ -78,7 +78,7 @@ else
 	             arch/x86/kernel/idt.asm \
 	             arch/x86/kernel/isr.asm \
 	             arch/x86/kernel/syscall.asm
-    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -static -no-pie
+    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie
 endif
 
 QEMU_FLAGS    := -cdrom $(KERNEL_ISO) \

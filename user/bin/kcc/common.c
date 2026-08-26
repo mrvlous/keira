@@ -99,7 +99,7 @@ void print_num(int val) {
     print_str(buf + idx);
 }
 
-void print_hex(unsigned long val) {
+void print_hex(uint64_t val) {
     char buf[20];
     int idx = 19;
     buf[19] = 0;
@@ -130,28 +130,28 @@ void error_msg(const char *msg) {
 }
 
 void write_u8(char *buf, int offset, int val) {
-    buf[offset] = val;
+    buf[offset] = (char)val;
 }
 
 void write_u16(char *buf, int offset, int val) {
-    buf[offset] = val & 255;
-    buf[offset + 1] = (val >> 8) & 255;
+    buf[offset] = (char)(val & 255);
+    buf[offset + 1] = (char)((val >> 8) & 255);
 }
 
 void write_u32(char *buf, int offset, int val) {
-    buf[offset] = val & 255;
-    buf[offset + 1] = (val >> 8) & 255;
-    buf[offset + 2] = (val >> 16) & 255;
-    buf[offset + 3] = (val >> 24) & 255;
+    buf[offset] = (char)(val & 255);
+    buf[offset + 1] = (char)((val >> 8) & 255);
+    buf[offset + 2] = (char)((val >> 16) & 255);
+    buf[offset + 3] = (char)((val >> 24) & 255);
 }
 
-void write_u64(char *buf, int offset, unsigned long val) {
-    buf[offset] = val & 255;
-    buf[offset + 1] = (val >> 8) & 255;
-    buf[offset + 2] = (val >> 16) & 255;
-    buf[offset + 3] = (val >> 24) & 255;
-    buf[offset + 4] = (val >> 32) & 255;
-    buf[offset + 5] = (val >> 40) & 255;
-    buf[offset + 6] = (val >> 48) & 255;
-    buf[offset + 7] = (val >> 56) & 255;
+void write_u64(char *buf, int offset, uint64_t val) {
+    buf[offset] = (char)(val & 255);
+    buf[offset + 1] = (char)((val >> 8) & 255);
+    buf[offset + 2] = (char)((val >> 16) & 255);
+    buf[offset + 3] = (char)((val >> 24) & 255);
+    buf[offset + 4] = (char)((val >> 32) & 255);
+    buf[offset + 5] = (char)((val >> 40) & 255);
+    buf[offset + 6] = (char)((val >> 48) & 255);
+    buf[offset + 7] = (char)((val >> 56) & 255);
 }

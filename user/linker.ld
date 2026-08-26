@@ -45,4 +45,9 @@ SECTIONS {
         *(.bss.*)
         *(COMMON)
     } :data
+
+    /DISCARD/ : {
+        *(.comment)
+        *(.note.gnu.build-id)
+    }
 }

@@ -17,7 +17,7 @@
 void emit_u8(unsigned char val);
 void emit_u16(unsigned short val);
 void emit_u32(unsigned int val);
-void emit_u64(unsigned long val);
+void emit_u64(uint64_t val);
 
 /* Register & Immediate Operations */
 void emit_load_imm(long val);

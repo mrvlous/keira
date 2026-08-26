@@ -32,12 +32,12 @@ void k_memset(char *dest, int val, int n);
 
 void print_str(const char *s);
 void print_num(int val);
-void print_hex(unsigned long val);
+void print_hex(uint64_t val);
 void error_msg(const char *msg);
 
 void write_u8(char *buf, int offset, int val);
 void write_u16(char *buf, int offset, int val);
 void write_u32(char *buf, int offset, int val);
-void write_u64(char *buf, int offset, unsigned long val);
+void write_u64(char *buf, int offset, uint64_t val);
 
 #endif /* _KCC_COMMON_H */
