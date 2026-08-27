@@ -1,32 +1,59 @@
 Keira Kernel
 ============
 
-Keira is a freestanding, 100% pure Rust operating system kernel in Ring 0 supporting both 64-bit (x86_64) and pure 32-bit (i686) bare-metal architectures. It
-manages system hardware resources, coordinates modular Rust device drivers, and
-provides a preemptive priority multitasking scheduler, 62 system calls,
-AHCI SATA storage driver, NVMe PCIe Driver, VBE Framebuffer, USB Host Controller, LKM, HPET Timer, PCIe ECAM/MSI, io_uring Async I/O, NX/KASLR, Futex Threading, cgroups, EXT4 Driver, KVM Hypervisor, TPM 2.0, BPF Engine, DMA Allocator, Syslog Buffer, MAC Security, POSIX Timers, Pipe Splice, ACPI Power, PMU Counters, EventFD, Seccomp BPF, Swap Space, Epoll, Message Queues, POSIX Signals & Job Control, USB Mass Storage & HID Subsystem, Hardware RAID & LVM, POSIX Shared Memory IPC, Stateful Netfilter IPv4 Firewall Engine,
-Native TLS 1.3 Cryptographic Engine, IPC Shared Memory & Pipe subsystems, Multi-User Accounts & Hostname, POSIX File Permissions & Multi-TTY, Userland Socket API, Native KCC Compiler (Keira C Compiler),
-75 native shell commands, and a system shell controlled by a hyper-modular Rust kernel workspace.
+Keira is an educational, exploratory freestanding operating system kernel in
+Ring 0 built from scratch in safe Rust, Assembly, and C, supporting both modern
+64-bit (x86_64) and pure 32-bit (i686) bare-metal architectures.
+
+Built as an open systems programming learning journey, Keira manages hardware
+resources from first principles, coordinates modular device drivers, and
+provides a preemptive multitasking scheduler, 62 system calls, bare-metal
+TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR initrd, Ring 3 userland
+isolation, and an in-kernel C compiler (kcc.elf).
+
+The Story & Learning Journey
+----------------------------
+
+Keira serves as a hands-on laboratory for understanding the core foundations
+of computer systems:
+
+* Bare-Metal Bootstrap: Multiboot2, GDT, TSS, IDT, and APIC interrupts.
+* Memory Architecture: Frame bitmapped allocator, 4-level paging, and heap.
+* Multitasking: Preemptive timer-tick context switching and POSIX signals.
+* Bare-Metal Networking: e1000/RTL8139, ARP, IPv4, UDP, DHCP, DNS, TCP, TLS.
+* Storage & Filesystems: ATA, AHCI, NVMe, FAT16, block LRU cache, and VFS.
+* Ring 3 Userland: Privilege separation, syscall ABI, and native C compiler.
+
+Read the detailed engineering journal: docs/journey/README.md
 
 Quick Start
 -----------
 
 * Get the latest code: https://github.com/mrvlous/keira
-* Setup the workspace: See docs/contributing/setup.md
+* Setup the workspace: See docs/contributing/guides/setup.md
 * Build & run 64-bit kernel: `make run` (or `make run-64`)
 * Build & run 32-bit kernel: `make ARCH=i686 run` (or `make run-32`)
 * Build all architectures: `make full`
 * Automated multi-architecture test suite: `make test-all`
 
-Architecture & Documentation Map
---------------------------------
+Hyper-Modular Documentation Architecture
+----------------------------------------
 
-Explore the kernel's core subsystems and design details across 4 primary sections:
+Explore the kernel across 13 first-class hyper-modular domains:
 
-* Hyper-Modular Kernel Crates: docs/crates/README.md
-* System Architecture & Blueprints: docs/architecture/README.md
-* Userland Runtime & C SDK: docs/userland/README.md
-* Contribution Guidelines: docs/contributing/README.md
+* Learning Journey: docs/journey/README.md
+* Kernel Core: docs/kernel/README.md
+* Memory Subsystems: docs/memory/README.md
+* Task & Scheduling: docs/task/README.md
+* System Calls: docs/syscall/README.md
+* Inter-Process Communication: docs/ipc/README.md
+* Filesystems & VFS: docs/fs/README.md
+* Hardware Device Drivers: docs/drivers/README.md
+* Layered Network Stack: docs/net/README.md
+* Cryptographic Security: docs/crypto/README.md
+* Shell & Utilities: docs/shell/README.md
+* Userland & C SDK: docs/userland/README.md
+* Contributor Guidelines: docs/contributing/README.md
 
 More modular guides can be found starting from the documentation map: docs/README.md
 
@@ -35,53 +62,55 @@ Who Are You?
 
 Find your role below:
 
-* New Kernel Developer - Getting started with kernel development
-* Academic Researcher - Studying kernel internals and architecture
-* Device Driver Developer - Writing drivers for hardware interfaces
+* Systems Student & Learner - Exploring low-level OS internals from scratch
+* Academic Researcher - Studying kernel architecture and Rust safety contracts
+* Device Driver Developer - Writing drivers for hardware and block interfaces
 * AI Coding Assistant - LLMs and AI-powered development tools
 
 For Specific Users
 ==================
 
-New Kernel Developer
---------------------
+Systems Student & Learner
+-------------------------
 
-Welcome! Start your Keira development journey here:
+Welcome! Start your systems development journey here:
 
-* Getting Started: docs/contributing/setup.md
-* Build Pipeline: docs/contributing/build.md
-* Coding Style: docs/contributing/style.md
-* Contribution Workflow: docs/contributing/workflow.md
-* Bootstrapping Sequence: docs/architecture/boot_pipeline.md
+* Learning Journal: docs/journey/README.md
+* Getting Started: docs/contributing/guides/setup.md
+* Build Pipeline: docs/contributing/guides/build.md
+* Coding Style: docs/contributing/guides/style.md
+* Contribution Workflow: docs/contributing/guides/workflow.md
+* Bootstrapping Sequence: docs/kernel/boot.md
 
 Academic Researcher
 -------------------
 
 Explore the kernel's core subsystems and design details:
 
-* Memory Management: docs/architecture/memory_model.md
-* Task Scheduler: docs/crates/task/scheduler.md
-* System Calls and Privilege: docs/crates/syscall/table.md
-* Cryptographic Subsystem: docs/crates/crypto/README.md
-* Virtual Filesystem (VFS) Layer: docs/crates/fs/vfs.md
-* FAT Filesystem Implementation: docs/crates/fs/fat.md
-* TAR Boot initrd Reader: docs/crates/fs/tar.md
-* Native KCC Compiler: docs/userland/kcc_compiler.md
-* Freestanding C SDK: docs/userland/c_sdk.md
-* Multi-User Accounts & System Hostname: docs/userland/users.md
-* POSIX File Permissions & Multi-TTY: docs/userland/permissions.md
+* Memory Management: docs/memory/README.md
+* Task Scheduler: docs/task/scheduler.md
+* System Calls and Privilege: docs/syscall/table.md
+* Cryptographic Subsystem: docs/crypto/README.md
+* Virtual Filesystem (VFS) Layer: docs/fs/README.md
+* FAT Filesystem Implementation: docs/fs/fat.md
+* TAR Boot initrd Reader: docs/fs/initrd.md
+* Native KCC Compiler: docs/userland/compiler/README.md
+* Freestanding C SDK: docs/userland/sdk/README.md
+* Multi-User Accounts & System Hostname: docs/userland/system/users.md
+* POSIX File Permissions & Multi-TTY: docs/userland/system/permissions.md
 
 Device Driver Developer
 -----------------------
 
 Write and support hardware device drivers:
 
-* VGA Text Console & VBE Framebuffer: docs/crates/io/vga.md
-* Serial UART COM1: docs/crates/io/serial.md
-* Sound (PC Speaker & HDA): docs/crates/io/sound.md
-* Storage (IDE, AHCI, NVMe): docs/crates/io/storage.md
-* Intel e1000 Network Driver: docs/crates/net/drivers.md
-* USB Host Controller Driver: docs/crates/io/usb.md
+* Driver Framework: docs/drivers/README.md
+* VGA Text Console & VBE Framebuffer: docs/drivers/display/README.md
+* Serial UART COM1: docs/drivers/serial/README.md
+* Sound (PC Speaker & HDA): docs/drivers/sound/README.md
+* Storage (IDE, AHCI, NVMe): docs/drivers/storage/README.md
+* Intel e1000 Network Driver: docs/drivers/net/e1000.md
+* USB Host Controller Driver: docs/drivers/bus/usb.md
 
 AI Coding Assistant
 -------------------
@@ -89,7 +118,7 @@ AI Coding Assistant
 CRITICAL: If you are an LLM or AI-powered coding assistant, you MUST read and
 follow the coding standards before proposing changes to Keira:
 
-* Coding Style and Comment Rules: docs/contributing/style.md
+* Coding Style and Comment Rules: docs/contributing/guides/style.md
 
 Communication and Support
 =========================

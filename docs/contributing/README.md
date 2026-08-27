@@ -1,27 +1,36 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Contributor Guide
+# Keira Kernel Contributor & Learning Guide
 
-Welcome to the Keira Kernel development guide! Keira is a freestanding, modular x86_64 operating system kernel written in safe Rust, Assembly, and C.
+Welcome to the Keira Kernel development and contributor guide! Keira is an educational, freestanding, hyper-modular x86 operating system kernel written in safe Rust, Assembly, and C.
 
-## Navigation & Sections
+Whether you are a student exploring systems programming, a seasoned developer curious about bare-metal Rust, or a hobbyist building your own OS, you are warmly invited to learn, experiment, and contribute.
 
-| Guide | Description |
-| :--- | :--- |
-| **[`setup.md`](setup.md)** | Toolchain installation, target specifications, and environment setup |
-| **[`build.md`](build.md)** | Makefile targets, Cargo profiles, `-Zbuild-std`, and ISO generation |
-| **[`workflow.md`](workflow.md)** | Git branch strategy, Conventional Commits, and Pull Request process |
-| **[`style.md`](style.md)** | Coding conventions, Rustdoc formatting, and license header rules |
-| **[`testing.md`](testing.md)** | Automated unit testing, QEMU headless smoke tests, and stress testing |
-| **[`debugging.md`](debugging.md)** | Remote GDB debugging (`:1234`), COM1 serial logs, and QEMU monitor |
-| **[`unsafe_guidelines.md`](unsafe_guidelines.md)** | Unsafe Rust safety contracts, raw pointers, and hardware MMIO |
-| **[`architecture_review.md`](architecture_review.md)** | Modular isolation, zero-bloat policy, and architectural rubric |
-| **[`adding_syscalls.md`](adding_syscalls.md)** | Tutorial on adding and registering new kernel system calls |
-| **[`adding_commands.md`](adding_commands.md)** | Tutorial on implementing new native shell commands |
-| **[`adding_drivers.md`](adding_drivers.md)** | Tutorial on developing new I/O and block device drivers |
+---
+
+## Contributor Submodules
+
+```mermaid
+graph TD
+    Contributor["Contributor Documentation"] --> Guides["guides/<br/>Workspace Setup, Build System, Workflow & Style"]
+    Contributor --> Verification["verification/<br/>Testing Harness, Remote GDB & Unsafe Rust Guidelines"]
+    Contributor --> Tutorials["tutorials/<br/>Step-by-Step Guides: Syscalls, Shell Commands & Drivers"]
+```
+
+---
+
+## Contributor Module Index
+
+| Submodule | Focus Area | Description |
+| :--- | :--- | :--- |
+| [`guides/`](guides/README.md) | Development Guides | Toolchain setup, build matrix (`make full`), branch strategy, and style rules |
+| [`verification/`](verification/README.md) | Verification & Debugging | Automated QEMU test suite, remote GDB debugging, and unsafe Rust safety contracts |
+| [`tutorials/`](tutorials/README.md) | Developer Tutorials | Practical tutorials for implementing new syscalls, shell commands, and device drivers |
+
+---
 
 ## Core Principles
 
-1. **Hyper-Modular Separation**: Subsystems reside in their designated `crates/*` package with minimal public surface.
+1. **Hyper-Modular Separation**: Subsystems reside in their designated crate package with minimal public surface.
 2. **Deterministic Safety**: All `unsafe` blocks must document a formal `# Safety` contract.
 3. **Zero Userland Bloat**: Keep the userland footprint minimal, focused, and clean (`kcc.elf` compiler binary).
