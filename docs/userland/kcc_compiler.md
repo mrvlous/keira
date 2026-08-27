@@ -41,8 +41,8 @@ graph TD
 
 | Target Architecture | Output Format | Base Virtual Address | Syscall Mechanism | Linker Script |
 | :--- | :--- | :--- | :--- | :--- |
-| **`x86_64`** | ELF64 Executable | `0x40000000` (1 GiB) | Native `syscall` / LSTAR | `user/linker.ld` |
-| **`i686`** | ELF32 Executable | `0x01000000` (16 MiB) | `int $0x80` Interrupt Vector | `user/linker32.ld` |
+| **`x86_64`** | ELF64 Executable | `0x40000000` (1 GiB) | Native `syscall` / LSTAR | `user/arch/x86/linker.ld` |
+| **`i686`** | ELF32 Executable | `0x01000000` (16 MiB) | `int $0x80` Interrupt Vector | `user/arch/x86/linker32.ld` |
 
 ## Supported Language Features & Syntax
 

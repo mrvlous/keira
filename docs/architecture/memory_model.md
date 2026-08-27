@@ -36,6 +36,6 @@ When launching userland programs (`run /system/bin/kcc.elf`), `vmm::clone_kernel
 
 In 32-bit Protected Mode, Keira operates with flat segmentation and hardware-enforced Ring 3 privileges:
 * **Kernel Memory (0 - 16 MiB)**: Code, heap, stack, and VGA buffers.
-* **Userland Binary Base**: `0x01000000` (16 MiB boundary linked via `user/linker32.ld`).
+* **Userland Binary Base**: `0x01000000` (16 MiB boundary linked via `user/arch/x86/linker32.ld`).
 * **Userland Stack Top**: `0x07FFF000 - 16` (~128 MiB boundary within standard physical bounds).
 * **Segment Selectors**: User Code `CS=0x1B` (GDT index 3, RPL 3) and User Data `DS/SS=0x23` (GDT index 4, RPL 3).

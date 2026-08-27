@@ -209,4 +209,5 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
      - `targets/x86/i686-keira-none.json` (32-bit Protected Mode)
 2. **Linker Scripts**:
    - Kernel Linkers: `arch/x86/linker.ld` (`x86_64`) and `arch/x86/linker32.ld` (`i686`).
-   - Userland Linkers: `user/linker.ld` (`x86_64` base `0x40000000`) and `user/linker32.ld` (`i686` base `0x01000000`).
+   - Userland Linkers: `user/arch/x86/linker.ld` (`x86_64` base `0x40000000`) and `user/arch/x86/linker32.ld` (`i686` base `0x01000000`).
+

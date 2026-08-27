@@ -72,9 +72,10 @@ ifeq ($(ARCH),i686)
                    arch/x86/kernel/idt.asm \
                    arch/x86/kernel/isr.asm \
                    arch/x86/kernel/syscall.asm
+    USER_LINKER_SCRIPT := user/arch/x86/linker32.ld
     USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                      -mno-sse -mno-sse2 -mno-mmx \
-                     -Iuser/include -Iuser/bin/kcc/include -T user/linker32.ld \
+                     -Iuser/include -Iuser/bin/kcc/include -T $(USER_LINKER_SCRIPT) \
                      -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
     ASM_FLAGS   := -f elf64 -I arch/x86/include/asm/
@@ -91,10 +92,11 @@ else
                    arch/x86/kernel/idt.asm \
                    arch/x86/kernel/isr.asm \
                    arch/x86/kernel/syscall.asm
+    USER_LINKER_SCRIPT := user/arch/x86/linker.ld
     USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                      -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
                      -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
-                     -Iuser/include -Iuser/bin/kcc/include -T user/linker.ld \
+                     -Iuser/include -Iuser/bin/kcc/include -T $(USER_LINKER_SCRIPT) \
                      -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie
 endif
 
@@ -232,7 +234,7 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
-$(USER_ELF): $(USER_KCC_SRCS) $(USER_LIB_SRCS) user/linker.ld | dirs
+$(USER_ELF): $(USER_KCC_SRCS) $(USER_LIB_SRCS) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Building user space program: kcc ($(ARCH))..."
 	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o $(USER_ELF)
 
