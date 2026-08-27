@@ -13,8 +13,23 @@ use crate::arp::table::send_arp_announcement;
 use crate::driver::e1000::{self, E1000_FOUND, E1000_MAC};
 use crate::ip::ipv4::ip_checksum;
 
+use core::sync::atomic::{AtomicU16, Ordering};
+
 extern "C" {
     fn get_uptime_ms() -> u64;
+}
+
+static NEXT_SRC_PORT: AtomicU16 = AtomicU16::new(49152);
+
+/// Allocate next unique source port in range 49152..65000.
+pub fn get_next_src_port() -> u16 {
+    let port = NEXT_SRC_PORT.fetch_add(1, Ordering::Relaxed);
+    if port < 49152 || port > 65000 {
+        NEXT_SRC_PORT.store(49152, Ordering::Relaxed);
+        49152
+    } else {
+        port
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -260,7 +275,7 @@ where
         return Err("Network card offline");
     }
 
-    let src_port = 49152u16.wrapping_add((get_uptime_ms() as u16) % 16384);
+    let src_port = get_next_src_port();
     let initial_seq = 0x10000000u32.wrapping_add((get_uptime_ms() as u32).wrapping_mul(1103515245));
     let mac = E1000_MAC;
 
@@ -304,18 +319,18 @@ where
 
     e1000::transmit_raw_frame(&syn_frame[..54])?;
 
-    // 2. Wait for SYN-ACK with Retransmission (up to 3 attempts, 1500ms timeout per attempt)
+    // 2. Wait for SYN-ACK with Retransmission (up to 4 attempts, 2500ms timeout per attempt)
     let mut server_seq = 0u32;
     let mut synack_received = false;
     let mut rx_buf = [0u8; 2048];
 
-    for attempt in 0..3 {
+    for attempt in 0..4 {
         let start_tick = get_uptime_ms();
         if attempt > 0 {
             let _ = e1000::transmit_raw_frame(&syn_frame[..54]);
         }
 
-        while get_uptime_ms() < start_tick + 1500 {
+        while get_uptime_ms() < start_tick + 2500 {
             if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
                 if bytes >= 54
                     && rx_buf[12] == 0x08

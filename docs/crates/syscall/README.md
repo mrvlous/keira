@@ -10,3 +10,4 @@ The `keira-syscall` crate implements the complete 62-vector system call table, R
 - [`dispatcher.md`](dispatcher.md): Syscall entry, argument decoding, and return ABI.
 - [`tss.md`](tss.md): Task State Segment (TSS) & Ring 3 IST stack.
 - [`exception.md`](exception.md): CPU exception routing (`#PF`, `#GP`, `#DF`).
+- [`user_copy.md`](user_copy.md): Validated pointer checking and Ring 0 / Ring 3 memory copying.
