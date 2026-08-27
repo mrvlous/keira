@@ -131,7 +131,7 @@ Keira uses two consistent commit message formats:
 ```text
 Keira <version>
 ```
-*Example: `Keira 0.35.0`*
+*Example: `Keira 0.36.0`*
 
 ### B. Standard Conventional Commits:
 ```text
@@ -210,4 +210,3 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 2. **Linker Scripts**:
    - Kernel Linkers: `arch/x86/linker.ld` (`x86_64`) and `arch/x86/linker32.ld` (`i686`).
    - Userland Linkers: `user/arch/x86/linker.ld` (`x86_64` base `0x40000000`) and `user/arch/x86/linker32.ld` (`i686` base `0x01000000`).
-
