@@ -304,40 +304,51 @@ where
 
     e1000::transmit_raw_frame(&syn_frame[..54])?;
 
-    // 2. Wait for SYN-ACK
+    // 2. Wait for SYN-ACK with Retransmission (up to 3 attempts, 1500ms timeout per attempt)
     let mut server_seq = 0u32;
     let mut synack_received = false;
     let mut rx_buf = [0u8; 2048];
-    let start_tick = get_uptime_ms();
 
-    while get_uptime_ms() < start_tick + 3500 {
-        if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
-            if bytes >= 54
-                && rx_buf[12] == 0x08
-                && rx_buf[13] == 0x00
-                && rx_buf[23] == 0x06
-                && rx_buf[30..34] == [10, 0, 2, 15]
-                && (rx_buf[26..30] == target_ip || rx_buf[26..30] == [10, 0, 2, 2])
-            {
-                let dst_p = u16::from_be_bytes([rx_buf[36], rx_buf[37]]);
-                if dst_p == src_port {
-                    let tcp_flags = rx_buf[47];
-                    if (tcp_flags & 0x12) == 0x12 || (tcp_flags & 0x02) != 0 {
-                        server_seq =
-                            u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
-                        synack_received = true;
-                        break;
+    for attempt in 0..3 {
+        let start_tick = get_uptime_ms();
+        if attempt > 0 {
+            let _ = e1000::transmit_raw_frame(&syn_frame[..54]);
+        }
+
+        while get_uptime_ms() < start_tick + 1500 {
+            if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
+                if bytes >= 54
+                    && rx_buf[12] == 0x08
+                    && rx_buf[13] == 0x00
+                    && rx_buf[23] == 0x06
+                    && rx_buf[30..34] == [10, 0, 2, 15]
+                    && (rx_buf[26..30] == target_ip || rx_buf[26..30] == [10, 0, 2, 2])
+                {
+                    let dst_p = u16::from_be_bytes([rx_buf[36], rx_buf[37]]);
+                    if dst_p == src_port {
+                        let tcp_flags = rx_buf[47];
+                        if (tcp_flags & 0x12) == 0x12 || (tcp_flags & 0x02) != 0 {
+                            server_seq = u32::from_be_bytes([
+                                rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41],
+                            ]);
+                            synack_received = true;
+                            break;
+                        }
                     }
                 }
             }
         }
+
+        if synack_received {
+            break;
+        }
     }
 
-    let mut ack_seq = if synack_received {
-        server_seq.wrapping_add(1)
-    } else {
-        1
-    };
+    if !synack_received {
+        return Err("Connection timed out: No SYN-ACK response from host");
+    }
+
+    let mut ack_seq = server_seq.wrapping_add(1);
 
     // 3. Send PSH-ACK with request data
     let mut data_frame = [0u8; 1024];
@@ -413,9 +424,16 @@ where
     let mut content_length: Option<usize> = None;
     let mut headers_stripped = false;
     let mut last_packet_time = get_uptime_ms();
+    let mut data_retransmitted = false;
     let client_cur_seq = initial_seq.wrapping_add(1 + request_data.len() as u32);
 
     while get_uptime_ms() < last_packet_time + 4000 {
+        if total_downloaded == 0 && !data_retransmitted && get_uptime_ms() > last_packet_time + 1800
+        {
+            data_retransmitted = true;
+            let _ = e1000::transmit_raw_frame(&data_frame[..frame_len]);
+        }
+
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
             if bytes >= 54
                 && rx_buf[12] == 0x08
