@@ -312,16 +312,19 @@ pub unsafe fn fetch_https(
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
-    let req_end = concat!(
-        "\r\nUser-Agent: Keira/",
-        env!("CARGO_PKG_VERSION"),
-        "\r\nConnection: close\r\n\r\n"
-    )
-    .as_bytes();
+    let ua_prefix = b"\r\nUser-Agent: ";
+    req_buf[req_len..req_len + ua_prefix.len()].copy_from_slice(ua_prefix);
+    req_len += ua_prefix.len();
+
+    let ua_bytes = crate::HTTP_USER_AGENT.as_bytes();
+    req_buf[req_len..req_len + ua_bytes.len()].copy_from_slice(ua_bytes);
+    req_len += ua_bytes.len();
+
+    let req_end = b"\r\nConnection: close\r\n\r\n";
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
-    let mut enc_buf = [0u8; 256];
+    let mut enc_buf = [0u8; 512];
     let (enc_len, _tag) = session.encrypt_record(&req_buf[..req_len], &mut enc_buf);
 
     match crate::tcp::stream::tcp_send_and_receive(target_ip, 443, &enc_buf[..enc_len]) {
@@ -383,12 +386,15 @@ where
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
-    let req_end = concat!(
-        "\r\nUser-Agent: Keira/",
-        env!("CARGO_PKG_VERSION"),
-        "\r\nConnection: close\r\n\r\n"
-    )
-    .as_bytes();
+    let ua_prefix = b"\r\nUser-Agent: ";
+    req_buf[req_len..req_len + ua_prefix.len()].copy_from_slice(ua_prefix);
+    req_len += ua_prefix.len();
+
+    let ua_bytes = crate::HTTP_USER_AGENT.as_bytes();
+    req_buf[req_len..req_len + ua_bytes.len()].copy_from_slice(ua_bytes);
+    req_len += ua_bytes.len();
+
+    let req_end = b"\r\nConnection: close\r\n\r\n";
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 

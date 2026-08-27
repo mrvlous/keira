@@ -64,3 +64,19 @@ pub use tls::native::{
     fetch_https, fetch_https_stream, tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256,
     TLS_CONTENT_APPLICATION_DATA, TLS_CONTENT_HANDSHAKE, TLS_VERSION_12, TLS_VERSION_13,
 };
+
+#[cfg(target_arch = "x86_64")]
+pub const HTTP_USER_AGENT: &str = concat!(
+    "KeiraOS/",
+    env!("CARGO_PKG_VERSION"),
+    " (Keira-Kernel; Bare-Metal; x86_64) KeiraNet/",
+    env!("CARGO_PKG_VERSION")
+);
+
+#[cfg(target_arch = "x86")]
+pub const HTTP_USER_AGENT: &str = concat!(
+    "KeiraOS/",
+    env!("CARGO_PKG_VERSION"),
+    " (Keira-Kernel; Bare-Metal; i686) KeiraNet/",
+    env!("CARGO_PKG_VERSION")
+);

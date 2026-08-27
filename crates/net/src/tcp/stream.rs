@@ -660,12 +660,15 @@ where
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
-    let req_end = concat!(
-        "\r\nUser-Agent: Keira/",
-        env!("CARGO_PKG_VERSION"),
-        "\r\nConnection: close\r\n\r\n"
-    )
-    .as_bytes();
+    let ua_prefix = b"\r\nUser-Agent: ";
+    req_buf[req_len..req_len + ua_prefix.len()].copy_from_slice(ua_prefix);
+    req_len += ua_prefix.len();
+
+    let ua_bytes = crate::HTTP_USER_AGENT.as_bytes();
+    req_buf[req_len..req_len + ua_bytes.len()].copy_from_slice(ua_bytes);
+    req_len += ua_bytes.len();
+
+    let req_end = b"\r\nConnection: close\r\n\r\n";
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
@@ -714,14 +717,14 @@ pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> 
 
     let target_ip = crate::dns::resolver::resolve_domain(host_str).unwrap_or([10, 0, 2, 2]);
 
-    let mut req_buf = [0u8; 256];
+    let mut req_buf = [0u8; 512];
     let mut req_len = 0;
     let req_str = b"GET ";
     req_buf[req_len..req_len + req_str.len()].copy_from_slice(req_str);
     req_len += req_str.len();
 
     let p_bytes = path.as_bytes();
-    let to_copy_p = core::cmp::min(p_bytes.len(), 64);
+    let to_copy_p = core::cmp::min(p_bytes.len(), 128);
     req_buf[req_len..req_len + to_copy_p].copy_from_slice(&p_bytes[..to_copy_p]);
     req_len += to_copy_p;
 
@@ -730,16 +733,19 @@ pub unsafe fn fetch_http(url: &str) -> Result<([u8; 512], usize), &'static str> 
     req_len += host_prefix.len();
 
     let h_bytes = host.as_bytes();
-    let to_copy_h = core::cmp::min(h_bytes.len(), 64);
+    let to_copy_h = core::cmp::min(h_bytes.len(), 128);
     req_buf[req_len..req_len + to_copy_h].copy_from_slice(&h_bytes[..to_copy_h]);
     req_len += to_copy_h;
 
-    let req_end = concat!(
-        "\r\nUser-Agent: Keira/",
-        env!("CARGO_PKG_VERSION"),
-        "\r\nConnection: close\r\n\r\n"
-    )
-    .as_bytes();
+    let ua_prefix = b"\r\nUser-Agent: ";
+    req_buf[req_len..req_len + ua_prefix.len()].copy_from_slice(ua_prefix);
+    req_len += ua_prefix.len();
+
+    let ua_bytes = crate::HTTP_USER_AGENT.as_bytes();
+    req_buf[req_len..req_len + ua_bytes.len()].copy_from_slice(ua_bytes);
+    req_len += ua_bytes.len();
+
+    let req_end = b"\r\nConnection: close\r\n\r\n";
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
