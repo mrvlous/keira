@@ -11,7 +11,17 @@ This document establishes the official coding, documentation, licensing, and com
 Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`), configuration file (`.toml`, `.json`), and documentation file (`.md`) **MUST** begin with a standard GPL-2.0-only license header.
 
 > [!IMPORTANT]
-> **Do NOT include author email addresses in file headers.**
+> **License Header Rules:**
+> 1. **Name Only (No Email Addresses)**: Always use the author's full name without email addresses (e.g. `Copyright (C) 2026 Moh. Ananda Firmansyah Putra`). Email addresses are maintained exclusively in `MAINTAINERS` and `CREDITS`.
+> 2. **Original Author vs. Contributors**:
+>    - For files authored by the primary creator, use `Copyright (C) 2026 Moh. Ananda Firmansyah Putra`.
+>    - When an external contributor authors a new standalone file, they must use their own full name: `Copyright (C) 2026 <Contributor Full Name>`.
+>    - When significantly modifying existing files, contributors may append an additional copyright line below existing authors:
+>      ```text
+>      Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+>      Copyright (C) 2026 <Contributor Full Name>
+>      ```
+>    - Contributors should also append their name and contact information to the root [`CREDITS`](../../CREDITS) file.
 
 ### Rust (`.rs`):
 ```rust
@@ -198,6 +208,9 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 2. **Grammar & Tone**:
    - Write clear, concise, and professional documentation and docstrings.
    - Use imperative mood for commit summaries (e.g. `"feat(user): add dual-architecture support..."`) and spell out words like `"and"` instead of ampersands (`&`) in commit subjects.
+3. **Comment Formatting & Decorative Banner Policy**:
+   - Decorative banner symbols in code comments (such as `// ===`, `// ---`, `/* === */`, or `; ===`) are strictly prohibited.
+   - Use clean, concise single-line `//` comments or formal rustdoc docstrings (`//!`, `///`) without ASCII art or divider lines.
 
 ---
 
