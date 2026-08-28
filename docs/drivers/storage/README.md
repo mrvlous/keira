@@ -1,16 +1,31 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Block Storage Drivers
+# Block Storage Controller Drivers
 
-This submodule details all physical and virtual block storage controller drivers in Keira Kernel.
+This directory details hardware block storage controllers, Direct Memory Access (DMA) command engines, and storage virtualization in Keira Kernel.
+
+---
+
+## Storage Subsystem Architecture
+
+```mermaid
+graph TD
+    VFS["Virtual File System (VFS) Layer"] --> BlockDev["Block Device Abstraction Layer"]
+    BlockDev --> AHCI["AHCI SATA Driver (Command Lists & PRDTs)"]
+    BlockDev --> NVMe["NVMe PCIe Driver (Submission & Completion Queues)"]
+    BlockDev --> IDE["Legacy IDE / ATA PIO Driver"]
+    BlockDev --> RAMDisk["In-Memory Initial RAM Disk (Initrd USTAR)"]
+    AHCI --> DiskDrive["Physical SATA SSD / HDD Drives"]
+    NVMe --> NVMDrive["PCIe NVMe Solid State Drives"]
+```
 
 ---
 
 ## Storage Driver Index
 
-| Driver | Interface | Document | Description |
-| :--- | :--- | :--- | :--- |
-| **IDE / ATA** | Port I/O / Bus Master DMA | [`ide.md`](ide.md) | Legacy Parallel ATA PIO and Bus Master DMA driver |
-| **AHCI SATA** | MMIO / Native Command Queuing | [`ahci.md`](ahci.md) | Advanced Host Controller Interface SATA driver |
-| **NVMe** | PCIe MMIO / Doorbell Queues | [`nvme.md`](nvme.md) | Non-Volatile Memory Express solid-state controller driver |
-| **RAM Disk** | Memory Block Device | [`ramdisk.md`](ramdisk.md) | In-memory volatile block storage device |
+| Document | Storage Interface | Description |
+| :--- | :--- | :--- |
+| [`ahci.md`](ahci.md) | AHCI 1.3 / SATA III | Advanced Host Controller Interface with Native Command Queuing (NCQ) |
+| [`nvme.md`](nvme.md) | NVMe 1.4 over PCIe | Non-Volatile Memory Express with circular submission/completion queues |
+| [`ide.md`](ide.md) | ATA / IDE PIO | Legacy 16-bit PIO ATA hard disk drive controller |
+| [`ramdisk.md`](ramdisk.md) | Initial RAM Disk (Initrd) | Memory-backed block device for early boot USTAR archives |

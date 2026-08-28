@@ -1,17 +1,29 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Userland System Services & Security
+# System Daemons, Users & Environment Configuration
 
-This submodule specifies multi-user authentication, file permission models, network hostname, init process, and POSIX I/O in Keira Kernel.
+This directory details userland system initialization (`init`), multi-user authentication (`users`), POSIX permission enforcement, host configuration, and standard I/O in Keira Kernel.
 
 ---
 
-## System Services Index
+## Userland System Subsystem Architecture
 
-| Component | Document | Description |
+```mermaid
+graph TD
+    Init["System Init (docs/userland/system/init.md)"] --> MultiUser["Multi-User Subsystem (users.md)"]
+    MultiUser --> Perms["POSIX File & Inode Permissions (permissions.md)"]
+    Init --> Host["System Hostname & Environment (hostname.md)"]
+    Init --> POSIXIO["POSIX Standard I/O Streams (posix_io.md)"]
+```
+
+---
+
+## System Subsystem Index
+
+| Document | Topic | Description |
 | :--- | :--- | :--- |
-| **Authentication** | [`users.md`](users.md) | Multi-user database (`/config/sys/passwd`), SHA-256 password hashing |
-| **File Security** | [`permissions.md`](permissions.md) | POSIX mode bits, read-only file attributes, and access control validation |
-| **Network Identity** | [`hostname.md`](hostname.md) | System hostname configuration and persistence (`/config/sys/hostname.cfg`) |
-| **Init Process** | [`init.md`](init.md) | Userland PID 1 init process lifecycle and startup script execution |
-| **POSIX I/O** | [`posix_io.md`](posix_io.md) | File descriptor table (0..15), standard streams, and `fcntl` access flags |
+| [`init.md`](init.md) | Userland Init Stage | Early userland bootstrap, root filesystem mount, and daemon startup |
+| [`users.md`](users.md) | Multi-User Management | User accounts (`/config/passwd`), UID/GID mappings, and sessions |
+| [`permissions.md`](permissions.md) | POSIX Permissions | Standard `rwxrwxrwx` octal mode bits, `chmod`, and ownership |
+| [`hostname.md`](hostname.md) | System Hostname | Node name resolution, `/config/hostname`, and runtime configuration |
+| [`posix_io.md`](posix_io.md) | POSIX File I/O | Standard streams (`stdin`, `stdout`, `stderr`) and descriptor tables |

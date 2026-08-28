@@ -1,16 +1,16 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Development & Workspace Guides
+# Contributing Guides & Workflow Standards
 
-This submodule specifies environment requirements, compiler toolchains, build targets, Git workflows, and coding conventions in Keira Kernel.
+This directory contains essential developer guides, environment setup instructions, compilation workflows, and style conventions for contributing to Keira Kernel.
 
 ---
 
-## Guides Index
+## Guide Index
 
 | Guide | Document | Description |
 | :--- | :--- | :--- |
-| **Workspace Setup** | [`setup.md`](setup.md) | Rust nightly toolchain, `rust-src`, QEMU emulator, and build tools |
-| **Building & Running** | [`build.md`](build.md) | Makefile targets, multi-arch compilation, ISO image generation, and QEMU runs |
-| **Git Workflow** | [`workflow.md`](workflow.md) | Branch naming, Conventional Commits, PR checklist, and architecture rubric |
-| **Coding Style Standards** | [`style.md`](style.md) | License headers, comments, Rust formatting, and zero-warning policy |
+| **Environment Setup** | [`setup.md`](setup.md) | Installing Rust nightly, GCC, NASM, GRUB, and QEMU |
+| **Build & Compilation** | [`build.md`](build.md) | Multi-architecture builds, kernel targets, and disk image generation |
+| **Git Workflow** | [`workflow.md`](workflow.md) | Branching strategy, manual commits, and pull requests |
+| **Code Style & Standards** | [`style.md`](style.md) | Linux kernel conventions, SPDX headers, and formatting rules |

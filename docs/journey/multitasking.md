@@ -1,19 +1,31 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Milestone 3: Preemptive Multitasking & Context Switching
+# Development Journey: Preemptive Multitasking & Scheduling
 
-This journal entry details the development of the preemptive round-robin scheduler, CPU context switches, and process state machines in Keira Kernel.
-
----
-
-## Engineering Challenges
-
-1. **Context Switch Atomicity**: Swapping the CPU execution context (stack pointer, instruction pointer, general registers) must happen cleanly without allowing an interrupt to interrupt the context switch itself.
-2. **Deadlock Prevention in Safe Rust**: Spinlocks guarding the task runqueue must disable hardware interrupts on acquisition to prevent deadlocks when a timer tick occurs while holding the lock.
+This document chronicles the design and implementation of context switching, timer-driven scheduling, and userland Ring 3 isolation in Keira Kernel.
 
 ---
 
-## Solutions & Design Choices
+## Context Switch Architecture
 
-* **`SpinMutex` and `SpinLock` with CLI**: All kernel locks used in scheduling paths automatically disable interrupts (`cli`) before acquiring the lock and restore the previous interrupt state on drop.
-* **Preemptive Timer Ticks**: Configured the PIT timer for a 1000 Hz system tick (1ms quantum) to drive fair round-robin scheduling.
+```mermaid
+sequenceDiagram
+    participant TaskA as Active Task A
+    participant PIT as APIC / PIT Timer IRQ
+    participant Scheduler as Round-Robin / Priority Scheduler
+    participant TaskB as Next Task B
+
+    TaskA->>PIT: Timer Interrupt Fires (100 Hz Tick)
+    PIT->>Scheduler: Save Task A CPU Registers to Stack
+    Scheduler->>Scheduler: Select Highest-Priority Ready Task (Task B)
+    Scheduler->>TaskB: Switch CR3 Page Directory & Restore Registers
+    TaskB-->>TaskB: Resume Execution in Task B Context
+```
+
+---
+
+## Key Engineering Milestones
+
+* **Software Context Switching**: Handcrafted x86_64 assembly routine (`switch_to`) saving and restoring callee-saved registers (`RBP`, `RBX`, `R12`–`R15`).
+* **Privilege Level 3 Transition**: Configured TSS, GDT user code/data descriptors, and `IRETQ` stack frames to drop safely into Ring 3 userland.
+* **Task State Management**: Implemented `Ready`, `Running`, `Blocked`, and `Zombie` lifecycle transitions with automatic parent reclamation (`waitpid`).

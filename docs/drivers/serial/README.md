@@ -1,13 +1,24 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Serial Communications & 16550 UART Driver
+# Serial Communication Drivers
 
-This submodule details the 16550 UART serial driver providing early debug logging and headless COM1 communication in Keira Kernel.
+This directory specifies the serial communication drivers, 16550A UART controller interfaces, and host terminal diagnostic streams in Keira Kernel.
 
 ---
 
-## Serial Driver Index
+## Serial Subsystem Architecture
 
-| Driver | Base Port | Baud Rate | Document | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| **16550 UART** | `0x3F8` (`COM1`) | 115,200 baud (8-N-1) | [`uart16550.md`](uart16550.md) | Standard PC COM1 serial communications port driver |
+```mermaid
+graph LR
+    KernelLog["Early Boot Milestones / Panic Handler"] --> SerialPort["COM1 Port (0x3F8)"]
+    SerialPort --> UARTDriver["16550A UART Driver (115200 8N1)"]
+    UARTDriver --> HostTerminal["Host Diagnostic Terminal (QEMU -serial stdio)"]
+```
+
+---
+
+## Driver Index
+
+| Document | Serial Hardware | Operational Role |
+| :--- | :--- | :--- |
+| [`uart16550.md`](uart16550.md) | 16550A UART COM1 (`0x3F8`) | ANSI-colored boot progress logging, diagnostic tracing, and panic dumps |

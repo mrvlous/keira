@@ -1,14 +1,26 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Terminal & TTY Subsystems
+# Virtual Terminals & TTY Subsystem
 
-This submodule specifies multi-virtual terminal consoles and TTY line disciplines in Keira Kernel.
+This directory specifies the Virtual Terminal (VT) switching engine, ANSI terminal emulation, and TTY line discipline in Keira Kernel.
+
+---
+
+## TTY Subsystem Architecture
+
+```mermaid
+graph TD
+    Keyboard["PS/2 & USB Keyboard Input"] --> LineDisc["TTY Line Discipline (Raw / Canonical Mode)"]
+    LineDisc --> ActiveTTY["Active Virtual Terminal (tty1 - tty4)"]
+    ActiveTTY --> ANSIEngine["ANSI Escape Code Parser & Screen Buffer"]
+    ANSIEngine --> Display["VGA Text / VBE Linear Framebuffer Console"]
+```
 
 ---
 
 ## TTY Module Index
 
-| Component | Document | Description |
+| Document | Component | Description |
 | :--- | :--- | :--- |
-| **Virtual Terminals** | [`virtual_terminals.md`](virtual_terminals.md) | Multi-virtual consoles (`tty1`–`tty4`) with Alt+F1..F4 hotkey switching |
-| **Line Discipline** | [`line_discipline.md`](line_discipline.md) | Canonical line editing, raw input mode, echo, and backspace processing |
+| [`virtual_terminals.md`](virtual_terminals.md) | Virtual Terminals (`tty1`–`tty4`) | Multi-session console switching via `Alt+F1`–`Alt+F4` |
+| [`line_discipline.md`](line_discipline.md) | TTY Line Discipline | Character echoing, line buffering, and signal generation (`Ctrl+C`) |

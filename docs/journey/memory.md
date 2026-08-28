@@ -1,20 +1,25 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Milestone 2: Frame Allocator & 4-Level Virtual Paging
+# Development Journey: Physical & Virtual Memory Architecture
 
-This journal entry details the construction of the physical memory manager, 4-level virtual paging, and heap allocators in Keira Kernel.
-
----
-
-## Engineering Challenges
-
-1. **Bootstrap Memory Paradox**: You cannot allocate dynamic memory to track available memory before the memory allocator exists.
-2. **Page Table Recursion**: Mapping virtual address ranges requires modifying page tables, which themselves exist at physical memory addresses.
+This document chronicles the evolution of memory management in Keira Kernel from simple bitmap physical allocation to high-performance slab heaps and recursive page tables.
 
 ---
 
-## Solutions & Design Choices
+## Memory Evolution Flow
 
-* **Static Bitmap PMM**: Placed a static bit array in the kernel BSS segment to track 4096-byte frames without requiring any dynamic heap allocation.
-* **4-Level Paging Engine**: Built an explicit page table walker allocating PDPT, PD, and PT frames on demand from the PMM, enforcing `W^X` (Write XOR Execute) memory protections.
-* **Thread-Safe Slab Heap**: Implemented a 16-byte aligned bump and slab heap allocator (`kmalloc` / `kfree`) backed by atomic CAS operations.
+```mermaid
+graph TD
+    Phase1["1. Bitmap Frame Allocator (4KB Physical Pages)"] --> Phase2["2. 4-Level Paging with Higher-Half Virtual Mapping"]
+    Phase2 --> Phase3["3. Slab & Buddy Kernel Heap Allocator"]
+    Phase3 --> Phase4["4. DMA Continuous Buffers & Direct Physical Map"]
+    Phase4 --> Phase5["5. Page Fault Demand Paging & KASLR"]
+```
+
+---
+
+## Key Engineering Milestones
+
+* **Zero-Allocation Bitmap PMM**: Bootstrapped physical memory allocator utilizing GRUB memory map tags to safely reserve kernel text and MMIO holes.
+* **Recursive Page Table Navigation**: Implemented recursive PML4 mapping at slot 510, enabling dynamic mapping and unmapping of 4KB pages without extra page table allocations.
+* **Slab Allocator**: Created power-of-two slab caches (32B to 4096B) to achieve sub-microsecond kernel allocations with minimal heap fragmentation.

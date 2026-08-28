@@ -1,14 +1,29 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# System & Peripheral Bus Drivers
+# Peripheral & System Bus Drivers
 
-This submodule details bus enumeration, PCI/PCIe configuration space scanning, and USB host controller drivers in Keira Kernel.
+This directory details hardware bus enumeration, configuration space parsing, and device management in Keira Kernel.
+
+---
+
+## Bus Architecture
+
+```mermaid
+graph TD
+    KernelBoot["Kernel Initialization"] --> PCIScan["PCI Bus Scanner (0..255)"]
+    PCIScan --> DeviceProbe["Probe Devices & Functions (0..31 / 0..7)"]
+    DeviceProbe --> MatchDriver["Match Class Code & Vendor ID"]
+    MatchDriver --> Storage["AHCI / NVMe Storage Drivers"]
+    MatchDriver --> NIC["Intel e1000 / RTL8139 NIC Drivers"]
+    MatchDriver --> Audio["Intel HDA Audio Controller"]
+    MatchDriver --> USB["USB xHCI / UHCI Host Controller"]
+```
 
 ---
 
 ## Bus Driver Index
 
-| Bus Interface | Architecture | Document | Description |
-| :--- | :--- | :--- | :--- |
-| **PCI / PCIe** | Port `0xCF8`/`0xCFC` & ECAM | [`pci.md`](pci.md) | PCI 2.2 / PCIe 3.0 device scanning, BAR mapping, and MSI interrupts |
-| **USB** | UHCI / OHCI / EHCI | [`usb.md`](usb.md) | Universal Serial Bus host controllers and HID keyboard/mouse packet decoding |
+| Document | Bus Protocol | Description |
+| :--- | :--- | :--- |
+| [`pci.md`](pci.md) | PCI & PCIe ECAM | PCI configuration space access, BAR allocation, and MSI interrupts |
+| [`usb.md`](usb.md) | Universal Serial Bus (USB) | UHCI/xHCI host controller interfaces and USB HID keyboard/mouse |

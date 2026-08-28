@@ -1,20 +1,25 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Milestone 6: Ring 3 Privilege Separation & Native C Compiler
+# Development Journey: Native C Compiler & Ring 3 Userland
 
-This journal entry details the transition to userland execution, Task State Segment stack switching, system call validation, and compiling C programs inside Keira Kernel.
-
----
-
-## Engineering Challenges
-
-1. **Privilege Boundary Security**: Userland processes run in unprivileged CPU Ring 3 and may pass invalid, malicious, or unmapped memory pointers to the kernel.
-2. **Dynamic ELF Loading**: Parsing 64-bit ELF headers, verifying magic bytes, creating private virtual address mappings, and mapping `PT_LOAD` segments with proper `R/W/X` permissions.
-3. **Native In-Kernel Toolchains**: Running a real C compiler (`kcc.elf`) directly within Keira to compile user programs on bare metal.
+This document chronicles the creation of the native C compiler (`kcc`), standard C library (SDK), and standalone ELF toolchain inside Keira Kernel.
 
 ---
 
-## Solutions & Design Choices
+## Self-Hosting Toolchain Vision
 
-* **Hardened User Pointer Validation**: Built `validate_user_ptr()` and `copy_from_user()` verifying non-nullness, canonical address bounds, and overflow prevention before any pointer dereference.
-* **Integrated KCC Compiler**: Integrated a freestanding C compiler (`kcc.elf`) into `/system/bin/`, allowing developers to write, compile, and execute C programs directly within Keira.
+```mermaid
+graph LR
+    Dev["Developer on Keira Terminal"] --> Edit["Edit Source: kvi /home/admin/app.c"]
+    Edit --> Compile["Compile: kcc -o /apps/bin/app.elf /home/admin/app.c"]
+    Compile --> Run["Execute: run /apps/bin/app.elf"]
+    Run --> Output["Ring 3 Userland Process Running on Keira Kernel"]
+```
+
+---
+
+## Key Engineering Milestones
+
+* **Native C Compiler (`kcc`)**: Built a complete recursive-descent C compiler capable of parsing C syntax, performing type checking, and emitting native ELF executables.
+* **C Standard Library (SDK)**: Implemented standard libc primitives (`stdio`, `stdlib`, `string`, `ctype`, `math`) backed by native kernel system calls.
+* **Zero-Dependency Self-Contained Ecosystem**: Complete ability to develop, compile, test, and run native applications directly on bare metal without host dependencies.

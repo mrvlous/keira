@@ -1,15 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Testing, Verification & Debugging
+# Verification, Testing & Debugging
 
-This submodule specifies automated testing harnesses, headless QEMU smoke tests, remote GDB debugging, serial logs, and unsafe Rust safety contracts in Keira Kernel.
+This directory specifies automated test suites, remote GDB debugging, and unsafe Rust safety contracts in Keira Kernel.
 
 ---
 
-## Verification & Debugging Index
+## Verification Index
 
-| Component | Document | Description |
+| Document | Topic | Description |
 | :--- | :--- | :--- |
-| **Testing Harness** | [`testing.md`](testing.md) | Unit tests, headless QEMU smoke testing, and multi-architecture verification |
-| **Remote Debugging** | [`debugging.md`](debugging.md) | Remote GDB server (`localhost:1234`), COM1 serial logging, and QEMU monitor |
-| **Unsafe Safety Contracts** | [`unsafe_guidelines.md`](unsafe_guidelines.md) | Soundness rules, raw pointer dereferencing, and `# Safety` docstrings |
+| **Testing Suite** | [`testing.md`](testing.md) | Headless smoke testing, QMP scripts, and 20-cycle stress tests |
+| **Kernel Debugging** | [`debugging.md`](debugging.md) | Remote GDB debugging on TCP port 1234, register dumps, and QEMU monitor |
+| **Unsafe Guidelines** | [`unsafe_guidelines.md`](unsafe_guidelines.md) | Memory safety invariants, user pointer validation, and `# Safety` docs |

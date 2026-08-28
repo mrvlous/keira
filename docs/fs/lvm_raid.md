@@ -1,22 +1,41 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Logical Volume Manager (LVM) & Software RAID
+# Logical Volume Management & Software RAID
 
-This document describes volume virtualization and software RAID array management in Keira Kernel.
-
----
-
-## RAID Levels Supported
-
-* **RAID 0 (Striping)**: Data is split across physical drives for high throughput.
-* **RAID 1 (Mirroring)**: Full data duplication across mirror physical drives for fault tolerance.
-* **RAID 5 (Distributed Parity)**: Block striping with XOR parity across 3 or more physical drives.
+This document specifies software RAID volume striping (RAID 0), mirroring (RAID 1), parity recovery (RAID 5), and linear volume concatenation in Keira Kernel.
 
 ---
 
-## Core API (`crates/fs/src/lvm/mod.rs`)
+## Software RAID Architecture
+
+```mermaid
+graph TD
+    VFS["VFS / Virtual File System"] --> RAIDLayer["Virtual Block Device Layer (Software RAID)"]
+    RAIDLayer --> RAID0["RAID 0 (Block Striping for Throughput)"]
+    RAIDLayer --> RAID1["RAID 1 (Block Mirroring for Redundancy)"]
+    RAIDLayer --> RAID5["RAID 5 (Block Striping with Distributed Parity)"]
+    RAID0 --> DiskA["Physical Disk A (SATA / NVMe)"]
+    RAID0 --> DiskB["Physical Disk B (SATA / NVMe)"]
+```
+
+---
+
+## Technical Specifications
+
+| RAID Level | Block Strategy | Fault Tolerance | Description |
+| :--- | :--- | :--- | :--- |
+| **RAID 0** | Striped Blocks | 0 Disk Failures | High-speed concurrent I/O throughput across $N$ disks |
+| **RAID 1** | Mirrored Blocks | $N - 1$ Disk Failures | Exact copy on 2 or more disks for high availability |
+| **RAID 5** | Striped with XOR Parity | 1 Disk Failure | Distributed parity block calculation for storage efficiency |
+
+---
+
+## Core API (`crates/fs/src/raid/mod.rs`)
 
 ```rust
-pub fn lvm_create_volume(name: &str, size_blocks: usize) -> Result<u32, &'static str>;
-pub fn raid_create_array(level: u8, disks: &[u32]) -> Result<u32, &'static str>;
+/// Register a new Software RAID virtual block device.
+pub unsafe fn create_raid_volume(level: u8, member_disks: &[usize]) -> Result<usize, &'static str>;
+
+/// Read sectors from a virtual RAID volume.
+pub unsafe fn raid_read(volume_id: usize, lba: u64, count: u32, buf: &mut [u8]) -> Result<(), &'static str>;
 ```

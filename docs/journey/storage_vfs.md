@@ -1,19 +1,26 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Milestone 4: Storage, Filesystems & Sector Caching
+# Development Journey: Storage Drivers & Virtual File System
 
-This journal entry details the creation of the unified Virtual Filesystem (VFS), FAT16 cluster chaining, and in-memory LRU block caching in Keira Kernel.
-
----
-
-## Engineering Challenges
-
-1. **Storage Device Diversity**: Supporting IDE ATA, AHCI SATA, NVMe, and RAM disks under a single consistent file API.
-2. **I/O Bottlenecks**: Raw disk sector reads are slow. Without an intelligent caching layer, reading FAT directory clusters repeatedly degrades system responsiveness.
+This document chronicles the development of block storage drivers (AHCI, NVMe, IDE, RAM Disk) and the Virtual File System (VFS) in Keira Kernel.
 
 ---
 
-## Solutions & Design Choices
+## Storage Architecture Evolution
 
-* **Trait-Based VFS Layer**: Decoupled filesystem implementations from physical drivers using abstract `FileSystem` and `BlockDevice` traits.
-* **16-Slot LRU Sector Cache**: Built a write-through sector cache that caches hot FAT tables and directory entries in memory with monotonic clock eviction.
+```mermaid
+graph TD
+    RAMDisk["1. In-Memory USTAR Initrd Archive"] --> IDE["2. Legacy ATA / IDE PIO Driver"]
+    IDE --> FAT16["3. Complete FAT16 Read/Write Engine"]
+    FAT16 --> AHCI["4. AHCI SATA NCQ DMA Storage"]
+    AHCI --> NVMe["5. NVMe PCIe Submission/Completion Queues"]
+    NVMe --> VFSUnified["6. Unified VFS Inode / Mount Hierarchy"]
+```
+
+---
+
+## Key Engineering Milestones
+
+* **Unified VFS Abstraction**: Designed common inode operations (`read`, `write`, `lookup`, `readdir`, `stat`) across FAT16, Initrd, and DevFS.
+* **Robust FAT16 Implementation**: Implemented cluster chain allocation, directory entry management, long file names (LFN), and file truncation.
+* **High-Speed AHCI/NVMe DMA**: Enabled direct hardware memory-to-disk transfers without CPU-intensive programmed I/O loops.

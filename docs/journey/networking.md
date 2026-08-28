@@ -1,20 +1,27 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Milestone 5: Bare-Metal TCP/IP Stack & TLS 1.3
+# Development Journey: Bare-Metal Network Stack & TLS 1.3
 
-This journal entry details the implementation of bare-metal network interface drivers, packet parsing, TCP state machines, and TLS 1.3 cryptography in Keira Kernel.
-
----
-
-## Engineering Challenges
-
-1. **Hardware Packet Descriptors**: Writing PCI bus master DMA ring buffer drivers for Intel e1000 and Realtek RTL8139 cards without external runtime libraries.
-2. **TCP State Machine & Packet Loss**: Implementing stateful connection handshakes, sequence number tracking, and retransmission timers directly in bare-metal Rust.
-3. **TLS 1.3 Crypto Complexity**: Writing X25519 key exchange, SHA-256 HKDF key derivation, and AES-128-GCM record layer encryption completely from scratch.
+This document chronicles the implementation of the pure Rust networking stack, Intel e1000 DMA drivers, TCP state machine, and native TLS 1.3 encryption in Keira Kernel.
 
 ---
 
-## Solutions & Design Choices
+## Network Stack Layering
 
-* **Layered Modular Architecture**: Decoupled Ethernet, ARP, IPv4, UDP, TCP, and TLS into distinct Rust modules with explicit packet boundaries.
-* **Monotonic Ephemeral Ports**: Implemented atomic monotonic port allocation (`49152`–`65000`) preventing port collision under high-frequency sequential connections.
+```mermaid
+graph TD
+    App["Shell / User Applications ('download https://...')"] --> TLS["Native TLS 1.3 (AES-128-GCM + X25519)"]
+    TLS --> HTTP["HTTP/1.1 Client & Chunked Decoder"]
+    HTTP --> TCP["TCP State Machine (SYN / ACK / ESTABLISHED / FIN)"]
+    TCP --> IP["IPv4 Routing & ICMP Engine"]
+    IP --> ARP["ARP Resolution & LRU Cache"]
+    ARP --> E1000["Intel 82540EM Gigabit NIC Driver (DMA Rings)"]
+```
+
+---
+
+## Key Engineering Milestones
+
+* **Pure Rust TCP Engine**: Built reliable TCP connection handling with 3-way handshakes, sequence tracking, window management, and retransmission.
+* **Native Bare-Metal TLS 1.3**: Implemented pure Rust TLS 1.3 handshake without external dependencies, integrating AES-128-GCM, SHA-256, HKDF, and Curve25519.
+* **Continuous Streaming Downloads**: Enabled streaming downloads directly over HTTP/HTTPS with cargo-style progress badges saved directly to FAT16 storage.

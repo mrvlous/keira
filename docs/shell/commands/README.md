@@ -1,19 +1,34 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Native Shell Commands Catalog
+# Native Shell Built-In Commands
 
-This catalog provides reference documentation for all 75 native shell commands in Keira Kernel.
+This directory documents the native built-in commands organized by subsystem domain in `keira-shell`.
 
 ---
 
-## Command Categories
+## Command Domain Architecture
 
-| Submodule | Focus Area | Document |
+```mermaid
+graph TD
+    Shell["keira-shell Command Router"] --> FS["fs/<br/>ls, cat, write, mkdir, rm, cp, mv, stat, tree"]
+    Shell --> Sys["sys/<br/>uptime, info, dmesg, ksvc, please, shutdown, reboot"]
+    Shell --> Proc["proc/<br/>ps, top, kill, nice, cgroup"]
+    Shell --> Net["net/<br/>ifconfig, ping, download, netstat, arp, firewall"]
+    Shell --> Sec["sec/<br/>useradd, passwd, su, mac, seccomp"]
+    Shell --> Dev["dev/<br/>lspci, lsblk, audio, meminfo"]
+    Shell --> Util["util/<br/>clear, echo, date, guide, help"]
+```
+
+---
+
+## Command Domain Categories
+
+| Category | Description | Primary Commands |
 | :--- | :--- | :--- |
-| **Hardware & Devices** | Block devices, NVMe, USB, KVM, LVM, RAID, and LKM | [`dev.md`](dev.md) |
-| **Filesystem & Storage** | Files, directories, text editing (`kvi`), FAT16, and USTAR initrd | [`fs.md`](fs.md) |
-| **Networking & Sockets** | DHCP, DNS, TCP/UDP downloads, HTTPS, and firewall | [`net.md`](net.md) |
-| **Processes & Tasks** | Task monitor (`tasks`), signals (`kill`), job control, and cgroups | [`proc.md`](proc.md) |
-| **Security & Authentication** | Users, login, TPM 2.0 enclave, Seccomp BPF, and MAC | [`sec.md`](sec.md) |
-| **System & Diagnostics** | Memory, CPU topology, runtime stats, power, and syslog | [`sys.md`](sys.md) |
-| **Shell Utilities** | Help, history, search, navigation, and script execution | [`util.md`](util.md) |
+| **Filesystem (`fs/`)** | File, directory, and storage operations | `ls`, `view`, `cat`, `write`, `mkdir`, `rm`, `cp`, `mv`, `tree`, `fileinfo` |
+| **System (`sys/`)** | System telemetry, services, power, and kernel logs | `info`, `uptime`, `dmesg`, `ksvc`, `please`, `reboot`, `shutdown` |
+| **Process (`proc/`)** | Multitasking, process tree, and scheduling | `ps`, `top`, `kill`, `spawn`, `nice`, `cgroup` |
+| **Network (`net/`)** | Network interface, sockets, ping, and downloads | `ifconfig`, `ping`, `download`, `netstat`, `arp`, `firewall` |
+| **Security (`sec/`)** | User accounts, credentials, and access control | `useradd`, `userdel`, `passwd`, `su`, `mac`, `seccomp` |
+| **Hardware (`dev/`)** | Hardware busses, PCI devices, and audio | `lspci`, `lsblk`, `audio`, `meminfo`, `framebuffer` |
+| **Utility (`util/`)** | Console utilities, editors, and guides | `clear`, `echo`, `date`, `kvi`, `guide`, `help` |
