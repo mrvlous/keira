@@ -546,7 +546,6 @@ unsafe fn scroll_up() {
 /// Print a single ASCII character to console.
 pub fn putchar(c: u8) {
     unsafe {
-        crate::serial::putchar(c);
         VGA_BUSY = true;
         CURSOR_BLINK_STATE = true;
         if REDIRECT_TO_FILE {
