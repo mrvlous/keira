@@ -2,10 +2,26 @@
 
 # Tutorial: Creating a Native Shell Command
 
-Step-by-step guide for adding a new built-in command to `keira-shell`.
+This guide provides a step-by-step walkthrough for adding a new native built-in command to `keira-shell`.
 
-## Step 1: Create Command File
-Select the appropriate category subfolder in `crates/shell/src/cmds/` (`fs`, `sys`, `proc`, `net`, `sec`, `dev`, or `util`), and create a new file under [`crates/shell/src/cmds/<category>/mycmd.rs`](../../crates/shell/src/cmds):
+---
+
+## Command Registration Architecture
+
+```mermaid
+graph TD
+    UserKey["User Command Input ('mycmd')"] --> Executor["crates/shell/src/executor.rs"]
+    Executor --> Router["Command Router Dispatch Arm"]
+    Router --> CmdModule["crates/shell/src/cmds/<category>/mycmd.rs"]
+    CmdModule --> VGACli["vga::print_str() / CliArgs Parser"]
+```
+
+---
+
+## Step-by-Step Implementation
+
+### Step 1: Create Command Source File
+Select the appropriate category subfolder in `crates/shell/src/cmds/` (`fs`, `sys`, `proc`, `net`, `sec`, `dev`, or `util`), and create [`crates/shell/src/cmds/<category>/mycmd.rs`](../../../crates/shell/src/cmds):
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
 //
@@ -16,10 +32,12 @@ Select the appropriate category subfolder in `crates/shell/src/cmds/` (`fs`, `sy
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+use crate::args::CliArgs;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if let Some("-h") | Some("--help") = parts.next() {
+    let args = CliArgs::parse(parts);
+    if args.has_flag('h', "help") {
         unsafe {
             vga::print_str("Usage: mycmd [options]\n");
         }
@@ -31,7 +49,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 }
 ```
 
-## Step 2: Register in `cmds/<category>/mod.rs` & `executor.rs`
+### Step 2: Register in Category Module & Executor
 1. Add `pub mod mycmd;` to `crates/shell/src/cmds/<category>/mod.rs`.
-2. Add `"mycmd" => super::cmds::mycmd::run(&mut parts),` inside `crates/shell/src/executor.rs`.
-3. Add `mycmd` to the `SHELL_CMDS` manifest in [`Makefile`](../../Makefile).
+2. Add `"mycmd" => super::cmds::<category>::mycmd::run(&mut parts),` inside `crates/shell/src/executor.rs`.
+3. Add `mycmd` to the `SHELL_CMDS` list in [`Makefile`](../../../Makefile).

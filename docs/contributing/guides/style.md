@@ -27,7 +27,6 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 ### Rust (`.rs`):
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
-
 //
 // Keira Kernel - Operating System Kernel
 // Copyright (C) 2026 Moh. Ananda Firmansyah Putra
@@ -181,7 +180,7 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 > **Strict Prohibition**: Never use recreational or non-standard console colors (`Cyan`, `LightCyan`, `Magenta`, `LightBlue`, `Brown`). The console palette must remain austere, professional, and consistent with the Linux monochrome standard.
 
 ### B. CLI Argument & Flag Parser Conventions:
-- Shell commands with flags must utilize the `#![no_std]` [`CliArgs`](file:///crates/shell/src/args.rs) parser engine.
+- Shell commands with flags must utilize the `#![no_std]` [`CliArgs`](../../../crates/shell/src/args.rs) parser engine.
 - Support standard POSIX single-letter short flags (`-l`, `-a`, `-c`, `-m`, `-s`, `-v`, `-u`, `-f`, `-r`, `-d`, `-t`, `-n`, `-L`) and GNU long flags (`--long`, `--all`, `--version`, `--help`).
 - Commands without arguments or configurations (`sync`, `reset`, `unwind`, `runtime`, `wipe`) execute immediately without blocking on `-h` boilerplate.
 - Network download and streaming progress bars must adhere to the `rustc`/`cargo` compiler format with 12-character right-aligned status tags (`Connecting`, `Downloading`, `Downloaded`, `Finished`) and size metrics (`Bytes`, `KiB`, `MiB`).
