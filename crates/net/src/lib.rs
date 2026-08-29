@@ -67,7 +67,7 @@ pub use tls::native::{
 
 #[cfg(target_arch = "x86_64")]
 pub const HTTP_USER_AGENT: &str = concat!(
-    "KeiraOS/",
+    "KeiraKernel/",
     env!("CARGO_PKG_VERSION"),
     " (Keira-Kernel; Bare-Metal; x86_64) KeiraNet/",
     env!("CARGO_PKG_VERSION")
@@ -75,7 +75,7 @@ pub const HTTP_USER_AGENT: &str = concat!(
 
 #[cfg(target_arch = "x86")]
 pub const HTTP_USER_AGENT: &str = concat!(
-    "KeiraOS/",
+    "KeiraKernel/",
     env!("CARGO_PKG_VERSION"),
     " (Keira-Kernel; Bare-Metal; i686) KeiraNet/",
     env!("CARGO_PKG_VERSION")
