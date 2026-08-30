@@ -13,8 +13,7 @@ This document specifies ASCII character validation, classification, and case con
 | `int isalpha(int c)` | `(c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')` | Alphabetic character |
 | `int isdigit(int c)` | `c >= '0' && c <= '9'` | Decimal digit |
 | `int isalnum(int c)` | `isalpha(c) || isdigit(c)` | Alphanumeric character |
-| `int isspace(int c)` | `c == ' ' || c == '	' || c == '
-' || c == ''` | Whitespace character |
+| `int isspace(int c)` | `c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v'` | Whitespace character |
 | `int isprint(int c)` | `c >= 0x20 && c <= 0x7E` | Printable character |
 | `int toupper(int c)` | `c >= 'a' && c <= 'z' ? c - 32 : c` | Convert to uppercase |
 | `int tolower(int c)` | `c >= 'A' && c <= 'Z' ? c + 32 : c` | Convert to lowercase |
