@@ -40,14 +40,22 @@ pub static KERNEL_SYMBOLS: [KernelSymbol; 4] = [
 pub fn list_modules() {
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Dynamically Resolved Kernel Symbols (kallsyms):\n");
+        vga::print_str("Dynamically Resolved Kernel Symbols (kallsyms) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         for sym in KERNEL_SYMBOLS.iter() {
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             vga::print_str("  0x");
             vga::print_hex(sym.addr);
             vga::print_str(" - ");
             vga::print_str(sym.name);
-            vga::print_str("\n");
+            vga::print_str(
+                "
+",
+            );
         }
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
@@ -56,9 +64,22 @@ pub fn list_modules() {
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: lkm [lsmod|load|unload]\n\n");
-            vga::print_str("Description:\n  Inspect Loadable Kernel Modules and dynamic symbol resolution (Syscall 34 & 35).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: lkm [lsmod|load|unload]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect Loadable Kernel Modules and dynamic symbol resolution (Syscall 34 & 35).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }

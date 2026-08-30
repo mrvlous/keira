@@ -9,23 +9,27 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Inspect POSIX high-resolution nanosecond interval timers (Syscall 45 & 46).
+//! Query POSIX High-Resolution Timer Subsystem (Syscall 45 & 46).
 
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: timer [status]\n\n");
-            vga::print_str("Description:\n  Inspect POSIX high-resolution nanosecond interval timers (Syscall 45 & 46).\n\n");
+            vga::print_str("Usage: timer [status|list]\n\n");
+            vga::print_str("Description:\n  Query POSIX High-Resolution Timer Subsystem (Syscall 45 & 46).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        let mut tid: u64 = 0;
-        let _ = keira_arch::timer::sys_timer_create(0, &mut tid);
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("POSIX High-Resolution Timer Subsystem (Syscall 45 & 46) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str("[PREVIEW]\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let mut tid = 0u64;
+        let _ = keira_arch::timer::sys_timer_create(0, &mut tid as *mut u64);
     }
 }

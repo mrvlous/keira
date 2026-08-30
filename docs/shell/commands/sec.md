@@ -8,14 +8,15 @@ This document details all native commands in Keira Kernel related to multi-user 
 
 ## Command Reference Table
 
-| Command | Syntax | Description |
-| :--- | :--- | :--- |
-| `user` | `user [whoami \| list \| add <name> \| del <name>]` | Query current user account or manage system user identities |
-| `login` | `login [username]` | Authenticate and switch user context with password verification |
-| `tpm` | `tpm [status \| pcr \| quote \| random]` | Query hardware TPM 2.0 security enclave registers and PCR values |
-| `seccomp` | `seccomp [status \| filter \| test]` | Inspect active task Seccomp BPF system call filters |
-| `bpf` | `bpf [list \| load <prog> \| status]` | Inspect kernel extended BPF bytecode execution engine |
-| `mac` | `mac [status \| enforce \| permissive]` | Query and toggle Mandatory Access Control security policy status |
+| Command | Syntax | Status | Description |
+| :--- | :--- | :--- | :--- |
+| `login` | `login [username]` | `[Active]` | Authenticate user credentials against `/config/sys/passwd` and switch session |
+| `user` | `user [whoami \| list \| add <name> \| del <name>]` | `[Active]` | Manage system user identities, UID/GID mapping, and home folders in `/users/` |
+| `protect` | `protect <path> [readonly \| hidden \| archive]` | `[Active]` | Configure FAT filesystem attributes and access permissions on files |
+| `tpm` | `tpm [status \| pcr]` | `[Preview]` | Query Trusted Platform Module (TPM 2.0) hardware security enclave interface |
+| `seccomp` | `seccomp [status]` | `[Preview]` | Inspect Secure Computing (Seccomp) syscall filtering sandbox interface (Syscall 36) |
+| `bpf` | `bpf [list \| status \| maps]` | `[Preview]` | Inspect Extended Berkeley Packet Filter (eBPF) runtime program interface (Syscall 51 & 52) |
+| `mac` | `mac [status \| enforce \| permissive]` | `[Preview]` | Query and toggle Mandatory Access Control (MAC) security policy interface (Syscall 62) |
 
 ---
 
@@ -31,13 +32,9 @@ Home         : /users/admin
 Shell        : /system/bin/shell
 ```
 
-### `tpm status`
-Queries the hardware TPM 2.0 controller over memory-mapped I/O:
+### `protect <path>`
+Sets read-only or hidden security attributes on a target FAT16 file:
 ```bash
-keira> tpm status
-TPM 2.0 Security Module:
-  Manufacturer  : 0x54434720 (TCG)
-  Specification : 2.0 (Revision 1.59)
-  Status        : Initialized & Armed
-  PCR[0] Hash   : e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+keira> protect /config/sys/os-release readonly
+[OK] File /config/sys/os-release attribute updated to Read-Only.
 ```

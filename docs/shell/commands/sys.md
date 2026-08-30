@@ -8,30 +8,30 @@ This document details all native commands in Keira Kernel related to hardware di
 
 ## Command Reference Table
 
-| Command | Syntax | Description |
-| :--- | :--- | :--- |
-| `system` | `system [info \| version \| uname]` | Display kernel version, architecture, build timestamp, and compiler version |
-| `runtime` | `runtime [status \| stats]` | Display active kernel uptime, tick rate, and context switch frequency |
-| `memory` | `memory [info \| pmm \| heap \| map]` | Inspect physical frame allocations, kernel heap stats, and virtual memory layout |
-| `cpu` | `cpu [info \| topology \| features]` | Display CPU vendor, brand, core count, APIC IDs, and SSE/AVX capability flags |
-| `time` | `time [get \| set <epoch> \| rtc]` | Query Real-Time Clock (RTC) and hardware PIT uptime |
-| `env` | `env [list \| set <key> <val> \| get <key>]` | Inspect and manipulate environment variables (`$PATH`, `$USER`, `$HOME`) |
-| `hostname` | `hostname [get \| set <name>]` | Query or update system hostname |
-| `power` | `power [shutdown \| reboot \| sleep]` | ACPI hardware power control and soft reboot |
-| `reset` | `reset` | Trigger immediate hardware CPU reset via keyboard controller port `0x64` |
-| `sync` | `sync` | Flush all dirty filesystem cache buffers to physical block media |
-| `service` | `service [list \| start <svc> \| stop <svc>]` | Inspect and control background system service daemons |
-| `syslog` | `syslog [tail \| clear \| dump]` | Inspect in-memory kernel ring buffer logs (`klog`) |
-| `unwind` | `unwind` | Display stack trace frame unwinding for the current execution context |
+| Command | Syntax | Status | Description |
+| :--- | :--- | :--- | :--- |
+| `system` | `system [-v] [-u] [-s]` | `[Active]` | Display kernel specifications, architecture, memory stats, and uptime |
+| `cpu` | `cpu` | `[Active]` | Display CPU vendor signature string (e.g. AuthenticAMD, GenuineIntel) |
+| `runtime` | `runtime` | `[Active]` | Display time elapsed since system boot in milliseconds |
+| `time` | `time` | `[Active]` | Query Real-Time Clock (RTC) date and time in UTC |
+| `memory` | `memory` | `[Active]` | Inspect physical frame allocations (PMM) and heap memory telemetry |
+| `service` | `service [list \| start <svc> \| stop <svc> \| edit <svc>]` | `[Active]` | Inspect and control `ksvc` background service daemons (httpd, syslogd, syncd, watchdogd) |
+| `env` | `env [list \| set <k> <v> \| get <k>]` | `[Active]` | Inspect and manipulate shell runtime environment variables |
+| `hostname` | `hostname [get \| set <name>]` | `[Active]` | Query or update persistent system hostname in `/config/sys/hostname` |
+| `power` | `power [status \| acpi]` | `[Active]` | Query ACPI S0 power state and NMI hardware watchdog telemetry |
+| `reset` | `reset` | `[Active]` | Trigger immediate bare-metal CPU reboot via PS/2 controller port `0x64` |
+| `sync` | `sync` | `[Active]` | Flush dirty filesystem block cache sectors to physical storage media |
+| `syslog` | `syslog [dmesg]` | `[Active]` | Read circular kernel syslog dmesg diagnostic log buffer (Syscall 44) |
+| `unwind` | `unwind` | `[Active]` | Walk active kernel callstack frame pointers (RBP/RIP) for backtrace (Syscall 37) |
 
 ---
 
 ## Detailed Usage
 
-### `memory info`
-Queries the Physical Memory Manager (PMM) and heap allocator:
+### `memory`
+Queries the Physical Memory Manager (PMM) and kernel heap allocator:
 ```bash
-keira> memory info
+keira> memory
 Physical Memory Manager (PMM):
   Total Memory  : 128 MB (32768 frames)
   Allocated     : 24.5 MB (6272 frames)
@@ -44,12 +44,13 @@ Kernel Bump/Slab Heap:
   Allocations   : 1420 active
 ```
 
-### `cpu info`
-Queries CPUID instruction features:
+### `service list`
+Displays the status of background services managed by `ksvc`:
 ```bash
-keira> cpu info
-CPU 0:
-  Vendor        : GenuineIntel (Intel QEMU Virtual CPU)
-  Architecture  : x86_64 Long Mode
-  Features      : FPU, VME, DE, PSE, TSC, MSR, PAE, MCE, CX8, APIC, SEP, MTRR, PGE, MCA, CMOV, PAT, PSE36, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, NX, LM
+keira> service list
+Service Name  State     Port/PID  Description
+[httpd]       RUNNING   Port 80   Native Background HTTP Web Server
+[syslogd]     RUNNING   PID 3     System Event Logging Daemon
+[syncd]       RUNNING   PID 4     Filesystem Cache Auto-Sync Daemon
+[watchdogd]   RUNNING   PID 5     Kernel Health & Crash Watchdog
 ```

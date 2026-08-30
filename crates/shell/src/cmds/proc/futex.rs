@@ -9,7 +9,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
 //! Query Fast Userspace Mutex wait queue status (Syscall 40).
 
 use keira_io::vga;
@@ -17,16 +16,35 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: futex [status]\n\n");
-            vga::print_str("Description:\n  Query Fast Userspace Mutex (Futex) wait queue and locking status (Syscall 40).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: futex [status]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Query Fast Userspace Mutex (Futex) wait queue and locking status (Syscall 40).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Fast Userspace Mutex (Futex) Subsystem (Syscall 40):\n");
+        vga::print_str("Fast Userspace Mutex (Futex) Subsystem (Syscall 40) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         let _ = keira_ipc::futex::sys_futex(
             0x400000 as *mut u32,
             keira_ipc::futex::FUTEX_WAKE,
@@ -35,6 +53,5 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             core::ptr::null_mut(),
             0,
         );
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

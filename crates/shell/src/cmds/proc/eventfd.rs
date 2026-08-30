@@ -9,7 +9,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
 //! Inspect EventFD & SignalFD event notification counter status (Syscall 50 & 51).
 
 use keira_io::vga;
@@ -17,17 +16,35 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: eventfd [status]\n\n");
-            vga::print_str("Description:\n  Inspect EventFD & SignalFD event notification counter status (Syscall 50 & 51).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: eventfd [status]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect EventFD & SignalFD event notification counter status (Syscall 50 & 51).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("EventFD & SignalFD Subsystem Status (Syscall 50 & 51)\n");
-        let _ = keira_ipc::eventfd::sys_eventfd(0, 0);
+        vga::print_str("EventFD & SignalFD Subsystem (Syscall 50 & 51) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = keira_ipc::eventfd::sys_eventfd(0, 0);
     }
 }

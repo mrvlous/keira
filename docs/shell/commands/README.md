@@ -2,7 +2,7 @@
 
 # Native Shell Built-In Commands
 
-This directory documents the native built-in commands organized by subsystem domain in `keira-shell`.
+This directory documents the 75 native built-in commands organized by subsystem domain in , categorized by **Active Bare-Metal Implementations** (55 commands) and **Interface Prototypes / Stubs** (20 commands).
 
 ---
 
@@ -10,25 +10,26 @@ This directory documents the native built-in commands organized by subsystem dom
 
 ```mermaid
 graph TD
-    Shell["keira-shell Command Router"] --> FS["fs/<br/>ls, cat, write, mkdir, rm, cp, mv, stat, tree"]
-    Shell --> Sys["sys/<br/>uptime, info, dmesg, ksvc, please, shutdown, reboot"]
-    Shell --> Proc["proc/<br/>ps, top, kill, nice, cgroup"]
-    Shell --> Net["net/<br/>ifconfig, ping, download, netstat, arp, firewall"]
-    Shell --> Sec["sec/<br/>useradd, passwd, su, mac, seccomp"]
-    Shell --> Dev["dev/<br/>lspci, lsblk, audio, meminfo"]
-    Shell --> Util["util/<br/>clear, echo, date, guide, help"]
+    Shell["keira-shell Command Router (75 Commands)"] --> FS["fs/ (15 Commands)<br/>list, view, edit, create, delete, copy, move, folder, write, drives, disk, ramdisk, initrd, fileinfo, ext4"]
+    Shell --> Sys["sys/ (13 Commands)<br/>system, runtime, memory, cpu, time, env, hostname, power, reset, sync, service, syslog, unwind"]
+    Shell --> Proc["proc/ (13 Commands)<br/>tasks, kill, stop, bg, fg, jobs, run, cgroups, futex, eventfd, perf, timer, mqueue"]
+    Shell --> Net["net/ (7 Commands)<br/>network, download, https, iptables, firewall, ipcs, ipcrm"]
+    Shell --> Sec["sec/ (7 Commands)<br/>user, login, protect, tpm, seccomp, bpf, mac"]
+    Shell --> Dev["dev/ (11 Commands)<br/>devices, drivers, framebuffer, usb, epoll, kvm, lkm, lvm, nvme, raid, swap"]
+    Shell --> Util["util/ (8 Commands)<br/>guide, help, history, search, go, script, wait, wipe"]
 ```
 
 ---
 
-## Command Domain Categories
+## Subsystem Domain Summary
 
-| Category | Description | Primary Commands |
-| :--- | :--- | :--- |
-| **Filesystem (`fs/`)** | File, directory, and storage operations | `ls`, `view`, `cat`, `write`, `mkdir`, `rm`, `cp`, `mv`, `tree`, `fileinfo` |
-| **System (`sys/`)** | System telemetry, services, power, and kernel logs | `info`, `uptime`, `dmesg`, `ksvc`, `please`, `reboot`, `shutdown` |
-| **Process (`proc/`)** | Multitasking, process tree, and scheduling | `ps`, `top`, `kill`, `spawn`, `nice`, `cgroup` |
-| **Network (`net/`)** | Network interface, sockets, ping, and downloads | `ifconfig`, `ping`, `download`, `netstat`, `arp`, `firewall` |
-| **Security (`sec/`)** | User accounts, credentials, and access control | `useradd`, `userdel`, `passwd`, `su`, `mac`, `seccomp` |
-| **Hardware (`dev/`)** | Hardware busses, PCI devices, and audio | `lspci`, `lsblk`, `audio`, `meminfo`, `framebuffer` |
-| **Utility (`util/`)** | Console utilities, editors, and guides | `clear`, `echo`, `date`, `kvi`, `guide`, `help` |
+| Domain | Path | Total Commands | Active | Preview | Documentation |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Hardware & Devices** | `dev/` | 11 | 4 | 7 | [dev.md](dev.md) |
+| **Filesystem & Storage** | `fs/` | 15 | 14 | 1 | [fs.md](fs.md) |
+| **Process & Scheduling** | `proc/` | 13 | 7 | 6 | [proc.md](proc.md) |
+| **Networking & Sockets** | `net/` | 7 | 5 | 2 | [net.md](net.md) |
+| **Security & Accounts** | `sec/` | 7 | 3 | 4 | [sec.md](sec.md) |
+| **System & Telemetry** | `sys/` | 13 | 13 | 0 | [sys.md](sys.md) |
+| **Utilities & Shell** | `util/` | 8 | 8 | 0 | [util.md](util.md) |
+| **Total** | | **75** | **55** | **20** | |

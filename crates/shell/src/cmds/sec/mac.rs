@@ -9,32 +9,45 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Query Mandatory Access Control (MAC / SELinux) security policies.
+//! Inspect Mandatory Access Control (MAC) & Type Enforcement security labels (Syscall 62).
 
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: mac [status|rules]\n\n");
-            vga::print_str("Description:\n  Query Mandatory Access Control (MAC / SELinux) path-based security policies.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: mac [status|enforce|permissive]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect Mandatory Access Control (MAC) & Type Enforcement security labels (Syscall 62).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Mandatory Access Control (MAC) Security Subsystem\n");
-        vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("  Status      : Enforcing\n");
-        vga::print_str("  Policy Mode : Path-based Security Sandboxing\n");
+        vga::print_str("Mandatory Access Control (MAC) Subsystem (Syscall 62) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str(
+            "  Policy Engine : Type Enforcement Active (Permissive Mode)
+",
+        );
     }
-}
-
-/// Verify path-based Mandatory Access Control security rules
-pub fn is_path_access_allowed(path: &str, write_op: bool) -> bool {
-    !(write_op && path.starts_with("/system/bin/"))
 }

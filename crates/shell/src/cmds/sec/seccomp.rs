@@ -9,22 +9,42 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Configure Secure Computing Mode (Seccomp-BPF) system call filters (Syscall 55).
+//! Inspect Secure Computing (Seccomp) syscall filtering enclaves (Syscall 36).
 
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: seccomp [status|strict|filter]\n\n");
-            vga::print_str("Description:\n  Configure Secure Computing Mode (Seccomp-BPF) system call filtering sandbox (Syscall 55).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: seccomp [status]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect Secure Computing (Seccomp) syscall filtering enclaves (Syscall 36).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Secure Computing (Seccomp) Sandbox Subsystem ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         let _ = keira_task::seccomp::sys_seccomp(1, 0, 0);
     }
 }

@@ -87,9 +87,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::White, vga::Color::Black);
 
                 vga::print_str("  [1/4] Client Hello      -> Sent (X25519 key share)\n");
-                vga::print_str("  [2/4] Server Hello       ← Received\n");
-                vga::print_str("  [3/4] Key Derivation     ✓ HKDF-SHA256 Complete\n");
-                vga::print_str("  [4/4] Finished           ✓ Handshake Complete\n\n");
+                vga::print_str("  [2/4] Server Hello      <- Received\n");
+                vga::print_str("  [3/4] Key Derivation    [OK] HKDF-SHA256 Complete\n");
+                vga::print_str("  [4/4] Finished          [OK] Handshake Complete\n\n");
 
                 vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                 vga::print_str("  Cipher : TLS_AES_128_GCM_SHA256\n");

@@ -8,23 +8,24 @@ This document details all native commands in Keira Kernel related to file operat
 
 ## Command Reference Table
 
-| Command | Syntax | Description |
-| :--- | :--- | :--- |
-| `list` | `list [path]` | List files and directories in current or specified path |
-| `view` | `view <file>` | Display text content of a file to the console |
-| `edit` | `edit <file>` | Launch full-screen interactive `kvi` text editor |
-| `create` | `create <file> [text]` | Create a new file with optional initial text |
-| `delete` | `delete <path>` | Delete a file or directory recursively |
-| `copy` | `copy <src> <dst>` | Copy a file from source to destination |
-| `move` | `move <src> <dst>` | Move or rename a file or directory |
-| `folder` | `folder <dir>` | Create a new directory |
-| `write` | `write <file> <text>` | Append or write string data to an existing file |
-| `drives` | `drives` | Display mounted filesystem drives (`A:`, `B:`, `C:`) |
-| `disk` | `disk [info \| read \| write]` | Query block disk geometry, sectors, and partition tables |
-| `ramdisk` | `ramdisk [info \| clear \| dump]` | Inspect and manage volatile in-memory block devices |
-| `initrd` | `initrd [list \| cat <file>]` | Inspect boot USTAR RAM disk archive |
-| `ext4` | `ext4 [mount \| info \| list]` | Inspect EXT4 filesystem superblock and block groups |
-| `use` | `use <path>` | Change working directory or drive context |
+| Command | Syntax | Status | Description |
+| :--- | :--- | :--- | :--- |
+| `list` | `list [path]` | `[Active]` | List files and directories in current or specified path |
+| `view` | `view <file>` | `[Active]` | Display text content of a file to the console |
+| `edit` | `edit <file>` | `[Active]` | Launch full-screen interactive `kvi` modal text editor |
+| `create` | `create <file> [text]` | `[Active]` | Create a new file on FAT16 filesystem |
+| `delete` | `delete <path>` | `[Active]` | Delete a file or directory on FAT16 filesystem |
+| `copy` | `copy <src> <dst>` | `[Active]` | Copy a file from source to destination path |
+| `move` | `move <src> <dst>` | `[Active]` | Move or rename a file or directory |
+| `folder` | `folder <dir>` | `[Active]` | Create a new directory on FAT16 filesystem |
+| `write` | `write <file> <text>` | `[Active]` | Append or write string data to an existing FAT16 file |
+| `drives` | `drives` | `[Active]` | Scan and display detected ATA/AHCI block storage drives |
+| `use` | `use <drive_id>` | `[Active]` | Mount and select active block drive partition context |
+| `disk` | `disk` | `[Active]` | Query primary storage drive geometry, BPB, and FAT16 layout |
+| `ramdisk` | `ramdisk [info \| clear \| dump]` | `[Active]` | Inspect in-memory USTAR RAM disk initialization structures |
+| `initrd` | `initrd [-c]` | `[Active]` | Traverse and list files inside the boot USTAR RAM disk archive |
+| `fileinfo` | `fileinfo <path>` | `[Active]` | Display FAT16 inode metadata, starting cluster, and file size |
+| `ext4` | `ext4 [info \| inodes]` | `[Preview]` | Inspect native Linux EXT4/EXT2 filesystem superblock prototype |
 
 ---
 

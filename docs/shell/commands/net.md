@@ -8,25 +8,25 @@ This document details all native commands in Keira Kernel related to network int
 
 ## Command Reference Table
 
-| Command | Syntax | Description |
-| :--- | :--- | :--- |
-| `network` | `network [status \| up \| down \| dhcp]` | Display interface status, IP configuration, and trigger DHCP negotiation |
-| `download` | `download <url> [output_file]` | Download remote HTTP resource over TCP/IP stack |
-| `https` | `https <url>` | Securely fetch remote HTTPS payload using native TLS 1.3 |
-| `iptables` | `iptables [list \| add <rule> \| flush]` | Inspect and configure Netfilter packet filtering rules |
-| `firewall` | `firewall [status \| enable \| disable]` | Display firewall engine status and drop/accept statistics |
-| `ipcs` | `ipcs [all \| pipes \| shm \| queues]` | List active IPC shared memory segments, pipes, and message queues |
-| `ipcrm` | `ipcrm <shm \| pipe \| mqueue> <id>` | Destroy and release active IPC channels |
-| `mqueue` | `mqueue [list \| create <name> \| send]` | Manage POSIX message queues |
+| Command | Syntax | Status | Description |
+| :--- | :--- | :--- | :--- |
+| `network` | `network [dhcp \| resolve <domain> \| ping <ip>]` | `[Active]` | Display Intel e1000 NIC state, configure DHCP, resolve DNS, or send ICMP ping |
+| `download` | `download <url> [dest_path]` | `[Active]` | Fetch network payload over HTTP/HTTPS and save directly to FAT16 storage |
+| `https` | `https <url>` | `[Active]` | Securely fetch remote HTTPS payload using native bare-metal TLS 1.3 |
+| `firewall` | `firewall [status \| enable \| disable]` | `[Active]` | Display Netfilter packet filter status and drop/accept statistics |
+| `iptables` | `iptables [list \| add <rule> \| flush]` | `[Active]` | Inspect and configure Netfilter packet filtering rules |
+| `ipcs` | `ipcs [-m] [-s] [-q] [-a]` | `[Preview]` | Query status of System V and POSIX IPC facilities (Syscall 38-40) |
+| `ipcrm` | `ipcrm [-m <id>] [-s <id>] [-q <id>]` | `[Preview]` | Remove System V and POSIX IPC facilities from kernel memory (Syscall 41 & 42) |
+| `mqueue` | `mqueue [list \| status]` | `[Preview]` | Inspect POSIX Message Queue descriptors interface (Syscall 60 & 61) |
 
 ---
 
 ## Detailed Usage
 
-### `network status` & `network dhcp`
-Inspects network interface cards (Intel e1000 or Realtek RTL8139) and triggers DHCP lease acquisition:
+### `network` & `network dhcp`
+Inspects network interface cards (Intel e1000) and triggers DHCP lease acquisition:
 ```bash
-keira> network status
+keira> network
 Network Interface eth0:
   Driver        : Intel 82540EM (e1000)
   MAC Address   : 52:54:00:12:34:56
@@ -38,12 +38,9 @@ Network Interface eth0:
 ```
 
 ### `download <url>`
-Performs DNS resolution and initiates an HTTP GET request over raw TCP:
+Performs DNS resolution and initiates an HTTP/HTTPS stream fetch directly into FAT16 disk storage:
 ```bash
-keira> download http://api.github.com/zen /data/zen.txt
-Resolving api.github.com... 140.82.121.3
-Connecting to 140.82.121.3:80... Connected.
-Sending HTTP GET request...
-[200 OK] Received 42 bytes.
-Saved to /data/zen.txt
+keira> download http://208.95.112.1/json /data/ip.json
+Downloading  128.0 KiB / 128.0 KiB  100% [====================] Finished
+Saved to /data/ip.json (128 bytes)
 ```

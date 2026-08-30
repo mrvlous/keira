@@ -9,30 +9,49 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Inspect in-kernel BPF bytecode raw packet filter programs.
+//! Inspect Extended Berkeley Packet Filter (eBPF) runtime program states (Syscall 51 & 52).
 
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: bpf [status|list]\n\n");
-            vga::print_str("Description:\n  Inspect active zero-copy in-kernel BPF socket packet filter programs.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: bpf [list|status|maps]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect Extended Berkeley Packet Filter (eBPF) runtime program states (Syscall 51 & 52).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Zero-Copy BPF Packet Filter Engine Status\n");
+        vga::print_str("Extended Berkeley Packet Filter (eBPF) Subsystem ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str("  Interpreter : ");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("[OK]");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str(" Active (e1000 Raw Socket Support)\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str(
+            "  eBPF VM Engine : Ready (Verifier Active)
+",
+        );
+        vga::print_str(
+            "  Active Maps    : 0 Loaded
+",
+        );
     }
 }

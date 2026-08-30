@@ -8,20 +8,20 @@ This document details all native commands in Keira Kernel related to task monito
 
 ## Command Reference Table
 
-| Command | Syntax | Description |
-| :--- | :--- | :--- |
-| `tasks` | `tasks` | Display running kernel and userland tasks, PIDs, states, and CPU runtime |
-| `kill` | `kill <pid> [sig]` | Send POSIX signal (`SIGKILL`, `SIGTERM`, `SIGINT`) to a target task |
-| `stop` | `stop <pid>` | Pause task execution (`SIGSTOP`) |
-| `bg` | `bg <job_id>` | Resume stopped job in the background |
-| `fg` | `fg <job_id>` | Bring background job to the foreground |
-| `jobs` | `jobs` | List active background and stopped shell job entries |
-| `cgroups` | `cgroups [list \| create <cg> \| set]` | Inspect and configure cgroups resource limits (CPU shares, memory max) |
-| `futex` | `futex [status \| wait \| wake]` | Inspect active userland fast userspace mutex wait queues |
-| `eventfd` | `eventfd [list \| create \| read]` | Manage kernel `eventfd` notification descriptors |
-| `perf` | `perf [stat \| top \| counters]` | Sample CPU performance monitoring unit (PMU) hardware counters |
-| `timer` | `timer [list \| set <ms> \| cancel]` | Manage POSIX high-resolution timer queues |
-| `run` | `run <elf_path> [args...]` | Execute an ELF binary in isolated Ring 3 userland |
+| Command | Syntax | Status | Description |
+| :--- | :--- | :--- | :--- |
+| `tasks` | `tasks` | `[Active]` | Display running kernel and userland tasks, PIDs, states, and CPU runtime |
+| `run` | `run <elf_path> [args...]` | `[Active]` | Load and execute an ELF binary in isolated Ring 3 userland address space |
+| `stop` | `stop <pid>` | `[Active]` | Pause task execution in scheduler (`SIGSTOP`) |
+| `kill` | `kill <pid> [sig]` | `[Active]` | Send POSIX signal (`SIGKILL`, `SIGTERM`, `SIGINT`) to a target task |
+| `jobs` | `jobs` | `[Active]` | List active background and stopped shell job entries in scheduler table |
+| `fg` | `fg <job_id>` | `[Active]` | Bring background job to foreground and hook keyboard input |
+| `bg` | `bg <job_id>` | `[Active]` | Resume stopped job in the background (`SIGCONT`) |
+| `cgroups` | `cgroups [list \| status]` | `[Preview]` | Inspect process cgroups resource quotas and PID namespace mapping |
+| `futex` | `futex [status]` | `[Preview]` | Inspect Fast Userspace Mutex wait queues and locking interface (Syscall 40) |
+| `eventfd` | `eventfd [status]` | `[Preview]` | Inspect EventFD & SignalFD event notification counter interface (Syscall 50 & 51) |
+| `perf` | `perf [stat \| top \| list]` | `[Preview]` | Query Hardware Performance Monitoring Counters interface (Syscall 47 & 48) |
+| `timer` | `timer [status \| list]` | `[Preview]` | Query POSIX High-Resolution Timer interface (Syscall 45 & 46) |
 
 ---
 

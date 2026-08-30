@@ -9,7 +9,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
 //! Inspect NVMe PCIe controller status and Admin Queues.
 
 use keira_io::vga;
@@ -17,23 +16,43 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: nvme [status|list]\n\n");
-            vga::print_str("Description:\n  Inspect high-speed NVMe 1.4 PCIe SSD storage controller status.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: nvme [status|list]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect high-speed NVMe 1.4 PCIe SSD storage controller status.
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("NVMe PCIe Controller Subsystem Status\n");
+        vga::print_str("NVMe PCIe Storage Controller Subsystem ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str("  Status      : ");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("[OK]");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str(" Active (Admin SQ/CQ Ready)\n");
-        vga::print_str("  Namespaces  : 1 Active NVMe Namespace (/dev/nvme0n1)\n");
+        vga::print_str(
+            "  Status      : Ready (Admin SQ/CQ Configured)
+",
+        );
+        vga::print_str(
+            "  Namespaces  : 1 Active NVMe Namespace (/dev/nvme0n1)
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }

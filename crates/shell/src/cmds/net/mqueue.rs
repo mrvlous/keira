@@ -9,24 +9,42 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Inspect POSIX Real-Time Message Queues (Syscall 41).
+//! Inspect POSIX Message Queue descriptors & message backlog (Syscall 60 & 61).
 
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: mqueue [create|send|receive|status]\n\n");
             vga::print_str(
-                "Description:\n  Inspect POSIX Real-Time Message Queues (Syscall 41).\n\n",
+                "Usage: mqueue [list|status]
+
+",
             );
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Description:
+  Inspect POSIX Message Queue descriptors & message backlog (Syscall 60 & 61).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("POSIX Message Queue Subsystem (Syscall 60 & 61) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         let _ = keira_ipc::mqueue::sys_mq_open(core::ptr::null(), 0, 0);
     }
 }

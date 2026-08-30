@@ -9,7 +9,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
 //! Inspect process cgroup resource quotas & PID namespace mapping.
 
 use keira_io::vga;
@@ -17,20 +16,38 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: cgroups [list|status]\n\n");
-            vga::print_str("Description:\n  Inspect process cgroup memory limits & container PID namespace mapping.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: cgroups [list|status]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect process cgroup memory limits & container PID namespace mapping.
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Resource Control Groups (cgroups) & PID Namespaces\n");
+        vga::print_str("Resource Control Groups (cgroups) & PID Namespaces ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str("  Default cgroup : Max Memory 64MB ");
-        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-        vga::print_str("(Active)\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str(
+            "  Default cgroup : Max Memory 64MB (Configured)
+",
+        );
     }
 }

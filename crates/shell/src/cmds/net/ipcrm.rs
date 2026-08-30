@@ -9,26 +9,32 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Deallocate POSIX shared memory IPC segments or semaphores.
+//! Remove System V / POSIX IPC facilities (Shared Memory, Semaphores, Message Queues).
 
 use keira_io::vga;
-use keira_ipc::shm;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: ipcrm <shmid|semid>\n\n");
-            vga::print_str("Description:\n  Remove POSIX shared memory IPC segments or semaphores by ID (Syscall 75).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str("Usage: ipcrm [-m <shmid>] [-s <semid>] [-q <msqid>]\n\n");
+            vga::print_str(
+                "Description:\n  Remove System V and POSIX IPC facilities from kernel memory (Syscall 41 & 42).\n\n",
+            );
+            vga::print_str("Options:\n");
+            vga::print_str("  -m <shmid>   Remove Shared Memory segment\n");
+            vga::print_str("  -s <semid>   Remove Semaphore array\n");
+            vga::print_str("  -q <msqid>   Remove Message Queue\n");
+            vga::print_str("  -h, --help   Show this help message and exit\n");
         }
         return;
     }
 
     unsafe {
-        let _ = shm::sys_shm_sem(shm::SHM_CMD_RM, 0, 0);
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("System V / POSIX IPC Facility Removal ");
         vga::set_color(vga::Color::Yellow, vga::Color::Black);
-        vga::print_str("[IPC] Deallocated target shared memory IPC segment/semaphore.\n");
+        vga::print_str("[PREVIEW]\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = keira_ipc::shm::sys_shm_sem(0, 0, 0);
     }
 }

@@ -9,7 +9,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
 //! Inspect epoll scalable I/O event multiplexer instances (Syscall 55 & 56).
 
 use keira_io::vga;
@@ -17,17 +16,35 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: epoll [status]\n\n");
-            vga::print_str("Description:\n  Inspect epoll scalable I/O event multiplexer instances (Syscall 55 & 56).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: epoll [status]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect epoll scalable I/O event multiplexer instances (Syscall 55 & 56).
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Epoll Scalable I/O Event Engine Status (Syscall 55 & 56)\n");
-        let _ = keira_ipc::epoll::sys_epoll_create(1024);
+        vga::print_str("Epoll Scalable I/O Event Engine (Syscall 55 & 56) ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        let _ = keira_ipc::epoll::sys_epoll_create(1024);
     }
 }

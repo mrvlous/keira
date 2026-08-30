@@ -9,26 +9,43 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Inspect TPM 2.0 enclave status & PCR SHA-256 measurement banks.
+//! Trusted Platform Module (TPM 2.0) hardware security enclave & PCRs.
 
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
-            vga::print_str("Usage: tpm [pcr|status]\n\n");
-            vga::print_str("Description:\n  Inspect TPM 2.0 hardware security enclave & PCR SHA-256 measurement banks.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::print_str(
+                "Usage: tpm [status|pcr]
+
+",
+            );
+            vga::print_str(
+                "Description:
+  Inspect Trusted Platform Module (TPM 2.0) hardware security enclave & PCRs.
+
+",
+            );
+            vga::print_str(
+                "Options:
+  -h, --help    Show this help message and exit
+",
+            );
         }
         return;
     }
 
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("TPM 2.0 Hardware Security Enclave Status\n");
+        vga::print_str("TPM 2.0 Hardware Security Enclave ");
+        vga::set_color(vga::Color::Yellow, vga::Color::Black);
+        vga::print_str(
+            "[PREVIEW]
+",
+        );
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         keira_crypto::tpm::init();
         let _ = keira_crypto::tpm::read_pcr(0);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 }
