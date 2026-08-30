@@ -38,6 +38,22 @@ graph LR
 * `make full`: Compiles kernel binaries, ISOs, and disk images for both `x86_64` and `i686`.
 * `make run`: Boots active `ARCH` in QEMU with AHCI SATA, IDE, HDA sound, and COM1 serial output.
 * `make run-32`: Boots pure 32-bit `i686` kernel in QEMU.
+* `make check`: Verifies all required build dependencies are installed and reports missing tools.
 * `make test-all`: Runs headless automated test harness across all target architectures.
 * `make format`: Automatically formats Rust code (`cargo fmt`) and C code (`clang-format`).
 * `make clean`: Removes all build output directories and intermediate object files.
+
+---
+
+## Cross-Distribution Compatibility
+
+The build system is designed to work across all major Linux distributions without manual configuration:
+
+| Feature | Mechanism |
+| :--- | :--- |
+| **GRUB ISO Creation** | Auto-detects `grub-mkrescue` (Arch, Ubuntu) or `grub2-mkrescue` (Fedora, openSUSE) at parse time |
+| **Shell Recipes** | Explicit `SHELL := /bin/bash` ensures consistent behavior regardless of `/bin/sh` symlink target |
+| **Escape Sequences** | All `printf` calls use POSIX-compliant octal escapes (`\002`) instead of non-portable hex (`\x02`) |
+| **Dependency Check** | `make check` validates all 15 required tools and reports which are missing |
+
+See [setup.md](setup.md) for per-distribution package installation commands.

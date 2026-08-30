@@ -7,6 +7,8 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License.
 
+SHELL           := /bin/bash
+
 # Master Build System Architecture
 #
 # Orchestrates the pure Rust kernel and assembly bootstrap compilation pipeline:
@@ -24,6 +26,7 @@ ASM             := nasm
 CC              := gcc
 LD              := ld
 CARGO           := cargo
+GRUB_MKRESCUE   := $(shell command -v grub-mkrescue 2>/dev/null || command -v grub2-mkrescue 2>/dev/null || echo grub-mkrescue)
 
 # Project naming & version metadata
 KERNEL_NAME     := keira
@@ -217,7 +220,7 @@ $(KERNEL_ISO): $(KERNEL_BIN) $(INITRD_TAR) | dirs
 	$(Q)echo '	module2 /boot/initrd.tar initrd' >> $(ISO_DIR)/boot/grub/grub.cfg
 	$(Q)echo '	boot' >> $(ISO_DIR)/boot/grub/grub.cfg
 	$(Q)echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)grub-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
+	$(Q)$(GRUB_MKRESCUE) -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
 	@$(LOG_DONE) "$(KERNEL_ISO) ready"
 
 $(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) FORCE | dirs
@@ -260,11 +263,11 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/apps/bin/kcc.elf
 	$(Q)for cmd in $(SHELL_CMDS); do \
-	    printf "ELF\x02\x01\x01\x00Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
+	    printf "ELF\002\001\001\000Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
 	    chmod +x $(FS_ROOT)/system/bin/$$cmd.elf; \
 	done
 	$(Q)for drv in $(DRIVER_FILES); do \
-	    printf "KEIRA_DRIVER\x01\x00[Driver: %s]\nStatus=Active\nType=KernelSubsystem\n" "$$drv" > $(FS_ROOT)/system/drivers/$$drv; \
+	    printf "KEIRA_DRIVER\001\000[Driver: %s]\nStatus=Active\nType=KernelSubsystem\n" "$$drv" > $(FS_ROOT)/system/drivers/$$drv; \
 	done
 	$(Q)printf "console\nnull\nzero\nrandom\nurandom\nptmx\ntty\nfb0\nsda\nsda1\n" > $(FS_ROOT)/system/dev/devices.list
 	$(Q)cp user/include/stdio.h $(FS_ROOT)/system/include/stdio.h
@@ -381,7 +384,7 @@ objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 
 check: ## Verify all required build dependencies are installed
 	@MISSING=0; \
-	for tool in nasm gcc ld cargo rustc grub-mkrescue xorriso $(QEMU) \
+	for tool in nasm gcc ld cargo rustc $(GRUB_MKRESCUE) xorriso $(QEMU) \
 	            clang-format clang-tidy mkfs.fat mmd mcopy tar dd; do \
 	    if command -v $$tool >/dev/null 2>&1; then \
 	        $(LOG_CHECK) "$$tool"; \
