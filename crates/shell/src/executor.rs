@@ -83,9 +83,11 @@ pub unsafe fn get_current_user_home() -> &'static str {
     let mut total_len = 0;
     HOME_PATH_BUF[0..6].copy_from_slice(b"users/");
     total_len += 6;
-    let user_len = CURRENT_USER_LEN;
-    HOME_PATH_BUF[total_len..total_len + user_len].copy_from_slice(&CURRENT_USER[..user_len]);
-    total_len += user_len;
+    let user_len = core::cmp::min(CURRENT_USER_LEN, 16);
+    if total_len + user_len <= 32 {
+        HOME_PATH_BUF[total_len..total_len + user_len].copy_from_slice(&CURRENT_USER[..user_len]);
+        total_len += user_len;
+    }
     core::str::from_utf8(&HOME_PATH_BUF[..total_len]).unwrap_or("users/admin")
 }
 
@@ -94,11 +96,8 @@ pub unsafe fn get_current_user_home() -> &'static str {
 /// # Safety
 /// Reads from global mutable user states.
 pub unsafe fn is_admin_mode() -> bool {
-    IS_ADMIN
-        || matches!(
-            core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]),
-            Ok("admin")
-        )
+    let ulen = core::cmp::min(CURRENT_USER_LEN, 16);
+    IS_ADMIN || matches!(core::str::from_utf8(&CURRENT_USER[..ulen]), Ok("admin"))
 }
 
 /// Validates whether the active user has write permissions in the current working directory.
@@ -185,8 +184,8 @@ pub fn execute_command(cmd: &str) {
                     return;
                 }
 
-                let user_str =
-                    core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]).unwrap_or("default");
+                let ulen = core::cmp::min(CURRENT_USER_LEN, 16);
+                let user_str = core::str::from_utf8(&CURRENT_USER[..ulen]).unwrap_or("default");
                 vga::print_str("[please] password for ");
                 vga::print_str(user_str);
                 vga::print_str(": ");
@@ -462,6 +461,7 @@ pub fn execute_command_inner(cmd: &str) {
         "iptables" => super::cmds::iptables::run(&mut parts),
         "firewall" => super::cmds::firewall::run(&mut parts),
         "service" | "ksvc" => super::cmds::service::run(&mut parts),
+        "kcc" => super::cmds::proc::kcc::run(&mut parts),
         _ => {
             // First check if this is an executable binary or path
             if super::cmds::run::run_direct(command) {

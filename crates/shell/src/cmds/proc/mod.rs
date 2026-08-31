@@ -15,6 +15,7 @@ pub mod eventfd;
 pub mod fg;
 pub mod futex;
 pub mod jobs;
+pub mod kcc;
 pub mod kill;
 pub mod perf;
 pub mod run;

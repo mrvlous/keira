@@ -11,6 +11,7 @@
 #ifndef _TIME_H
 #define _TIME_H
 
+#include <stddef.h>
 #include <sys/types.h>
 
 struct tm {
@@ -28,5 +29,7 @@ struct tm {
 time_t time(time_t *tloc);
 struct tm *gmtime(const time_t *timep);
 char *asctime(const struct tm *tm);
+size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);
+time_t difftime(time_t time1, time_t time0);
 
 #endif /* _TIME_H */

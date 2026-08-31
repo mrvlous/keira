@@ -270,16 +270,24 @@ fs-root: $(USER_ELF) | dirs
 	    printf "KEIRA_DRIVER\001\000[Driver: %s]\nStatus=Active\nType=KernelSubsystem\n" "$$drv" > $(FS_ROOT)/system/drivers/$$drv; \
 	done
 	$(Q)printf "console\nnull\nzero\nrandom\nurandom\nptmx\ntty\nfb0\nsda\nsda1\n" > $(FS_ROOT)/system/dev/devices.list
-	$(Q)cp user/include/stdio.h $(FS_ROOT)/system/include/stdio.h
-	$(Q)cp user/include/stdlib.h $(FS_ROOT)/system/include/stdlib.h
-	$(Q)cp user/include/string.h $(FS_ROOT)/system/include/string.h
-	$(Q)cp user/include/syscall.h $(FS_ROOT)/system/include/syscall.h
-	$(Q)cp user/include/sys/types.h $(FS_ROOT)/system/include/sys/types.h
+	$(Q)cp -r user/include/* $(FS_ROOT)/system/include/
 	$(Q)cp user/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
+	$(Q)mkdir -p $(FS_ROOT)/system/lib
+	$(Q)cp user/lib/math/math.c $(FS_ROOT)/system/lib/math.c
+	$(Q)cp user/lib/string/string.c $(FS_ROOT)/system/lib/string.c
+	$(Q)cp user/lib/stdlib/stdlib.c $(FS_ROOT)/system/lib/stdlib.c
+	$(Q)cp user/lib/unistd/unistd.c $(FS_ROOT)/system/lib/unistd.c
+	$(Q)cp user/lib/assert/assert.c $(FS_ROOT)/system/lib/assert.c
+	$(Q)cp user/lib/dirent/dirent.c $(FS_ROOT)/system/lib/dirent.c
+	$(Q)cp user/lib/stat/stat.c $(FS_ROOT)/system/lib/stat.c
+	$(Q)cp user/lib/signal/signal.c $(FS_ROOT)/system/lib/signal.c
+	$(Q)cp user/lib/time/time.c $(FS_ROOT)/system/lib/time.c
+	$(Q)cp user/lib/setjmp/setjmp.c $(FS_ROOT)/system/lib/setjmp.c
 	$(Q)cp user/bin/kcc/main.c $(FS_ROOT)/apps/src/kcc_main.c
 	$(Q)cp user/bin/kcc/lexer.c $(FS_ROOT)/apps/src/lexer.c
 	$(Q)cp user/bin/kcc/parser.c $(FS_ROOT)/apps/src/parser.c
 	$(Q)cp user/bin/kcc/codegen.c $(FS_ROOT)/apps/src/codegen.c
+	$(Q)cp user/apps/*.c $(FS_ROOT)/apps/src/
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "HOSTNAME=keira\nTIMEZONE=UTC\nKEYMAP=us\nINIT_RUNLEVEL=3\n" > $(FS_ROOT)/config/sys/os-release
 	$(Q)printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > $(FS_ROOT)/config/sys/resolv.conf
@@ -295,7 +303,7 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
 	$(Q)printf "[INFO] Keira Service Controller (ksvc) system logger initialized.\n" > $(FS_ROOT)/data/log/syslog.log
 	$(Q)printf "KEY=VALUE\n" > $(FS_ROOT)/data/save/session.dat
-	$(Q)printf "<!DOCTYPE html><html><head><title>Keira Kernel OS</title></head><body style=\"background:#111;color:#eee;font-family:sans-serif;padding:40px;\"><h1>Keira Kernel v$(VERSION)</h1><p>Native Background Web &amp; REST API Server (httpd)</p><p>Status: <strong>Active &amp; Serving</strong></p></body></html>\n" > $(FS_ROOT)/data/www/index.html
+	$(Q)printf "<!DOCTYPE html><html><head><title>Keira Kernel</title></head><body style=\"background:#111;color:#eee;font-family:sans-serif;padding:40px;\"><h1>Keira Kernel v$(VERSION)</h1><p>Native Background Web &amp; REST API Server (httpd)</p><p>Status: <strong>Active &amp; Serving</strong></p></body></html>\n" > $(FS_ROOT)/data/www/index.html
 	$(Q)touch $(FS_ROOT)/temp/.keep
 
 $(DISK_IMG): fs-root
@@ -304,7 +312,7 @@ $(DISK_IMG): fs-root
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save ::/data/www 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save ::/data/www 2>/dev/null || true
 	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \

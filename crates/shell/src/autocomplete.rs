@@ -72,6 +72,7 @@ pub unsafe fn handle_autocomplete() {
         "ipcs",
         "iptables",
         "jobs",
+        "kcc",
         "kill",
         "kvm",
         "list",

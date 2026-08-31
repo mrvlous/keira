@@ -55,7 +55,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, bg);
                 vga::print_str("  tasks     stop      wait      script    run       cgroups\n");
                 vga::print_str("  futex     seccomp   epoll     eventfd   mqueue    kill\n");
-                vga::print_str("  jobs      fg        bg        service\n\n");
+                vga::print_str("  jobs      fg        bg        service   kcc\n\n");
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Networking & IPC:\n");
@@ -183,6 +183,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             Some("run") => {
                 vga::print_str("Usage: run <program.elf>\nLoad and execute a freestanding user mode ELF program in Ring 3.\n");
+            }
+            Some("kcc") => {
+                vga::print_str("Usage: kcc [options] <source.c>\nCompile C source code into a freestanding Ring 3 ELF executable binary.\nOptions:\n  -o, --output <file>  Specify output binary path\n  -v, --version        Display compiler version\n  -h, --help           Display help manual\n");
             }
             Some("write") => {
                 vga::print_str("Usage: write [-a|--append|>>] <filename> <text>\nWrite or append text content to a file on the active FAT16 storage drive.\n");

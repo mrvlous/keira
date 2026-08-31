@@ -1,35 +1,25 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Mathematical Operations Library (`<math.h>`)
+# Scientific & Integer Mathematics (`<math.h>`)
 
-This document specifies floating-point and integer arithmetic routines in the Keira C SDK.
-
----
-
-## Mathematical Function Specifications
-
-| Function | Return Type | Description |
-| :--- | :--- | :--- |
-| `double sqrt(double x)` | Square Root | Computes non-negative square root using Newton-Raphson |
-| `double sin(double x)` | Sine | Taylor series trigonometric sine approximation |
-| `double cos(double x)` | Cosine | Taylor series trigonometric cosine approximation |
-| `double pow(double x, double y)` | Exponentiation | Computes $x^y$ |
-| `double fabs(double x)` | Absolute Value | Floating-point absolute magnitude |
-| `double floor(double x)` | Floor | Largest integer value less than or equal to $x$ |
-| `double ceil(double x)` | Ceiling | Smallest integer value greater than or equal to $x$ |
+The `<math.h>` header provides mathematical functions optimized for freestanding x86 execution.
 
 ---
 
-## Core API (`user/sdk/libc/math.c`)
+## 1. Function Reference
 
-```c
-#include <math.h>
-
-double sqrt(double x);
-double sin(double x);
-double cos(double x);
-double pow(double base, double exp);
-double fabs(double x);
-double floor(double x);
-double ceil(double x);
-```
+| Function Prototype | Description |
+| :--- | :--- |
+| `int isqrt(int x);` | Fast integer square root via binary restoration |
+| `int ipow(int base, int exp);` | Exponentiation by squaring |
+| `int min(int a, int b);` | Minimum of two integers |
+| `int max(int a, int b);` | Maximum of two integers |
+| `int clamp(int val, int min, int max);` | Value clamping to inclusive range |
+| `int abs(int x);` | Absolute value of integer |
+| `long labs(long x);` | Absolute value of long integer |
+| `int gcd(int a, int b);` | Greatest common divisor via Euclidean algorithm |
+| `int lcm(int a, int b);` | Least common multiple |
+| `int sin_fp(int deg);` | Fixed-point sine (scaled by 10000) |
+| `int cos_fp(int deg);` | Fixed-point cosine (scaled by 10000) |
+| `int atan2_fp(int y, int x);` | Fixed-point arc tangent (returns angle in degrees 0-360) |
+| `int hypot_fp(int x, int y);` | Euclidean distance $\sqrt{x^2 + y^2}$ |

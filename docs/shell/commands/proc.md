@@ -12,6 +12,7 @@ This document details all native commands in Keira Kernel related to task monito
 | :--- | :--- | :--- | :--- |
 | `tasks` | `tasks` | `[Active]` | Display running kernel and userland tasks, PIDs, states, and CPU runtime |
 | `run` | `run <elf_path> [args...]` | `[Active]` | Load and execute an ELF binary in isolated Ring 3 userland address space |
+| `kcc` | `kcc [options] <source.c>` | `[Active]` | Compile C source code into a freestanding Ring 3 ELF binary on-demand |
 | `stop` | `stop <pid>` | `[Active]` | Pause task execution in scheduler (`SIGSTOP`) |
 | `kill` | `kill <pid> [sig]` | `[Active]` | Send POSIX signal (`SIGKILL`, `SIGTERM`, `SIGINT`) to a target task |
 | `jobs` | `jobs` | `[Active]` | List active background and stopped shell job entries in scheduler table |
@@ -41,8 +42,14 @@ keira> tasks
 ### `run <elf_path>`
 Loads and executes a dynamic ELF binary within an isolated virtual address space:
 ```bash
-keira> run /system/bin/kcc.elf -v
-Keira C Compiler (KCC) v0.36.0
-Target: x86_64-keira-none
-Ready.
+keira> run /apps/bin/calc.elf
+```
+
+### `kcc [options] <source.c>`
+Compiles C source code on-demand into an executable ELF binary:
+```bash
+keira> kcc /apps/src/calc.c -o /apps/bin/calc.elf
+Compiling: /apps/src/calc.c -> /apps/bin/calc.elf
+[OK] Executable ready at /apps/bin/calc.elf
+Hint: Execute with 'run /apps/bin/calc.elf'
 ```

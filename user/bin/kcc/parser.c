@@ -77,6 +77,24 @@ void primary_expr(void) {
         }
         match(TOK_RPAREN);
         emit_load_imm(sz);
+    } else if (tok == TOK_SYSCALL) {
+        match(TOK_SYSCALL);
+        match(TOK_LPAREN);
+        assignment_expr();
+        emit_push_rax(); /* syscall nr */
+        match(TOK_COMMA);
+        assignment_expr();
+        emit_push_rax(); /* arg1 */
+        match(TOK_COMMA);
+        assignment_expr();
+        emit_push_rax(); /* arg2 */
+        match(TOK_COMMA);
+        assignment_expr();
+        emit_push_rax(); /* arg3 */
+        match(TOK_RPAREN);
+
+        emit_syscall_stub();
+        return;
     } else if (tok == TOK_IDENT) {
         char name[256];
         k_strcpy(name, token_string);

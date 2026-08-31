@@ -58,21 +58,24 @@ pub fn print_prompt() {
         }
 
         vga::set_color(vga::Color::White, vga::Color::Black);
-        if let Ok(user_str) = core::str::from_utf8(&CURRENT_USER[..CURRENT_USER_LEN]) {
+        let ulen = core::cmp::min(CURRENT_USER_LEN, 16);
+        if let Ok(user_str) = core::str::from_utf8(&CURRENT_USER[..ulen]) {
             vga::print_str(user_str);
         } else {
             vga::print_str("default");
         }
 
         vga::print_str("@");
-        if let Ok(hostname_str) = core::str::from_utf8(&HOSTNAME[..HOSTNAME_LEN]) {
+        let hlen = core::cmp::min(HOSTNAME_LEN, 32);
+        if let Ok(hostname_str) = core::str::from_utf8(&HOSTNAME[..hlen]) {
             vga::print_str(hostname_str);
         } else {
             vga::print_str("keira");
         }
         vga::print_str(":");
 
-        let current_path = core::str::from_utf8(&SHELL_PATH[..SHELL_PATH_LEN]).unwrap_or_default();
+        let plen = core::cmp::min(SHELL_PATH_LEN, 80);
+        let current_path = core::str::from_utf8(&SHELL_PATH[..plen]).unwrap_or_default();
         let home_path = get_current_user_home();
 
         if current_path.is_empty() {

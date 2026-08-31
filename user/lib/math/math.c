@@ -9,15 +9,17 @@
  */
 
 #include <math.h>
-#include <stdint.h>
 
 int isqrt(int x) {
     if (x <= 0)
         return 0;
     int res = 0;
     int bit = 1 << 30;
-    while (bit > x)
+
+    while (bit > x) {
         bit >>= 2;
+    }
+
     while (bit != 0) {
         if (x >= res + bit) {
             x -= res + bit;
@@ -44,11 +46,15 @@ int ipow(int base, int exp) {
 }
 
 int min(int a, int b) {
-    return (a < b) ? a : b;
+    if (a < b)
+        return a;
+    return b;
 }
 
 int max(int a, int b) {
-    return (a > b) ? a : b;
+    if (a > b)
+        return a;
+    return b;
 }
 
 int clamp(int val, int min_val, int max_val) {
@@ -59,66 +65,77 @@ int clamp(int val, int min_val, int max_val) {
     return val;
 }
 
-/* Freestanding 64-bit integer division helpers for 32-bit compilation */
-static uint64_t udivmod64(uint64_t num, uint64_t den, uint64_t *rem_p) {
-    uint64_t quot = 0, qbit = 1;
+int abs(int x) {
+    if (x < 0)
+        return -x;
+    return x;
+}
 
-    if (den == 0)
+long labs(long x) {
+    if (x < 0)
+        return -x;
+    return x;
+}
+
+int gcd(int a, int b) {
+    a = abs(a);
+    b = abs(b);
+    while (b != 0) {
+        int t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+int lcm(int a, int b) {
+    if (a == 0 || b == 0)
         return 0;
-
-    while ((int64_t)den >= 0) {
-        den <<= 1;
-        qbit <<= 1;
-    }
-
-    while (qbit) {
-        if (den <= num) {
-            num -= den;
-            quot += qbit;
-        }
-        den >>= 1;
-        qbit >>= 1;
-    }
-
-    if (rem_p)
-        *rem_p = num;
-
-    return quot;
+    return abs(a * b) / gcd(a, b);
 }
 
-uint64_t __udivdi3(uint64_t num, uint64_t den) {
-    return udivmod64(num, den, 0);
+int sin_fp(int deg) {
+    deg = deg % 360;
+    if (deg < 0)
+        deg += 360;
+    if (deg > 180)
+        return -sin_fp(deg - 180);
+    if (deg > 90)
+        deg = 180 - deg;
+
+    /* Bhaskara I sine approximation formula scaled by 10000 */
+    int num = 4 * deg * (180 - deg) * 100;
+    int den = 405 - (deg * (180 - deg)) / 100;
+    if (den <= 0)
+        return 10000;
+    int res = num / den;
+    if (res > 10000)
+        res = 10000;
+    return res;
 }
 
-uint64_t __umoddi3(uint64_t num, uint64_t den) {
-    uint64_t rem = 0;
-    udivmod64(num, den, &rem);
-    return rem;
+int cos_fp(int deg) {
+    return sin_fp(deg + 90);
 }
 
-int64_t __divdi3(int64_t a, int64_t b) {
-    int neg = 0;
-    if (a < 0) {
-        a = -a;
-        neg = !neg;
+int atan2_fp(int y, int x) {
+    if (x == 0) {
+        if (y > 0)
+            return 90;
+        if (y < 0)
+            return 270;
+        return 0;
     }
-    if (b < 0) {
-        b = -b;
-        neg = !neg;
-    }
-    int64_t res = (int64_t)__udivdi3((uint64_t)a, (uint64_t)b);
-    return neg ? -res : res;
+    int angle = (abs(y) * 45) / (abs(x) + abs(y) / 2 + 1);
+    if (x > 0 && y >= 0)
+        return angle;
+    if (x < 0 && y >= 0)
+        return 180 - angle;
+    if (x < 0 && y < 0)
+        return 180 + angle;
+    return 360 - angle;
 }
 
-int64_t __moddi3(int64_t a, int64_t b) {
-    int neg = 0;
-    if (a < 0) {
-        a = -a;
-        neg = 1;
-    }
-    if (b < 0) {
-        b = -b;
-    }
-    int64_t res = (int64_t)__umoddi3((uint64_t)a, (uint64_t)b);
-    return neg ? -res : res;
+int hypot_fp(int x, int y) {
+    return isqrt(x * x + y * y);
 }

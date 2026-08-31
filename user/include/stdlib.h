@@ -19,6 +19,8 @@
 
 int atoi(const char *nptr);
 long atol(const char *nptr);
+long strtol(const char *nptr, char **endptr, int base);
+unsigned long strtoul(const char *nptr, char **endptr, int base);
 void itoa(int value, char *str, int base);
 void exit(int status);
 void abort(void);
@@ -27,5 +29,9 @@ long labs(long j);
 long long llabs(long long j);
 int rand(void);
 void srand(unsigned int seed);
+
+void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
+void *bsearch(const void *key, const void *base, size_t nmemb, size_t size,
+              int (*compar)(const void *, const void *));
 
 #endif /* _STDLIB_H */

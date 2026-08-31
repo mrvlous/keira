@@ -16,5 +16,15 @@ int ipow(int base, int exp);
 int min(int a, int b);
 int max(int a, int b);
 int clamp(int val, int min_val, int max_val);
+int abs(int x);
+long labs(long x);
+int gcd(int a, int b);
+int lcm(int a, int b);
+
+/* Fixed-point scientific trigonometry (scaled by 10000) */
+int sin_fp(int deg);
+int cos_fp(int deg);
+int atan2_fp(int y, int x);
+int hypot_fp(int x, int y);
 
 #endif /* _MATH_H */

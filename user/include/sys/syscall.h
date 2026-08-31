@@ -38,6 +38,7 @@ int64_t syscall4(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a
 int64_t syscall5(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5);
 int64_t syscall6(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5,
                  uint64_t a6);
+long syscall(long number, ...);
 
 void sys_print_char(char c);
 void sys_exit(int status);

@@ -1,38 +1,23 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Standard Utilities & Memory Allocator (`stdlib.h`)
+# General Utilities & Memory (`<stdlib.h>`)
 
-This document specifies dynamic heap allocation, integer conversions, and process lifecycle functions in the Keira Kernel C SDK.
-
----
-
-## Technical Specifications
-
-* **Memory Backing**: Uses `sys_brk` to dynamically expand the userland heap address range.
-* **Allocation Overhead**: 16-byte metadata header per allocated chunk.
+The `<stdlib.h>` header defines numeric conversion, memory management, sorting, search, and process termination functions.
 
 ---
 
-## Core API (`user/include/stdlib.h` & `user/lib/stdlib/`)
+## 1. Function Reference
 
-```c
-// Dynamic Memory Management
-void *malloc(size_t size);
-void free(void *ptr);
-void *calloc(size_t num, size_t size);
-void *realloc(void *ptr, size_t new_size);
-
-// Process Control
-void exit(int status);
-void abort(void);
-
-// String & Integer Conversions
-int atoi(const char *str);
-char *itoa(int value, char *str, int base);
-int abs(int n);
-long labs(long n);
-
-// Random Number Generation
-int rand(void);
-void srand(unsigned int seed);
-```
+| Function Prototype | Description |
+| :--- | :--- |
+| `int atoi(const char *nptr);` | Convert ASCII string to integer |
+| `long atol(const char *nptr);` | Convert ASCII string to long integer |
+| `long strtol(const char *nptr, char **endptr, int base);` | Convert string to long with custom base |
+| `unsigned long strtoul(const char *nptr, char **endptr, int base);` | Convert string to unsigned long |
+| `void itoa(int value, char *str, int base);` | Convert integer to ASCII string representation |
+| `void exit(int status);` | Terminate process with exit code |
+| `void abort(void);` | Abnormally terminate process via SIGABRT |
+| `int rand(void);` | Pseudo-random number generator |
+| `void srand(unsigned int seed);` | Seed pseudo-random generator |
+| `void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));` | Quicksort array elements |
+| `void *bsearch(const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));` | Binary search sorted array |
