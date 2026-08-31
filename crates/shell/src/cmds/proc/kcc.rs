@@ -44,7 +44,11 @@ pub fn run(parts: &mut SplitWhitespace) {
             }
             "-v" | "--version" => {
                 vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("Keira C Compiler (KCC) v0.36.0\n");
+                vga::print_str(concat!(
+                    "Keira C Compiler (KCC) v",
+                    env!("CARGO_PKG_VERSION"),
+                    "\n"
+                ));
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 #[cfg(target_arch = "x86_64")]
                 vga::print_str("Target: x86_64-keira-none (Freestanding Ring 3 ELF)\n");
