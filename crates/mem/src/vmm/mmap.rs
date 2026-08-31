@@ -62,6 +62,20 @@ pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
     }
 }
 
+/// Locate the active VMA enclosing the given virtual address within the specified address space.
+pub unsafe fn find_active_vma(pml4_phys: u64, addr: u64) -> Option<Vma> {
+    if pml4_phys == 0 {
+        return None;
+    }
+    for i in 0..MAX_VMAS {
+        let vma = VMA_TABLE[i];
+        if vma.is_active && vma.pml4_phys == pml4_phys && addr >= vma.start && addr < vma.end {
+            return Some(vma);
+        }
+    }
+    None
+}
+
 /// Find the lowest available non-overlapping virtual memory range within [MMAP_START, MMAP_END)
 /// for the specified address space (cur_pml4).
 pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u64> {

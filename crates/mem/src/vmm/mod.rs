@@ -10,11 +10,13 @@
 //! Virtual Memory Management (VMM) subsystem.
 
 pub mod clone;
+pub mod fault;
 pub mod free;
 pub mod mmap;
 pub mod paging;
 
 pub use clone::*;
+pub use fault::*;
 pub use free::*;
 pub use mmap::*;
 pub use paging::*;

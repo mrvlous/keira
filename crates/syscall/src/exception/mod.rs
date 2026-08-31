@@ -103,6 +103,14 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
     );
 
     if (cs & 3) == 3 {
+        // 1. Attempt to resolve user mode Page Fault on-demand (Demand Paging / Stack Auto-Growth)
+        if vector == 14 {
+            let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
+            if unsafe { keira_mem::vmm::handle_page_fault(cr2, error_code, rsp) } {
+                return;
+            }
+        }
+
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("\n*** USER PROCESS CRASHED ***\n");
         vga::print_str("Exception Vector: ");

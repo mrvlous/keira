@@ -30,3 +30,14 @@ Virtual addresses are decomposed into four 9-bit table indices:
 | `3` | `PAGE_WRITE_THROUGH` | Write-through caching policy |
 | `4` | `PAGE_CACHE_DISABLE` | Disable CPU caching (for MMIO regions) |
 | `63` | `PAGE_NO_EXECUTE` | Hardware `NX` bit preventing code execution |
+
+---
+
+## Demand Paging & User Stack Auto-Growth
+
+When a Ring 3 user process accesses an unmapped virtual address within its authorized Virtual Memory Area (VMA) or user stack window (`USER_STACK_BOTTOM` to `USER_STACK_TOP`), the CPU triggers Interrupt 14 (`#PF` Page Fault):
+
+1. **Hardware Fault Trapping**: The CPU writes the faulting address to `CR2` and pushes an error code containing fault attributes (`P`, `W/R`, `U/S`, `I/D`).
+2. **Exception Dispatcher (`handle_page_fault`)**: The Ring 0 handler inspects `CR2` and validates against active VMAs or the dynamic user stack window.
+3. **On-Demand Frame Allocation**: If the access is valid and the page is not-present, a zeroed physical frame is allocated from PMM, mapped to the faulting page, and TLB entry is invalidated via `invlpg`.
+4. **Transparent Instruction Resume**: The interrupt handler returns via `iretq`, allowing the CPU to resume execution seamlessly without process crashes or memory leaks.

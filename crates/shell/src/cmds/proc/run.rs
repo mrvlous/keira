@@ -26,11 +26,7 @@ const USER_STACK_TOP: u64 = 0x07FFF000 - 16;
 #[cfg(target_arch = "x86_64")]
 const USER_DEFAULT_BRK: u64 = 0x600000000000;
 #[cfg(target_arch = "x86_64")]
-const USER_STACK_BOTTOM: u64 = 0x7FFFFFD80000;
-#[cfg(target_arch = "x86_64")]
 const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
-#[cfg(target_arch = "x86_64")]
-const USER_STACK_PAGES: u64 = 256;
 
 /// Execute a freestanding user mode ELF program in an isolated address space.
 pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
@@ -93,29 +89,26 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
             }
         };
 
-        let stack_pages = USER_STACK_PAGES;
-        let stack_bottom_vaddr: u64 = USER_STACK_BOTTOM;
-        for p in 0..stack_pages {
-            let page_vaddr = stack_bottom_vaddr + (p * pmm::PAGE_SIZE);
-            let stack_frame = match pmm::alloc_frame() {
-                Some(f) => f,
-                None => {
-                    cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
-                    return Err("Out of memory for user stack frame");
-                }
-            };
-            if let Err(e) = vmm::map_page(
-                page_vaddr,
-                stack_frame,
-                vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-            ) {
-                pmm::free_frame(stack_frame);
+        // Allocate initial top stack frame (4KB); further stack frames are allocated on-demand via #PF
+        let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
+        let stack_frame = match pmm::alloc_frame() {
+            Some(f) => f,
+            None => {
                 cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
-                return Err(e);
+                return Err("Out of memory for user stack frame");
             }
-            let ptr = page_vaddr as *mut u8;
-            core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
+        };
+        if let Err(e) = vmm::map_page(
+            top_stack_page,
+            stack_frame,
+            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
+        ) {
+            pmm::free_frame(stack_frame);
+            cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+            return Err(e);
         }
+        let ptr = top_stack_page as *mut u8;
+        core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
         let initial_user_rsp: u64 = USER_STACK_TOP;
 
         let mut brk_end = USER_DEFAULT_BRK;
