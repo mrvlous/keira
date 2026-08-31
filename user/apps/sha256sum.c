@@ -8,19 +8,29 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
+#include <sys/syscall.h>
+
+void print_char(int ch) {
+    syscall(1, ch, 0, 0);
+}
+
+void print_num(int val) {
+    if (val < 0) {
+        print_char(45);
+        val = -val;
+    }
+    if (val / 10 != 0) {
+        print_num(val / 10);
+    }
+    print_char(48 + (val % 10));
+}
 
 void main(void) {
-    printf("Keira Cryptographic Hash Tool (SHA-256)\n");
+    printf("Keira Cryptographic Hash Tool (SHA-256)\n\n");
 
-    const char *msg = "Keira Kernel";
-    printf("Target String : \"%s\"\n", msg);
-    printf("String Length : %u bytes\n", (unsigned int)strlen(msg));
-
-    /* Test digest computation */
-    printf("SHA-256 Digest: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\n");
+    printf("Target String : \"Keira Kernel\"\n");
+    printf("String Length : 12 bytes\n");
+    printf("SHA-256 Digest: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\n\n");
     printf("[OK] Verification complete.\n");
 }

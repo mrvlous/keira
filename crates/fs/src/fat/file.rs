@@ -326,6 +326,18 @@ pub unsafe fn remove_entry(name: &str) -> Result<(), &'static str> {
     let entry = &mut *entries.add(found.index);
     entry.name[0] = 0xE5;
 
+    // Clear any preceding LFN entries belonging to this file in the sector
+    let mut idx = found.index;
+    while idx > 0 {
+        idx -= 1;
+        let prev_entry = &mut *entries.add(idx);
+        if (prev_entry.attr & 0x0F) == 0x0F {
+            prev_entry.name[0] = 0xE5;
+        } else {
+            break;
+        }
+    }
+
     write_sector(found.sector, &sector_data)?;
     Ok(())
 }

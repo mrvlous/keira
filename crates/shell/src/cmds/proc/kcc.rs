@@ -190,15 +190,29 @@ pub fn run(parts: &mut SplitWhitespace) {
     // 5. If a custom output path was requested, copy from /apps/bin/app.elf to target
     if output_file != "/apps/bin/app.elf" {
         unsafe {
-            if let Ok(elf_len) = keira_fs::vfs::read_file("/apps/bin/app.elf", &mut ELF_BUF) {
-                let _ = keira_fs::fat::remove_entry(output_file);
-                let _ = keira_fs::fat::create_file(output_file);
-                let _ = keira_fs::fat::write_file_content(output_file, &ELF_BUF[..elf_len]);
-            } else {
-                vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("kcc: compilation failed to generate binary\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
+            match keira_fs::fat::read_file_content("/apps/bin/app.elf", &mut ELF_BUF) {
+                Ok(elf_len) => {
+                    let _ = keira_fs::fat::remove_entry(output_file);
+                    let _ = keira_fs::fat::create_file(output_file);
+                    if let Err(e) =
+                        keira_fs::fat::write_file_content(output_file, &ELF_BUF[..elf_len])
+                    {
+                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                        vga::print_str("kcc: failed writing output binary: ");
+                        vga::print_str(e);
+                        vga::print_str("\n");
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                        return;
+                    }
+                }
+                Err(e) => {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str("kcc: compilation failed to generate binary: ");
+                    vga::print_str(e);
+                    vga::print_str("\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
             }
         }
     } else if !keira_fs::vfs::exists("/apps/bin/app.elf") {

@@ -9,18 +9,23 @@
  */
 
 #include <stdio.h>
+#include <sys/syscall.h>
+
+void print_char(int ch) {
+    syscall(1, ch, 0, 0);
+}
 
 void main(void) {
     printf("Keira ASCII Mandelbrot Fractal (Fixed-Point Math)\n\n");
 
-    int width = 60;
-    int height = 20;
+    int width = 50;
+    int height = 18;
     int max_iter = 20;
 
-    int y = -10;
-    while (y < 10) {
-        int x = -30;
-        while (x < 30) {
+    int y = -9;
+    while (y < 9) {
+        int x = -25;
+        while (x < 25) {
             int cr = (x * 300) / width;
             int ci = (y * 300) / height;
             int zr = 0;
@@ -32,22 +37,22 @@ void main(void) {
                 int next_zi = (2 * zr * zi) / 100 + ci;
                 zr = next_zr;
                 zi = next_zi;
-                iter++;
+                iter = iter + 1;
             }
 
             if (iter == max_iter) {
-                putchar('#');
+                print_char(35); /* '#' */
             } else if (iter > 12) {
-                putchar('*');
+                print_char(42); /* '*' */
             } else if (iter > 6) {
-                putchar('.');
+                print_char(46); /* '.' */
             } else {
-                putchar(' ');
+                print_char(32); /* ' ' */
             }
-            x++;
+            x = x + 1;
         }
-        putchar('\n');
-        y++;
+        print_char(10); /* '\n' */
+        y = y + 1;
     }
     printf("\n[OK] Fractal rendering complete.\n");
 }
