@@ -18,8 +18,10 @@ This document details all native commands in Keira Kernel related to hardware di
 | `service` | `service [list \| start <svc> \| stop <svc> \| edit <svc>]` | `[Active]` | Inspect and control `ksvc` background service daemons (httpd, syslogd, syncd, watchdogd) |
 | `env` | `env [list \| set <k> <v> \| get <k>]` | `[Active]` | Inspect and manipulate shell runtime environment variables |
 | `hostname` | `hostname [get \| set <name>]` | `[Active]` | Query or update persistent system hostname in `/config/sys/hostname` |
-| `power` | `power [status \| acpi]` | `[Active]` | Query ACPI S0 power state and NMI hardware watchdog telemetry |
+| `power` | `power [status \| acpi \| shutdown \| reboot]` | `[Active]` | Query ACPI power state, initiate S5 soft-off shutdown, or reboot CPU |
+| `poweroff` | `poweroff` | `[Active]` | Direct alias for `power shutdown` to power off hardware via ACPI S5 |
 | `reset` | `reset` | `[Active]` | Trigger immediate bare-metal CPU reboot via PS/2 controller port `0x64` |
+| `reboot` | `reboot` | `[Active]` | Direct alias for `reset` to reboot machine via PS/2 fast reset |
 | `sync` | `sync` | `[Active]` | Flush dirty filesystem block cache sectors to physical storage media |
 | `syslog` | `syslog [dmesg]` | `[Active]` | Read circular kernel syslog dmesg diagnostic log buffer (Syscall 44) |
 | `unwind` | `unwind` | `[Active]` | Walk active kernel callstack frame pointers (RBP/RIP) for backtrace (Syscall 37) |
