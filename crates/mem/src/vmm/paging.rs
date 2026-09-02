@@ -15,6 +15,7 @@ use keira_arch::cpu::{invlpg, read_cr3, write_cr3};
 pub const PAGE_PRESENT: u64 = 1 << 0;
 pub const PAGE_WRITABLE: u64 = 1 << 1;
 pub const PAGE_USER: u64 = 1 << 2;
+pub const PAGE_COW: u64 = 1 << 9; // Bit 9: Software Copy-On-Write flag
 pub const PAGE_NO_EXECUTE: u64 = 1 << 63;
 /// Page Size (PS) flag indicating a 2MB huge page (PD level) or 1GB huge page (PDPT level).
 pub const PAGE_HUGE: u64 = 1 << 7;
@@ -420,6 +421,51 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
         }
 
         Some(pt_entry)
+    }
+}
+
+/// Retrieve a mutable pointer to the raw page table entry (PTE) for a virtual address in a specific PML4 table.
+pub unsafe fn get_pte_mut_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<*mut u64> {
+    #[cfg(test)]
+    {
+        let _ = (pml4_phys, virtual_addr);
+        return None;
+    }
+    #[cfg(not(test))]
+    {
+        if pml4_phys == 0 {
+            return None;
+        }
+        let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
+        let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
+        let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
+        let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
+
+        let pml4 = pml4_phys as *const u64;
+        let pml4_entry = *pml4.add(pml4_idx);
+        if (pml4_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+        let pdpt_entry = *pdpt.add(pdpt_idx);
+        if (pdpt_entry & PAGE_PRESENT) == 0 || (pdpt_entry & PAGE_HUGE) != 0 {
+            return None;
+        }
+
+        let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_entry = *pd.add(pd_idx);
+        if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_HUGE) != 0 {
+            return None;
+        }
+
+        let pt = (pd_entry & PTE_ADDR_MASK) as *mut u64;
+        let pt_entry = *pt.add(pt_idx);
+        if (pt_entry & PAGE_PRESENT) == 0 {
+            return None;
+        }
+
+        Some(pt.add(pt_idx))
     }
 }
 

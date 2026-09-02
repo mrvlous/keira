@@ -13,8 +13,9 @@
 
 use keira_fs::elf::loader::load_elf;
 use keira_io::vga;
+use keira_mem::pmm;
 #[cfg(target_arch = "x86_64")]
-use keira_mem::{pmm, vmm};
+use keira_mem::vmm;
 
 extern "C" {
     fn jump_to_user(entry: u64, stack: u64);
@@ -28,15 +29,123 @@ const USER_DEFAULT_BRK: u64 = 0x600000000000;
 #[cfg(target_arch = "x86_64")]
 const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
 
-/// Execute a freestanding user mode ELF program in an isolated address space.
-pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
+/// Format System V AMD64 ABI user stack with argc, argv pointers, envp pointers, and string data.
+#[cfg(target_arch = "x86_64")]
+unsafe fn setup_user_stack_args_64(page_ptr: *mut u8, top_page_vaddr: u64, args: &[&str]) -> u64 {
+    let mut offset = 4096usize - 16;
+    let mut arg_vaddrs = [0u64; 16];
+    let argc = if args.is_empty() {
+        1
+    } else {
+        args.len().min(16)
+    };
+
+    for (i, &arg) in args[..argc].iter().enumerate() {
+        let bytes = arg.as_bytes();
+        let len = bytes.len() + 1;
+        if offset < len + 256 {
+            break;
+        }
+        offset -= len;
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), page_ptr.add(offset), bytes.len());
+        *page_ptr.add(offset + bytes.len()) = 0;
+        arg_vaddrs[i] = top_page_vaddr + offset as u64;
+    }
+
+    // 16-byte align before pointer words
+    offset &= !15;
+
+    // Total words: argc(1) + argv pointers(argc) + argv_null(1) + envp_null(1)
+    let total_words = 1 + argc + 1 + 1;
+    if total_words % 2 != 0 {
+        offset = offset.saturating_sub(8);
+    }
+    offset = offset.saturating_sub(total_words * 8);
+
+    let stack_u64 = page_ptr.add(offset) as *mut u64;
+    let mut w_idx = 0;
+
+    // 1. argc
+    *stack_u64.add(w_idx) = argc as u64;
+    w_idx += 1;
+
+    // 2. argv[0..argc]
+    for i in 0..argc {
+        *stack_u64.add(w_idx) = arg_vaddrs[i];
+        w_idx += 1;
+    }
+
+    // 3. argv NULL terminator
+    *stack_u64.add(w_idx) = 0;
+    w_idx += 1;
+
+    // 4. envp NULL terminator
+    *stack_u64.add(w_idx) = 0;
+
+    top_page_vaddr + offset as u64
+}
+
+/// Format 32-bit user stack with argc, argv pointers, envp pointers, and string data.
+#[cfg(target_arch = "x86")]
+unsafe fn setup_user_stack_args_32(page_ptr: *mut u8, top_page_vaddr: u64, args: &[&str]) -> u64 {
+    let mut offset = 4096usize - 16;
+    let mut arg_vaddrs = [0u32; 16];
+    let argc = if args.is_empty() {
+        1
+    } else {
+        args.len().min(16)
+    };
+
+    for (i, &arg) in args[..argc].iter().enumerate() {
+        let bytes = arg.as_bytes();
+        let len = bytes.len() + 1;
+        if offset < len + 256 {
+            break;
+        }
+        offset -= len;
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), page_ptr.add(offset), bytes.len());
+        *page_ptr.add(offset + bytes.len()) = 0;
+        arg_vaddrs[i] = (top_page_vaddr + offset as u64) as u32;
+    }
+
+    offset &= !15;
+
+    // Allocate argv vector array [argv[0], ..., argv[argc-1], NULL]
+    let argv_words = argc + 1;
+    offset = offset.saturating_sub(argv_words * 4);
+    let argv_table_offset = offset;
+    let argv_table_ptr = page_ptr.add(argv_table_offset) as *mut u32;
+
+    for i in 0..argc {
+        *argv_table_ptr.add(i) = arg_vaddrs[i];
+    }
+    *argv_table_ptr.add(argc) = 0; // NULL terminator
+
+    offset &= !15;
+
+    // Allocate cdecl call frame: [ret_dummy(1), argc(1), argv_ptr(1), envp_ptr(1)]
+    offset = offset.saturating_sub(16);
+    let stack_u32 = page_ptr.add(offset) as *mut u32;
+
+    *stack_u32.add(0) = 0; // Dummy return address
+    *stack_u32.add(1) = argc as u32; // argc at [ESP+4]
+    *stack_u32.add(2) = (top_page_vaddr + argv_table_offset as u64) as u32; // argv at [ESP+8]
+    *stack_u32.add(3) = 0; // envp at [ESP+12]
+
+    top_page_vaddr + offset as u64
+}
+
+/// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
+pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
     #[cfg(target_arch = "x86")]
     {
         let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
         keira_task::scheduler::SCHEDULER_INITIALIZED = false;
 
         let entry_point = load_elf(filename)?;
-        let initial_user_rsp: u64 = USER_STACK_TOP;
+        let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
+        let ptr = top_stack_page as *mut u8;
+        let initial_user_rsp = setup_user_stack_args_32(ptr, top_stack_page, args);
 
         jump_to_user(entry_point, initial_user_rsp);
 
@@ -109,7 +218,7 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
         }
         let ptr = top_stack_page as *mut u8;
         core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
-        let initial_user_rsp: u64 = USER_STACK_TOP;
+        let initial_user_rsp = setup_user_stack_args_64(ptr, top_stack_page, args);
 
         let mut brk_end = USER_DEFAULT_BRK;
         if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
@@ -132,8 +241,8 @@ pub unsafe fn run_user_program(filename: &str) -> Result<(), &'static str> {
     }
 }
 
-/// Resolve an ELF binary path and execute it, returning true if found.
-pub fn run_direct(arg: &str) -> bool {
+/// Resolve an ELF binary path and execute it with CLI arguments, returning true if found.
+pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
     unsafe {
         let mut path_buf = [0u8; 128];
         let mut resolved_str = "";
@@ -202,7 +311,7 @@ pub fn run_direct(arg: &str) -> bool {
         vga::print_str(resolved_str);
         vga::print_str("\n");
 
-        match run_user_program(resolved_str) {
+        match run_user_program(resolved_str, args) {
             Ok(_) => {
                 vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                 vga::print_str("Program exited normally.\n");
@@ -221,23 +330,37 @@ pub fn run_direct(arg: &str) -> bool {
     }
 }
 
-pub fn run(parts: &mut core::str::SplitWhitespace) {
-    let arg = match parts.next() {
-        Some("-h") | Some("--help") => {
-            vga::print_str("Usage: run <program.elf>\n\n");
-            vga::print_str("Description:\n  Load and execute a freestanding user mode x86_64 ELF binary program in Ring 3 user space.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-            vga::print_str("Examples:\n  run hello.elf\n  run kcc\n");
-            return;
-        }
-        Some(s) => s,
-        None => {
-            vga::print_str("Usage: run <program.elf>\n");
-            return;
-        }
-    };
+/// Backward compatible run_direct helper.
+pub fn run_direct(arg: &str) -> bool {
+    let args = [arg];
+    run_direct_with_args(arg, &args)
+}
 
-    if !run_direct(arg) {
+pub fn run(parts: &mut core::str::SplitWhitespace) {
+    let mut args_buf: [&str; 16] = [""; 16];
+    let mut arg_count = 0;
+
+    while let Some(part) = parts.next() {
+        if arg_count == 0 && (part == "-h" || part == "--help") {
+            vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n\n");
+            vga::print_str("Description:\n  Load and execute a freestanding user mode ELF binary program in Ring 3 user space with CLI arguments.\n\n");
+            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+            vga::print_str("Examples:\n  run hello.elf\n  run /apps/bin/calc.elf\n  run kcc /data/main.c -o /apps/bin/app.elf\n");
+            return;
+        }
+        if arg_count < 16 {
+            args_buf[arg_count] = part;
+            arg_count += 1;
+        }
+    }
+
+    if arg_count == 0 {
+        vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n");
+        return;
+    }
+
+    let prog_arg = args_buf[0];
+    if !run_direct_with_args(prog_arg, &args_buf[..arg_count]) {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("Error executing program: file not found\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

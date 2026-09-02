@@ -682,6 +682,16 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 0
             }
         },
+        // Syscall 64: sys_sigaction
+        64 => unsafe {
+            let sig = arg1 as u32;
+            let handler = arg2;
+            let old_handler_ptr = arg3 as *mut u64;
+            keira_task::signal::sys_sigaction(CURRENT_TASK_IDX, sig, handler, old_handler_ptr)
+                .unwrap_or(errno_to_ret(EINVAL))
+        },
+        // Syscall 65: sys_sigreturn
+        65 => 0,
         // Syscall 70: sync
         70 => {
             unsafe {

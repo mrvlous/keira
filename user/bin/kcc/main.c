@@ -16,7 +16,7 @@
 
 #include <syscall.h>
 
-void _start(void) {
+void _start(int argc, char **argv) {
     print_str("KCC (Keira C Compiler) Native Toolchain\n");
 
     /* Initialize compiler subsystems */
@@ -25,24 +25,39 @@ void _start(void) {
     init_symbols();
 
     const char *source_path = "/data/main.c";
+    const char *output_path = "/apps/bin/app.elf";
+
+    if (argc >= 2 && argv && argv[1]) {
+        source_path = argv[1];
+    }
+    if (argc >= 4 && argv && argv[2] && argv[3]) {
+        if (k_strcmp(argv[2], "-o") == 0) {
+            output_path = argv[3];
+        }
+    }
+
     int in_fd = sys_open(source_path, 0, 0);
-    if (in_fd < 0) {
+    if (in_fd < 0 && argc < 2) {
         source_path = "/temp/main.c";
         in_fd = sys_open(source_path, 0, 0);
     }
-    if (in_fd < 0) {
+    if (in_fd < 0 && argc < 2) {
         source_path = "/apps/src/hello.c";
         in_fd = sys_open(source_path, 0, 0);
     }
     if (in_fd < 0) {
-        print_str("Error: Could not open source file (/data/main.c or /temp/main.c)\n");
-        print_str("Usage: Place target C code in /data/main.c and run 'run /apps/bin/kcc.elf'\n");
+        print_str("Error: Could not open source file: ");
+        print_str(source_path);
+        print_str("\n");
+        print_str("Usage: run /apps/bin/kcc.elf <source.c> [-o output.elf]\n");
         sys_exit(1);
     }
 
     print_str("[INFO] Compiling source: ");
     print_str(source_path);
-    print_str(" -> /apps/bin/app.elf\n");
+    print_str(" -> ");
+    print_str(output_path);
+    print_str("\n");
 
     k_memset(src_buf, 0, MAX_SOURCE_SIZE);
     int read_len = sys_read(in_fd, src_buf, MAX_SOURCE_SIZE - 1);
@@ -71,7 +86,7 @@ void _start(void) {
         i++;
     }
 
-    if (write_elf_executable("/apps/bin/app.elf") < 0) {
+    if (write_elf_executable(output_path) < 0) {
         sys_exit(1);
     }
 

@@ -29,7 +29,24 @@ Virtual addresses are decomposed into four 9-bit table indices:
 | `2` | `PAGE_USER` | Page accessible in User Mode Ring 3 (`DPL=3`) |
 | `3` | `PAGE_WRITE_THROUGH` | Write-through caching policy |
 | `4` | `PAGE_CACHE_DISABLE` | Disable CPU caching (for MMIO regions) |
+| `9` | `PAGE_COW` | Copy-on-Write software flag (Bit 9 available for OS use) |
 | `63` | `PAGE_NO_EXECUTE` | Hardware `NX` bit preventing code execution |
+
+---
+
+## Copy-on-Write (COW) Memory Sharing (`sys_fork`)
+
+Keira implements zero-copy process forking via hardware-assisted Copy-on-Write:
+
+1. **Address Space Duplication**: During `sys_fork()`, `clone_user_address_space` shares existing physical frames between parent and child instead of allocating eager copies.
+2. **Write-Protection & COW Flag**: All writable user PTEs are marked Read-Only (`PAGE_WRITABLE` cleared) and tagged with `PAGE_COW` (bit 9).
+3. **Hardware Page Fault Resolution**: When either process attempts to write to a shared page, CPU triggers `#PF` (Present = 1, Write = 1):
+   - The handler verifies `(pte & PAGE_COW) != 0`.
+   - Allocates a fresh, private physical frame from PMM.
+   - Copies 4096 bytes from the shared frame into the private frame.
+   - Remaps the virtual page as private and writable (`PAGE_WRITABLE` set, `PAGE_COW` cleared).
+   - Flushes the local CPU TLB via `invlpg(vaddr)`.
+4. **Resumed Execution**: Ring 3 execution resumes transparently with isolated, writable memory.
 
 ---
 

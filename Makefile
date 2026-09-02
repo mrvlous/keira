@@ -169,7 +169,8 @@ SHELL_CMDS      := guide login drives use ramdisk system cpu runtime time memory
                    protect fileinfo framebuffer usb https user hostname syslog kvm \
                    nvme ext4 cgroups futex bpf tpm swap seccomp epoll \
                    drivers lkm unwind power perf timer eventfd mac mqueue \
-                   kill jobs fg bg lvm raid ipcs ipcrm iptables firewall service
+                   kill jobs fg bg lvm raid ipcs ipcrm iptables firewall service \
+                   shutdown reboot
 
 DRIVER_FILES    := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
                    ide.sys ahci.sys sound.sys e1000.sys

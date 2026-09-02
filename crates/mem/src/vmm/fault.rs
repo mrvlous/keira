@@ -11,7 +11,8 @@
 
 use super::mmap::{find_active_vma, PROT_EXEC, PROT_READ, PROT_WRITE};
 use super::paging::{
-    active_pml4, map_page, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE,
+    active_pml4, get_pte_mut_in_pml4, map_page, PAGE_COW, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
+    PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 use keira_arch::cpu::invlpg;
@@ -26,24 +27,48 @@ pub const USER_STACK_TOP: u64 = 0x7FFFFFE00000;
 #[cfg(target_arch = "x86_64")]
 pub const USER_STACK_BOTTOM: u64 = 0x7FFFFFD80000;
 
-/// Process a Page Fault interrupt. Returns `true` if the fault was resolved (e.g. via demand paging
-/// or stack auto-growth) and execution should resume, or `false` if it is an unrecoverable fault.
+/// Process a Page Fault interrupt. Returns `true` if the fault was resolved (e.g. via demand paging,
+/// stack auto-growth, or Copy-on-Write) and execution should resume, or `false` if it is an unrecoverable fault.
 pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
     let pml4 = active_pml4();
     let is_present = (error_code & 1) != 0;
     let is_write = (error_code & 2) != 0;
     let is_instruction = (error_code & 16) != 0;
 
-    // We only resolve non-present pages for user mode (Demand Paging / Stack Growth)
-    if is_present {
-        return false;
-    }
-
     // Align faulting address to page boundary
     let fault_page = cr2 & !(pmm::PAGE_SIZE - 1);
 
     // Guard against NULL pointer dereference or zero page access
     if fault_page == 0 {
+        return false;
+    }
+
+    // 1. Handle Copy-on-Write (COW) write fault on an existing present page
+    if is_present && is_write {
+        if let Some(pte_ptr) = get_pte_mut_in_pml4(pml4, fault_page) {
+            let pte = *pte_ptr;
+            if (pte & PAGE_COW) != 0 {
+                // Allocate a new physical frame for this private copy
+                if let Some(new_frame) = pmm::alloc_frame() {
+                    let src_ptr = fault_page as *const u8;
+                    let dst_ptr = new_frame as *mut u8;
+                    core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, pmm::PAGE_SIZE as usize);
+
+                    // Update PTE: point to new frame, enable WRITABLE, clear COW
+                    *pte_ptr = (new_frame & PTE_ADDR_MASK)
+                        | (pte & !(PTE_ADDR_MASK | PAGE_COW))
+                        | PAGE_WRITABLE;
+
+                    invlpg(fault_page as usize);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // If page is present but not COW write fault, it is an illegal permission violation
+    if is_present {
         return false;
     }
 

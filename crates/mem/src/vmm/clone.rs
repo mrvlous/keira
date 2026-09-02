@@ -11,8 +11,8 @@
 
 use super::free::free_user_pages;
 use super::paging::{
-    active_pml4, map_page_in_pml4, switch_address_space, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
-    PAGE_WRITABLE, PTE_ADDR_MASK,
+    active_pml4, map_page_in_pml4, switch_address_space, PAGE_COW, PAGE_NO_EXECUTE, PAGE_PRESENT,
+    PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 
@@ -116,35 +116,36 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                     vaddr |= (pd_idx as u64) << 21;
                     vaddr |= (pt_idx as u64) << 12;
 
-                    // Allocate fresh frame for child
-                    let child_frame = match pmm::alloc_frame() {
-                        Some(f) => f,
-                        None => {
-                            switch_address_space(current_pml4);
-                            free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
-                            pmm::free_frame(child_pml4_phys);
-                            return Err("Out of physical memory cloning user page");
-                        }
+                    let phys_frame = pt_entry & PTE_ADDR_MASK;
+                    let is_writable = (pt_entry & PAGE_WRITABLE) != 0;
+
+                    let child_flags = if is_writable {
+                        // Mark both parent and child as Read-Only with PAGE_COW flag set
+                        let cow_flags = (pt_entry & !PAGE_WRITABLE) | PAGE_COW;
+                        *(pt as *mut u64).add(pt_idx) = cow_flags;
+                        keira_arch::cpu::invlpg(vaddr as usize);
+                        cow_flags
+                    } else {
+                        pt_entry
                     };
 
-                    let page_flags =
-                        (pt_entry & (PAGE_USER | PAGE_WRITABLE | PAGE_NO_EXECUTE)) | PAGE_PRESENT;
-
-                    // Map in child PML4
-                    if let Err(e) =
-                        map_page_in_pml4(child_pml4_phys, vaddr, child_frame, page_flags)
-                    {
-                        pmm::free_frame(child_frame);
+                    // Map shared physical frame in child PML4 with COW protection
+                    if let Err(e) = map_page_in_pml4(
+                        child_pml4_phys,
+                        vaddr,
+                        phys_frame,
+                        child_flags
+                            & (PAGE_USER
+                                | PAGE_WRITABLE
+                                | PAGE_NO_EXECUTE
+                                | PAGE_COW
+                                | PAGE_PRESENT),
+                    ) {
                         switch_address_space(current_pml4);
                         free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
                         pmm::free_frame(child_pml4_phys);
                         return Err(e);
                     }
-
-                    // Copy parent page content to child frame
-                    let src_ptr = vaddr as *const u8;
-                    let dst_ptr = child_frame as *mut u8;
-                    core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, pmm::PAGE_SIZE as usize);
                 }
             }
         }

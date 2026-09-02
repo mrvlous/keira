@@ -262,12 +262,15 @@ jump_to_user:
     push 0x2B
     push rdi
 
+    ; Forward System V AMD64 ABI arguments: RDI = argc = [RSP], RSI = argv = RSP + 8
+    mov r8, rsi
+    mov rdi, [r8]
+    lea rsi, [r8 + 8]
+
     xor rax, rax
     xor rbx, rbx
     xor rcx, rcx
     xor rdx, rdx
-    xor rsi, rsi
-    xor rdi, rdi
     xor rbp, rbp
     xor r8, r8
     xor r9, r9

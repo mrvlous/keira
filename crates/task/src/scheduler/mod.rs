@@ -494,7 +494,7 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
 
     if let Some(ref mut task) = TASKS[pid] {
         match sig {
-            9 | 15 => {
+            2 | 9 | 15 => {
                 task.state = TaskState::Zombie(sig as i32);
                 Ok(())
             }
