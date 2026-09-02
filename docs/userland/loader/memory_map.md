@@ -31,4 +31,26 @@ graph TD
 | **`.text`** | `0x0040_0000` | Read / Execute (`R-X`) | ELF instructions |
 | **`.data` / `.bss`** | `0x0060_0000` | Read / Write (`RW-`) | Global variables |
 | **User Heap** | `0x0100_0000` | Read / Write (`RW-`) | `malloc()` dynamic heap allocations |
-| **User Stack** | `0x7FFF_FFFF_0000` | Read / Write (`RW-`) | Function call frames and local variables |
+| **User Stack** | `0x7FFFFFD8_0000` – `0x7FFFFFE0_0000` | Read / Write (`RW-`) | Function call frames, local variables, and System V CLI arguments |
+
+---
+
+## System V Initial Stack Framing & CLI Arguments
+
+At process startup, the kernel formats the top of the user stack with the command-line argument vector before transferring execution privilege to Ring 3 via `jump_to_user`:
+
+```
++-------------------------------------------------------------+ High Address
+| ASCII Strings (argv[0], argv[1], ..., envp[0], ...)         |
++-------------------------------------------------------------+
+| NULL Pointer (envp terminator)                              |
+| NULL Pointer (argv terminator)                              |
+| char *argv[argc-1]                                          |
+| ...                                                         |
+| char *argv[0]                                               |
+| uint64_t argc                                               | <-- Initial %rsp (16-byte aligned)
++-------------------------------------------------------------+ Low Address
+```
+
+- **x86_64 Calling Convention**: `_start(int argc, char **argv)` receives `RDI = argc` and `RSI = argv`.
+- **i686 Calling Convention**: `_start(int argc, char **argv)` receives arguments on stack with `[ESP+0] = ret_dummy`, `[ESP+4] = argc`, `[ESP+8] = argv`, `[ESP+12] = envp`.

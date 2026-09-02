@@ -37,3 +37,15 @@ Registers `handler` as the dispatch routine for signal `signum`. Returns the pre
 int raise(int sig);
 ```
 Sends signal `sig` to the current calling process.
+
+### `kill`
+```c
+int kill(pid_t pid, int sig);
+```
+Dispatches asynchronous POSIX signal `sig` to the process identified by `pid` via `SYS_KILL` (vector 22).
+
+---
+
+## 3. Kernel Trampoline & Signal Registration
+
+Userland signals can be registered directly with the Ring 0 kernel via `sys_sigaction` (vector 64). When a signal is delivered to a task, the kernel interrupts user execution, pushes a trampoline stack frame, and switches execution to the registered signal handler. Upon return, `sys_sigreturn` (vector 65) restores the saved processor register context.

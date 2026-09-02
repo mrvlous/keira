@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers (vector table) for all 62 system calls supported by Keira Kernel.
+//! System call numbers (vector table) supported by Keira Kernel.
 
 pub const SYS_PUTC: u64 = 1;
 pub const SYS_EXIT: u64 = 2;

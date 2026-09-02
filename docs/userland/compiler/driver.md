@@ -34,9 +34,9 @@ graph TD
 ## Shell Usage
 
 ```bash
-# Compile native C program inside Keira shell
-keira> kcc -o /apps/bin/hello.elf /home/admin/hello.c
+# Compile native C program inside Keira shell using KCC binary and CLI arguments
+keira> run /apps/bin/kcc.elf /apps/src/calc.c -o /apps/bin/calc2.elf
 
 # Execute compiled ELF binary in Ring 3 userland
-keira> run /apps/bin/hello.elf
+keira> run /apps/bin/calc2.elf
 ```
