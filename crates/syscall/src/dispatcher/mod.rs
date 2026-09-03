@@ -692,6 +692,48 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         },
         // Syscall 65: sys_sigreturn
         65 => 0,
+        // Syscall 66: sys_clock_gettime
+        66 => {
+            let _clock_id = arg1 as u32;
+            let tp_ptr = arg2 as *mut keira_arch::timers::Timespec;
+            if tp_ptr.is_null() {
+                return errno_to_ret(EFAULT);
+            }
+            let tp_addr = tp_ptr as usize;
+            if tp_addr % core::mem::align_of::<keira_arch::timers::Timespec>() != 0 {
+                return errno_to_ret(EINVAL);
+            }
+            let uptime = unsafe { get_uptime_ms() };
+            let sec = (uptime / 1000) as i64;
+            let nsec = ((uptime % 1000) * 1_000_000) as i64;
+            let ts = keira_arch::timers::Timespec {
+                tv_sec: sec,
+                tv_nsec: nsec,
+            };
+            unsafe {
+                core::ptr::write(tp_ptr, ts);
+            }
+            0
+        }
+        // Syscall 67: sys_nanosleep
+        67 => {
+            let req_ptr = arg1 as *const keira_arch::timers::Timespec;
+            if req_ptr.is_null() {
+                return errno_to_ret(EFAULT);
+            }
+            let req = unsafe { *req_ptr };
+            if req.tv_sec < 0 || req.tv_nsec < 0 || req.tv_nsec >= 1_000_000_000 {
+                return errno_to_ret(EINVAL);
+            }
+            let ms = (req.tv_sec as u64) * 1000 + (req.tv_nsec as u64) / 1_000_000;
+            let start = unsafe { get_uptime_ms() };
+            while unsafe { get_uptime_ms() } < start + ms {
+                unsafe {
+                    core::arch::asm!("hlt");
+                }
+            }
+            0
+        }
         // Syscall 70: sync
         70 => {
             unsafe {

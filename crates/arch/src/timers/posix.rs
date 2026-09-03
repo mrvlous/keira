@@ -11,6 +11,16 @@
 
 pub const CLOCK_REALTIME: u64 = 0;
 pub const CLOCK_MONOTONIC: u64 = 1;
+pub const CLOCK_PROCESS_CPUTIME_ID: u64 = 2;
+pub const CLOCK_THREAD_CPUTIME_ID: u64 = 3;
+
+/// Standard POSIX timespec representing time in seconds and nanoseconds.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Timespec {
+    pub tv_sec: i64,
+    pub tv_nsec: i64,
+}
 
 pub struct PosixTimer {
     pub timer_id: u64,

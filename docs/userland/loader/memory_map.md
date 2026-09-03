@@ -41,7 +41,18 @@ At process startup, the kernel formats the top of the user stack with the comman
 
 ```
 +-------------------------------------------------------------+ High Address
-| ASCII Strings (argv[0], argv[1], ..., envp[0], ...)         |
+| ASCII Strings (argv[0], ..., envp[0], ..., AT_RANDOM 16B)   |
++-------------------------------------------------------------+
+| Auxiliary Vector (Elf64_auxv_t / Elf32_auxv_t)             |
+|   - AT_NULL (0, 0)                                          |
+|   - AT_RANDOM (25, pointer to 16-byte random canary seed)   |
+|   - AT_CLKTCK (17, 100)                                     |
+|   - AT_EUID (12, 0)                                         |
+|   - AT_UID (11, 0)                                          |
+|   - AT_FLAGS (8, 0)                                         |
+|   - AT_BASE (7, 0)                                          |
+|   - AT_ENTRY (9, entry_point)                               |
+|   - AT_PAGESZ (6, 4096)                                     |
 +-------------------------------------------------------------+
 | NULL Pointer (envp terminator)                              |
 | NULL Pointer (argv terminator)                              |
@@ -54,3 +65,21 @@ At process startup, the kernel formats the top of the user stack with the comman
 
 - **x86_64 Calling Convention**: `_start(int argc, char **argv)` receives `RDI = argc` and `RSI = argv`.
 - **i686 Calling Convention**: `_start(int argc, char **argv)` receives arguments on stack with `[ESP+0] = ret_dummy`, `[ESP+4] = argc`, `[ESP+8] = argv`, `[ESP+12] = envp`.
+
+---
+
+## Auxiliary Vector (`Elf64_auxv_t` / `Elf32_auxv_t`) Specification
+
+The Auxiliary Vector conveys kernel execution parameters directly to the dynamic linker or C runtime before `main()`:
+
+| Tag | Value | Description |
+| :--- | :--- | :--- |
+| `AT_PAGESZ` | `6` | System page size in bytes (`4096`) |
+| `AT_ENTRY` | `9` | Entry point virtual address of the program executable |
+| `AT_BASE` | `7` | Base address of the ELF interpreter (`0` for static binaries) |
+| `AT_FLAGS` | `8` | Processor execution flags (`0`) |
+| `AT_UID` | `11` | Real user identifier of the calling process (`0` for admin) |
+| `AT_EUID` | `12` | Effective user identifier of the calling process (`0`) |
+| `AT_CLKTCK` | `17` | Frequency of system timer clock ticks (`100` Hz) |
+| `AT_RANDOM` | `25` | Pointer to 16 bytes of random entropy for `-fstack-protector` canaries |
+| `AT_NULL` | `0` | End-of-vector sentinel marker |

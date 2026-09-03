@@ -66,3 +66,15 @@ size_t strftime(char *s, size_t max, const char *format, const struct tm *tm) {
 time_t difftime(time_t time1, time_t time0) {
     return (time1 - time0);
 }
+
+int clock_gettime(clockid_t clk_id, struct timespec *tp) {
+    if (!tp)
+        return -1;
+    return (int)syscall2(SYS_CLOCK_GETTIME, (uint64_t)clk_id, (uint64_t)(uintptr_t)tp);
+}
+
+int nanosleep(const struct timespec *req, struct timespec *rem) {
+    if (!req)
+        return -1;
+    return (int)syscall2(SYS_NANOSLEEP, (uint64_t)(uintptr_t)req, (uint64_t)(uintptr_t)rem);
+}

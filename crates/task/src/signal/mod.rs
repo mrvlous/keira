@@ -75,6 +75,37 @@ pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
     job_id
 }
 
+/// Query the currently running foreground job PID, if any.
+pub unsafe fn get_foreground_job_pid() -> Option<u32> {
+    for i in 0..JOB_COUNT {
+        if let Some(ref job) = JOB_TABLE[i] {
+            if job.is_foreground && job.state == JobState::Running {
+                return Some(job.pid);
+            }
+        }
+    }
+    None
+}
+
+/// Remove a job from the table by process ID.
+pub unsafe fn remove_job_by_pid(pid: u32) {
+    for i in 0..JOB_COUNT {
+        if let Some(ref job) = JOB_TABLE[i] {
+            if job.pid == pid {
+                JOB_TABLE[i] = None;
+                for j in i..(JOB_COUNT.saturating_sub(1)) {
+                    JOB_TABLE[j] = JOB_TABLE[j + 1];
+                }
+                if JOB_COUNT > 0 {
+                    JOB_TABLE[JOB_COUNT - 1] = None;
+                    JOB_COUNT -= 1;
+                }
+                break;
+            }
+        }
+    }
+}
+
 /// Send POSIX signal to target process PID (Syscall 72: sys_kill).
 pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
     unsafe {

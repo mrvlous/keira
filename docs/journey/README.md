@@ -30,4 +30,4 @@ graph TD
 | **Milestone 3** | [`multitasking.md`](multitasking.md) | Preemptive timer ticks, task state machines, context switching, and spinlocks |
 | **Milestone 4** | [`storage_vfs.md`](storage_vfs.md) | Unified VFS traits, FAT12/16/32, EXT4 parsing, and LRU sector caching |
 | **Milestone 5** | [`networking.md`](networking.md) | Intel e1000/RTL8139 drivers, ARP, IPv4, TCP 3-way handshakes, and TLS 1.3 |
-| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | Ring 3 userland privilege separation, 62 syscalls, and native C compiler |
+| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | Ring 3 userland privilege separation, System V ABI & auxv, POSIX signals, and native C compiler |

@@ -26,10 +26,24 @@ struct tm {
     int tm_isdst;
 };
 
+typedef int clockid_t;
+
+#define CLOCK_REALTIME 0
+#define CLOCK_MONOTONIC 1
+#define CLOCK_PROCESS_CPUTIME_ID 2
+#define CLOCK_THREAD_CPUTIME_ID 3
+
+struct timespec {
+    time_t tv_sec;
+    long tv_nsec;
+};
+
 time_t time(time_t *tloc);
 struct tm *gmtime(const time_t *timep);
 char *asctime(const struct tm *tm);
 size_t strftime(char *s, size_t max, const char *format, const struct tm *tm);
 time_t difftime(time_t time1, time_t time0);
+int clock_gettime(clockid_t clk_id, struct timespec *tp);
+int nanosleep(const struct timespec *req, struct timespec *rem);
 
 #endif /* _TIME_H */

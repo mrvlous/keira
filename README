@@ -7,7 +7,7 @@ Ring 0 built from scratch in safe Rust, Assembly, and C, supporting both modern
 
 Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers, and
-provides a preemptive multitasking scheduler, 62 system calls, bare-metal
+provides a preemptive multitasking scheduler, POSIX system calls, bare-metal
 TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR initrd, Ring 3 userland
 isolation, and an in-kernel C compiler (kcc.elf).
 

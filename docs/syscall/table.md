@@ -63,6 +63,8 @@ This document specifies the complete system call vector table supported by Keira
 | `63` | `SYS_GETPPID` | - | Get parent process identifier |
 | `64` | `SYS_SIGACTION` | `int signum, u64 handler, u64 *old_handler` | Register asynchronous POSIX signal handler |
 | `65` | `SYS_SIGRETURN` | - | Restore saved user register context after signal handler |
+| `66` | `SYS_CLOCK_GETTIME` | `clockid_t clk_id, struct timespec *tp` | Retrieve monotonic or real-time high-resolution clock |
+| `67` | `SYS_NANOSLEEP` | `const struct timespec *req, struct timespec *rem` | High-precision process sleep with sub-millisecond accuracy |
 | `70` | `SYS_SYNC` | - | Flush dirty sector buffers to disk |
 | `71` | `SYS_FSYNC` | `int fd` | Synchronize file modified data and metadata |
 | `74` | `SYS_RAID_LVM` | `uint32_t op, uint64_t arg1, uint64_t arg2` | Logical volume and software RAID control |

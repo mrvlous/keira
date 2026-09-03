@@ -39,13 +39,16 @@ Lower Addresses
 
 ---
 
-## POSIX Asynchronous Signal Trampoline
+## POSIX Asynchronous Signal Trampoline & Interactive TTY Signals
 
 Keira supports standard POSIX signal handling:
 
 - `sys_sigaction(pid, signum, handler, old_handler)`: Registers userland signal handlers for signals such as `SIGHUP`, `SIGINT`, `SIGTERM`, `SIGKILL`, `SIGSTOP`, `SIGCONT`.
 - `sys_kill(pid, signum)`: Dispatches asynchronous signals to target processes with status transitions (`Running`, `Stopped`, `Terminated`) and wake-up notifications.
 - `sys_sigreturn()`: Restores saved user register state upon completing signal handler execution.
+- **Interactive TTY Signals**: Keyboard scan codes are processed by the TTY line discipline:
+  - `Ctrl+C` (ASCII 3): Automatically routes `SIGINT` (2) to the active foreground process registered in `JOB_TABLE`.
+  - `Ctrl+Z` (ASCII 26): Automatically routes `SIGSTOP` (19) to freeze the foreground process and return control to the shell prompt.
 
 ---
 

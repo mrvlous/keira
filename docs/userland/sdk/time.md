@@ -43,3 +43,26 @@ Converts epoch time `timep` into broken-down UTC calendar structure.
 char *asctime(const struct tm *tm);
 ```
 Converts broken-down time structure into standard ASCII string `YYYY-MM-DD HH:MM:SS UTC`.
+
+### `clock_gettime`
+```c
+int clock_gettime(clockid_t clk_id, struct timespec *tp);
+```
+Retrieves the high-resolution time of the specified clock (`CLOCK_REALTIME` or `CLOCK_MONOTONIC`) into `struct timespec` via `SYS_CLOCK_GETTIME` (vector 66).
+
+### `nanosleep`
+```c
+int nanosleep(const struct timespec *req, struct timespec *rem);
+```
+Suspends calling thread execution until the interval requested in `req` has elapsed via `SYS_NANOSLEEP` (vector 67).
+
+---
+
+## 3. High-Resolution Structure Definition
+
+```c
+struct timespec {
+    time_t tv_sec;  /* Seconds */
+    long   tv_nsec; /* Nanoseconds (0 - 999,999,999) */
+};
+```
