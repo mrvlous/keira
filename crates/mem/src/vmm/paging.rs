@@ -168,6 +168,90 @@ pub unsafe fn map_page_in_pml4(
     Ok(())
 }
 
+/// Map a 2MB huge page directly in the Level 2 Page Directory (PD) without allocating a 4KB Page Table.
+pub unsafe fn map_huge_2m_page(
+    virtual_addr: u64,
+    physical_addr: u64,
+    flags: u64,
+) -> Result<(), &'static str> {
+    if !virtual_addr.is_multiple_of(0x20_0000) {
+        return Err("Virtual address is not 2MB aligned");
+    }
+    if !physical_addr.is_multiple_of(0x20_0000) {
+        return Err("Physical address is not 2MB aligned");
+    }
+
+    let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
+    let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
+    let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
+
+    let pml4_phys = active_pml4();
+    let pml4 = pml4_phys as *mut u64;
+
+    // 1. Traverse / Allocate PDPT
+    let pml4_entry = *pml4.add(pml4_idx);
+    let pdpt_addr = if (pml4_entry & PAGE_PRESENT) == 0 {
+        let frame = pmm::alloc_frame().ok_or("Out of physical memory for PDPT")?;
+        *pml4.add(pml4_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+        frame
+    } else {
+        pml4_entry & PTE_ADDR_MASK
+    };
+    let pdpt = pdpt_addr as *mut u64;
+
+    // 2. Traverse / Allocate PD
+    let pdpt_entry = *pdpt.add(pdpt_idx);
+    let pd_addr = if (pdpt_entry & PAGE_PRESENT) == 0 {
+        let frame = pmm::alloc_frame().ok_or("Out of physical memory for PD")?;
+        *pdpt.add(pdpt_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+        frame
+    } else {
+        pdpt_entry & PTE_ADDR_MASK
+    };
+    let pd = pd_addr as *mut u64;
+
+    // 3. Establish 2MB huge page in PD
+    *pd.add(pd_idx) = (physical_addr & PTE_ADDR_MASK_2M) | flags | PAGE_PRESENT | PAGE_HUGE;
+
+    invlpg(virtual_addr as usize);
+    Ok(())
+}
+
+/// Unmap a 2MB huge page from the Level 2 Page Directory (PD).
+pub unsafe fn unmap_huge_2m_page(virtual_addr: u64) -> Result<(), &'static str> {
+    if !virtual_addr.is_multiple_of(0x20_0000) {
+        return Err("Virtual address is not 2MB aligned");
+    }
+
+    let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
+    let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
+    let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
+
+    let pml4_phys = active_pml4();
+    let pml4 = pml4_phys as *mut u64;
+
+    let pml4_entry = *pml4.add(pml4_idx);
+    if (pml4_entry & PAGE_PRESENT) == 0 {
+        return Err("Page not mapped (PDPT missing)");
+    }
+    let pdpt = (pml4_entry & PTE_ADDR_MASK) as *mut u64;
+
+    let pdpt_entry = *pdpt.add(pdpt_idx);
+    if (pdpt_entry & PAGE_PRESENT) == 0 {
+        return Err("Page not mapped (PD missing)");
+    }
+    let pd = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
+
+    let pd_entry = *pd.add(pd_idx);
+    if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_HUGE) == 0 {
+        return Err("2MB huge page not mapped");
+    }
+
+    *pd.add(pd_idx) = 0;
+    invlpg(virtual_addr as usize);
+    Ok(())
+}
+
 /// Modify access permissions on an existing virtual page and invalidate TLB.
 pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'static str> {
     if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {

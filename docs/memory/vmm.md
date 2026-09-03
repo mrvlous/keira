@@ -58,3 +58,16 @@ When a Ring 3 user process accesses an unmapped virtual address within its autho
 2. **Exception Dispatcher (`handle_page_fault`)**: The Ring 0 handler inspects `CR2` and validates against active VMAs or the dynamic user stack window.
 3. **On-Demand Frame Allocation**: If the access is valid and the page is not-present, a zeroed physical frame is allocated from PMM, mapped to the faulting page, and TLB entry is invalidated via `invlpg`.
 4. **Transparent Instruction Resume**: The interrupt handler returns via `iretq`, allowing the CPU to resume execution seamlessly without process crashes or memory leaks.
+
+---
+
+## 2MB Huge Pages (`PAGE_HUGE`)
+
+To optimize memory bandwidth and reduce TLB miss overhead for massive contiguous allocations (such as the linear VBE/GOP framebuffer and kernel direct physical memory mappings), Keira supports 2MB Huge Pages directly in Level 2 Page Directories (PD):
+
+- **Page Size Flag (`PAGE_HUGE = 1 << 7`)**: Set in the Page Directory Entry (PDE).
+- **Physical Address Alignment**: Both virtual address and physical frame are aligned to 2MB boundaries (`0x20_0000`).
+- **Core API (`crates/mem/src/vmm/paging.rs`)**:
+  - `map_huge_2m_page(vaddr, paddr, flags)`: Creates a direct 2MB translation bypassing the 4KB PT level.
+  - `unmap_huge_2m_page(vaddr)`: Clears the huge page entry and invalidates the CPU TLB via `invlpg`.
+- **TLB Advantage**: A single 2MB PDE translation entry covers 512 regular 4KB pages, cutting TLB pressure by a factor of 512.

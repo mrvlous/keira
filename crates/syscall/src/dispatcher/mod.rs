@@ -751,7 +751,85 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 72: fcntl
         72 => errno_to_ret(ENOSYS),
         // Syscall 73: ioctl
-        73 => errno_to_ret(ENOSYS),
+        73 => {
+            let request = arg2;
+            let argp = arg3 as *mut u8;
+            if argp.is_null() {
+                return errno_to_ret(EFAULT);
+            }
+            #[cfg(target_arch = "x86_64")]
+            if (arg3 < keira_mem::vmm::USER_MIN_VADDR || arg3 >= keira_mem::vmm::USER_MAX_VADDR)
+                && !keira_mem::is_valid_ram_range(arg3, 32)
+            {
+                return errno_to_ret(EFAULT);
+            }
+
+            match request {
+                // TIOCGWINSZ (0x5413)
+                0x5413 => {
+                    #[repr(C)]
+                    struct Winsize {
+                        ws_row: u16,
+                        ws_col: u16,
+                        ws_xpixel: u16,
+                        ws_ypixel: u16,
+                    }
+                    let ws = Winsize {
+                        ws_row: 25,
+                        ws_col: 80,
+                        ws_xpixel: 640,
+                        ws_ypixel: 400,
+                    };
+                    unsafe {
+                        core::ptr::copy_nonoverlapping(
+                            &ws as *const _ as *const u8,
+                            argp,
+                            core::mem::size_of::<Winsize>(),
+                        );
+                    }
+                    0
+                }
+                // TCGETS (0x5401)
+                0x5401 => {
+                    #[repr(C)]
+                    struct Termios {
+                        c_iflag: u32,
+                        c_oflag: u32,
+                        c_cflag: u32,
+                        c_lflag: u32,
+                        c_line: u8,
+                        c_cc: [u8; 32],
+                        c_ispeed: u32,
+                        c_ospeed: u32,
+                    }
+                    let mut term = Termios {
+                        c_iflag: 0x0500, // ICRNL | IXON
+                        c_oflag: 0x0005, // OPOST | ONLCR
+                        c_cflag: 0x00BF, // CS8 | CREAD | B38400
+                        c_lflag: 0x8A3B, // ISIG | ICANON | ECHO | ECHOE | ECHOK
+                        c_line: 0,
+                        c_cc: [0u8; 32],
+                        c_ispeed: 38400,
+                        c_ospeed: 38400,
+                    };
+                    term.c_cc[0] = 3; // VINTR (^C)
+                    term.c_cc[1] = 28; // VQUIT (^\)
+                    term.c_cc[2] = 127; // VERASE (DEL/BS)
+                    term.c_cc[3] = 4; // VEOF (^D)
+                    unsafe {
+                        core::ptr::copy_nonoverlapping(
+                            &term as *const _ as *const u8,
+                            argp,
+                            core::mem::size_of::<Termios>(),
+                        );
+                    }
+                    0
+                }
+                // TCSETS (0x5402), TCSETSW (0x5403), TCSETSF (0x5404)
+                0x5402 | 0x5403 | 0x5404 => 0,
+                _ => errno_to_ret(EINVAL),
+            }
+        }
         // Syscall 74: sys_raid_lvm
         74 => unsafe {
             keira_fs::lvm::sys_raid_lvm(arg1 as u32, arg2, arg3).unwrap_or(errno_to_ret(EINVAL))
@@ -766,7 +844,18 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 .unwrap_or(errno_to_ret(EINVAL))
         },
         // Syscall 77: sys_perf_event
-        77 => errno_to_ret(ENOSYS),
+        77 => {
+            let out_ptr = arg2 as *mut u64;
+            if !out_ptr.is_null() {
+                let tsc = keira_arch::cpu::rdtsc();
+                unsafe {
+                    core::ptr::write(out_ptr, tsc);
+                }
+                0
+            } else {
+                errno_to_ret(EFAULT)
+            }
+        }
         // Syscall 78: sys_bpf
         78 => errno_to_ret(ENOSYS),
         // Syscall 79: sys_tpm2

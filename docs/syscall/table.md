@@ -67,6 +67,7 @@ This document specifies the complete system call vector table supported by Keira
 | `67` | `SYS_NANOSLEEP` | `const struct timespec *req, struct timespec *rem` | High-precision process sleep with sub-millisecond accuracy |
 | `70` | `SYS_SYNC` | - | Flush dirty sector buffers to disk |
 | `71` | `SYS_FSYNC` | `int fd` | Synchronize file modified data and metadata |
+| `73` | `SYS_IOCTL` | `int fd, unsigned long request, void *argp` | Device and terminal I/O control (TIOCGWINSZ, TCGETS, TCSETS) |
 | `74` | `SYS_RAID_LVM` | `uint32_t op, uint64_t arg1, uint64_t arg2` | Logical volume and software RAID control |
 | `75` | `SYS_SHM_SEM` | `uint32_t op, uint64_t arg1, uint64_t arg2` | POSIX shared memory semaphore interface |
 | `76` | `SYS_NETFILTER` | `uint32_t op, uint64_t arg1, uint64_t arg2` | Hardware network packet filter & firewall rules |

@@ -10,8 +10,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <syscall.h>
+#include <termios.h>
 #include <unistd.h>
 
 ssize_t read(int fd, void *buf, size_t count) {
@@ -111,4 +115,35 @@ int isatty(int fd) {
     if (fd >= 0 && fd <= 2)
         return 1;
     return 0;
+}
+
+int ioctl(int fd, unsigned long request, ...) {
+    va_list ap;
+    va_start(ap, request);
+    void *argp = va_arg(ap, void *);
+    va_end(ap);
+
+    int ret = (int)syscall3(SYS_IOCTL, (uint64_t)fd, (uint64_t)request, (uint64_t)(uintptr_t)argp);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return ret;
+}
+
+int tcgetattr(int fd, struct termios *termios_p) {
+    if (!termios_p) {
+        errno = EFAULT;
+        return -1;
+    }
+    return ioctl(fd, TCGETS, termios_p);
+}
+
+int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
+    (void)optional_actions;
+    if (!termios_p) {
+        errno = EFAULT;
+        return -1;
+    }
+    return ioctl(fd, TCSETS, (void *)termios_p);
 }

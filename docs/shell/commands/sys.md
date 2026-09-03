@@ -11,7 +11,7 @@ This document details all native commands in Keira Kernel related to hardware di
 | Command | Syntax | Status | Description |
 | :--- | :--- | :--- | :--- |
 | `system` | `system [-v] [-u] [-s]` | `[Active]` | Display kernel specifications, architecture, memory stats, and uptime |
-| `cpu` | `cpu` | `[Active]` | Display CPU vendor signature string (e.g. AuthenticAMD, GenuineIntel) |
+| `cpu` | `cpu [-f] [-r] [-s]` | `[Active]` | Display CPU vendor, feature flags, live TSC cycles, and digital core temperature |
 | `runtime` | `runtime` | `[Active]` | Display time elapsed since system boot in milliseconds |
 | `time` | `time` | `[Active]` | Query Real-Time Clock (RTC) date and time in UTC |
 | `memory` | `memory` | `[Active]` | Inspect physical frame allocations (PMM) and heap memory telemetry |

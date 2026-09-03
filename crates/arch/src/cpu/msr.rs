@@ -19,6 +19,10 @@ pub const IA32_FMASK_MSR: u32 = 0xC0000084;
 pub const IA32_FS_BASE_MSR: u32 = 0xC0000100;
 pub const IA32_GS_BASE_MSR: u32 = 0xC0000101;
 pub const IA32_KERNEL_GS_BASE_MSR: u32 = 0xC0000102;
+pub const IA32_THERM_STATUS_MSR: u32 = 0x19C;
+pub const IA32_TEMPERATURE_TARGET_MSR: u32 = 0x1A2;
+pub const AMD_HARDWARE_THERMAL_STATUS_MSR: u32 = 0xC0010064;
+pub const IA32_PERF_STATUS_MSR: u32 = 0x198;
 
 /// Read a 64-bit Model Specific Register (MSR).
 #[inline(always)]

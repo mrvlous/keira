@@ -51,6 +51,8 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
 | `<dirent.h>` | [`dirent.md`](dirent.md) | Directory traversal and listing | [Active] |
 | `<assert.h>` | [`assert.md`](assert.md) | Diagnostic verification assertions | [Active] |
 | `<setjmp.h>` | [`setjmp.md`](setjmp.md) | Non-local jump buffer and control transfers | [Active] |
+| `<termios.h>` | [`termios.md`](termios.md) | Terminal line discipline, raw/canonical modes, baud rates | [Active] |
+| `<sys/ioctl.h>` | [`ioctl.md`](ioctl.md) | Terminal window sizing and device I/O control | [Active] |
 | `<syscall.h>` | [`syscalls.md`](syscalls.md) | Raw kernel syscall dispatch interface | [Active] |
 
 ---

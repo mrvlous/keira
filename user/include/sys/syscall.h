@@ -31,6 +31,7 @@
 #define SYS_MUNMAP 31
 #define SYS_CLOCK_GETTIME 66
 #define SYS_NANOSLEEP 67
+#define SYS_IOCTL 73
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);

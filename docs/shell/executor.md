@@ -20,12 +20,24 @@ graph TD
 
 ---
 
+## Pipelines & I/O Redirection
+
+The shell executor natively parses UNIX-style pipeline and file redirection operators:
+
+1. **Pipeline (`|`)**: Connects stdout of the left command into the in-memory `PIPE_BUFFER`, making it available for subsequent stream consumers (e.g. `tasks | search kernel`, `list | search .elf`).
+2. **File Output Redirection (`>`)**: Intercepts console output and writes the stream to a specified file path in FAT16/VFS (e.g. `system > /temp/sysinfo.txt`).
+3. **File Append Redirection (`>>`)**: Appends console output stream to the end of an existing file.
+4. **Input Redirection (`<`)**: Reads data from a file into the active shell pipe stream.
+
+---
+
 ## Technical Specifications
 
 | Parameter | Specification | Description |
 | :--- | :--- | :--- |
 | **Line Buffer Capacity** | 256 bytes | Maximum length of single interactive command |
 | **Max Arguments** | 16 positional arguments & flags | Statically bounded argument storage |
+| **Pipe Buffer Capacity** | 4096 bytes | Zero-copy circular memory buffer for stream operations |
 | **Privilege Escalation** | `please <command>` / `sudo` | Elevates administrative privileges for sensitive operations |
 
 ---

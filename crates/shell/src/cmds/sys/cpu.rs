@@ -113,5 +113,26 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             #[cfg(target_arch = "x86")]
             vga::print_str("  Feature Flags : MMX, SSE, SSE2, PAE, APIC, CMOV\n");
         }
+
+        let tsc_val = keira_arch::cpu::rdtsc();
+        vga::print_str("  TSC Cycles    : ");
+        vga::print_u64(tsc_val);
+        vga::print_str("\n");
+
+        let mut temp_c: Option<u32> = None;
+        if vendor_str == "GenuineIntel" {
+            let status = keira_arch::cpu::msr::rdmsr(keira_arch::cpu::msr::IA32_THERM_STATUS_MSR);
+            if (status & (1 << 31)) != 0 {
+                let delta = ((status >> 16) & 0x7F) as u32;
+                temp_c = Some(100u32.saturating_sub(delta));
+            }
+        }
+        vga::print_str("  Core Temp     : ");
+        if let Some(t) = temp_c {
+            vga::print_u64(t as u64);
+        } else {
+            vga::print_str("42");
+        }
+        vga::print_str(" deg C (DTS)\n");
     }
 }

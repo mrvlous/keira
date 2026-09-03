@@ -69,6 +69,22 @@ pub fn pause() {
     };
 }
 
+/// Read processor timestamp counter (TSC).
+#[inline(always)]
+pub fn rdtsc() -> u64 {
+    #[cfg(not(target_os = "none"))]
+    {
+        0
+    }
+    #[cfg(target_os = "none")]
+    unsafe {
+        let low: u32;
+        let high: u32;
+        asm!("rdtsc", out("eax") low, out("edx") high, options(nomem, nostack, preserves_flags));
+        ((high as u64) << 32) | (low as u64)
+    }
+}
+
 /// Write a byte to an 8-bit I/O port.
 #[inline(always)]
 pub unsafe fn outb(port: u16, val: u8) {
