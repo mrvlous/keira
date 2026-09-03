@@ -2,7 +2,7 @@
 
 # Native Shell Built-In Commands
 
-This directory documents the 76 native built-in commands organized by subsystem domain in Keira Kernel, categorized by **Active Bare-Metal Implementations** (56 commands) and **Interface Prototypes / Stubs** (20 commands).
+This directory documents the 78 native built-in commands organized by subsystem domain in Keira Kernel, categorized by **Active Bare-Metal Implementations** (58 commands) and **Interface Prototypes / Stubs** (20 commands).
 
 ---
 
@@ -10,8 +10,8 @@ This directory documents the 76 native built-in commands organized by subsystem 
 
 ```mermaid
 graph TD
-    Shell["keira-shell Command Router (76 Commands)"] --> FS["fs/ (15 Commands)<br/>list, view, edit, create, delete, copy, move, folder, write, drives, disk, ramdisk, initrd, fileinfo, ext4"]
-    Shell --> Sys["sys/ (13 Commands)<br/>system, runtime, memory, cpu, time, env, hostname, power, reset, sync, service, syslog, unwind"]
+    Shell["keira-shell Command Router (78 Commands)"] --> FS["fs/ (15 Commands)<br/>list, view, edit, create, delete, copy, move, folder, write, drives, disk, ramdisk, initrd, fileinfo, ext4"]
+    Shell --> Sys["sys/ (15 Commands)<br/>system, runtime, memory, cpu, smp, time, env, hostname, power, reset, sync, service, syslog, unwind, watchpoint"]
     Shell --> Proc["proc/ (14 Commands)<br/>tasks, kill, stop, bg, fg, jobs, run, kcc, cgroups, futex, eventfd, perf, timer, mqueue"]
     Shell --> Net["net/ (7 Commands)<br/>network, download, https, iptables, firewall, ipcs, ipcrm"]
     Shell --> Sec["sec/ (7 Commands)<br/>user, login, protect, tpm, seccomp, bpf, mac"]
@@ -30,6 +30,6 @@ graph TD
 | **Process & Scheduling** | `proc/` | 14 | 8 | 6 | [proc.md](proc.md) |
 | **Networking & Sockets** | `net/` | 7 | 5 | 2 | [net.md](net.md) |
 | **Security & Accounts** | `sec/` | 7 | 3 | 4 | [sec.md](sec.md) |
-| **System & Telemetry** | `sys/` | 13 | 13 | 0 | [sys.md](sys.md) |
+| **System & Telemetry** | `sys/` | 15 | 15 | 0 | [sys.md](sys.md) |
 | **Utilities & Shell** | `util/` | 8 | 8 | 0 | [util.md](util.md) |
-| **Total** | | **76** | **56** | **20** | |
+| **Total** | | **78** | **58** | **20** | |

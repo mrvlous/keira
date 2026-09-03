@@ -43,3 +43,32 @@ pub unsafe fn remap_pic(offset1: u8, offset2: u8) {
     outb(0xA1, a2);
 }
 ```
+
+---
+
+## Local APIC Interrupt Command Register (ICR) & SMP Bootstrapping
+
+Keira boots Application Processors (APs) via Local APIC Inter-Processor Interrupts (IPIs) using the standard `INIT-SIPI-SIPI` protocol (`crates/arch/src/interrupts/smp.rs`):
+
+```mermaid
+sequenceDiagram
+    participant BSP as Bootstrap Processor (BSP)
+    participant APIC as Local APIC (ICR)
+    participant AP as Application Processor (AP)
+
+    BSP->>APIC: Assert INIT IPI (Delivery Mode 0b101, Level Assert)
+    APIC-->>AP: Enter INIT Reset State
+    BSP->>APIC: De-assert INIT IPI (Level De-assert)
+    BSP->>APIC: Startup IPI #1 (SIPI, Vector = Trampoline Page)
+    APIC-->>AP: Begin Real-Mode Execution at Trampoline Page
+    opt If AP Not Online
+        BSP->>APIC: Startup IPI #2 (SIPI Retry)
+    end
+    AP-->>BSP: Set CoreStatus::Online
+```
+
+### ICR Register Configuration:
+- **Low Register (`0x300`)**: Delivery mode, delivery status polling (`bit 12`), destination shorthand.
+- **High Register (`0x310`)**: Target APIC ID (`destination << 24`).
+- **Memory Mapping**: Local APIC physical address (`0xFEE00000`) is identity-mapped with writable permissions in kernel page tables.
+

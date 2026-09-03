@@ -40,7 +40,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     "  download  env       framebuffer usb       https     syslog    kvm\n",
                 );
                 vga::print_str("  nvme      bpf       tpm       power     perf      drivers\n");
-                vga::print_str("  lkm       unwind    timer     mac\n\n");
+                vga::print_str(
+                    "  lkm       unwind    timer     mac       smp       watchpoint\n\n",
+                );
 
                 vga::set_color(vga::Color::White, bg);
                 vga::print_str("Storage & Filesystem:\n");
@@ -318,8 +320,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("tpm") => {
                 vga::print_str("Usage: tpm [status|pcr|random|quote]\nInteract with Trusted Platform Module (TPM 2.0) crypto chip and PCR banks.\n");
             }
+            Some("smp") => {
+                vga::print_str("Usage: smp [-h]\nInspect Symmetric Multiprocessing (SMP) CPU core topology and Local APIC states.\n");
+            }
             Some("unwind") => {
                 vga::print_str("Usage: unwind [dump|trace|stack]\nTrigger stack frame unwinding and inspect active kernel call stack traces.\n");
+            }
+            Some("watchpoint") => {
+                vga::print_str("Usage: watchpoint [list | set <slot> <addr> [w|rw|x] [1|2|4|8] | clear <slot>]\nControl x86 hardware debug registers (DR0-DR7) and memory watchpoints.\n");
             }
             Some(other) => {
                 vga::set_color(vga::Color::LightRed, bg);

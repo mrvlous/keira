@@ -147,6 +147,10 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
     vga::print_boot_log("Initializing Virtual Memory Manager (VMM) paging", 0);
 
     unsafe {
+        // Identity map Local APIC (0xFEE00000) and I/O APIC (0xFEC00000) MMIO registers
+        let _ = vmm::map_page(0xFEE0_0000, 0xFEE0_0000, vmm::PAGE_WRITABLE);
+        let _ = vmm::map_page(0xFEC0_0000, 0xFEC0_0000, vmm::PAGE_WRITABLE);
+
         scheduler_init();
     }
     vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);

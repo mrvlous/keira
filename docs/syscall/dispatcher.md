@@ -42,3 +42,26 @@ pub extern "C" fn syscall_dispatcher(
     // 4. Return result or encoded POSIX errno
 }
 ```
+
+---
+
+## Ring 3 Exception Trapping & Core Dumper (`crates/syscall/src/exception/mod.rs`)
+
+When an unhandled CPU exception (`#UD`, `#GP`, `#PF`) occurs within an unprivileged Ring 3 task, Keira isolates the fault, generates a formatted diagnostic core dump, and cleanly terminates the faulted task without compromising the kernel:
+
+```mermaid
+graph TD
+    Fault["Ring 3 Task Faults (#UD, #GP, #PF)"] --> IDT["CPU Traps to IDT Vector Handler"]
+    IDT --> Dumper["dump_user_crash() Core Dumper"]
+    Dumper --> Regs["Dump General-Purpose Registers (RAX..R15 / EAX..EBP)"]
+    Regs --> CodeBytes["Read Faulting Instruction Bytes at RIP/EIP"]
+    CodeBytes --> StackWalk["Walk Stack Frames via RBP/EBP Frame Pointer"]
+    StackWalk --> Terminate["Terminate Task & Reclaim Ring 3 Address Space"]
+```
+
+### Core Dumper Output Format:
+- **Header**: Process ID, task name, and exception mnemonic (`#PF`, `#GP`, `#UD`).
+- **Registers**: Full general-purpose register dump and flags register (`RFLAGS`).
+- **Code Bytes**: 16 bytes of machine code centered at the faulting instruction pointer (`RIP`/`EIP`).
+- **Stack Backtrace**: Stack frame unwinding printing up to 8 ancestor return addresses.
+

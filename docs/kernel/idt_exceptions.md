@@ -25,6 +25,7 @@ graph LR
 | Vector | Exception Code | Name | Action Taken |
 | :--- | :--- | :--- | :--- |
 | `0x00` | `#DE` | Divide-by-Zero | Trigger SIGFPE or kernel panic if in Ring 0 |
+| `0x01` | `#DB` | Debug Exception | Inspect DR6 status, identify watchpoint slot, log diagnostic, and clear condition without panic |
 | `0x06` | `#UD` | Invalid Opcode | Terminate faulted Ring 3 task or panic kernel |
 | `0x08` | `#DF` | Double Fault | Switch to dedicated IST1 stack and dump registers |
 | `0x0D` | `#GP` | General Protection Fault | Check privilege violation, segment limits, or GP error code |

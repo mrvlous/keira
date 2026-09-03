@@ -2,7 +2,7 @@
 
 # Keira Kernel Interactive Shell Subsystem
 
-The `shell` subsystem provides an interactive command line interface, command executor, line editor (`kvi`), tab auto-completion engine, history ring buffer, service supervisor, and 76 native utilities.
+The `shell` subsystem provides an interactive command line interface, command executor, line editor (`kvi`), tab auto-completion engine, history ring buffer, service supervisor, and 78 native utilities.
 
 ---
 
@@ -14,7 +14,7 @@ graph TD
     Line --> Auto["autocomplete.md<br/>Tab Auto-Completion"]
     Line --> Hist["history.md<br/>Command History Ring Buffer"]
     Line --> Exec["executor.md<br/>Parser & Tokenizer"]
-    Exec --> Cmds["commands/<br/>76 Native Shell Commands"]
+    Exec --> Cmds["commands/<br/>78 Native Shell Commands"]
     Exec --> Userland["Userland ELF Loader<br/>(run /system/bin/kcc.elf)"]
 ```
 
@@ -29,4 +29,4 @@ graph TD
 | [`autocomplete.md`](autocomplete.md) | Auto-Completion | Dynamic file path, device node, and command name completion engine |
 | [`history.md`](history.md) | History Buffer | Circular command history ring buffer with Up/Down arrow navigation |
 | [`service.md`](service.md) | Service Supervisor | Background service supervisor managing persistent kernel daemons |
-| [`commands/`](commands/README.md) | Native Commands Catalog | Hyper-modular catalog covering all 76 built-in shell utilities |
+| [`commands/`](commands/README.md) | Native Commands Catalog | Hyper-modular catalog covering all 78 built-in shell utilities |

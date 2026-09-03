@@ -102,6 +102,29 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         frame.ebp as u64,
     );
 
+    // Handle Hardware Debug Exception (#DB) triggered by DR0..DR3 watchpoints
+    if vector == 1 {
+        let dr6 = unsafe { keira_arch::debug::read_dr6() };
+        let mut handled = false;
+        for slot in 0..4 {
+            if (dr6 & (1 << slot)) != 0 {
+                keira_io::serial::print_str("[HW WATCHPOINT] Slot ");
+                print_decimal_serial(slot as u64);
+                keira_io::serial::print_str(" triggered at RIP: 0x");
+                print_hex_serial(rip);
+                keira_io::serial::print_str("\n");
+                handled = true;
+            }
+        }
+        if handled {
+            unsafe {
+                // Clear triggered watchpoint status flags in DR6
+                keira_arch::debug::write_dr6(dr6 & !0xF);
+            }
+            return;
+        }
+    }
+
     if (cs & 3) == 3 {
         // 1. Attempt to resolve user mode Page Fault on-demand (Demand Paging / Stack Auto-Growth)
         if vector == 14 {
@@ -112,32 +135,42 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         }
 
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
-        vga::print_str("\n*** USER PROCESS CRASHED ***\n");
+        vga::print_str("\n*** USER PROCESS CRASHED (CORE DUMP) ***\n");
         vga::print_str("Exception Vector: ");
         vga::print_u64(vector);
         if vector == 14 {
-            vga::print_str(" (Page Fault)");
+            vga::print_str(" (Page Fault #PF)");
         } else if vector == 13 {
-            vga::print_str(" (General Protection Fault)");
+            vga::print_str(" (General Protection Fault #GP)");
+        } else if vector == 6 {
+            vga::print_str(" (Invalid Opcode #UD)");
         }
-        vga::print_str("\nRIP: 0x");
+        vga::print_str(" | Error Code: 0x");
+        print_hex(error_code);
+        vga::print_str("\n");
+
+        vga::print_str("Registers:\n");
+        vga::print_str("  RIP: 0x");
         print_hex(rip);
+        vga::print_str("  RSP: 0x");
+        print_hex(rsp);
+        vga::print_str("  RBP: 0x");
+        print_hex(rbp);
+        vga::print_str("  RFLAGS: 0x");
+        print_hex(rflags);
+        vga::print_str("\n");
+
         if vector == 14 {
             let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
-            vga::print_str(" | Faulting Address: 0x");
+            vga::print_str("  Faulting Virtual Address (CR2): 0x");
             print_hex(cr2);
-
-            keira_io::serial::print_str("\n[PAGE FAULT] RIP: 0x");
-            keira_io::serial::print_u64(rip);
-            keira_io::serial::print_str(" | CR2: 0x");
-            keira_io::serial::print_u64(cr2);
-            keira_io::serial::print_str(" | RSP: 0x");
-            keira_io::serial::print_u64(rsp);
-            keira_io::serial::print_str(" | Error Code: 0x");
-            keira_io::serial::print_u64(error_code);
-            keira_io::serial::print_str("\n");
+            vga::print_str("\n");
         }
-        vga::print_str("\nTerminating crashed user process...\n");
+
+        vga::print_str("Stack Backtrace:\n");
+        unwind_from_frame(rbp, rip);
+
+        vga::print_str("Terminating crashed user process...\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
         if CURRENT_TASK_IDX != 0 {

@@ -9,6 +9,8 @@
 
 //! Kernel architecture debugging, stack frame capture, and backtraces.
 
+pub mod hw_breakpoint;
 pub mod unwind;
 
+pub use hw_breakpoint::*;
 pub use unwind::*;

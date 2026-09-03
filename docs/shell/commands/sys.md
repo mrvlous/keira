@@ -12,6 +12,7 @@ This document details all native commands in Keira Kernel related to hardware di
 | :--- | :--- | :--- | :--- |
 | `system` | `system [-v] [-u] [-s]` | `[Active]` | Display kernel specifications, architecture, memory stats, and uptime |
 | `cpu` | `cpu [-f] [-r] [-s]` | `[Active]` | Display CPU vendor, feature flags, live TSC cycles, and digital core temperature |
+| `smp` | `smp [-h]` | `[Active]` | Inspect Symmetric Multiprocessing (SMP) core topology and Local APIC states |
 | `runtime` | `runtime` | `[Active]` | Display time elapsed since system boot in milliseconds |
 | `time` | `time` | `[Active]` | Query Real-Time Clock (RTC) date and time in UTC |
 | `memory` | `memory` | `[Active]` | Inspect physical frame allocations (PMM) and heap memory telemetry |
@@ -25,6 +26,7 @@ This document details all native commands in Keira Kernel related to hardware di
 | `sync` | `sync` | `[Active]` | Flush dirty filesystem block cache sectors to physical storage media |
 | `syslog` | `syslog [dmesg]` | `[Active]` | Read circular kernel syslog dmesg diagnostic log buffer (Syscall 44) |
 | `unwind` | `unwind` | `[Active]` | Walk active kernel callstack frame pointers (RBP/RIP) for backtrace (Syscall 37) |
+| `watchpoint` | `watchpoint [list \| set \| clear]` | `[Active]` | Control x86 hardware debug registers (DR0-DR7) and memory watchpoints |
 
 ---
 
@@ -55,4 +57,37 @@ Service Name  State     Port/PID  Description
 [syslogd]     RUNNING   PID 3     System Event Logging Daemon
 [syncd]       RUNNING   PID 4     Filesystem Cache Auto-Sync Daemon
 [watchdogd]   RUNNING   PID 5     Kernel Health & Crash Watchdog
+```
+
+### `smp`
+Inspects multi-core CPU topology and APIC initialization status:
+```bash
+keira> smp
+Symmetric Multiprocessing (SMP) Hardware Topology:
+  Total Online Cores : 4
+
+CORE  APIC ID  ROLE  STATUS
+----  -------  ----  --------------
+Core 0  0x0    BSP   Online (Active)
+Core 1  0x1    AP    Online (Active)
+Core 2  0x2    AP    Online (Active)
+Core 3  0x3    AP    Online (Active)
+```
+
+### `watchpoint`
+Programs x86 hardware debug address registers (`DR0`-`DR3`) and debug control (`DR7`):
+```bash
+keira> watchpoint set 0 0x100000 w 4
+[OK] Hardware watchpoint set on slot 0 at address 0x100000
+
+keira> watchpoint list
+x86 Hardware Debug Registers & Watchpoints:
+  DR6 (Status)  : 0xFFFF0FF0   DR7 (Control) : 0xD0401
+
+SLOT  REGISTER  ADDRESS   CONDITION       SIZE    STATUS
+----  --------  --------  --------------  ------  --------
+DR0   DR0       0x100000  Data Write (w)  4-byte  ACTIVE
+DR1   DR1       0x0       Disabled        -       INACTIVE
+DR2   DR2       0x0       Disabled        -       INACTIVE
+DR3   DR3       0x0       Disabled        -       INACTIVE
 ```

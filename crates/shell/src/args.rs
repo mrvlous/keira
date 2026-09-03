@@ -120,18 +120,16 @@ impl<'a> CliArgs<'a> {
         None
     }
 
-    /// Retrieve the second positional argument that is not a flag/option.
-    pub fn second_positional(&self) -> Option<&'a str> {
-        let mut found_first = false;
+    /// Retrieve the N-th positional argument that is not a flag/option.
+    pub fn positional(&self, idx: usize) -> Option<&'a str> {
+        let mut cur = 0;
         let mut skip_next = false;
-
         for i in 0..self.token_count {
             let tok = self.tokens[i];
             if skip_next {
                 skip_next = false;
                 continue;
             }
-
             if tok.starts_with('-') {
                 if !tok.contains('=') && tok.len() == 2 && i + 1 < self.token_count {
                     let next = self.tokens[i + 1];
@@ -143,14 +141,17 @@ impl<'a> CliArgs<'a> {
                 }
                 continue;
             }
-
-            if !found_first {
-                found_first = true;
-            } else {
+            if cur == idx {
                 return Some(tok);
             }
+            cur += 1;
         }
         None
+    }
+
+    /// Retrieve the second positional argument that is not a flag/option.
+    pub fn second_positional(&self) -> Option<&'a str> {
+        self.positional(1)
     }
 
     /// Get total parsed token count.

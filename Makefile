@@ -162,13 +162,13 @@ LOG_CHECK       := printf "  $(CLR_GREEN)$(CLR_BOLD)[OK]$(CLR_RESET)    %s\n"
 LOG_MISS        := printf "  $(CLR_RED)$(CLR_BOLD)[MISS]$(CLR_RESET)  %s\n"
 
 # Canonical filesystem manifests
-SHELL_CMDS      := guide login drives use ramdisk system cpu runtime time memory \
+SHELL_CMDS      := guide login drives use ramdisk system cpu smp runtime time memory \
                    devices wait initrd wipe reset run write tasks disk list \
                    go script view create folder delete edit copy help history \
                    move search download network stop env sync \
                    protect fileinfo framebuffer usb https user hostname syslog kvm \
                    nvme ext4 cgroups futex bpf tpm swap seccomp epoll \
-                   drivers lkm unwind power perf timer eventfd mac mqueue \
+                   drivers lkm unwind watchpoint power perf timer eventfd mac mqueue \
                    kill jobs fg bg lvm raid ipcs ipcrm iptables firewall service \
                    shutdown reboot
 
