@@ -1,0 +1,239 @@
+<!-- SPDX-License-Identifier: GPL-2.0-only -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keira Kernel — Bare Metal Kernel in Rust</title>
+  <meta name="description" content="Official GitHub Repository for Keira Kernel, a dual architecture x86_64 and i686 bare metal kernel in Rust, C99 and Assembly featuring eBPF and cBPF filtering, KVM virtualization framework, EXT4 read only filesystem and native TLS 1.3 socket engine.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="logo">Keira<span>Kernel</span></div>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="https://github.com/mrvlous/keira">GitHub</a>
+        <a href="https://github.com/mrvlous/keira/tree/main/docs">Docs</a>
+        <a href="#features">Features</a>
+        <a href="#gallery">Gallery</a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <a class="btn-small" href="https://github.com/mrvlous/keira">Get Source</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero-pro">
+      <div class="container hero-pro-grid">
+        <div class="hero-copy">
+          <p class="badge">x86_64 and i686 • Rust • C99 • Assembly • GPL 2.0 only</p>
+          <h1>Keira Kernel</h1>
+          <p class="subtitle">A freestanding bare metal kernel for x86_64 and i686 written from scratch in Rust, C99 and Assembly and booting via Multiboot2.</p>
+          <p class="desc">Hyper modular with 12 crates, 30k plus LOC and 13 documentation domains. Preemptive scheduling, 4 level paging, multi-core SMP and Ring 3 isolation with 62 syscall vectors and 78 built-in commands.</p>
+          <div class="cta">
+            <a class="btn primary" href="https://github.com/mrvlous/keira">View on GitHub</a>
+            <a class="btn ghost" href="#quick-start">Quick Start</a>
+          </div>
+          <div class="code">
+            <code>make test-all</code><span>reproducible dual architecture build</span>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="terminal-title">qemu - keira</span>
+            </div>
+            <img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="eager">
+          </div>
+          <div class="educational">
+            <strong>Educational project by Moh. Ananda Firmansyah Putra</strong> — built from scratch as a systems learning journey.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-bar">
+      <div class="container stats-bar-grid">
+        <div class="stat-item"><span class="stat-num">37.7k</span><span class="stat-label">LOC total</span></div>
+        <div class="stat-item"><span class="stat-num">30.5k</span><span class="stat-label">Rust crates</span></div>
+        <div class="stat-item"><span class="stat-num">12</span><span class="stat-label">crates</span></div>
+        <div class="stat-item"><span class="stat-num">62</span><span class="stat-label">syscalls</span></div>
+        <div class="stat-item"><span class="stat-num">13</span><span class="stat-label">doc domains</span></div>
+        <div class="stat-item"><span class="stat-num">2</span><span class="stat-label">archs x86_64 and i686</span></div>
+      </div>
+    </section>
+
+    <section class="features-pro" id="features">
+      <div class="container">
+        <div class="section-head left">
+          <p class="eyebrow">Architecture</p>
+          <h2>Hyper modular, not monolithic</h2>
+          <p class="section-desc">Six focused subsystems with explicit crate boundaries and documented Safety contracts. Each crate has a dedicated docs domain.</p>
+        </div>
+        <div class="bento">
+          <article class="card span-2">
+            <div class="card-top">
+              <div class="card-icon">◈</div>
+              <span class="card-tag">Memory and Task • crates/mem and task</span>
+            </div>
+            <h3>Memory and Scheduling</h3>
+            <p>Bitmap PMM, 4 level paging, heap, DMA and swap. Preemptive scheduler with cgroups and POSIX signals and documented scheduler tick.</p>
+            <div class="card-meta">PMM • VMM • Heap • docs/memory</div>
+          </article>
+          <article class="card">
+            <div class="card-top">
+              <div class="card-icon">⬡</div>
+              <span class="card-tag">Security • crates/crypto and net</span>
+            </div>
+            <h3>Network and Security</h3>
+            <p>TCP/IP with native TLS 1.3, firewall and eBPF and cBPF with Seccomp filtering plus KVM framework. AES GCM and Curve25519.</p>
+            <div class="card-meta">TLS 1.3 • eBPF • docs/net and crypto</div>
+          </article>
+          <article class="card">
+            <div class="card-top">
+              <div class="card-icon">▦</div>
+              <span class="card-tag">Storage • crates/fs and io</span>
+            </div>
+            <h3>Filesystem</h3>
+            <p>VFS with FAT12/16/32, EXT4 read only, USTAR initrd, LVM and RAID with 16 slot LRU sector cache.</p>
+            <div class="card-meta">VFS • FAT • EXT4 • docs/fs</div>
+          </article>
+          <article class="card span-2">
+            <div class="card-top">
+              <div class="card-icon">⬢</div>
+              <span class="card-tag">Hardware • crates/arch and io</span>
+            </div>
+            <h3>Drivers</h3>
+            <p>VGA and VBE, UART, PCI/PCIe with MSI, AHCI, NVMe, USB and Intel e1000 with Virtio net. Multi-core SMP topology, hardware watchpoints and telemetry.</p>
+            <div class="card-meta">VGA • AHCI • NVMe • e1000 • MSI • docs/drivers</div>
+          </article>
+          <article class="card">
+            <div class="card-top">
+              <div class="card-icon">⬔</div>
+              <span class="card-tag">Core • crates/syscall</span>
+            </div>
+            <h3>62 Syscalls</h3>
+            <p>Validated user copying, Ring 3 isolation, ELF loader and POSIX compatible dispatcher.</p>
+            <div class="card-meta">SYS_PUTC to SYS_WAITPID • docs/syscall</div>
+          </article>
+          <article class="card">
+            <div class="card-top">
+              <div class="card-icon">✦</div>
+              <span class="card-tag">DevEx • user and shell</span>
+            </div>
+            <h3>Toolchain</h3>
+            <p>In kernel C compiler kcc.elf and C SDK, shell with 78 built-in commands and kvi editor for native development on bare metal.</p>
+            <div class="card-meta">kcc • SDK • docs/userland and shell</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery-pro" id="gallery">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Live Evidence</p>
+          <h2>Real QEMU sessions</h2>
+          <p class="section-desc">Not mockups — direct captures from Keira running on QEMU. Drag to scroll or use arrow keys.</p>
+        </div>
+        <div class="strip" id="strip" tabindex="0" aria-label="Screenshot gallery">
+          <figure class="shot"><img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="lazy"><figcaption>Boot</figcaption></figure>
+          <figure class="shot"><img src="assets/02_Hardware_Telemetry_and_Thermals.png" alt="Hardware telemetry and thermals" loading="lazy"><figcaption>Telemetry</figcaption></figure>
+          <figure class="shot"><img src="assets/03_VFS_Storage_and_Redirection.png" alt="VFS storage and redirection" loading="lazy"><figcaption>VFS</figcaption></figure>
+          <figure class="shot"><img src="assets/04_Process_Lifecycle_and_Pipes.png" alt="Process lifecycle and pipes" loading="lazy"><figcaption>Processes</figcaption></figure>
+          <figure class="shot"><img src="assets/05_Native_KCC_Compiler_and_Ring3.png" alt="Native KCC compiler" loading="lazy"><figcaption>KCC</figcaption></figure>
+          <figure class="shot"><img src="assets/06_Networking_Security_and_Crypto.png" alt="Networking security and crypto" loading="lazy"><figcaption>Net and Crypto</figcaption></figure>
+          <figure class="shot"><img src="assets/07_Dual_Architecture_i686_Protected_Mode.png" alt="Dual architecture i686 protected mode" loading="lazy"><figcaption>i686</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="docs">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Documentation</p>
+          <h2>13 documentation domains</h2>
+          <p class="section-desc">Start from the docs map and dive into any subsystem. Every crate has a matching guide.</p>
+        </div>
+        <div class="docs-grid">
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/journey">journey — 6 milestones</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/kernel">kernel — boot and HAL</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/memory">memory — PMM and VMM</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/task">task — scheduler</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/syscall">syscall — 62 vectors</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/fs">fs — VFS and FAT/EXT4</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/drivers">drivers — VGA, NVMe, e1000</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/net">net — TCP/IP and TLS 1.3</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/crypto">crypto — AES and Seccomp</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/shell">shell — 78 built-in commands</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/userland">userland — KCC and SDK</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/contributing">contributing — setup and style</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="unified">
+      <div class="container unified-grid">
+        <div class="unified-card about-pro">
+          <p class="eyebrow">Background</p>
+          <h2>Built as an educational journey</h2>
+          <p>Keira is an independent project by <strong>Moh. Ananda Firmansyah Putra</strong>, Systems Architect and Certified Security Researcher specializing in low level systems programming and post quantum cryptography. It was created to learn operating system internals from first principles and to share a reproducible, well documented bare metal kernel with the community.</p>
+          <p class="muted">Open source under GPL 2.0 only. Designed for study, experimentation and collaboration.</p>
+        </div>
+        <div class="unified-card build" id="quick-start">
+          <p class="eyebrow">Quick Start</p>
+          <h2>Build in seconds</h2>
+          <p class="muted">Dual arch ISO and disk images in one command. Tested on QEMU.</p>
+          <pre><code>git clone https://github.com/mrvlous/keira
+cd keira
+make test-all   # x86_64 and i686
+make run        # QEMU</code></pre>
+          <p class="hint">Copy with one click — code block is interactive</p>
+          <div class="links">
+            <a href="https://github.com/mrvlous/keira">Source</a>
+            <span>•</span>
+            <a href="https://github.com/mrvlous/keira/blob/main/README">README</a>
+            <span>•</span>
+            <a href="https://github.com/mrvlous/keira/blob/main/LICENSES/preferred/GPL-2.0-only">GPL 2.0 only</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="logo">Keira<span>Kernel</span></div>
+        <p>Freestanding bare metal kernel for x86_64 and i686. Educational and open source under GPL 2.0 only.</p>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <a href="https://github.com/mrvlous/keira">GitHub</a>
+        <a href="https://github.com/mrvlous/keira/tree/main/docs">Documentation</a>
+        <a href="https://github.com/mrvlous/keira/issues">Issues</a>
+      </div>
+      <div>
+        <h4>Author</h4>
+        <p>Moh. Ananda Firmansyah Putra</p>
+        <a href="https://linkedin.com/in/mrvlous">LinkedIn</a>
+        <a href="mailto:mrvlous@proton.me">mrvlous@proton.me</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>© 2026 Keira Kernel</span>
+      <span>Built as an educational systems journey</span>
+    </div>
+  </footer>
+  <div class="lightbox" id="lightbox"><img alt="preview"></div>
+  <script src="script.js"></script>
+</body>
+</html>
