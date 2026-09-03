@@ -4,15 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Keira Kernel Bare Metal Kernel in Rust</title>
-  <meta name="description" content="Official GitHub Repository for Keira Kernel, a dual architecture x86_64 and i686 bare metal kernel in Rust, C99 and Assembly featuring eBPF and cBPF filtering, KVM virtualization framework, EXT4 read only filesystem and native TLS 1.3 socket engine.">
-  <meta property="og:title" content="Keira Kernel Bare Metal Kernel in Rust">
+  <title>Keira Kernel</title>
+  <meta name="description" content="Official GitHub Repository for Keira Kernel, a dual architecture x86_64 and i686 bare metal kernel in Rust, C99, and Assembly featuring eBPF and cBPF filtering, KVM virtualization framework, EXT4 read only filesystem, and native TLS 1.3 socket engine.">
+  <meta property="og:title" content="Keira Kernel">
   <meta property="og:description" content="A freestanding bare metal kernel for x86_64 and i686 written from scratch in Rust, C99, and Assembly. Preemptive scheduling, multi core SMP, 4 level paging, and Ring 3 isolation with 78 built in commands.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://mrvlous.github.io/keira/">
   <meta property="og:image" content="https://mrvlous.github.io/keira/assets/01_Keira_Boot_Screen.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Keira Kernel Bare Metal Kernel in Rust">
+  <meta name="twitter:title" content="Keira Kernel">
   <meta name="twitter:description" content="Dual-architecture x86_64 and i686 bare-metal kernel in Rust, C99, and Assembly.">
   <meta name="twitter:image" content="https://mrvlous.github.io/keira/assets/01_Keira_Boot_Screen.png">
   <link rel="stylesheet" href="style.css">
@@ -44,8 +44,8 @@
         <div class="hero-copy">
           <p class="badge">x86_64 and i686 • Rust • C99 • Assembly • GPL 2.0 only</p>
           <h1>Keira Kernel</h1>
-          <p class="subtitle">A freestanding bare metal kernel for x86_64 and i686 written from scratch in Rust, C99 and Assembly and booting via Multiboot2.</p>
-          <p class="desc">Hyper modular with 12 crates, 30k plus LOC and 13 documentation domains. Preemptive scheduling, 4 level paging, multi-core SMP and Ring 3 isolation with 62 syscall vectors and 78 built-in commands.</p>
+          <p class="subtitle">A freestanding bare metal kernel for x86_64 and i686, written from scratch in Rust, C99, and Assembly and booting via Multiboot2.</p>
+          <p class="desc">Hyper modular with 12 crates, 30k plus LOC, and 13 documentation domains. Preemptive scheduling, 4 level paging, multi core SMP, and Ring 3 isolation with 62 syscall vectors and 78 built in commands.</p>
           <div class="cta">
             <a class="btn primary" href="https://github.com/mrvlous/keira">View on GitHub</a>
             <a class="btn ghost" href="#quick-start">Quick Start</a>
@@ -94,7 +94,7 @@
               <span class="card-tag">Memory and Task • crates/mem and task</span>
             </div>
             <h3>Memory and Scheduling</h3>
-            <p>Bitmap PMM, 4 level paging, heap, DMA and swap. Preemptive scheduler with cgroups and POSIX signals and documented scheduler tick.</p>
+            <p>Bitmap PMM, 4 level paging, heap, DMA, and swap. Preemptive scheduler with cgroups and POSIX signals and documented scheduler tick.</p>
             <div class="card-meta">PMM • VMM • Heap • docs/memory</div>
           </article>
           <article class="card">
@@ -103,7 +103,7 @@
               <span class="card-tag">Security • crates/crypto and net</span>
             </div>
             <h3>Network and Security</h3>
-            <p>TCP/IP with native TLS 1.3, firewall and eBPF and cBPF with Seccomp filtering plus KVM framework. AES GCM and Curve25519.</p>
+            <p>TCP/IP with native TLS 1.3, firewall, and eBPF and cBPF with Seccomp filtering plus KVM framework. AES GCM and Curve25519.</p>
             <div class="card-meta">TLS 1.3 • eBPF • docs/net and crypto</div>
           </article>
           <article class="card">
@@ -112,7 +112,7 @@
               <span class="card-tag">Storage • crates/fs and io</span>
             </div>
             <h3>Filesystem</h3>
-            <p>VFS with FAT12/16/32, EXT4 read only, USTAR initrd, LVM and RAID with 16 slot LRU sector cache.</p>
+            <p>VFS with FAT12/16/32, EXT4 read only, USTAR initrd, LVM, and RAID with 16 slot LRU sector cache.</p>
             <div class="card-meta">VFS • FAT • EXT4 • docs/fs</div>
           </article>
           <article class="card span-2">
@@ -121,7 +121,7 @@
               <span class="card-tag">Hardware • crates/arch and io</span>
             </div>
             <h3>Drivers</h3>
-            <p>VGA and VBE, UART, PCI/PCIe with MSI, AHCI, NVMe, USB and Intel e1000 with Virtio net. Multi-core SMP topology, hardware watchpoints and telemetry.</p>
+            <p>VGA and VBE, UART, PCI/PCIe with MSI, AHCI, NVMe, USB, and Intel e1000 with Virtio net. Multi core SMP topology, hardware watchpoints, and telemetry.</p>
             <div class="card-meta">VGA • AHCI • NVMe • e1000 • MSI • docs/drivers</div>
           </article>
           <article class="card">
@@ -130,7 +130,7 @@
               <span class="card-tag">Core • crates/syscall</span>
             </div>
             <h3>62 Syscalls</h3>
-            <p>Validated user copying, Ring 3 isolation, ELF loader and POSIX compatible dispatcher.</p>
+            <p>Validated user copying, Ring 3 isolation, ELF loader, and POSIX compatible dispatcher.</p>
             <div class="card-meta">SYS_PUTC to SYS_WAITPID • docs/syscall</div>
           </article>
           <article class="card">
@@ -139,7 +139,7 @@
               <span class="card-tag">DevEx • user and shell</span>
             </div>
             <h3>Toolchain</h3>
-            <p>In kernel C compiler kcc.elf and C SDK, shell with 78 built-in commands and kvi editor for native development on bare metal.</p>
+            <p>In kernel C compiler kcc.elf and C SDK, shell with 78 built in commands and kvi editor for native development on bare metal.</p>
             <div class="card-meta">kcc • SDK • docs/userland and shell</div>
           </article>
         </div>
@@ -195,7 +195,7 @@
           <p class="eyebrow">Background</p>
           <h2>Built as an educational journey</h2>
           <p>Keira is an independent project by <strong>Moh. Ananda Firmansyah Putra</strong>, Systems Architect and Certified Security Researcher specializing in low level systems programming and post quantum cryptography. It was created to learn operating system internals from first principles and to share a reproducible, well documented bare metal kernel with the community.</p>
-          <p class="muted">Open source under GPL 2.0 only. Designed for study, experimentation and collaboration.</p>
+          <p class="muted">Open source under GPL 2.0 only. Designed for study, experimentation, and collaboration.</p>
         </div>
         <div class="unified-card build" id="quick-start">
           <p class="eyebrow">Quick Start</p>
