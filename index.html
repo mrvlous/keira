@@ -15,6 +15,7 @@
   <meta name="twitter:title" content="Keira Kernel">
   <meta name="twitter:description" content="Dual-architecture x86_64 and i686 bare-metal kernel in Rust, C99, and Assembly.">
   <meta name="twitter:image" content="https://mrvlous.github.io/keira/assets/01_Keira_Boot_Screen.png">
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -23,19 +24,29 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="nav">
     <div class="container nav-inner">
-      <div class="logo">Keira<span>Kernel</span></div>
-      <nav class="nav-links" aria-label="Primary">
-        <a href="https://github.com/mrvlous/keira">GitHub</a>
-        <a href="https://github.com/mrvlous/keira/tree/main/docs">Docs</a>
-        <a href="#features">Features</a>
-        <a href="#gallery">Gallery</a>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-          <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"></path></svg>
-        </button>
-        <a class="btn-small" href="https://github.com/mrvlous/keira">Get Source</a>
-      </nav>
+      <a class="logo" href="#main" aria-label="Keira Kernel Home">Keira<span>Kernel</span></a>
+      <div class="nav-actions">
+        <nav class="nav-links" id="navLinks" aria-label="Primary">
+          <a href="https://github.com/mrvlous/keira">GitHub</a>
+          <a href="https://github.com/mrvlous/keira/tree/main/docs">Docs</a>
+          <a href="#features">Features</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#quick-start">Quick Start</a>
+          <a class="btn-small desktop-only" href="https://github.com/mrvlous/keira">Get Source</a>
+        </nav>
+        <div class="nav-controls">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+          <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+            <svg class="icon-menu" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      </div>
     </div>
+    <div class="nav-drawer-backdrop" id="navBackdrop"></div>
   </header>
 
   <main id="main">
@@ -60,7 +71,7 @@
               <span class="dot"></span><span class="dot"></span><span class="dot"></span>
               <span class="terminal-title">qemu - keira</span>
             </div>
-            <img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="eager">
+            <img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="eager" width="1280" height="800">
           </div>
           <div class="educational">
             <strong>Educational project by Moh. Ananda Firmansyah Putra</strong> — built from scratch as a systems learning journey.
@@ -82,7 +93,7 @@
 
     <section class="features-pro" id="features">
       <div class="container">
-        <div class="section-head left">
+        <div class="section-head">
           <p class="eyebrow">Architecture</p>
           <h2>Hyper modular, not monolithic</h2>
           <p class="section-desc">Six focused subsystems with explicit crate boundaries and documented Safety contracts. Each crate has a dedicated docs domain.</p>
@@ -133,12 +144,12 @@
             <p>Validated user copying, Ring 3 isolation, ELF loader, and POSIX compatible dispatcher.</p>
             <div class="card-meta">SYS_PUTC to SYS_WAITPID • docs/syscall</div>
           </article>
-          <article class="card">
+          <article class="card span-2">
             <div class="card-top">
               <div class="card-icon">✦</div>
               <span class="card-tag">DevEx • user and shell</span>
             </div>
-            <h3>Toolchain</h3>
+            <h3>Toolchain and Shell</h3>
             <p>In kernel C compiler kcc.elf and C SDK, shell with 78 built in commands and kvi editor for native development on bare metal.</p>
             <div class="card-meta">kcc • SDK • docs/userland and shell</div>
           </article>
@@ -154,13 +165,13 @@
           <p class="section-desc">Not mockups — direct captures from Keira running on QEMU. Drag to scroll or use arrow keys.</p>
         </div>
         <div class="strip" id="strip" tabindex="0" aria-label="Screenshot gallery">
-          <figure class="shot"><img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="lazy"><figcaption>Boot</figcaption></figure>
-          <figure class="shot"><img src="assets/02_Hardware_Telemetry_and_Thermals.png" alt="Hardware telemetry and thermals" loading="lazy"><figcaption>Telemetry</figcaption></figure>
-          <figure class="shot"><img src="assets/03_VFS_Storage_and_Redirection.png" alt="VFS storage and redirection" loading="lazy"><figcaption>VFS</figcaption></figure>
-          <figure class="shot"><img src="assets/04_Process_Lifecycle_and_Pipes.png" alt="Process lifecycle and pipes" loading="lazy"><figcaption>Processes</figcaption></figure>
-          <figure class="shot"><img src="assets/05_Native_KCC_Compiler_and_Ring3.png" alt="Native KCC compiler" loading="lazy"><figcaption>KCC</figcaption></figure>
-          <figure class="shot"><img src="assets/06_Networking_Security_and_Crypto.png" alt="Networking security and crypto" loading="lazy"><figcaption>Net and Crypto</figcaption></figure>
-          <figure class="shot"><img src="assets/07_Dual_Architecture_i686_Protected_Mode.png" alt="Dual architecture i686 protected mode" loading="lazy"><figcaption>i686</figcaption></figure>
+          <figure class="shot" data-caption="Keira Boot Screen"><img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="lazy" width="1280" height="800"><figcaption>Boot Screen</figcaption></figure>
+          <figure class="shot" data-caption="Hardware Telemetry and Thermals"><img src="assets/02_Hardware_Telemetry_and_Thermals.png" alt="Hardware telemetry and thermals" loading="lazy" width="1280" height="800"><figcaption>Telemetry and Thermals</figcaption></figure>
+          <figure class="shot" data-caption="VFS Storage and Redirection"><img src="assets/03_VFS_Storage_and_Redirection.png" alt="VFS storage and redirection" loading="lazy" width="1280" height="800"><figcaption>VFS Storage</figcaption></figure>
+          <figure class="shot" data-caption="Process Lifecycle and Pipes"><img src="assets/04_Process_Lifecycle_and_Pipes.png" alt="Process lifecycle and pipes" loading="lazy" width="1280" height="800"><figcaption>Process Lifecycle</figcaption></figure>
+          <figure class="shot" data-caption="Native KCC Compiler and Ring 3"><img src="assets/05_Native_KCC_Compiler_and_Ring3.png" alt="Native KCC compiler and Ring 3" loading="lazy" width="1280" height="800"><figcaption>Native KCC Compiler</figcaption></figure>
+          <figure class="shot" data-caption="Networking Security and Crypto"><img src="assets/06_Networking_Security_and_Crypto.png" alt="Networking security and crypto" loading="lazy" width="1280" height="800"><figcaption>Networking and Crypto</figcaption></figure>
+          <figure class="shot" data-caption="Dual Architecture i686 Protected Mode"><img src="assets/07_Dual_Architecture_i686_Protected_Mode.png" alt="Dual architecture i686 protected mode" loading="lazy" width="1280" height="800"><figcaption>i686 Protected Mode</figcaption></figure>
         </div>
       </div>
     </section>
@@ -201,10 +212,17 @@
           <p class="eyebrow">Quick Start</p>
           <h2>Build in seconds</h2>
           <p class="muted">Dual arch ISO and disk images in one command. Tested on QEMU.</p>
-          <pre><code>git clone https://github.com/mrvlous/keira
+          <div class="code-box">
+            <button class="copy-btn" id="copyQuickStart" aria-label="Copy quick start commands">
+              <svg class="icon-copy" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg class="icon-check" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span class="copy-label">Copy</span>
+            </button>
+            <pre><code id="quickStartCode">git clone https://github.com/mrvlous/keira
 cd keira
 make test-all   # x86_64 and i686
 make run        # QEMU</code></pre>
+          </div>
           <p class="hint">Copy with one click — code block is interactive</p>
           <div class="links">
             <a href="https://github.com/mrvlous/keira">Source</a>
@@ -242,7 +260,22 @@ make run        # QEMU</code></pre>
       <span>Built as an educational systems journey</span>
     </div>
   </footer>
-  <div class="lightbox" id="lightbox"><img alt="preview"></div>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+    <button class="lb-close" id="lbClose" aria-label="Close preview">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <button class="lb-prev" id="lbPrev" aria-label="Previous image">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <div class="lb-container">
+      <img id="lbImg" src="" alt="preview">
+      <p class="lb-caption" id="lbCaption"></p>
+    </div>
+    <button class="lb-next" id="lbNext" aria-label="Next image">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
