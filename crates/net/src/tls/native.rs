@@ -407,7 +407,13 @@ where
         &enc_buf[..enc_len],
         &mut on_progress,
     ) {
-        Ok((payload, cl)) => Ok((payload, cl)),
+        Ok((payload, cl)) => {
+            if payload.len() < 10 || payload[0] == 0x15 {
+                Err("TLS 1.3 Alert (Handshake rejected by host)")
+            } else {
+                Ok((payload, cl))
+            }
+        }
         Err(e) => {
             if target_ip != [10, 0, 2, 2] {
                 crate::tcp::stream::fetch_stream_download(

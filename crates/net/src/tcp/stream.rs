@@ -291,7 +291,7 @@ where
 
     // 1. Send SYN
     let mut syn_frame = [0u8; 60];
-    syn_frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+    syn_frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
     syn_frame[6..12].copy_from_slice(&mac);
     syn_frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -319,19 +319,22 @@ where
 
     e1000::transmit_raw_frame(&syn_frame[..54])?;
 
-    // 2. Wait for SYN-ACK with Retransmission (up to 4 attempts, 2500ms timeout per attempt)
+    // 2. Wait for SYN-ACK with Retransmission (up to 2 attempts, 1000ms timeout per attempt)
     let mut server_seq = 0u32;
     let mut synack_received = false;
     let mut rx_buf = [0u8; 2048];
 
-    for attempt in 0..4 {
+    for attempt in 0..2 {
         let start_tick = get_uptime_ms();
         if attempt > 0 {
             let _ = e1000::transmit_raw_frame(&syn_frame[..54]);
         }
 
-        while get_uptime_ms() < start_tick + 2500 {
+        while get_uptime_ms() < start_tick + 1000 {
             if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
+                if bytes >= 42 && rx_buf[12] == 0x08 && rx_buf[13] == 0x06 {
+                    crate::arp::handle_arp_packet(&rx_buf[..bytes]);
+                }
                 if bytes >= 54
                     && rx_buf[12] == 0x08
                     && rx_buf[13] == 0x00
@@ -367,7 +370,7 @@ where
 
     // 3. Send PSH-ACK with request data
     let mut data_frame = [0u8; 1024];
-    data_frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+    data_frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
     data_frame[6..12].copy_from_slice(&mac);
     data_frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -406,7 +409,7 @@ where
     // Helper to send TCP ACK
     let send_ack = |client_seq: u32, ack_num: u32| -> Result<(), &'static str> {
         let mut ack_frame = [0u8; 54];
-        ack_frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+        ack_frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
         ack_frame[6..12].copy_from_slice(&mac);
         ack_frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -442,14 +445,17 @@ where
     let mut data_retransmitted = false;
     let client_cur_seq = initial_seq.wrapping_add(1 + request_data.len() as u32);
 
-    while get_uptime_ms() < last_packet_time + 4000 {
-        if total_downloaded == 0 && !data_retransmitted && get_uptime_ms() > last_packet_time + 1800
+    while get_uptime_ms() < last_packet_time + 15000 {
+        if total_downloaded == 0 && !data_retransmitted && get_uptime_ms() > last_packet_time + 2500
         {
             data_retransmitted = true;
             let _ = e1000::transmit_raw_frame(&data_frame[..frame_len]);
         }
 
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
+            if bytes >= 42 && rx_buf[12] == 0x08 && rx_buf[13] == 0x06 {
+                crate::arp::handle_arp_packet(&rx_buf[..bytes]);
+            }
             if bytes >= 54
                 && rx_buf[12] == 0x08
                 && rx_buf[13] == 0x00

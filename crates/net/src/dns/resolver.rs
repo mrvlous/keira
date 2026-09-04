@@ -102,9 +102,11 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
         return Err("Network card offline");
     }
 
+    crate::arp::send_arp_announcement();
+
     let mut frame = [0u8; 256];
     let mac = E1000_MAC;
-    frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+    frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
     frame[6..12].copy_from_slice(&mac);
     frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -152,6 +154,9 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
 
     while get_uptime_ms() < start_tick + 4000 {
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
+            if bytes >= 42 && rx_buf[12] == 0x08 && rx_buf[13] == 0x06 {
+                crate::arp::handle_arp_packet(&rx_buf[..bytes]);
+            }
             if bytes >= 42 && rx_buf[12] == 0x08 && rx_buf[13] == 0x00 && rx_buf[23] == 17 {
                 let dns_data = &rx_buf[42..bytes];
                 if dns_data.len() >= 12 {
