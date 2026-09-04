@@ -4,6 +4,9 @@
 
 Welcome to the technical documentation for Keira Kernel. Built as an open, educational systems programming learning journey, this documentation system is organized into **13 first-class hyper-modular domains** providing exhaustive, in-depth architectural and implementation details.
 
+* **Official Website & Interactive Showcase**: [https://mrvlous.github.io/keira/](https://mrvlous.github.io/keira/)
+* **Source Repository**: [https://github.com/mrvlous/keira](https://github.com/mrvlous/keira)
+
 ---
 
 ## The Learning Journey

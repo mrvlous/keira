@@ -6,6 +6,8 @@
 
 This module is an open engineering journal and educational roadmap detailing the design decisions, challenges, and lessons learned while developing **Keira Kernel** from scratch in safe Rust, C, and Assembly.
 
+* **Live Evidence & Interactive Showcase**: [https://mrvlous.github.io/keira/](https://mrvlous.github.io/keira/)
+
 ---
 
 ## Learning Milestones Index

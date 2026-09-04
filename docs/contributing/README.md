@@ -6,6 +6,9 @@ Welcome to the Keira Kernel development and contributor guide! Keira is an educa
 
 Whether you are a student exploring systems programming, a seasoned developer curious about bare-metal Rust, or a hobbyist building your own OS, you are warmly invited to learn, experiment, and contribute.
 
+* **Project Landing Page & Showcase**: [https://mrvlous.github.io/keira/](https://mrvlous.github.io/keira/)
+* **Source Repository**: [https://github.com/mrvlous/keira](https://github.com/mrvlous/keira)
+
 ---
 
 ## Contributor Submodules

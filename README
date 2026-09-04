@@ -29,6 +29,7 @@ Read the detailed engineering journal: docs/journey/README.md
 Quick Start
 -----------
 
+* Official Landing Page: https://mrvlous.github.io/keira/
 * Get the latest code: https://github.com/mrvlous/keira
 * Setup the workspace: See docs/contributing/guides/setup.md
 * Build & run 64-bit kernel: `make run` (or `make run-64`)
@@ -123,6 +124,7 @@ follow the coding standards before proposing changes to Keira:
 Communication and Support
 =========================
 
+* Project Landing Page & Live Tour: https://mrvlous.github.io/keira/
 * Repository Home: https://github.com/mrvlous/keira
 * Issue Tracker: https://github.com/mrvlous/keira/issues
 * Technical Index: docs/README.md
