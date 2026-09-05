@@ -3,11 +3,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Keira Kernel</title>
   <meta name="description" content="Official GitHub Repository for Keira Kernel, a dual architecture x86_64 and i686 bare metal kernel in Rust, C99, and Assembly featuring eBPF and cBPF filtering, KVM virtualization framework, EXT4 read only filesystem, and native TLS 1.3 socket engine.">
   <meta property="og:title" content="Keira Kernel">
-  <meta property="og:description" content="A freestanding bare metal kernel for x86_64 and i686 written from scratch in Rust, C99, and Assembly. Preemptive scheduling, multi core SMP, 4 level paging, and Ring 3 isolation with 78 built in commands.">
+  <meta property="og:description" content="A freestanding bare metal kernel for x86_64 and i686 written from scratch in Rust, C99, and Assembly. Preemptive scheduling, multi core SMP, 4 level paging, and Ring 3 isolation with 62 syscall vectors and 78 built in commands.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://mrvlous.github.io/keira/">
   <meta property="og:image" content="https://mrvlous.github.io/keira/assets/01_Keira_Boot_Screen.png">
@@ -18,7 +18,7 @@
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -26,43 +26,114 @@
     <div class="container nav-inner">
       <a class="logo" href="#main" aria-label="Keira Kernel Home">Keira<span>Kernel</span></a>
       <div class="nav-actions">
-        <nav class="nav-links" id="navLinks" aria-label="Primary">
+        <nav class="nav-links desktop-only" aria-label="Primary">
           <a href="https://github.com/mrvlous/keira">GitHub</a>
           <a href="https://github.com/mrvlous/keira/tree/main/docs">Docs</a>
           <a href="#features">Features</a>
           <a href="#gallery">Gallery</a>
           <a href="#quick-start">Quick Start</a>
-          <a class="btn-small desktop-only" href="https://github.com/mrvlous/keira">Get Source</a>
+          <a class="btn-small" href="https://github.com/mrvlous/keira">Get Source</a>
         </nav>
         <div class="nav-controls">
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
-            <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-            <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"></path></svg>
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle light or dark theme" title="Toggle theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"></path></svg>
           </button>
-          <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+          <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileDrawer">
             <svg class="icon-menu" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             <svg class="icon-close" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
       </div>
     </div>
-    <div class="nav-drawer-backdrop" id="navBackdrop"></div>
   </header>
+
+  <!-- Dedicated Mobile Navigation Drawer -->
+  <div class="mobile-drawer-backdrop" id="mobileDrawerBackdrop"></div>
+  <aside class="mobile-drawer" id="mobileDrawer" aria-label="Mobile Navigation">
+    <div class="mobile-drawer-inner">
+      <div class="mobile-drawer-links">
+        <a href="https://github.com/mrvlous/keira" class="drawer-link">
+          <span>GitHub</span>
+          <svg class="drawer-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="https://github.com/mrvlous/keira/tree/main/docs" class="drawer-link">
+          <span>Documentation</span>
+          <svg class="drawer-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#features" class="drawer-link">
+          <span>Architecture &amp; Features</span>
+          <svg class="drawer-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#gallery" class="drawer-link">
+          <span>Live QEMU Gallery</span>
+          <svg class="drawer-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+        <a href="#quick-start" class="drawer-link">
+          <span>Quick Start Guide</span>
+          <svg class="drawer-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </a>
+      </div>
+
+      <div class="mobile-drawer-theme">
+        <div class="theme-label-row">
+          <span class="theme-title">Appearance</span>
+          <span class="theme-current" id="themeStatusLabel">Dark Mode</span>
+        </div>
+        <div class="theme-segmented" role="radiogroup" aria-label="Theme selection">
+          <button type="button" class="theme-seg-btn" id="themeSegLight" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            <span>Light</span>
+          </button>
+          <button type="button" class="theme-seg-btn" id="themeSegDark" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"></path></svg>
+            <span>Dark</span>
+          </button>
+          <button type="button" class="theme-seg-btn" id="themeSegAuto" role="radio" aria-checked="false">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>System</span>
+          </button>
+        </div>
+      </div>
+
+      <a href="https://github.com/mrvlous/keira" class="drawer-btn-primary">
+        <span>Get Source Code on GitHub</span>
+      </a>
+    </div>
+  </aside>
 
   <main id="main">
     <section class="hero-pro">
       <div class="container hero-pro-grid">
         <div class="hero-copy">
-          <p class="badge">x86_64 and i686 • Rust • C99 • Assembly • GPL 2.0 only</p>
+          <div class="badge-group">
+            <span class="badge-pill">x86_64 &amp; i686</span>
+            <span class="badge-pill">Rust • C99 • ASM</span>
+            <span class="badge-pill">GPL-2.0</span>
+          </div>
           <h1>Keira Kernel</h1>
           <p class="subtitle">A freestanding bare metal kernel for x86_64 and i686, written from scratch in Rust, C99, and Assembly and booting via Multiboot2.</p>
           <p class="desc">Hyper modular with 12 crates, 39k plus LOC, and 13 documentation domains. Preemptive scheduling, 4 level paging, multi core SMP, and Ring 3 isolation with 62 syscall vectors and 78 built in commands.</p>
           <div class="cta">
-            <a class="btn primary" href="https://github.com/mrvlous/keira">View on GitHub</a>
-            <a class="btn ghost" href="#quick-start">Quick Start</a>
+            <a class="btn primary" href="https://github.com/mrvlous/keira">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              <span>View on GitHub</span>
+            </a>
+            <a class="btn ghost" href="#quick-start">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              <span>Quick Start</span>
+            </a>
           </div>
-          <div class="code">
-            <code>make test-all</code><span>reproducible dual architecture build</span>
+          <div class="hero-cmd-chip" id="heroCmdChip" title="Click to copy make test-all">
+            <div class="hero-cmd-main">
+              <span class="hero-cmd-prompt">$</span>
+              <code>make test-all</code>
+              <button class="hero-cmd-copy" id="heroCmdCopyBtn" aria-label="Copy make test-all command">
+                <svg class="icon-copy" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <svg class="icon-check" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+            </div>
+            <span class="hero-cmd-desc">dual architecture build verification</span>
           </div>
         </div>
         <div class="hero-visual">
@@ -87,7 +158,7 @@
         <div class="stat-item"><span class="stat-num">12</span><span class="stat-label">crates</span></div>
         <div class="stat-item"><span class="stat-num">62</span><span class="stat-label">syscalls</span></div>
         <div class="stat-item"><span class="stat-num">13</span><span class="stat-label">doc domains</span></div>
-        <div class="stat-item"><span class="stat-num">2</span><span class="stat-label">archs x86_64 and i686</span></div>
+        <div class="stat-item"><span class="stat-num">2</span><span class="stat-label">archs x86_64 &amp; i686</span></div>
       </div>
     </section>
 
@@ -102,7 +173,7 @@
           <article class="card span-2">
             <div class="card-top">
               <div class="card-icon">◈</div>
-              <span class="card-tag">Memory and Task • crates/mem and task</span>
+              <span class="card-tag">Memory &amp; Task • crates/mem &amp; task</span>
             </div>
             <h3>Memory and Scheduling</h3>
             <p>Bitmap PMM, 4 level paging, heap, DMA, and swap. Preemptive scheduler with cgroups and POSIX signals and documented scheduler tick.</p>
@@ -111,7 +182,7 @@
           <article class="card">
             <div class="card-top">
               <div class="card-icon">⬡</div>
-              <span class="card-tag">Security • crates/crypto and net</span>
+              <span class="card-tag">Security • crates/crypto &amp; net</span>
             </div>
             <h3>Network and Security</h3>
             <p>TCP/IP with native TLS 1.3, firewall, and eBPF and cBPF with Seccomp filtering plus KVM framework. AES GCM and Curve25519.</p>
@@ -120,7 +191,7 @@
           <article class="card">
             <div class="card-top">
               <div class="card-icon">▦</div>
-              <span class="card-tag">Storage • crates/fs and io</span>
+              <span class="card-tag">Storage • crates/fs &amp; io</span>
             </div>
             <h3>Filesystem</h3>
             <p>VFS with FAT12/16/32, EXT4 read only, USTAR initrd, LVM, and RAID with 16 slot LRU sector cache.</p>
@@ -129,7 +200,7 @@
           <article class="card span-2">
             <div class="card-top">
               <div class="card-icon">⬢</div>
-              <span class="card-tag">Hardware • crates/arch and io</span>
+              <span class="card-tag">Hardware • crates/arch &amp; io</span>
             </div>
             <h3>Drivers</h3>
             <p>VGA and VBE, UART, PCI/PCIe with MSI, AHCI, NVMe, USB, and Intel e1000 with Virtio net. Multi core SMP topology, hardware watchpoints, and telemetry.</p>
@@ -147,7 +218,7 @@
           <article class="card span-2">
             <div class="card-top">
               <div class="card-icon">✦</div>
-              <span class="card-tag">DevEx • user and shell</span>
+              <span class="card-tag">DevEx • user &amp; shell</span>
             </div>
             <h3>Toolchain and Shell</h3>
             <p>In kernel C compiler kcc.elf and C SDK, shell with 78 built in commands and kvi editor for native development on bare metal.</p>
@@ -162,16 +233,22 @@
         <div class="section-head">
           <p class="eyebrow">Live Evidence</p>
           <h2>Real QEMU sessions</h2>
-          <p class="section-desc">Not mockups — direct captures from Keira running on QEMU. Drag to scroll or use arrow keys.</p>
+          <p class="section-desc">Not mockups — direct captures from Keira running on QEMU. Swipe or drag horizontally to view all captures.</p>
         </div>
-        <div class="strip" id="strip" tabindex="0" aria-label="Screenshot gallery">
-          <figure class="shot" data-caption="Keira Boot Screen"><img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="lazy" width="1280" height="800"><figcaption>Boot Screen</figcaption></figure>
-          <figure class="shot" data-caption="Hardware Telemetry and Thermals"><img src="assets/02_Hardware_Telemetry_and_Thermals.png" alt="Hardware telemetry and thermals" loading="lazy" width="1280" height="800"><figcaption>Telemetry and Thermals</figcaption></figure>
-          <figure class="shot" data-caption="VFS Storage and Redirection"><img src="assets/03_VFS_Storage_and_Redirection.png" alt="VFS storage and redirection" loading="lazy" width="1280" height="800"><figcaption>VFS Storage</figcaption></figure>
-          <figure class="shot" data-caption="Process Lifecycle and Pipes"><img src="assets/04_Process_Lifecycle_and_Pipes.png" alt="Process lifecycle and pipes" loading="lazy" width="1280" height="800"><figcaption>Process Lifecycle</figcaption></figure>
-          <figure class="shot" data-caption="Native KCC Compiler and Ring 3"><img src="assets/05_Native_KCC_Compiler_and_Ring3.png" alt="Native KCC compiler and Ring 3" loading="lazy" width="1280" height="800"><figcaption>Native KCC Compiler</figcaption></figure>
-          <figure class="shot" data-caption="Networking Security and Crypto"><img src="assets/06_Networking_Security_and_Crypto.png" alt="Networking security and crypto" loading="lazy" width="1280" height="800"><figcaption>Networking and Crypto</figcaption></figure>
-          <figure class="shot" data-caption="Dual Architecture i686 Protected Mode"><img src="assets/07_Dual_Architecture_i686_Protected_Mode.png" alt="Dual architecture i686 protected mode" loading="lazy" width="1280" height="800"><figcaption>i686 Protected Mode</figcaption></figure>
+        <div class="strip-wrapper">
+          <div class="strip" id="strip" tabindex="0" aria-label="Screenshot gallery">
+            <figure class="shot" data-caption="Keira Boot Screen"><img src="assets/01_Keira_Boot_Screen.png" alt="Keira boot screen" loading="lazy" width="1280" height="800"><figcaption>Boot Screen</figcaption></figure>
+            <figure class="shot" data-caption="Hardware Telemetry and Thermals"><img src="assets/02_Hardware_Telemetry_and_Thermals.png" alt="Hardware telemetry and thermals" loading="lazy" width="1280" height="800"><figcaption>Telemetry and Thermals</figcaption></figure>
+            <figure class="shot" data-caption="VFS Storage and Redirection"><img src="assets/03_VFS_Storage_and_Redirection.png" alt="VFS storage and redirection" loading="lazy" width="1280" height="800"><figcaption>VFS Storage</figcaption></figure>
+            <figure class="shot" data-caption="Process Lifecycle and Pipes"><img src="assets/04_Process_Lifecycle_and_Pipes.png" alt="Process lifecycle and pipes" loading="lazy" width="1280" height="800"><figcaption>Process Lifecycle</figcaption></figure>
+            <figure class="shot" data-caption="Native KCC Compiler and Ring 3"><img src="assets/05_Native_KCC_Compiler_and_Ring3.png" alt="Native KCC compiler and Ring 3" loading="lazy" width="1280" height="800"><figcaption>Native KCC Compiler</figcaption></figure>
+            <figure class="shot" data-caption="Networking Security and Crypto"><img src="assets/06_Networking_Security_and_Crypto.png" alt="Networking security and crypto" loading="lazy" width="1280" height="800"><figcaption>Networking and Crypto</figcaption></figure>
+            <figure class="shot" data-caption="Dual Architecture i686 Protected Mode"><img src="assets/07_Dual_Architecture_i686_Protected_Mode.png" alt="Dual architecture i686 protected mode" loading="lazy" width="1280" height="800"><figcaption>i686 Protected Mode</figcaption></figure>
+          </div>
+          <div class="gallery-hint">
+            <span class="gallery-hint-icon">↔</span>
+            <span>Swipe horizontally to explore 7 live captures</span>
+          </div>
         </div>
       </div>
     </section>
@@ -184,18 +261,18 @@
           <p class="section-desc">Start from the docs map and dive into any subsystem. Every crate has a matching guide.</p>
         </div>
         <div class="docs-grid">
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/journey">journey — 6 milestones</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/kernel">kernel — boot and HAL</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/memory">memory — PMM and VMM</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/task">task — scheduler</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/syscall">syscall — 62 vectors</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/fs">fs — VFS and FAT/EXT4</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/drivers">drivers — VGA, NVMe, e1000</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/net">net — TCP/IP and TLS 1.3</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/crypto">crypto — AES and Seccomp</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/shell">shell — 78 built-in commands</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/userland">userland — KCC and SDK</a>
-          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/contributing">contributing — setup and style</a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/journey"><span class="doc-tag">journey/</span><span class="doc-desc">6 milestones</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/kernel"><span class="doc-tag">kernel/</span><span class="doc-desc">boot and HAL</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/memory"><span class="doc-tag">memory/</span><span class="doc-desc">PMM and VMM</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/task"><span class="doc-tag">task/</span><span class="doc-desc">scheduler</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/syscall"><span class="doc-tag">syscall/</span><span class="doc-desc">62 vectors</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/fs"><span class="doc-tag">fs/</span><span class="doc-desc">VFS and FAT/EXT4</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/drivers"><span class="doc-tag">drivers/</span><span class="doc-desc">VGA, NVMe, e1000</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/net"><span class="doc-tag">net/</span><span class="doc-desc">TCP/IP and TLS 1.3</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/crypto"><span class="doc-tag">crypto/</span><span class="doc-desc">AES and Seccomp</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/shell"><span class="doc-tag">shell/</span><span class="doc-desc">78 built-in cmds</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/userland"><span class="doc-tag">userland/</span><span class="doc-desc">KCC and SDK</span></a>
+          <a class="doc-link" href="https://github.com/mrvlous/keira/tree/main/docs/contributing"><span class="doc-tag">contributing/</span><span class="doc-desc">setup and style</span></a>
         </div>
       </div>
     </section>
@@ -213,11 +290,17 @@
           <h2>Build in seconds</h2>
           <p class="muted">Dual arch ISO and disk images in one command. Tested on QEMU.</p>
           <div class="code-box">
-            <button class="copy-btn" id="copyQuickStart" aria-label="Copy quick start commands">
-              <svg class="icon-copy" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              <svg class="icon-check" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span class="copy-label">Copy</span>
-            </button>
+            <div class="code-box-header">
+              <div class="code-box-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="code-box-title">bash — quick start</span>
+              <button class="copy-btn" id="copyQuickStart" aria-label="Copy quick start commands">
+                <svg class="icon-copy" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <svg class="icon-check" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span class="copy-label">Copy</span>
+              </button>
+            </div>
             <pre><code id="quickStartCode">git clone https://github.com/mrvlous/keira
 cd keira
 make test-all # x86_64 and i686
@@ -265,16 +348,23 @@ make run # QEMU</code></pre>
     <button class="lb-close" id="lbClose" aria-label="Close preview">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </button>
-    <button class="lb-prev" id="lbPrev" aria-label="Previous image">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-    </button>
     <div class="lb-container">
+      <div class="lb-header">
+        <span class="lb-counter" id="lbCounter">1 / 7</span>
+        <p class="lb-caption" id="lbCaption"></p>
+      </div>
       <img id="lbImg" src="" alt="preview">
-      <p class="lb-caption" id="lbCaption"></p>
+      <div class="lb-mobile-nav">
+        <button class="lb-nav-btn" id="lbPrev" aria-label="Previous image">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span>Prev</span>
+        </button>
+        <button class="lb-nav-btn" id="lbNext" aria-label="Next image">
+          <span>Next</span>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
     </div>
-    <button class="lb-next" id="lbNext" aria-label="Next image">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </button>
   </div>
   <script src="script.js"></script>
 </body>

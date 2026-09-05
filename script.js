@@ -7,86 +7,167 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-// Theme toggle with localStorage
-const toggle = document.getElementById('themeToggle');
-const savedTheme = localStorage.getItem('keira-theme');
-if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-if (toggle){
-  toggle.addEventListener('click', () => {
+// Theme Management (Synchronized Navbar Toggle & Drawer Segmented Control)
+const themeToggle = document.getElementById('themeToggle');
+const themeStatusLabel = document.getElementById('themeStatusLabel');
+const segLight = document.getElementById('themeSegLight');
+const segDark = document.getElementById('themeSegDark');
+const segAuto = document.getElementById('themeSegAuto');
+
+function getSystemTheme(){
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function updateThemeUI(prefTheme){
+  const effectiveTheme = prefTheme === 'auto' ? getSystemTheme() : prefTheme;
+  if (prefTheme === 'auto'){
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', prefTheme);
+  }
+
+  // Update theme toggle tooltip/label
+  if (themeToggle){
+    const nextTheme = effectiveTheme === 'dark' ? 'Light' : 'Dark';
+    themeToggle.setAttribute('title', `Switch to ${nextTheme} Mode`);
+    themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} Mode`);
+  }
+
+  // Update drawer status label
+  if (themeStatusLabel){
+    if (prefTheme === 'auto'){
+      themeStatusLabel.textContent = `Auto (${effectiveTheme === 'dark' ? 'Dark' : 'Light'})`;
+    } else {
+      themeStatusLabel.textContent = effectiveTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+    }
+  }
+
+  // Update segmented control buttons
+  if (segLight) segLight.classList.toggle('active', prefTheme === 'light');
+  if (segDark) segDark.classList.toggle('active', prefTheme === 'dark');
+  if (segAuto) segAuto.classList.toggle('active', prefTheme === 'auto');
+}
+
+function setTheme(prefTheme){
+  localStorage.setItem('keira-theme', prefTheme);
+  updateThemeUI(prefTheme);
+}
+
+// Initialize theme
+const savedTheme = localStorage.getItem('keira-theme') || 'auto';
+updateThemeUI(savedTheme);
+
+// Listen to system theme change if auto
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  const currentPref = localStorage.getItem('keira-theme') || 'auto';
+  if (currentPref === 'auto'){
+    updateThemeUI('auto');
+  }
+});
+
+// Navbar toggle click (toggles between light and dark)
+if (themeToggle){
+  themeToggle.addEventListener('click', () => {
     const cur = document.documentElement.getAttribute('data-theme');
-    const isDark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = cur ? cur === 'dark' : getSystemTheme() === 'dark';
     const next = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('keira-theme', next);
+    setTheme(next);
   });
 }
 
-// Mobile navigation drawer toggle
+// Drawer Segmented Control buttons
+if (segLight) segLight.addEventListener('click', () => setTheme('light'));
+if (segDark) segDark.addEventListener('click', () => setTheme('dark'));
+if (segAuto) segAuto.addEventListener('click', () => setTheme('auto'));
+
+// Mobile navigation drawer toggle with body scroll lock
 const menuToggle = document.getElementById('menuToggle');
-const navLinks = document.getElementById('navLinks');
-const navBackdrop = document.getElementById('navBackdrop');
+const mobileDrawer = document.getElementById('mobileDrawer');
+const mobileDrawerBackdrop = document.getElementById('mobileDrawerBackdrop');
 
 function closeMobileMenu(){
-  if (navLinks) navLinks.classList.remove('open');
-  if (navBackdrop) navBackdrop.classList.remove('open');
+  if (mobileDrawer) mobileDrawer.classList.remove('open');
+  if (mobileDrawerBackdrop) mobileDrawerBackdrop.classList.remove('open');
   if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('menu-open');
 }
 
 function openMobileMenu(){
-  if (navLinks) navLinks.classList.add('open');
-  if (navBackdrop) navBackdrop.classList.add('open');
+  if (mobileDrawer) mobileDrawer.classList.add('open');
+  if (mobileDrawerBackdrop) mobileDrawerBackdrop.classList.add('open');
   if (menuToggle) menuToggle.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('menu-open');
 }
 
 if (menuToggle){
   menuToggle.addEventListener('click', () => {
-    const isOpen = navLinks && navLinks.classList.contains('open');
+    const isOpen = mobileDrawer && mobileDrawer.classList.contains('open');
     if (isOpen) closeMobileMenu();
     else openMobileMenu();
   });
 }
 
-if (navBackdrop){
-  navBackdrop.addEventListener('click', closeMobileMenu);
+if (mobileDrawerBackdrop){
+  mobileDrawerBackdrop.addEventListener('click', closeMobileMenu);
 }
 
-if (navLinks){
-  navLinks.querySelectorAll('a').forEach(link => {
+if (mobileDrawer){
+  mobileDrawer.querySelectorAll('.drawer-link').forEach(link => {
     link.addEventListener('click', closeMobileMenu);
   });
 }
 
-// Card 3D parallax on pointer movement
-const cards = document.querySelectorAll('.card');
-cards.forEach(card => {
-  card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    card.style.setProperty('--mx', x + 'px');
-    card.style.setProperty('--my', y + 'px');
-  });
+// Hero command chip click-to-copy
+const heroCmdChip = document.getElementById('heroCmdChip');
+const heroCmdBtn = document.getElementById('heroCmdCopyBtn');
+function copyHeroCommand(){
+  if (!navigator.clipboard) return;
+  navigator.clipboard.writeText('make test-all').then(() => {
+    if (heroCmdChip) heroCmdChip.classList.add('copied');
+    setTimeout(() => {
+      if (heroCmdChip) heroCmdChip.classList.remove('copied');
+    }, 1600);
+  }).catch(() => {});
+}
+if (heroCmdChip) heroCmdChip.addEventListener('click', copyHeroCommand);
+if (heroCmdBtn) heroCmdBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  copyHeroCommand();
 });
 
-// Interactive copy button
-const copyBtn = document.getElementById('copyQuickStart');
-const quickCode = document.getElementById('quickStartCode');
-if (copyBtn && quickCode){
-  copyBtn.addEventListener('click', async () => {
+// Quick start code copy button
+const copyQuickStart = document.getElementById('copyQuickStart');
+const quickStartCode = document.getElementById('quickStartCode');
+if (copyQuickStart && quickStartCode){
+  copyQuickStart.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(quickCode.innerText.trim());
-      copyBtn.classList.add('copied');
-      const label = copyBtn.querySelector('.copy-label');
+      await navigator.clipboard.writeText(quickStartCode.innerText.trim());
+      copyQuickStart.classList.add('copied');
+      const label = copyQuickStart.querySelector('.copy-label');
       if (label) label.textContent = 'Copied!';
       setTimeout(() => {
-        copyBtn.classList.remove('copied');
+        copyQuickStart.classList.remove('copied');
         if (label) label.textContent = 'Copy';
       }, 1600);
     } catch {}
   });
 }
 
-// Desktop mouse drag-to-scroll & keyboard navigation on gallery strip
+// Card 3D parallax on mouse move (desktop only)
+if (window.matchMedia('(hover: hover)').matches){
+  const cards = document.querySelectorAll('.card');
+  cards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mx', x + 'px');
+      card.style.setProperty('--my', y + 'px');
+    });
+  });
+}
+
+// Gallery strip drag-to-scroll & arrow navigation
 const strip = document.getElementById('strip');
 if (strip){
   let isDown = false;
@@ -124,10 +205,11 @@ if (strip){
   });
 }
 
-// Lightbox with controls, captions, touch swipe, and keyboard
+// Lightbox with counter, mobile thumb nav, touch swipe & keyboard
 const lb = document.getElementById('lightbox');
 const lbImg = document.getElementById('lbImg');
 const lbCaption = document.getElementById('lbCaption');
+const lbCounter = document.getElementById('lbCounter');
 const lbClose = document.getElementById('lbClose');
 const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
@@ -144,6 +226,7 @@ function showLightboxImage(idx){
   const caption = shot.getAttribute('data-caption') || shot.querySelector('figcaption')?.innerText || '';
   if (img) lbImg.src = img.src;
   if (lbCaption) lbCaption.innerText = caption;
+  if (lbCounter) lbCounter.innerText = `${currentIdx + 1} / ${shots.length}`;
 }
 
 shots.forEach((shot, i) => {
@@ -151,16 +234,24 @@ shots.forEach((shot, i) => {
     if (!lb) return;
     showLightboxImage(i);
     lb.classList.add('open');
+    document.body.classList.add('menu-open');
   });
 });
 
 function closeLightbox(){
   if (lb) lb.classList.remove('open');
+  document.body.classList.remove('menu-open');
 }
 
 if (lbClose) lbClose.addEventListener('click', closeLightbox);
-if (lbPrev) lbPrev.addEventListener('click', () => showLightboxImage(currentIdx - 1));
-if (lbNext) lbNext.addEventListener('click', () => showLightboxImage(currentIdx + 1));
+if (lbPrev) lbPrev.addEventListener('click', (e) => {
+  e.stopPropagation();
+  showLightboxImage(currentIdx - 1);
+});
+if (lbNext) lbNext.addEventListener('click', (e) => {
+  e.stopPropagation();
+  showLightboxImage(currentIdx + 1);
+});
 
 if (lb){
   lb.addEventListener('click', (e) => {
