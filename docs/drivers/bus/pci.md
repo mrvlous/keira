@@ -54,4 +54,3 @@ graph TD
 - **Message Control**: 16-bit field; bit 0 enables MSI delivery, bits 1..3 define requested vector count.
 - **Message Address**: 32-bit register programmed with Local APIC destination address `0xFEE00000 | (apic_id << 12)`.
 - **Message Data**: 16-bit register specifying assigned interrupt vector (`0x20..0xFE`) and delivery mode.
-

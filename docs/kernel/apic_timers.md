@@ -71,4 +71,3 @@ sequenceDiagram
 - **Low Register (`0x300`)**: Delivery mode, delivery status polling (`bit 12`), destination shorthand.
 - **High Register (`0x310`)**: Target APIC ID (`destination << 24`).
 - **Memory Mapping**: Local APIC physical address (`0xFEE00000`) is identity-mapped with writable permissions in kernel page tables.
-

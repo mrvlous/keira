@@ -64,4 +64,3 @@ graph TD
 - **Registers**: Full general-purpose register dump and flags register (`RFLAGS`).
 - **Code Bytes**: 16 bytes of machine code centered at the faulting instruction pointer (`RIP`/`EIP`).
 - **Stack Backtrace**: Stack frame unwinding printing up to 8 ancestor return addresses.
-
