@@ -305,7 +305,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: seccomp [status|strict|filter|load]\nConfigure kernel syscall filtering sandbox and security boundaries.\n");
             }
             Some("service") | Some("ksvc") => {
-                vga::print_str("Usage: service [list|start|stop|restart|status|enable|disable|edit|create] [name]\nManage background daemon services and .conf files under /config/sys/.\n");
+                vga::print_str("Usage: service [list|start|stop|restart|status|enable|disable|edit|create|logs|top|reload|reset] [name]\nManage background daemon services and .conf files under /config/sys/.\n");
             }
 
             Some("swap") => {

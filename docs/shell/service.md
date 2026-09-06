@@ -2,7 +2,7 @@
 
 # Keira Service Controller (`ksvc`) & Background Daemons
 
-This document specifies the internal architecture, configuration management, and runtime execution of background daemon services managed by `ksvc` in Keira Kernel.
+This document specifies the internal architecture, configuration management, telemetry sampling, and runtime execution of background daemon services managed by `ksvc` in Keira Kernel.
 
 ---
 
@@ -12,12 +12,16 @@ This document specifies the internal architecture, configuration management, and
 graph TD
     KernelBoot["Kernel Boot / run_boot_script()"] --> InitSvc["auto_start_enabled_services()"]
     InitSvc --> ConfReader["Parse /config/sys/*.conf"]
-    ConfReader --> SvcTable["SERVICES Table (MAX_SERVICES = 8)"]
+    ConfReader --> SvcTable["SERVICES Table (MAX_SERVICES = 16)"]
     ShellRunloop["Shell Event Loop (tick_all)"] --> Dispatch["Interval Dispatcher & Socket Poller"]
     Dispatch --> Httpd["httpd: Micro Web & REST API Server (Port 80)"]
     Dispatch --> Syncd["syncd: FAT16 Auto-Sync & Cache Flush (15s)"]
     Dispatch --> Syslogd["syslogd: Kernel Audit Logger (/data/log/syslog.log)"]
-    Dispatch --> Watchdogd["watchdogd: Memory & Task Supervisor (10s)"]
+    Dispatch --> Watchdogd["watchdogd: Memory & PMM Supervisor (10s)"]
+    Dispatch --> Timed["timed: CMOS RTC & System Clock Sync (30s)"]
+    Dispatch --> Monitord["monitord: Telemetry & Memory Sampler (10s)"]
+    Dispatch --> Netd["netd: Network State & ARP Maintainer (15s)"]
+    SvcTable --> LogRing["In-Memory Event Ring Buffer (MAX_LOG_LINES = 4)"]
 ```
 
 ---
@@ -29,7 +33,10 @@ graph TD
 | **`httpd`** | Native Micro Web & REST API Server | Port 80 (TCP) | `/config/sys/httpd.conf` | Enabled |
 | **`syncd`** | FAT16 Auto-Sync & Dirty Cache Flush | Interval 15s | `/config/sys/syncd.conf` | Enabled |
 | **`syslogd`** | Kernel Event & Audit Logger Service | Interval 5s | `/config/sys/syslogd.conf` | Enabled |
-| **`watchdogd`** | Memory & Task Health Supervisor | Interval 10s | `/config/sys/watchdogd.conf` | Disabled |
+| **`watchdogd`** | Memory & Task Health Watchdog | Interval 10s | `/config/sys/watchdogd.conf` | Enabled |
+| **`timed`** | CMOS RTC & System Clock Sync Daemon | Interval 30s | `/config/sys/timed.conf` | Enabled |
+| **`monitord`** | System Health & Telemetry Daemon | Interval 10s | `/config/sys/monitord.conf` | Enabled |
+| **`netd`** | Network State & ARP Cache Daemon | Interval 15s | `/config/sys/netd.conf` | Enabled |
 
 ---
 
@@ -55,6 +62,8 @@ pub unsafe fn auto_start_enabled_services();
 pub unsafe fn start_service(name: &str) -> Result<(), &'static str>;
 pub unsafe fn stop_service(name: &str) -> Result<(), &'static str>;
 pub unsafe fn restart_service(name: &str) -> Result<(), &'static str>;
+pub unsafe fn reload_service(name: &str) -> Result<(), &'static str>;
+pub unsafe fn reset_service_stats(name: &str) -> Result<(), &'static str>;
 pub unsafe fn enable_service(name: &str, enable: bool) -> Result<(), &'static str>;
 pub unsafe fn tick_all();
 ```
@@ -67,8 +76,21 @@ pub unsafe fn tick_all();
 # List all registered services and their real-time state
 keira> ksvc list
 
+# Display real-time cycle counts, intervals, uptime, and last events
+keira> ksvc top
+
 # Inspect detailed telemetry of a service
 keira> ksvc status httpd
+
+# View live service event logs from ring buffer and disk
+keira> ksvc logs syslogd
+keira> ksvc logs monitord
+
+# Hot-reload configuration without restarting service
+keira> ksvc reload httpd
+
+# Reset performance and cycle counters
+keira> ksvc reset timed
 
 # Start, stop, or restart a background service
 keira> ksvc start watchdogd
@@ -78,7 +100,4 @@ keira> ksvc restart httpd
 # Enable or disable service boot auto-start
 keira> ksvc enable watchdogd
 keira> ksvc disable httpd
-
-# View live service logs
-keira> ksvc logs syslogd
 ```

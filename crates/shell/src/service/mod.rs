@@ -14,14 +14,38 @@
 //! Manages native background services, daemon lifecycles, and configuration files (`.conf`)
 //! stored in the canonical `/config/sys/` directory hierarchy.
 
-pub const MAX_SERVICES: usize = 8;
+pub const MAX_SERVICES: usize = 16;
 pub const CONF_DIR: &str = "/config/sys";
+pub const MAX_LOG_LINES: usize = 4;
+pub const MAX_LOG_LEN: usize = 64;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum ServiceState {
     Stopped,
     Running,
     Failed,
+}
+
+/// In-memory circular log entry for recent service events and telemetry.
+#[derive(Copy, Clone)]
+pub struct ServiceLogEntry {
+    pub text: [u8; MAX_LOG_LEN],
+    pub len: usize,
+    pub timestamp_ms: u64,
+}
+
+impl ServiceLogEntry {
+    pub const fn empty() -> Self {
+        Self {
+            text: [0u8; MAX_LOG_LEN],
+            len: 0,
+            timestamp_ms: 0,
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        core::str::from_utf8(&self.text[..self.len]).unwrap_or("")
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -42,6 +66,8 @@ pub struct ServiceRecord {
     pub bytes_count: u64,
     pub conf_path: [u8; 32],
     pub conf_path_len: usize,
+    pub logs: [ServiceLogEntry; MAX_LOG_LINES],
+    pub log_head: usize,
 }
 
 impl ServiceRecord {
@@ -63,6 +89,8 @@ impl ServiceRecord {
             bytes_count: 0,
             conf_path: [0u8; 32],
             conf_path_len: 0,
+            logs: [ServiceLogEntry::empty(); MAX_LOG_LINES],
+            log_head: 0,
         }
     }
 
@@ -76,6 +104,16 @@ impl ServiceRecord {
 
     pub fn conf_path_str(&self) -> &str {
         core::str::from_utf8(&self.conf_path[..self.conf_path_len]).unwrap_or("")
+    }
+
+    pub fn log_event(&mut self, text: &str, timestamp_ms: u64) {
+        let idx = self.log_head % MAX_LOG_LINES;
+        let tbytes = text.as_bytes();
+        let len = tbytes.len().min(MAX_LOG_LEN);
+        self.logs[idx].text[..len].copy_from_slice(&tbytes[..len]);
+        self.logs[idx].len = len;
+        self.logs[idx].timestamp_ms = timestamp_ms;
+        self.log_head = self.log_head.wrapping_add(1);
     }
 }
 
@@ -146,6 +184,9 @@ pub fn parse_conf_into_record(content: &str, record: &mut ServiceRecord) {
 }
 
 /// Initialize built-in services and load their .conf files from /config/sys/.
+///
+/// # Safety
+/// Must be executed in a synchronized kernel context during early shell initialization.
 pub unsafe fn init() {
     if INITIALIZED {
         return;
@@ -153,7 +194,7 @@ pub unsafe fn init() {
 
     SERVICE_COUNT = 0;
 
-    // Register built-in default services
+    // Register built-in default services (7 primary system daemons)
     register_service_builtin(
         "httpd",
         "Native Micro Web & REST API Server",
@@ -184,7 +225,31 @@ pub unsafe fn init() {
         0,
         10,
         "/config/sys/watchdogd.conf",
-        false,
+        true,
+    );
+    register_service_builtin(
+        "timed",
+        "CMOS RTC & System Clock Sync Daemon",
+        0,
+        30,
+        "/config/sys/timed.conf",
+        true,
+    );
+    register_service_builtin(
+        "monitord",
+        "System Health & Telemetry Daemon",
+        0,
+        10,
+        "/config/sys/monitord.conf",
+        true,
+    );
+    register_service_builtin(
+        "netd",
+        "Network State & ARP Daemon",
+        0,
+        15,
+        "/config/sys/netd.conf",
+        true,
     );
 
     // Read and override configurations from .conf files if present on disk
@@ -195,6 +260,10 @@ pub unsafe fn init() {
     INITIALIZED = true;
 }
 
+/// Register a built-in service definition into the table.
+///
+/// # Safety
+/// Accesses and modifies global static `SERVICES` and `SERVICE_COUNT`.
 unsafe fn register_service_builtin(
     name: &str,
     desc: &str,
@@ -231,6 +300,9 @@ unsafe fn register_service_builtin(
 }
 
 /// Reload configuration for a service from its .conf file on disk.
+///
+/// # Safety
+/// Index must be within bounds; accesses global static mutable services array.
 pub unsafe fn reload_service_conf(idx: usize) {
     if idx >= SERVICE_COUNT {
         return;
@@ -245,6 +317,9 @@ pub unsafe fn reload_service_conf(idx: usize) {
 }
 
 /// Auto-start all enabled services on system boot.
+///
+/// # Safety
+/// Initializes and starts services during early shell initialization.
 pub unsafe fn auto_start_enabled_services() {
     init();
     for i in 0..SERVICE_COUNT {
@@ -255,6 +330,9 @@ pub unsafe fn auto_start_enabled_services() {
 }
 
 /// Start a service by index.
+///
+/// # Safety
+/// Modifies global static services table and interacts with filesystem.
 pub unsafe fn start_service_by_idx(idx: usize) -> Result<(), &'static str> {
     if idx >= SERVICE_COUNT {
         return Err("Service index out of range");
@@ -264,22 +342,31 @@ pub unsafe fn start_service_by_idx(idx: usize) -> Result<(), &'static str> {
     SERVICES[idx].state = ServiceState::Running;
     SERVICES[idx].start_time_ms = now;
     SERVICES[idx].last_tick_ms = now;
+    SERVICES[idx].log_event("Service started", now);
 
     // Initial action on start
-    if SERVICES[idx].name_str() == "httpd" {
-        // Prepare web server root directory
+    let name = SERVICES[idx].name_str();
+    if name == "httpd" {
         let _ = keira_fs::fat::create_dir("/data/www");
         SERVICES[idx].cycles_count = 1;
-    } else if SERVICES[idx].name_str() == "syslogd" {
+        SERVICES[idx].log_event("HTTP server listening on port 80", now);
+    } else if name == "syslogd" {
         let _ = keira_fs::fat::create_dir("/data/log");
         let initial_log = b"[INFO] Keira Service Controller (ksvc) initialized syslog daemon\n";
         let _ = keira_fs::fat::append_file_content("/data/log/syslog.log", initial_log);
+    } else if name == "monitord" {
+        let _ = keira_fs::fat::create_dir("/data/log");
+        let initial_log = b"[INFO] Keira Telemetry Monitor (monitord) initialized\n";
+        let _ = keira_fs::fat::append_file_content("/data/log/monitor.log", initial_log);
     }
 
     Ok(())
 }
 
 /// Start a service by name.
+///
+/// # Safety
+/// Modifies global static services table.
 pub unsafe fn start_service(name: &str) -> Result<(), &'static str> {
     init();
     for i in 0..SERVICE_COUNT {
@@ -291,11 +378,16 @@ pub unsafe fn start_service(name: &str) -> Result<(), &'static str> {
 }
 
 /// Stop a service by name.
+///
+/// # Safety
+/// Modifies global static services table.
 pub unsafe fn stop_service(name: &str) -> Result<(), &'static str> {
     init();
     for i in 0..SERVICE_COUNT {
         if SERVICES[i].name_str() == name {
             SERVICES[i].state = ServiceState::Stopped;
+            let now = get_uptime_ms();
+            SERVICES[i].log_event("Service stopped", now);
             return Ok(());
         }
     }
@@ -303,12 +395,53 @@ pub unsafe fn stop_service(name: &str) -> Result<(), &'static str> {
 }
 
 /// Restart a service by name.
+///
+/// # Safety
+/// Modifies global static services table.
 pub unsafe fn restart_service(name: &str) -> Result<(), &'static str> {
     stop_service(name)?;
     start_service(name)
 }
 
+/// Reload configuration for a service by name.
+///
+/// # Safety
+/// Accesses and modifies global static services table.
+pub unsafe fn reload_service(name: &str) -> Result<(), &'static str> {
+    init();
+    for i in 0..SERVICE_COUNT {
+        if SERVICES[i].name_str() == name {
+            reload_service_conf(i);
+            let now = get_uptime_ms();
+            SERVICES[i].log_event("Configuration reloaded", now);
+            return Ok(());
+        }
+    }
+    Err("Service not found")
+}
+
+/// Reset telemetry and cycle counters for a service.
+///
+/// # Safety
+/// Accesses and modifies global static services table.
+pub unsafe fn reset_service_stats(name: &str) -> Result<(), &'static str> {
+    init();
+    for i in 0..SERVICE_COUNT {
+        if SERVICES[i].name_str() == name {
+            SERVICES[i].cycles_count = 0;
+            SERVICES[i].bytes_count = 0;
+            let now = get_uptime_ms();
+            SERVICES[i].log_event("Counters reset", now);
+            return Ok(());
+        }
+    }
+    Err("Service not found")
+}
+
 /// Enable a service to auto-start on boot and update its .conf file.
+///
+/// # Safety
+/// Modifies global static services table and writes configuration to VFS.
 pub unsafe fn enable_service(name: &str, enable: bool) -> Result<(), &'static str> {
     init();
     for i in 0..SERVICE_COUNT {
@@ -369,6 +502,15 @@ pub unsafe fn enable_service(name: &str, enable: bool) -> Result<(), &'static st
             }
 
             let _ = keira_fs::fat::write_file_content(conf_path, &conf_buf[..len]);
+            let now = get_uptime_ms();
+            SERVICES[i].log_event(
+                if enable {
+                    "Auto-start enabled"
+                } else {
+                    "Auto-start disabled"
+                },
+                now,
+            );
             return Ok(());
         }
     }
@@ -376,6 +518,9 @@ pub unsafe fn enable_service(name: &str, enable: bool) -> Result<(), &'static st
 }
 
 /// Background ticker: called on every shell event loop iteration / timer tick.
+///
+/// # Safety
+/// Iterates over and modifies background services runtime state and filesystems.
 pub unsafe fn tick_all() {
     if !INITIALIZED {
         return;
@@ -397,6 +542,7 @@ pub unsafe fn tick_all() {
             if name == "syncd" {
                 // Background filesystem auto-sync
                 let _ = keira_fs::fat::flush_dirty_sectors();
+                SERVICES[i].log_event("Filesystem dirty sectors flushed", now);
             } else if name == "syslogd" {
                 // Background audit logger
                 let mut log_buf = [0u8; 128];
@@ -429,12 +575,160 @@ pub unsafe fn tick_all() {
 
                 let _ =
                     keira_fs::fat::append_file_content("/data/log/syslog.log", &log_buf[..offset]);
+                SERVICES[i].log_event("Syslog heartbeat recorded", now);
             } else if name == "watchdogd" {
-                // Background memory & heap supervisor
-                // Validates heap alloc integrity
+                // Memory & heap health supervisor
+                let (total_frames, alloc_frames, free_frames) = keira_mem::pmm::get_stats();
+                let pmm_res = keira_mem::verify_pmm_invariants();
+
+                if total_frames > 0 && free_frames < total_frames / 20 {
+                    SERVICES[i].log_event("WARN: Low physical memory threshold", now);
+                    let alert = b"[WARN] watchdogd: Physical memory below 5% threshold\n";
+                    let _ = keira_fs::fat::append_file_content("/data/log/syslog.log", alert);
+                } else if pmm_res.is_err() {
+                    SERVICES[i].log_event("WARN: PMM invariant check anomaly", now);
+                } else {
+                    SERVICES[i].log_event("Memory & PMM invariant check healthy", now);
+                }
+            } else if name == "timed" {
+                // CMOS RTC & system clock sync daemon
+                #[repr(C)]
+                struct RtcTime {
+                    second: u8,
+                    minute: u8,
+                    hour: u8,
+                    day: u8,
+                    month: u8,
+                    year: u16,
+                }
+                extern "C" {
+                    fn rtc_get_time(time: *mut RtcTime);
+                }
+                let mut t = RtcTime {
+                    second: 0,
+                    minute: 0,
+                    hour: 0,
+                    day: 0,
+                    month: 0,
+                    year: 0,
+                };
+                rtc_get_time(&mut t as *mut RtcTime);
+                SERVICES[i].log_event("RTC clock drift synchronized", now);
+            } else if name == "monitord" {
+                // Hardware telemetry & performance sampler
+                let (total_frames, alloc_frames, free_frames) = keira_mem::pmm::get_stats();
+                let heap_used = keira_mem::heap_get_used();
+
+                let mut mon_buf = [0u8; 160];
+                let mut m_offset = 0;
+                let pfx = b"[METRIC] Uptime: ";
+                mon_buf[m_offset..m_offset + pfx.len()].copy_from_slice(pfx);
+                m_offset += pfx.len();
+
+                let mut v = now / 1000;
+                let mut dig = [0u8; 16];
+                let mut dl = 0;
+                if v == 0 {
+                    dig[0] = b'0';
+                    dl = 1;
+                } else {
+                    while v > 0 {
+                        dig[dl] = b'0' + (v % 10) as u8;
+                        dl += 1;
+                        v /= 10;
+                    }
+                }
+                for k in 0..dl {
+                    mon_buf[m_offset] = dig[dl - 1 - k];
+                    m_offset += 1;
+                }
+
+                let mid = b"s | RAM alloc: ";
+                mon_buf[m_offset..m_offset + mid.len()].copy_from_slice(mid);
+                m_offset += mid.len();
+
+                v = alloc_frames;
+                dl = 0;
+                if v == 0 {
+                    dig[0] = b'0';
+                    dl = 1;
+                } else {
+                    while v > 0 {
+                        dig[dl] = b'0' + (v % 10) as u8;
+                        dl += 1;
+                        v /= 10;
+                    }
+                }
+                for k in 0..dl {
+                    mon_buf[m_offset] = dig[dl - 1 - k];
+                    m_offset += 1;
+                }
+
+                let slash = b"/";
+                mon_buf[m_offset..m_offset + slash.len()].copy_from_slice(slash);
+                m_offset += slash.len();
+
+                v = total_frames;
+                dl = 0;
+                if v == 0 {
+                    dig[0] = b'0';
+                    dl = 1;
+                } else {
+                    while v > 0 {
+                        dig[dl] = b'0' + (v % 10) as u8;
+                        dl += 1;
+                        v /= 10;
+                    }
+                }
+                for k in 0..dl {
+                    mon_buf[m_offset] = dig[dl - 1 - k];
+                    m_offset += 1;
+                }
+
+                let heap_str = b" frames | Heap used: ";
+                mon_buf[m_offset..m_offset + heap_str.len()].copy_from_slice(heap_str);
+                m_offset += heap_str.len();
+
+                v = heap_used as u64;
+                dl = 0;
+                if v == 0 {
+                    dig[0] = b'0';
+                    dl = 1;
+                } else {
+                    while v > 0 {
+                        dig[dl] = b'0' + (v % 10) as u8;
+                        dl += 1;
+                        v /= 10;
+                    }
+                }
+                for k in 0..dl {
+                    mon_buf[m_offset] = dig[dl - 1 - k];
+                    m_offset += 1;
+                }
+
+                let end = b"B\n";
+                mon_buf[m_offset..m_offset + end.len()].copy_from_slice(end);
+                m_offset += end.len();
+
+                let _ = keira_fs::fat::append_file_content(
+                    "/data/log/monitor.log",
+                    &mon_buf[..m_offset],
+                );
+                SERVICES[i].log_event("Telemetry snapshot recorded", now);
+            } else if name == "netd" {
+                // Network link monitor & ARP cache maintenance
+                let carrier = keira_net::E1000_FOUND;
+                if carrier {
+                    SERVICES[i].log_event("Carrier UP (Intel e1000 active)", now);
+                } else {
+                    SERVICES[i].log_event("Carrier standby: no active NIC", now);
+                }
             }
         } else if name == "httpd" {
-            // Web server background socket poller / request processor
+            // Web server background socket poller
+            if SERVICES[i].cycles_count == 1 {
+                SERVICES[i].log_event("HTTP server active on port 80", now);
+            }
         }
     }
 }

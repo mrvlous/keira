@@ -295,7 +295,14 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)printf "127.0.0.1\tlocalhost\n127.0.1.1\tkeira\n" > $(FS_ROOT)/config/sys/hosts
 	$(Q)printf "admin:x:0:0:System Administrator:/users/admin:/system/bin/shell\ndefault:x:1000:1000:Default User:/users/default:/system/bin/shell\nguest:x:1001:1001:Guest Account:/users/guest:/system/bin/shell\n" > $(FS_ROOT)/config/sys/passwd
 	$(Q)printf "admin:x:0:admin\ndefault:x:1000:default\nguest:x:1001:guest\n" > $(FS_ROOT)/config/sys/group
-	$(Q)printf "# Keira System Services Configuration\n[httpd]\nenabled=true\nport=80\nroot=/data/www\n\n[syslogd]\nenabled=true\nfile=/data/log/syslog.log\n\n[syncd]\nenabled=true\ninterval=30\n\n[watchdogd]\nenabled=true\ntimeout=60\n" > $(FS_ROOT)/config/sys/services.conf
+	$(Q)printf "# Keira System Services Configuration\n[httpd]\nenabled=true\nport=80\nroot=/data/www\n\n[syslogd]\nenabled=true\nfile=/data/log/syslog.log\n\n[syncd]\nenabled=true\ninterval=30\n\n[watchdogd]\nenabled=true\ntimeout=60\n\n[timed]\nenabled=true\ninterval=30\n\n[monitord]\nenabled=true\ninterval=10\n\n[netd]\nenabled=true\ninterval=15\n" > $(FS_ROOT)/config/sys/services.conf
+	$(Q)printf "# Keira Service Configuration\nname=httpd\ndescription=Native Micro Web & REST API Server\nenabled=1\nauto_restart=1\nport=80\n" > $(FS_ROOT)/config/sys/httpd.conf
+	$(Q)printf "# Keira Service Configuration\nname=syncd\ndescription=FAT16 Auto-Sync & Cache Flush Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/syncd.conf
+	$(Q)printf "# Keira Service Configuration\nname=syslogd\ndescription=Kernel Event & Audit Logger Service\nenabled=1\nauto_restart=1\ninterval=5\n" > $(FS_ROOT)/config/sys/syslogd.conf
+	$(Q)printf "# Keira Service Configuration\nname=watchdogd\ndescription=Memory & Task Health Watchdog\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/watchdogd.conf
+	$(Q)printf "# Keira Service Configuration\nname=timed\ndescription=CMOS RTC & System Clock Sync Daemon\nenabled=1\nauto_restart=1\ninterval=30\n" > $(FS_ROOT)/config/sys/timed.conf
+	$(Q)printf "# Keira Service Configuration\nname=monitord\ndescription=System Health & Telemetry Daemon\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/monitord.conf
+	$(Q)printf "# Keira Service Configuration\nname=netd\ndescription=Network State & ARP Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/netd.conf
 	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/admin\nexport USER=admin\n" > $(FS_ROOT)/users/admin/.profile
 	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default\n" > $(FS_ROOT)/users/default/.profile
 	$(Q)printf "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest\n" > $(FS_ROOT)/users/guest/.profile
@@ -303,6 +310,7 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/data/log/boot.log
 	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
 	$(Q)printf "[INFO] Keira Service Controller (ksvc) system logger initialized.\n" > $(FS_ROOT)/data/log/syslog.log
+	$(Q)printf "[INFO] Keira Telemetry Monitor (monitord) initialized.\n" > $(FS_ROOT)/data/log/monitor.log
 	$(Q)printf "KEY=VALUE\n" > $(FS_ROOT)/data/save/session.dat
 	$(Q)printf "<!DOCTYPE html><html><head><title>Keira Kernel</title></head><body style=\"background:#111;color:#eee;font-family:sans-serif;padding:40px;\"><h1>Keira Kernel v$(VERSION)</h1><p>Native Background Web &amp; REST API Server (httpd)</p><p>Status: <strong>Active &amp; Serving</strong></p></body></html>\n" > $(FS_ROOT)/data/www/index.html
 	$(Q)touch $(FS_ROOT)/temp/.keep

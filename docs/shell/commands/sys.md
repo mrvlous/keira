@@ -16,7 +16,7 @@ This document details all native commands in Keira Kernel related to hardware di
 | `runtime` | `runtime` | `[Active]` | Display time elapsed since system boot in milliseconds |
 | `time` | `time` | `[Active]` | Query Real-Time Clock (RTC) date and time in UTC |
 | `memory` | `memory` | `[Active]` | Inspect physical frame allocations (PMM) and heap memory telemetry |
-| `service` | `service [list \| start <svc> \| stop <svc> \| edit <svc>]` | `[Active]` | Inspect and control `ksvc` background service daemons (httpd, syslogd, syncd, watchdogd) |
+| `service` | `service [list \| start \| stop \| restart \| status \| logs \| top \| reload \| reset \| edit \| create]` | `[Active]` | Inspect and control `ksvc` background daemons (httpd, syncd, syslogd, watchdogd, timed, monitord, netd) |
 | `env` | `env [list \| set <k> <v> \| get <k>]` | `[Active]` | Inspect and manipulate shell runtime environment variables |
 | `hostname` | `hostname [get \| set <name>]` | `[Active]` | Query or update persistent system hostname in `/config/sys/hostname` |
 | `power` | `power [status \| acpi \| shutdown \| reboot]` | `[Active]` | Query ACPI power state, initiate S5 soft-off shutdown, or reboot CPU |
@@ -48,15 +48,20 @@ Kernel Bump/Slab Heap:
   Allocations   : 1420 active
 ```
 
-### `service list`
-Displays the status of background services managed by `ksvc`:
+### `service list` & `ksvc top`
+Displays all background services and telemetry managed by `ksvc`:
 ```bash
 keira> service list
-Service Name  State     Port/PID  Description
-[httpd]       RUNNING   Port 80   Native Background HTTP Web Server
-[syslogd]     RUNNING   PID 3     System Event Logging Daemon
-[syncd]       RUNNING   PID 4     Filesystem Cache Auto-Sync Daemon
-[watchdogd]   RUNNING   PID 5     Kernel Health & Crash Watchdog
+Keira Service Controller (ksvc) - Background Daemons
+  SERVICE       PID    STATE      PORT / INTERVAL    CONFIG PATH
+  ------------  -----  ---------  -----------------  ------------------------------
+  httpd         2      RUNNING    Port 80 (TCP)      /config/sys/httpd.conf
+  syncd         3      RUNNING    Interval 15s       /config/sys/syncd.conf
+  syslogd       4      RUNNING    Interval 5s        /config/sys/syslogd.conf
+  watchdogd     5      RUNNING    Interval 10s       /config/sys/watchdogd.conf
+  timed         6      RUNNING    Interval 30s       /config/sys/timed.conf
+  monitord      7      RUNNING    Interval 10s       /config/sys/monitord.conf
+  netd          8      RUNNING    Interval 15s       /config/sys/netd.conf
 ```
 
 ### `smp`
