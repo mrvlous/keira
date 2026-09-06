@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Operating System Kernel
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+
+# Git Ignore Specification for gh-pages
+/target/
+/build/
+crates/
+*.bin
+*.log
+*.tmp
+.DS_Store
