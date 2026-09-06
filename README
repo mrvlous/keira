@@ -9,7 +9,8 @@ Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers, and
 provides a preemptive multitasking scheduler, POSIX system calls, bare-metal
 TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR initrd, Ring 3 userland
-isolation, and an in-kernel C compiler (kcc.elf).
+isolation, background daemon controller (ksvc), and an in-kernel C compiler
+(kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
@@ -23,6 +24,7 @@ of computer systems:
 * Bare-Metal Networking: e1000/RTL8139, ARP, IPv4, UDP, DHCP, DNS, TCP, TLS.
 * Storage & Filesystems: ATA, AHCI, NVMe, FAT16, block LRU cache, and VFS.
 * Ring 3 Userland: Privilege separation, syscall ABI, and native C compiler.
+* Background Services: Autonomous daemon supervisor (ksvc) and system services.
 
 Read the detailed engineering journal: docs/journey/README.md
 
@@ -97,6 +99,7 @@ Explore the kernel's core subsystems and design details:
 * TAR Boot initrd Reader: docs/fs/initrd.md
 * Native KCC Compiler: docs/userland/compiler/README.md
 * Freestanding C SDK: docs/userland/sdk/README.md
+* Service Controller & Daemons: docs/shell/service.md
 * Multi-User Accounts & System Hostname: docs/userland/system/users.md
 * POSIX File Permissions & Multi-TTY: docs/userland/system/permissions.md
 
