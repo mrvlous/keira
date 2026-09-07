@@ -17,6 +17,7 @@
 *.o
 *.a
 *.bin
+!crates/io/src/vga/vga_font.bin
 *.elf
 *.iso
 *.img
