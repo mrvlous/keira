@@ -20,7 +20,7 @@ This document details all native commands in Keira Kernel related to hardware di
 | `lvm` | `lvm [list \| create <vg> <pv> \| info]` | `[Preview]` | Display and configure Logical Volume Manager volume groups |
 | `nvme` | `nvme [info \| list \| stats]` | `[Preview]` | Display NVMe PCIe controller registers, queues, and namespace stats |
 | `raid` | `raid [status \| create <md> <lvl>]` | `[Preview]` | Inspect software RAID array configuration (RAID 0, RAID 1) |
-| `swap` | `swap [status \| on <dev> \| off <dev>]` | `[Preview]` | Display active swap spaces and configure backing swap devices (Syscall 53 & 54) |
+| `swap` | `swap [status \| on [dev] \| off \| test]` | `[Active]` | Display active swap spaces, allocate slots, and configure backing devices |
 
 ---
 
@@ -48,4 +48,21 @@ VGA / VBE Framebuffer Status:
   Color Depth: 32 bpp (ARGB8888)
   Pitch      : 4096 bytes/line
   Base Addr  : 0xFD000000
+```
+
+### `swap`
+Inspects, mounts, or exercises virtual memory disk swap partitions and slot allocation:
+```bash
+keira> swap on /data/swapfile
+Swap Activation: [OK]
+  Backing Device : /data/swapfile
+  Capacity       : 64 MB (16384 4KB slots)
+
+keira> swap status
+Virtual Memory Disk Swap Status: [ACTIVE]
+  Backing Device : /data/swapfile
+  Total Space    : 64 MB (16384 pages)
+  Used Space     : 0 KB (0 pages)
+  Free Space     : 64 MB (16384 pages)
+  Swap Activity  : 0 In | 0 Out
 ```

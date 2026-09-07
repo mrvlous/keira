@@ -33,8 +33,10 @@ pub use pmm::{
     verify_pmm_invariants_locked, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES,
     PAGE_SIZE, PAGE_SIZE_4K,
 };
-pub use swap::pager as swap_pager;
-pub use swap::{is_active as swap_is_active, swapoff, swapon, sys_swapoff, sys_swapon};
+pub use swap::{
+    alloc_swap_slot, free_swap_slot, is_active as swap_is_active, swap_stats, swapoff, swapon,
+    sys_swapoff, sys_swapon, SwapStats,
+};
 pub use vmm::{
     active_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, find_free_mmap_range,
     free_and_unmap_page, free_user_pages, get_kaslr_offset, get_phys_addr, get_phys_addr_in_pml4,

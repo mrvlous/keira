@@ -43,9 +43,10 @@ pub use driver::virtio_net::{
 pub use ethernet::frame::{EthernetHeader, ETHERTYPE_ARP, ETHERTYPE_IPV4, ETHERTYPE_IPV6};
 pub use filter as netfilter;
 pub use filter::firewall::{
-    bpf_filter_packet, filter_packet, sys_netfilter, BpfInstruction, ConnTrackEntry, FirewallRule,
+    add_rule, bpf_filter_packet, delete_rule, filter_ipv4_frame, filter_packet, flush_rules,
+    print_firewall_status, sys_netfilter, BpfInstruction, ConnTrackEntry, FirewallRule,
     NETFILTER_CMD_ADD_RULE, NETFILTER_CMD_DEL_RULE, NETFILTER_CMD_FLUSH, NETFILTER_CMD_STATUS,
-    NETFILTER_CMD_TOGGLE, NETFILTER_ENABLED,
+    NETFILTER_CMD_TOGGLE, NETFILTER_ENABLED, PACKETS_DROPPED, PACKETS_INSPECTED,
 };
 pub use icmp::ping::send_ping;
 pub use ip::ipv4::{

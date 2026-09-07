@@ -248,6 +248,12 @@ pub unsafe fn receive_raw_frame(buf: &mut [u8]) -> Result<usize, &'static str> {
         RX_RING.cur = (cur + 1) % 16;
         PACKETS_RECEIVED += 1;
 
+        if copy_len >= 14 && buf[12] == 0x08 && buf[13] == 0x00 {
+            if !crate::filter::filter_ipv4_frame(&buf[..copy_len]) {
+                return Err("Packet dropped by firewall rule");
+            }
+        }
+
         return Ok(copy_len);
     }
 

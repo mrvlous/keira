@@ -44,3 +44,29 @@ keira> download http://208.95.112.1/json /data/ip.json
 Downloading  128.0 KiB / 128.0 KiB  100% [====================] Finished
 Saved to /data/ip.json (128 bytes)
 ```
+
+### `firewall`
+Inspects, toggles, or flushes the stateful IPv4 Netfilter firewall engine:
+```bash
+keira> firewall status
+Stateful IPv4 Netfilter Firewall Status:
+Engine State: ENABLED (Active Packet Inspection & Filtering)
+  Packets Inspected : 0
+  Packets Dropped   : 0
+
+Active Firewall Chain Rules:
+  [Rule 1] Chain INPUT | Proto: TCP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:80 => ACCEPT (Matches: 0)
+  [Rule 2] Chain INPUT | Proto: TCP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:443 => ACCEPT (Matches: 0)
+  [Rule 3] Chain INPUT | Proto: ICMP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:0 => ACCEPT (Matches: 0)
+  [Rule 4] Chain INPUT | Proto: TCP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:23 => DROP (Matches: 0)
+```
+
+### `iptables`
+Dynamically appends, deletes, or flushes firewall chain rules:
+```bash
+keira> iptables -A INPUT -p tcp --dport 8080 -j DROP
+[IPTABLES] Added rule 5 to INPUT (Port 8080/TCP DROP) [OK]
+
+keira> iptables -D 5
+[IPTABLES] Deleted rule 5 from chain [OK]
+```
