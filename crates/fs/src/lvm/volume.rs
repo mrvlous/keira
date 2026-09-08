@@ -242,3 +242,165 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
         _ => Err("Invalid LVM/RAID command vector"),
     }
 }
+
+/// Retrieve immutable reference to Volume Groups table.
+pub fn get_vol_groups() -> &'static [VolumeGroup; 2] {
+    unsafe { &VOL_GROUPS }
+}
+
+/// Retrieve immutable reference to Software RAID arrays table.
+pub fn get_raid_arrays() -> &'static [RaidArray; 2] {
+    unsafe { &RAID_ARRAYS }
+}
+
+/// Safe helper to create a named Volume Group.
+pub fn create_vg_named(name: &str, total_mb: u32) -> Result<(), &'static str> {
+    unsafe {
+        for vg in VOL_GROUPS.iter_mut() {
+            if !vg.active {
+                let mut name_buf = [0u8; 16];
+                let bytes = name.as_bytes();
+                let len = bytes.len().min(15);
+                name_buf[..len].copy_from_slice(&bytes[..len]);
+                *vg = VolumeGroup {
+                    name: name_buf,
+                    total_mb,
+                    free_mb: total_mb,
+                    pv_count: 1,
+                    lv_count: 0,
+                    lvs: [LogicalVolume {
+                        name: [0; 16],
+                        size_mb: 0,
+                        fstype: [0; 8],
+                        active: false,
+                    }; 4],
+                    active: true,
+                };
+                return Ok(());
+            }
+        }
+    }
+    Err("Volume group table full")
+}
+
+/// Safe helper to create a Logical Volume in a target Volume Group.
+pub fn create_lv_named(
+    vg_name: &str,
+    lv_name: &str,
+    size_mb: u32,
+    fstype: &str,
+) -> Result<(), &'static str> {
+    unsafe {
+        for vg in VOL_GROUPS.iter_mut() {
+            if vg.active {
+                let cur_vg_name = core::str::from_utf8(&vg.name)
+                    .unwrap_or("")
+                    .trim_matches('\0');
+                if cur_vg_name == vg_name {
+                    if vg.free_mb < size_mb {
+                        return Err("Insufficient free space in Volume Group");
+                    }
+                    if (vg.lv_count as usize) >= vg.lvs.len() {
+                        return Err("Volume Group Logical Volume limit reached");
+                    }
+                    let idx = vg.lv_count as usize;
+                    let mut name_buf = [0u8; 16];
+                    let name_bytes = lv_name.as_bytes();
+                    let n_len = name_bytes.len().min(15);
+                    name_buf[..n_len].copy_from_slice(&name_bytes[..n_len]);
+
+                    let mut fs_buf = [0u8; 8];
+                    let fs_bytes = fstype.as_bytes();
+                    let f_len = fs_bytes.len().min(7);
+                    fs_buf[..f_len].copy_from_slice(&fs_bytes[..f_len]);
+
+                    vg.lvs[idx] = LogicalVolume {
+                        name: name_buf,
+                        size_mb,
+                        fstype: fs_buf,
+                        active: true,
+                    };
+                    vg.free_mb -= size_mb;
+                    vg.lv_count += 1;
+                    return Ok(());
+                }
+            }
+        }
+    }
+    Err("Volume Group not found")
+}
+
+/// Safe helper to trigger RAID synchronization.
+pub fn sync_raid_array(md_name: &str) -> Result<(), &'static str> {
+    unsafe {
+        for raid in RAID_ARRAYS.iter_mut() {
+            if raid.active {
+                let cur_name = core::str::from_utf8(&raid.name)
+                    .unwrap_or("")
+                    .trim_matches('\0');
+                if cur_name == md_name || md_name == "all" {
+                    raid.synced = true;
+                    return Ok(());
+                }
+            }
+        }
+    }
+    Err("RAID device not found")
+}
+
+/// Retrieve overall LVM allocation statistics.
+pub fn get_lvm_stats() -> (usize, usize, usize, usize) {
+    let mut vgs = 0;
+    let mut total = 0;
+    let mut free = 0;
+    let mut lvs = 0;
+    unsafe {
+        for vg in VOL_GROUPS.iter() {
+            if vg.active {
+                vgs += 1;
+                total += vg.total_mb as usize;
+                free += vg.free_mb as usize;
+                lvs += vg.lv_count as usize;
+            }
+        }
+    }
+    (vgs, total, free, lvs)
+}
+
+/// Retrieve overall RAID status statistics.
+pub fn get_raid_stats() -> (usize, usize) {
+    let mut active = 0;
+    let mut synced = 0;
+    unsafe {
+        for raid in RAID_ARRAYS.iter() {
+            if raid.active {
+                active += 1;
+                if raid.synced {
+                    synced += 1;
+                }
+            }
+        }
+    }
+    (active, synced)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lvm_topology() {
+        let (vgs, total, free, lvs) = get_lvm_stats();
+        assert!(vgs >= 1);
+        assert!(total >= free);
+        assert!(lvs >= 1);
+    }
+
+    #[test]
+    fn test_raid_topology() {
+        let (active, synced) = get_raid_stats();
+        assert!(active >= 1);
+        assert!(synced <= active);
+        assert!(sync_raid_array("md0").is_ok());
+    }
+}

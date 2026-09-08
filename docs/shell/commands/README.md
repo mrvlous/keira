@@ -2,7 +2,7 @@
 
 # Native Shell Built-In Commands
 
-This directory documents the 78 native built-in commands organized by subsystem domain in Keira Kernel, categorized by **Active Bare-Metal Implementations** (71 commands) and **Interface Prototypes / Stubs** (7 commands).
+This directory documents the 78 native built-in commands organized by subsystem domain in Keira Kernel, categorized by **Active Bare-Metal Implementations** (75 commands) and **Interface Prototypes / Stubs** (3 commands).
 
 ---
 
@@ -25,11 +25,11 @@ graph TD
 
 | Domain | Path | Total Commands | Active | Preview | Documentation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Hardware & Devices** | `dev/` | 11 | 5 | 6 | [dev.md](dev.md) |
+| **Hardware & Devices** | `dev/` | 11 | 9 | 2 | [dev.md](dev.md) |
 | **Filesystem & Storage** | `fs/` | 16 | 15 | 1 | [fs.md](fs.md) |
 | **Process & Scheduling** | `proc/` | 13 | 13 | 0 | [proc.md](proc.md) |
 | **Networking & Sockets** | `net/` | 8 | 8 | 0 | [net.md](net.md) |
 | **Security & Accounts** | `sec/` | 7 | 7 | 0 | [sec.md](sec.md) |
 | **System & Telemetry** | `sys/` | 15 | 15 | 0 | [sys.md](sys.md) |
 | **Utilities & Shell** | `util/` | 8 | 8 | 0 | [util.md](util.md) |
-| **Total** | | **78** | **71** | **7** | |
+| **Total** | | **78** | **75** | **3** | |

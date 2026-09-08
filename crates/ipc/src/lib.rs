@@ -19,8 +19,10 @@ pub mod shm;
 pub mod uring;
 
 pub use event::epoll::{
-    self, sys_epoll_create, sys_epoll_ctl, EpollInstance, EPOLL_CTL_ADD, EPOLL_CTL_DEL,
-    EPOLL_CTL_MOD,
+    self, epoll_ctl_internal, epoll_reset, get_epoll_instances, get_epoll_stats, sys_epoll_create,
+    sys_epoll_ctl, sys_epoll_wait, EpollEvent, EpollInstance, EpollItem, EPOLLERR, EPOLLET,
+    EPOLLHUP, EPOLLIN, EPOLLOUT, EPOLLPRI, EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLL_CTL_MOD,
+    MAX_EPOLL_INSTANCES, MAX_EPOLL_ITEMS,
 };
 pub use event::eventfd::{
     self, close_eventfd, create_eventfd, get_eventfd_stats, get_eventfd_table, read_eventfd,

@@ -30,12 +30,30 @@ graph TD
 
 ---
 
-## Core API (`crates/fs/src/raid/mod.rs`)
+## Core API (`crates/fs/src/lvm/volume.rs`)
 
 ```rust
-/// Register a new Software RAID virtual block device.
-pub unsafe fn create_raid_volume(level: u8, member_disks: &[usize]) -> Result<usize, &'static str>;
+/// Query registered Logical Volume Management volume groups.
+pub fn get_vol_groups() -> &'static [VolumeGroup; 2];
 
-/// Read sectors from a virtual RAID volume.
-pub unsafe fn raid_read(volume_id: usize, lba: u64, count: u32, buf: &mut [u8]) -> Result<(), &'static str>;
+/// Query registered Software RAID arrays.
+pub fn get_raid_arrays() -> &'static [RaidArray; 2];
+
+/// Create a named Volume Group with a specified capacity.
+pub fn create_vg_named(name: &str, total_mb: u32) -> Result<(), &'static str>;
+
+/// Allocate a Logical Volume within an existing Volume Group.
+pub fn create_lv_named(vg_name: &str, lv_name: &str, size_mb: u32, fs_type: &str) -> Result<(), &'static str>;
+
+/// Synchronize data mirror state across member disks in a RAID-1 array.
+pub fn sync_raid_array(md_name: &str) -> Result<(), &'static str>;
+
+/// Retrieve global LVM statistics: (active_vgs, total_storage_mb, free_storage_mb, mapped_lvs).
+pub fn get_lvm_stats() -> (usize, usize, usize, usize);
+
+/// Retrieve global Software RAID statistics: (active_arrays, synced_arrays).
+pub fn get_raid_stats() -> (usize, usize);
+
+/// Dispatch LVM and Software RAID operations from userspace (Syscall 74).
+pub unsafe fn sys_raid_lvm(cmd: u64, arg1: u64, arg2: u64) -> i64;
 ```

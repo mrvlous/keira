@@ -51,7 +51,10 @@ pub use storage::ide::{
     self, identify as ide_identify, read_sector as ide_read_sector,
     write_sector as ide_write_sector, IdeBlockDevice, IDE_DEVICE,
 };
-pub use storage::nvme::{self, init as nvme_init, NvmeController, NVME_CONTROLLER};
+pub use storage::nvme::{
+    self, ensure_initialized as nvme_ensure_initialized, get_nvme_controller, get_nvme_stats,
+    init as nvme_init, NvmeController, NvmeNamespace, NVME_CONTROLLER,
+};
 pub use storage::ramdisk::{
     self, create_ramdisk, free_current_ramdisk, RamBlockDevice, RAM_DEVICE,
 };

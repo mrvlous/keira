@@ -13,7 +13,8 @@ graph TD
     UserA["Process A"] -->|"pipe.md<br/>Pipes & Splice"| UserB["Process B"]
     UserA -->|"shm.md<br/>Shared Memory Pages"| UserB
     UserA -->|"futex.md<br/>Fast Userspace Mutex"| Sync["Kernel Futex Wait Queue"]
-    UserA -->|"eventfd.md<br/>Event Counters"| Poll["Epoll / Poller"]
+    UserA -->|"eventfd.md<br/>Event Counters"| Poll["Epoll Ready List"]
+    UserA -->|"epoll.md<br/>Epoll Multiplexer"| Poll
     UserA -->|"mqueue.md<br/>POSIX Message Queue"| MQ["Priority Message Queue"]
     UserA -->|"uring.md<br/>io_uring SQ/CQ"| AsyncIO["Async I/O Engine"]
 ```
@@ -28,5 +29,6 @@ graph TD
 | [`shm.md`](shm.md) | POSIX Shared Memory | Cross-task shared virtual memory pages with page-table remapping |
 | [`futex.md`](futex.md) | Fast Userspace Mutex | Low-overhead userland synchronization wait queues (`FUTEX_WAIT`, `FUTEX_WAKE`) |
 | [`eventfd.md`](eventfd.md) | Event Descriptors | 64-bit event counter notification channels for asynchronous event loops |
+| [`epoll.md`](epoll.md) | Epoll Multiplexer | Scalable edge/level-triggered I/O event multiplexer (`epoll_create`, `epoll_ctl`, `epoll_wait`) |
 | [`mqueue.md`](mqueue.md) | POSIX Message Queues | Priority-ordered inter-task message passing queues |
 | [`uring.md`](uring.md) | Asynchronous I/O (`io_uring`) | Lockless submission queue (SQ) and completion queue (CQ) ring buffers |

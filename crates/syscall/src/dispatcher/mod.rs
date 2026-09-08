@@ -685,11 +685,20 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         54 => errno_to_ret(ENOSYS),
         // Syscall 55: epoll_create
         55 => keira_ipc::event::sys_epoll_create(arg1 as i32).unwrap_or(errno_to_ret(ENOMEM)),
-        // Syscall 56: epoll_ctl
-        56 => keira_ipc::event::sys_epoll_ctl(arg1 as i32, arg2 as i32, arg3 as i32, 0)
-            .unwrap_or(errno_to_ret(EINVAL)),
-        // Syscall 57: epoll_wait
-        57 => errno_to_ret(ENOSYS),
+        // Syscall 56: epoll_ctl (arg1 = epfd, arg2 = (fd << 32) | op, arg3 = event_ptr)
+        56 => {
+            let op = (arg2 & 0xFFFF_FFFF) as i32;
+            let fd = (arg2 >> 32) as i32;
+            keira_ipc::event::sys_epoll_ctl(arg1 as i32, op, fd, arg3)
+                .unwrap_or(errno_to_ret(EINVAL))
+        }
+        // Syscall 57: epoll_wait (arg1 = epfd, arg2 = events_out_ptr, arg3 = (timeout << 32) | maxevents)
+        57 => {
+            let maxevents = (arg3 & 0xFFFF_FFFF) as i32;
+            let timeout = (arg3 >> 32) as i32;
+            keira_ipc::event::sys_epoll_wait(arg1 as i32, arg2, maxevents, timeout)
+                .unwrap_or(errno_to_ret(EINVAL))
+        }
         // Syscall 58: mq_open
         58 => unsafe {
             keira_ipc::mqueue::sys_mq_open(arg1 as *const u8, arg2 as i32, arg3 as u32)

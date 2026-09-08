@@ -24,8 +24,8 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | **Memory** | [`memory/`](memory/README.md) | Physical frame allocator (PMM), 4-level paging (VMM), heap, DMA, and swap |
 | **Task & Scheduling** | [`task/`](task/README.md) | Preemptive scheduler, context switching, task descriptors, cgroups, and signals |
 | **System Calls** | [`syscall/`](syscall/README.md) | System call vector table, dispatcher ABI, and validated user copying |
-| **IPC** | [`ipc/`](ipc/README.md) | Anonymous pipes, zero-copy splice, shared memory, futex, eventfd, and mqueue |
-| **Filesystems** | [`fs/`](fs/README.md) | Virtual Filesystem (VFS), FAT12/16/32, EXT4, USTAR initrd, and sector caching |
+| **IPC** | [`ipc/`](ipc/README.md) | Anonymous pipes, zero-copy splice, shared memory, futex, eventfd, epoll, and mqueue |
+| **Filesystems** | [`fs/`](fs/README.md) | Virtual Filesystem (VFS), FAT12/16/32, EXT4, USTAR initrd, LVM/RAID, and sector caching |
 | **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, sound, PCI/USB, and TTYs |
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3, and firewall |
 | **Cryptography** | [`crypto/`](crypto/README.md) | SHA-256, AES-128-GCM, Curve25519, TPM 2.0 enclave, Seccomp BPF, and MAC |

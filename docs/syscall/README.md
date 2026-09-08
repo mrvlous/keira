@@ -14,7 +14,7 @@ graph LR
     Entry --> TSS["TSS Stack Switch<br/>(Load Ring 0 RSP0)"]
     TSS --> Dispatch["dispatcher.md<br/>Syscall Routing Engine"]
     Dispatch --> Valid["user_copy.md<br/>Pointer Bounds Validation"]
-    Valid --> Table["table.md<br/>62 Kernel Handlers"]
+    Valid --> Table["table.md<br/>68 Kernel Handlers"]
 ```
 
 ---

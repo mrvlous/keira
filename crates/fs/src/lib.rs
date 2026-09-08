@@ -49,8 +49,10 @@ pub use lock::flock::{
     acquire_lock, release_all_locks_for_task, release_lock, FileLock, FILE_LOCKS, MAX_FILE_LOCKS,
 };
 pub use lvm::volume::{
-    sys_raid_lvm, LogicalVolume, PhysicalVolume, RaidArray, VolumeGroup, LVM_CMD_CREATE_LV,
-    LVM_CMD_CREATE_VG, LVM_CMD_INFO, LVM_CMD_RAID_STATUS, LVM_CMD_RAID_SYNC,
+    create_lv_named, create_vg_named, get_lvm_stats, get_raid_arrays, get_raid_stats,
+    get_vol_groups, sync_raid_array, sys_raid_lvm, LogicalVolume, PhysicalVolume, RaidArray,
+    VolumeGroup, LVM_CMD_CREATE_LV, LVM_CMD_CREATE_VG, LVM_CMD_INFO, LVM_CMD_RAID_STATUS,
+    LVM_CMD_RAID_SYNC,
 };
 pub use tar::reader::{
     cat_file as tar_cat_file, exists as tar_exists, init as tar_init, list_files as tar_list_files,

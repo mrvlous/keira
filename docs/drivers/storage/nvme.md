@@ -39,12 +39,15 @@ graph TD
 ## Core API (`crates/io/src/storage/nvme.rs`)
 
 ```rust
-/// Initialize NVMe controller, map MMIO registers, and create I/O queue pairs.
-pub unsafe fn init() -> Result<(), &'static str>;
+/// Initialize default hardware or synthetic NVMe PCIe controller instance.
+pub fn ensure_initialized();
 
-/// Read blocks from NVMe namespace using asynchronous submission queue commands.
-pub unsafe fn read_blocks(ns_id: u32, lba: u64, block_count: u16, buf: &mut [u8]) -> Result<(), &'static str>;
+/// Initialize NVMe PCIe controller and Admin Queue pairs.
+pub fn init(bus: u8, dev: u8, func: u8, mmio_base: u64) -> Result<(), &'static str>;
 
-/// Write blocks to NVMe namespace.
-pub unsafe fn write_blocks(ns_id: u32, lba: u64, block_count: u16, buf: &[u8]) -> Result<(), &'static str>;
+/// Retrieve immutable copy of current NVMe controller state.
+pub fn get_nvme_controller() -> Option<NvmeController>;
+
+/// Retrieve NVMe operational stats: (ready, active_namespaces, total_capacity_mb).
+pub fn get_nvme_stats() -> (bool, u32, u64);
 ```
