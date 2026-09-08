@@ -32,15 +32,22 @@ sequenceDiagram
 
 ---
 
-## Core API (`crates/ipc/src/eventfd/mod.rs`)
+## Core API (`crates/ipc/src/event/eventfd.rs`)
 
 ```rust
-pub const EFD_SEMAPHORE: u32 = 0x0001;
-pub const EFD_NONBLOCK: u32 = 0x0800;
+pub const EFD_SEMAPHORE: u32 = 1;
+pub const EFD_CLOEXEC: u32 = 0o2000000;
+pub const EFD_NONBLOCK: u32 = 0o4000;
 
 /// Create a new eventfd file descriptor with an initial 64-bit counter value.
-pub unsafe fn sys_eventfd(init_val: u32, flags: u32) -> Result<i32, &'static str>;
+pub unsafe fn create_eventfd(init_val: u64, flags: u32) -> Result<u32, &'static str>;
 
-/// Write integer increment to eventfd counter and wake up waiters.
-pub unsafe fn eventfd_write(handle: usize, val: u64) -> Result<(), &'static str>;
+/// Read and consume counter value from an EventFD descriptor.
+pub unsafe fn read_eventfd(id: u32) -> Result<u64, &'static str>;
+
+/// Write integer increment to eventfd counter.
+pub unsafe fn write_eventfd(id: u32, val: u64) -> Result<(), &'static str>;
+
+/// Close and deallocate an EventFD descriptor.
+pub unsafe fn close_eventfd(id: u32) -> Result<(), &'static str>;
 ```

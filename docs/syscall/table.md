@@ -38,16 +38,19 @@ This document specifies the complete system call vector table supported by Keira
 | `28` | `SYS_SHMGET` | `size_t size` | Allocate shared memory segment |
 | `29` | `SYS_SHMAT` | `int shmid` | Attach shared memory segment to address space |
 | `30` | `SYS_FORK` | - | Clone active process using Copy-on-Write |
-| `32` | `SYS_FUTEX` | `int *uaddr, int op, int val` | Fast user-space synchronization mutex |
 | `35` | `SYS_STAT` | `const char *path, struct stat *buf` | Retrieve file status and metadata |
 | `36` | `SYS_RMDIR` | `const char *pathname` | Remove empty directory |
+| `38` | `SYS_IO_URING_SETUP` | `unsigned int entries` | Initialize io_uring submission/completion queue pair |
+| `39` | `SYS_IO_URING_ENTER` | `unsigned int fd, unsigned int to_submit` | Enter io_uring kernel submission loop |
+| `40` | `SYS_FUTEX` | `int *uaddr, int op, int val` | Fast user-space synchronization mutex wait/wake/requeue |
 | `41` | `SYS_SOCKET` | `int domain, int type, int protocol` | Standard POSIX socket endpoint creation |
 | `43` | `SYS_ACCEPT` | `int sockfd, struct sockaddr *addr` | Accept connection on socket |
 | `44` | `SYS_SENDTO` | `int sockfd, const void *buf, size_t len` | Send datagram packet over network |
-| `45` | `SYS_RECVFROM` | `int sockfd, void *buf, size_t len` | Receive datagram packet from network |
+| `45` | `SYS_TIMER_CREATE` | `clockid_t clock_id, timer_t *timer_id` | Create POSIX high-resolution interval timer |
+| `46` | `SYS_TIMER_SETTIME` | `timer_t timer_id, int flags, u64 interval_ns` | Arm/disarm and set POSIX timer interval |
 | `47` | `SYS_SPLICE` | `int fd_in, int fd_out, size_t len` | Zero-copy pipe splice data transfer |
 | `48` | `SYS_VMSPLICE` | `int fd, const struct iovec *iov, size_t count` | Zero-copy user-kernel memory splice |
-| `49` | `SYS_BIND` | `int sockfd, const struct sockaddr *addr` | Bind socket to local network address |
+| `49` | `SYS_PERF_EVENT_OPEN` | `uint32_t type, uint64_t config, uint64_t flags` | Configure and open hardware PMU event counter |
 | `50` | `SYS_EVENTFD` | `unsigned int initval, int flags` | Create event notification descriptor |
 | `51` | `SYS_SIGNALFD` | `int fd, const sigset_t *mask, int flags` | Create signal-driven file descriptor |
 | `52` | `SYS_SECCOMP` | `unsigned int op, unsigned int flags, void *args` | Enforce Seccomp BPF security filters |

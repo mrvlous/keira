@@ -22,11 +22,16 @@ pub use event::epoll::{
     self, sys_epoll_create, sys_epoll_ctl, EpollInstance, EPOLL_CTL_ADD, EPOLL_CTL_DEL,
     EPOLL_CTL_MOD,
 };
-pub use event::eventfd::{self, sys_eventfd, sys_signalfd, EventFd};
+pub use event::eventfd::{
+    self, close_eventfd, create_eventfd, get_eventfd_stats, get_eventfd_table, read_eventfd,
+    sys_eventfd, sys_signalfd, write_eventfd, EventFd, EventFdEntry, EFD_CLOEXEC, EFD_NONBLOCK,
+    EFD_SEMAPHORE, MAX_EVENTFDS,
+};
 pub use futex::sync::{
-    self as futex_sync, sys_futex, FUTEX_CMP_REQUEUE, FUTEX_CMP_REQUEUE_PI, FUTEX_FD,
+    self as futex_sync, futex_requeue, futex_reset, futex_wait, futex_wake, get_futex_stats,
+    get_futex_table, sys_futex, FutexWaiter, FUTEX_CMP_REQUEUE, FUTEX_CMP_REQUEUE_PI, FUTEX_FD,
     FUTEX_LOCK_PI, FUTEX_REQUEUE, FUTEX_TRYLOCK_PI, FUTEX_UNLOCK_PI, FUTEX_WAIT, FUTEX_WAIT_BITSET,
-    FUTEX_WAIT_REQUEUE_PI, FUTEX_WAKE, FUTEX_WAKE_BITSET, FUTEX_WAKE_OP,
+    FUTEX_WAIT_REQUEUE_PI, FUTEX_WAKE, FUTEX_WAKE_BITSET, FUTEX_WAKE_OP, MAX_FUTEX_WAITERS,
 };
 pub use mqueue::queue::{
     self as mqueue_queue, get_mqueue_stats, get_mqueue_table, mq_open, mq_receive, mq_send,
@@ -115,6 +120,77 @@ mod tests {
 
             // Unlink
             mq_unlink(qname).expect("Unlink failed");
+        }
+    }
+
+    #[test]
+    fn test_futex_wait_wake_requeue() {
+        unsafe {
+            futex_reset();
+            let (_waits0, _wakes0, _requeues0, active0) = get_futex_stats();
+            assert_eq!(active0, 0);
+
+            // Wait on address 0x500000
+            assert_eq!(futex_wait(0x500000, 10, 2, 0xFFFFFFFF), Ok(0));
+            assert_eq!(futex_wait(0x500000, 10, 3, 0xFFFFFFFF), Ok(0));
+            assert_eq!(futex_wait(0x600000, 20, 4, 0xFFFFFFFF), Ok(0));
+
+            let (_, _, _, active1) = get_futex_stats();
+            assert_eq!(active1, 3);
+
+            // Requeue 1 waiter from 0x500000 to 0x700000
+            let req = futex_requeue(0x500000, 0x700000, 1).expect("Requeue failed");
+            assert_eq!(req, 1);
+
+            // Wake 1 waiter at 0x500000
+            let woken = futex_wake(0x500000, 1, 0xFFFFFFFF).expect("Wake failed");
+            assert_eq!(woken, 1);
+
+            // Wake the requeued waiter at 0x700000
+            let woken2 = futex_wake(0x700000, 1, 0xFFFFFFFF).expect("Wake requeued failed");
+            assert_eq!(woken2, 1);
+
+            // Wake at 0x600000
+            let woken3 = futex_wake(0x600000, 1, 0xFFFFFFFF).expect("Wake failed");
+            assert_eq!(woken3, 1);
+
+            let (_, _, _, active2) = get_futex_stats();
+            assert_eq!(active2, 0);
+
+            futex_reset();
+        }
+    }
+
+    #[test]
+    fn test_eventfd_create_write_read_close() {
+        unsafe {
+            let id = create_eventfd(10, 0).expect("Create EventFD failed");
+            let table = get_eventfd_table();
+            assert!(table
+                .iter()
+                .any(|e| e.in_use && e.id == id && e.count == 10));
+
+            // Write 5 to increment to 15
+            write_eventfd(id, 5).expect("Write failed");
+
+            // Read should return 15 and reset counter to 0
+            let val = read_eventfd(id).expect("Read failed");
+            assert_eq!(val, 15);
+
+            // Subsequent read should fail because counter is 0
+            assert!(read_eventfd(id).is_err());
+
+            // Write 3 in semaphore mode
+            let sem_id = create_eventfd(3, EFD_SEMAPHORE).expect("Create sem eventfd failed");
+            // Semaphore read should return 1 and decrement to 2
+            assert_eq!(read_eventfd(sem_id), Ok(1));
+            assert_eq!(read_eventfd(sem_id), Ok(1));
+            assert_eq!(read_eventfd(sem_id), Ok(1));
+            assert!(read_eventfd(sem_id).is_err());
+
+            // Cleanup
+            close_eventfd(id).expect("Close failed");
+            close_eventfd(sem_id).expect("Close failed");
         }
     }
 }

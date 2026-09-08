@@ -43,11 +43,25 @@ pub const FUTEX_WAIT: u32 = 0;
 pub const FUTEX_WAKE: u32 = 1;
 pub const FUTEX_REQUEUE: u32 = 3;
 
-/// Handle futex system call for userspace locking primitives.
-pub unsafe fn sys_futex(
+/// Enqueue waiter into futex wait queue.
+pub unsafe fn futex_wait(
     uaddr: usize,
-    futex_op: u32,
     val: u32,
-    timeout_ms: u64,
+    pid: u32,
+    bitset: u32,
 ) -> Result<i32, &'static str>;
+
+/// Wake up threads waiting on a futex word address.
+pub unsafe fn futex_wake(
+    uaddr: usize,
+    count: u32,
+    bitset: u32,
+) -> Result<u32, &'static str>;
+
+/// Requeue waiters from source address to destination address.
+pub unsafe fn futex_requeue(
+    from: usize,
+    to: usize,
+    count: u32,
+) -> Result<u32, &'static str>;
 ```

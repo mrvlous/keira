@@ -71,3 +71,20 @@ sequenceDiagram
 - **Low Register (`0x300`)**: Delivery mode, delivery status polling (`bit 12`), destination shorthand.
 - **High Register (`0x310`)**: Target APIC ID (`destination << 24`).
 - **Memory Mapping**: Local APIC physical address (`0xFEE00000`) is identity-mapped with writable permissions in kernel page tables.
+
+---
+
+## POSIX High-Resolution Interval Timers (`crates/arch/src/timers/posix.rs`)
+
+Keira provides an in-kernel descriptor table for POSIX interval timers (Syscalls 45 & 46):
+- **Clock Sources**: `CLOCK_MONOTONIC` (0) and `CLOCK_REALTIME` (1).
+- **Granularity**: Nanosecond precision driven by hardware APIC timer calibration.
+- **State Machine**: Supports armed, disarmed, one-shot, and recurring interval periodic fires.
+
+---
+
+## Hardware PMU & CPU Performance Monitoring (`crates/arch/src/perf/pmu.rs`)
+
+Ring 0 hardware performance telemetry leverages the CPU Timestamp Counter (`rdtsc`) and architectural performance counters (Syscall 49 `SYS_PERF_EVENT_OPEN` & Syscall 77 `SYS_PERF_EVENT`):
+- **Metrics Tracked**: CPU Cycles, Instructions Retired, Instructions Per Cycle (IPC), L1 Data Cache Misses, Branch Mispredictions.
+- **Subsystem Overhead**: Sample-based execution profiling across Scheduler, Syscall Entry, Network Stack, and Filesystem caches.

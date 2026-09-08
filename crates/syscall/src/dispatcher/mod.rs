@@ -624,8 +624,10 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let uaddr = arg1 as *mut u32;
             let futex_op = arg2 as u32;
             let val = arg3 as u32;
-            keira_ipc::futex::sys_futex(uaddr, futex_op, val, 0, core::ptr::null_mut(), 0)
-                .unwrap_or(-1) as u64
+            unsafe {
+                keira_ipc::futex::sys_futex(uaddr, futex_op, val, 0, core::ptr::null_mut(), 0)
+                    .unwrap_or(-1) as u64
+            }
         }
         // Syscall 41: clone_thread (Not implemented: return ENOSYS rather than false fork)
         41 => errno_to_ret(ENOSYS),
@@ -636,9 +638,24 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 44: syslog
         44 => errno_to_ret(ENOSYS),
         // Syscall 45: timer_create
-        45 => errno_to_ret(ENOSYS),
+        45 => {
+            let clock_id = arg1;
+            let timer_id_ptr = arg2 as *mut u64;
+            unsafe {
+                keira_arch::timer::sys_timer_create(clock_id, timer_id_ptr)
+                    .unwrap_or(errno_to_ret(EINVAL))
+            }
+        }
         // Syscall 46: timer_settime
-        46 => errno_to_ret(ENOSYS),
+        46 => {
+            let timer_id = arg1;
+            let flags = arg2 as u32;
+            let interval_nanos = arg3;
+            unsafe {
+                keira_arch::timer::sys_timer_settime(timer_id, flags, interval_nanos)
+                    .unwrap_or(errno_to_ret(EINVAL))
+            }
+        }
         // Syscall 47: splice
         47 => {
             keira_ipc::pipe::sys_splice(arg1, arg2, arg3 as usize, 0).unwrap_or(usize::MAX) as u64
@@ -648,13 +665,17 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             keira_ipc::pipe::sys_vmsplice(arg1, arg2, arg3 as usize, 0).unwrap_or(usize::MAX) as u64
         }
         // Syscall 49: perf_event_open
-        49 => errno_to_ret(ENOSYS),
+        49 => keira_arch::perf::sys_perf_event_open(arg1 as u32, arg2, arg3)
+            .unwrap_or(errno_to_ret(EINVAL)),
         // Syscall 50: eventfd
-        50 => {
+        50 => unsafe {
             keira_ipc::event::sys_eventfd(arg1 as u32, arg2 as u32).unwrap_or(errno_to_ret(ENOMEM))
-        }
+        },
         // Syscall 51: signalfd
-        51 => errno_to_ret(ENOSYS),
+        51 => unsafe {
+            keira_ipc::event::sys_signalfd(arg1 as i32, arg2, arg3 as u32)
+                .unwrap_or(errno_to_ret(ENOMEM))
+        },
         // Syscall 52: seccomp
         52 => keira_task::security::sys_seccomp(arg1 as u32, arg2 as u32, arg3)
             .unwrap_or(errno_to_ret(EINVAL)),
