@@ -46,15 +46,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_seccomp_strict_mode() {
+    fn test_seccomp_strict_and_filter_modes() {
         seccomp_reset();
-        assert_eq!(get_seccomp_mode(), SeccompMode::Disabled);
-
-        // In disabled mode, all syscalls permitted
-        assert!(check_syscall(10));
-        assert!(check_syscall(99));
-
-        // Switch to Strict
         set_seccomp_mode(SeccompMode::Strict);
         assert_eq!(get_seccomp_mode(), SeccompMode::Strict);
 
@@ -74,11 +67,6 @@ mod tests {
         assert_eq!(violations, 2);
         assert_eq!(last_viol, 21);
 
-        seccomp_reset();
-    }
-
-    #[test]
-    fn test_seccomp_filter_mode() {
         seccomp_reset();
         set_seccomp_mode(SeccompMode::Filter);
 

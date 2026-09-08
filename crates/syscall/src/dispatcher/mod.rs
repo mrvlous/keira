@@ -670,8 +670,10 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 57: epoll_wait
         57 => errno_to_ret(ENOSYS),
         // Syscall 58: mq_open
-        58 => keira_ipc::mqueue::sys_mq_open(arg1 as *const u8, arg2 as i32, arg3 as u32)
-            .unwrap_or(errno_to_ret(ENOMEM)),
+        58 => unsafe {
+            keira_ipc::mqueue::sys_mq_open(arg1 as *const u8, arg2 as i32, arg3 as u32)
+                .unwrap_or(errno_to_ret(ENOMEM))
+        },
         // Syscall 59: prctl
         59 => errno_to_ret(ENOSYS),
         // Syscall 60: getuid

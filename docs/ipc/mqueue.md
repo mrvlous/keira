@@ -19,10 +19,32 @@ pub struct MqAttr {
 
 ---
 
-## Core API (`crates/ipc/src/mqueue.rs`)
+## Core API (`crates/ipc/src/mqueue/queue.rs`)
 
 ```rust
-pub fn sys_mq_open(name: *const u8, oflag: i32, mode: u32) -> Result<u64, u64>;
-pub fn sys_mq_send(mqdes: i32, msg_ptr: *const u8, len: usize, prio: u32) -> Result<(), &'static str>;
-pub fn sys_mq_receive(mqdes: i32, msg_ptr: *mut u8, len: usize, prio_out: *mut u32) -> Result<usize, &'static str>;
+// Queue Management
+pub unsafe fn mq_open(name: &str, flags: u32, max_msg: usize, msg_size: usize) -> Result<u32, &'static str>;
+pub unsafe fn mq_send(name_or_id: &str, payload: &[u8], prio: u32) -> Result<(), &'static str>;
+pub unsafe fn mq_receive(name_or_id: &str, out_buf: &mut [u8]) -> Result<(usize, u32), &'static str>;
+pub unsafe fn mq_unlink(name: &str) -> Result<(), &'static str>;
+pub unsafe fn mq_unlink_by_id(id: u32) -> Result<(), &'static str>;
+pub unsafe fn get_mqueue_table() -> &'static [PosixMessageQueue];
+pub unsafe fn get_mqueue_stats() -> (usize, usize);
+
+// System Call Vector 58
+pub unsafe fn sys_mq_open(name_ptr: *const u8, oflag: i32, mode: u32) -> Result<u64, &'static str>;
 ```
+
+---
+
+## Shell Integration
+
+Inspect and interact with POSIX message queues via native shell commands:
+- `mqueue status`: Display message queue subsystem statistics and capacity.
+- `mqueue list`: Tabulate all active in-kernel message queues and backlog counts.
+- `mqueue create <name>`: Create a new POSIX message queue (e.g. `/keira_mq0`).
+- `mqueue send <queue> <msg>`: Enqueue message with default priority.
+- `mqueue recv <queue>`: Dequeue highest priority message.
+- `mqueue unlink <queue>`: Destroy and unlink message queue.
+- `ipcs -q`: Display active queues in tabular format.
+- `ipcrm -q <id|name>`: Remove queue by numeric ID or name.

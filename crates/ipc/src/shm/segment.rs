@@ -18,8 +18,9 @@ pub const SHM_CMD_GET: u32 = 2;
 pub const SHM_CMD_AT: u32 = 3;
 pub const SHM_CMD_DT: u32 = 4;
 pub const SHM_CMD_RM: u32 = 5;
+pub const SEM_CMD_RM: u32 = 6;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct ShmSegment {
     pub id: u32,
     pub key: u32,
@@ -30,7 +31,7 @@ pub struct ShmSegment {
     pub in_use: bool,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Semaphore {
     pub id: u32,
     pub key: u32,
@@ -109,7 +110,29 @@ static mut SEM_TABLE: [Semaphore; 4] = [
     },
 ];
 
+/// Retrieve active Shared Memory segments table.
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
+pub unsafe fn get_shm_table() -> &'static [ShmSegment] {
+    &SHM_TABLE
+}
+
+/// Retrieve active Counting Semaphores table.
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
+pub unsafe fn get_sem_table() -> &'static [Semaphore] {
+    &SEM_TABLE
+}
+
 /// Create or locate a shared memory segment of given size (Syscall 28: shmget).
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
 pub unsafe fn create_shm(size: usize) -> Result<usize, &'static str> {
     for seg in SHM_TABLE.iter_mut() {
         if !seg.in_use {
@@ -124,7 +147,64 @@ pub unsafe fn create_shm(size: usize) -> Result<usize, &'static str> {
     Err("SHM table full")
 }
 
+/// Remove and deallocate a shared memory segment by ID.
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
+pub unsafe fn remove_shm(id: u32) -> Result<(), &'static str> {
+    for seg in SHM_TABLE.iter_mut() {
+        if seg.id == id && seg.in_use {
+            seg.in_use = false;
+            seg.attach_count = 0;
+            seg.size_bytes = 0;
+            seg.phys_frame = 0;
+            return Ok(());
+        }
+    }
+    Err("Shared memory segment not found or not in use")
+}
+
+/// Create a new semaphore with given key and initial value.
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
+pub unsafe fn create_sem(key: u32, init_val: i32) -> Result<u32, &'static str> {
+    for sem in SEM_TABLE.iter_mut() {
+        if !sem.in_use {
+            sem.key = key;
+            sem.value = init_val;
+            sem.waiters = 0;
+            sem.in_use = true;
+            return Ok(sem.id);
+        }
+    }
+    Err("Semaphore table full")
+}
+
+/// Remove and deallocate a semaphore by ID.
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
+pub unsafe fn remove_sem(id: u32) -> Result<(), &'static str> {
+    for sem in SEM_TABLE.iter_mut() {
+        if sem.id == id && sem.in_use {
+            sem.in_use = false;
+            sem.value = 0;
+            sem.waiters = 0;
+            return Ok(());
+        }
+    }
+    Err("Semaphore not found or not in use")
+}
+
 /// Retrieve physical page frame for attached shared memory segment (Syscall 29: shmat).
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
 pub unsafe fn get_shm_frame(shmid: usize) -> Option<u64> {
     if shmid < 4 && SHM_TABLE[shmid].in_use {
         SHM_TABLE[shmid].attach_count += 1;
@@ -135,7 +215,11 @@ pub unsafe fn get_shm_frame(shmid: usize) -> Option<u64> {
 }
 
 /// System call vector 75: Stateful Shared Memory & Semaphore IPC.
-pub unsafe fn sys_shm_sem(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
+pub unsafe fn sys_shm_sem(cmd: u32, arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
     match cmd {
         SHM_CMD_INFO => {
             vga::set_color(vga::Color::White, vga::Color::Black);
@@ -187,13 +271,20 @@ pub unsafe fn sys_shm_sem(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'sta
         SHM_CMD_AT => Ok(0x70000000),
         SHM_CMD_DT => Ok(0),
         SHM_CMD_RM => {
-            for seg in SHM_TABLE.iter_mut() {
-                if seg.in_use && seg.attach_count == 0 {
-                    seg.in_use = false;
-                    return Ok(0);
+            let id = arg1 as u32;
+            remove_shm(id).map(|_| 0).or_else(|_| {
+                for seg in SHM_TABLE.iter_mut() {
+                    if seg.in_use && seg.attach_count == 0 {
+                        seg.in_use = false;
+                        return Ok(0);
+                    }
                 }
-            }
-            Ok(0)
+                Ok(0)
+            })
+        }
+        SEM_CMD_RM => {
+            let id = arg1 as u32;
+            remove_sem(id).map(|_| 0)
         }
         _ => Err("Invalid SHM/SEM command vector"),
     }

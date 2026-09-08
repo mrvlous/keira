@@ -15,9 +15,9 @@ This document details all native commands in Keira Kernel related to network int
 | `https` | `https <url>` | `[Active]` | Securely fetch remote HTTPS payload using native bare-metal TLS 1.3 |
 | `firewall` | `firewall [status \| enable \| disable]` | `[Active]` | Display Netfilter packet filter status and drop/accept statistics |
 | `iptables` | `iptables [list \| add <rule> \| flush]` | `[Active]` | Inspect and configure Netfilter packet filtering rules |
-| `ipcs` | `ipcs [-m] [-s] [-q] [-a]` | `[Preview]` | Query status of System V and POSIX IPC facilities (Syscall 38-40) |
-| `ipcrm` | `ipcrm [-m <id>] [-s <id>] [-q <id>]` | `[Preview]` | Remove System V and POSIX IPC facilities from kernel memory (Syscall 41 & 42) |
-| `mqueue` | `mqueue [list \| status]` | `[Preview]` | Inspect POSIX Message Queue descriptors interface (Syscall 60 & 61) |
+| `ipcs` | `ipcs [-m] [-s] [-q] [-a]` | `[Active]` | Query status of System V and POSIX IPC facilities (Syscall 38-40, 75) |
+| `ipcrm` | `ipcrm [-m <id>] [-s <id>] [-q <id>]` | `[Active]` | Remove System V and POSIX IPC facilities from kernel memory (Syscall 41-42, 75) |
+| `mqueue` | `mqueue <status \| list \| create \| send \| recv \| unlink>` | `[Active]` | Inspect and manage in-kernel POSIX Message Queue descriptors (Syscall 58) |
 
 ---
 
@@ -69,4 +69,58 @@ keira> iptables -A INPUT -p tcp --dport 8080 -j DROP
 
 keira> iptables -D 5
 [IPTABLES] Deleted rule 5 from chain [OK]
+```
+
+### `ipcs`
+Queries all active in-kernel System V and POSIX Inter-Process Communication facilities:
+```bash
+keira> ipcs -a
+------ Shared Memory Segments ------
+ID   KEY          BYTES   PHYS_FRAME   ATTACHES  OWNER
+0    0x12344321   4096    0x70000000   1         PID 1
+1    0x56788765   8192    0x70001000   2         PID 2
+
+------ Semaphore Arrays ------
+ID   KEY          VALUE   WAITERS
+0    0x10002000   1       0
+1    0x30004000   5       0
+
+------ POSIX Message Queues ------
+ID   NAME             MSGS   MAX_MSGS  MSG_SIZE
+0    /keira_sys_mq    1      8         128 B
+```
+
+### `ipcrm`
+Explicitly deallocates and removes shared memory, semaphore arrays, or message queues from kernel memory:
+```bash
+keira> ipcrm -m 0
+[OK] Removed Shared Memory segment #0
+
+keira> ipcrm -s 1
+[OK] Removed Semaphore array #1
+
+keira> ipcrm -q /keira_sys_mq
+[OK] Unlinked POSIX Message Queue '/keira_sys_mq'
+```
+
+### `mqueue`
+Creates, inspects, enqueues, and dequeues messages from POSIX priority message queues:
+```bash
+keira> mqueue status
+POSIX Message Queue Subsystem Status:
+  Subsystem Engine : Active (In-Kernel Priority Queue Engine)
+  Active Queues    : 1 / 8 allocated
+  Queued Messages  : 1 messages total
+  Queue Capacity   : 8 msgs per queue
+  Max Message Size : 128 bytes
+  Syscall Vector   : Syscall 58 (mq_open)
+
+keira> mqueue create /my_queue
+[OK] Created POSIX Message Queue '/my_queue' (MQID #1)
+
+keira> mqueue send /my_queue "Payload Alpha"
+[OK] Enqueued 13 bytes into '/my_queue' (Priority: 10)
+
+keira> mqueue recv /my_queue
+[OK] Dequeued (Priority 10, 13 bytes): "Payload Alpha"
 ```
