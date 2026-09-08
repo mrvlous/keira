@@ -45,12 +45,7 @@ pub struct ConnTrackEntry {
     pub in_use: bool,
 }
 
-pub struct BpfInstruction {
-    pub code: u16,
-    pub jt: u8,
-    pub jf: u8,
-    pub k: u32,
-}
+pub use super::bpf::BpfInstruction;
 
 pub static mut NETFILTER_ENABLED: bool = true;
 pub static mut PACKETS_INSPECTED: u64 = 0;
@@ -388,19 +383,13 @@ pub unsafe fn filter_packet(chain: &str, dport: u16) -> bool {
     true
 }
 
-/// Attach BPF filter bytecode instructions to network socket.
+/// Attach BPF filter bytecode instructions to network socket and evaluate against packet.
 pub fn bpf_filter_packet(pkt: &[u8], insns: &[BpfInstruction]) -> bool {
     if insns.is_empty() {
         return true;
     }
-    vga::set_color(vga::Color::White, vga::Color::Black);
-    vga::print_str("[BPF] Filtered Network Packet (Length: ");
-    vga::print_u64(pkt.len() as u64);
-    vga::print_str(" bytes, ");
-    vga::print_u64(insns.len() as u64);
-    vga::print_str(" BPF insns).\n");
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    true
+    let res = super::bpf::bpf_run_filter(insns, pkt);
+    res != 0
 }
 
 /// Print formatted firewall status and active rules.

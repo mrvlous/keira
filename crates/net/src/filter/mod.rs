@@ -9,6 +9,8 @@
 
 //! Netfilter stateful packet firewall and eBPF engine.
 
+pub mod bpf;
 pub mod firewall;
 
+pub use bpf::*;
 pub use firewall::*;

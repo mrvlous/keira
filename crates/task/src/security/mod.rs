@@ -7,41 +7,21 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Mandatory Access Control (MAC) and Seccomp BPF System Call Filtering.
+//! Mandatory Access Control (MAC) and Seccomp System Call Filtering Subsystems.
 
-use keira_io::vga;
+pub mod mac;
+pub mod seccomp;
 
-pub const SECCOMP_SET_MODE_STRICT: u32 = 0;
-pub const SECCOMP_SET_MODE_FILTER: u32 = 1;
-
-pub static mut MAC_ENABLED: bool = true;
-pub static mut SECCOMP_STRICT_ACTIVE: bool = false;
-
-/// Check Mandatory Access Control (MAC) permissions for target file path operation.
-pub fn check_path_access(pid: u64, path: &str, _mask: u32) -> bool {
-    let mac_ptr = &raw const MAC_ENABLED;
-    if !unsafe { *mac_ptr } {
-        return true;
-    }
-    vga::set_color(vga::Color::White, vga::Color::Black);
-    vga::print_str("[MAC] Security check passed for Process #");
-    vga::print_u64(pid);
-    vga::print_str(" on path '");
-    vga::print_str(path);
-    vga::print_str("'.\n");
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    true
-}
-
-/// Enforce seccomp system call sandbox filter (Syscall 52).
-pub fn sys_seccomp(op: u32, _flags: u32, _args_ptr: u64) -> Result<u64, &'static str> {
-    unsafe {
-        SECCOMP_STRICT_ACTIVE = true;
-    }
-    vga::set_color(vga::Color::White, vga::Color::Black);
-    vga::print_str("[SECCOMP] Enforced Seccomp BPF Syscall Filter Sandbox (Op: ");
-    vga::print_u64(op as u64);
-    vga::print_str(")\n");
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    Ok(0)
-}
+pub use mac::{
+    check_path_access, get_audit_log, get_mode as get_mac_mode, get_rules as get_mac_rules,
+    get_stats as get_mac_stats, init_rules as init_mac_rules, reset_stats as reset_mac_stats,
+    set_mode as set_mac_mode, MacAuditEvent, MacDomain, MacMode, MacRule, MAC_APPEND, MAC_ENABLED,
+    MAC_EXEC, MAC_READ, MAC_WRITE,
+};
+pub use seccomp::{
+    allow_syscall as seccomp_allow_syscall, check_syscall, deny_syscall as seccomp_deny_syscall,
+    get_mode as get_seccomp_mode, get_stats as get_seccomp_stats,
+    is_syscall_allowed as seccomp_is_syscall_allowed, reset as seccomp_reset,
+    set_mode as set_seccomp_mode, sys_seccomp, SeccompMode, SeccompState, SECCOMP_SET_MODE_FILTER,
+    SECCOMP_SET_MODE_STRICT, SECCOMP_STRICT_ACTIVE,
+};

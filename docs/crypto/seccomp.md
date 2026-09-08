@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Seccomp BPF System Call Filtering
+# Seccomp System Call Filtering & Sandboxing
 
-This document details task-level Berkeley Packet Filter (BPF) system call sandboxing, enforcement modes, and security isolation in Keira Kernel.
+This document details task-level system call sandboxing, strict POSIX isolation, bitmask filtering, and violation telemetry in Keira Kernel.
 
 ---
 
@@ -11,13 +11,15 @@ This document details task-level Berkeley Packet Filter (BPF) system call sandbo
 ```mermaid
 graph TD
     UserApp["Ring 3 Userland Process"] --> Syscall["Syscall Trap (MSR LSTAR / INT 0x80)"]
-    Syscall --> SeccompCheck{"Task Has Seccomp Filter?"}
-    SeccompCheck -->|No| ExecSyscall["Execute Kernel Syscall Handler"]
-    SeccompCheck -->|Yes| BPFInterpreter["Evaluate BPF Bytecode Instructions"]
-    BPFInterpreter --> Action{"Filter Action"}
-    Action -->|SECCOMP_RET_ALLOW| ExecSyscall
-    Action -->|SECCOMP_RET_ERRNO| ReturnErr["Return -EPERM / -EINVAL to Process"]
-    Action -->|SECCOMP_RET_KILL| Terminate["Terminate Task Immediately (SIGSYS)"]
+    Syscall --> Dispatcher["Syscall Dispatcher"]
+    Dispatcher --> SeccompCheck{"Seccomp Mode?"}
+    SeccompCheck -->|Disabled| ExecSyscall["Execute Kernel Syscall Handler"]
+    SeccompCheck -->|Strict| StrictCheck{"In Whitelist (read, write, exit, sigreturn)?"}
+    StrictCheck -->|Yes| ExecSyscall
+    StrictCheck -->|No| ReturnErr["Return -EPERM & Record Violation"]
+    SeccompCheck -->|Filter| BitmaskCheck{"Bit Set in 128-bit Mask?"}
+    BitmaskCheck -->|Yes| ExecSyscall
+    BitmaskCheck -->|No| ReturnErr
 ```
 
 ---
@@ -26,30 +28,42 @@ graph TD
 
 | Parameter | Specification | Description |
 | :--- | :--- | :--- |
-| **Filter VM** | Classic BPF (cBPF) | 32-bit register accumulator and scratch memory |
-| **Max Instructions** | 256 instructions per filter | Memory-bounded execution without loops |
-| **Evaluation Context** | `SeccompData` structure | System call number, architecture tag, 6 arguments |
-| **Inheritance Policy** | Process Clone / Fork | Child tasks automatically inherit parent security filters |
+| **Filter Modes** | Disabled, Strict, Filter | Configurable isolation boundary |
+| **Bitmask Range** | Syscalls 0..127 | 128-bit bitmask whitelist (`[u64; 2]`) |
+| **Strict Mode Set** | `SYS_READ`, `SYS_WRITE`, `SYS_EXIT`, `SYS_SIGRETURN` | Minimal POSIX execution subset |
+| **Enforcement Point** | `syscall_dispatcher` | Evaluated before any syscall routing |
+| **Syscall Interface** | Syscall 52 (`SYS_SECCOMP`) | Userland configuration interface |
 
 ---
 
-## Core API (`crates/crypto/src/seccomp/mod.rs`)
+## Core API (`crates/task/src/security/seccomp.rs`)
 
 ```rust
-pub const SECCOMP_RET_KILL: u32 = 0x0000_0000;
-pub const SECCOMP_RET_ERRNO: u32 = 0x0005_0000;
-pub const SECCOMP_RET_ALLOW: u32 = 0x7FFF_0000;
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum SeccompMode {
+    Disabled,
+    Strict,
+    Filter,
+}
 
-/// Evaluate installed Seccomp BPF program for a given system call invocation.
-pub unsafe fn eval_seccomp_filter(
-    task_id: u32,
-    syscall_nr: u64,
-    args: &[u64; 6],
-) -> u32;
+/// Determine whether a system call is permitted under active seccomp policy.
+pub fn check_syscall(syscall_num: u64) -> bool;
 
-/// Attach a new BPF program to the active thread context.
-pub unsafe fn attach_filter(
-    task_id: u32,
-    instructions: &[BpfInstruction],
-) -> Result<(), &'static str>;
+/// Set active seccomp operational mode.
+pub fn set_mode(mode: SeccompMode);
+
+/// Get active seccomp operational mode.
+pub fn get_mode() -> SeccompMode;
+
+/// Allow a specific system call number in filter mode.
+pub fn allow_syscall(syscall_num: u64);
+
+/// Deny a specific system call number in filter mode.
+pub fn deny_syscall(syscall_num: u64);
+
+/// Retrieve telemetry statistics (total_checked, total_violations, last_violation_syscall).
+pub fn get_stats() -> (u64, u64, u64);
+
+/// Reset seccomp configuration and counters back to baseline disabled state.
+pub fn reset();
 ```

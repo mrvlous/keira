@@ -81,3 +81,67 @@ pub const HTTP_USER_AGENT: &str = concat!(
     " (Keira-Kernel; Bare-Metal; i686) KeiraNet/",
     env!("CARGO_PKG_VERSION")
 );
+
+pub use filter::bpf::{
+    bpf_run_filter, bpf_verify, get_maps as bpf_get_maps, get_programs as bpf_get_programs,
+    get_status as bpf_get_status, map_delete as bpf_map_delete, map_lookup as bpf_map_lookup,
+    map_update as bpf_map_update, BpfMap, BpfMapType, BpfProgType, BpfProgram, BpfStatus,
+};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bpf_verifier_and_execution() {
+        use filter::bpf::*;
+
+        // A valid program: loads byte at offset 0, checks if equal to 42, returns 1 if true, 0 if false
+        let prog = [
+            BpfInstruction {
+                code: BPF_LD | BPF_B | BPF_ABS,
+                jt: 0,
+                jf: 0,
+                k: 0,
+            },
+            BpfInstruction {
+                code: BPF_JMP | BPF_JEQ | BPF_K,
+                jt: 0,
+                jf: 1,
+                k: 42,
+            },
+            BpfInstruction {
+                code: BPF_RET | BPF_K,
+                jt: 0,
+                jf: 0,
+                k: 1,
+            },
+            BpfInstruction {
+                code: BPF_RET | BPF_K,
+                jt: 0,
+                jf: 0,
+                k: 0,
+            },
+        ];
+
+        assert!(bpf_verify(&prog).is_ok());
+
+        let pkt_match = [42u8, 1, 2, 3];
+        let pkt_no_match = [99u8, 1, 2, 3];
+
+        assert_eq!(bpf_run_filter(&prog, &pkt_match), 1);
+        assert_eq!(bpf_run_filter(&prog, &pkt_no_match), 0);
+    }
+
+    #[test]
+    fn test_bpf_maps() {
+        use filter::bpf::*;
+        init();
+
+        assert!(bpf_map_update(1, 8080, 100).is_ok());
+        assert_eq!(bpf_map_lookup(1, 8080), Some(100));
+
+        assert!(bpf_map_delete(1, 8080).is_ok());
+        assert_eq!(bpf_map_lookup(1, 8080), None);
+    }
+}

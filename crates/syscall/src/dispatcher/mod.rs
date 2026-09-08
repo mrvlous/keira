@@ -11,7 +11,7 @@
 
 use super::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES, EBADF,
-    ECHILD, EFAULT, EINVAL, EIO, ENOENT, ENOMEM, ENOSYS,
+    ECHILD, EFAULT, EINVAL, EIO, ENOENT, ENOMEM, ENOSYS, EPERM,
 };
 use keira_fs::elf::loader::load_elf;
 use keira_fs::vfs::{create_file, exists, read_file, resolve_alias_path, write_file};
@@ -39,6 +39,9 @@ pub const HEAP_MAX_VADDR: u64 = 0x4000_0000_0000;
 /// Central system call dispatcher mapping syscall numbers to operations.
 #[no_mangle]
 pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
+    if num != 52 && !keira_task::security::check_syscall(num) {
+        return errno_to_ret(EPERM);
+    }
     match num {
         // Syscall 1: Print Character
         1 => {
@@ -74,6 +77,14 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             };
 
             if let Ok(filename_str) = core::str::from_utf8(&name_buf[..len]) {
+                let task_id = unsafe { CURRENT_TASK_IDX };
+                if !keira_task::security::check_path_access(
+                    task_id as u64,
+                    filename_str,
+                    keira_task::security::MAC_EXEC,
+                ) {
+                    return errno_to_ret(EACCES);
+                }
                 unsafe {
                     let child_pml4 = match vmm::clone_kernel_pml4() {
                         Ok(p) => p,
@@ -132,6 +143,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             };
 
             let task_id = unsafe { CURRENT_TASK_IDX };
+            let mac_mask = if write_mode {
+                keira_task::security::MAC_WRITE
+            } else {
+                keira_task::security::MAC_READ
+            };
+            if !keira_task::security::check_path_access(task_id as u64, path_str, mac_mask) {
+                return errno_to_ret(EACCES);
+            }
+
             if write_mode && unsafe { keira_fs::lock::acquire_lock(path_str, task_id) }.is_err() {
                 return errno_to_ret(EACCES);
             }
@@ -857,9 +877,74 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
         }
         // Syscall 78: sys_bpf
-        78 => errno_to_ret(ENOSYS),
+        78 => match arg1 {
+            // 0: BPF status executions count
+            0 => keira_net::bpf_get_status().total_executions,
+            // 1: BPF map lookup (arg2 = map_id, arg3 = key)
+            1 => keira_net::bpf_map_lookup(arg2 as u32, arg3 as u32).unwrap_or(0),
+            // 2: BPF map update (arg2 = map_id, arg3 = key high 32 bits, val low 32 bits)
+            2 => {
+                let key = (arg3 >> 32) as u32;
+                let val = arg3 & 0xFFFF_FFFF;
+                if keira_net::bpf_map_update(arg2 as u32, key, val).is_ok() {
+                    0
+                } else {
+                    errno_to_ret(EINVAL)
+                }
+            }
+            // 3: BPF map delete (arg2 = map_id, arg3 = key)
+            3 => {
+                if keira_net::bpf_map_delete(arg2 as u32, arg3 as u32).is_ok() {
+                    0
+                } else {
+                    errno_to_ret(ENOENT)
+                }
+            }
+            _ => errno_to_ret(EINVAL),
+        },
         // Syscall 79: sys_tpm2
-        79 => errno_to_ret(ENOSYS),
+        79 => match arg1 {
+            // 0: Read PCR (arg2 = index, arg3 = out_ptr to 32-byte digest buffer)
+            0 => {
+                let out_ptr = arg3 as *mut u8;
+                if out_ptr.is_null() {
+                    return errno_to_ret(EFAULT);
+                }
+                match keira_crypto::tpm::read_pcr(arg2 as usize) {
+                    Ok(digest) => {
+                        if unsafe { copy_to_user(arg3, &digest) }.is_ok() {
+                            0
+                        } else {
+                            errno_to_ret(EFAULT)
+                        }
+                    }
+                    Err(_) => errno_to_ret(EINVAL),
+                }
+            }
+            // 1: Extend PCR (arg2 = index, arg3 = in_ptr to 32-byte data buffer)
+            1 => {
+                let mut data_buf = [0u8; 32];
+                if unsafe { copy_from_user(&mut data_buf, arg3) }.is_err() {
+                    return errno_to_ret(EFAULT);
+                }
+                match keira_crypto::tpm::extend_pcr(arg2 as usize, &data_buf, "SYSCALL_EXTEND") {
+                    Ok(_) => 0,
+                    Err(_) => errno_to_ret(EINVAL),
+                }
+            }
+            // 2: Quote PCRs (arg2 = mask, arg3 = out_ptr to 32-byte quote)
+            2 => {
+                let quote = keira_crypto::tpm::quote_pcrs(arg2 as u32);
+                if unsafe { copy_to_user(arg3, &quote) }.is_ok() {
+                    0
+                } else {
+                    errno_to_ret(EFAULT)
+                }
+            }
+            // 3: TPM Status total measurements
+            3 => keira_crypto::tpm::get_status().total_measurements,
+            _ => errno_to_ret(EINVAL),
+        },
         // Syscall 80: sys_pci_bridge
         80 => errno_to_ret(ENOSYS),
         _ => errno_to_ret(ENOSYS),

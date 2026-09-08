@@ -20,3 +20,27 @@ pub use cipher::*;
 pub use curve::*;
 pub use hash::*;
 pub use tpm::*;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tpm2_pcr_init_and_extend() {
+        tpm::init();
+        assert!(tpm::is_initialized());
+
+        let pcr0 = tpm::read_pcr(0).expect("PCR 0 should be readable");
+        assert_ne!(pcr0, [0u8; 32]);
+
+        let extended = tpm::extend_pcr(10, b"measurement_payload", "TEST_MEASURE")
+            .expect("Extend should succeed");
+        assert_ne!(extended, [0u8; 32]);
+
+        let pcr10 = tpm::read_pcr(10).expect("PCR 10 should be readable");
+        assert_eq!(extended, pcr10);
+
+        let quote = tpm::quote_pcrs(0b0001);
+        assert_ne!(quote, [0u8; 32]);
+    }
+}
