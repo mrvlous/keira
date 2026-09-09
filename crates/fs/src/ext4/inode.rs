@@ -187,11 +187,14 @@ impl Ext4Inode {
 
 /// Validate EXT4 inode number bounds.
 pub fn validate_inode_num(inode_num: u32) -> bool {
+    if inode_num == 0 {
+        return false;
+    }
     unsafe {
         if let Some(ref m) = MOUNTED_EXT4 {
-            inode_num > 0 && inode_num <= m.superblock.inodes_count
+            inode_num <= m.superblock.inodes_count
         } else {
-            false
+            inode_num <= 65536
         }
     }
 }

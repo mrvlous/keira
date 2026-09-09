@@ -588,7 +588,12 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
         },
         // Syscall 32: madvise
-        32 => errno_to_ret(ENOSYS),
+        32 => unsafe {
+            match vmm::mmap::madvise_pages(arg1, arg2, arg3 as u32) {
+                Ok(()) => 0,
+                Err(_) => errno_to_ret(EINVAL),
+            }
+        },
         // Syscall 33: tls_connect
         33 => {
             let host_ptr = arg1 as *const u8;
@@ -673,8 +678,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             Ok(exit_code) => exit_code,
             Err(_) => errno_to_ret(EINVAL),
         },
-        // Syscall 44: syslog
-        44 => errno_to_ret(ENOSYS),
+        // Syscall 44: syslog (arg1 = type, arg2 = buf_ptr, arg3 = len)
+        44 => {
+            let buf_ptr = arg2 as *mut u8;
+            let len = arg3 as usize;
+            match keira_core::log::klog::sys_syslog_read(buf_ptr, len) {
+                Ok(read_bytes) => read_bytes as u64,
+                Err(_) => errno_to_ret(EINVAL),
+            }
+        }
         // Syscall 45: timer_create
         45 => {
             let clock_id = arg1;

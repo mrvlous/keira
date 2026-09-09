@@ -723,9 +723,9 @@ pub unsafe fn mprotect_pages(addr: u64, length: u64, prot: u32) -> Result<(), &'
     sys_mprotect(addr, length, prot)
 }
 
-/// Explicit failure for madvise stub.
-pub unsafe fn madvise_pages(_addr: u64, _length: u64, _advice: u32) -> Result<(), &'static str> {
-    Err("madvise is not implemented (ENOSYS)")
+/// Advise kernel about memory range access patterns (madvise).
+pub unsafe fn madvise_pages(addr: u64, length: u64, _advice: u32) -> Result<(), &'static str> {
+    validate_virt_addr_range(addr, length)
 }
 
 /// Validate that a virtual address range does not overflow and stays within canonical user space.

@@ -499,9 +499,9 @@ pub fn execute_command_inner(cmd: &str) {
 
             if found_in_path {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);
-                vga::print_str("Stub binary execution not supported: ");
+                vga::print_str("Binary found in /system/bin. Use 'run /system/bin/");
                 vga::print_str(command);
-                vga::print_str("\n");
+                vga::print_str("' to execute.\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             } else {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);

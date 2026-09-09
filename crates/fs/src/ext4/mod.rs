@@ -103,6 +103,7 @@ mod tests {
 
     #[test]
     fn test_ext4_inode_and_extents() {
+        ensure_initialized();
         let root_node = read_inode(EXT4_ROOT_INO).expect("Root inode #2 should be valid");
         assert!(root_node.is_dir());
         assert!(root_node.has_extents());

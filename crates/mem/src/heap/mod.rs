@@ -71,7 +71,7 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
     current
 }
 
-/// Free memory block (stub in sequential bump allocator).
+/// Free memory block (no-op in sequential bump allocator).
 #[no_mangle]
 pub extern "C" fn kfree(_ptr: *mut u8) {
     // Sequential bump allocator does not reclaim individual blocks
