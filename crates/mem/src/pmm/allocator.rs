@@ -25,19 +25,19 @@ static PMM_HOLDER_CORE: core::sync::atomic::AtomicIsize = core::sync::atomic::At
 #[cfg(test)]
 thread_local! {
     static CURRENT_THREAD_HOLDS_PMM: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
-    static MOCK_CPU_ID: core::cell::Cell<Option<isize>> = const { core::cell::Cell::new(None) };
+    static TEST_CPU_ID: core::cell::Cell<Option<isize>> = const { core::cell::Cell::new(None) };
 }
 
-/// Helper to set mock CPU ID on the current thread for multi-core / SMP tests.
+/// Helper to set test CPU ID on the current thread for multi-core / SMP tests.
 #[cfg(test)]
 pub fn set_test_cpu_id(cpu_id: isize) {
-    MOCK_CPU_ID.with(|c| c.set(Some(cpu_id)));
+    TEST_CPU_ID.with(|c| c.set(Some(cpu_id)));
 }
 
-/// Helper to clear mock CPU ID on the current thread.
+/// Helper to clear test CPU ID on the current thread.
 #[cfg(test)]
 pub fn clear_test_cpu_id() {
-    MOCK_CPU_ID.with(|c| c.set(None));
+    TEST_CPU_ID.with(|c| c.set(None));
 }
 
 /// Read the current CPU / Local APIC ID.
@@ -50,7 +50,7 @@ pub fn get_current_cpu_id() -> isize {
     }
     #[cfg(all(not(target_os = "none"), test))]
     {
-        MOCK_CPU_ID.with(|c| c.get().unwrap_or(0))
+        TEST_CPU_ID.with(|c| c.get().unwrap_or(0))
     }
     #[cfg(all(not(target_os = "none"), not(test)))]
     {
@@ -369,7 +369,7 @@ pub fn reset_pmm_stats() {
     }
 }
 
-/// Set a mock physical RAM region for testing environments where all frames start as allocated.
+/// Set a test physical RAM region for testing environments where all frames start as allocated.
 pub fn set_test_ram_region(start: u64, end: u64) {
     let _guard = PmmGuard::lock();
     unsafe {
@@ -399,7 +399,7 @@ pub fn set_test_ram_region(start: u64, end: u64) {
     }
 }
 
-/// Set a mock physical RAM region for testing environments where all frames start as unallocated (ready to be allocated).
+/// Set a test physical RAM region for testing environments where all frames start as unallocated (ready to be allocated).
 pub fn set_test_ram_region_empty(start: u64, end: u64) {
     let _guard = PmmGuard::lock();
     unsafe {

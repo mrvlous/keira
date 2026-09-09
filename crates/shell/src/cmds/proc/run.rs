@@ -207,11 +207,11 @@ unsafe fn setup_user_stack_args_32(
 
     offset &= !15;
 
-    // Allocate cdecl call frame: [ret_dummy(1), argc(1), argv_ptr(1), envp_ptr(1)]
+    // Allocate cdecl call frame: [ret_sentinel(1), argc(1), argv_ptr(1), envp_ptr(1)]
     offset = offset.saturating_sub(16);
     let stack_u32 = page_ptr.add(offset) as *mut u32;
 
-    *stack_u32.add(0) = 0; // Dummy return address
+    *stack_u32.add(0) = 0; // NULL return address sentinel for stack unwinder
     *stack_u32.add(1) = argc as u32; // argc at [ESP+4]
     *stack_u32.add(2) = (top_page_vaddr + argv_table_offset as u64) as u32; // argv at [ESP+8]
     *stack_u32.add(3) = (top_page_vaddr + (argv_table_offset + (argc + 1) * 4) as u64) as u32; // envp at [ESP+12]
