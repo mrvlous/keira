@@ -38,14 +38,20 @@ This document specifies the complete system call vector table supported by Keira
 | `28` | `SYS_SHMGET` | `size_t size` | Allocate shared memory segment |
 | `29` | `SYS_SHMAT` | `int shmid` | Attach shared memory segment to address space |
 | `30` | `SYS_FORK` | - | Clone active process using Copy-on-Write |
-| `35` | `SYS_STAT` | `const char *path, struct stat *buf` | Retrieve file status and metadata |
-| `36` | `SYS_RMDIR` | `const char *pathname` | Remove empty directory |
+| `31` | `SYS_MPROTECT` | `void *addr, size_t len, int prot` | Set memory protection permissions |
+| `32` | `SYS_MADVISE` | `void *addr, size_t len, int advice` | Give advice about use of memory |
+| `33` | `SYS_TLS_CONNECT` | `const char *host` | Establish bare-metal TLS 1.3 encrypted tunnel |
+| `34` | `SYS_INIT_MODULE` | `const char *name, size_t size` | Load, link, and initialize loadable kernel module |
+| `35` | `SYS_DELETE_MODULE` | `const char *name, unsigned int flags` | Unload and unmap registered kernel module |
+| `36` | `SYS_CLOCK_GETTIME` | `clockid_t clk_id, struct timespec *tp` | Retrieve monotonic or real-time clock |
+| `37` | `SYS_PTRACE` | `int request, pid_t pid, void *addr, void *data` | Process trace and debug inspection |
 | `38` | `SYS_IO_URING_SETUP` | `unsigned int entries` | Initialize io_uring submission/completion queue pair |
 | `39` | `SYS_IO_URING_ENTER` | `unsigned int fd, unsigned int to_submit` | Enter io_uring kernel submission loop |
 | `40` | `SYS_FUTEX` | `int *uaddr, int op, int val` | Fast user-space synchronization mutex wait/wake/requeue |
-| `41` | `SYS_SOCKET` | `int domain, int type, int protocol` | Standard POSIX socket endpoint creation |
-| `43` | `SYS_ACCEPT` | `int sockfd, struct sockaddr *addr` | Accept connection on socket |
-| `44` | `SYS_SENDTO` | `int sockfd, const void *buf, size_t len` | Send datagram packet over network |
+| `41` | `SYS_CLONE_THREAD` | `unsigned long flags, void *stack` | Thread clone interface |
+| `42` | `SYS_KVM_CREATE_VM` | - | Allocate isolated guest virtual machine context |
+| `43` | `SYS_KVM_RUN_VCPU` | `u64 vm_id, uint32_t vcpu_id` | Execute guest vCPU instruction pipeline until VM-exit |
+| `44` | `SYS_SYSLOG` | `int type, char *buf, int len` | Read or control kernel syslog ring buffer |
 | `45` | `SYS_TIMER_CREATE` | `clockid_t clock_id, timer_t *timer_id` | Create POSIX high-resolution interval timer |
 | `46` | `SYS_TIMER_SETTIME` | `timer_t timer_id, int flags, u64 interval_ns` | Arm/disarm and set POSIX timer interval |
 | `47` | `SYS_SPLICE` | `int fd_in, int fd_out, size_t len` | Zero-copy pipe splice data transfer |

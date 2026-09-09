@@ -2,7 +2,7 @@
 
 # Keira Kernel Core Subsystem
 
-The `kernel` subsystem coordinates hardware bootstrap, CPU initialization, Global Descriptor Tables (GDT), Interrupt Descriptor Tables (IDT), APIC timers, Hardware Abstraction Layer (HAL) traits, and stack unwinding panic handlers.
+The `kernel` subsystem coordinates hardware bootstrap, CPU initialization, Global Descriptor Tables (GDT), Interrupt Descriptor Tables (IDT), APIC timers, Hardware Abstraction Layer (HAL) traits, stack unwinding panic handlers, Loadable Kernel Modules (LKM), and Kernel-based Virtual Machine (KVM) hardware virtualization.
 
 ---
 
@@ -16,6 +16,8 @@ graph TD
     Main --> APIC["apic_timers.md<br/>Local APIC, IO-APIC & PIT Timers"]
     Main --> HAL["hal.md<br/>Hardware Abstraction Layer Traits"]
     Main --> Panic["panic.md<br/>Stack Frame Unwinding & Panic Handler"]
+    Main --> LKM["lkm.md<br/>Loadable Kernel Modules & kallsyms"]
+    Main --> KVM["kvm.md<br/>KVM Hardware Virtualization & vCPUs"]
 ```
 
 ---
@@ -30,3 +32,5 @@ graph TD
 | [`apic_timers.md`](apic_timers.md) | Timers & Interrupt Routing | Local APIC calibration, IO-APIC routing, SMP multi-core IPIs, PIT frequency divisor, and RTC clock |
 | [`hal.md`](hal.md) | Hardware Abstraction Layer | Architecture-independent hardware interfaces for CPU, MMU, and Interrupts |
 | [`panic.md`](panic.md) | Kernel Panic Engine | Dual-architecture stack frame unwinding and formatted serial/VGA crash logging |
+| [`lkm.md`](lkm.md) | Loadable Kernel Modules | Module lifecycle states, dynamic symbol export, kallsyms, and Syscalls 34 & 35 |
+| [`kvm.md`](kvm.md) | KVM Hypervisor | Hardware Intel VMX / AMD SVM detection, guest vCPU execution, VM-exits, and Syscalls 42 & 43 |

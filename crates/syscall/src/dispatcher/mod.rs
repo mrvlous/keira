@@ -607,10 +607,42 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 errno_to_ret(EINVAL)
             }
         }
-        // Syscall 34: init_module
-        34 => errno_to_ret(ENOSYS),
-        // Syscall 35: delete_module
-        35 => errno_to_ret(ENOSYS),
+        // Syscall 34: init_module (arg1 = name_ptr, arg2 = size)
+        34 => {
+            let name_ptr = arg1 as *const u8;
+            let size = arg2 as usize;
+            let mut name_buf = [0u8; 32];
+            let len = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
+                Ok(l) => l,
+                Err(e) => return errno_to_ret(e),
+            };
+            if let Ok(name_str) = core::str::from_utf8(&name_buf[..len]) {
+                match keira_core::module::sys_init_module(name_str, size) {
+                    Ok(ret) => ret as u64,
+                    Err(err) => err as u64,
+                }
+            } else {
+                errno_to_ret(EINVAL)
+            }
+        }
+        // Syscall 35: delete_module (arg1 = name_ptr, arg2 = flags)
+        35 => {
+            let name_ptr = arg1 as *const u8;
+            let flags = arg2 as u32;
+            let mut name_buf = [0u8; 32];
+            let len = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
+                Ok(l) => l,
+                Err(e) => return errno_to_ret(e),
+            };
+            if let Ok(name_str) = core::str::from_utf8(&name_buf[..len]) {
+                match keira_core::module::sys_delete_module(name_str, flags) {
+                    Ok(ret) => ret as u64,
+                    Err(err) => err as u64,
+                }
+            } else {
+                errno_to_ret(EINVAL)
+            }
+        }
         // Syscall 36: clock_gettime
         36 => unsafe { get_uptime_ms() * 1_000_000 },
         // Syscall 37: ptrace
@@ -632,9 +664,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 41: clone_thread (Not implemented: return ENOSYS rather than false fork)
         41 => errno_to_ret(ENOSYS),
         // Syscall 42: kvm_create_vm
-        42 => errno_to_ret(ENOSYS),
-        // Syscall 43: kvm_run_vcpu
-        43 => errno_to_ret(ENOSYS),
+        42 => match keira_arch::kvm::sys_kvm_create_vm() {
+            Ok(vm_id) => vm_id,
+            Err(_) => errno_to_ret(ENOMEM),
+        },
+        // Syscall 43: kvm_run_vcpu (arg1 = vm_id, arg2 = vcpu_id)
+        43 => match keira_arch::kvm::sys_kvm_run_vcpu(arg1, arg2 as u32) {
+            Ok(exit_code) => exit_code,
+            Err(_) => errno_to_ret(EINVAL),
+        },
         // Syscall 44: syslog
         44 => errno_to_ret(ENOSYS),
         // Syscall 45: timer_create

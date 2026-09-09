@@ -15,6 +15,7 @@ pub mod collections;
 pub mod error;
 pub mod log;
 pub mod mem;
+pub mod module;
 pub mod sync;
 
 pub use collections::lru_cache::LruCache;
@@ -22,5 +23,10 @@ pub use collections::ring_buffer::RingBuffer;
 pub use error::{KernelError, Result as KernelResult};
 pub use log::klog::{self, klog, sys_syslog_read, KLOG_HEAD, KLOG_RING_BUFFER};
 pub use mem::align::{align_down, align_up, is_aligned};
+pub use module::{
+    get_module, get_modules_snapshot, lookup_symbol_by_addr, register_module, register_symbol,
+    resolve_symbol, sys_delete_module, sys_init_module, unregister_module, KernelModule,
+    KernelSymbol, ModuleState, BASE_KALLSYMS, MAX_MODULES,
+};
 pub use sync::mutex::{SpinMutex, SpinMutexGuard};
 pub use sync::spinlock::SpinLock;

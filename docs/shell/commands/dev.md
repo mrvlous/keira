@@ -15,8 +15,8 @@ This document details all native commands in Keira Kernel related to hardware di
 | `framebuffer` | `framebuffer` | `[Active]` | Display active VGA/VBE graphical framebuffer resolution, pitch, and BPP |
 | `usb` | `usb [list \| tree \| ports]` | `[Active]` | Enumerate USB host controllers, root hubs, and connected HID/storage devices |
 | `epoll` | `epoll [status \| list \| create \| ctl \| wait \| test]` | `[Active]` | Inspect and manage `epoll` scalable I/O event multiplexer instances (Syscall 55, 56 & 57) |
-| `kvm` | `kvm [status \| vcpu \| vm]` | `[Preview]` | Inspect hardware virtualization acceleration interface (Syscall 49 & 50) |
-| `lkm` | `lkm [list \| load <mod> \| unload <mod>]` | `[Preview]` | Inspect Loadable Kernel Module symbols and dynamic resolution (Syscall 34 & 35) |
+| `kvm` | `kvm [status \| list \| create \| run <vm_id> <vcpu_id> \| vcpu <vm_id> <vcpu_id> \| test]` | `[Active]` | Kernel-based Virtual Machine hardware virtualization control and vCPU execution (Syscall 42 & 43) |
+| `lkm` | `lkm [status \| lsmod \| list \| load <name> [size] \| unload <name> \| symbols \| test]` | `[Active]` | Loadable Kernel Module lifecycle management and dynamic symbol table (Syscall 34 & 35) |
 | `lvm` | `lvm [status \| list \| info \| create \| lvcreate \| test]` | `[Active]` | Display and configure Logical Volume Manager volume groups (Syscall 74) |
 | `nvme` | `nvme [status \| list \| identify \| namespaces \| test]` | `[Active]` | Display NVMe 1.4 PCIe controller registers, queues, and namespace stats |
 | `raid` | `raid [status \| list \| sync \| rebuild \| test]` | `[Active]` | Inspect and synchronize Software RAID 0 (striping) and RAID 1 (mirroring) arrays (Syscall 74) |
@@ -136,4 +136,58 @@ Virtual Memory Disk Swap Status: [ACTIVE]
   Used Space     : 0 KB (0 pages)
   Free Space     : 64 MB (16384 pages)
   Swap Activity  : 0 In | 0 Out
+```
+
+### `kvm`
+Inspects hardware virtualization capabilities and exercises isolated guest VM execution:
+```bash
+keira> kvm status
+Kernel-based Virtual Machine (KVM) Subsystem [Active]
+  Hardware Ext: Intel VMX=YES, AMD SVM=NO
+  Hypervisor  : Active (Bare-Metal KVM Engine)
+  Guest VMs   : 1 allocated (Max: 4)
+  Total Exits : 0 transitions handled
+  Syscalls    : 42 (kvm_create_vm), 43 (kvm_run_vcpu)
+
+keira> kvm list
+VM ID   Status    Memory (MB)   vCPUs   Total VM-Exits
+  #1    Active    128 MB          1       0
+
+keira> kvm run 1 0
+vCPU Execution Transition (VM #1, vCPU #0):
+  Exit Reason : CPUID Instruction (Code 3)
+  Guest RIP   : 0x0000FFF2
+  Guest RSP   : 0x00007C00
+  Guest CR0   : 0x60000010
+  Total Exits : 1
+```
+
+### `lkm`
+Manages Loadable Kernel Modules, dynamic symbol tables, and runtime module lifecycles:
+```bash
+keira> lkm status
+Loadable Kernel Module (LKM) Subsystem [Active]
+  Status      : Online (Syscall 34 & 35 active)
+  Loaded Mods : 3 / 16 active
+  Symbol Table: 10 base symbols exported
+  Syscalls    : 34 (init_module), 35 (delete_module)
+
+keira> lkm lsmod
+Module                  Size  Used by  State     Load Address
+ext4_fs                65536        1  Live      0xFFFF800000400000
+e1000_nic              32768        0  Live      0xFFFF800000410000
+ahci_sata              24576        2  Live      0xFFFF800000420000
+
+keira> lkm symbols
+Kernel Symbol Table (kallsyms):
+  0xFFFF800000101000        vga_print_str
+  0xFFFF800000101200        vga_set_color
+  0xFFFF800000102000        klog_write
+  0xFFFF800000103000  [GPL] pmm_alloc_frame
+  0xFFFF800000103100  [GPL] pmm_free_frame
+  0xFFFF800000104000  [GPL] vmm_map_page
+  0xFFFF800000105000        scheduler_yield
+  0xFFFF800000106000        timer_get_ticks
+  0xFFFF800000107000  [GPL] ext4_mount
+  0xFFFF800000107200  [GPL] ext4_lookup
 ```

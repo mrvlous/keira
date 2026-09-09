@@ -13,7 +13,7 @@
 use super::state::*;
 use keira_io::vga;
 
-fn find_last_word(buf: &[u8]) -> (usize, &str) {
+pub fn find_last_word(buf: &[u8]) -> (usize, &str) {
     let mut i = buf.len();
     while i > 0 && buf[i - 1] != b' ' {
         i -= 1;
@@ -113,6 +113,7 @@ pub unsafe fn handle_autocomplete() {
         "user",
         "view",
         "wait",
+        "watchpoint",
         "wipe",
         "write",
     ];

@@ -13,7 +13,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
 license = "GPL-2.0-only"
-description = "Interactive system shell, code editor, autocomplete, and 74 native commands for Keira Kernel"
+description = "Interactive system shell, code editor, autocomplete, and 78 native commands for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

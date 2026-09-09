@@ -417,3 +417,54 @@ pub fn process_pending() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cli_args_parsing() {
+        let input = "-l -a --long target_file.txt";
+        let mut parts = input.split_whitespace();
+        let cli = CliArgs::parse(&mut parts);
+        assert!(cli.has_flag('l', "long"));
+        assert!(cli.has_flag('a', "all"));
+        assert_eq!(cli.first_positional(), Some("target_file.txt"));
+    }
+
+    #[test]
+    fn test_cli_args_options() {
+        let input = "-n 10 --format=json data.txt";
+        let mut parts = input.split_whitespace();
+        let cli = CliArgs::parse(&mut parts);
+        assert_eq!(cli.get_opt('n', "number"), Some("10"));
+        assert_eq!(cli.get_opt('f', "format"), Some("json"));
+        assert_eq!(cli.first_positional(), Some("data.txt"));
+    }
+
+    #[test]
+    fn test_find_last_word_autocomplete() {
+        let buf = b"ext4 info";
+        let (pos, word) = autocomplete::find_last_word(buf);
+        assert_eq!(pos, 5);
+        assert_eq!(word, "info");
+
+        let single = b"lkm";
+        let (pos2, word2) = autocomplete::find_last_word(single);
+        assert_eq!(pos2, 0);
+        assert_eq!(word2, "lkm");
+    }
+
+    #[test]
+    fn test_history_push_logic() {
+        unsafe {
+            BUFFER_LEN = 4;
+            INPUT_BUFFER[0..4].copy_from_slice(b"test");
+            let initial_count = core::ptr::read(core::ptr::addr_of!(HISTORY_COUNT));
+            history_push();
+            let current_count = core::ptr::read(core::ptr::addr_of!(HISTORY_COUNT));
+            assert_eq!(current_count, initial_count + 1);
+            BUFFER_LEN = 0;
+        }
+    }
+}

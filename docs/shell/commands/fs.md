@@ -25,7 +25,7 @@ This document details all native commands in Keira Kernel related to file operat
 | `ramdisk` | `ramdisk [info \| clear \| dump]` | `[Active]` | Inspect in-memory USTAR RAM disk initialization structures |
 | `initrd` | `initrd [-c]` | `[Active]` | Traverse and list files inside the boot USTAR RAM disk archive |
 | `fileinfo` | `fileinfo <path>` | `[Active]` | Display FAT16 inode metadata, starting cluster, and file size |
-| `ext4` | `ext4 [info \| inodes]` | `[Preview]` | Inspect native Linux EXT4/EXT2 filesystem superblock prototype |
+| `ext4` | `ext4 [status \| info \| inodes \| ls [path] \| cat <path> \| test]` | `[Active]` | Inspect and traverse native Linux EXT4/EXT2 filesystem partitions |
 
 ---
 
@@ -53,4 +53,24 @@ keira> list /system/bin
   [file] kcc.elf        (45056 bytes)
   [file] shell.elf      (12288 bytes)
   [file] edit.elf       (8192 bytes)
+```
+
+### `ext4`
+Inspects, traverses, and reads files from native Linux EXT4 filesystem partitions:
+```bash
+keira> ext4 status
+Native Linux EXT4 Filesystem Driver [Active]
+  Status      : Mounted (/system/dev/sda2)
+  Storage     : 256 MB Total (192 MB Free)
+  Inodes      : 65536 total (61440 free)
+  Block Size  : 4096 bytes
+  Features    : Extents, 64-Bit, Flex-BG, Dir-Index
+
+keira> ext4 ls /
+EXT4 Directory [/] (Inode #2):
+  [DIR] Inode #2        .
+  [DIR] Inode #2        ..
+  [DIR] Inode #11       system
+  [REG] Inode #12       boot.cfg
+  [REG] Inode #13       vmlinuz
 ```
