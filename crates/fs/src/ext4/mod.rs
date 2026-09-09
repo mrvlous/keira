@@ -69,7 +69,7 @@ pub fn read_file_content(path: &str, buf: &mut [u8]) -> Result<usize, &'static s
     let sample_data: &[u8] = if path.ends_with("boot.cfg") {
         b"timeout=5\ndefault=keira\ntitle=Keira Kernel (EXT4 Boot Partition)\n"
     } else if path.ends_with("version.txt") {
-        b"Keira Kernel v0.1.0 (EXT4 Linux Driver Active)\n"
+        b"Keira Kernel v0.2.0 (EXT4 Linux Driver Active)\n"
     } else {
         b"EXT4 binary payload content [LBA 2048]\n"
     };

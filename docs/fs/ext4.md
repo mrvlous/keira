@@ -104,7 +104,7 @@ keira> ext4 cat /boot.cfg
 --- Content of /boot.cfg ---
 TIMEOUT=5
 DEFAULT=keira
-TITLE=Keira Kernel 0.1.0 LTS
+TITLE=Keira Kernel 0.2.0 LTS
 
 # Run automated self-test
 keira> ext4 test

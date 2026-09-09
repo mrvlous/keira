@@ -61,7 +61,7 @@ pub fn init() {
 
         // Initialize baseline platform measurements for standard TCG PCR assignments:
         // PCR 0: BIOS / Core System Firmware
-        let bios_digest = sha256(b"Keira Coreboot / UEFI Firmware Stage v0.1.0");
+        let bios_digest = sha256(b"Keira Coreboot / UEFI Firmware Stage v0.2.0");
         TPM_PCR_BANK[0].copy_from_slice(&bios_digest);
 
         // PCR 1: Host Platform Configuration & ACPI Tables

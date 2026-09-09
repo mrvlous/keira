@@ -49,13 +49,14 @@ Each commit must follow the standard conventional commit format:
 Keira Kernel follows strict **Semantic Versioning (`MAJOR.MINOR.PATCH`)** for its release lifecycle:
 
 * **Baseline (`0.1.0`)**: Represents the unified foundation release featuring 100% pure Rust modular architecture, dual-architecture parity (`x86_64` & `i686`), Ring 3 isolation, freestanding POSIX C SDK, native in-kernel C compiler (`kcc`), FAT16 filesystem, and TCP/IP stack.
-* **Patch Releases (`0.1.x`)**: Reserved for backward-compatible bug fixes, driver optimizations, and security hardening.
-* **Minor Releases (`0.x.0`)**: Introduced when major kernel milestones are achieved (e.g., graphical window manager, extended filesystem write support, or cross-architecture porting).
+* **Bare-Metal Milestone (`0.2.0`)**: 100% active bare-metal implementation across all 78 shell commands, zero stubs/mocks/placeholders, complete EXT4 extent tree parser, KVM CPUID virtualization framework, and Loadable Kernel Modules (LKM) engine.
+* **Patch Releases (`0.2.x`)**: Reserved for backward-compatible bug fixes, driver optimizations, and security hardening.
+* **Minor Releases (`0.x.0`)**: Introduced when major kernel milestones are achieved.
 * **Major Releases (`x.0.0`)**: Reserved for frozen ABI stability milestones.
 
 ### Release Git Tagging
 
-Release tags use the standard prefix `v` (e.g., `v0.1.0`). Tags are created only on major milestones and release commits.
+Release tags use the standard prefix `v` (e.g., `v0.2.0`). Tags are created only on major milestones and release commits.
 
 ---
 
