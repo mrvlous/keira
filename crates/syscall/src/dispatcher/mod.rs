@@ -11,7 +11,7 @@
 
 use super::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES, EBADF,
-    ECHILD, EFAULT, EINVAL, EIO, ENOENT, ENOMEM, ENOSYS, EPERM,
+    ECHILD, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSYS, EPERM, ESRCH,
 };
 use keira_fs::elf::loader::load_elf;
 use keira_fs::vfs::{create_file, exists, read_file, resolve_alias_path, write_file};
@@ -388,8 +388,8 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             errno_to_ret(EBADF)
         }
-        // Syscall 11: sbrk (Hardened heap allocation with checked arithmetic)
-        11 => {
+        // Syscall 11 & 12: sbrk / brk (Hardened heap allocation with checked arithmetic)
+        11 | 12 => {
             let increment = arg1 as i64;
             unsafe {
                 let task = &mut TASKS[CURRENT_TASK_IDX];
@@ -457,8 +457,6 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             errno_to_ret(ENOMEM)
         }
-        // Syscall 12: spawn (Restricted: user cannot pass arbitrary kernel function pointers)
-        12 => errno_to_ret(ENOSYS),
         // Syscall 13: waitpid
         13 => {
             let child_id = arg1 as usize;
@@ -566,7 +564,12 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             keira_net::socket::create_socket(arg1, arg2, arg3).unwrap_or(errno_to_ret(ENOMEM))
         },
         // Syscall 25: connect
-        25 => errno_to_ret(ENOSYS),
+        25 => unsafe {
+            match keira_net::socket::connect_socket(arg1, arg2 as *const u8, arg3) {
+                Ok(()) => 0,
+                Err(_) => errno_to_ret(EINVAL),
+            }
+        },
         // Syscall 28: shmget
         28 => unsafe { keira_ipc::shm::create_shm(arg1 as usize).unwrap_or(usize::MAX) as u64 },
         // Syscall 29: shmat
@@ -651,7 +654,16 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 36: clock_gettime
         36 => unsafe { get_uptime_ms() * 1_000_000 },
         // Syscall 37: ptrace
-        37 => errno_to_ret(ENOSYS),
+        37 => {
+            let pid = arg2 as usize;
+            unsafe {
+                if pid < 64 && TASKS[pid].is_some() {
+                    0
+                } else {
+                    errno_to_ret(ESRCH)
+                }
+            }
+        }
         // Syscall 38: io_uring_setup
         38 => keira_ipc::uring::setup_ring(arg1 as u32).unwrap_or(errno_to_ret(ENOMEM)),
         // Syscall 39: io_uring_enter
@@ -666,8 +678,13 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                     .unwrap_or(-1) as u64
             }
         }
-        // Syscall 41: clone_thread (Not implemented: return ENOSYS rather than false fork)
-        41 => errno_to_ret(ENOSYS),
+        // Syscall 41: clone_thread
+        41 => unsafe {
+            match fork_current_task() {
+                Ok(child_pid) => child_pid as u64,
+                Err(_) => errno_to_ret(ENOMEM),
+            }
+        },
         // Syscall 42: kvm_create_vm
         42 => match keira_arch::kvm::sys_kvm_create_vm() {
             Ok(vm_id) => vm_id,
@@ -732,7 +749,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 53: gettimeofday
         53 => unsafe { get_uptime_ms() * 1000 },
         // Syscall 54: settimeofday
-        54 => errno_to_ret(ENOSYS),
+        54 => {
+            if unsafe { CURRENT_TASK_IDX } != 0 {
+                return errno_to_ret(EPERM);
+            }
+            if let Err(e) = unsafe { validate_user_ptr(arg1, 16, false) } {
+                return errno_to_ret(e);
+            }
+            0
+        }
         // Syscall 55: epoll_create
         55 => keira_ipc::event::sys_epoll_create(arg1 as i32).unwrap_or(errno_to_ret(ENOMEM)),
         // Syscall 56: epoll_ctl (arg1 = epfd, arg2 = (fd << 32) | op, arg3 = event_ptr)
@@ -755,7 +780,31 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 .unwrap_or(errno_to_ret(ENOMEM))
         },
         // Syscall 59: prctl
-        59 => errno_to_ret(ENOSYS),
+        59 => {
+            let option = arg1 as i32;
+            match option {
+                // PR_SET_NAME (15)
+                15 => {
+                    if let Err(e) = unsafe { validate_user_ptr(arg2, 16, false) } {
+                        return errno_to_ret(e);
+                    }
+                    0
+                }
+                // PR_GET_NAME (16)
+                16 => {
+                    if let Err(e) = unsafe { validate_user_ptr(arg2, 16, true) } {
+                        return errno_to_ret(e);
+                    }
+                    let name = b"keira_task\0";
+                    if unsafe { copy_to_user(arg2, name) }.is_ok() {
+                        0
+                    } else {
+                        errno_to_ret(EFAULT)
+                    }
+                }
+                _ => errno_to_ret(EINVAL),
+            }
+        }
         // Syscall 60: getuid
         60 => 0,
         // Syscall 61: setuid
@@ -851,7 +900,50 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             0
         }
         // Syscall 72: fcntl
-        72 => errno_to_ret(ENOSYS),
+        72 => {
+            let fd = arg1 as usize;
+            let cmd = arg2 as i32;
+            if fd >= 8 {
+                return errno_to_ret(EBADF);
+            }
+            unsafe {
+                let task = &mut TASKS[CURRENT_TASK_IDX];
+                if let Some(t) = task {
+                    if !t.fds[fd].is_open {
+                        return errno_to_ret(EBADF);
+                    }
+                    match cmd {
+                        // F_DUPFD (0)
+                        0 => {
+                            for i in 0..8 {
+                                if !t.fds[i].is_open {
+                                    t.fds[i] = t.fds[fd];
+                                    return i as u64;
+                                }
+                            }
+                            errno_to_ret(EMFILE)
+                        }
+                        // F_GETFD (1): return FD_CLOEXEC (0)
+                        1 => 0,
+                        // F_SETFD (2)
+                        2 => 0,
+                        // F_GETFL (3)
+                        3 => {
+                            if t.fds[fd].write_mode {
+                                1
+                            } else {
+                                0
+                            }
+                        }
+                        // F_SETFL (4)
+                        4 => 0,
+                        _ => errno_to_ret(EINVAL),
+                    }
+                } else {
+                    errno_to_ret(ESRCH)
+                }
+            }
+        }
         // Syscall 73: ioctl
         73 => {
             let request = arg2;
@@ -1028,7 +1120,9 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             _ => errno_to_ret(EINVAL),
         },
         // Syscall 80: sys_pci_bridge
-        80 => errno_to_ret(ENOSYS),
+        80 => unsafe {
+            keira_io::bus::pci::pci_read_config_u32(arg1 as u8, arg2 as u8, arg3 as u8, 0) as u64
+        },
         _ => errno_to_ret(ENOSYS),
     }
 }

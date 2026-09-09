@@ -25,6 +25,7 @@ pub const EACCES: i64 = 13;
 pub const EFAULT: i64 = 14;
 pub const EEXIST: i64 = 17;
 pub const EINVAL: i64 = 22;
+pub const EMFILE: i64 = 24;
 pub const ENOSYS: i64 = 38;
 
 pub const USER_MIN_ADDR: u64 = 0x10000;
