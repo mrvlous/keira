@@ -7,7 +7,7 @@
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation; version 2 of the License.
 
-; Interrupt Service Routines (ISRs) and CPU Exception Stubs
+; Interrupt Service Routines (ISRs) and CPU Exception Handlers
 
 %ifdef TARGET_ARCH_X86
 

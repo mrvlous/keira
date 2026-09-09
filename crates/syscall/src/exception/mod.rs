@@ -47,7 +47,7 @@ pub struct ExceptionStackFrame {
     pub edi: u32,
     pub esi: u32,
     pub ebp: u32,
-    pub esp_dummy: u32,
+    pub esp_padding: u32,
     pub ebx: u32,
     pub edx: u32,
     pub ecx: u32,
@@ -61,7 +61,7 @@ pub struct ExceptionStackFrame {
     pub user_ss: u32,
 }
 
-/// CPU exception dispatcher invoked by low-level assembly ISR stubs.
+/// CPU exception dispatcher invoked by low-level assembly ISR handlers.
 #[no_mangle]
 pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFrame) {
     let frame = &*frame_ptr;

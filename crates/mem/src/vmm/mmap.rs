@@ -1326,40 +1326,40 @@ mod tests {
         let pdpt_phys = 0x1000_0000u64;
         let pd_phys = 0x1001_0000u64;
 
-        let mut mock_pml4 = [0u64; 512];
-        let mut mock_pdpt = [0u64; 512];
-        let mut mock_pd = [0u64; 512];
+        let mut test_pml4 = [0u64; 512];
+        let mut test_pdpt = [0u64; 512];
+        let mut test_pd = [0u64; 512];
 
         // Link PML4[1] -> PDPT
-        mock_pml4[1] = pdpt_phys | paging::PAGE_PRESENT | paging::PAGE_USER;
+        test_pml4[1] = pdpt_phys | paging::PAGE_PRESENT | paging::PAGE_USER;
 
         // Set 1GB Huge Page in PDPT[0]
         let frame_1gb = 0x4000_0000u64;
-        mock_pdpt[0] = frame_1gb | paging::PAGE_PRESENT | paging::PAGE_USER | paging::PAGE_HUGE;
+        test_pdpt[0] = frame_1gb | paging::PAGE_PRESENT | paging::PAGE_USER | paging::PAGE_HUGE;
 
         // Verify that PDPT[0] holds the 1GB entry, while PML4[1] still points to PDPT
-        assert_eq!(mock_pml4[1] & paging::PTE_ADDR_MASK, pdpt_phys);
-        assert_eq!(mock_pdpt[0] & paging::PTE_ADDR_MASK_1G, frame_1gb);
+        assert_eq!(test_pml4[1] & paging::PTE_ADDR_MASK, pdpt_phys);
+        assert_eq!(test_pdpt[0] & paging::PTE_ADDR_MASK_1G, frame_1gb);
 
         // Unmapping 1GB huge page clears PDPT[0], PML4[1] MUST remain intact!
-        mock_pdpt[0] = 0;
-        assert_eq!(mock_pdpt[0], 0);
-        assert_eq!(mock_pml4[1] & paging::PTE_ADDR_MASK, pdpt_phys);
+        test_pdpt[0] = 0;
+        assert_eq!(test_pdpt[0], 0);
+        assert_eq!(test_pml4[1] & paging::PTE_ADDR_MASK, pdpt_phys);
 
         // Link PDPT[1] -> PD
-        mock_pdpt[1] = pd_phys | paging::PAGE_PRESENT | paging::PAGE_USER;
+        test_pdpt[1] = pd_phys | paging::PAGE_PRESENT | paging::PAGE_USER;
 
         // Set 2MB Huge Page in PD[0]
         let frame_2mb = 0x20_0000u64;
-        mock_pd[0] = frame_2mb | paging::PAGE_PRESENT | paging::PAGE_USER | paging::PAGE_HUGE;
+        test_pd[0] = frame_2mb | paging::PAGE_PRESENT | paging::PAGE_USER | paging::PAGE_HUGE;
 
         // Verify that PD[0] holds the 2MB entry, while PDPT[1] still points to PD
-        assert_eq!(mock_pdpt[1] & paging::PTE_ADDR_MASK, pd_phys);
-        assert_eq!(mock_pd[0] & paging::PTE_ADDR_MASK_2M, frame_2mb);
+        assert_eq!(test_pdpt[1] & paging::PTE_ADDR_MASK, pd_phys);
+        assert_eq!(test_pd[0] & paging::PTE_ADDR_MASK_2M, frame_2mb);
 
         // Unmapping 2MB huge page clears PD[0], PDPT[1] MUST remain intact!
-        mock_pd[0] = 0;
-        assert_eq!(mock_pd[0], 0);
-        assert_eq!(mock_pdpt[1] & paging::PTE_ADDR_MASK, pd_phys);
+        test_pd[0] = 0;
+        assert_eq!(test_pd[0], 0);
+        assert_eq!(test_pdpt[1] & paging::PTE_ADDR_MASK, pd_phys);
     }
 }

@@ -12,7 +12,7 @@ SHELL           := /bin/bash
 # Master Build System Architecture
 #
 # Orchestrates the pure Rust kernel and assembly bootstrap compilation pipeline:
-#   1. NASM (Assembly)  : Compiles 32-bit and 64-bit boot trampolines & ISR stubs.
+#   1. NASM (Assembly)  : Compiles 32-bit and 64-bit boot trampolines & ISR handlers.
 #   2. Cargo (Rust Core): Compiles `no_std` 100% Pure Rust kernel static library (`.a`).
 #   3. LD (Linker)      : Links object files into a single ELF kernel executable.
 #   4. Userland (KCC/C) : Compiles userland C compiler (kcc.elf) and standard library.

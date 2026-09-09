@@ -11,7 +11,7 @@ This document details remote GDB debugging, serial UART logging, register inspec
 ```mermaid
 sequenceDiagram
     participant HostGDB as Host GDB Client (gdb build/x86_64/bin/keira.bin)
-    participant QEMUTCP as QEMU GDBstub (localhost:1234)
+    participant QEMUTCP as QEMU GDB Server (localhost:1234)
     participant Kernel as Keira Kernel Ring 0
 
     HostGDB->>QEMUTCP: 1. target remote localhost:1234

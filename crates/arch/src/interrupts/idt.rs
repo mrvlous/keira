@@ -212,7 +212,7 @@ pub fn init() {
     }
 }
 
-/// Generic ISR dispatcher called from assembly stubs if required.
+/// Generic ISR dispatcher called from assembly handlers if required.
 #[no_mangle]
 pub extern "C" fn isr_handler(vector: usize) {
     if vector == 32 {

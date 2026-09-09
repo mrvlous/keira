@@ -93,7 +93,7 @@ void primary_expr(void) {
         emit_push_rax(); /* arg3 */
         match(TOK_RPAREN);
 
-        emit_syscall_stub();
+        emit_syscall_trampoline();
         return;
     } else if (tok == TOK_IDENT) {
         char name[256];
@@ -119,7 +119,7 @@ void primary_expr(void) {
                 emit_push_rax(); /* arg3 */
                 match(TOK_RPAREN);
 
-                emit_syscall_stub();
+                emit_syscall_trampoline();
                 return;
             }
 
@@ -786,7 +786,7 @@ void statement(void) {
         match(TOK_RPAREN);
         match(TOK_SEMICOLON);
 
-        emit_printf_stub(fmt_offset, arg_count);
+        emit_printf_trampoline(fmt_offset, arg_count);
     } else if (tok == TOK_RETURN) {
         match(TOK_RETURN);
         if (tok != TOK_SEMICOLON) {

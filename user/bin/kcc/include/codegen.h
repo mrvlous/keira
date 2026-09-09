@@ -74,8 +74,8 @@ void emit_func_prologue(void);
 void emit_func_epilogue(int is_main);
 void emit_param_save(int param_idx, int local_offset);
 void emit_call(const char *name, int arg_count);
-void emit_syscall_stub(void);
-void emit_printf_stub(int fmt_offset, int arg_count);
+void emit_syscall_trampoline(void);
+void emit_printf_trampoline(int fmt_offset, int arg_count);
 
 /* Control Flow, Branches & Jump Patching */
 int emit_jmp_forward(void);

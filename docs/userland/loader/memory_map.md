@@ -64,7 +64,7 @@ At process startup, the kernel formats the top of the user stack with the comman
 ```
 
 - **x86_64 Calling Convention**: `_start(int argc, char **argv)` receives `RDI = argc` and `RSI = argv`.
-- **i686 Calling Convention**: `_start(int argc, char **argv)` receives arguments on stack with `[ESP+0] = ret_dummy`, `[ESP+4] = argc`, `[ESP+8] = argv`, `[ESP+12] = envp`.
+- **i686 Calling Convention**: `_start(int argc, char **argv)` receives arguments on stack with `[ESP+0] = ret_sentinel`, `[ESP+4] = argc`, `[ESP+8] = argv`, `[ESP+12] = envp`.
 
 ---
 

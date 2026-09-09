@@ -600,7 +600,7 @@ void emit_call(const char *name, int arg_count) {
 #endif
 }
 
-void emit_syscall_stub(void) {
+void emit_syscall_trampoline(void) {
 #if defined(__i386__) || defined(__i686__)
     /* Stack had args pushed: syscall nr, arg1, arg2, arg3 */
     emit_pop_rdx(); /* arg3 in edx */
@@ -621,7 +621,7 @@ void emit_syscall_stub(void) {
 #endif
 }
 
-void emit_printf_stub(int fmt_offset, int arg_count) {
+void emit_printf_trampoline(int fmt_offset, int arg_count) {
 #if defined(__i386__) || defined(__i686__)
     for (int a = 0; a < arg_count; a++) {
         emit_pop_rax();
