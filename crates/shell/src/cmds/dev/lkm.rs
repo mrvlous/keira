@@ -132,8 +132,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     .and_then(|s| s.parse::<usize>().ok())
                     .unwrap_or(16384);
 
-                let mock_vaddr = 0xFFFF_8000_0055_0000 + (size as u64 & 0x000F_FFFF);
-                match register_module(mod_name, size, mock_vaddr, "Dynamic Kernel Module") {
+                let module_vaddr = 0xFFFF_8000_0055_0000 + (size as u64 & 0x000F_FFFF);
+                match register_module(mod_name, size, module_vaddr, "Dynamic Kernel Module") {
                     Ok(idx) => {
                         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                         vga::print_str("[OK] Module '");
@@ -141,7 +141,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                         vga::print_str("' loaded successfully into slot #");
                         vga::print_u64(idx as u64);
                         vga::print_str(" at ");
-                        vga::print_hex(mock_vaddr);
+                        vga::print_hex(module_vaddr);
                         vga::print_str("\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     }

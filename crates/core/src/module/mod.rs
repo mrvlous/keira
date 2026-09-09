@@ -419,8 +419,8 @@ pub fn sys_init_module(name: &str, size: usize) -> Result<i64, i64> {
         return Err(-22); // -EINVAL
     }
 
-    let mock_vaddr = 0xFFFF_8000_0050_0000 + (size as u64 & 0x000F_FFFF);
-    match register_module(name, size, mock_vaddr, "Dynamic Loadable Kernel Module") {
+    let module_vaddr = 0xFFFF_8000_0050_0000 + (size as u64 & 0x000F_FFFF);
+    match register_module(name, size, module_vaddr, "Dynamic Loadable Kernel Module") {
         Ok(idx) => Ok(idx as i64),
         Err(KernelError::DeviceBusy) => Err(-16),  // -EBUSY
         Err(KernelError::OutOfMemory) => Err(-12), // -ENOMEM
