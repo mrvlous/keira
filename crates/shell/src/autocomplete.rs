@@ -98,6 +98,7 @@ pub unsafe fn handle_autocomplete() {
         "search",
         "seccomp",
         "service",
+        "smp",
         "stop",
         "swap",
         "sync",
