@@ -25,7 +25,7 @@ Select the appropriate category subfolder in `crates/shell/src/cmds/` (`fs`, `sy
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
 //
-// Keira Kernel - Operating System Kernel
+// Keira Kernel - Freestanding Kernel from Scratch
 // Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 //
 // This program is free software; you can redistribute it and/or modify

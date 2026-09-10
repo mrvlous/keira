@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Keira Kernel - Operating System Kernel
+ * Keira Kernel - Freestanding Kernel from Scratch
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
  *
  * This program is free software; you can redistribute it and/or modify
@@ -62,7 +62,7 @@ void main(void) {
     printf("Pattern Query: \"Rust\"\n\n");
 
     char *pat = "Rust";
-    check_and_print(1, "Keira Kernel Operating System", pat);
+    check_and_print(1, "Keira Freestanding Kernel from Scratch", pat);
     check_and_print(2, "Pure Rust bare-metal hyper-architecture", pat);
     check_and_print(3, "Freestanding C Userland Toolchain (KCC)", pat);
     check_and_print(4, "Rust and C multi-language system runtime", pat);
