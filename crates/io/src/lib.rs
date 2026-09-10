@@ -16,7 +16,6 @@ pub mod framebuffer;
 pub mod ps2;
 pub mod rtc;
 pub mod serial;
-pub mod sound;
 pub mod storage;
 pub mod tty;
 pub mod usb;
@@ -38,10 +37,6 @@ pub use serial::uart::{
     print as serial_print, print_hex as serial_print_hex, print_str as serial_print_str,
     print_u64 as serial_print_u64, putchar as serial_putchar,
 };
-pub use sound::hda::{
-    init as hda_init, play_tone as hda_play_tone, stop as hda_stop, HDA_INITIALIZED, HDA_PCI_FOUND,
-};
-pub use sound::speaker::{play_note, play_sound, sleep_ms, stop_sound};
 pub use storage::ahci::{self, flush_dma_cache, init as ahci_init, AhciBlockDevice, AHCI_DEVICE};
 pub use storage::block::{
     self, for_each_device, get_device, get_mounted_device, mount_device, register_device,

@@ -113,7 +113,6 @@ Write and support hardware device drivers:
 * Driver Framework: docs/drivers/README.md
 * VGA Text Console & VBE Framebuffer: docs/drivers/display/README.md
 * Serial UART COM1: docs/drivers/serial/README.md
-* Sound (PC Speaker & HDA): docs/drivers/sound/README.md
 * Storage (IDE, AHCI, NVMe): docs/drivers/storage/README.md
 * Intel e1000 Network Driver: docs/drivers/net/e1000.md
 * USB Host Controller Driver: docs/drivers/bus/usb.md

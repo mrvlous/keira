@@ -26,9 +26,9 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | **System Calls** | [`syscall/`](syscall/README.md) | System call vector table, dispatcher ABI, and validated user copying |
 | **IPC** | [`ipc/`](ipc/README.md) | Anonymous pipes, zero-copy splice, shared memory, futex, eventfd, epoll, and mqueue |
 | **Filesystems** | [`fs/`](fs/README.md) | Virtual Filesystem (VFS), FAT12/16/32, EXT4, USTAR initrd, LVM/RAID, and sector caching |
-| **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, sound, PCI/USB, and TTYs |
+| **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, PCI/USB, and TTYs |
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3, and firewall |
 | **Cryptography** | [`crypto/`](crypto/README.md) | SHA-256, AES-128-GCM, Curve25519, TPM 2.0 enclave, Seccomp BPF, and MAC |
-| **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete, history, and 78 commands |
+| **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete, history, and 75 commands |
 | **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, in-kernel KCC compiler, dynamic ELF loader, and multi-user |
 | **Contributor Guide** | [`contributing/`](contributing/README.md) | Environment setup, build targets, coding style, testing, and debugging |

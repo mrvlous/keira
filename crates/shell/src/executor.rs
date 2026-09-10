@@ -384,7 +384,6 @@ pub fn execute_command_inner(cmd: &str) {
         .unwrap_or(raw_command);
 
     match command {
-        "guide" => super::cmds::guide::run(&mut parts),
         "env" => super::cmds::env::run(&mut parts),
         "login" => super::cmds::login::run(&mut parts),
         "user" => super::cmds::user::run(&mut parts),
@@ -401,7 +400,6 @@ pub fn execute_command_inner(cmd: &str) {
         "devices" => super::cmds::devices::run(&mut parts),
         "network" => super::cmds::network::run(&mut parts),
         "download" => super::cmds::download::run(&mut parts),
-        "wait" => super::cmds::wait::run(&mut parts),
         "initrd" => super::cmds::initrd::run(&mut parts),
         "wipe" => super::cmds::wipe::run(&mut parts),
         "reset" | "reboot" => super::cmds::reset::run(&mut parts),
@@ -413,7 +411,6 @@ pub fn execute_command_inner(cmd: &str) {
 
         "list" => super::cmds::list::run(&mut parts),
         "go" => super::cmds::go::run(&mut parts),
-        "script" => super::cmds::script::run(&mut parts),
         "view" => super::cmds::view::run(&mut parts),
         "write" => super::cmds::write::run(&mut parts),
         "create" => super::cmds::create::run(&mut parts),
@@ -507,7 +504,7 @@ pub fn execute_command_inner(cmd: &str) {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
                 vga::print_str("Unknown command: ");
                 vga::print_str(command);
-                vga::print_str(". Type 'guide' for help.\n");
+                vga::print_str(". Type 'help' for available commands.\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
         }
