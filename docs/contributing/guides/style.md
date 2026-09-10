@@ -28,7 +28,7 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
 //
-// Keira Kernel - Operating System Kernel
+// Keira Kernel - Freestanding Kernel from Scratch
 // Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 //
 // This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,7 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 ```c
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Keira Kernel - Operating System Kernel
+ * Keira Kernel - Freestanding Kernel from Scratch
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 ```nasm
 ; SPDX-License-Identifier: GPL-2.0-only
 ;
-; Keira Kernel - Operating System Kernel
+; Keira Kernel - Freestanding Kernel from Scratch
 ; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 ;
 ; This program is free software; you can redistribute it and/or modify
@@ -65,7 +65,7 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 ```makefile
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Keira Kernel - Operating System Kernel
+# Keira Kernel - Freestanding Kernel from Scratch
 # Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 #
 # This program is free software; you can redistribute it and/or modify
