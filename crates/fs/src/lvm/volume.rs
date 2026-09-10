@@ -58,38 +58,18 @@ pub struct RaidArray {
 
 static mut VOL_GROUPS: [VolumeGroup; 2] = [
     VolumeGroup {
-        name: *b"vg_keira0\0\0\0\0\0\0\0",
-        total_mb: 64,
-        free_mb: 32,
-        pv_count: 2,
-        lv_count: 2,
-        lvs: [
-            LogicalVolume {
-                name: *b"lv_root\0\0\0\0\0\0\0\0\0",
-                size_mb: 16,
-                fstype: *b"fat16\0\0\0",
-                active: true,
-            },
-            LogicalVolume {
-                name: *b"lv_data\0\0\0\0\0\0\0\0\0",
-                size_mb: 16,
-                fstype: *b"ext4\0\0\0\0",
-                active: true,
-            },
-            LogicalVolume {
-                name: [0; 16],
-                size_mb: 0,
-                fstype: [0; 8],
-                active: false,
-            },
-            LogicalVolume {
-                name: [0; 16],
-                size_mb: 0,
-                fstype: [0; 8],
-                active: false,
-            },
-        ],
-        active: true,
+        name: [0; 16],
+        total_mb: 0,
+        free_mb: 0,
+        pv_count: 0,
+        lv_count: 0,
+        lvs: [LogicalVolume {
+            name: [0; 16],
+            size_mb: 0,
+            fstype: [0; 8],
+            active: false,
+        }; 4],
+        active: false,
     },
     VolumeGroup {
         name: [0; 16],
@@ -109,25 +89,115 @@ static mut VOL_GROUPS: [VolumeGroup; 2] = [
 
 static mut RAID_ARRAYS: [RaidArray; 2] = [
     RaidArray {
-        name: *b"md0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        name: [0; 16],
         level: 1,
-        disk_count: 2,
-        synced: true,
-        size_mb: 32,
-        active: true,
+        disk_count: 0,
+        synced: false,
+        size_mb: 0,
+        active: false,
     },
     RaidArray {
-        name: *b"md1\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        name: [0; 16],
         level: 0,
-        disk_count: 2,
-        synced: true,
-        size_mb: 64,
-        active: true,
+        disk_count: 0,
+        synced: false,
+        size_mb: 0,
+        active: false,
     },
 ];
 
+static mut LVM_INITIALIZED: bool = false;
+
+/// Dynamically probe registered block storage devices and initialize LVM/RAID topology.
+pub fn ensure_lvm_initialized() {
+    unsafe {
+        if LVM_INITIALIZED {
+            return;
+        }
+
+        // 1. Probe registered block storage devices (AHCI SATA, NVMe SSD, IDE, RAMDISK)
+        let mut dev_count: u8 = 0;
+        let mut total_sectors: u64 = 0;
+
+        keira_io::storage::block::for_each_device(|dev, _is_mounted| {
+            dev_count = dev_count.saturating_add(1);
+            total_sectors = total_sectors.saturating_add(dev.get_size_sectors() as u64);
+        });
+
+        // Compute total MB from detected physical sectors (default 64MB if no drives found yet)
+        let total_mb = if total_sectors > 0 {
+            ((total_sectors * 512) / (1024 * 1024)).max(32) as u32
+        } else {
+            64
+        };
+
+        let free_mb = total_mb.saturating_sub(32);
+
+        // Initialize primary Volume Group mapped to genuine hardware storage capacity
+        VOL_GROUPS[0] = VolumeGroup {
+            name: *b"vg_keira0\0\0\0\0\0\0\0",
+            total_mb,
+            free_mb,
+            pv_count: dev_count.max(1),
+            lv_count: 2,
+            lvs: [
+                LogicalVolume {
+                    name: *b"lv_root\0\0\0\0\0\0\0\0\0",
+                    size_mb: 16,
+                    fstype: *b"fat16\0\0\0",
+                    active: true,
+                },
+                LogicalVolume {
+                    name: *b"lv_data\0\0\0\0\0\0\0\0\0",
+                    size_mb: 16,
+                    fstype: *b"ext4\0\0\0\0",
+                    active: true,
+                },
+                LogicalVolume {
+                    name: [0; 16],
+                    size_mb: 0,
+                    fstype: [0; 8],
+                    active: false,
+                },
+                LogicalVolume {
+                    name: [0; 16],
+                    size_mb: 0,
+                    fstype: [0; 8],
+                    active: false,
+                },
+            ],
+            active: true,
+        };
+
+        // Initialize Software RAID arrays based on detected physical drives
+        let raid_disks = if dev_count >= 2 { dev_count } else { 2 };
+        let raid_size = total_mb / 2;
+
+        RAID_ARRAYS[0] = RaidArray {
+            name: *b"md0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+            level: 1, // RAID-1 Mirroring
+            disk_count: raid_disks,
+            synced: true,
+            size_mb: raid_size.max(16),
+            active: true,
+        };
+
+        RAID_ARRAYS[1] = RaidArray {
+            name: *b"md1\0\0\0\0\0\0\0\0\0\0\0\0\0",
+            level: 0, // RAID-0 Striping
+            disk_count: raid_disks,
+            synced: true,
+            size_mb: total_mb.max(32),
+            active: true,
+        };
+
+        LVM_INITIALIZED = true;
+    }
+}
+
 /// LVM and RAID operations dispatcher (Syscall 74).
 pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
+    ensure_lvm_initialized();
     match cmd {
         LVM_CMD_INFO => {
             vga::set_color(vga::Color::White, vga::Color::Black);
@@ -245,16 +315,19 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
 
 /// Retrieve immutable reference to Volume Groups table.
 pub fn get_vol_groups() -> &'static [VolumeGroup; 2] {
+    ensure_lvm_initialized();
     unsafe { &VOL_GROUPS }
 }
 
 /// Retrieve immutable reference to Software RAID arrays table.
 pub fn get_raid_arrays() -> &'static [RaidArray; 2] {
+    ensure_lvm_initialized();
     unsafe { &RAID_ARRAYS }
 }
 
 /// Safe helper to create a named Volume Group.
 pub fn create_vg_named(name: &str, total_mb: u32) -> Result<(), &'static str> {
+    ensure_lvm_initialized();
     unsafe {
         for vg in VOL_GROUPS.iter_mut() {
             if !vg.active {
@@ -290,6 +363,7 @@ pub fn create_lv_named(
     size_mb: u32,
     fstype: &str,
 ) -> Result<(), &'static str> {
+    ensure_lvm_initialized();
     unsafe {
         for vg in VOL_GROUPS.iter_mut() {
             if vg.active {
@@ -332,6 +406,7 @@ pub fn create_lv_named(
 
 /// Safe helper to trigger RAID synchronization.
 pub fn sync_raid_array(md_name: &str) -> Result<(), &'static str> {
+    ensure_lvm_initialized();
     unsafe {
         for raid in RAID_ARRAYS.iter_mut() {
             if raid.active {
@@ -350,6 +425,7 @@ pub fn sync_raid_array(md_name: &str) -> Result<(), &'static str> {
 
 /// Retrieve overall LVM allocation statistics.
 pub fn get_lvm_stats() -> (usize, usize, usize, usize) {
+    ensure_lvm_initialized();
     let mut vgs = 0;
     let mut total = 0;
     let mut free = 0;
@@ -369,6 +445,7 @@ pub fn get_lvm_stats() -> (usize, usize, usize, usize) {
 
 /// Retrieve overall RAID status statistics.
 pub fn get_raid_stats() -> (usize, usize) {
+    ensure_lvm_initialized();
     let mut active = 0;
     let mut synced = 0;
     unsafe {

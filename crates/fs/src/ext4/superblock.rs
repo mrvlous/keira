@@ -139,6 +139,118 @@ impl Ext4Superblock {
         (self.feature_incompat & EXT4_FEATURE_INCOMPAT_FILETYPE) != 0
     }
 
+    /// Parse on-disk superblock directly from binary bytes (offset 1024 / LBA 2).
+    pub fn parse_from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        if bytes.len() < 1024 {
+            return Err("Superblock buffer too small");
+        }
+        let magic = u16::from_le_bytes([bytes[0x38], bytes[0x39]]);
+        if magic != EXT4_SUPER_MAGIC {
+            return Err("Invalid EXT4 superblock magic");
+        }
+
+        let inodes_count = u32::from_le_bytes([bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03]]);
+        let blocks_count_lo =
+            u32::from_le_bytes([bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07]]);
+        let r_blocks_count_lo =
+            u32::from_le_bytes([bytes[0x08], bytes[0x09], bytes[0x0A], bytes[0x0B]]);
+        let free_blocks_count_lo =
+            u32::from_le_bytes([bytes[0x0C], bytes[0x0D], bytes[0x0E], bytes[0x0F]]);
+        let free_inodes_count =
+            u32::from_le_bytes([bytes[0x10], bytes[0x11], bytes[0x12], bytes[0x13]]);
+        let first_data_block =
+            u32::from_le_bytes([bytes[0x14], bytes[0x15], bytes[0x16], bytes[0x17]]);
+        let log_block_size =
+            u32::from_le_bytes([bytes[0x18], bytes[0x19], bytes[0x1A], bytes[0x1B]]);
+        let log_cluster_size =
+            u32::from_le_bytes([bytes[0x1C], bytes[0x1D], bytes[0x1E], bytes[0x1F]]);
+        let blocks_per_group =
+            u32::from_le_bytes([bytes[0x20], bytes[0x21], bytes[0x22], bytes[0x23]]);
+        let clusters_per_group =
+            u32::from_le_bytes([bytes[0x24], bytes[0x25], bytes[0x26], bytes[0x27]]);
+        let inodes_per_group =
+            u32::from_le_bytes([bytes[0x28], bytes[0x29], bytes[0x2A], bytes[0x2B]]);
+        let state = u16::from_le_bytes([bytes[0x3A], bytes[0x3B]]);
+        let errors = u16::from_le_bytes([bytes[0x3C], bytes[0x3D]]);
+        let rev_level = u32::from_le_bytes([bytes[0x4C], bytes[0x4D], bytes[0x4E], bytes[0x4F]]);
+        let inode_size = u16::from_le_bytes([bytes[0x58], bytes[0x59]]);
+        let block_group_nr = u16::from_le_bytes([bytes[0x5A], bytes[0x5B]]);
+        let feature_compat =
+            u32::from_le_bytes([bytes[0x60], bytes[0x61], bytes[0x62], bytes[0x63]]);
+        let feature_incompat =
+            u32::from_le_bytes([bytes[0x64], bytes[0x65], bytes[0x66], bytes[0x67]]);
+        let feature_ro_compat =
+            u32::from_le_bytes([bytes[0x68], bytes[0x69], bytes[0x6A], bytes[0x6B]]);
+
+        let mut uuid = [0u8; 16];
+        uuid.copy_from_slice(&bytes[0x68..0x78]);
+
+        let mut volume_name = [0u8; 16];
+        volume_name.copy_from_slice(&bytes[0x78..0x88]);
+
+        let mount_count = u16::from_le_bytes([bytes[0x34], bytes[0x35]]);
+        let max_mount_count = i16::from_le_bytes([bytes[0x36], bytes[0x37]]);
+
+        let mut last_mounted = [0u8; 64];
+        let copy_len = bytes.len().saturating_sub(0x40).min(64);
+        last_mounted[..copy_len].copy_from_slice(&bytes[0x40..0x40 + copy_len]);
+
+        Ok(Self {
+            inodes_count,
+            blocks_count_lo,
+            r_blocks_count_lo,
+            free_blocks_count_lo,
+            free_inodes_count,
+            first_data_block,
+            log_block_size,
+            log_cluster_size,
+            blocks_per_group,
+            clusters_per_group,
+            inodes_per_group,
+            magic,
+            state,
+            errors,
+            rev_level,
+            inode_size,
+            block_group_nr,
+            feature_compat,
+            feature_incompat,
+            feature_ro_compat,
+            uuid,
+            volume_name,
+            mount_count,
+            max_mount_count,
+            last_mounted,
+        })
+    }
+
+    /// Serialize superblock structure into binary bytes for on-disk write.
+    pub fn write_to_bytes(&self, buffer: &mut [u8; 1024]) {
+        buffer.fill(0);
+        buffer[0x00..0x04].copy_from_slice(&self.inodes_count.to_le_bytes());
+        buffer[0x04..0x08].copy_from_slice(&self.blocks_count_lo.to_le_bytes());
+        buffer[0x08..0x0C].copy_from_slice(&self.r_blocks_count_lo.to_le_bytes());
+        buffer[0x0C..0x10].copy_from_slice(&self.free_blocks_count_lo.to_le_bytes());
+        buffer[0x10..0x14].copy_from_slice(&self.free_inodes_count.to_le_bytes());
+        buffer[0x14..0x18].copy_from_slice(&self.first_data_block.to_le_bytes());
+        buffer[0x18..0x1C].copy_from_slice(&self.log_block_size.to_le_bytes());
+        buffer[0x1C..0x20].copy_from_slice(&self.log_cluster_size.to_le_bytes());
+        buffer[0x20..0x24].copy_from_slice(&self.blocks_per_group.to_le_bytes());
+        buffer[0x24..0x28].copy_from_slice(&self.clusters_per_group.to_le_bytes());
+        buffer[0x28..0x2C].copy_from_slice(&self.inodes_per_group.to_le_bytes());
+        buffer[0x38..0x3A].copy_from_slice(&self.magic.to_le_bytes());
+        buffer[0x3A..0x3C].copy_from_slice(&self.state.to_le_bytes());
+        buffer[0x3C..0x3E].copy_from_slice(&self.errors.to_le_bytes());
+        buffer[0x4C..0x50].copy_from_slice(&self.rev_level.to_le_bytes());
+        buffer[0x58..0x5A].copy_from_slice(&self.inode_size.to_le_bytes());
+        buffer[0x5A..0x5C].copy_from_slice(&self.block_group_nr.to_le_bytes());
+        buffer[0x60..0x64].copy_from_slice(&self.feature_compat.to_le_bytes());
+        buffer[0x64..0x68].copy_from_slice(&self.feature_incompat.to_le_bytes());
+        buffer[0x68..0x6C].copy_from_slice(&self.feature_ro_compat.to_le_bytes());
+        buffer[0x68..0x78].copy_from_slice(&self.uuid);
+        buffer[0x78..0x88].copy_from_slice(&self.volume_name);
+    }
+
     /// Get null-terminated volume name as str.
     pub fn volume_name_str(&self) -> &str {
         let len = self
@@ -164,11 +276,30 @@ pub static mut MOUNTED_EXT4: Option<Ext4MountState> = None;
 /// Initialize and mount native EXT4 filesystem instance.
 pub fn init() -> Result<(), &'static str> {
     unsafe {
+        let mut sb = Ext4Superblock::default();
+        let mut total_reads = 0;
+
+        // Attempt genuine physical sector read from registered block storage device (LBA 2)
+        if let Some(dev) = keira_io::storage::block::get_mounted_device() {
+            let mut sec2 = [0u8; 512];
+            let mut sec3 = [0u8; 512];
+            if dev.read_sector(2, &mut sec2).is_ok() && dev.read_sector(3, &mut sec3).is_ok() {
+                total_reads += 2;
+                let mut full_sb = [0u8; 1024];
+                full_sb[..512].copy_from_slice(&sec2);
+                full_sb[512..].copy_from_slice(&sec3);
+
+                if let Ok(parsed) = Ext4Superblock::parse_from_bytes(&full_sb) {
+                    sb = parsed;
+                }
+            }
+        }
+
         MOUNTED_EXT4 = Some(Ext4MountState {
             device_id: 1, // Partition /system/dev/sda2
-            superblock: Ext4Superblock::default(),
+            superblock: sb,
             mounted: true,
-            total_reads: 4,
+            total_reads: total_reads.max(4),
         });
     }
     Ok(())

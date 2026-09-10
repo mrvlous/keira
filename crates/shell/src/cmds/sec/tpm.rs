@@ -106,6 +106,15 @@ fn print_status() {
     vga::print_str("  Locality Base     : 0x");
     print_hex_u64(status.mmio_base);
     vga::print_str(" (Locality 0 MMIO Enclave)\n");
+    vga::print_str("  Hardware Probe    : VID 0x");
+    vga::print_hex(status.hardware.vendor_id as u64);
+    vga::print_str(" DID 0x");
+    vga::print_hex(status.hardware.device_id as u64);
+    vga::print_str(if status.hardware.present {
+        " [CONNECTED]\n"
+    } else {
+        " [NO HARDWARE / FLOATING]\n"
+    });
 
     vga::print_str("  Active PCR Banks  : SHA-256 (24 Registers [PCR 0..23])\n");
     vga::print_str("  Total Measurements: ");

@@ -28,9 +28,79 @@ pub struct PerfTelemetry {
     pub pmu_enabled: bool,
 }
 
+/// Architectural Performance Monitoring Unit (PMU) hardware capabilities.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct PmuCapabilities {
+    pub version: u8,
+    pub general_counters: u8,
+    pub fixed_counters: u8,
+    pub counter_bit_width: u8,
+    pub has_core_cycles: bool,
+    pub has_instructions_retired: bool,
+    pub has_ref_cycles: bool,
+    pub has_cache_misses: bool,
+    pub has_branch_misses: bool,
+}
+
+/// Fixed MSR registers for x86 Architectural PMU.
+pub const IA32_PERF_GLOBAL_CTRL: u32 = 0x38F;
+pub const IA32_FIXED_CTR_CTRL: u32 = 0x38D;
+pub const IA32_FIXED_CTR0: u32 = 0x309; // INST_RETIRED.ANY
+pub const IA32_FIXED_CTR1: u32 = 0x30A; // CPU_CLK_UNHALTED.CORE
+pub const IA32_FIXED_CTR2: u32 = 0x30B; // CPU_CLK_UNHALTED.REF
+
+pub const TSC_NOMINAL_HZ: u64 = 2_400_000_000;
+
 static mut PMU_ENABLED: bool = true;
 static mut PERF_BASE_CYCLES: u64 = 0;
-static mut PERF_SAMPLES_COLLECTED: u64 = 42;
+static mut PERF_INSTRUCTIONS: u64 = 0;
+static mut PERF_CACHE_MISSES: u64 = 0;
+static mut PERF_BRANCH_MISSES: u64 = 0;
+
+/// Probe CPUID for Architectural Performance Monitoring (Leaf 0x0A).
+pub fn probe_pmu_hardware() -> PmuCapabilities {
+    #[cfg(target_arch = "x86_64")]
+    {
+        let leaf_0a = core::arch::x86_64::__cpuid(0x0A);
+        let version = (leaf_0a.eax & 0xFF) as u8;
+        let general_counters = ((leaf_0a.eax >> 8) & 0xFF) as u8;
+        let counter_bit_width = ((leaf_0a.eax >> 16) & 0xFF) as u8;
+        let ebx = leaf_0a.ebx;
+        let edx = leaf_0a.edx;
+        let fixed_counters = (edx & 0x1F) as u8;
+
+        PmuCapabilities {
+            version,
+            general_counters,
+            fixed_counters,
+            counter_bit_width,
+            has_core_cycles: (ebx & (1 << 0)) == 0 && version > 0,
+            has_instructions_retired: (ebx & (1 << 1)) == 0 && version > 0,
+            has_ref_cycles: (ebx & (1 << 2)) == 0 && version > 0,
+            has_cache_misses: (ebx & (1 << 4)) == 0 && version > 0,
+            has_branch_misses: (ebx & (1 << 6)) == 0 && version > 0,
+        }
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        PmuCapabilities::default()
+    }
+}
+
+/// Detect CPU TSC frequency or fallback to calibrated nominal baseline.
+pub fn detect_tsc_frequency_hz() -> u64 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        let leaf_15 = core::arch::x86_64::__cpuid(0x15);
+        if leaf_15.eax != 0 && leaf_15.ebx != 0 && leaf_15.ecx != 0 {
+            let hz = (leaf_15.ecx as u64 * leaf_15.ebx as u64) / (leaf_15.eax as u64);
+            if hz >= 500_000_000 {
+                return hz;
+            }
+        }
+    }
+    TSC_NOMINAL_HZ
+}
 
 /// Read hardware timestamp counter and return performance telemetry snapshot.
 ///
@@ -45,18 +115,16 @@ pub unsafe fn get_perf_telemetry() -> PerfTelemetry {
         current_tsc
     };
 
-    // Calculate realistic instruction telemetry from cycles (average IPC ~ 1.25)
-    let instructions = (cycles * 5) / 4;
-    let cache_misses = (instructions / 128).max(12);
-    let branch_misses = (instructions / 256).max(6);
+    let caps = probe_pmu_hardware();
+    let pmu_available = caps.version > 0 && PMU_ENABLED;
 
     PerfTelemetry {
         cycles,
-        instructions,
-        cache_misses,
-        branch_misses,
-        tsc_hz: 2_400_000_000,
-        pmu_enabled: PMU_ENABLED,
+        instructions: PERF_INSTRUCTIONS,
+        cache_misses: PERF_CACHE_MISSES,
+        branch_misses: PERF_BRANCH_MISSES,
+        tsc_hz: TSC_NOMINAL_HZ,
+        pmu_enabled: pmu_available,
     }
 }
 
@@ -67,7 +135,9 @@ pub unsafe fn get_perf_telemetry() -> PerfTelemetry {
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn reset_perf_counters() {
     PERF_BASE_CYCLES = crate::cpu::rdtsc();
-    PERF_SAMPLES_COLLECTED = 0;
+    PERF_INSTRUCTIONS = 0;
+    PERF_CACHE_MISSES = 0;
+    PERF_BRANCH_MISSES = 0;
 }
 
 /// Open a hardware performance monitoring counter event (Syscall 49 / 77).
