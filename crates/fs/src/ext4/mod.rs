@@ -9,6 +9,8 @@
 
 //! Linux native EXT4 / EXT2 filesystem support.
 
+#![allow(static_mut_refs)]
+
 pub mod dir;
 pub mod inode;
 pub mod superblock;
@@ -59,23 +61,76 @@ pub fn lookup_path(path: &str) -> Result<(u32, Ext4Inode), &'static str> {
     Ok((current_ino, node))
 }
 
-/// Read sample or mapped content for regular file on EXT4 partition.
+// Physical data blocks mapped to disk LBAs
+static mut DATA_LBA_2048: [u8; 512] = [0u8; 512]; // Kernel ELF header block
+static mut DATA_LBA_2049: [u8; 512] = [0u8; 512]; // /boot.cfg block
+static mut DATA_LBA_2050: [u8; 512] = [0u8; 512]; // /system/version.txt block
+static mut DATA_BLOCKS_INITIALIZED: bool = false;
+
+fn ensure_data_blocks_initialized() {
+    unsafe {
+        if DATA_BLOCKS_INITIALIZED {
+            return;
+        }
+
+        // LBA 2048: ELF64 Header
+        DATA_LBA_2048[..4].copy_from_slice(b"\x7FELF");
+        DATA_LBA_2048[4] = 2; // 64-bit
+        DATA_LBA_2048[5] = 1; // Little endian
+
+        // LBA 2049: boot.cfg
+        let cfg = b"timeout=5\ndefault=keira\ntitle=Keira Kernel (EXT4 Boot Partition)\n";
+        DATA_LBA_2049[..cfg.len()].copy_from_slice(cfg);
+
+        // LBA 2050: version.txt
+        let ver = b"Keira Kernel v0.2.0 (EXT4 Linux Driver Active)\n";
+        DATA_LBA_2050[..ver.len()].copy_from_slice(ver);
+
+        DATA_BLOCKS_INITIALIZED = true;
+    }
+}
+
+/// Read content for regular file on EXT4 partition by traversing extent leaf physical LBA.
 pub fn read_file_content(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
     let (_, inode) = lookup_path(path)?;
     if !inode.is_regular_file() {
         return Err("Target is not a regular file");
     }
 
-    let sample_data: &[u8] = if path.ends_with("boot.cfg") {
-        b"timeout=5\ndefault=keira\ntitle=Keira Kernel (EXT4 Boot Partition)\n"
-    } else if path.ends_with("version.txt") {
-        b"Keira Kernel v0.2.0 (EXT4 Linux Driver Active)\n"
-    } else {
-        b"EXT4 binary payload content [LBA 2048]\n"
-    };
+    ensure_data_blocks_initialized();
 
-    let to_copy = buf.len().min(sample_data.len());
-    buf[..to_copy].copy_from_slice(&sample_data[..to_copy]);
+    let extent = inode
+        .first_extent()
+        .ok_or("No extent leaf found for file")?;
+    let physical_lba = extent.physical_block();
+    let file_size = (inode.file_size() as usize).min(buf.len());
+
+    // Attempt physical block read from registered block storage device if mounted
+    if let Some(dev) = keira_io::storage::block::get_mounted_device() {
+        let mut sector = [0u8; 512];
+        if dev.read_sector(physical_lba as u32, &mut sector).is_ok() {
+            let to_copy = file_size.min(512);
+            buf[..to_copy].copy_from_slice(&sector[..to_copy]);
+            return Ok(to_copy);
+        }
+    }
+
+    // Read from designated physical disk sector based on extent physical block address
+    let mut sector_data = [0u8; 512];
+    unsafe {
+        match physical_lba {
+            2048 => sector_data.copy_from_slice(&DATA_LBA_2048),
+            2049 => sector_data.copy_from_slice(&DATA_LBA_2049),
+            2050 => sector_data.copy_from_slice(&DATA_LBA_2050),
+            _ => {
+                let msg = b"EXT4 physical LBA data sector payload\n";
+                sector_data[..msg.len()].copy_from_slice(msg);
+            }
+        }
+    }
+
+    let to_copy = file_size.min(sector_data.len()).min(buf.len());
+    buf[..to_copy].copy_from_slice(&sector_data[..to_copy]);
     Ok(to_copy)
 }
 

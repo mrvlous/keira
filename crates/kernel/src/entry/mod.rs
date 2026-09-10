@@ -154,6 +154,10 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
         // Identity map Local APIC (0xFEE00000) and I/O APIC (0xFEC00000) MMIO registers
         let _ = vmm::map_page(0xFEE0_0000, 0xFEE0_0000, vmm::PAGE_WRITABLE);
         let _ = vmm::map_page(0xFEC0_0000, 0xFEC0_0000, vmm::PAGE_WRITABLE);
+        // Identity map TPM 2.0 TIS MMIO interface (0xFED40000)
+        if vmm::map_page(0xFED4_0000, 0xFED4_0000, vmm::PAGE_WRITABLE).is_ok() {
+            keira_crypto::tpm::TPM_MMIO_MAPPED = true;
+        }
 
         scheduler_init();
     }

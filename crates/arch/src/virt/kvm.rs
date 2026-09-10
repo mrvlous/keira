@@ -18,6 +18,12 @@ pub const MAX_GUEST_VMS: usize = 4;
 /// Maximum number of virtual CPUs allocated per Guest Virtual Machine.
 pub const MAX_VCPUS_PER_VM: usize = 4;
 
+/// Guest reset vector execution start address (standard 16-byte ROM baseline at 0xFFF0).
+pub const GUEST_RESET_VECTOR: u64 = 0x0000_FFF0;
+
+/// Fixed-size guest instruction code capacity per vCPU context.
+pub const GUEST_CODE_CAPACITY: usize = 64;
+
 /// Hardware virtualization capabilities detected via CPUID.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VirtHardware {
@@ -25,7 +31,7 @@ pub struct VirtHardware {
     pub has_intel_vmx: bool,
     /// AMD-V / SVM instruction set support (CPUID.80000001H:ECX.SVM[bit 2]).
     pub has_amd_svm: bool,
-    /// Hypervisor operational status.
+    /// Hypervisor operational status based on genuine hardware virtualization flags.
     pub hypervisor_ready: bool,
 }
 
@@ -75,7 +81,7 @@ impl GuestRegisters {
             r13: 0,
             r14: 0,
             r15: 0,
-            rip: 0x0000_FFF0, // Reset execution vector
+            rip: GUEST_RESET_VECTOR, // Reset execution vector
             rflags: 0x0000_0002,
             cr0: 0x6000_0010,
             cr3: 0,
@@ -135,10 +141,27 @@ pub struct VirtualCpu {
     pub exit_count: u64,
     /// Online status flag.
     pub is_running: bool,
+    /// Physical guest ROM/RAM page hosting instruction bytes at reset vector.
+    pub guest_code: [u8; GUEST_CODE_CAPACITY],
 }
 
 impl VirtualCpu {
     pub const fn new(id: u32) -> Self {
+        let mut code = [0xF4; GUEST_CODE_CAPACITY]; // Fill default with HLT (0xF4)
+
+        // Seed genuine standard x86 guest instructions starting at reset vector:
+        // Offset 0: 0x0F, 0xA2 -> CPUID (2 bytes)
+        code[0] = 0x0F;
+        code[1] = 0xA2;
+        // Offset 2: 0xEC -> IN AL, DX (1 byte)
+        code[2] = 0xEC;
+        // Offset 3: 0x0F, 0x01, 0xC1 -> VMCALL (3 bytes)
+        code[3] = 0x0F;
+        code[4] = 0x01;
+        code[5] = 0xC1;
+        // Offset 6: 0xF4 -> HLT (1 byte)
+        code[6] = 0xF4;
+
         Self {
             id,
             regs: GuestRegisters::new_reset_state(),
@@ -146,35 +169,63 @@ impl VirtualCpu {
             instructions_executed: 0,
             exit_count: 0,
             is_running: false,
+            guest_code: code,
         }
     }
 
-    /// Advance vCPU execution by simulating a guest instruction block until exit.
+    /// Load custom x86 guest machine instructions into execution buffer.
+    pub fn load_code(&mut self, offset: usize, bytes: &[u8]) -> Result<(), &'static str> {
+        if offset + bytes.len() > GUEST_CODE_CAPACITY {
+            return Err("Code payload exceeds guest code buffer capacity");
+        }
+        self.guest_code[offset..offset + bytes.len()].copy_from_slice(bytes);
+        Ok(())
+    }
+
+    /// Advance vCPU execution by decoding and executing the instruction at guest RIP.
     pub fn step(&mut self) -> VmExitReason {
         self.is_running = true;
-        self.instructions_executed = self.instructions_executed.saturating_add(64);
-        self.exit_count = self.exit_count.saturating_add(1);
 
-        // Cycle through deterministic guest transitions: CPUID -> Port IO -> HLT -> VMCALL
-        let reason = match self.exit_count % 4 {
-            1 => {
-                self.regs.rip = self.regs.rip.wrapping_add(2);
-                VmExitReason::Cpuid
-            }
-            2 => {
-                self.regs.rip = self.regs.rip.wrapping_add(1);
-                VmExitReason::IoInstruction
-            }
-            3 => {
-                self.regs.rip = self.regs.rip.wrapping_add(3);
-                VmExitReason::Hypercall
-            }
-            _ => {
-                self.regs.rip = self.regs.rip.wrapping_add(1);
-                VmExitReason::Hlt
+        let offset = match self.regs.rip.checked_sub(GUEST_RESET_VECTOR) {
+            Some(off) => off as usize,
+            None => {
+                self.exit_reason = VmExitReason::Shutdown;
+                return VmExitReason::Shutdown;
             }
         };
 
+        if offset >= GUEST_CODE_CAPACITY {
+            self.exit_reason = VmExitReason::Shutdown;
+            return VmExitReason::Shutdown;
+        }
+
+        let slice = &self.guest_code[offset..];
+        let (reason, insn_len) = match slice {
+            // CPUID: 0x0F 0xA2
+            [0x0F, 0xA2, ..] => {
+                self.regs.rax = 0x0000_0001; // Processor signature
+                self.regs.rbx = 0x756E_6547; // "Genu"
+                self.regs.rdx = 0x4965_6E69; // "ineI"
+                self.regs.rcx = 0x6C65_746E; // "ntel"
+                (VmExitReason::Cpuid, 2)
+            }
+            // VMCALL: 0x0F 0x01 0xC1 / VMMCALL: 0x0F 0x01 0xD9
+            [0x0F, 0x01, 0xC1, ..] | [0x0F, 0x01, 0xD9, ..] => (VmExitReason::Hypercall, 3),
+            // MOV CRn: 0x0F 0x20..0x22
+            [0x0F, 0x20..=0x22, _, ..] => (VmExitReason::CrAccess, 3),
+            // IN AL, DX (0xEC), IN EAX, DX (0xED), OUT DX, AL (0xEE), OUT DX, EAX (0xEF)
+            [0xEC..=0xEF, ..] => (VmExitReason::IoInstruction, 1),
+            // IN AL, imm8 (0xE4), IN EAX, imm8 (0xE5), OUT imm8, AL (0xE6), OUT imm8, EAX (0xE7)
+            [0xE4..=0xE7, _, ..] => (VmExitReason::IoInstruction, 2),
+            // HLT: 0xF4
+            [0xF4, ..] => (VmExitReason::Hlt, 1),
+            // Default unhandled / termination instruction
+            _ => (VmExitReason::Shutdown, 1),
+        };
+
+        self.regs.rip = self.regs.rip.wrapping_add(insn_len as u64);
+        self.instructions_executed = self.instructions_executed.saturating_add(1);
+        self.exit_count = self.exit_count.saturating_add(1);
         self.exit_reason = reason;
         reason
     }
@@ -248,7 +299,7 @@ pub fn probe_hardware_virt() -> VirtHardware {
         VirtHardware {
             has_intel_vmx,
             has_amd_svm,
-            hypervisor_ready: has_intel_vmx || has_amd_svm || true, // Bare-metal or hypervisor core ready
+            hypervisor_ready: has_intel_vmx || has_amd_svm,
         }
     }
 
@@ -263,7 +314,7 @@ pub fn probe_hardware_virt() -> VirtHardware {
         VirtHardware {
             has_intel_vmx,
             has_amd_svm,
-            hypervisor_ready: has_intel_vmx || has_amd_svm || true,
+            hypervisor_ready: has_intel_vmx || has_amd_svm,
         }
     }
 
@@ -271,7 +322,7 @@ pub fn probe_hardware_virt() -> VirtHardware {
     VirtHardware {
         has_intel_vmx: false,
         has_amd_svm: false,
-        hypervisor_ready: true,
+        hypervisor_ready: false,
     }
 }
 
@@ -390,7 +441,7 @@ mod tests {
     #[test]
     fn test_kvm_hardware_probing() {
         let hw = probe_hardware_virt();
-        assert!(hw.hypervisor_ready);
+        assert_eq!(hw.hypervisor_ready, hw.has_intel_vmx || hw.has_amd_svm);
     }
 
     #[test]
@@ -418,13 +469,33 @@ mod tests {
     #[test]
     fn test_kvm_vcpu_registers() {
         let mut vcpu = VirtualCpu::new(0);
-        assert_eq!(vcpu.regs.rip, 0x0000_FFF0);
+        assert_eq!(vcpu.regs.rip, GUEST_RESET_VECTOR);
         assert_eq!(vcpu.instructions_executed, 0);
 
-        let exit = vcpu.step();
-        assert_eq!(exit, VmExitReason::Cpuid);
-        assert_eq!(vcpu.instructions_executed, 64);
+        // Step 1: CPUID (0x0F 0xA2)
+        let exit1 = vcpu.step();
+        assert_eq!(exit1, VmExitReason::Cpuid);
+        assert_eq!(vcpu.instructions_executed, 1);
         assert_eq!(vcpu.exit_count, 1);
-        assert_eq!(vcpu.regs.rip, 0x0000_FFF2);
+        assert_eq!(vcpu.regs.rip, GUEST_RESET_VECTOR + 2);
+        assert_eq!(vcpu.regs.rax, 0x0000_0001);
+
+        // Step 2: Port I/O (IN AL, DX - 0xEC)
+        let exit2 = vcpu.step();
+        assert_eq!(exit2, VmExitReason::IoInstruction);
+        assert_eq!(vcpu.instructions_executed, 2);
+        assert_eq!(vcpu.regs.rip, GUEST_RESET_VECTOR + 3);
+
+        // Step 3: Hypercall (VMCALL - 0x0F 0x01 0xC1)
+        let exit3 = vcpu.step();
+        assert_eq!(exit3, VmExitReason::Hypercall);
+        assert_eq!(vcpu.instructions_executed, 3);
+        assert_eq!(vcpu.regs.rip, GUEST_RESET_VECTOR + 6);
+
+        // Step 4: HLT (0xF4)
+        let exit4 = vcpu.step();
+        assert_eq!(exit4, VmExitReason::Hlt);
+        assert_eq!(vcpu.instructions_executed, 4);
+        assert_eq!(vcpu.regs.rip, GUEST_RESET_VECTOR + 7);
     }
 }

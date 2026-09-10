@@ -93,6 +93,7 @@ keira> tpm status
 TPM 2.0 Hardware Security Enclave Status:
   Device State      : Active (TCG TPM 2.0 Specification rev 01.59)
   Locality Base     : 0x00000000FED40000 (Locality 0 MMIO Enclave)
+  Hardware Probe    : VID 0x1B36 DID 0x0001 [CONNECTED]
   Active PCR Banks  : SHA-256 (24 Registers [PCR 0..23])
   Total Measurements: 6
   Event Log Records : 4

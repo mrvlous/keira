@@ -227,8 +227,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
             // 1. Hardware detection
             let hw = probe_hardware_virt();
-            assert!(hw.hypervisor_ready);
-            vga::print_str("  1. Hardware CPUID virtualization probe completed - OK\n");
+            assert_eq!(hw.hypervisor_ready, hw.has_intel_vmx || hw.has_amd_svm);
+            vga::print_str("  1. Hardware CPUID virtualization probe completed (Intel VMX=");
+            vga::print_str(if hw.has_intel_vmx { "YES" } else { "NO" });
+            vga::print_str(", AMD SVM=");
+            vga::print_str(if hw.has_amd_svm { "YES" } else { "NO" });
+            vga::print_str(") - OK\n");
 
             // 2. VM Creation
             let test_vm_id = create_vm().expect("Test VM creation failed");
