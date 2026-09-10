@@ -30,7 +30,7 @@ graph LR
 
 ---
 
-## Core Token Definitions (`user/apps/kcc/src/lexer.c`)
+## Core Token Definitions (`user/bin/kcc/src/lexer.c`)
 
 ```c
 typedef enum {

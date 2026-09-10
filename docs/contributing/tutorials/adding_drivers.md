@@ -24,7 +24,7 @@ graph TD
 Locate the PCI Vendor ID, Device ID, Class Code, and Subclass for your hardware target.
 
 ### Step 2: Implement Driver Module
-Create a new driver under `crates/io/src/storage/`, `crates/io/src/sound/`, `crates/io/src/net/`, or `crates/io/src/bus/`:
+Create a new driver under `crates/io/src/storage/`, `crates/io/src/net/`, or `crates/io/src/bus/`:
 * Setup MMIO register bases and port I/O mapping.
 * Allocate physically contiguous DMA buffers via `keira_mem::dma::alloc_dma_buffer()`.
 * Register the hardware interrupt vector with the IDT and PIC/APIC.

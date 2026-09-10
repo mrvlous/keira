@@ -28,7 +28,7 @@ graph TD
 
 ---
 
-## Core API (`user/apps/kcc/src/codegen.c`)
+## Core API (`user/bin/kcc/src/codegen.c`)
 
 ```c
 void codegen_ast_root(ast_node_t *root);

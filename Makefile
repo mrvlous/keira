@@ -114,8 +114,6 @@ QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
                    -device ahci,id=ahci0 \
                    -drive file=$(DISK_IMG),format=raw,id=sata0,if=none \
                    -device ide-hd,drive=sata0,bus=ahci0.0 \
-                   -audiodev none,id=snd0 \
-                   -device intel-hda -device hda-duplex,audiodev=snd0 \
                    -device e1000,netdev=net0 \
                    -netdev user,id=net0 \
                    -boot d \
@@ -162,9 +160,9 @@ LOG_CHECK       := printf "  $(CLR_GREEN)$(CLR_BOLD)[OK]$(CLR_RESET)    %s\n"
 LOG_MISS        := printf "  $(CLR_RED)$(CLR_BOLD)[MISS]$(CLR_RESET)  %s\n"
 
 # Canonical filesystem manifests
-SHELL_CMDS      := guide login drives use ramdisk system cpu smp runtime time memory \
-                   devices wait initrd wipe reset run write tasks disk list \
-                   go script view create folder delete edit copy help history \
+SHELL_CMDS      := login drives use ramdisk system cpu smp runtime time memory \
+                   devices initrd wipe reset run write tasks disk list \
+                   go view create folder delete edit copy help history \
                    move search download network stop env sync \
                    protect fileinfo framebuffer usb https user hostname syslog kvm \
                    nvme ext4 cgroups futex bpf tpm swap seccomp epoll \

@@ -15,13 +15,15 @@ extern crate std;
 pub mod dma;
 pub mod heap;
 pub mod pmm;
+pub mod slab;
 pub mod swap;
 pub mod vmm;
 
 pub use dma::{alloc_dma_buffer, DmaBuffer, ScatterGatherEntry};
 pub use heap::{
-    heap_get_alloc_count, heap_get_free, heap_get_peak, heap_get_total, heap_get_used, heap_init,
-    kfree, kmalloc,
+    heap_get_active_alloc_count, heap_get_alloc_count, heap_get_arena_used, heap_get_free,
+    heap_get_peak, heap_get_total, heap_get_used, heap_init, kfree, kmalloc, BlockHeader,
+    BLOCK_MAGIC, LARGE_CLASS, NUM_SIZE_CLASSES, SIZE_CLASSES,
 };
 #[cfg(test)]
 pub use pmm::TEST_MUTEX;
@@ -32,6 +34,10 @@ pub use pmm::{
     set_test_ram_region_empty, total_memory, total_usable_memory, verify_pmm_invariants,
     verify_pmm_invariants_locked, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES,
     PAGE_SIZE, PAGE_SIZE_4K,
+};
+pub use slab::{
+    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
+    TASK_CACHE, VMA_CACHE,
 };
 pub use swap::{
     alloc_swap_slot, free_swap_slot, is_active as swap_is_active, swap_stats, swapoff, swapon,

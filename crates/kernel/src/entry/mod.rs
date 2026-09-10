@@ -119,10 +119,14 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
     }
 
     extern "C" {
+        static __heap_start: u8;
         static __heap_end: u8;
     }
+    let heap_start_ptr = unsafe { &__heap_start as *const u8 as *mut u8 };
     let heap_end_addr = unsafe { &__heap_end as *const u8 as u64 };
+    let heap_size = (heap_end_addr - heap_start_ptr as u64) as usize;
     unsafe {
+        keira_mem::heap_init(heap_start_ptr, heap_size);
         keira_mem::init(multiboot_info_ptr as u64, initrd_end, heap_end_addr);
 
         let fb_addr = vga::FRAMEBUFFER_ADDR;
@@ -144,6 +148,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
     }
     vga::print_boot_log("Initializing Physical Memory Manager (PMM) frames", 0);
     vga::print_boot_log("Initializing Virtual Memory Manager (VMM) paging", 0);
+    vga::print_boot_log("Initializing Segregated Free-List Kernel Heap", 0);
 
     unsafe {
         // Identity map Local APIC (0xFEE00000) and I/O APIC (0xFEC00000) MMIO registers
