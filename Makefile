@@ -173,7 +173,7 @@ SHELL_CMDS      := guide login drives use ramdisk system cpu smp runtime time me
                    shutdown reboot
 
 DRIVER_FILES    := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
-                   ide.sys ahci.sys sound.sys e1000.sys
+                   ide.sys ahci.sys e1000.sys
 
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 debug clean rust iso dirs \
@@ -288,7 +288,7 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)cp user/bin/kcc/lexer.c $(FS_ROOT)/apps/src/lexer.c
 	$(Q)cp user/bin/kcc/parser.c $(FS_ROOT)/apps/src/parser.c
 	$(Q)cp user/bin/kcc/codegen.c $(FS_ROOT)/apps/src/codegen.c
-	$(Q)cp user/apps/*.c $(FS_ROOT)/apps/src/
+	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "HOSTNAME=keira\nTIMEZONE=UTC\nKEYMAP=us\nINIT_RUNLEVEL=3\n" > $(FS_ROOT)/config/sys/os-release
 	$(Q)printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > $(FS_ROOT)/config/sys/resolv.conf

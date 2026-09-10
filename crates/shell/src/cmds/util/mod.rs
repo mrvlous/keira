@@ -10,10 +10,7 @@
 //! General shell utilities, navigation, scripts, and help manuals.
 
 pub mod go;
-pub mod guide;
 pub mod help;
 pub mod history;
-pub mod script;
 pub mod search;
-pub mod wait;
 pub mod wipe;

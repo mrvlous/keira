@@ -14,7 +14,6 @@ use keira_fs::tar;
 use keira_io::bus::pci;
 use keira_io::ps2::{keyboard as ps2_keyboard, mouse as ps2_mouse};
 use keira_io::rtc;
-use keira_io::sound::hda;
 use keira_io::storage::{ahci, block, ide};
 use keira_io::vga;
 use keira_mem::vmm;
@@ -155,13 +154,9 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
     }
     vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);
 
-    vga::print_boot_log(
-        "Initializing PCI Bus & storage/audio/network host controllers",
-        0,
-    );
+    vga::print_boot_log("Initializing PCI Bus & storage/network host controllers", 0);
     pci::init();
     let _ = ahci::init();
-    let _ = unsafe { hda::init() };
     unsafe {
         if e1000::init() {
             vga::print_boot_log("Initializing Intel e1000 Gigabit Ethernet NIC driver", 0);

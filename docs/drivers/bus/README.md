@@ -15,7 +15,6 @@ graph TD
     DeviceProbe --> MatchDriver["Match Class Code & Vendor ID"]
     MatchDriver --> Storage["AHCI / NVMe Storage Drivers"]
     MatchDriver --> NIC["Intel e1000 / RTL8139 NIC Drivers"]
-    MatchDriver --> Audio["Intel HDA Audio Controller"]
     MatchDriver --> USB["USB xHCI / UHCI Host Controller"]
 ```
 
