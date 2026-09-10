@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //
-// Keira Kernel - Operating System Kernel
+// Keira Kernel - Freestanding Kernel from Scratch
 // Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 //
 // This program is free software; you can redistribute it and/or modify
@@ -117,7 +117,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("System Specifications & Kernel Information\n");
 
-        vga::print_str("  OS System Version : ");
+        vga::print_str("  Kernel Version    : ");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("Keira Kernel v");
         vga::print_str(env!("CARGO_PKG_VERSION"));

@@ -1,7 +1,7 @@
 Keira Kernel
 ============
 
-Keira is an educational, exploratory freestanding operating system kernel in
+Keira is an educational, exploratory freestanding kernel in
 Ring 0 built from scratch in safe Rust, Assembly, and C, supporting both modern
 64-bit (x86_64) and pure 32-bit (i686) bare-metal architectures.
 
