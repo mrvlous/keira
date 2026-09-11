@@ -184,10 +184,8 @@ void postfix_expr(void) {
 
             /* index in rax, base in top-of-stack */
             emit_pop_rcx(); /* rcx = base */
-            emit_u8(0x48);
-            emit_u8(0x01);
-            emit_u8(0xc8); /* add rax, rcx (rax = base + index) */
-            emit_deref(1); /* byte deref */
+            emit_add();     /* rax = base + index (dual-arch safe) */
+            emit_deref(1);  /* byte deref */
         } else if (tok == TOK_INC) {
             match(TOK_INC);
             /* Post-increment: rax holds original value, but we increment variable if direct local
@@ -523,10 +521,8 @@ void statement(void) {
             match(TOK_RBRACKET);
 
             /* index in rax, base in stack */
-            emit_pop_rcx(); /* rcx = base */
-            emit_u8(0x48);
-            emit_u8(0x01);
-            emit_u8(0xc8);   /* add rax, rcx (effective address) */
+            emit_pop_rcx();  /* rcx = base */
+            emit_add();      /* add rax, rcx (effective address, dual-arch safe) */
             emit_push_rax(); /* push effective address */
 
             match(TOK_ASSIGN);
@@ -615,6 +611,18 @@ void statement(void) {
             int loc = lookup_local(name);
             if (loc != 0) {
                 emit_inc_local(loc, 0, is_dec);
+            } else {
+                int glob = lookup_global(name);
+                if (glob != -1) {
+                    emit_inc_global(glob, 0, is_dec);
+                } else {
+                    print_str("Error on line ");
+                    print_num(line_num);
+                    print_str(": Undefined variable in increment/decrement '");
+                    print_str(name);
+                    print_str("'\n");
+                    sys_exit(1);
+                }
             }
             match(TOK_SEMICOLON);
         } else if (tok == TOK_LPAREN) {
@@ -720,22 +728,84 @@ void statement(void) {
                 char var_name[256];
                 k_strcpy(var_name, token_string);
                 match(TOK_IDENT);
-                if (tok == TOK_ASSIGN) {
-                    match(TOK_ASSIGN);
-                    assignment_expr();
-                    int loc = lookup_local(var_name);
-                    if (loc != 0)
-                        emit_store_local(loc, 8);
-                } else if (tok == TOK_INC) {
+                int loc = lookup_local(var_name);
+                int glob = (loc == 0) ? lookup_global(var_name) : -1;
+
+                if (tok == TOK_INC) {
                     match(TOK_INC);
-                    int loc = lookup_local(var_name);
-                    if (loc != 0)
+                    if (loc != 0) {
                         emit_inc_local(loc, 0, 0);
+                    } else if (glob != -1) {
+                        emit_inc_global(glob, 0, 0);
+                    }
                 } else if (tok == TOK_DEC) {
                     match(TOK_DEC);
-                    int loc = lookup_local(var_name);
-                    if (loc != 0)
+                    if (loc != 0) {
                         emit_inc_local(loc, 0, 1);
+                    } else if (glob != -1) {
+                        emit_inc_global(glob, 0, 1);
+                    }
+                } else if (tok == TOK_ASSIGN || tok == TOK_ADD_ASSIGN || tok == TOK_SUB_ASSIGN ||
+                           tok == TOK_MUL_ASSIGN || tok == TOK_DIV_ASSIGN ||
+                           tok == TOK_MOD_ASSIGN || tok == TOK_AND_ASSIGN || tok == TOK_OR_ASSIGN ||
+                           tok == TOK_XOR_ASSIGN || tok == TOK_SHL_ASSIGN ||
+                           tok == TOK_SHR_ASSIGN) {
+                    int assign_op = tok;
+                    match(assign_op);
+
+                    if (assign_op == TOK_ASSIGN) {
+                        assignment_expr();
+                    } else {
+                        if (loc != 0) {
+                            emit_load_local(loc, 8);
+                        } else if (glob != -1) {
+                            emit_load_global(glob, 8);
+                        }
+                        emit_push_rax();
+                        assignment_expr();
+                        emit_pop_rcx();
+
+                        switch (assign_op) {
+                        case TOK_ADD_ASSIGN:
+                            emit_add();
+                            break;
+                        case TOK_SUB_ASSIGN:
+                            emit_sub();
+                            break;
+                        case TOK_MUL_ASSIGN:
+                            emit_imul();
+                            break;
+                        case TOK_DIV_ASSIGN:
+                            emit_idiv();
+                            break;
+                        case TOK_MOD_ASSIGN:
+                            emit_imod();
+                            break;
+                        case TOK_AND_ASSIGN:
+                            emit_bit_and();
+                            break;
+                        case TOK_OR_ASSIGN:
+                            emit_bit_or();
+                            break;
+                        case TOK_XOR_ASSIGN:
+                            emit_bit_xor();
+                            break;
+                        case TOK_SHL_ASSIGN:
+                            emit_shl();
+                            break;
+                        case TOK_SHR_ASSIGN:
+                            emit_shr();
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+
+                    if (loc != 0) {
+                        emit_store_local(loc, 8);
+                    } else if (glob != -1) {
+                        emit_store_global(glob, 8);
+                    }
                 }
             } else {
                 assignment_expr();
@@ -897,8 +967,28 @@ void compile_global_declarations(void) {
                 match(TOK_RBRACKET);
                 add_global(name, size);
                 match(TOK_SEMICOLON);
+            } else if (tok == TOK_ASSIGN) {
+                /* Initialized Global Variable: int x = 42; */
+                match(TOK_ASSIGN);
+                int offset = add_global(name, 8);
+                long init_val = 0;
+                int sign = 1;
+                if (tok == TOK_MINUS) {
+                    match(TOK_MINUS);
+                    sign = -1;
+                } else if (tok == TOK_PLUS) {
+                    match(TOK_PLUS);
+                }
+                if (tok == TOK_NUM) {
+                    init_val = sign * token_num;
+                    match(TOK_NUM);
+                }
+                if (offset >= 0 && offset + 8 <= MAX_DATA_SIZE) {
+                    write_u64((char *)(data_buf + offset), 0, (uint64_t)init_val);
+                }
+                match(TOK_SEMICOLON);
             } else {
-                /* Global Variable: int x; */
+                /* Uninitialized Global Variable: int x; */
                 add_global(name, 8);
                 match(TOK_SEMICOLON);
             }

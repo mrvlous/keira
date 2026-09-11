@@ -27,13 +27,28 @@ void _start(int argc, char **argv) {
     const char *source_path = "/data/main.c";
     const char *output_path = "/apps/bin/app.elf";
 
-    if (argc >= 2 && argv && argv[1]) {
-        source_path = argv[1];
-    }
-    if (argc >= 4 && argv && argv[2] && argv[3]) {
-        if (k_strcmp(argv[2], "-o") == 0) {
-            output_path = argv[3];
+    int arg_i = 1;
+    while (arg_i < argc && argv && argv[arg_i]) {
+        if (k_strcmp(argv[arg_i], "-o") == 0) {
+            if (arg_i + 1 < argc && argv[arg_i + 1]) {
+                output_path = argv[arg_i + 1];
+                arg_i += 2;
+                continue;
+            }
+        } else if (k_strcmp(argv[arg_i], "-v") == 0 || k_strcmp(argv[arg_i], "--version") == 0) {
+            print_str("Keira C Compiler (KCC) Native v0.1.0\n");
+            sys_exit(0);
+        } else if (k_strcmp(argv[arg_i], "-h") == 0 || k_strcmp(argv[arg_i], "--help") == 0) {
+            print_str("Usage: kcc [options] <source.c>\n");
+            print_str("Options:\n");
+            print_str("  -o <path>     Specify output ELF binary (default: /apps/bin/app.elf)\n");
+            print_str("  -v, --version Display compiler version\n");
+            print_str("  -h, --help    Display this help message\n");
+            sys_exit(0);
+        } else if (argv[arg_i][0] != '-') {
+            source_path = argv[arg_i];
         }
+        arg_i++;
     }
 
     int in_fd = sys_open(source_path, 0, 0);
@@ -41,15 +56,11 @@ void _start(int argc, char **argv) {
         source_path = "/temp/main.c";
         in_fd = sys_open(source_path, 0, 0);
     }
-    if (in_fd < 0 && argc < 2) {
-        source_path = "/apps/src/hello.c";
-        in_fd = sys_open(source_path, 0, 0);
-    }
     if (in_fd < 0) {
         print_str("Error: Could not open source file: ");
         print_str(source_path);
         print_str("\n");
-        print_str("Usage: run /apps/bin/kcc.elf <source.c> [-o output.elf]\n");
+        print_str("Usage: run /system/bin/kcc.elf <source.c> [-o output.elf]\n");
         sys_exit(1);
     }
 
@@ -99,6 +110,8 @@ void _start(int argc, char **argv) {
     print_str("       Functions compiled: ");
     print_num(function_count);
     print_str("\n");
-    print_str("       Executable written to /apps/bin/app.elf\n");
+    print_str("       Executable written to ");
+    print_str(output_path);
+    print_str("\n");
     sys_exit(0);
 }

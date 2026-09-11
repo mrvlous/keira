@@ -34,9 +34,12 @@ graph TD
 ## Shell Usage
 
 ```bash
-# Compile native C program inside Keira shell using KCC binary and CLI arguments
-keira> run /apps/bin/kcc.elf /apps/src/calc.c -o /apps/bin/calc2.elf
+# Compile native C program inside Keira shell using KCC driver
+keira> kcc /data/main.c -o /apps/bin/test.elf
+
+# Alternatively run the standalone compiler binary directly
+keira> run /system/bin/kcc.elf /data/main.c -o /apps/bin/test.elf
 
 # Execute compiled ELF binary in Ring 3 userland
-keira> run /apps/bin/calc2.elf
+keira> run /apps/bin/test.elf
 ```
