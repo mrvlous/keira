@@ -175,14 +175,98 @@ DRIVER_FILES    := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
 
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 debug clean rust iso dirs \
-        format lint user disk initrd help info check size objdump qemu-net test test-all fs-root
+        format lint user disk initrd help info check size objdump qemu-net test test-all fs-root \
+        preflight preflight-qemu preflight-format preflight-lint
 
 .DEFAULT_GOAL   := all
 
-# Primary build targets
-all: $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image for current ARCH
+# Toolchain preflight dependency guards
+preflight: ## Validate presence of all essential build, packaging, and filesystem utilities
+	@MISSING=""; \
+	for tool in $(ASM) $(CC) $(LD) $(CARGO) rustc $(GRUB_MKRESCUE) xorriso mkfs.fat mmd mcopy tar dd; do \
+	    if ! command -v $$tool >/dev/null 2>&1; then \
+	        MISSING="$$MISSING $$tool"; \
+	    fi; \
+	done; \
+	if [ -n "$$MISSING" ]; then \
+	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing required build tool(s):$(CLR_RESET)%s\n\n" "$$MISSING"; \
+	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install missing dependencies using your distribution package manager:$(CLR_RESET)\n"; \
+	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso dosfstools mtools tar coreutils\n\n"; \
+	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso dosfstools mtools tar coreutils\n\n"; \
+	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso dosfstools mtools tar coreutils\n\n"; \
+	    printf "  $(CLR_BOLD)Rust Nightly (required):$(CLR_RESET)\n"; \
+	    printf "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly\n\n"; \
+	    exit 1; \
+	else \
+	    if [ "$$MAKECMDGOALS" = "preflight" ] || [ "$(MAKECMDGOALS)" = "preflight" ]; then \
+	        $(LOG_DONE) "All core build tools verified"; \
+	    fi; \
+	fi
 
-full: ## Build kernel and ISO images for all supported architectures (x86_64 & i686)
+preflight-qemu: ## Validate presence of QEMU hypervisor for current target architecture
+	@if ! command -v $(QEMU) >/dev/null 2>&1; then \
+	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing QEMU hypervisor: $(CLR_RESET)$(QEMU)\n\n"; \
+	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install QEMU using your distribution package manager:$(CLR_RESET)\n"; \
+	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "    sudo apt-get update && sudo apt-get install -y qemu-system-x86\n\n"; \
+	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "    sudo pacman -S --needed qemu-system-x86\n\n"; \
+	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "    sudo dnf install -y qemu-system-x86\n\n"; \
+	    exit 1; \
+	else \
+	    if [ "$$MAKECMDGOALS" = "preflight-qemu" ] || [ "$(MAKECMDGOALS)" = "preflight-qemu" ]; then \
+	        $(LOG_DONE) "QEMU hypervisor verified: $(QEMU)"; \
+	    fi; \
+	fi
+
+preflight-format: ## Validate presence of code formatting utilities
+	@MISSING=""; \
+	for tool in cargo clang-format; do \
+	    if ! command -v $$tool >/dev/null 2>&1; then \
+	        MISSING="$$MISSING $$tool"; \
+	    fi; \
+	done; \
+	if [ -n "$$MISSING" ]; then \
+	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing formatting tool(s):$(CLR_RESET)%s\n\n" "$$MISSING"; \
+	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install formatting tools using your distribution package manager:$(CLR_RESET)\n"; \
+	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "    sudo apt-get update && sudo apt-get install -y clang-format cargo\n\n"; \
+	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "    sudo pacman -S --needed clang rust\n\n"; \
+	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "    sudo dnf install -y clang-tools-extra cargo\n\n"; \
+	    exit 1; \
+	else \
+	    if [ "$$MAKECMDGOALS" = "preflight-format" ] || [ "$(MAKECMDGOALS)" = "preflight-format" ]; then \
+	        $(LOG_DONE) "All formatting tools verified"; \
+	    fi; \
+	fi
+
+preflight-lint: ## Validate presence of static analysis utilities
+	@if ! command -v clang-tidy >/dev/null 2>&1; then \
+	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing static analysis tool: $(CLR_RESET)clang-tidy\n\n"; \
+	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install clang-tidy using your distribution package manager:$(CLR_RESET)\n"; \
+	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "    sudo apt-get update && sudo apt-get install -y clang-tidy\n\n"; \
+	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "    sudo pacman -S --needed clang\n\n"; \
+	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "    sudo dnf install -y clang-tools-extra\n\n"; \
+	    exit 1; \
+	else \
+	    if [ "$$MAKECMDGOALS" = "preflight-lint" ] || [ "$(MAKECMDGOALS)" = "preflight-lint" ]; then \
+	        $(LOG_DONE) "Static analysis tool verified: clang-tidy"; \
+	    fi; \
+	fi
+
+# Primary build targets
+all: preflight $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image for current ARCH
+
+full: preflight ## Build kernel and ISO images for all supported architectures (x86_64 & i686)
 	@$(LOG_INFO) "Building Keira for all architectures (x86_64 & i686)..."
 	$(Q)$(MAKE) ARCH=x86_64 all
 	$(Q)$(MAKE) ARCH=i686 all
@@ -190,19 +274,19 @@ full: ## Build kernel and ISO images for all supported architectures (x86_64 & i
 
 fll: full
 
-iso: $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
+iso: preflight $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
 
-disk: $(DISK_IMG) ## Create and populate FAT16 hard disk image
+disk: preflight $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
-initrd: $(INITRD_TAR) ## Build RAM Disk USTAR archive
+initrd: preflight $(INITRD_TAR) ## Build RAM Disk USTAR archive
 
-user: $(USER_ELF) ## Build user-space C compiler (kcc.elf)
+user: preflight $(USER_ELF) ## Build user-space C compiler (kcc.elf)
 
-rust: | dirs ## Build Rust kernel static library
+rust: preflight | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
-dirs: ## Create architecture-isolated build output directory hierarchy
+dirs: preflight ## Create architecture-isolated build output directory hierarchy
 	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR)
 
 # Binary & ISO construction rules
@@ -332,35 +416,35 @@ $(INITRD_TAR): fs-root | dirs
 	@$(LOG_DONE) "$(INITRD_TAR) ready"
 
 # QEMU execution & debugging targets
-run: all ## Launch Keira in QEMU virtual machine for current ARCH
+run: preflight-qemu all ## Launch Keira in QEMU virtual machine for current ARCH
 	@$(LOG_INFO) "Launching Keira in QEMU ($(ARCH))..."
 	$(Q)$(QEMU) $(QEMU_FLAGS)
 
 run-64: run-x86_64 ## Alias for run-x86_64
 
-run-x86_64: ## Launch Keira 64-bit in QEMU (x86_64)
+run-x86_64: preflight-qemu ## Launch Keira 64-bit in QEMU (x86_64)
 	$(Q)$(MAKE) ARCH=x86_64 run
 
 run-32: run-i686 ## Alias for run-i686
 
-run-i686: ## Launch Keira pure 32-bit in QEMU (i686)
+run-i686: preflight-qemu ## Launch Keira pure 32-bit in QEMU (i686)
 	$(Q)$(MAKE) ARCH=i686 run
 
-debug: all ## Launch Keira in QEMU debug mode (GDB on :1234)
+debug: preflight-qemu all ## Launch Keira in QEMU debug mode (GDB on :1234)
 	@$(LOG_INFO) "Launching Keira (debug mode, waiting for GDB on :1234)..."
 	$(Q)$(QEMU) $(QEMU_FLAGS) -s -S
 
-qemu-net: all ## Launch Keira in QEMU with e1000 NIC emulation
+qemu-net: preflight-qemu all ## Launch Keira in QEMU with e1000 NIC emulation
 	@$(LOG_INFO) "Launching Keira in QEMU with e1000 NIC..."
 	$(Q)$(QEMU) $(QEMU_NET_FLAGS)
 
 # Automated testing & verification
-test: all ## Run automated headless QEMU smoke test for current ARCH
+test: preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
 	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > $(BUILD_DIR)/test.log 2>&1 || true
 	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
 
-test-all: ## Run automated headless smoke tests on all architectures
+test-all: preflight-qemu ## Run automated headless smoke tests on all architectures
 	@$(LOG_INFO) "Running automated smoke tests across all architectures..."
 	$(Q)$(MAKE) ARCH=x86_64 test
 	$(Q)$(MAKE) ARCH=i686 test
@@ -375,14 +459,14 @@ clean: ## Remove build directory and compiled artifacts
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
 
-format: ## Format Rust and C source code
+format: preflight-format ## Format Rust and C source code
 	@$(LOG_INFO) "Formatting Rust code..."
 	$(Q)$(CARGO) fmt --all
 	@$(LOG_INFO) "Formatting C code..."
 	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
 	@$(LOG_DONE) "Formatting complete"
 
-lint: ## Static analysis of C userland code using clang-tidy
+lint: preflight-lint ## Static analysis of C userland code using clang-tidy
 	@$(LOG_INFO) "Linting userland C code..."
 	$(Q)find user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I user/include -I user/bin/kcc/include -ffreestanding -m64 \;
 	@$(LOG_DONE) "Linting complete"
@@ -399,12 +483,13 @@ objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 
 check: ## Verify all required build dependencies are installed
 	@MISSING=0; \
-	for tool in nasm gcc ld cargo rustc $(GRUB_MKRESCUE) xorriso $(QEMU) \
+	for tool in $(ASM) $(CC) $(LD) $(CARGO) rustc $(GRUB_MKRESCUE) xorriso $(QEMU) \
 	            clang-format clang-tidy mkfs.fat mmd mcopy tar dd; do \
+	    display_name=$$(basename "$$tool"); \
 	    if command -v $$tool >/dev/null 2>&1; then \
-	        $(LOG_CHECK) "$$tool"; \
+	        $(LOG_CHECK) "$$display_name"; \
 	    else \
-	        $(LOG_MISS) "$$tool"; \
+	        $(LOG_MISS) "$$display_name"; \
 	        MISSING=$$((MISSING + 1)); \
 	    fi; \
 	done; \
@@ -412,7 +497,17 @@ check: ## Verify all required build dependencies are installed
 	if [ $$MISSING -eq 0 ]; then \
 	    $(LOG_DONE) "All dependencies satisfied"; \
 	else \
-	    $(LOG_WARN) "$$MISSING missing dependencies detected"; \
+	    $(LOG_ERR) "$$MISSING missing dependencies detected"; \
+	    printf "\n$(CLR_CYAN)$(CLR_BOLD)[INFO] Install missing dependencies using your distribution package manager:$(CLR_RESET)\n"; \
+	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso qemu-system-x86 clang-format clang-tidy dosfstools mtools tar coreutils\n\n"; \
+	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso qemu-system-x86 clang dosfstools mtools tar coreutils\n\n"; \
+	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso qemu-system-x86 clang-tools-extra dosfstools mtools tar coreutils\n\n"; \
+	    printf "  $(CLR_BOLD)Rust Nightly (required):$(CLR_RESET)\n"; \
+	    printf "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly\n\n"; \
+	    exit 1; \
 	fi
 
 info: ## Display build configuration and toolchain versions
