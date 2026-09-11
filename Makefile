@@ -123,41 +123,19 @@ QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
 
 QEMU_NET_FLAGS  := $(QEMU_FLAGS)
 
-# Terminal styling & color definitions
-ifeq ($(COLOR),0)
-    CLR_RESET   :=
-    CLR_BOLD    :=
-    CLR_GREEN   :=
-    CLR_YELLOW  :=
-    CLR_BLUE    :=
-    CLR_MAGENTA :=
-    CLR_CYAN    :=
-    CLR_ORANGE  :=
-    CLR_RED     :=
-else
-    CLR_RESET   := \033[0m
-    CLR_BOLD    := \033[1m
-    CLR_GREEN   := \033[32m
-    CLR_YELLOW  := \033[33m
-    CLR_BLUE    := \033[34m
-    CLR_MAGENTA := \033[35m
-    CLR_CYAN    := \033[36m
-    CLR_ORANGE  := \033[38;5;208m
-    CLR_RED     := \033[31m
-endif
-
-LOG_ASM         := printf "  $(CLR_YELLOW)$(CLR_BOLD)[ASM]$(CLR_RESET)   %s\n"
-LOG_CC          := printf "  $(CLR_BLUE)$(CLR_BOLD)[CC]$(CLR_RESET)    %s\n"
-LOG_CARGO       := printf "  $(CLR_ORANGE)$(CLR_BOLD)[CARGO]$(CLR_RESET) %s\n"
-LOG_LD          := printf "  $(CLR_MAGENTA)$(CLR_BOLD)[LD]$(CLR_RESET)    %s\n"
-LOG_ISO         := printf "  $(CLR_MAGENTA)$(CLR_BOLD)[ISO]$(CLR_RESET)   %s\n"
-LOG_DISK        := printf "  $(CLR_CYAN)$(CLR_BOLD)[DISK]$(CLR_RESET)  %s\n"
-LOG_DONE        := printf "$(CLR_GREEN)$(CLR_BOLD)[DONE]$(CLR_RESET)  %s\n"
-LOG_INFO        := printf "$(CLR_CYAN)$(CLR_BOLD)[INFO]$(CLR_RESET)  %s\n"
-LOG_WARN        := printf "$(CLR_YELLOW)$(CLR_BOLD)[WARN]$(CLR_RESET)  %s\n"
-LOG_ERR         := printf "$(CLR_RED)$(CLR_BOLD)[ERR]$(CLR_RESET)   %s\n"
-LOG_CHECK       := printf "  $(CLR_GREEN)$(CLR_BOLD)[OK]$(CLR_RESET)    %s\n"
-LOG_MISS        := printf "  $(CLR_RED)$(CLR_BOLD)[MISS]$(CLR_RESET)  %s\n"
+# Terminal logging definitions (plain text)
+LOG_ASM         := printf "  [ASM]   %s\n"
+LOG_CC          := printf "  [CC]    %s\n"
+LOG_CARGO       := printf "  [CARGO] %s\n"
+LOG_LD          := printf "  [LD]    %s\n"
+LOG_ISO         := printf "  [ISO]   %s\n"
+LOG_DISK        := printf "  [DISK]  %s\n"
+LOG_DONE        := printf "[DONE]  %s\n"
+LOG_INFO        := printf "[INFO]  %s\n"
+LOG_WARN        := printf "[WARN]  %s\n"
+LOG_ERR         := printf "[ERR]   %s\n"
+LOG_CHECK       := printf "  [OK]    %s\n"
+LOG_MISS        := printf "  [MISS]  %s\n"
 
 # Canonical filesystem manifests
 SHELL_CMDS      := login drives use ramdisk system cpu smp runtime time memory \
@@ -189,15 +167,15 @@ preflight: ## Validate presence of all essential build, packaging, and filesyste
 	    fi; \
 	done; \
 	if [ -n "$$MISSING" ]; then \
-	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing required build tool(s):$(CLR_RESET)%s\n\n" "$$MISSING"; \
-	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install missing dependencies using your distribution package manager:$(CLR_RESET)\n"; \
-	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "\n[ERR] Missing required build tool(s):%s\n\n" "$$MISSING"; \
+	    printf "[INFO] Please install missing dependencies using your distribution package manager:\n"; \
+	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso dosfstools mtools tar coreutils\n\n"; \
-	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "  Arch Linux:\n"; \
 	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso dosfstools mtools tar coreutils\n\n"; \
-	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso dosfstools mtools tar coreutils\n\n"; \
-	    printf "  $(CLR_BOLD)Rust Nightly (required):$(CLR_RESET)\n"; \
+	    printf "  Rust Nightly (required):\n"; \
 	    printf "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly\n\n"; \
 	    exit 1; \
 	else \
@@ -208,13 +186,13 @@ preflight: ## Validate presence of all essential build, packaging, and filesyste
 
 preflight-qemu: ## Validate presence of QEMU hypervisor for current target architecture
 	@if ! command -v $(QEMU) >/dev/null 2>&1; then \
-	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing QEMU hypervisor: $(CLR_RESET)$(QEMU)\n\n"; \
-	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install QEMU using your distribution package manager:$(CLR_RESET)\n"; \
-	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "\n[ERR] Missing QEMU hypervisor: $(QEMU)\n\n"; \
+	    printf "[INFO] Please install QEMU using your distribution package manager:\n"; \
+	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y qemu-system-x86\n\n"; \
-	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "  Arch Linux:\n"; \
 	    printf "    sudo pacman -S --needed qemu-system-x86\n\n"; \
-	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y qemu-system-x86\n\n"; \
 	    exit 1; \
 	else \
@@ -231,13 +209,13 @@ preflight-format: ## Validate presence of code formatting utilities
 	    fi; \
 	done; \
 	if [ -n "$$MISSING" ]; then \
-	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing formatting tool(s):$(CLR_RESET)%s\n\n" "$$MISSING"; \
-	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install formatting tools using your distribution package manager:$(CLR_RESET)\n"; \
-	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "\n[ERR] Missing formatting tool(s):%s\n\n" "$$MISSING"; \
+	    printf "[INFO] Please install formatting tools using your distribution package manager:\n"; \
+	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y clang-format cargo\n\n"; \
-	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "  Arch Linux:\n"; \
 	    printf "    sudo pacman -S --needed clang rust\n\n"; \
-	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y clang-tools-extra cargo\n\n"; \
 	    exit 1; \
 	else \
@@ -248,13 +226,13 @@ preflight-format: ## Validate presence of code formatting utilities
 
 preflight-lint: ## Validate presence of static analysis utilities
 	@if ! command -v clang-tidy >/dev/null 2>&1; then \
-	    printf "\n$(CLR_RED)$(CLR_BOLD)[ERR] Missing static analysis tool: $(CLR_RESET)clang-tidy\n\n"; \
-	    printf "$(CLR_CYAN)$(CLR_BOLD)[INFO] Please install clang-tidy using your distribution package manager:$(CLR_RESET)\n"; \
-	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "\n[ERR] Missing static analysis tool: clang-tidy\n\n"; \
+	    printf "[INFO] Please install clang-tidy using your distribution package manager:\n"; \
+	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y clang-tidy\n\n"; \
-	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "  Arch Linux:\n"; \
 	    printf "    sudo pacman -S --needed clang\n\n"; \
-	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y clang-tools-extra\n\n"; \
 	    exit 1; \
 	else \
@@ -473,10 +451,10 @@ lint: preflight-lint ## Static analysis of C userland code using clang-tidy
 
 # Inspection & diagnostic utilities
 size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
-	@printf "  $(CLR_BOLD)Section Sizes ($(ARCH)):$(CLR_RESET)\n"
+	@printf "  Section Sizes ($(ARCH)):\n"
 	$(Q)size $(KERNEL_BIN) | sed 's/^/    /'
-	@printf "\n  $(CLR_BOLD)File Size ($(ARCH)):$(CLR_RESET)\n"
-	@printf "    $(CLR_CYAN)%s$(CLR_RESET)\n\n" "$$(du -h $(KERNEL_BIN) | cut -f1) ($(KERNEL_BIN))"
+	@printf "\n  File Size ($(ARCH)):\n"
+	@printf "    %s\n\n" "$$(du -h $(KERNEL_BIN) | cut -f1) ($(KERNEL_BIN))"
 
 objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 	$(Q)objdump -h $(KERNEL_BIN)
@@ -498,52 +476,51 @@ check: ## Verify all required build dependencies are installed
 	    $(LOG_DONE) "All dependencies satisfied"; \
 	else \
 	    $(LOG_ERR) "$$MISSING missing dependencies detected"; \
-	    printf "\n$(CLR_CYAN)$(CLR_BOLD)[INFO] Install missing dependencies using your distribution package manager:$(CLR_RESET)\n"; \
-	    printf "  $(CLR_BOLD)Ubuntu / Debian:$(CLR_RESET)\n"; \
+	    printf "\n[INFO] Install missing dependencies using your distribution package manager:\n"; \
+	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso qemu-system-x86 clang-format clang-tidy dosfstools mtools tar coreutils\n\n"; \
-	    printf "  $(CLR_BOLD)Arch Linux:$(CLR_RESET)\n"; \
+	    printf "  Arch Linux:\n"; \
 	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso qemu-system-x86 clang dosfstools mtools tar coreutils\n\n"; \
-	    printf "  $(CLR_BOLD)Fedora / RHEL:$(CLR_RESET)\n"; \
+	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso qemu-system-x86 clang-tools-extra dosfstools mtools tar coreutils\n\n"; \
-	    printf "  $(CLR_BOLD)Rust Nightly (required):$(CLR_RESET)\n"; \
+	    printf "  Rust Nightly (required):\n"; \
 	    printf "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly\n\n"; \
 	    exit 1; \
 	fi
 
 info: ## Display build configuration and toolchain versions
-	@printf "$(CLR_BOLD)Keira Kernel Build Info$(CLR_RESET)\n\n"
-	@printf "  $(CLR_BOLD)Kernel$(CLR_RESET)\n"
-	@printf "    Version      : $(CLR_CYAN)$(VERSION)$(CLR_RESET)\n"
-	@printf "    Architecture : $(CLR_CYAN)$(ARCH)$(CLR_RESET)\n"
-	@printf "    Name         : $(CLR_CYAN)$(KERNEL_NAME)$(CLR_RESET)\n"
-	@printf "    Binary       : $(CLR_CYAN)$(KERNEL_BIN)$(CLR_RESET)\n"
-	@printf "    ISO          : $(CLR_CYAN)$(KERNEL_ISO)$(CLR_RESET)\n"
-	@printf "    Disk Image   : $(CLR_CYAN)$(DISK_IMG) ($(DISK_SIZE)MB FAT16)$(CLR_RESET)\n\n"
-	@printf "  $(CLR_BOLD)Toolchain$(CLR_RESET)\n"
-	@printf "    NASM         : $(CLR_CYAN)$(shell $(ASM) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
-	@printf "    GCC          : $(CLR_CYAN)$(shell $(CC) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
-	@printf "    LD           : $(CLR_CYAN)$(shell $(LD) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
-	@printf "    Cargo        : $(CLR_CYAN)$(shell $(CARGO) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n"
-	@printf "    Rustc        : $(CLR_CYAN)$(shell rustc --version 2>/dev/null || echo 'not found')$(CLR_RESET)\n"
-	@printf "    QEMU         : $(CLR_CYAN)$(shell $(QEMU) --version 2>/dev/null | head -1 || echo 'not found')$(CLR_RESET)\n\n"
-	@printf "  $(CLR_BOLD)Source Files$(CLR_RESET)\n"
-	@printf "    Assembly     : $(CLR_CYAN)$(words $(ASM_SRCS)) files$(CLR_RESET)\n"
-	@printf "    Kernel Core  : $(CLR_CYAN)Pure Rust (12 crates)$(CLR_RESET)\n"
-	@printf "    Shell Cmds   : $(CLR_CYAN)$(words $(SHELL_CMDS)) commands$(CLR_RESET)\n"
-	@printf "    Drivers      : $(CLR_CYAN)$(words $(DRIVER_FILES)) descriptors$(CLR_RESET)\n\n"
-	@printf "  $(CLR_BOLD)Rust Target$(CLR_RESET)\n"
-	@printf "    Spec         : $(CLR_CYAN)$(RUST_TARGET)$(CLR_RESET)\n"
-	@printf "    Profile      : $(CLR_CYAN)$(RUST_MODE)$(CLR_RESET)\n"
-	@printf "    Output       : $(CLR_CYAN)$(RUST_LIB)$(CLR_RESET)\n\n"
+	@printf "Keira Kernel Build Info\n\n"
+	@printf "  Kernel\n"
+	@printf "    Version      : $(VERSION)\n"
+	@printf "    Architecture : $(ARCH)\n"
+	@printf "    Name         : $(KERNEL_NAME)\n"
+	@printf "    Binary       : $(KERNEL_BIN)\n"
+	@printf "    ISO          : $(KERNEL_ISO)\n"
+	@printf "    Disk Image   : $(DISK_IMG) ($(DISK_SIZE)MB FAT16)\n\n"
+	@printf "  Toolchain\n"
+	@printf "    NASM         : $(shell $(ASM) --version 2>/dev/null | head -1 || echo 'not found')\n"
+	@printf "    GCC          : $(shell $(CC) --version 2>/dev/null | head -1 || echo 'not found')\n"
+	@printf "    LD           : $(shell $(LD) --version 2>/dev/null | head -1 || echo 'not found')\n"
+	@printf "    Cargo        : $(shell $(CARGO) --version 2>/dev/null | head -1 || echo 'not found')\n"
+	@printf "    Rustc        : $(shell rustc --version 2>/dev/null || echo 'not found')\n"
+	@printf "    QEMU         : $(shell $(QEMU) --version 2>/dev/null | head -1 || echo 'not found')\n\n"
+	@printf "  Source Files\n"
+	@printf "    Assembly     : $(words $(ASM_SRCS)) files\n"
+	@printf "    Kernel Core  : Pure Rust (12 crates)\n"
+	@printf "    Shell Cmds   : $(words $(SHELL_CMDS)) commands\n"
+	@printf "    Drivers      : $(words $(DRIVER_FILES)) descriptors\n\n"
+	@printf "  Rust Target\n"
+	@printf "    Spec         : $(RUST_TARGET)\n"
+	@printf "    Profile      : $(RUST_MODE)\n"
+	@printf "    Output       : $(RUST_LIB)\n\n"
 
 help: ## Display all available Makefile targets
-	@printf "\n$(CLR_BOLD)Keira Kernel Build System$(CLR_RESET)  v$(VERSION) ($(ARCH))\n\n"
-	@printf "  $(CLR_BOLD)Usage:$(CLR_RESET) make $(CLR_CYAN)<target>$(CLR_RESET) [ARCH=x86_64|i686] [V=1] [COLOR=0] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
-	@printf "  $(CLR_BOLD)Build Targets:$(CLR_RESET)\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    $(CLR_CYAN)%-15s$(CLR_RESET) %s\n", $$1, $$2}'
-	@printf "\n  $(CLR_BOLD)Variables:$(CLR_RESET)\n"
-	@printf "    $(CLR_CYAN)ARCH=x86_64|i686$(CLR_RESET) Target architecture (default: x86_64)\n"
-	@printf "    $(CLR_CYAN)V=1$(CLR_RESET)             Show raw commands (verbose mode)\n"
-	@printf "    $(CLR_CYAN)COLOR=0$(CLR_RESET)         Disable colored output\n"
-	@printf "    $(CLR_CYAN)DISK_SIZE=N$(CLR_RESET)     FAT16 disk size in MB (default: 32)\n"
-	@printf "    $(CLR_CYAN)QEMU_MEM=NM$(CLR_RESET)     QEMU guest memory (default: 128M)\n\n"
+	@printf "\nKeira Kernel Build System  v$(VERSION) ($(ARCH))\n\n"
+	@printf "  Usage: make <target> [ARCH=x86_64|i686] [V=1] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
+	@printf "  Build Targets:\n"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    %-15s %s\n", $$1, $$2}'
+	@printf "\n  Variables:\n"
+	@printf "    ARCH=x86_64|i686 Target architecture (default: x86_64)\n"
+	@printf "    V=1             Show raw commands (verbose mode)\n"
+	@printf "    DISK_SIZE=N     FAT16 disk size in MB (default: 32)\n"
+	@printf "    QEMU_MEM=NM     QEMU guest memory (default: 128M)\n\n"

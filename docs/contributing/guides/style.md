@@ -186,6 +186,11 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 - Commands without arguments or configurations (`sync`, `reset`, `unwind`, `runtime`, `wipe`) execute immediately without blocking on `-h` boilerplate.
 - Network download and streaming progress bars must adhere to the `rustc`/`cargo` compiler format with 12-character right-aligned status tags (`Connecting`, `Downloading`, `Downloaded`, `Finished`) and size metrics (`Bytes`, `KiB`, `MiB`).
 
+### C. Build System & Makefile Logging Standards:
+- The `Makefile` build system strictly uses clean, uncolored monochrome plain text output without ANSI color escape codes (`\033[...]`).
+- Standard bracketed status tags: `[ASM]`, `[CC]`, `[CARGO]`, `[LD]`, `[ISO]`, `[DISK]`, `[DONE]`, `[INFO]`, `[WARN]`, `[ERR]`, `[OK]`, `[MISS]`.
+- Output remains austere, predictable, and fully readable across all terminal configurations, CI/CD runners, and log piping pipelines.
+
 ---
 
 ## 7. Whitespace, Newline & Formatting Standards
