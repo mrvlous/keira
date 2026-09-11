@@ -13,7 +13,7 @@ This guide details how to install and configure all required build tools on Linu
 sudo apt update
 sudo apt install -y build-essential nasm gcc grub-pc-bin grub-common \
                     xorriso qemu-system-x86 dosfstools mtools clang-format \
-                    python3 git
+                    clang-tidy python3 git
 ```
 
 ### Arch Linux / Manjaro / CachyOS
@@ -64,7 +64,15 @@ rustup component add rustfmt clippy
 
 ## Verifying Toolchain
 
-Run the automated Makefile dependency checker:
+Validate your environment with the Makefile dependency diagnostics:
+
 ```bash
+# Full dependency diagnostic report (15 tools)
 make check
+
+# Or test core build preflight directly
+make preflight
 ```
+
+> [!TIP]
+> You do not need to run `make preflight` manually before every build. Standard build targets (`make all`, `make full`, `make iso`, `make disk`, `make run`) automatically execute preflight guards and will halt immediately with package manager commands if any tool is missing.

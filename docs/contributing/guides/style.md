@@ -159,7 +159,8 @@ Keira <version>
 * `docs`: Documentation addition, clarification, or link update.
 * `style`: Formatting, comment syntax, or whitespace adjustments.
 * `test`: Automated test harness additions or QEMU test improvements.
-* `chore`: Build system, Makefile, or repository maintenance.
+* `build`: Build system, Makefile, toolchain, or dependency updates.
+* `chore`: Repository maintenance, metadata, or auxiliary tasks.
 
 ---
 
