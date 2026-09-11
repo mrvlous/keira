@@ -13,8 +13,7 @@ graph TD
     KernelBoot["Kernel Boot / run_boot_script()"] --> InitSvc["auto_start_enabled_services()"]
     InitSvc --> ConfReader["Parse /config/sys/*.conf"]
     ConfReader --> SvcTable["SERVICES Table (MAX_SERVICES = 16)"]
-    ShellRunloop["Shell Event Loop (tick_all)"] --> Dispatch["Interval Dispatcher & Socket Poller"]
-    Dispatch --> Httpd["httpd: Micro Web & REST API Server (Port 80)"]
+    ShellRunloop["Shell Event Loop (tick_all)"] --> Dispatch["Interval Dispatcher & Subsystem Poller"]
     Dispatch --> Syncd["syncd: FAT16 Auto-Sync & Cache Flush (15s)"]
     Dispatch --> Syslogd["syslogd: Kernel Audit Logger (/data/log/syslog.log)"]
     Dispatch --> Watchdogd["watchdogd: Memory & PMM Supervisor (10s)"]
@@ -30,7 +29,6 @@ graph TD
 
 | Service Name | Description | Default Port / Interval | Config File Path | Default State |
 | :--- | :--- | :--- | :--- | :--- |
-| **`httpd`** | Native Micro Web & REST API Server | Port 80 (TCP) | `/config/sys/httpd.conf` | Enabled |
 | **`syncd`** | FAT16 Auto-Sync & Dirty Cache Flush | Interval 15s | `/config/sys/syncd.conf` | Enabled |
 | **`syslogd`** | Kernel Event & Audit Logger Service | Interval 5s | `/config/sys/syslogd.conf` | Enabled |
 | **`watchdogd`** | Memory & Task Health Watchdog | Interval 10s | `/config/sys/watchdogd.conf` | Enabled |
@@ -45,11 +43,11 @@ graph TD
 Service configurations are serialized to `/config/sys/<service>.conf`:
 ```text
 # Keira Service Configuration
-name=httpd
-description=Native Micro Web & REST API Server
+name=syncd
+description=FAT16 Auto-Sync & Cache Flush Daemon
 enabled=1
 auto_restart=1
-port=80
+interval=15
 ```
 
 ---
@@ -80,14 +78,14 @@ keira> ksvc list
 keira> ksvc top
 
 # Inspect detailed telemetry of a service
-keira> ksvc status httpd
+keira> ksvc status syncd
 
 # View live service event logs from ring buffer and disk
 keira> ksvc logs syslogd
 keira> ksvc logs monitord
 
 # Hot-reload configuration without restarting service
-keira> ksvc reload httpd
+keira> ksvc reload syncd
 
 # Reset performance and cycle counters
 keira> ksvc reset timed
@@ -95,9 +93,9 @@ keira> ksvc reset timed
 # Start, stop, or restart a background service
 keira> ksvc start watchdogd
 keira> ksvc stop syncd
-keira> ksvc restart httpd
+keira> ksvc restart syncd
 
 # Enable or disable service boot auto-start
 keira> ksvc enable watchdogd
-keira> ksvc disable httpd
+keira> ksvc disable syncd
 ```

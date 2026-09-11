@@ -177,6 +177,6 @@ Shell        : /system/bin/shell
 ### `protect <path>`
 Sets read-only or hidden security attributes on a target FAT16 file:
 ```bash
-keira> protect /config/sys/os-release readonly
-[OK] File /config/sys/os-release attribute updated to Read-Only.
+keira> protect /config/sys/kernel.cfg readonly
+[OK] File /config/sys/kernel.cfg attribute updated to Read-Only.
 ```

@@ -23,9 +23,8 @@ graph TD
 ## User Database File Format (`/config/sys/passwd`)
 
 ```text
-username:password_hash:uid:gid:home_dir:shell
-admin:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8:0:0:/users/admin:/system/bin/shell
-user:e6c279f628cffd8023d9205572d9b00607f404c816765f546438fb184d3b9a4c:1000:1000:/users/user:/system/bin/shell
+username:password
+admin:keira
 ```
 
 ---

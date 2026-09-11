@@ -130,7 +130,7 @@ pub unsafe fn read_file_content(filename: &str, buffer: &mut [u8]) -> Result<usi
 
     let mut size_left = entry.file_size as usize;
     if size_left > buffer.len() {
-        return Err("Buffer too small for file content");
+        size_left = buffer.len();
     }
 
     let mut current_cluster = entry.first_cluster_lo;

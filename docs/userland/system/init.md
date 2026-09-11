@@ -17,7 +17,7 @@ sequenceDiagram
 
     Kernel->>TSS: 1. Setup TSS Ring 0 Stack & LSTAR MSR
     Kernel->>VFS: 2. Mount Boot Initrd & Primary FAT16 Partition
-    Kernel->>Kernel: 3. Parse /config/sys/hostname.cfg & users.cfg
+    Kernel->>Kernel: 3. Parse /config/sys/hostname.cfg & passwd
     Kernel->>Shell: 4. Spawn Root Session on /system/dev/console (tty1)
     Shell->>Shell: 5. Display Banner, Run /config/boot/boot.cfg & Enter Event Loop
 ```
@@ -38,5 +38,5 @@ When userland applications are launched, the kernel prepares a dedicated executi
 | Configuration File | Path | Description |
 | :--- | :--- | :--- |
 | **Boot Script** | `/config/boot/boot.cfg` | Shell script executed automatically during early user session startup |
-| **System Release** | `/config/sys/os-release` | Kernel release, version string, and architecture identity |
-| **User Database** | `/config/sys/users.cfg` | User accounts, UID/GID assignments, and password hashes |
+| **Kernel Release** | `/config/sys/kernel.cfg` | Kernel release, version string, and architecture identity |
+| **User Database** | `/config/sys/passwd` | Kernel user database and authentication records |

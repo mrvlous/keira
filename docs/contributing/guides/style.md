@@ -122,15 +122,15 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 
 All runtime and VFS paths must adhere to the canonical 6-directory hierarchy:
 
-* `/system`: Core binaries (`/system/bin`), device nodes (`/system/dev`), drivers (`/system/drivers`), and headers (`/system/include`).
-* `/apps`: Userland executables (`/apps/bin`) and C source samples (`/apps/src`).
-* `/config`: Boot config (`/config/boot`) and system configurations (`/config/sys`).
-* `/users`: Multi-user home folders (`/users/admin`, `/users/default`, `/users/guest`).
-* `/data`: Persistent templates and diagnostic logs (`/data/main.c`, `/data/log/`).
+* `/system`: Core binaries (`/system/bin`), device nodes (`/system/dev`), drivers (`/system/drivers`), headers (`/system/include`, `/system/include/sys`), and runtime C libraries (`/system/lib`).
+* `/apps`: Userland executables (`/apps/bin`) and organized C source trees (`/apps/src/kcc`).
+* `/config`: Boot configuration (`/config/boot`) and kernel system configurations (`/config/sys`).
+* `/users`: Kernel user workspace (`/users/admin`).
+* `/data`: Persistent diagnostic logs (`/data/log/`) and compiler test programs (`/data/main.c`).
 * `/temp`: Temporary runtime scratch workspace (`/temp/.keep`).
 
-> [!NOTE]
-> Do not use legacy paths like `/system/etc/` (use `/config/sys/`) or recreational directories (no `/apps/games/`).
+> [!IMPORTANT]
+> Keira is a freestanding kernel, not an operating system distribution. Do not introduce OS distribution or desktop elements (e.g. no `/data/www`, no `/data/save`, no `/config/sys/os-release`, no unmaintained desktop user homes, and no unparsed `.profile` scripts).
 
 ---
 
