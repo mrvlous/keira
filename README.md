@@ -4,7 +4,7 @@
 
 This branch hosts the static web assets for the official [Keira Kernel Landing Page](https://mrvlous.github.io/keira/).
 
-For the primary operating system kernel codebase, architecture documentation, and build instructions, visit the [`main`](https://github.com/mrvlous/keira/tree/main) branch.
+For the primary freestanding kernel codebase, architecture documentation, and build instructions, visit the [`main`](https://github.com/mrvlous/keira/tree/main) branch.
 
 ## License
 
