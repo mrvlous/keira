@@ -32,6 +32,8 @@ Each commit must follow the standard conventional commit format:
 * `docs`: Documentation addition or clarification.
 * `style`: Formatting, whitespace, or rustfmt fixes.
 * `test`: Automated QEMU test harness or unit test additions.
+* `build`: Build system, Makefile, toolchain, or dependency updates.
+* `chore`: Repository maintenance, metadata, or auxiliary tasks.
 
 ---
 
@@ -49,7 +51,7 @@ Each commit must follow the standard conventional commit format:
 Keira Kernel follows strict **Semantic Versioning (`MAJOR.MINOR.PATCH`)** for its release lifecycle:
 
 * **Baseline (`0.1.0`)**: Represents the unified foundation release featuring 100% pure Rust modular architecture, dual-architecture parity (`x86_64` & `i686`), Ring 3 isolation, freestanding POSIX C SDK, native in-kernel C compiler (`kcc`), FAT16 filesystem, and TCP/IP stack.
-* **Bare-Metal Milestone (`0.2.0`)**: 100% active bare-metal implementation across all 78 shell commands, zero stubs/mocks/placeholders, complete EXT4 extent tree parser, KVM CPUID virtualization framework, and Loadable Kernel Modules (LKM) engine.
+* **Bare-Metal Milestone (`0.2.0`)**: 100% active bare-metal implementation across all 75 shell commands, zero stubs/mocks/placeholders, complete EXT4 extent tree parser, KVM CPUID virtualization framework, and Loadable Kernel Modules (LKM) engine.
 * **Patch Releases (`0.2.x`)**: Reserved for backward-compatible bug fixes, driver optimizations, and security hardening.
 * **Minor Releases (`0.x.0`)**: Introduced when major kernel milestones are achieved.
 * **Major Releases (`x.0.0`)**: Reserved for frozen ABI stability milestones.
@@ -63,7 +65,8 @@ Release tags use the standard prefix `v` (e.g., `v0.2.0`). Tags are created only
 ## Pull Request Checklist
 
 Before opening a pull request, ensure:
-1. `make check` passes with all tools detected.
-2. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
-3. `make all` and `make test` pass cleanly.
-4. All new files contain clean GPL-2.0-only license headers with the author's full name (no email addresses in headers).
+1. `make check` passes with all dependencies satisfied (or `make preflight` succeeds).
+2. `make format` and `make lint` run cleanly without modifying unstaged formatting.
+3. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
+4. `make all` and `make test` pass cleanly.
+5. All new files contain clean GPL-2.0-only license headers with the author's full name (no email addresses in headers).

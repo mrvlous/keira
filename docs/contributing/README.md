@@ -2,7 +2,7 @@
 
 # Keira Kernel Contributor & Learning Guide
 
-Welcome to the Keira Kernel development and contributor guide! Keira is an educational, freestanding, hyper-modular x86 operating system kernel written in safe Rust, Assembly, and C.
+Welcome to the Keira Kernel development and contributor guide! Keira is an educational, freestanding, hyper-modular x86 kernel from scratch written in safe Rust, Assembly, and C.
 
 Whether you are a student exploring systems programming, a seasoned developer curious about bare-metal Rust, or a hobbyist building your own OS, you are warmly invited to learn, experiment, and contribute.
 
