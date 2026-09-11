@@ -194,15 +194,7 @@ pub unsafe fn init() {
 
     SERVICE_COUNT = 0;
 
-    // Register built-in default services (7 primary system daemons)
-    register_service_builtin(
-        "httpd",
-        "Native Micro Web & REST API Server",
-        80,
-        0,
-        "/config/sys/httpd.conf",
-        true,
-    );
+    // Register built-in default services (6 primary kernel system daemons)
     register_service_builtin(
         "syncd",
         "FAT16 Auto-Sync & Cache Flush Daemon",
@@ -346,11 +338,7 @@ pub unsafe fn start_service_by_idx(idx: usize) -> Result<(), &'static str> {
 
     // Initial action on start
     let name = SERVICES[idx].name_str();
-    if name == "httpd" {
-        let _ = keira_fs::fat::create_dir("/data/www");
-        SERVICES[idx].cycles_count = 1;
-        SERVICES[idx].log_event("HTTP server listening on port 80", now);
-    } else if name == "syslogd" {
+    if name == "syslogd" {
         let _ = keira_fs::fat::create_dir("/data/log");
         let initial_log = b"[INFO] Keira Service Controller (ksvc) initialized syslog daemon\n";
         let _ = keira_fs::fat::append_file_content("/data/log/syslog.log", initial_log);
@@ -723,11 +711,6 @@ pub unsafe fn tick_all() {
                 } else {
                     SERVICES[i].log_event("Carrier standby: no active NIC", now);
                 }
-            }
-        } else if name == "httpd" {
-            // Web server background socket poller
-            if SERVICES[i].cycles_count == 1 {
-                SERVICES[i].log_event("HTTP server active on port 80", now);
             }
         }
     }

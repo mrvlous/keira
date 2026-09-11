@@ -310,17 +310,14 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/system/dev
 	$(Q)mkdir -p $(FS_ROOT)/system/drivers
 	$(Q)mkdir -p $(FS_ROOT)/system/include/sys
+	$(Q)mkdir -p $(FS_ROOT)/system/lib
 	$(Q)mkdir -p $(FS_ROOT)/apps/bin
-	$(Q)mkdir -p $(FS_ROOT)/apps/src
+	$(Q)mkdir -p $(FS_ROOT)/apps/src/kcc/include
 	$(Q)mkdir -p $(FS_ROOT)/config/boot
 	$(Q)mkdir -p $(FS_ROOT)/config/sys
 	$(Q)mkdir -p $(FS_ROOT)/users/admin
-	$(Q)mkdir -p $(FS_ROOT)/users/default
-	$(Q)mkdir -p $(FS_ROOT)/users/guest
 	$(Q)mkdir -p $(FS_ROOT)/temp
 	$(Q)mkdir -p $(FS_ROOT)/data/log
-	$(Q)mkdir -p $(FS_ROOT)/data/save
-	$(Q)mkdir -p $(FS_ROOT)/data/www
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/apps/bin/kcc.elf
 	$(Q)for cmd in $(SHELL_CMDS); do \
@@ -333,7 +330,6 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)printf "console\nnull\nzero\nrandom\nurandom\nptmx\ntty\nfb0\nsda\nsda1\n" > $(FS_ROOT)/system/dev/devices.list
 	$(Q)cp -r user/include/* $(FS_ROOT)/system/include/
 	$(Q)cp user/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
-	$(Q)mkdir -p $(FS_ROOT)/system/lib
 	$(Q)cp user/lib/math/math.c $(FS_ROOT)/system/lib/math.c
 	$(Q)cp user/lib/string/string.c $(FS_ROOT)/system/lib/string.c
 	$(Q)cp user/lib/stdlib/stdlib.c $(FS_ROOT)/system/lib/stdlib.c
@@ -346,35 +342,31 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)cp user/lib/setjmp/setjmp.c $(FS_ROOT)/system/lib/setjmp.c
 	$(Q)cp user/lib/ctype/ctype.c $(FS_ROOT)/system/lib/ctype.c
 	$(Q)cp user/lib/errno/errno.c $(FS_ROOT)/system/lib/errno.c
-	$(Q)cp user/bin/kcc/main.c $(FS_ROOT)/apps/src/kcc_main.c
-	$(Q)cp user/bin/kcc/lexer.c $(FS_ROOT)/apps/src/lexer.c
-	$(Q)cp user/bin/kcc/parser.c $(FS_ROOT)/apps/src/parser.c
-	$(Q)cp user/bin/kcc/codegen.c $(FS_ROOT)/apps/src/codegen.c
+	$(Q)cp user/lib/mem/malloc.c $(FS_ROOT)/system/lib/malloc.c
+	$(Q)cp user/lib/stdio/file.c $(FS_ROOT)/system/lib/file.c
+	$(Q)cp user/lib/stdio/printf.c $(FS_ROOT)/system/lib/printf.c
+	$(Q)cp user/lib/syscall/syscall.c $(FS_ROOT)/system/lib/syscall.c
+	$(Q)cp user/bin/kcc/*.c $(FS_ROOT)/apps/src/kcc/
+	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
 	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
-	$(Q)printf "HOSTNAME=keira\nTIMEZONE=UTC\nKEYMAP=us\nINIT_RUNLEVEL=3\n" > $(FS_ROOT)/config/sys/os-release
+	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
+	$(Q)printf "keira\n" > $(FS_ROOT)/config/sys/hostname.cfg
 	$(Q)printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > $(FS_ROOT)/config/sys/resolv.conf
 	$(Q)printf "127.0.0.1\tlocalhost\n127.0.1.1\tkeira\n" > $(FS_ROOT)/config/sys/hosts
-	$(Q)printf "admin:x:0:0:System Administrator:/users/admin:/system/bin/shell\ndefault:x:1000:1000:Default User:/users/default:/system/bin/shell\nguest:x:1001:1001:Guest Account:/users/guest:/system/bin/shell\n" > $(FS_ROOT)/config/sys/passwd
-	$(Q)printf "admin:x:0:admin\ndefault:x:1000:default\nguest:x:1001:guest\n" > $(FS_ROOT)/config/sys/group
-	$(Q)printf "# Keira System Services Configuration\n[httpd]\nenabled=true\nport=80\nroot=/data/www\n\n[syslogd]\nenabled=true\nfile=/data/log/syslog.log\n\n[syncd]\nenabled=true\ninterval=30\n\n[watchdogd]\nenabled=true\ntimeout=60\n\n[timed]\nenabled=true\ninterval=30\n\n[monitord]\nenabled=true\ninterval=10\n\n[netd]\nenabled=true\ninterval=15\n" > $(FS_ROOT)/config/sys/services.conf
-	$(Q)printf "# Keira Service Configuration\nname=httpd\ndescription=Native Micro Web & REST API Server\nenabled=1\nauto_restart=1\nport=80\n" > $(FS_ROOT)/config/sys/httpd.conf
+	$(Q)printf "admin:keira\n" > $(FS_ROOT)/config/sys/passwd
+	$(Q)printf "# Keira Kernel System Services Configuration\n[syslogd]\nenabled=true\nfile=/data/log/syslog.log\n\n[syncd]\nenabled=true\ninterval=30\n\n[watchdogd]\nenabled=true\ntimeout=60\n\n[timed]\nenabled=true\ninterval=30\n\n[monitord]\nenabled=true\ninterval=10\n\n[netd]\nenabled=true\ninterval=15\n" > $(FS_ROOT)/config/sys/services.conf
 	$(Q)printf "# Keira Service Configuration\nname=syncd\ndescription=FAT16 Auto-Sync & Cache Flush Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/syncd.conf
 	$(Q)printf "# Keira Service Configuration\nname=syslogd\ndescription=Kernel Event & Audit Logger Service\nenabled=1\nauto_restart=1\ninterval=5\n" > $(FS_ROOT)/config/sys/syslogd.conf
 	$(Q)printf "# Keira Service Configuration\nname=watchdogd\ndescription=Memory & Task Health Watchdog\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/watchdogd.conf
 	$(Q)printf "# Keira Service Configuration\nname=timed\ndescription=CMOS RTC & System Clock Sync Daemon\nenabled=1\nauto_restart=1\ninterval=30\n" > $(FS_ROOT)/config/sys/timed.conf
 	$(Q)printf "# Keira Service Configuration\nname=monitord\ndescription=System Health & Telemetry Daemon\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/monitord.conf
 	$(Q)printf "# Keira Service Configuration\nname=netd\ndescription=Network State & ARP Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/netd.conf
-	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/admin\nexport USER=admin\n" > $(FS_ROOT)/users/admin/.profile
-	$(Q)printf "export PATH=/system/bin:/apps/bin\nexport HOME=/users/default\nexport USER=default\n" > $(FS_ROOT)/users/default/.profile
-	$(Q)printf "export PATH=/system/bin\nexport HOME=/users/guest\nexport USER=guest\n" > $(FS_ROOT)/users/guest/.profile
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n#include <stdio.h>\n#include <syscall.h>\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
 	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/data/log/boot.log
 	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
 	$(Q)printf "[INFO] Keira Service Controller (ksvc) system logger initialized.\n" > $(FS_ROOT)/data/log/syslog.log
 	$(Q)printf "[INFO] Keira Telemetry Monitor (monitord) initialized.\n" > $(FS_ROOT)/data/log/monitor.log
-	$(Q)printf "KEY=VALUE\n" > $(FS_ROOT)/data/save/session.dat
-	$(Q)printf "<!DOCTYPE html><html><head><title>Keira Kernel</title></head><body style=\"background:#111;color:#eee;font-family:sans-serif;padding:40px;\"><h1>Keira Kernel v$(VERSION)</h1><p>Native Background Web &amp; REST API Server (httpd)</p><p>Status: <strong>Active &amp; Serving</strong></p></body></html>\n" > $(FS_ROOT)/data/www/index.html
 	$(Q)touch $(FS_ROOT)/temp/.keep
 
 $(DISK_IMG): fs-root
@@ -383,7 +375,7 @@ $(DISK_IMG): fs-root
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/users/default ::/users/guest ::/temp ::/data ::/data/log ::/data/save ::/data/www 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
 	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \

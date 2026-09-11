@@ -43,7 +43,7 @@ Keira Kernel includes `kvi`, an in-kernel text editor featuring:
   * `Ctrl+F`: In-editor text search.
 
 ```bash
-keira> edit /config/sys/os-release
+keira> edit /config/sys/kernel.cfg
 ```
 
 ### `list [path]`
