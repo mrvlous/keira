@@ -422,6 +422,26 @@ void emit_store_global(int offset, int size) {
     emit_store_deref(size);
 }
 
+void emit_inc_global(int offset, int is_post, int is_dec) {
+    emit_load_global(offset, 8);
+    if (is_post) {
+        emit_push_rax(); /* save original value for expression result */
+    }
+    if (is_dec) {
+        REX_W();
+        emit_u8(0xff);
+        emit_u8(0xc8); /* dec rax/eax */
+    } else {
+        REX_W();
+        emit_u8(0xff);
+        emit_u8(0xc0); /* inc rax/eax */
+    }
+    emit_store_global(offset, 8);
+    if (is_post) {
+        emit_pop_rax(); /* return original */
+    }
+}
+
 /* Pointer Dereferencing */
 void emit_deref(int size) {
     if (size == 1) {

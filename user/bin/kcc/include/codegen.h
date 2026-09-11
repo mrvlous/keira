@@ -64,6 +64,7 @@ void emit_inc_local(int offset, int is_post, int is_dec);
 void emit_load_global(int offset, int size);
 void emit_store_global(int offset, int size);
 void emit_addr_global(int offset);
+void emit_inc_global(int offset, int is_post, int is_dec);
 
 /* Pointer Dereferencing */
 void emit_deref(int size);

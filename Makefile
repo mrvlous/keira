@@ -344,6 +344,8 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)cp user/lib/signal/signal.c $(FS_ROOT)/system/lib/signal.c
 	$(Q)cp user/lib/time/time.c $(FS_ROOT)/system/lib/time.c
 	$(Q)cp user/lib/setjmp/setjmp.c $(FS_ROOT)/system/lib/setjmp.c
+	$(Q)cp user/lib/ctype/ctype.c $(FS_ROOT)/system/lib/ctype.c
+	$(Q)cp user/lib/errno/errno.c $(FS_ROOT)/system/lib/errno.c
 	$(Q)cp user/bin/kcc/main.c $(FS_ROOT)/apps/src/kcc_main.c
 	$(Q)cp user/bin/kcc/lexer.c $(FS_ROOT)/apps/src/lexer.c
 	$(Q)cp user/bin/kcc/parser.c $(FS_ROOT)/apps/src/parser.c

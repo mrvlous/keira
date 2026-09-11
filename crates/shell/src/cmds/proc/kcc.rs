@@ -38,8 +38,8 @@ pub fn run(parts: &mut SplitWhitespace) {
                 );
                 vga::print_str("  -h, --help           Display this help manual\n\n");
                 vga::print_str("Examples:\n");
-                vga::print_str("  kcc /apps/src/calc.c -o /apps/bin/calc.elf\n");
-                vga::print_str("  kcc /apps/src/bench.c\n");
+                vga::print_str("  kcc /data/main.c -o /apps/bin/app.elf\n");
+                vga::print_str("  kcc /data/main.c\n");
                 return;
             }
             "-v" | "--version" => {
@@ -130,6 +130,8 @@ pub fn run(parts: &mut SplitWhitespace) {
         ("<signal.h>", "\"signal.h\"", "/system/lib/signal.c"),
         ("<time.h>", "\"time.h\"", "/system/lib/time.c"),
         ("<setjmp.h>", "\"setjmp.h\"", "/system/lib/setjmp.c"),
+        ("<ctype.h>", "\"ctype.h\"", "/system/lib/ctype.c"),
+        ("<errno.h>", "\"errno.h\"", "/system/lib/errno.c"),
     ];
 
     for &(hdr1, hdr2, lib_path) in &libs {

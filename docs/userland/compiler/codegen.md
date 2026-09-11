@@ -28,11 +28,12 @@ graph TD
 
 ---
 
-## Core API (`user/bin/kcc/src/codegen.c`)
+## Core API (`user/bin/kcc/codegen.c`)
 
 ```c
-void codegen_ast_root(ast_node_t *root);
-void codegen_emit_prologue(int stack_size);
-void codegen_emit_epilogue(void);
-int codegen_write_elf(const char *output_filename);
+void emit_func_prologue(void);
+void emit_func_epilogue(int is_main);
+void emit_inc_local(int offset, int is_post, int is_dec);
+void emit_inc_global(int offset, int is_post, int is_dec);
+int write_elf_executable(const char *output_path);
 ```
