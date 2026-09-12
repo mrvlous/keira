@@ -45,7 +45,7 @@ sequenceDiagram
 
 ---
 
-## Assembly Entry Trampoline (`arch/x86/boot/boot.asm`)
+## Assembly Entry Trampolines (`arch/x86/x86_64/boot/entry32.asm` & `arch/x86/i686/boot/entry.asm`)
 
 ### 1. Stack Allocation
 A dedicated 16 KB early stack is allocated in the BSS segment:
