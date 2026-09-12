@@ -41,7 +41,7 @@ sudo xbps-install -Syu base-devel nasm gcc grub xorriso qemu dosfstools \
                        mtools clang python3 git
 ```
 
-> **Note:** The Makefile auto-detects `grub-mkrescue` or `grub2-mkrescue` depending on your distribution. No manual symlinks or aliases are required.
+> **Note:** The Makefile auto-detects `grub-mkrescue` or `grub2-mkrescue` depending on your host environment. No manual symlinks or aliases are required.
 
 ---
 

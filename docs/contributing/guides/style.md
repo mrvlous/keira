@@ -221,12 +221,24 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 
 ---
 
-## 9. Multi-Architecture Target Organization
+## 9. Multi-Architecture 4-Tier Symmetrical Organization
 
-1. **Target Specification Layout**:
-   - Architecture JSON specification files must be organized in architecture-specific subdirectories under `targets/`:
-     - `targets/x86/x86_64/x86_64-keira-none.json` (64-bit Long Mode)
-     - `targets/x86/i686/i686-keira-none.json` (32-bit Protected Mode)
-2. **Linker Scripts**:
-   - Kernel Linkers: `arch/x86/x86_64/linker.ld` (`x86_64`) and `arch/x86/i686/linker.ld` (`i686`).
-   - Userland Linkers: `user/arch/x86/linker.ld` (`x86_64` base `0x40000000`) and `user/arch/x86/linker32.ld` (`i686` base `0x01000000`).
+All architectural code, target specifications, userland linkers, and build outputs maintain strict 1:1 symmetry across `i686` and `x86_64`:
+
+1. **Kernel Bootstrap & Assembly (`arch/x86/`)**:
+   - Shared multiboot headers: `arch/x86/common/boot/multiboot2_header.asm`
+   - Shared assembly includes: `arch/x86/common/include/constants.inc`
+   - Pure 32-bit bootstrap & kernel: `arch/x86/i686/` (`entry.asm`, `gdt.asm`, `idt.asm`, `isr.asm`, `syscall.asm`, `linker.ld`)
+   - 64-bit Long Mode bootstrap & kernel: `arch/x86/x86_64/` (`entry32.asm`, `entry64.asm`, `gdt.asm`, `idt.asm`, `isr.asm`, `paging.asm`, `syscall.asm`, `linker.ld`)
+
+2. **Cargo Target Specifications (`targets/x86/`)**:
+   - `targets/x86/x86_64/x86_64-keira-none.json` (64-bit Long Mode)
+   - `targets/x86/i686/i686-keira-none.json` (32-bit Protected Mode)
+
+3. **Userland Linker Scripts (`user/arch/x86/`)**:
+   - `user/arch/x86/x86_64/linker.ld` (`x86_64` virtual base `0x40000000`)
+   - `user/arch/x86/i686/linker.ld` (`i686` virtual base `0x01000000`)
+
+4. **Build Output Hierarchy (`build/x86/`)**:
+   - `build/x86/x86_64/` (`bin/`, `disk/`, `iso/`, `obj/`, `staging/`)
+   - `build/x86/i686/` (`bin/`, `disk/`, `iso/`, `obj/`, `staging/`)

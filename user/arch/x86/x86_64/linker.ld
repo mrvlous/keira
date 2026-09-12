@@ -9,7 +9,7 @@
  */
 
 /*
- * Linker Script Specification for Ring 3 User Space Programs
+ * Linker Script Specification for Ring 3 User Space Programs (x86_64)
  *
  * Enforces strict W^X separation between executable code (.text/.rodata) and writable data (.data/.bss).
  *

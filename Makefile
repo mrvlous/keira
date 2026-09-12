@@ -75,7 +75,7 @@ ifeq ($(ARCH),i686)
                    arch/x86/i686/kernel/idt.asm \
                    arch/x86/i686/kernel/isr.asm \
                    arch/x86/i686/kernel/syscall.asm
-    USER_LINKER_SCRIPT := user/arch/x86/linker32.ld
+    USER_LINKER_SCRIPT := user/arch/x86/i686/linker.ld
     USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                      -mno-sse -mno-sse2 -mno-mmx \
                      -Iuser/include -Iuser/bin/kcc/include -T $(USER_LINKER_SCRIPT) \
@@ -95,7 +95,7 @@ else
                    arch/x86/x86_64/kernel/idt.asm \
                    arch/x86/x86_64/kernel/isr.asm \
                    arch/x86/x86_64/kernel/syscall.asm
-    USER_LINKER_SCRIPT := user/arch/x86/linker.ld
+    USER_LINKER_SCRIPT := user/arch/x86/x86_64/linker.ld
     USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                      -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
                      -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
@@ -168,7 +168,7 @@ preflight: ## Validate presence of all essential build, packaging, and filesyste
 	done; \
 	if [ -n "$$MISSING" ]; then \
 	    printf "\n[ERR] Missing required build tool(s):%s\n\n" "$$MISSING"; \
-	    printf "[INFO] Please install missing dependencies using your distribution package manager:\n"; \
+	    printf "[INFO] Please install missing dependencies using your host package manager:\n"; \
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso dosfstools mtools tar coreutils\n\n"; \
 	    printf "  Arch Linux:\n"; \
@@ -187,7 +187,7 @@ preflight: ## Validate presence of all essential build, packaging, and filesyste
 preflight-qemu: ## Validate presence of QEMU hypervisor for current target architecture
 	@if ! command -v $(QEMU) >/dev/null 2>&1; then \
 	    printf "\n[ERR] Missing QEMU hypervisor: $(QEMU)\n\n"; \
-	    printf "[INFO] Please install QEMU using your distribution package manager:\n"; \
+	    printf "[INFO] Please install QEMU using your host package manager:\n"; \
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y qemu-system-x86\n\n"; \
 	    printf "  Arch Linux:\n"; \
@@ -210,7 +210,7 @@ preflight-format: ## Validate presence of code formatting utilities
 	done; \
 	if [ -n "$$MISSING" ]; then \
 	    printf "\n[ERR] Missing formatting tool(s):%s\n\n" "$$MISSING"; \
-	    printf "[INFO] Please install formatting tools using your distribution package manager:\n"; \
+	    printf "[INFO] Please install formatting tools using your host package manager:\n"; \
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y clang-format cargo\n\n"; \
 	    printf "  Arch Linux:\n"; \
@@ -227,7 +227,7 @@ preflight-format: ## Validate presence of code formatting utilities
 preflight-lint: ## Validate presence of static analysis utilities
 	@if ! command -v clang-tidy >/dev/null 2>&1; then \
 	    printf "\n[ERR] Missing static analysis tool: clang-tidy\n\n"; \
-	    printf "[INFO] Please install clang-tidy using your distribution package manager:\n"; \
+	    printf "[INFO] Please install clang-tidy using your host package manager:\n"; \
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y clang-tidy\n\n"; \
 	    printf "  Arch Linux:\n"; \
@@ -470,7 +470,7 @@ check: ## Verify all required build dependencies are installed
 	    $(LOG_DONE) "All dependencies satisfied"; \
 	else \
 	    $(LOG_ERR) "$$MISSING missing dependencies detected"; \
-	    printf "\n[INFO] Install missing dependencies using your distribution package manager:\n"; \
+	    printf "\n[INFO] Install missing dependencies using your host package manager:\n"; \
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso qemu-system-x86 clang-format clang-tidy dosfstools mtools tar coreutils\n\n"; \
 	    printf "  Arch Linux:\n"; \
