@@ -76,10 +76,11 @@ ifeq ($(ARCH),i686)
                    arch/x86/i686/kernel/isr.asm \
                    arch/x86/i686/kernel/syscall.asm
     USER_LINKER_SCRIPT := user/arch/x86/i686/linker.ld
-    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
-                     -mno-sse -mno-sse2 -mno-mmx \
-                     -Iuser/include -Iuser/bin/kcc/include -T $(USER_LINKER_SCRIPT) \
-                     -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
+    USER_CFLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
+                   -mno-sse -mno-sse2 -mno-mmx \
+                   -Iuser/include
+    USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
+                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
     ASM_FLAGS   := -f elf64 -I arch/x86/common/include/
     LD_FLAGS    := -n -T arch/x86/x86_64/linker.ld --gc-sections --no-warn-rwx-segments
@@ -96,18 +97,29 @@ else
                    arch/x86/x86_64/kernel/isr.asm \
                    arch/x86/x86_64/kernel/syscall.asm
     USER_LINKER_SCRIPT := user/arch/x86/x86_64/linker.ld
-    USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
-                     -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
-                     -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
-                     -Iuser/include -Iuser/bin/kcc/include -T $(USER_LINKER_SCRIPT) \
-                     -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie
+    USER_CFLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
+                   -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
+                   -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
+                   -Iuser/include
+    USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
+                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie
 endif
 
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS        := $(ASM_OBJS)
 
+USER_LIBC_A     := $(BUILD_DIR)/lib/libc.a
 USER_LIB_SRCS   := $(shell find user/lib -type f -name "*.c")
+USER_LIB_OBJS   := $(patsubst user/lib/%.c,$(OBJ_DIR)/user/lib/%.o,$(USER_LIB_SRCS))
+
 USER_KCC_SRCS   := $(shell find user/bin/kcc -type f -name "*.c")
+USER_KCC_OBJS   := $(patsubst user/bin/kcc/%.c,$(OBJ_DIR)/user/bin/kcc/%.o,$(USER_KCC_SRCS))
+
+SYSINFO_ELF     := $(BIN_DIR)/sysinfo.elf
+SYSINFO_SRCS    := $(shell find user/bin/sysinfo -type f -name "*.c")
+SYSINFO_OBJS    := $(patsubst user/bin/sysinfo/%.c,$(OBJ_DIR)/user/bin/sysinfo/%.o,$(SYSINFO_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -258,14 +270,14 @@ disk: preflight $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
 initrd: preflight $(INITRD_TAR) ## Build RAM Disk USTAR archive
 
-user: preflight $(USER_ELF) ## Build user-space C compiler (kcc.elf)
+user: preflight $(USER_ELFS) $(USER_LIBC_A) ## Build user-space C binaries (kcc.elf, sysinfo.elf) and libc.a
 
 rust: preflight | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
 dirs: preflight ## Create architecture-isolated build output directory hierarchy
-	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR)
+	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BUILD_DIR)/lib $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR)
 
 # Binary & ISO construction rules
 $(KERNEL_ISO): $(KERNEL_BIN) $(INITRD_TAR) | dirs
@@ -298,12 +310,39 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
-$(USER_ELF): $(USER_KCC_SRCS) $(USER_LIB_SRCS) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Building user space program: kcc ($(ARCH))..."
-	$(Q)$(CC) $(USER_CC_FLAGS) $(USER_KCC_SRCS) $(USER_LIB_SRCS) -o $(USER_ELF)
+# Userland freestanding C standard library (libc.a)
+$(OBJ_DIR)/user/lib/%.o: user/lib/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+
+$(USER_LIBC_A): $(USER_LIB_OBJS) | dirs
+	@$(LOG_INFO) "Archiving freestanding C standard library: libc.a ($(ARCH))..."
+	$(Q)mkdir -p $(dir $@)
+	$(Q)ar rcs $@ $(USER_LIB_OBJS)
+	@$(LOG_DONE) "$(USER_LIBC_A) ready"
+
+# Userland C compiler (kcc.elf)
+$(OBJ_DIR)/user/bin/kcc/%.o: user/bin/kcc/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -Iuser/bin/kcc/include -c $< -o $@
+
+$(USER_ELF): $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: kcc ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(USER_ELF)
+	@$(LOG_DONE) "$(USER_ELF) ready"
+
+# Userland diagnostic tool (sysinfo.elf)
+$(OBJ_DIR)/user/bin/sysinfo/%.o: user/bin/sysinfo/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+
+$(SYSINFO_ELF): $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: sysinfo ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SYSINFO_ELF)
+	@$(LOG_DONE) "$(SYSINFO_ELF) ready"
 
 # Canonical root filesystem & disk image rules
-fs-root: $(USER_ELF) | dirs
+fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT)
 	$(Q)mkdir -p $(FS_ROOT)/system/bin
@@ -313,6 +352,7 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/system/lib
 	$(Q)mkdir -p $(FS_ROOT)/apps/bin
 	$(Q)mkdir -p $(FS_ROOT)/apps/src/kcc/include
+	$(Q)mkdir -p $(FS_ROOT)/apps/src/sysinfo
 	$(Q)mkdir -p $(FS_ROOT)/config/boot
 	$(Q)mkdir -p $(FS_ROOT)/config/sys
 	$(Q)mkdir -p $(FS_ROOT)/users/admin
@@ -320,6 +360,9 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/data/log
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/apps/bin/kcc.elf
+	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/system/bin/sysinfo.elf
+	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/apps/bin/sysinfo.elf
+	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/system/lib/libc.a
 	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf "ELF\002\001\001\000Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
 	    chmod +x $(FS_ROOT)/system/bin/$$cmd.elf; \
@@ -348,6 +391,7 @@ fs-root: $(USER_ELF) | dirs
 	$(Q)cp user/lib/syscall/syscall.c $(FS_ROOT)/system/lib/syscall.c
 	$(Q)cp user/bin/kcc/*.c $(FS_ROOT)/apps/src/kcc/
 	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
+	$(Q)cp user/bin/sysinfo/*.c $(FS_ROOT)/apps/src/sysinfo/
 	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
@@ -375,7 +419,7 @@ $(DISK_IMG): fs-root
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
 	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \

@@ -81,3 +81,6 @@ run /system/bin/kcc.elf
 # Execute compiled userland binary
 run /apps/bin/app.elf
 ```
+
+### C. Archived Static Library (`libc.a`):
+All freestanding C runtime modules in `user/lib/` are compiled into independent object files and archived into `libc.a` (`build/x86/<arch>/lib/libc.a`), which is deployed to `/system/lib/libc.a`. Ring 3 applications (`kcc.elf`, `sysinfo.elf`) link directly against this archive using architecture-specific linker scripts (`user/arch/x86/`).

@@ -281,6 +281,35 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 return errno_to_ret(e);
             }
 
+            if fd == 1 || fd == 2 {
+                let mut chunk = [0u8; 128];
+                let mut written = 0usize;
+                while written < len as usize {
+                    let to_read = (len as usize - written).min(chunk.len());
+                    if unsafe { copy_from_user(&mut chunk[..to_read], buf_ptr + written as u64) }
+                        .is_err()
+                    {
+                        return if written > 0 {
+                            written as u64
+                        } else {
+                            errno_to_ret(EFAULT)
+                        };
+                    }
+                    if let Ok(s) = core::str::from_utf8(&chunk[..to_read]) {
+                        vga::print_str(s);
+                    } else {
+                        for &b in &chunk[..to_read] {
+                            let single = [b];
+                            if let Ok(s) = core::str::from_utf8(&single) {
+                                vga::print_str(s);
+                            }
+                        }
+                    }
+                    written += to_read;
+                }
+                return written as u64;
+            }
+
             unsafe {
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
