@@ -10,12 +10,12 @@ Keira Kernel utilizes a pure Rust kernel build pipeline with assembly bootstrap 
 
 ```mermaid
 graph LR
-    ASM["arch/x86/**/*.asm"] --> NASM["NASM"] --> Obj["build/<arch>/obj/*.asm.o"]
+    ASM["arch/x86/**/*.asm"] --> NASM["NASM"] --> Obj["build/x86/<arch>/obj/*.asm.o"]
     Rust["crates/* (12 Crates)"] --> Cargo["Cargo (-Zbuild-std)"] --> Lib["libkeira_kernel.a"]
     Obj --> LD["LD Linker"]
     Lib --> LD
-    CUser["user/* (KCC Compiler)"] --> GCC["GCC / Host"] --> KCCObj["build/<arch>/bin/kcc.elf"]
-    LD --> Bin["build/<arch>/bin/keira.bin"]
+    CUser["user/* (KCC Compiler)"] --> GCC["GCC / Host"] --> KCCObj["build/x86/<arch>/bin/kcc.elf"]
+    LD --> Bin["build/x86/<arch>/bin/keira.bin"]
     Bin --> ISO["grub-mkrescue -> keira-<arch>-<date>.iso"]
     KCCObj --> Initrd["initrd.tar"] --> ISO
 ```

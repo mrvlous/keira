@@ -35,7 +35,7 @@ DATE_SUFFIX     := $(shell date +%Y-%m-%d)
 
 # Architecture-isolated build directory hierarchy
 BUILD_ROOT      := build
-BUILD_DIR       := $(BUILD_ROOT)/$(ARCH)
+BUILD_DIR       := $(BUILD_ROOT)/x86/$(ARCH)
 BIN_DIR         := $(BUILD_DIR)/bin
 ISO_OUT_DIR     := $(BUILD_DIR)/iso
 DISK_DIR        := $(BUILD_DIR)/disk
