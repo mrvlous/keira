@@ -36,7 +36,7 @@ graph LR
 
 * `make all`: Compiles assembly, 12 Rust kernel crates, userland KCC, initrd, and bootable ISO for active `ARCH` (triggers `preflight`).
 * `make full`: Compiles kernel binaries, ISOs, and disk images for both `x86_64` and `i686`.
-* `make preflight`: Validates presence of core build, packaging, and filesystem utilities (`nasm`, `gcc`, `ld`, `cargo`, `rustc`, `grub-mkrescue`, `xorriso`, `mkfs.fat`, `mmd`, `mcopy`, `tar`, `dd`), printing distro installation commands if missing.
+* `make preflight`: Validates presence of core build, packaging, and filesystem utilities (`nasm`, `gcc`, `ld`, `cargo`, `rustc`, `grub-mkrescue`, `xorriso`, `mkfs.fat`, `mmd`, `mcopy`, `tar`, `dd`), printing host package installation commands if missing.
 * `make preflight-qemu`: Validates presence of QEMU hypervisor for current target architecture.
 * `make preflight-format`: Validates presence of code formatting utilities (`cargo`, `clang-format`).
 * `make preflight-lint`: Validates presence of static analysis utilities (`clang-tidy`).
@@ -51,16 +51,16 @@ graph LR
 
 ---
 
-## Cross-Distribution Compatibility
+## Host Environment Compatibility
 
-The build system is designed to work across all major Linux distributions without manual configuration:
+The build system is designed to work across all major Linux development environments without manual configuration:
 
 | Feature | Mechanism |
 | :--- | :--- |
 | **GRUB ISO Creation** | Auto-detects `grub-mkrescue` (Arch, Ubuntu) or `grub2-mkrescue` (Fedora, openSUSE) at parse time |
 | **Shell Recipes** | Explicit `SHELL := /bin/bash` ensures consistent behavior regardless of `/bin/sh` symlink target |
 | **Escape Sequences** | All `printf` calls use POSIX-compliant octal escapes (`\002`) instead of non-portable hex (`\x02`) |
-| **Dependency Preflight** | `make preflight` automatically runs on every build target, halting immediately with distro package commands if any tool is missing |
+| **Dependency Preflight** | `make preflight` automatically runs on every build target, halting immediately with host package commands if any tool is missing |
 | **Dependency Diagnostics** | `make check` provides full itemized verification of all 15 tool dependencies with non-zero exit code on failure |
 
-See [setup.md](setup.md) for per-distribution package installation commands.
+See [setup.md](setup.md) for host package installation commands.
