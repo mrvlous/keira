@@ -10,7 +10,7 @@ This document details remote GDB debugging, serial UART logging, register inspec
 
 ```mermaid
 sequenceDiagram
-    participant HostGDB as Host GDB Client (gdb build/x86_64/bin/keira.bin)
+    participant HostGDB as Host GDB Client (gdb build/x86/x86_64/bin/keira.bin)
     participant QEMUTCP as QEMU GDB Server (localhost:1234)
     participant Kernel as Keira Kernel Ring 0
 
@@ -32,7 +32,7 @@ make debug
 
 In a separate terminal, launch GDB and connect:
 ```bash
-gdb build/x86_64/bin/keira.bin
+gdb build/x86/x86_64/bin/keira.bin
 (gdb) target remote localhost:1234
 (gdb) break kernel_main
 (gdb) continue
@@ -50,7 +50,7 @@ gdb build/x86_64/bin/keira.bin
 
 All early boot milestone messages and kernel panic dumps are output directly to COM1 serial (`-serial stdio`). To redirect serial output directly to a log file:
 ```bash
-qemu-system-x86_64 -cdrom build/x86_64/iso/keira-x86_64-*.iso -serial file:serial.log -display none
+qemu-system-x86_64 -cdrom build/x86/x86_64/iso/keira-x86_64-*.iso -serial file:serial.log -display none
 ```
 
 ---
