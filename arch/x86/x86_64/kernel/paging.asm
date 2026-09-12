@@ -7,7 +7,7 @@
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation; version 2 of the License.
 
-; Page Table Initialization and Early Identity Mapping
+; Page Table Initialization and Early Identity Mapping (x86_64)
 ;
 ; Configures 4-level paging structures (PML4 -> PDPT -> PD) to identity-map
 ; 1 GiB of physical memory using 2 MiB huge pages during early bootstrap.

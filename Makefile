@@ -63,38 +63,38 @@ endif
 
 # Architecture-specific compilation flags
 ifeq ($(ARCH),i686)
-    ASM_FLAGS   := -f elf32 -I arch/x86/include/asm/ -DTARGET_ARCH_X86
-    LD_FLAGS    := -m elf_i386 -n -T arch/x86/linker32.ld --gc-sections --no-warn-rwx-segments
-    RUST_TARGET := targets/x86/i686-keira-none.json
+    ASM_FLAGS   := -f elf32 -I arch/x86/common/include/
+    LD_FLAGS    := -m elf_i386 -n -T arch/x86/i686/linker.ld --gc-sections --no-warn-rwx-segments
+    RUST_TARGET := targets/x86/i686/i686-keira-none.json
     RUST_MODE   := release
     RUST_LIB    := target/i686-keira-none/$(RUST_MODE)/libkeira_kernel.a
     QEMU        := qemu-system-i386
-    ASM_SRCS    := arch/x86/boot/multiboot2_header.asm \
-                   arch/x86/boot/entry32.asm \
-                   arch/x86/kernel/gdt.asm \
-                   arch/x86/kernel/idt.asm \
-                   arch/x86/kernel/isr.asm \
-                   arch/x86/kernel/syscall.asm
+    ASM_SRCS    := arch/x86/common/boot/multiboot2_header.asm \
+                   arch/x86/i686/boot/entry.asm \
+                   arch/x86/i686/kernel/gdt.asm \
+                   arch/x86/i686/kernel/idt.asm \
+                   arch/x86/i686/kernel/isr.asm \
+                   arch/x86/i686/kernel/syscall.asm
     USER_LINKER_SCRIPT := user/arch/x86/linker32.ld
     USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                      -mno-sse -mno-sse2 -mno-mmx \
                      -Iuser/include -Iuser/bin/kcc/include -T $(USER_LINKER_SCRIPT) \
                      -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
-    ASM_FLAGS   := -f elf64 -I arch/x86/include/asm/
-    LD_FLAGS    := -n -T arch/x86/linker.ld --gc-sections --no-warn-rwx-segments
-    RUST_TARGET := targets/x86/x86_64-keira-none.json
+    ASM_FLAGS   := -f elf64 -I arch/x86/common/include/
+    LD_FLAGS    := -n -T arch/x86/x86_64/linker.ld --gc-sections --no-warn-rwx-segments
+    RUST_TARGET := targets/x86/x86_64/x86_64-keira-none.json
     RUST_MODE   := release
     RUST_LIB    := target/x86_64-keira-none/$(RUST_MODE)/libkeira_kernel.a
     QEMU        := qemu-system-x86_64
-    ASM_SRCS    := arch/x86/boot/multiboot2_header.asm \
-                   arch/x86/boot/entry32.asm \
-                   arch/x86/boot/entry64.asm \
-                   arch/x86/kernel/gdt.asm \
-                   arch/x86/kernel/paging.asm \
-                   arch/x86/kernel/idt.asm \
-                   arch/x86/kernel/isr.asm \
-                   arch/x86/kernel/syscall.asm
+    ASM_SRCS    := arch/x86/common/boot/multiboot2_header.asm \
+                   arch/x86/x86_64/boot/entry32.asm \
+                   arch/x86/x86_64/boot/entry64.asm \
+                   arch/x86/x86_64/kernel/gdt.asm \
+                   arch/x86/x86_64/kernel/paging.asm \
+                   arch/x86/x86_64/kernel/idt.asm \
+                   arch/x86/x86_64/kernel/isr.asm \
+                   arch/x86/x86_64/kernel/syscall.asm
     USER_LINKER_SCRIPT := user/arch/x86/linker.ld
     USER_CC_FLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                      -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \

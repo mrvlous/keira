@@ -7,17 +7,7 @@
 ; it under the terms of the GNU General Public License as published by
 ; the Free Software Foundation; version 2 of the License.
 
-; 64-Bit Long Mode Execution Trampoline
-;
-; Executed immediately after the far jump from 32-bit compatibility mode.
-; The CPU is operating in full 64-bit long mode.
-;
-; Responsibilities:
-;   1. Reload 64-bit data segment selectors (DS, ES, SS, FS, GS)
-;   2. Establish 64-bit stack frame pointer (RSP)
-;   3. Zero-initialize uninitialized kernel BSS memory region
-;   4. Transfer control directly to the 64-bit pure Rust kernel entry point kernel_main()
-;   5. Halt CPU execution if kernel_main returns
+; 64-Bit Long Mode Execution Trampoline (x86_64)
 
 %include "constants.inc"
 

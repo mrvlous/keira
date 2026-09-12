@@ -67,6 +67,6 @@ Release tags use the standard prefix `v` (e.g., `v0.2.0`). Tags are created only
 Before opening a pull request, ensure:
 1. `make check` passes with all dependencies satisfied (or `make preflight` succeeds).
 2. `make format` and `make lint` run cleanly without modifying unstaged formatting.
-3. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
+3. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86/x86_64/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
 4. `make all` and `make test` pass cleanly.
 5. All new files contain clean GPL-2.0-only license headers with the author's full name (no email addresses in headers).

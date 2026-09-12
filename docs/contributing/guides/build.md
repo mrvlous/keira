@@ -10,7 +10,7 @@ Keira Kernel utilizes a pure Rust kernel build pipeline with assembly bootstrap 
 
 ```mermaid
 graph LR
-    ASM["arch/x86/*.asm"] --> NASM["NASM"] --> Obj["build/<arch>/obj/*.asm.o"]
+    ASM["arch/x86/**/*.asm"] --> NASM["NASM"] --> Obj["build/<arch>/obj/*.asm.o"]
     Rust["crates/* (12 Crates)"] --> Cargo["Cargo (-Zbuild-std)"] --> Lib["libkeira_kernel.a"]
     Obj --> LD["LD Linker"]
     Lib --> LD
@@ -26,8 +26,8 @@ graph LR
 
 | Architecture | Target Spec | Build Command | QEMU Command |
 | :--- | :--- | :--- | :--- |
-| **x86_64** (Default) | `targets/x86/x86_64-keira-none.json` | `make` (or `make all`) | `make run` |
-| **i686** (32-bit) | `targets/x86/i686-keira-none.json` | `make ARCH=i686 all` | `make run-32` |
+| **x86_64** (Default) | `targets/x86/x86_64/x86_64-keira-none.json` | `make` (or `make all`) | `make run` |
+| **i686** (32-bit) | `targets/x86/i686/i686-keira-none.json` | `make ARCH=i686 all` | `make run-32` |
 | **Dual Matrix** | Both architectures | `make full` | `make test-all` |
 
 ---
