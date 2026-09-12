@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Keira Kernel - Operating System Kernel
+# Keira Kernel - Freestanding Kernel from Scratch
 # Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 
 # Clangd Language Server Configuration
