@@ -12,6 +12,7 @@
 #include "elf.h"
 #include "lexer.h"
 #include "parser.h"
+#include "preproc.h"
 #include "symbols.h"
 
 #include <syscall.h>
@@ -78,7 +79,34 @@ void _start(int argc, char **argv) {
         sys_exit(1);
     }
 
-    init_lexer(src_buf);
+    /* Determine source directory for relative includes */
+    char cur_dir[128];
+    k_memset(cur_dir, 0, sizeof(cur_dir));
+    int path_len = k_strlen(source_path);
+    int last_slash = -1;
+    int si;
+    for (si = 0; si < path_len; si++) {
+        if (source_path[si] == '/') {
+            last_slash = si;
+        }
+    }
+    if (last_slash >= 0) {
+        k_memcpy(cur_dir, source_path, last_slash);
+        cur_dir[last_slash] = '\0';
+    } else {
+        cur_dir[0] = '.';
+        cur_dir[1] = '\0';
+    }
+
+    init_preprocessor();
+    k_memset(prep_buf, 0, MAX_SOURCE_SIZE);
+    int prep_len = preprocess_source(src_buf, prep_buf, MAX_SOURCE_SIZE, cur_dir);
+    if (prep_len < 0) {
+        print_str("Error: Preprocessing failed\n");
+        sys_exit(1);
+    }
+
+    init_lexer(prep_buf);
     compile_global_declarations();
 
     /* Patch function calls relative offsets */

@@ -17,6 +17,8 @@
 
 #include <syscall.h>
 
+static int current_is_main = 0;
+
 void match(int expected) {
     if (tok == expected) {
         tok = next_token();
@@ -865,7 +867,7 @@ void statement(void) {
             emit_load_imm(0);
         }
         match(TOK_SEMICOLON);
-        emit_func_epilogue(0);
+        emit_func_epilogue(current_is_main);
     } else {
         /* Expression statement or empty statement */
         if (tok == TOK_SEMICOLON) {
@@ -881,15 +883,30 @@ void statement(void) {
 void compile_global_declarations(void) {
     tok = next_token();
     while (tok != TOK_EOF) {
+        while (tok == TOK_CONST || tok == TOK_EXTERN) {
+            match(tok);
+        }
+
+        if (tok == TOK_SEMICOLON) {
+            match(TOK_SEMICOLON);
+            continue;
+        }
+
         if (tok == TOK_INT || tok == TOK_CHAR || tok == TOK_VOID || tok == TOK_SHORT ||
-            tok == TOK_LONG || tok == TOK_UNSIGNED) {
+            tok == TOK_LONG || tok == TOK_UNSIGNED || tok == TOK_SIGNED) {
             int type_tok = tok;
             match(type_tok);
+            while (tok == TOK_INT || tok == TOK_CHAR || tok == TOK_SHORT || tok == TOK_LONG ||
+                   tok == TOK_UNSIGNED || tok == TOK_SIGNED) {
+                match(tok);
+            }
 
             int is_ptr = 0;
-            if (tok == TOK_STAR) {
-                match(TOK_STAR);
-                is_ptr = 1;
+            while (tok == TOK_STAR || tok == TOK_CONST) {
+                if (tok == TOK_STAR) {
+                    is_ptr = 1;
+                }
+                match(tok);
             }
             (void)is_ptr;
 
@@ -898,52 +915,89 @@ void compile_global_declarations(void) {
             match(TOK_IDENT);
 
             if (tok == TOK_LPAREN) {
-                /* Function Definition */
+                /* Function Declaration or Definition */
                 match(TOK_LPAREN);
-                add_function(name, code_idx);
                 clear_locals();
 
                 int param_count = 0;
                 if (tok != TOK_RPAREN) {
+                    while (tok == TOK_CONST) {
+                        match(TOK_CONST);
+                    }
                     if (tok == TOK_VOID && *(src_ptr) == ')') {
                         match(TOK_VOID);
+                    } else if (tok == TOK_ELLIPSIS) {
+                        match(TOK_ELLIPSIS);
                     } else {
                         int p_type = tok;
                         match(p_type);
+                        while (tok == TOK_INT || tok == TOK_CHAR || tok == TOK_SHORT ||
+                               tok == TOK_LONG || tok == TOK_UNSIGNED || tok == TOK_SIGNED) {
+                            match(tok);
+                        }
                         int p_is_ptr = 0;
-                        if (tok == TOK_STAR) {
-                            match(TOK_STAR);
-                            p_is_ptr = 1;
+                        while (tok == TOK_STAR || tok == TOK_CONST) {
+                            if (tok == TOK_STAR) {
+                                p_is_ptr = 1;
+                            }
+                            match(tok);
                         }
                         (void)p_is_ptr;
                         char p_name[256];
-                        k_strcpy(p_name, token_string);
-                        match(TOK_IDENT);
-
-                        add_local(p_name, 8);
+                        if (tok == TOK_IDENT) {
+                            k_strcpy(p_name, token_string);
+                            match(TOK_IDENT);
+                            add_local(p_name, 8);
+                        }
                         param_count++;
 
                         while (tok == TOK_COMMA) {
                             match(TOK_COMMA);
+                            while (tok == TOK_CONST) {
+                                match(TOK_CONST);
+                            }
+                            if (tok == TOK_ELLIPSIS) {
+                                match(TOK_ELLIPSIS);
+                                break;
+                            }
                             int next_p_type = tok;
                             match(next_p_type);
+                            while (tok == TOK_INT || tok == TOK_CHAR || tok == TOK_SHORT ||
+                                   tok == TOK_LONG || tok == TOK_UNSIGNED || tok == TOK_SIGNED) {
+                                match(tok);
+                            }
                             int next_p_is_ptr = 0;
-                            if (tok == TOK_STAR) {
-                                match(TOK_STAR);
-                                next_p_is_ptr = 1;
+                            while (tok == TOK_STAR || tok == TOK_CONST) {
+                                if (tok == TOK_STAR) {
+                                    next_p_is_ptr = 1;
+                                }
+                                match(tok);
                             }
                             (void)next_p_is_ptr;
                             char next_p_name[256];
-                            k_strcpy(next_p_name, token_string);
-                            match(TOK_IDENT);
-
-                            add_local(next_p_name, 8);
+                            if (tok == TOK_IDENT) {
+                                k_strcpy(next_p_name, token_string);
+                                match(TOK_IDENT);
+                                add_local(next_p_name, 8);
+                            }
                             param_count++;
                         }
                     }
                 }
                 match(TOK_RPAREN);
 
+                if (tok == TOK_SEMICOLON) {
+                    /* Function Prototype / Forward Declaration */
+                    match(TOK_SEMICOLON);
+                    clear_locals();
+                    continue;
+                }
+
+                /* Actual Function Definition */
+                int is_main = (k_strcmp(name, "main") == 0);
+                current_is_main = is_main;
+
+                add_function(name, code_idx);
                 emit_func_prologue();
 
                 /* Save incoming parameter registers to local stack slots */
@@ -957,8 +1011,8 @@ void compile_global_declarations(void) {
                 block();
                 match(TOK_RBRACE);
 
-                int is_main = (k_strcmp(name, "main") == 0);
                 emit_func_epilogue(is_main);
+                current_is_main = 0;
             } else if (tok == TOK_LBRACKET) {
                 /* Global Array: char buf[1024]; */
                 match(TOK_LBRACKET);

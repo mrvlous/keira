@@ -13,6 +13,7 @@
 #include <syscall.h>
 
 char src_buf[MAX_SOURCE_SIZE];
+char prep_buf[MAX_SOURCE_SIZE];
 unsigned char code_buf[MAX_CODE_SIZE];
 unsigned char data_buf[MAX_DATA_SIZE];
 int code_idx = 0;
@@ -26,6 +27,18 @@ int k_strcmp(const char *s1, const char *s2) {
         s2 = s2 + 1;
     }
     return *s1 - *s2;
+}
+
+int k_strncmp(const char *s1, const char *s2, int n) {
+    int i = 0;
+    while (i < n && *s1 && *s1 == *s2) {
+        s1++;
+        s2++;
+        i++;
+    }
+    if (i == n)
+        return 0;
+    return (unsigned char)*s1 - (unsigned char)*s2;
 }
 
 int k_strlen(const char *s) {

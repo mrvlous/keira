@@ -26,6 +26,8 @@ enum TokenType {
     TOK_LONG,
     TOK_UNSIGNED,
     TOK_SIGNED,
+    TOK_CONST,
+    TOK_EXTERN,
 
     /* Control Flow Keywords */
     TOK_RETURN,
@@ -53,6 +55,8 @@ enum TokenType {
     TOK_COMMA,     /* , */
     TOK_COLON,     /* : */
     TOK_QUESTION,  /* ? */
+    TOK_DOT,       /* . */
+    TOK_ELLIPSIS,  /* ... */
 
     /* Arithmetic Operators */
     TOK_PLUS,  /* + */
