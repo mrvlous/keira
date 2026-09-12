@@ -10,7 +10,7 @@ This document specifies the POSIX file descriptor table, standard streams (`stdi
 
 ```mermaid
 graph LR
-    Proc["Userland Process"] --> FDT["File Descriptor Table (0..15 per task)"]
+    Proc["Userland Process"] --> FDT["File Descriptor Table (0..31 per task)"]
     FDT --> FD0["FD 0: stdin (/system/dev/console)"]
     FDT --> FD1["FD 1: stdout (/system/dev/console)"]
     FDT --> FD2["FD 2: stderr (/system/dev/console)"]

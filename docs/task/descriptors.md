@@ -9,20 +9,24 @@ This document details the Task Control Block (TCB), saved CPU registers, task st
 ## Task Control Block (TCB) Structure
 
 ```rust
-pub struct TaskControlBlock {
-    pub pid: u32,
-    pub parent_pid: u32,
+pub const MAX_FDS: usize = 32;
+pub const MAX_TASKS: usize = 64;
+
+pub struct Task {
+    pub id: usize,
+    pub name: &'static str,
+    pub rsp: u64,
+    pub stack_addr: u64,
     pub state: TaskState,
-    pub priority: u8,
+    pub fds: [FileDescriptor; MAX_FDS],
+    pub program_break: u64,
+    pub program_break_start: u64,
+    pub cwd: [u8; 128],
+    pub cwd_len: usize,
+    pub parent_id: usize,
+    pub pml4_phys: u64,
+    pub exit_code: i32,
     pub is_user: bool,
-    pub page_table_root: usize, // CR3 register
-    pub kernel_stack: usize,
-    pub user_stack: usize,
-    pub context: TaskContext,
-    pub fds: [FileDescriptor; 16],
-    pub pending_signals: u32,
-    pub signal_mask: u32,
-    pub name: [u8; 32],
 }
 ```
 

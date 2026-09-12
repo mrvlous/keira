@@ -55,6 +55,8 @@ Keira supports standard POSIX signal handling:
 ## Core API (`crates/task/src/scheduler/mod.rs`)
 
 ```rust
+pub const MAX_TASKS: usize = 64;
+
 pub fn init_scheduler();
 pub fn schedule();
 pub fn spawn_task(entry: usize, is_user: bool, name: &str) -> Result<u32, &'static str>;
