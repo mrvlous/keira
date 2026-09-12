@@ -16,15 +16,17 @@
 
 #define MAX_CODE_SIZE 65536
 #define MAX_DATA_SIZE 32768
-#define MAX_SOURCE_SIZE 65536
+#define MAX_SOURCE_SIZE 131072
 
 extern char src_buf[MAX_SOURCE_SIZE];
+extern char prep_buf[MAX_SOURCE_SIZE];
 extern unsigned char code_buf[MAX_CODE_SIZE];
 extern unsigned char data_buf[MAX_DATA_SIZE];
 extern int code_idx;
 extern int data_idx;
 
 int k_strcmp(const char *s1, const char *s2);
+int k_strncmp(const char *s1, const char *s2, int n);
 int k_strlen(const char *s);
 void k_strcpy(char *dest, const char *src);
 void k_memcpy(char *dest, const char *src, int n);

@@ -10,7 +10,8 @@ This submodule details the internal architecture of `kcc.elf`, the standalone in
 
 ```mermaid
 graph LR
-    Source["C Source File (.c)"] --> Lexer["lexer.md<br/>Lexical Tokenizer"]
+    Source["C Source File (.c)"] --> Preproc["preproc.md<br/>Preprocessor & Macros"]
+    Preproc --> Lexer["lexer.md<br/>Lexical Tokenizer"]
     Lexer --> Parser["parser.md<br/>Recursive Descent Parser"]
     Parser --> AST["Abstract Syntax Tree (AST)"]
     AST --> Codegen["codegen.md<br/>x86_64 Machine Codegen"]
@@ -24,7 +25,8 @@ graph LR
 
 | Component | Document | Description |
 | :--- | :--- | :--- |
+| **Preprocessor** | [`preproc.md`](preproc.md) | Header inclusion, macro expansion, and conditional compilation directives |
 | **Lexer** | [`lexer.md`](lexer.md) | Keyword recognition, string literal escape processing, and numeric tokens |
-| **Parser** | [`parser.md`](parser.md) | Recursive descent grammar parser and AST node construction |
+| **Parser** | [`parser.md`](parser.md) | Recursive descent grammar parser, prototypes, and AST node construction |
 | **Code Generator** | [`codegen.md`](codegen.md) | x86_64 machine code generation, stack frame setup, and register mapping |
 | **Driver & CLI** | [`driver.md`](driver.md) | Compiler command line arguments, target specifications, and ELF output |

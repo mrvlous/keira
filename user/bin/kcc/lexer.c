@@ -100,6 +100,10 @@ int next_token(void) {
             tok = TOK_UNSIGNED;
         else if (k_strcmp(token_string, "signed") == 0)
             tok = TOK_SIGNED;
+        else if (k_strcmp(token_string, "const") == 0)
+            tok = TOK_CONST;
+        else if (k_strcmp(token_string, "extern") == 0)
+            tok = TOK_EXTERN;
         else if (k_strcmp(token_string, "return") == 0)
             tok = TOK_RETURN;
         else if (k_strcmp(token_string, "if") == 0)
@@ -248,6 +252,14 @@ int next_token(void) {
         return tok;
     case ',':
         tok = TOK_COMMA;
+        return tok;
+    case '.':
+        if (*src_ptr == '.' && *(src_ptr + 1) == '.') {
+            src_ptr += 2;
+            tok = TOK_ELLIPSIS;
+            return tok;
+        }
+        tok = TOK_DOT;
         return tok;
     case ':':
         tok = TOK_COLON;
@@ -423,6 +435,16 @@ const char *token_name(int token) {
         return "long";
     case TOK_UNSIGNED:
         return "unsigned";
+    case TOK_SIGNED:
+        return "signed";
+    case TOK_CONST:
+        return "const";
+    case TOK_EXTERN:
+        return "extern";
+    case TOK_DOT:
+        return "'.'";
+    case TOK_ELLIPSIS:
+        return "'...'";
     case TOK_RETURN:
         return "return";
     case TOK_IF:
