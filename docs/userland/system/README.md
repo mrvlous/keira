@@ -14,6 +14,7 @@ graph TD
     MultiUser --> Perms["POSIX File & Inode Permissions (permissions.md)"]
     Init --> Host["System Hostname & Environment (hostname.md)"]
     Init --> POSIXIO["POSIX Standard I/O Streams (posix_io.md)"]
+    Init --> Binaries["Ring 3 Native Binaries (binaries.md)"]
 ```
 
 ---
@@ -22,6 +23,7 @@ graph TD
 
 | Document | Topic | Description |
 | :--- | :--- | :--- |
+| [`binaries.md`](binaries.md) | Native Ring 3 Binaries | Native ELF applications (`kcc`, `sysinfo`) and libc linkage |
 | [`init.md`](init.md) | Userland Init Stage | Early userland bootstrap, root filesystem mount, and daemon startup |
 | [`users.md`](users.md) | Multi-User Management | User accounts (`/config/passwd`), UID/GID mappings, and sessions |
 | [`permissions.md`](permissions.md) | POSIX Permissions | Standard `rwxrwxrwx` octal mode bits, `chmod`, and ownership |
