@@ -2,7 +2,7 @@
 
 # The Keira Kernel Learning Journey
 
-> *"The best way to truly understand how an operating system works is not merely to read about it, but to build one from the very first instruction."*
+> *"The best way to truly understand how a freestanding kernel works is not merely to read about it, but to build one from the very first instruction."*
 
 This module is an open engineering journal and educational roadmap detailing the design decisions, challenges, and lessons learned while developing **Keira Kernel** from scratch in safe Rust, C, and Assembly.
 

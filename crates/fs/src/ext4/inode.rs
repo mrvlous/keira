@@ -65,7 +65,7 @@ pub struct Ext4Inode {
     pub i_links_count: u16, // Hard links count
     pub i_blocks_lo: u32,   // Count of 512-byte blocks allocated
     pub i_flags: u32,       // Inode flags (e.g. EXT4_EXTENTS_FL)
-    pub i_osd1: u32,        // OS dependent 1
+    pub i_osd1: u32,        // System dependent 1
     pub i_block: [u8; 60],  // Block pointers or extent tree header
     pub i_generation: u32,  // File version
     pub i_file_acl_lo: u32, // Extended attribute block

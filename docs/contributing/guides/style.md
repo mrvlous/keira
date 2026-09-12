@@ -130,7 +130,7 @@ All runtime and VFS paths must adhere to the canonical 6-directory hierarchy:
 * `/temp`: Temporary runtime scratch workspace (`/temp/.keep`).
 
 > [!IMPORTANT]
-> Keira is a freestanding kernel, not an operating system distribution. Do not introduce OS distribution or desktop elements (e.g. no `/data/www`, no `/data/save`, no `/config/sys/os-release`, no unmaintained desktop user homes, and no unparsed `.profile` scripts).
+> Keira is a freestanding kernel, not a distribution. Do not introduce distribution or desktop elements (e.g. no `/data/www`, no `/data/save`, no `/config/sys/os-release`, no unmaintained desktop user homes, and no unparsed `.profile` scripts).
 
 ---
 

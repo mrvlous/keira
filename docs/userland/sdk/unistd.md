@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# POSIX Operating System API (`<unistd.h>`)
+# POSIX Freestanding Kernel API (`<unistd.h>`)
 
 The `<unistd.h>` header provides standard POSIX system interfaces for file operations, process identification, and execution control in Ring 3 userland.
 
