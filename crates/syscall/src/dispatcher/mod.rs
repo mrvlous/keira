@@ -21,13 +21,14 @@ use keira_mem::vmm;
 use keira_task::scheduler::{
     fork_current_task, send_signal, spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX, TASKS,
 };
+use keira_task::types::MAX_FDS;
 
 extern "C" {
     fn get_uptime_ms() -> u64;
 }
 
 pub fn validate_fd(fd: i32) -> Result<(), i64> {
-    if (0..8).contains(&fd) {
+    if (0..MAX_FDS as i32).contains(&fd) {
         Ok(())
     } else {
         Err(EBADF)
@@ -172,7 +173,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
                     let mut fd_slot = None;
-                    for i in 0..8 {
+                    for i in 0..MAX_FDS {
                         if !t.fds[i].is_open {
                             fd_slot = Some(i);
                             break;
@@ -195,7 +196,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let fd = arg1 as usize;
             let buf_ptr = arg2;
             let len = arg3;
-            if fd >= 8 {
+            if fd >= MAX_FDS {
                 return errno_to_ret(EBADF);
             }
             if len == 0 {
@@ -270,7 +271,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let fd = arg1 as usize;
             let buf_ptr = arg2;
             let len = arg3;
-            if fd >= 8 {
+            if fd >= MAX_FDS {
                 return errno_to_ret(EBADF);
             }
             if len == 0 {
@@ -341,7 +342,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 9: Close File
         9 => {
             let fd = arg1 as usize;
-            if fd >= 8 {
+            if fd >= MAX_FDS {
                 return errno_to_ret(EBADF);
             }
             unsafe {
@@ -370,7 +371,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             let fd = arg1 as usize;
             let offset = arg2;
             let whence = arg3;
-            if fd >= 8 {
+            if fd >= MAX_FDS {
                 return errno_to_ret(EBADF);
             }
             unsafe {
@@ -903,7 +904,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         72 => {
             let fd = arg1 as usize;
             let cmd = arg2 as i32;
-            if fd >= 8 {
+            if fd >= MAX_FDS {
                 return errno_to_ret(EBADF);
             }
             unsafe {
@@ -915,7 +916,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                     match cmd {
                         // F_DUPFD (0)
                         0 => {
-                            for i in 0..8 {
+                            for i in 0..MAX_FDS {
                                 if !t.fds[i].is_open {
                                     t.fds[i] = t.fds[fd];
                                     return i as u64;

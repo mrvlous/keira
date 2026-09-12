@@ -48,6 +48,8 @@ impl Default for FileDescriptor {
     }
 }
 
+pub const MAX_FDS: usize = 32;
+
 /// Task Control Block (TCB) tracking registers, address space, and resource allocations.
 pub struct Task {
     pub id: usize,
@@ -55,7 +57,7 @@ pub struct Task {
     pub rsp: u64,
     pub stack_addr: u64,
     pub state: TaskState,
-    pub fds: [FileDescriptor; 8],
+    pub fds: [FileDescriptor; MAX_FDS],
     pub program_break: u64,
     pub program_break_start: u64,
     pub cwd: [u8; 128],

@@ -47,7 +47,9 @@ pub struct JobInfo {
     pub is_foreground: bool,
 }
 
-pub static mut JOB_TABLE: [Option<JobInfo>; 16] = [None; 16];
+pub const MAX_JOBS: usize = 64;
+
+pub static mut JOB_TABLE: [Option<JobInfo>; MAX_JOBS] = [const { None }; MAX_JOBS];
 pub static mut JOB_COUNT: usize = 0;
 
 /// Register a new background or foreground process job into Job Control Table.
@@ -66,7 +68,7 @@ pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
     };
     info.name[..len].copy_from_slice(&nbytes[..len]);
 
-    if JOB_COUNT < 16 {
+    if JOB_COUNT < MAX_JOBS {
         JOB_TABLE[JOB_COUNT] = Some(info);
         JOB_COUNT += 1;
     } else {

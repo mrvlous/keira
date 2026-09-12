@@ -26,3 +26,18 @@ pub use user_copy::{
     EAGAIN, EBADF, ECHILD, EFAULT, EINTR, EINVAL, EIO, ENOENT, ENOMEM, ENOSYS, EPERM,
     USER_MAX_ADDR, USER_MIN_ADDR,
 };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_fd_bounds() {
+        for fd in 0..32 {
+            assert!(validate_fd(fd).is_ok());
+        }
+        assert_eq!(validate_fd(-1), Err(EBADF));
+        assert_eq!(validate_fd(32), Err(EBADF));
+        assert_eq!(validate_fd(100), Err(EBADF));
+    }
+}

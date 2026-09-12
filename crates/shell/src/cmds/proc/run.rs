@@ -258,7 +258,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         let cleanup_and_restore = |child: u64, brk: u64| {
             if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
                 task.pml4_phys = parent_pml4;
-                for fd in 0..8 {
+                for fd in 0..keira_task::MAX_FDS {
                     if task.fds[fd].is_open {
                         if task.fds[fd].write_mode {
                             if let Ok(path_str) =

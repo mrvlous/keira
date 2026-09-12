@@ -9,7 +9,7 @@
 
 //! Preemptive Round-Robin multitasking scheduler, context switching, and task lifecycle management.
 
-use super::types::{FileDescriptor, InterruptContext, Task, TaskState};
+use super::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 use keira_fs::lock::flock::release_all_locks_for_task;
 use keira_io::serial;
 use keira_io::vga;
@@ -20,9 +20,9 @@ extern "C" {
     static mut kernel_stack_temp: u64;
 }
 
-pub const MAX_TASKS: usize = 8;
+pub const MAX_TASKS: usize = 64;
 
-pub static mut TASKS: [Option<Task>; MAX_TASKS] = [None, None, None, None, None, None, None, None];
+pub static mut TASKS: [Option<Task>; MAX_TASKS] = [const { None }; MAX_TASKS];
 pub static mut CURRENT_TASK_IDX: usize = 0;
 pub static mut SCHEDULER_INITIALIZED: bool = false;
 
@@ -37,7 +37,7 @@ pub unsafe fn init() {
         rsp: 0,
         stack_addr: 0,
         state: TaskState::Running,
-        fds: [FileDescriptor::new(); 8],
+        fds: [FileDescriptor::new(); MAX_FDS],
         program_break: 0,
         program_break_start: 0,
         cwd: main_cwd,
@@ -108,7 +108,7 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         rsp: context_ptr as u64,
         stack_addr: stack_frame,
         state: TaskState::Ready,
-        fds: [FileDescriptor::new(); 8],
+        fds: [FileDescriptor::new(); MAX_FDS],
         program_break: 0,
         program_break_start: 0,
         cwd: child_cwd,
@@ -190,7 +190,7 @@ pub unsafe fn spawn_user(
         rsp: context_ptr as u64,
         stack_addr: stack_frame,
         state: TaskState::Ready,
-        fds: [FileDescriptor::new(); 8],
+        fds: [FileDescriptor::new(); MAX_FDS],
         program_break: 0x600000000000,
         program_break_start: 0x600000000000,
         cwd: child_cwd,

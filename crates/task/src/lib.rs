@@ -35,15 +35,22 @@ pub use security::{
     SECCOMP_SET_MODE_FILTER, SECCOMP_SET_MODE_STRICT, SECCOMP_STRICT_ACTIVE,
 };
 pub use signal::{
-    add_job, sys_kill, JobInfo, JobState, JOB_COUNT, JOB_TABLE, SIGABRT, SIGALRM, SIGBUS, SIGCHLD,
-    SIGCONT, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGQUIT, SIGSEGV, SIGSTOP, SIGTERM,
-    SIGTRAP, SIGUSR1, SIGUSR2,
+    add_job, sys_kill, JobInfo, JobState, JOB_COUNT, JOB_TABLE, MAX_JOBS, SIGABRT, SIGALRM, SIGBUS,
+    SIGCHLD, SIGCONT, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGQUIT, SIGSEGV, SIGSTOP,
+    SIGTERM, SIGTRAP, SIGUSR1, SIGUSR2,
 };
-pub use types::{FileDescriptor, InterruptContext, Task, TaskState};
+pub use types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_task_and_fd_capacities() {
+        assert_eq!(MAX_TASKS, 64);
+        assert_eq!(MAX_FDS, 32);
+        assert_eq!(MAX_JOBS, 64);
+    }
 
     #[test]
     fn test_seccomp_strict_and_filter_modes() {
