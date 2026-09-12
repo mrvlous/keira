@@ -25,7 +25,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | **Read-Only** | `ATTR_READ_ONLY` | `0x01` | Prevents writing, truncation, or deletion |
 | **Hidden** | `ATTR_HIDDEN` | `0x02` | Hides file from standard directory listings |
-| **System** | `ATTR_SYSTEM` | `0x04` | Marks file as critical operating system component |
+| **System** | `ATTR_SYSTEM` | `0x04` | Marks file as critical freestanding kernel component |
 | **Directory** | `ATTR_DIRECTORY` | `0x10` | Identifies subdirectory node |
 | **Archive** | `ATTR_ARCHIVE` | `0x20` | Backup archive status flag |
 

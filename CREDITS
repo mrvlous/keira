@@ -37,7 +37,7 @@ Special Acknowledgements & Upstream Foundations:
 
 * Dennis Ritchie, Ken Thompson & Bell Labs
   For the creation of the C programming language and foundational Unix
-  operating system architecture and design principles.
+  kernel architecture and design principles.
 
 * GNU Project & Free Software Foundation (FSF)
   For the GNU General Public License (GPLv2), compiler toolchains (GCC),
@@ -60,7 +60,7 @@ Special Acknowledgements & Upstream Foundations:
   https://www.intel.com | https://www.amd.com
 
 * POSIX, IEEE & The Open Group
-  For the Portable Operating System Interface (POSIX.1) standard and Single
+  For the POSIX.1 standard and Single
   UNIX Specification API conventions.
   https://www.opengroup.org
 
@@ -77,7 +77,7 @@ Special Acknowledgements & Upstream Foundations:
 
 * OSDev Community
   For comprehensive hardware specifications, x86_64 architecture documentation,
-  and operating system development knowledge bases.
+  and freestanding kernel development knowledge bases.
   https://wiki.osdev.org
 
 * GNU GRUB & Multiboot Specification Developers

@@ -29,7 +29,7 @@ Virtual addresses are decomposed into four 9-bit table indices:
 | `2` | `PAGE_USER` | Page accessible in User Mode Ring 3 (`DPL=3`) |
 | `3` | `PAGE_WRITE_THROUGH` | Write-through caching policy |
 | `4` | `PAGE_CACHE_DISABLE` | Disable CPU caching (for MMIO regions) |
-| `9` | `PAGE_COW` | Copy-on-Write software flag (Bit 9 available for OS use) |
+| `9` | `PAGE_COW` | Copy-on-Write software flag (Bit 9 available for kernel use) |
 | `63` | `PAGE_NO_EXECUTE` | Hardware `NX` bit preventing code execution |
 
 ---
