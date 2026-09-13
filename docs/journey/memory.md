@@ -23,3 +23,4 @@ graph TD
 * **Zero-Allocation Bitmap PMM**: Bootstrapped physical memory allocator utilizing GRUB memory map tags to safely reserve kernel text and MMIO holes.
 * **Recursive Page Table Navigation**: Implemented recursive PML4 mapping at slot 510, enabling dynamic mapping and unmapping of 4KB pages without extra page table allocations.
 * **Slab Allocator**: Created power-of-two slab caches (32B to 4096B) to achieve sub-microsecond kernel allocations with minimal heap fragmentation.
+* **Demand Paging & Lazy Allocation**: Implemented on-demand physical frame mapping for anonymous `sys_mmap` and heap `sbrk` expansion, resolving faults transparently via Interrupt 14 (`#PF`) handlers and skipping unaccessed pages in `munmap`.

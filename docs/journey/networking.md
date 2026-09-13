@@ -25,3 +25,4 @@ graph TD
 * **Pure Rust TCP Engine**: Built reliable TCP connection handling with 3-way handshakes, sequence tracking, window management, and retransmission.
 * **Native Bare-Metal TLS 1.3**: Implemented pure Rust TLS 1.3 handshake without external dependencies, integrating AES-128-GCM, SHA-256, HKDF, and Curve25519.
 * **Continuous Streaming Downloads**: Enabled streaming downloads directly over HTTP/HTTPS with cargo-style progress badges saved directly to FAT16 storage.
+* **In-Kernel BSD Socket Layer & Async Epoll Readiness**: Implemented a global socket descriptor table integrated into task file descriptors (`SYS_SOCKET`, `SYS_CONNECT`), unified `read`/`write` multiplexing, and dynamic readiness polling (`EPOLLIN` / `EPOLLOUT`) for scalable `epoll_wait` event loops.
