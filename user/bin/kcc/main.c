@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
                 continue;
             }
         } else if (k_strcmp(argv[arg_i], "-v") == 0 || k_strcmp(argv[arg_i], "--version") == 0) {
-            print_str("Keira C Compiler (KCC) Native v0.2.0\n");
+            print_str("Keira C Compiler (KCC) Native v0.3.0\n");
             sys_exit(0);
         } else if (k_strcmp(argv[arg_i], "-h") == 0 || k_strcmp(argv[arg_i], "--help") == 0) {
             print_str("Usage: kcc [options] <source.c>\n");
