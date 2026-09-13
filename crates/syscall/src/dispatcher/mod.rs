@@ -10,8 +10,8 @@
 //! 64-bit fast syscall dispatcher, pointer validation, and hardened userland system call router.
 
 use super::user_copy::{
-    copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES, EBADF,
-    ECHILD, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSYS, EPERM, ESRCH,
+    copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
+    EAGAIN, EBADF, ECHILD, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSYS, EPERM, ESRCH,
 };
 use keira_fs::elf::loader::load_elf;
 use keira_fs::vfs::{create_file, exists, read_file, resolve_alias_path, write_file};
@@ -21,7 +21,7 @@ use keira_mem::vmm;
 use keira_task::scheduler::{
     fork_current_task, send_signal, spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX, TASKS,
 };
-use keira_task::types::MAX_FDS;
+use keira_task::types::{FileDescriptor, MAX_FDS};
 
 extern "C" {
     fn get_uptime_ms() -> u64;
@@ -35,7 +35,10 @@ pub fn validate_fd(fd: i32) -> Result<(), i64> {
     }
 }
 
-pub const HEAP_MAX_VADDR: u64 = 0x4000_0000_0000;
+#[cfg(target_arch = "x86_64")]
+pub const HEAP_MAX_VADDR: u64 = 0x7000_0000_0000;
+#[cfg(target_arch = "x86")]
+pub const HEAP_MAX_VADDR: u64 = 0x4000_0000;
 
 /// Central system call dispatcher mapping syscall numbers to operations.
 #[no_mangle]
@@ -210,6 +213,27 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
                     if t.fds[fd].is_open {
+                        if t.fds[fd].is_socket {
+                            let mut kernel_buf = [0u8; 1024];
+                            let to_read = (len as usize).min(kernel_buf.len());
+                            match keira_net::socket::recv_socket(
+                                t.fds[fd].socket_id as u64,
+                                kernel_buf.as_mut_ptr(),
+                                to_read,
+                            ) {
+                                Ok(bytes) => {
+                                    if bytes > 0 {
+                                        if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                            return bytes as u64;
+                                        }
+                                        return errno_to_ret(EFAULT);
+                                    }
+                                    return 0;
+                                }
+                                Err(_) => return errno_to_ret(EAGAIN),
+                            }
+                        }
+
                         let path_str =
                             match core::str::from_utf8(&t.fds[fd].path[..t.fds[fd].path_len]) {
                                 Ok(s) => s,
@@ -314,6 +338,22 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
                     if t.fds[fd].is_open && t.fds[fd].write_mode {
+                        if t.fds[fd].is_socket {
+                            let mut kernel_buf = [0u8; 1024];
+                            let to_write = (len as usize).min(kernel_buf.len());
+                            if copy_from_user(&mut kernel_buf[..to_write], buf_ptr).is_ok() {
+                                match keira_net::socket::send_socket(
+                                    t.fds[fd].socket_id as u64,
+                                    kernel_buf.as_ptr(),
+                                    to_write,
+                                ) {
+                                    Ok(bytes) => return bytes as u64,
+                                    Err(_) => return errno_to_ret(EIO),
+                                }
+                            }
+                            return errno_to_ret(EFAULT);
+                        }
+
                         let path_str =
                             match core::str::from_utf8(&t.fds[fd].path[..t.fds[fd].path_len]) {
                                 Ok(s) => s,
@@ -378,7 +418,9 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
                     if t.fds[fd].is_open {
-                        if t.fds[fd].write_mode {
+                        if t.fds[fd].is_socket {
+                            let _ = keira_net::socket::close_socket(t.fds[fd].socket_id as u64);
+                        } else if t.fds[fd].write_mode {
                             if let Ok(path_str) =
                                 core::str::from_utf8(&t.fds[fd].path[..t.fds[fd].path_len])
                             {
@@ -386,9 +428,7 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                                 let _ = keira_fs::lock::release_lock(path_str, task_id);
                             }
                         }
-                        t.fds[fd].is_open = false;
-                        t.fds[fd].offset = 0;
-                        t.fds[fd].path_len = 0;
+                        t.fds[fd] = FileDescriptor::new();
                         return 0;
                     }
                 }
@@ -441,43 +481,12 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                     let old_page_top = (old_brk + pmm::PAGE_SIZE - 1) & !(pmm::PAGE_SIZE - 1);
                     let new_page_top = (new_brk + pmm::PAGE_SIZE - 1) & !(pmm::PAGE_SIZE - 1);
 
-                    if new_page_top > old_page_top {
-                        let mut curr_page = old_page_top;
-                        let mut mapped_in_call = 0u64;
-                        let mut failed = false;
-                        while curr_page < new_page_top {
-                            let frame = match pmm::alloc_frame() {
-                                Some(f) => f,
-                                None => {
-                                    failed = true;
-                                    break;
-                                }
-                            };
-                            if vmm::map_page(
-                                curr_page,
-                                frame,
-                                vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-                            )
-                            .is_err()
-                            {
-                                pmm::free_frame(frame);
-                                failed = true;
-                                break;
-                            }
-                            let ptr = curr_page as *mut u8;
-                            core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
+                    // If shrinking heap, unmap and free any pages that were mapped above new_page_top
+                    if new_page_top < old_page_top {
+                        let mut curr_page = new_page_top;
+                        while curr_page < old_page_top {
+                            let _ = vmm::free_and_unmap_page(curr_page);
                             curr_page += pmm::PAGE_SIZE;
-                            mapped_in_call += pmm::PAGE_SIZE;
-                        }
-
-                        if failed {
-                            // Atomic rollback of all pages mapped in this sbrk request
-                            let mut rollback_page = old_page_top;
-                            while rollback_page < old_page_top + mapped_in_call {
-                                let _ = vmm::free_and_unmap_page(rollback_page);
-                                rollback_page += pmm::PAGE_SIZE;
-                            }
-                            return errno_to_ret(ENOMEM);
                         }
                     }
 
@@ -591,13 +600,48 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         }
         // Syscall 24: socket
         24 => unsafe {
-            keira_net::socket::create_socket(arg1, arg2, arg3).unwrap_or(errno_to_ret(ENOMEM))
+            let sock_res = keira_net::socket::create_socket(arg1, arg2, arg3);
+            match sock_res {
+                Ok(sock_id) => {
+                    let task = &mut TASKS[CURRENT_TASK_IDX];
+                    if let Some(t) = task {
+                        let mut free_fd = None;
+                        for i in 3..MAX_FDS {
+                            if !t.fds[i].is_open {
+                                free_fd = Some(i);
+                                break;
+                            }
+                        }
+                        if let Some(fd) = free_fd {
+                            t.fds[fd] = FileDescriptor::new_socket(sock_id as u32, false);
+                            fd as u64
+                        } else {
+                            let _ = keira_net::socket::close_socket(sock_id);
+                            errno_to_ret(EMFILE)
+                        }
+                    } else {
+                        errno_to_ret(ESRCH)
+                    }
+                }
+                Err(_) => errno_to_ret(ENOMEM),
+            }
         },
         // Syscall 25: connect
         25 => unsafe {
-            match keira_net::socket::connect_socket(arg1, arg2 as *const u8, arg3) {
-                Ok(()) => 0,
-                Err(_) => errno_to_ret(EINVAL),
+            let fd = arg1 as usize;
+            let task = &mut TASKS[CURRENT_TASK_IDX];
+            if let Some(t) = task {
+                if fd < MAX_FDS && t.fds[fd].is_open && t.fds[fd].is_socket {
+                    let sock_id = t.fds[fd].socket_id as u64;
+                    match keira_net::socket::connect_socket(sock_id, arg2 as *const u8, arg3) {
+                        Ok(()) => 0,
+                        Err(_) => errno_to_ret(EINVAL),
+                    }
+                } else {
+                    errno_to_ret(EBADF)
+                }
+            } else {
+                errno_to_ret(ESRCH)
             }
         },
         // Syscall 28: shmget

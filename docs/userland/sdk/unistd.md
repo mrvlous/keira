@@ -73,6 +73,14 @@ int usleep(unsigned int usec);
 ```
 Suspends process execution for the specified duration.
 
+### `brk` / `sbrk`
+```c
+int brk(void *addr);
+void *sbrk(intptr_t increment);
+```
+`brk` sets the end of the data segment to `addr`. Returns `0` on success, or `-1` on error.
+`sbrk` increments the program data space by `increment` bytes. Returns the previous program break address, or `(void *)-1` on error.
+
 ---
 
 ## 3. Example Usage

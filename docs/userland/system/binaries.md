@@ -30,7 +30,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
 
 ---
 
@@ -110,9 +110,14 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [OK]   VFS working directory tracking operational
   [TEST] VFS file seeking (lseek)...
   [OK]   VFS seek pointer operational
-  [TEST] BSD socket creation via SYS_SOCKET...
-  [INFO] Created IPv4 TCP socket handle: fd=6
-  [OK]   Socket ABI boundary validated
+  [TEST] BSD socket lifecycle & async stream dispatch...
+  [INFO] Allocated socket descriptor: fd=3
+  [INFO] Socket connected to remote endpoint
+  [INFO] Transmitted 4 stream payload bytes
+  [OK]   BSD socket subsystem operational
+  [TEST] VMM demand paging & lazy heap (sbrk) allocation...
+  [INFO] Lazy pages faulted in transparently via #PF
+  [OK]   VMM demand paging operational
   [TEST] Out-of-bounds syscall safety check...
   [OK]   Undefined syscall safely handled without kernel fault
 

@@ -126,11 +126,38 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
     }
 
     if (cs & 3) == 3 {
-        // 1. Attempt to resolve user mode Page Fault on-demand (Demand Paging / Stack Auto-Growth)
+        // 1. Attempt to resolve user mode Page Fault on-demand (Demand Paging / Stack Auto-Growth / Heap)
         if vector == 14 {
             let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
             if unsafe { keira_mem::vmm::handle_page_fault(cr2, error_code, rsp) } {
                 return;
+            }
+
+            // 2. Demand Paging for task heap (program_break)
+            unsafe {
+                if let Some(ref t) =
+                    keira_task::scheduler::TASKS[keira_task::scheduler::CURRENT_TASK_IDX]
+                {
+                    if cr2 >= t.program_break_start && cr2 < t.program_break {
+                        let fault_page = cr2 & !(keira_mem::pmm::PAGE_SIZE - 1);
+                        if let Some(frame) = keira_mem::pmm::alloc_frame() {
+                            core::ptr::write_bytes(
+                                frame as *mut u8,
+                                0,
+                                keira_mem::pmm::PAGE_SIZE as usize,
+                            );
+                            let flags = keira_mem::vmm::PAGE_PRESENT
+                                | keira_mem::vmm::PAGE_WRITABLE
+                                | keira_mem::vmm::PAGE_USER;
+                            if keira_mem::vmm::map_page(fault_page, frame, flags).is_ok() {
+                                keira_arch::cpu::invlpg(fault_page as usize);
+                                return;
+                            } else {
+                                keira_mem::pmm::free_frame(frame);
+                            }
+                        }
+                    }
+                }
             }
         }
 

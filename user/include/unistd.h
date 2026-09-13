@@ -38,6 +38,9 @@ int unlink(const char *pathname);
 int chdir(const char *path);
 char *getcwd(char *buf, size_t size);
 
+int brk(void *addr);
+void *sbrk(intptr_t increment);
+
 pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);

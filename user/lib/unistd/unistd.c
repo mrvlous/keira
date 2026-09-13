@@ -90,6 +90,24 @@ char *getcwd(char *buf, size_t size) {
     return buf;
 }
 
+int brk(void *addr) {
+    int64_t ret = syscall1(SYS_BRK, (uint64_t)(uintptr_t)addr);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return 0;
+}
+
+void *sbrk(intptr_t increment) {
+    int64_t ret = syscall1(SYS_BRK, (uint64_t)increment);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return (void *)-1;
+    }
+    return (void *)(uintptr_t)ret;
+}
+
 pid_t getpid(void) {
     return (pid_t)sys_getpid();
 }

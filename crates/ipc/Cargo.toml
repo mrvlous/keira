@@ -21,4 +21,5 @@ keira-arch = { path = "../arch" }
 keira-mem = { path = "../mem" }
 keira-io = { path = "../io" }
 keira-fs = { path = "../fs" }
+keira-net = { path = "../net" }
 keira-task = { path = "../task" }

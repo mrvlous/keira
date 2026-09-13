@@ -24,6 +24,7 @@ pub const SUPPORTED_PROT: u32 = PROT_READ | PROT_WRITE | PROT_EXEC;
 
 pub const MAP_SHARED: u32 = 1 << 0;
 pub const MAP_PRIVATE: u32 = 1 << 1;
+pub const MAP_POPULATE: u32 = 1 << 3;
 pub const MAP_FIXED: u32 = 1 << 4;
 pub const MAP_ANONYMOUS: u32 = 1 << 5;
 
@@ -201,51 +202,55 @@ pub unsafe fn sys_mmap(
         page_flags |= PAGE_NO_EXECUTE;
     }
 
-    let mut allocated_pages = 0u64;
-    while allocated_pages < aligned_len {
-        let vaddr = start_vaddr + allocated_pages;
-        let frame = match pmm::alloc_frame() {
-            Some(f) => f,
-            None => {
-                // Rollback previously mapped pages and track cleanup errors
+    // Under demand paging, anonymous mappings do not allocate physical frames upfront
+    // unless MAP_POPULATE is explicitly requested. Unmapped pages fault in on-demand via #PF.
+    if (flags & MAP_POPULATE) != 0 {
+        let mut allocated_pages = 0u64;
+        while allocated_pages < aligned_len {
+            let vaddr = start_vaddr + allocated_pages;
+            let frame = match pmm::alloc_frame() {
+                Some(f) => f,
+                None => {
+                    // Rollback previously mapped pages and track cleanup errors
+                    let mut rollback_offset = 0u64;
+                    let mut first_rollback_err = None;
+                    while rollback_offset < allocated_pages {
+                        if let Err(e) = free_and_unmap_page(start_vaddr + rollback_offset) {
+                            if first_rollback_err.is_none() {
+                                first_rollback_err = Some(e);
+                            }
+                        }
+                        rollback_offset += pmm::PAGE_SIZE;
+                    }
+                    if let Some(_err) = first_rollback_err {
+                        return Err("Out of physical memory during mmap allocation (rollback cleanup error encountered)");
+                    }
+                    return Err("Out of physical memory during mmap allocation");
+                }
+            };
+
+            if let Err(e) = map_page(vaddr, frame, page_flags) {
+                pmm::free_frame(frame);
                 let mut rollback_offset = 0u64;
                 let mut first_rollback_err = None;
                 while rollback_offset < allocated_pages {
-                    if let Err(e) = free_and_unmap_page(start_vaddr + rollback_offset) {
+                    if let Err(re) = free_and_unmap_page(start_vaddr + rollback_offset) {
                         if first_rollback_err.is_none() {
-                            first_rollback_err = Some(e);
+                            first_rollback_err = Some(re);
                         }
                     }
                     rollback_offset += pmm::PAGE_SIZE;
                 }
-                if let Some(_err) = first_rollback_err {
-                    return Err("Out of physical memory during mmap allocation (rollback cleanup error encountered)");
+                if let Some(_re) = first_rollback_err {
+                    return Err("Failed to map page during mmap allocation (rollback cleanup error encountered)");
                 }
-                return Err("Out of physical memory during mmap allocation");
+                return Err(e);
             }
-        };
 
-        if let Err(e) = map_page(vaddr, frame, page_flags) {
-            pmm::free_frame(frame);
-            let mut rollback_offset = 0u64;
-            let mut first_rollback_err = None;
-            while rollback_offset < allocated_pages {
-                if let Err(re) = free_and_unmap_page(start_vaddr + rollback_offset) {
-                    if first_rollback_err.is_none() {
-                        first_rollback_err = Some(re);
-                    }
-                }
-                rollback_offset += pmm::PAGE_SIZE;
-            }
-            if let Some(_re) = first_rollback_err {
-                return Err("Failed to map page during mmap allocation (rollback cleanup error encountered)");
-            }
-            return Err(e);
+            let ptr = vaddr as *mut u8;
+            core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
+            allocated_pages += pmm::PAGE_SIZE;
         }
-
-        let ptr = vaddr as *mut u8;
-        core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
-        allocated_pages += pmm::PAGE_SIZE;
     }
 
     // Record authoritative VMA tagged with active PML4 ownership
@@ -323,14 +328,22 @@ pub unsafe fn sys_munmap_ext(addr: u64, length: u64) -> Result<u64, (&'static st
         None
     };
 
-    // Unmap physical pages with strict error tracking and partial VMA synchronization
+    // Unmap physical pages with strict error tracking and partial VMA synchronization.
+    // For lazily mapped pages, only unmap pages that were actually faulted into the page table.
     let mut offset = 0u64;
     let mut unmap_err = None;
     while offset < aligned_len {
         let vaddr = addr + offset;
-        if let Err(e) = free_and_unmap_page(vaddr) {
-            unmap_err = Some(e);
-            break;
+        #[cfg(not(test))]
+        let is_mapped = is_page_mapped_in_pml4(cur_pml4, vaddr);
+        #[cfg(test)]
+        let is_mapped = true;
+
+        if is_mapped {
+            if let Err(e) = free_and_unmap_page(vaddr) {
+                unmap_err = Some(e);
+                break;
+            }
         }
         offset += pmm::PAGE_SIZE;
     }
@@ -560,26 +573,25 @@ pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static s
         if vma.is_active && vma.pml4_phys == pml4_phys {
             let mut vaddr = vma.start;
             while vaddr < vma.end {
-                let pte = match get_pte_in_pml4(pml4_phys, vaddr) {
-                    Some(p) => p,
-                    None => {
-                        return Err("VMA invariant violation: VMA page not mapped in page table")
+                if let Some(pte) = get_pte_in_pml4(pml4_phys, vaddr) {
+                    if (pte & PAGE_PRESENT) != 0 {
+                        if (pte & PAGE_USER) == 0 {
+                            return Err("VMA invariant violation: PTE missing PAGE_USER flag");
+                        }
+                        if (vma.prot & PROT_WRITE) != 0 && (pte & PAGE_WRITABLE) == 0 {
+                            return Err(
+                                "VMA invariant violation: Writable VMA has non-writable PTE",
+                            );
+                        }
+                        if (vma.prot & PROT_WRITE) == 0 && (pte & PAGE_WRITABLE) != 0 {
+                            return Err("VMA invariant violation: Read-only VMA has writable PTE");
+                        }
+                        if (vma.prot & PROT_EXEC) == 0 && (pte & PAGE_NO_EXECUTE) == 0 {
+                            return Err(
+                                "VMA invariant violation: Non-executable VMA has executable PTE",
+                            );
+                        }
                     }
-                };
-                if (pte & PAGE_PRESENT) == 0 {
-                    return Err("VMA invariant violation: PTE not present");
-                }
-                if (pte & PAGE_USER) == 0 {
-                    return Err("VMA invariant violation: PTE missing PAGE_USER flag");
-                }
-                if (vma.prot & PROT_WRITE) != 0 && (pte & PAGE_WRITABLE) == 0 {
-                    return Err("VMA invariant violation: Writable VMA has non-writable PTE");
-                }
-                if (vma.prot & PROT_WRITE) == 0 && (pte & PAGE_WRITABLE) != 0 {
-                    return Err("VMA invariant violation: Read-only VMA has writable PTE");
-                }
-                if (vma.prot & PROT_EXEC) == 0 && (pte & PAGE_NO_EXECUTE) == 0 {
-                    return Err("VMA invariant violation: Non-executable VMA has executable PTE");
                 }
                 vaddr += pmm::PAGE_SIZE;
             }

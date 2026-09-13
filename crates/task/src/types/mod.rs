@@ -28,6 +28,9 @@ pub struct FileDescriptor {
     pub path_len: usize,
     pub offset: u64,
     pub write_mode: bool,
+    pub is_socket: bool,
+    pub socket_id: u32,
+    pub nonblocking: bool,
 }
 
 impl FileDescriptor {
@@ -38,6 +41,22 @@ impl FileDescriptor {
             path_len: 0,
             offset: 0,
             write_mode: false,
+            is_socket: false,
+            socket_id: 0,
+            nonblocking: false,
+        }
+    }
+
+    pub fn new_socket(socket_id: u32, nonblocking: bool) -> Self {
+        Self {
+            is_open: true,
+            path: [0u8; 128],
+            path_len: 0,
+            offset: 0,
+            write_mode: true,
+            is_socket: true,
+            socket_id,
+            nonblocking,
         }
     }
 }

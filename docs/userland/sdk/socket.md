@@ -62,3 +62,6 @@ Transmits a message from `buf` of length `len` across the connected socket. Retu
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
 ```
 Receives messages from a socket into `buf`. Returns the number of bytes received, or `-1` on error.
+
+> [!NOTE]
+> Socket descriptors in Keira Kernel integrate directly into the process file descriptor table. Sockets may also be operated using standard `read()`, `write()`, and `close()` from `<unistd.h>`, or monitored via `epoll_wait()`.

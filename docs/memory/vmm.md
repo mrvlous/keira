@@ -50,14 +50,24 @@ Keira implements zero-copy process forking via hardware-assisted Copy-on-Write:
 
 ---
 
-## Demand Paging & User Stack Auto-Growth
+## Demand Paging & Lazy Allocation Architecture
 
-When a Ring 3 user process accesses an unmapped virtual address within its authorized Virtual Memory Area (VMA) or user stack window (`USER_STACK_BOTTOM` to `USER_STACK_TOP`), the CPU triggers Interrupt 14 (`#PF` Page Fault):
+Keira implements demand paging and lazy memory allocation to minimize physical frame consumption and eliminate eager allocation latency:
 
-1. **Hardware Fault Trapping**: The CPU writes the faulting address to `CR2` and pushes an error code containing fault attributes (`P`, `W/R`, `U/S`, `I/D`).
-2. **Exception Dispatcher (`handle_page_fault`)**: The Ring 0 handler inspects `CR2` and validates against active VMAs or the dynamic user stack window.
-3. **On-Demand Frame Allocation**: If the access is valid and the page is not-present, a zeroed physical frame is allocated from PMM, mapped to the faulting page, and TLB entry is invalidated via `invlpg`.
-4. **Transparent Instruction Resume**: The interrupt handler returns via `iretq`, allowing the CPU to resume execution seamlessly without process crashes or memory leaks.
+1. **Anonymous Memory Mapping (`sys_mmap`)**:
+   - When userland requests anonymous memory via `sys_mmap` without the `MAP_POPULATE` (`0x08000`) flag, the kernel registers the Virtual Memory Area (VMA) but defers physical frame allocation.
+   - Physical page allocation occurs lazily on first access when the CPU raises a Page Fault (`#PF`).
+   - If `MAP_POPULATE` is passed, the kernel eagerly allocates and maps all physical frames immediately.
+2. **Process Heap Auto-Expansion (`sys_brk` / `sbrk`)**:
+   - Calling `sys_brk()` or userland `sbrk()` increments the task's `program_break` pointer without pre-allocating physical memory.
+   - Accessing newly extended heap addresses triggers an Interrupt 14 (`#PF`) fault with `CR2` falling between `program_break_start` and `program_break`.
+   - The kernel page fault handler validates the bounds, allocates a zeroed physical frame from the PMM, maps the page with User and Writable permissions (`PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER`), and invalidates the CPU TLB via `invlpg`.
+   - Shrinking the heap via `sys_brk()` unmaps and frees all physical frames above the new break boundary.
+3. **User Stack Auto-Growth**:
+   - When a Ring 3 user process accesses an unmapped virtual address within its authorized user stack window (`USER_STACK_BOTTOM` to `USER_STACK_TOP`), the CPU triggers `#PF`.
+   - The handler verifies stack limits, maps an on-demand zeroed page, and resumes execution seamlessly.
+4. **Lazy `munmap` and PTE Invariant Verification**:
+   - When releasing memory regions (`sys_munmap`), the VMM inspects the page directory hierarchy using `is_page_mapped_in_pml4`. Unaccessed lazy pages without allocated physical frames are safely bypassed, preventing double-free panics in the PMM allocator.
 
 ---
 

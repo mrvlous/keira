@@ -48,6 +48,7 @@ dependencies = [
  "keira-fs",
  "keira-io",
  "keira-mem",
+ "keira-net",
  "keira-task",
 ]
 

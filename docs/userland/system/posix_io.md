@@ -41,3 +41,13 @@ pub fn sys_write(fd: u32, buf: *const u8, count: usize) -> Result<usize, u64>;
 pub fn sys_lseek(fd: u32, offset: i64, whence: i32) -> Result<i64, u64>;
 pub fn sys_close(fd: u32) -> Result<(), u64>;
 ```
+
+---
+
+## Socket & IPC Descriptor Multiplexing
+
+Dynamic descriptors (FD 3+) support unified descriptor multiplexing:
+
+- When an allocated descriptor has `is_socket == true`, invocations of `sys_read` and `sys_write` automatically route to `recv_socket` and `send_socket` in the network subsystem.
+- Invocations of `sys_close` automatically tear down and reclaim the corresponding socket table slot via `close_socket`.
+- File descriptors registered with `epoll` are dynamically polled for read/write readiness, allowing event-driven asynchronous I/O architectures.

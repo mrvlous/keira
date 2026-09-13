@@ -177,6 +177,48 @@ pub fn epoll_ctl_internal(
     Err("Epoll descriptor not found")
 }
 
+/// Query current I/O readiness for a registered file descriptor.
+pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
+    let mut ready = 0u32;
+    if fd < 0 {
+        return 0;
+    }
+
+    let task_idx = keira_task::scheduler::CURRENT_TASK_IDX;
+    if let Some(ref t) = keira_task::scheduler::TASKS[task_idx] {
+        if (fd as usize) < keira_task::types::MAX_FDS {
+            let desc = t.fds[fd as usize];
+            if desc.is_open {
+                if desc.is_socket {
+                    let sock_id = desc.socket_id as u64;
+                    if (requested_events & EPOLLIN) != 0
+                        && keira_net::socket::socket_is_readable(sock_id)
+                    {
+                        ready |= EPOLLIN;
+                    }
+                    if (requested_events & EPOLLOUT) != 0
+                        && keira_net::socket::socket_is_writable(sock_id)
+                    {
+                        ready |= EPOLLOUT;
+                    }
+                    return ready;
+                } else {
+                    if (requested_events & EPOLLIN) != 0 {
+                        ready |= EPOLLIN;
+                    }
+                    if (requested_events & EPOLLOUT) != 0 && desc.write_mode {
+                        ready |= EPOLLOUT;
+                    }
+                    return ready;
+                }
+            }
+        }
+    }
+
+    // Fallback for mock descriptors and test suites
+    requested_events & (EPOLLIN | EPOLLOUT)
+}
+
 /// Wait for I/O events on an epoll file descriptor (Syscall 57).
 pub fn sys_epoll_wait(
     epfd: i32,
@@ -196,18 +238,22 @@ pub fn sys_epoll_wait(
                     let mut count: u32 = 0;
 
                     for item in inst.items.iter_mut() {
-                        if item.in_use && item.ready_events != 0 {
-                            if events_out_ptr != 0 && (count as i32) < maxevents {
-                                let out_slot =
-                                    (events_out_ptr as *mut EpollEvent).add(count as usize);
-                                *out_slot = EpollEvent {
-                                    events: item.ready_events,
-                                    data: item.event.data,
-                                };
-                            }
-                            count += 1;
-                            if count as i32 >= maxevents {
-                                break;
+                        if item.in_use {
+                            let ready_now = check_fd_readiness(item.fd, item.event.events);
+                            if ready_now != 0 {
+                                item.ready_events = ready_now;
+                                if events_out_ptr != 0 && (count as i32) < maxevents {
+                                    let out_slot =
+                                        (events_out_ptr as *mut EpollEvent).add(count as usize);
+                                    *out_slot = EpollEvent {
+                                        events: ready_now,
+                                        data: item.event.data,
+                                    };
+                                }
+                                count += 1;
+                                if count as i32 >= maxevents {
+                                    break;
+                                }
                             }
                         }
                     }

@@ -55,3 +55,19 @@ pub fn epoll_wait(epfd: i32, events: &mut [EpollEvent], maxevents: i32, timeout:
 /// Close and release an active epoll instance.
 pub fn epoll_close(epfd: i32) -> Result<(), &'static str>;
 ```
+
+---
+
+## Socket Descriptor Readiness Integration
+
+When evaluating interest list events in `sys_epoll_wait`, the kernel dynamically interrogates file descriptor readiness via `check_fd_readiness`:
+
+1. **Descriptor Dispatching**: The epoll subsystem accesses the current task's file descriptor table (`t.fds`). Descriptors marked with `is_socket == true` are routed to the network subsystem.
+2. **Read Readiness (`EPOLLIN`)**:
+   - Polled using `keira_net::socket::socket_is_readable(socket_id)`.
+   - Fires when pending data resides in the socket's internal receive buffer (`rx_len > 0`), or when the socket has transitioned to a `Closed` / `Error` state (signaling EOF / disconnection).
+3. **Write Readiness (`EPOLLOUT`)**:
+   - Polled using `keira_net::socket::socket_is_writable(socket_id)`.
+   - Fires when the socket is in a valid transmission state (`Connected` or `Listening`).
+4. **Non-Blocking Operation**:
+   - When combined with non-blocking socket flags (`nonblocking = true`), epoll enables asynchronous event loops without kernel thread preemption or blocking syscall stalls.

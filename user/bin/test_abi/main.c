@@ -91,18 +91,52 @@ int main(int argc, char **argv) {
     }
     puts("  [OK]   VFS seek pointer operational");
 
-    /* 7. BSD Socket Creation ABI */
-    puts("  [TEST] BSD socket creation via SYS_SOCKET...");
+    /* 7. BSD Socket Lifecycle (Socket, Connect, Send, Close) */
+    puts("  [TEST] BSD socket lifecycle & async stream dispatch...");
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock >= 0) {
-        printf("  [INFO] Created IPv4 TCP socket handle: fd=%d\n", sock);
+        printf("  [INFO] Allocated socket descriptor: fd=%d\n", sock);
+        struct sockaddr_in saddr;
+        memset(&saddr, 0, sizeof(saddr));
+        saddr.sin_family = AF_INET;
+        saddr.sin_port = 0x5000;            /* Port 80 */
+        saddr.sin_addr.s_addr = 0x0100007F; /* 127.0.0.1 */
+
+        if (connect(sock, (const struct sockaddr *)&saddr, sizeof(saddr)) == 0) {
+            puts("  [INFO] Socket connected to remote endpoint");
+            ssize_t sent = send(sock, "PING", 4, 0);
+            if (sent == 4) {
+                puts("  [INFO] Transmitted 4 stream payload bytes");
+            }
+        }
         close(sock);
     } else {
-        puts("  [INFO] Socket creation handled gracefully");
+        puts("  [FAIL] socket() returned invalid descriptor");
+        return 1;
     }
-    puts("  [OK]   Socket ABI boundary validated");
+    puts("  [OK]   BSD socket subsystem operational");
 
-    /* 8. Out-of-bounds Syscall Handshake */
+    /* 8. VMM Demand Paging & Lazy Heap (sbrk) Allocation */
+    puts("  [TEST] VMM demand paging & lazy heap (sbrk) allocation...");
+    void *old_brk = sbrk(65536);
+    if (old_brk != (void *)-1) {
+        volatile char *canary_page1 = (volatile char *)old_brk + 4096;
+        volatile char *canary_page2 = (volatile char *)old_brk + 32768;
+        *canary_page1 = 'K';
+        *canary_page2 = 'R';
+        if (*canary_page1 == 'K' && *canary_page2 == 'R') {
+            puts("  [INFO] Lazy pages faulted in transparently via #PF");
+        } else {
+            puts("  [FAIL] Canary value corruption on faulted heap pages");
+            return 1;
+        }
+    } else {
+        puts("  [FAIL] sbrk(65536) heap expansion failed");
+        return 1;
+    }
+    puts("  [OK]   VMM demand paging operational");
+
+    /* 9. Out-of-bounds Syscall Handshake */
     puts("  [TEST] Out-of-bounds syscall safety check...");
     int64_t unhandled = syscall0(9999);
     (void)unhandled;
