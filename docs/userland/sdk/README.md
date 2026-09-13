@@ -13,7 +13,7 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
 ```
 +----------------------------------------------------------------+
 |                Ring 3 Userland Applications                    |
-|             (KCC, calc, bench, sha256sum, apps)                |
+|             (kcc.elf, sysinfo.elf, test_abi.elf)               |
 +----------------------------------------------------------------+
                                |
                                v
@@ -22,7 +22,7 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
 |  <stdio.h>    <stdlib.h>    <string.h>    <unistd.h>           |
 |  <math.h>     <time.h>      <ctype.h>     <signal.h>           |
 |  <sys/stat.h> <sys/mman.h>  <dirent.h>    <assert.h>           |
-|  <setjmp.h>   <syscall.h>                                      |
+|  <setjmp.h>   <sys/socket.h><syscall.h>                        |
 +----------------------------------------------------------------+
                                |
                                v
@@ -53,6 +53,7 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
 | `<setjmp.h>` | [`setjmp.md`](setjmp.md) | Non-local jump buffer and control transfers | [Active] |
 | `<termios.h>` | [`termios.md`](termios.md) | Terminal line discipline, raw/canonical modes, baud rates | [Active] |
 | `<sys/ioctl.h>` | [`ioctl.md`](ioctl.md) | Terminal window sizing and device I/O control | [Active] |
+| `<sys/socket.h>` | [`socket.md`](socket.md) | BSD socket network connection & transfer interface | [Active] |
 | `<syscall.h>` | [`syscalls.md`](syscalls.md) | Raw kernel syscall dispatch interface | [Active] |
 
 ---
@@ -82,5 +83,5 @@ run /system/bin/kcc.elf
 run /apps/bin/app.elf
 ```
 
-### C. Archived Static Library (`libc.a`):
-All freestanding C runtime modules in `user/lib/` are compiled into independent object files and archived into `libc.a` (`build/x86/<arch>/lib/libc.a`), which is deployed to `/system/lib/libc.a`. Ring 3 applications (`kcc.elf`, `sysinfo.elf`) link directly against this archive using architecture-specific linker scripts (`user/arch/x86/`).
+### C. Standard C Runtime (`crt0.asm`) & Static Archive (`libc.a`):
+All freestanding C runtime modules in `user/lib/` are compiled into independent object files and archived into `libc.a` (`build/x86/<arch>/lib/libc.a`), which is deployed to `/system/lib/libc.a`. Ring 3 applications (`kcc.elf`, `sysinfo.elf`, `test_abi.elf`) link directly against this archive along with the standard architecture-specific C runtime startup (`user/arch/x86/<arch>/crt0.asm`) and linker scripts (`user/arch/x86/<arch>/linker.ld`).

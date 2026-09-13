@@ -108,6 +108,9 @@ endif
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS        := $(ASM_OBJS)
 
+USER_CRT_SRC    := user/arch/x86/$(ARCH)/crt0.asm
+USER_CRT_OBJ    := $(OBJ_DIR)/$(USER_CRT_SRC).o
+
 USER_LIBC_A     := $(BUILD_DIR)/lib/libc.a
 USER_LIB_SRCS   := $(shell find user/lib -type f -name "*.c")
 USER_LIB_OBJS   := $(patsubst user/lib/%.c,$(OBJ_DIR)/user/lib/%.o,$(USER_LIB_SRCS))
@@ -119,7 +122,11 @@ SYSINFO_ELF     := $(BIN_DIR)/sysinfo.elf
 SYSINFO_SRCS    := $(shell find user/bin/sysinfo -type f -name "*.c")
 SYSINFO_OBJS    := $(patsubst user/bin/sysinfo/%.c,$(OBJ_DIR)/user/bin/sysinfo/%.o,$(SYSINFO_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF)
+TEST_ABI_ELF    := $(BIN_DIR)/test_abi.elf
+TEST_ABI_SRCS   := $(shell find user/bin/test_abi -type f -name "*.c")
+TEST_ABI_OBJS   := $(patsubst user/bin/test_abi/%.c,$(OBJ_DIR)/user/bin/test_abi/%.o,$(TEST_ABI_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -326,9 +333,9 @@ $(OBJ_DIR)/user/bin/kcc/%.o: user/bin/kcc/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(CC) $(USER_CFLAGS) -Iuser/bin/kcc/include -c $< -o $@
 
-$(USER_ELF): $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+$(USER_ELF): $(USER_CRT_OBJ) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Linking user space program: kcc ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(USER_ELF)
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(USER_ELF)
 	@$(LOG_DONE) "$(USER_ELF) ready"
 
 # Userland diagnostic tool (sysinfo.elf)
@@ -336,10 +343,20 @@ $(OBJ_DIR)/user/bin/sysinfo/%.o: user/bin/sysinfo/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
 
-$(SYSINFO_ELF): $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+$(SYSINFO_ELF): $(USER_CRT_OBJ) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Linking user space program: sysinfo ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SYSINFO_ELF)
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SYSINFO_ELF)
 	@$(LOG_DONE) "$(SYSINFO_ELF) ready"
+
+# Userland ABI verification & fault injection test tool (test_abi.elf)
+$(OBJ_DIR)/user/bin/test_abi/%.o: user/bin/test_abi/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+
+$(TEST_ABI_ELF): $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: test_abi ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TEST_ABI_ELF)
+	@$(LOG_DONE) "$(TEST_ABI_ELF) ready"
 
 # Canonical root filesystem & disk image rules
 fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
@@ -353,6 +370,7 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/apps/bin
 	$(Q)mkdir -p $(FS_ROOT)/apps/src/kcc/include
 	$(Q)mkdir -p $(FS_ROOT)/apps/src/sysinfo
+	$(Q)mkdir -p $(FS_ROOT)/apps/src/test_abi
 	$(Q)mkdir -p $(FS_ROOT)/config/boot
 	$(Q)mkdir -p $(FS_ROOT)/config/sys
 	$(Q)mkdir -p $(FS_ROOT)/users/admin
@@ -362,6 +380,8 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/apps/bin/kcc.elf
 	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/system/bin/sysinfo.elf
 	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/apps/bin/sysinfo.elf
+	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/system/bin/test_abi.elf
+	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/apps/bin/test_abi.elf
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/system/lib/libc.a
 	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf "ELF\002\001\001\000Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
@@ -377,6 +397,7 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp user/lib/string/string.c $(FS_ROOT)/system/lib/string.c
 	$(Q)cp user/lib/stdlib/stdlib.c $(FS_ROOT)/system/lib/stdlib.c
 	$(Q)cp user/lib/unistd/unistd.c $(FS_ROOT)/system/lib/unistd.c
+	$(Q)cp user/lib/socket/socket.c $(FS_ROOT)/system/lib/socket.c
 	$(Q)cp user/lib/assert/assert.c $(FS_ROOT)/system/lib/assert.c
 	$(Q)cp user/lib/dirent/dirent.c $(FS_ROOT)/system/lib/dirent.c
 	$(Q)cp user/lib/stat/stat.c $(FS_ROOT)/system/lib/stat.c
@@ -392,6 +413,7 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp user/bin/kcc/*.c $(FS_ROOT)/apps/src/kcc/
 	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
 	$(Q)cp user/bin/sysinfo/*.c $(FS_ROOT)/apps/src/sysinfo/
+	$(Q)cp user/bin/test_abi/*.c $(FS_ROOT)/apps/src/test_abi/
 	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
@@ -419,7 +441,7 @@ $(DISK_IMG): fs-root
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/apps/src/test_abi ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
 	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \

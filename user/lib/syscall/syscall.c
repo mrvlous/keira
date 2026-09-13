@@ -171,6 +171,35 @@ pid_t sys_getpid(void) {
     return (pid_t)syscall0(SYS_GETPID);
 }
 
+pid_t sys_getppid(void) {
+    return (pid_t)syscall0(SYS_GETPPID);
+}
+
+uid_t sys_getuid(void) {
+    return (uid_t)syscall0(SYS_GETUID);
+}
+
+pid_t sys_fork(void) {
+    return (pid_t)syscall0(SYS_FORK);
+}
+
+int sys_chdir(const char *path) {
+    return (int)syscall1(SYS_CHDIR, (uint64_t)(uintptr_t)path);
+}
+
+ssize_t sys_getcwd(char *buf, size_t size) {
+    return (ssize_t)syscall2(SYS_GETCWD, (uint64_t)(uintptr_t)buf, (uint64_t)size);
+}
+
+int sys_socket(int domain, int type, int protocol) {
+    return (int)syscall3(SYS_SOCKET, (uint64_t)domain, (uint64_t)type, (uint64_t)protocol);
+}
+
+int sys_connect(int sockfd, const void *addr, size_t addrlen) {
+    return (int)syscall3(SYS_CONNECT, (uint64_t)sockfd, (uint64_t)(uintptr_t)addr,
+                         (uint64_t)addrlen);
+}
+
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
     (void)prot;
     (void)flags;

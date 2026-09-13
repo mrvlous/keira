@@ -14,7 +14,7 @@
 #include <syscall.h>
 #include <unistd.h>
 
-void _start(int argc, char **argv) {
+int main(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
@@ -42,5 +42,5 @@ void _start(int argc, char **argv) {
     }
 
     puts("[OK] System info query completed successfully.");
-    sys_exit(0);
+    return 0;
 }

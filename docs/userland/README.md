@@ -25,4 +25,4 @@ graph TD
 | [`sdk/`](sdk/README.md) | Freestanding C SDK | Standard headers and archived static library (`libc.a`) |
 | [`compiler/`](compiler/README.md) | Native KCC Compiler | Preprocessor, lexer tokenization, recursive descent parser, and code generator |
 | [`loader/`](loader/README.md) | Dynamic ELF64 Loader | Program header validation, segment loading, address space setup, and rollback |
-| [`system/`](system/README.md) | System Services & Apps | Ring 3 native applications (`kcc`, `sysinfo`), user database, and POSIX I/O |
+| [`system/`](system/README.md) | System Services & Apps | Ring 3 native applications (`kcc`, `sysinfo`, `test_abi`), user database, and POSIX I/O |

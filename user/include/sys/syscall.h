@@ -25,7 +25,7 @@
 #define SYS_CLOSE 9
 #define SYS_LSEEK 10
 #define SYS_BRK 12
-#define SYS_WAITPID 13
+#define SYS_WAIT 13
 #define SYS_GETPID 14
 #define SYS_GETCWD 15
 #define SYS_CHDIR 16
@@ -35,12 +35,21 @@
 #define SYS_PIPE 23
 #define SYS_SOCKET 24
 #define SYS_CONNECT 25
+#define SYS_FORK 30
 #define SYS_CLOCK_GETTIME 36
-#define SYS_NANOSLEEP 67
 #define SYS_FUTEX 40
+#define SYS_ACCEPT 43
 #define SYS_EVENTFD 50
 #define SYS_SIGNALFD 51
 #define SYS_SECCOMP 52
+#define SYS_EPOLL_CREATE 55
+#define SYS_EPOLL_CTL 56
+#define SYS_EPOLL_WAIT 57
+#define SYS_GETUID 60
+#define SYS_SETUID 61
+#define SYS_WAITPID 62
+#define SYS_GETPPID 63
+#define SYS_NANOSLEEP 67
 #define SYS_IOCTL 73
 
 int64_t syscall0(uint64_t num);
@@ -60,7 +69,14 @@ ssize_t sys_write(int fd, const void *buf, size_t count);
 int sys_open(const char *filename, int flags, int mode);
 int sys_close(int fd);
 off_t sys_lseek(int fd, off_t offset, int whence);
+int sys_chdir(const char *path);
+ssize_t sys_getcwd(char *buf, size_t size);
 pid_t sys_getpid(void);
+pid_t sys_getppid(void);
+uid_t sys_getuid(void);
+pid_t sys_fork(void);
+int sys_socket(int domain, int type, int protocol);
+int sys_connect(int sockfd, const void *addr, size_t addrlen);
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 int sys_munmap(void *addr, size_t length);
 void sys_sleep(uint32_t ms);

@@ -42,16 +42,16 @@ keira> tasks
 ### `run <elf_path>`
 Loads and executes a dynamic ELF binary within an isolated virtual address space:
 ```bash
-keira> run /apps/bin/calc.elf
+admin@keira:~$ run /system/bin/sysinfo.elf
 ```
 
 ### `kcc [options] <source.c>`
 Compiles C source code on-demand into an executable ELF binary:
 ```bash
-keira> kcc /apps/src/calc.c -o /apps/bin/calc.elf
-Compiling: /apps/src/calc.c -> /apps/bin/calc.elf
-[OK] Executable ready at /apps/bin/calc.elf
-Hint: Execute with 'run /apps/bin/calc.elf'
+admin@keira:~$ kcc /data/main.c -o /apps/bin/app.elf
+Compiling: /data/main.c -> /apps/bin/app.elf
+[OK] Executable ready at /apps/bin/app.elf
+Hint: Execute with 'run /apps/bin/app.elf'
 ```
 
 ### `cgroups <subcommand>`

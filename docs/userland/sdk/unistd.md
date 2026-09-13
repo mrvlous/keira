@@ -45,12 +45,26 @@ int close(int fd);
 ```
 Closes the open file descriptor `fd`.
 
-### `getpid` / `getuid`
+### `getpid` / `getppid` / `getuid`
 ```c
 pid_t getpid(void);
+pid_t getppid(void);
 uid_t getuid(void);
 ```
-Retrieves the current process ID and effective user ID.
+Retrieves the current process ID, parent process ID, and effective user ID.
+
+### `lseek`
+```c
+off_t lseek(int fd, off_t offset, int whence);
+```
+Repositions the file offset of the open file descriptor `fd` according to `whence` (`SEEK_SET`, `SEEK_CUR`, `SEEK_END`). Returns the resulting offset location.
+
+### `chdir` / `getcwd`
+```c
+int chdir(const char *path);
+char *getcwd(char *buf, size_t size);
+```
+Changes the current working directory or copies an absolute pathname of the current working directory to `buf`.
 
 ### `sleep` / `usleep`
 ```c
@@ -67,8 +81,12 @@ Suspends process execution for the specified duration.
 #include <stdio.h>
 #include <unistd.h>
 
-void main(void) {
-    printf("Process PID: %d\n", (int)getpid());
+int main(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+
+    printf("Process PID: %d, PPID: %d\n", (int)getpid(), (int)getppid());
     write(STDOUT_FILENO, "Direct POSIX write\n", 19);
+    return 0;
 }
 ```

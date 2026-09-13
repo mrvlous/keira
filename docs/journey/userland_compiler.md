@@ -10,8 +10,8 @@ This document chronicles the creation of the native C compiler (`kcc`), standard
 
 ```mermaid
 graph LR
-    Dev["Developer on Keira Terminal"] --> Edit["Edit Source: kvi /home/admin/app.c"]
-    Edit --> Compile["Compile: kcc -o /apps/bin/app.elf /home/admin/app.c"]
+    Dev["Developer on Keira Terminal"] --> Edit["Edit Source: edit /users/admin/app.c"]
+    Edit --> Compile["Compile: kcc -o /apps/bin/app.elf /users/admin/app.c"]
     Compile --> Run["Execute: run /apps/bin/app.elf"]
     Run --> Output["Ring 3 Userland Process Running on Keira Kernel"]
 ```

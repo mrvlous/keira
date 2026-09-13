@@ -55,10 +55,12 @@ int close(int fd) {
 }
 
 off_t lseek(int fd, off_t offset, int whence) {
-    (void)fd;
-    (void)offset;
-    (void)whence;
-    return 0;
+    off_t ret = sys_lseek(fd, offset, whence);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return ret;
 }
 
 int unlink(const char *pathname) {
@@ -67,17 +69,24 @@ int unlink(const char *pathname) {
 }
 
 int chdir(const char *path) {
-    (void)path;
+    int ret = sys_chdir(path);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
     return 0;
 }
 
 char *getcwd(char *buf, size_t size) {
-    if (!buf || size < 2) {
-        errno = ERANGE;
+    if (!buf || size == 0) {
+        errno = EINVAL;
         return NULL;
     }
-    buf[0] = '/';
-    buf[1] = '\0';
+    ssize_t ret = sys_getcwd(buf, size);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return NULL;
+    }
     return buf;
 }
 
@@ -86,15 +95,15 @@ pid_t getpid(void) {
 }
 
 pid_t getppid(void) {
-    return 1;
+    return sys_getppid();
 }
 
 uid_t getuid(void) {
-    return 0;
+    return sys_getuid();
 }
 
 uid_t geteuid(void) {
-    return 0;
+    return sys_getuid();
 }
 
 gid_t getgid(void) {

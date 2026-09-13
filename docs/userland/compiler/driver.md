@@ -10,7 +10,7 @@ This document specifies command-line option parsing, preprocessor invocation, mu
 
 ```mermaid
 graph TD
-    CLI["kcc -o /apps/bin/hello.elf /home/admin/hello.c"] --> ParseArgs["Parse Compiler Flags (-o, -I, -Wall)"]
+    CLI["kcc -o /apps/bin/hello.elf /users/admin/hello.c"] --> ParseArgs["Parse Compiler Flags (-o, -I, -Wall)"]
     ParseArgs --> ReadFile["Read Source File from VFS into Memory"]
     ReadFile --> Lex["Lexer: Tokenization"]
     Lex --> Parse["Parser: Build Syntax Tree (AST)"]
@@ -26,7 +26,7 @@ graph TD
 | Option | Flag | Description |
 | :--- | :--- | :--- |
 | **Output File** | `-o <path>` | Specifies target executable path (e.g. `/apps/bin/prog.elf`) |
-| **Include Path** | `-I <dir>` | Adds header search directory (default `/system/sdk/include`) |
+| **Include Path** | `-I <dir>` | Adds header search directory (default `/system/include`) |
 | **Help** | `-h`, `--help` | Displays compiler usage and supported options |
 
 ---
@@ -35,11 +35,11 @@ graph TD
 
 ```bash
 # Compile native C program inside Keira shell using KCC driver
-keira> kcc /data/main.c -o /apps/bin/test.elf
+admin@keira:~$ kcc /data/main.c -o /apps/bin/test.elf
 
 # Alternatively run the standalone compiler binary directly
-keira> run /system/bin/kcc.elf /data/main.c -o /apps/bin/test.elf
+admin@keira:~$ run /system/bin/kcc.elf /data/main.c -o /apps/bin/test.elf
 
 # Execute compiled ELF binary in Ring 3 userland
-keira> run /apps/bin/test.elf
+admin@keira:~$ run /apps/bin/test.elf
 ```

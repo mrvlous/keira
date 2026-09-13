@@ -23,7 +23,7 @@ graph TD
 
 | Document | Topic | Description |
 | :--- | :--- | :--- |
-| [`binaries.md`](binaries.md) | Native Ring 3 Binaries | Native ELF applications (`kcc`, `sysinfo`) and libc linkage |
+| [`binaries.md`](binaries.md) | Native Ring 3 Binaries | Native ELF applications (`kcc`, `sysinfo`, `test_abi`) and libc linkage |
 | [`init.md`](init.md) | Userland Init Stage | Early userland bootstrap, root filesystem mount, and daemon startup |
 | [`users.md`](users.md) | Multi-User Management | User accounts (`/config/passwd`), UID/GID mappings, and sessions |
 | [`permissions.md`](permissions.md) | POSIX Permissions | Standard `rwxrwxrwx` octal mode bits, `chmod`, and ownership |

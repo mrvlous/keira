@@ -17,7 +17,7 @@
 
 #include <syscall.h>
 
-void _start(int argc, char **argv) {
+int main(int argc, char **argv) {
     print_str("KCC (Keira C Compiler) Native Toolchain\n");
 
     /* Initialize compiler subsystems */
@@ -141,5 +141,5 @@ void _start(int argc, char **argv) {
     print_str("       Executable written to ");
     print_str(output_path);
     print_str("\n");
-    sys_exit(0);
+    return 0;
 }
