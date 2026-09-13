@@ -15,6 +15,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 int main(int argc, char **argv) {
@@ -212,6 +213,64 @@ int main(int argc, char **argv) {
         return 1;
     }
     puts("  [OK]   Dual-tier memory allocator operational");
+
+    /* 12. Environment Variable Management */
+    puts("  [TEST] Environment variable operations (getenv, setenv, unsetenv)...");
+    setenv("KEIRA_ENV_TEST", "userland_active", 1);
+    char *env_val = getenv("KEIRA_ENV_TEST");
+    if (env_val && strcmp(env_val, "userland_active") == 0) {
+        printf("  [INFO] Environment variable set and read: \"%s\"\n", env_val);
+        unsetenv("KEIRA_ENV_TEST");
+        if (getenv("KEIRA_ENV_TEST") == NULL) {
+            puts("  [INFO] Environment variable unset validated");
+        }
+        puts("  [OK]   Environment variable subsystem operational");
+    } else {
+        puts("  [FAIL] setenv/getenv operation failed");
+        return 1;
+    }
+
+    /* 13. Advanced Stream Formatting & Parsing (fprintf, sscanf) */
+    puts("  [TEST] Stream formatting & string scanning (fprintf, sscanf)...");
+    char scan_buf[64];
+    int parsed_id = 0;
+    char parsed_name[32];
+    memset(scan_buf, 0, sizeof(scan_buf));
+    memset(parsed_name, 0, sizeof(parsed_name));
+    snprintf(scan_buf, sizeof(scan_buf), "task: 42 name: keira_proc");
+    int matches = sscanf(scan_buf, "task: %d name: %s", &parsed_id, parsed_name);
+    if (matches == 2 && parsed_id == 42 && strcmp(parsed_name, "keira_proc") == 0) {
+        printf("  [INFO] sscanf parsed %d tokens: id=%d name=\"%s\"\n", matches, parsed_id,
+               parsed_name);
+        fprintf(stdout, "  [INFO] fprintf stream output verified\n");
+        puts("  [OK]   Stream formatting and string parsing operational");
+    } else {
+        puts("  [FAIL] sscanf failed to parse expected tokens");
+        return 1;
+    }
+
+    /* 14. Ring 3 Multiprocess Orchestration (fork + waitpid + exit) */
+    puts("  [TEST] Ring 3 multiprocess orchestration (fork + waitpid)...");
+    pid_t child_pid = fork();
+    if (child_pid < 0) {
+        puts("  [FAIL] fork() syscall failed");
+        return 1;
+    } else if (child_pid == 0) {
+        /* In child process: exit immediately with status 42 */
+        exit(42);
+    } else {
+        /* In parent process: reap child and verify status */
+        int wstatus = 0;
+        pid_t reaped_pid = waitpid(child_pid, &wstatus, 0);
+        if (reaped_pid == child_pid && WIFEXITED(wstatus) && WEXITSTATUS(wstatus) == 42) {
+            printf("  [INFO] Child PID %d reaped with exit status %d\n", (int)reaped_pid,
+                   WEXITSTATUS(wstatus));
+            puts("  [OK]   Ring 3 process orchestration operational");
+        } else {
+            printf("  [FAIL] waitpid mismatch: reaped=%d, wstatus=%d\n", (int)reaped_pid, wstatus);
+            return 1;
+        }
+    }
 
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;

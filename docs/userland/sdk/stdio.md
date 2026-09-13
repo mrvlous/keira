@@ -19,13 +19,17 @@ This document specifies standard input/output formatting and buffered file strea
 ## Core API (`user/include/stdio.h` & `user/lib/stdio/`)
 
 ```c
-// Formatted Output
+// Formatted Output & Input Scanning
 int printf(const char *format, ...);
+int fprintf(FILE *stream, const char *format, ...);
 int sprintf(char *str, const char *format, ...);
 int snprintf(char *str, size_t size, const char *format, ...);
 int vprintf(const char *format, va_list ap);
+int vfprintf(FILE *stream, const char *format, va_list ap);
 int vsprintf(char *str, const char *format, va_list ap);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+int sscanf(const char *str, const char *format, ...);
+int vsscanf(const char *str, const char *format, va_list ap);
 
 // Character & String I/O
 int putchar(int c);

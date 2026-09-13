@@ -17,6 +17,7 @@
 global _start
 extern main
 extern exit
+extern environ
 
 section .text
 _start:
@@ -29,6 +30,9 @@ _start:
     mov eax, [esp]          ; argc
     mov edx, [esp + 4]      ; argv
     mov ecx, [esp + 8]      ; envp
+
+    ; Store envp in global environ pointer
+    mov [environ], ecx
 
     ; Align stack pointer to 16 bytes
     and esp, -16

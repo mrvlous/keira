@@ -15,6 +15,15 @@ global jump_to_user
 
 global user_rsp_temp
 global kernel_stack_temp
+global main_kernel_stack
+global user_rip_temp
+global user_rflags_temp
+global user_rbx_temp
+global user_rbp_temp
+global user_r12_temp
+global user_r13_temp
+global user_r14_temp
+global user_r15_temp
 
 extern syscall_dispatcher
 
@@ -22,6 +31,15 @@ section .data
 align 8
 user_rsp_temp:     dq 0
 kernel_stack_temp: dq 0
+main_kernel_stack: dq 0
+user_rip_temp:     dq 0
+user_rflags_temp:  dq 0
+user_rbx_temp:     dq 0
+user_rbp_temp:     dq 0
+user_r12_temp:     dq 0
+user_r13_temp:     dq 0
+user_r14_temp:     dq 0
+user_r15_temp:     dq 0
 
 section .text
 bits 64
@@ -58,6 +76,14 @@ init_syscall_msrs:
 ; syscall_handler_asm - Direct entry handler for 64-bit `syscall` instructions
 syscall_handler_asm:
     mov [rel user_rsp_temp], rsp
+    mov [rel user_rip_temp], rcx
+    mov [rel user_rflags_temp], r11
+    mov [rel user_rbx_temp], rbx
+    mov [rel user_rbp_temp], rbp
+    mov [rel user_r12_temp], r12
+    mov [rel user_r13_temp], r13
+    mov [rel user_r14_temp], r14
+    mov [rel user_r15_temp], r15
     mov rsp, [rel kernel_stack_temp]
 
     push qword [rel user_rsp_temp]
@@ -110,7 +136,7 @@ syscall_handler_asm:
 .exit_user_mode:
 global abort_user_mode
 abort_user_mode:
-    mov rsp, [rel kernel_stack_temp]
+    mov rsp, [rel main_kernel_stack]
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -135,6 +161,7 @@ jump_to_user:
     push r15
 
     mov [rel kernel_stack_temp], rsp
+    mov [rel main_kernel_stack], rsp
     cli
 
     push 0x23

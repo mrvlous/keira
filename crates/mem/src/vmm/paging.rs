@@ -333,7 +333,7 @@ pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> 
         return false;
     }
     if (pdpt_entry & PAGE_HUGE) != 0 {
-        if require_writable && (pdpt_entry & PAGE_WRITABLE) == 0 {
+        if require_writable && (pdpt_entry & PAGE_WRITABLE) == 0 && (pdpt_entry & PAGE_COW) == 0 {
             return false;
         }
         return true;
@@ -345,7 +345,7 @@ pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> 
         return false;
     }
     if (pd_entry & PAGE_HUGE) != 0 {
-        if require_writable && (pd_entry & PAGE_WRITABLE) == 0 {
+        if require_writable && (pd_entry & PAGE_WRITABLE) == 0 && (pd_entry & PAGE_COW) == 0 {
             return false;
         }
         return true;
@@ -357,7 +357,7 @@ pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> 
         return false;
     }
 
-    if require_writable && (pt_entry & PAGE_WRITABLE) == 0 {
+    if require_writable && (pt_entry & PAGE_WRITABLE) == 0 && (pt_entry & PAGE_COW) == 0 {
         return false;
     }
 

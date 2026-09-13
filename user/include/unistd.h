@@ -47,6 +47,14 @@ uid_t getuid(void);
 uid_t geteuid(void);
 gid_t getgid(void);
 
+pid_t fork(void);
+int execve(const char *pathname, char *const argv[], char *const envp[]);
+pid_t waitpid(pid_t pid, int *wstatus, int options);
+pid_t wait(int *wstatus);
+int pipe(int pipefd[2]);
+int dup(int oldfd);
+int dup2(int oldfd, int newfd);
+
 unsigned int sleep(unsigned int seconds);
 int usleep(unsigned int usec);
 

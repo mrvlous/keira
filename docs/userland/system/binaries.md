@@ -30,7 +30,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_FORK`, `SYS_WAITPID`, `SYS_EXIT`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
 
 ---
 
@@ -39,8 +39,9 @@ graph TD
 All userland binaries execute through an austere, standards-compliant `crt0` startup module (`user/arch/x86/x86_64/crt0.asm` and `user/arch/x86/i686/crt0.asm`):
 
 1. **Stack Unwrapping**: Unpacks `argc`, `argv`, and `envp` passed on the initial user stack by the kernel's ELF execution pipeline (`run.rs`).
-2. **Alignment Guarantee**: Enforces 16-byte stack boundary alignment before invoking application code.
-3. **Automatic Exit Dispatch**: Calls `main(argc, argv, envp)` and forwards the return status to `exit()` automatically upon completion.
+2. **Environment Initializer**: Initializes the global `char **environ;` pointer directly from `envp` before application execution.
+3. **Alignment Guarantee**: Enforces 16-byte stack boundary alignment before invoking application code.
+4. **Automatic Exit Dispatch**: Calls `main(argc, argv, envp)` and forwards the return status to `exit()` automatically upon completion.
 
 ---
 
@@ -129,6 +130,17 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [INFO] Mmap tier 256 KiB allocation validated
   [INFO] Mmap tier deallocation validated
   [OK]   Dual-tier memory allocator operational
+  [TEST] Environment variable operations (getenv, setenv, unsetenv)...
+  [INFO] Environment variable set and read: "userland_active"
+  [INFO] Environment variable unset validated
+  [OK]   Environment variable subsystem operational
+  [TEST] Stream formatting & string scanning (fprintf, sscanf)...
+  [INFO] sscanf parsed 2 tokens: id=42 name="keira_proc"
+  [INFO] fprintf stream output verified
+  [OK]   Stream formatting and string parsing operational
+  [TEST] Ring 3 multiprocess orchestration (fork + waitpid)...
+  [INFO] Child PID 1 reaped with exit status 42
+  [OK]   Ring 3 process orchestration operational
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

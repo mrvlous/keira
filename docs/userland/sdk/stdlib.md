@@ -17,6 +17,10 @@ The `<stdlib.h>` header defines numeric conversion, memory management, sorting, 
 | `void itoa(int value, char *str, int base);` | Convert integer to ASCII string representation |
 | `void exit(int status);` | Terminate process with exit code |
 | `void abort(void);` | Abnormally terminate process via SIGABRT |
+| `char *getenv(const char *name);` | Retrieve environment variable value |
+| `int setenv(const char *name, const char *value, int overwrite);` | Add or change environment variable |
+| `int unsetenv(const char *name);` | Remove environment variable |
+| `int putenv(char *string);` | Add or change environment variable from "name=value" string |
 | `int rand(void);` | Pseudo-random number generator |
 | `void srand(unsigned int seed);` | Seed pseudo-random generator |
 | `void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));` | Quicksort array elements |

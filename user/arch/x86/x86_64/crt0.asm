@@ -17,6 +17,7 @@
 global _start
 extern main
 extern exit
+extern environ
 
 section .text
 _start:
@@ -34,6 +35,9 @@ _start:
     inc rax
     shl rax, 3
     lea rdx, [rsi + rax]
+
+    ; Store envp in global environ pointer
+    mov [rel environ], rdx
 
     ; Align stack pointer to 16 bytes before calling C code
     and rsp, -16

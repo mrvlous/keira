@@ -173,7 +173,8 @@ pub unsafe fn init_user_mode() {
 }
 
 /// Dynamically updates the TSS RSP0/ESP0 stack pointer loaded when switching from Ring 3 to Ring 0.
-pub unsafe fn set_kernel_stack(sp0: usize) {
+#[no_mangle]
+pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
     #[cfg(target_arch = "x86_64")]
     {
         TSS.rsp0 = sp0 as u64;

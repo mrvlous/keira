@@ -18,6 +18,17 @@ use keira_mem::vmm;
 
 extern "C" {
     static mut kernel_stack_temp: u64;
+    static mut main_kernel_stack: u64;
+    static mut user_rsp_temp: u64;
+    static mut user_rip_temp: u64;
+    static mut user_rflags_temp: u64;
+    static mut user_rbx_temp: u64;
+    static mut user_rbp_temp: u64;
+    static mut user_r12_temp: u64;
+    static mut user_r13_temp: u64;
+    static mut user_r14_temp: u64;
+    static mut user_r15_temp: u64;
+    fn set_kernel_stack(sp0: usize);
 }
 
 pub const MAX_TASKS: usize = 64;
@@ -244,16 +255,31 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             }
         };
 
-        // Copy register context to child stack
+        // Populate child register context from user syscall snapshot
         let context_size = core::mem::size_of::<InterruptContext>() as u64;
         let child_context_ptr = (stack_top - context_size) as *mut InterruptContext;
 
-        if parent.rsp != 0 {
-            let parent_context = parent.rsp as *const InterruptContext;
-            core::ptr::copy_nonoverlapping(parent_context, child_context_ptr, 1);
-            // In child process, fork() returns 0 in RAX
-            (*child_context_ptr).rax = 0;
-        }
+        (*child_context_ptr).r15 = user_r15_temp;
+        (*child_context_ptr).r14 = user_r14_temp;
+        (*child_context_ptr).r13 = user_r13_temp;
+        (*child_context_ptr).r12 = user_r12_temp;
+        (*child_context_ptr).r11 = 0;
+        (*child_context_ptr).r10 = 0;
+        (*child_context_ptr).r9 = 0;
+        (*child_context_ptr).r8 = 0;
+        (*child_context_ptr).rdi = 0;
+        (*child_context_ptr).rsi = 0;
+        (*child_context_ptr).rbp = user_rbp_temp;
+        (*child_context_ptr).rbx = user_rbx_temp;
+        (*child_context_ptr).rdx = 0;
+        (*child_context_ptr).rcx = 0;
+        (*child_context_ptr).rax = 0; // In child process, fork() returns 0!
+
+        (*child_context_ptr).rip = user_rip_temp;
+        (*child_context_ptr).cs = 0x2B; // User code selector (RPL=3)
+        (*child_context_ptr).rflags = (user_rflags_temp | 0x202) & !0x100; // IF=1, TF=0
+        (*child_context_ptr).rsp = user_rsp_temp;
+        (*child_context_ptr).ss = 0x23; // User data selector (RPL=3)
 
         let child_task = Task {
             id: slot_idx,
@@ -303,7 +329,7 @@ pub unsafe fn exit_current(exit_code: i32) {
             serial::print_str("' exited (Zombie)\n");
         }
 
-        core::arch::asm!("sti");
+        core::arch::asm!("sti; int 32");
         loop {
             core::arch::asm!("hlt");
         }
@@ -318,7 +344,7 @@ pub unsafe fn sys_waitpid(
     status_ptr: *mut i32,
     options: u32,
 ) -> Result<usize, &'static str> {
-    if options != 0 {
+    if (options & !1) != 0 {
         return Err("EINVAL");
     }
 
@@ -334,79 +360,64 @@ pub unsafe fn sys_waitpid(
 
     let parent_idx = CURRENT_TASK_IDX;
 
-    // 1. Search for matching zombie child
-    for i in 1..MAX_TASKS {
-        if let Some(ref child) = TASKS[i] {
-            if child.parent_id == parent_idx {
-                if target_pid == -1 || child.id == target_pid as usize {
-                    if let TaskState::Zombie(code) = child.state {
-                        let reaped_id = child.id;
-                        if !status_ptr.is_null() {
-                            *status_ptr = code;
+    loop {
+        // 1. Check if child already exited (Zombie)
+        for i in 1..MAX_TASKS {
+            if let Some(ref child) = TASKS[i] {
+                if child.parent_id == parent_idx {
+                    if target_pid == -1 || child.id == target_pid as usize {
+                        if let TaskState::Zombie(code) = child.state {
+                            let reaped_id = child.id;
+                            if !status_ptr.is_null() {
+                                let encoded_status = if code >= 0 {
+                                    (code & 0xff) << 8
+                                } else {
+                                    (-code) & 0x7f
+                                };
+                                *status_ptr = encoded_status;
+                            }
+                            release_all_locks_for_task(reaped_id);
+                            if child.stack_addr != 0 {
+                                vmm::free_user_pages(child.pml4_phys, child.program_break);
+                                pmm::free_frame(child.stack_addr);
+                            }
+                            TASKS[i] = None;
+                            return Ok(reaped_id);
                         }
-
-                        // Release child locks and memory
-                        release_all_locks_for_task(reaped_id);
-                        if child.stack_addr != 0 {
-                            vmm::free_user_pages(child.pml4_phys, child.program_break);
-                            pmm::free_frame(child.stack_addr);
-                        }
-                        TASKS[i] = None;
-                        return Ok(reaped_id);
                     }
                 }
             }
         }
-    }
 
-    // 2. Check if any matching child is still alive
-    let mut has_living_child = false;
-    for i in 1..MAX_TASKS {
-        if let Some(ref child) = TASKS[i] {
-            if child.parent_id == parent_idx
-                && (target_pid == -1 || child.id == target_pid as usize)
-            {
-                has_living_child = true;
-                break;
-            }
-        }
-    }
-
-    if !has_living_child {
-        return Err("No child processes");
-    }
-
-    // 3. Block parent until a child exits
-    if let Some(ref mut parent) = TASKS[parent_idx] {
-        parent.state = TaskState::Blocked;
-    }
-
-    core::arch::asm!("int 32");
-
-    // Retry reaping after waking up
-    for i in 1..MAX_TASKS {
-        if let Some(ref child) = TASKS[i] {
-            if child.parent_id == parent_idx {
-                if target_pid == -1 || child.id == target_pid as usize {
-                    if let TaskState::Zombie(code) = child.state {
-                        let reaped_id = child.id;
-                        if !status_ptr.is_null() {
-                            *status_ptr = code;
-                        }
-                        release_all_locks_for_task(reaped_id);
-                        if child.stack_addr != 0 {
-                            vmm::free_user_pages(child.pml4_phys, child.program_break);
-                            pmm::free_frame(child.stack_addr);
-                        }
-                        TASKS[i] = None;
-                        return Ok(reaped_id);
-                    }
+        // 2. Check if any matching child is still alive
+        let mut has_living_child = false;
+        for i in 1..MAX_TASKS {
+            if let Some(ref child) = TASKS[i] {
+                if child.parent_id == parent_idx
+                    && (target_pid == -1 || child.id == target_pid as usize)
+                {
+                    has_living_child = true;
+                    break;
                 }
             }
         }
-    }
 
-    Err("Interrupted wait")
+        if !has_living_child {
+            return Err("No child processes");
+        }
+
+        // Non-blocking wait if WNOHANG is set
+        if (options & 1) != 0 {
+            return Ok(0);
+        }
+
+        // 3. Block parent until a child exits
+        if let Some(ref mut parent) = TASKS[parent_idx] {
+            parent.state = TaskState::Blocked;
+        }
+
+        core::arch::asm!("sti; int 32; cli");
+    }
 }
 
 /// Wait for a child task to terminate.
@@ -445,6 +456,12 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
                 vmm::switch_address_space(task.pml4_phys);
                 if task.stack_addr != 0 {
                     kernel_stack_temp = task.stack_addr + pmm::PAGE_SIZE;
+                    set_kernel_stack(kernel_stack_temp as usize);
+                } else {
+                    kernel_stack_temp = main_kernel_stack;
+                    if main_kernel_stack != 0 {
+                        set_kernel_stack(main_kernel_stack as usize);
+                    }
                 }
 
                 return task.rsp;
@@ -460,6 +477,10 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
             main_task.state = TaskState::Running;
             CURRENT_TASK_IDX = 0;
             vmm::switch_address_space(main_task.pml4_phys);
+            kernel_stack_temp = main_kernel_stack;
+            if main_kernel_stack != 0 {
+                set_kernel_stack(main_kernel_stack as usize);
+            }
             return main_task.rsp;
         }
     }

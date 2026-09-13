@@ -246,11 +246,9 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         let parent_pml4 = vmm::active_pml4();
         let child_pml4 = vmm::clone_kernel_pml4()?;
 
-        let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
-        keira_task::scheduler::SCHEDULER_INITIALIZED = false;
-
         if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
             task.pml4_phys = child_pml4;
+            task.state = keira_task::TaskState::Running;
         }
 
         vmm::switch_address_space(child_pml4);
@@ -258,6 +256,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         let cleanup_and_restore = |child: u64, brk: u64| {
             if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
                 task.pml4_phys = parent_pml4;
+                task.state = keira_task::TaskState::Running;
                 for fd in 0..keira_task::MAX_FDS {
                     if task.fds[fd].is_open {
                         if task.fds[fd].write_mode {
@@ -272,7 +271,6 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
                 }
             }
             vmm::switch_address_space(parent_pml4);
-            keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
             vmm::free_user_pages(child, brk);
         };
 

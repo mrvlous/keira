@@ -8,7 +8,9 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <syscall.h>
 
@@ -113,6 +115,10 @@ int snprintf(char *str, size_t size, const char *format, ...) {
     return ret;
 }
 
+int vsprintf(char *str, const char *format, va_list ap) {
+    return vsnprintf(str, 65536, format, ap);
+}
+
 int sprintf(char *str, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
@@ -133,6 +139,137 @@ int printf(const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     int ret = vprintf(format, ap);
+    va_end(ap);
+    return ret;
+}
+
+int vfprintf(FILE *stream, const char *format, va_list ap) {
+    if (!stream)
+        return -1;
+    char buf[1024];
+    int len = vsnprintf(buf, sizeof(buf), format, ap);
+    if (len > 0) {
+        size_t written = fwrite(buf, 1, (size_t)len, stream);
+        return (int)written;
+    }
+    return len;
+}
+
+int fprintf(FILE *stream, const char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    int ret = vfprintf(stream, format, ap);
+    va_end(ap);
+    return ret;
+}
+
+int vsscanf(const char *str, const char *format, va_list ap) {
+    if (!str || !format)
+        return -1;
+    int matched = 0;
+    while (*format) {
+        if (isspace((unsigned char)*format)) {
+            while (isspace((unsigned char)*format))
+                format++;
+            while (isspace((unsigned char)*str))
+                str++;
+            continue;
+        }
+        if (*format != '%') {
+            if (*str != *format)
+                break;
+            str++;
+            format++;
+            continue;
+        }
+        format++;
+        if (*format == '%') {
+            if (*str != '%')
+                break;
+            str++;
+            format++;
+            continue;
+        }
+
+        if (*format == 'd' || *format == 'i') {
+            while (isspace((unsigned char)*str))
+                str++;
+            if (!*str)
+                break;
+            char *endptr = NULL;
+            long val = strtol(str, &endptr, (*format == 'i') ? 0 : 10);
+            if (endptr == str)
+                break;
+            int *out = va_arg(ap, int *);
+            if (out)
+                *out = (int)val;
+            str = endptr;
+            matched++;
+            format++;
+        } else if (*format == 'u') {
+            while (isspace((unsigned char)*str))
+                str++;
+            if (!*str)
+                break;
+            char *endptr = NULL;
+            unsigned long val = strtoul(str, &endptr, 10);
+            if (endptr == str)
+                break;
+            unsigned int *out = va_arg(ap, unsigned int *);
+            if (out)
+                *out = (unsigned int)val;
+            str = endptr;
+            matched++;
+            format++;
+        } else if (*format == 'x' || *format == 'X') {
+            while (isspace((unsigned char)*str))
+                str++;
+            if (!*str)
+                break;
+            char *endptr = NULL;
+            unsigned long val = strtoul(str, &endptr, 16);
+            if (endptr == str)
+                break;
+            unsigned int *out = va_arg(ap, unsigned int *);
+            if (out)
+                *out = (unsigned int)val;
+            str = endptr;
+            matched++;
+            format++;
+        } else if (*format == 's') {
+            while (isspace((unsigned char)*str))
+                str++;
+            if (!*str)
+                break;
+            char *out = va_arg(ap, char *);
+            if (!out)
+                break;
+            int s_idx = 0;
+            while (*str && !isspace((unsigned char)*str)) {
+                out[s_idx++] = *str++;
+            }
+            out[s_idx] = '\0';
+            matched++;
+            format++;
+        } else if (*format == 'c') {
+            if (!*str)
+                break;
+            char *out = va_arg(ap, char *);
+            if (out)
+                *out = *str++;
+            matched++;
+            format++;
+        } else {
+            break;
+        }
+    }
+    return matched;
+}
+
+int sscanf(const char *str, const char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    int ret = vsscanf(str, format, ap);
     va_end(ap);
     return ret;
 }

@@ -138,8 +138,7 @@ void sys_print_char(char c) {
 }
 
 void sys_exit(int status) {
-    (void)status;
-    syscall0(SYS_EXIT);
+    syscall1(SYS_EXIT, (uint64_t)(uint32_t)status);
     while (1) {
         __asm__ volatile("pause");
     }

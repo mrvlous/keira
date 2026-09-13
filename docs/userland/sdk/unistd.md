@@ -81,6 +81,30 @@ void *sbrk(intptr_t increment);
 `brk` sets the end of the data segment to `addr`. Returns `0` on success, or `-1` on error.
 `sbrk` increments the program data space by `increment` bytes. Returns the previous program break address, or `(void *)-1` on error.
 
+### `fork` / `execve`
+```c
+pid_t fork(void);
+int execve(const char *pathname, char *const argv[], char *const envp[]);
+```
+`fork` creates a new child process duplicating the calling process with Copy-on-Write memory. Returns `0` in the child and child PID in parent, or `-1` on error.
+`execve` executes the binary specified by `pathname`. Replaces the current process image upon success.
+
+### `wait` / `waitpid`
+```c
+pid_t wait(int *wstatus);
+pid_t waitpid(pid_t pid, int *wstatus, int options);
+```
+Waits for child process state transitions. Reaps zombies and extracts exit status using `WIFEXITED` and `WEXITSTATUS` macros defined in `<sys/wait.h>`.
+
+### `pipe` / `dup` / `dup2`
+```c
+int pipe(int pipefd[2]);
+int dup(int oldfd);
+int dup2(int oldfd, int newfd);
+```
+`pipe` creates a unidirectional data channel (`pipefd[0]` for read, `pipefd[1]` for write).
+`dup` and `dup2` allocate a new descriptor referring to the same open file description.
+
 ---
 
 ## 3. Example Usage

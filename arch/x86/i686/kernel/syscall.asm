@@ -12,13 +12,31 @@
 global jump_to_user
 global user_rsp_temp
 global kernel_stack_temp
+global main_kernel_stack
+global user_rip_temp
+global user_rflags_temp
+global user_rbx_temp
+global user_rbp_temp
+global user_r12_temp
+global user_r13_temp
+global user_r14_temp
+global user_r15_temp
 
 extern syscall_dispatcher
 
 section .data
-align 4
-user_rsp_temp:     dd 0
-kernel_stack_temp: dd 0
+align 8
+user_rsp_temp:     dq 0
+kernel_stack_temp: dq 0
+main_kernel_stack: dq 0
+user_rip_temp:     dq 0
+user_rflags_temp:  dq 0
+user_rbx_temp:     dq 0
+user_rbp_temp:     dq 0
+user_r12_temp:     dq 0
+user_r13_temp:     dq 0
+user_r14_temp:     dq 0
+user_r15_temp:     dq 0
 
 section .text
 bits 32
@@ -33,6 +51,7 @@ jump_to_user:
     push edi
 
     mov [kernel_stack_temp], esp
+    mov [main_kernel_stack], esp
     cli
 
     mov edx, [esp + 20]   ; entry_point (low 32-bit of u64)
@@ -113,7 +132,7 @@ isr128:
 .exit_user_mode:
 global abort_user_mode
 abort_user_mode:
-    mov esp, [kernel_stack_temp]
+    mov esp, [main_kernel_stack]
     mov ax, 0x10
     mov ds, ax
     mov es, ax

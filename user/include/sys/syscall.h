@@ -50,6 +50,7 @@
 #define SYS_WAITPID 62
 #define SYS_GETPPID 63
 #define SYS_NANOSLEEP 67
+#define SYS_FCNTL 72
 #define SYS_IOCTL 73
 
 int64_t syscall0(uint64_t num);

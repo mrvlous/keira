@@ -128,6 +128,69 @@ gid_t getgid(void) {
     return 0;
 }
 
+pid_t fork(void) {
+    int64_t ret = syscall0(SYS_FORK);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return (pid_t)ret;
+}
+
+int execve(const char *pathname, char *const argv[], char *const envp[]) {
+    (void)argv;
+    (void)envp;
+    int64_t ret = syscall1(SYS_EXEC, (uint64_t)(uintptr_t)pathname);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return 0;
+}
+
+pid_t waitpid(pid_t pid, int *wstatus, int options) {
+    int64_t ret =
+        syscall3(SYS_WAITPID, (uint64_t)pid, (uint64_t)(uintptr_t)wstatus, (uint64_t)options);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return (pid_t)ret;
+}
+
+pid_t wait(int *wstatus) {
+    return waitpid(-1, wstatus, 0);
+}
+
+int pipe(int pipefd[2]) {
+    if (!pipefd) {
+        errno = EFAULT;
+        return -1;
+    }
+    int64_t ret = syscall1(SYS_PIPE, (uint64_t)(uintptr_t)pipefd);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return 0;
+}
+
+int dup(int oldfd) {
+    int64_t ret = syscall3(SYS_FCNTL, (uint64_t)oldfd, 0, 0);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return (int)ret;
+}
+
+int dup2(int oldfd, int newfd) {
+    if (oldfd == newfd)
+        return oldfd;
+    close(newfd);
+    return dup(oldfd);
+}
+
 unsigned int sleep(unsigned int seconds) {
     sys_sleep(seconds * 1000);
     return 0;

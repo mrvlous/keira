@@ -56,8 +56,19 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             0
         }
-        // Syscall 2: Exit User Mode
-        2 => 0xDEADBEEF,
+        // Syscall 2: Exit User Mode / Process Termination
+        2 => {
+            let current_idx = unsafe { CURRENT_TASK_IDX };
+            let exit_code = arg1 as i32;
+            if current_idx != 0 {
+                unsafe {
+                    keira_task::scheduler::exit_current(exit_code);
+                }
+                0
+            } else {
+                0xDEADBEEF
+            }
+        }
         // Syscall 3: Sleep (busy halt)
         3 => {
             let ms = arg1;

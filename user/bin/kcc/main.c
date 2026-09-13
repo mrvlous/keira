@@ -15,6 +15,7 @@
 #include "preproc.h"
 #include "symbols.h"
 
+#include <stdio.h>
 #include <syscall.h>
 
 int main(int argc, char **argv) {
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
                 continue;
             }
         } else if (k_strcmp(argv[arg_i], "-v") == 0 || k_strcmp(argv[arg_i], "--version") == 0) {
-            print_str("Keira C Compiler (KCC) Native v0.1.0\n");
+            print_str("Keira C Compiler (KCC) Native v0.2.0\n");
             sys_exit(0);
         } else if (k_strcmp(argv[arg_i], "-h") == 0 || k_strcmp(argv[arg_i], "--help") == 0) {
             print_str("Usage: kcc [options] <source.c>\n");
@@ -52,17 +53,18 @@ int main(int argc, char **argv) {
         arg_i++;
     }
 
-    int in_fd = sys_open(source_path, 0, 0);
-    if (in_fd < 0 && argc < 2) {
+    FILE *in_fp = fopen(source_path, "r");
+    if (!in_fp && argc < 2) {
         source_path = "/temp/main.c";
-        in_fd = sys_open(source_path, 0, 0);
+        in_fp = fopen(source_path, "r");
     }
-    if (in_fd < 0) {
+    if (!in_fp) {
         print_str("Error: Could not open source file: ");
         print_str(source_path);
         print_str("\n");
         print_str("Usage: run /system/bin/kcc.elf <source.c> [-o output.elf]\n");
         sys_exit(1);
+        return 1;
     }
 
     print_str("[INFO] Compiling source: ");
@@ -72,11 +74,12 @@ int main(int argc, char **argv) {
     print_str("\n");
 
     k_memset(src_buf, 0, MAX_SOURCE_SIZE);
-    int read_len = sys_read(in_fd, src_buf, MAX_SOURCE_SIZE - 1);
-    sys_close(in_fd);
-    if (read_len <= 0) {
+    size_t read_len = fread(src_buf, 1, MAX_SOURCE_SIZE - 1, in_fp);
+    fclose(in_fp);
+    if (read_len == 0) {
         print_str("Error: Source file is empty\n");
         sys_exit(1);
+        return 1;
     }
 
     /* Determine source directory for relative includes */
