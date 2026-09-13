@@ -54,6 +54,9 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
 | `<termios.h>` | [`termios.md`](termios.md) | Terminal line discipline, raw/canonical modes, baud rates | [Active] |
 | `<sys/ioctl.h>` | [`ioctl.md`](ioctl.md) | Terminal window sizing and device I/O control | [Active] |
 | `<sys/socket.h>` | [`socket.md`](socket.md) | BSD socket network connection & transfer interface | [Active] |
+| `<sys/wait.h>` | [`wait.md`](wait.md) | Process state transitions & exit status macros | [Active] |
+| `<fcntl.h>` | [`fcntl.md`](fcntl.md) | File creation flags & access modes | [Active] |
+| `<errno.h>` | [`errno.md`](errno.md) | Standard error numbers & error reporting | [Active] |
 | `<syscall.h>` | [`syscalls.md`](syscalls.md) | Raw kernel syscall dispatch interface | [Active] |
 
 ---
