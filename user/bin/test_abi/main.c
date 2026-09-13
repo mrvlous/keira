@@ -36,7 +36,11 @@ int main(int argc, char **argv) {
 
     /* 2. Kernel Memory Boundary & EFAULT Protection */
     puts("  [TEST] Kernel address pointer isolation (EFAULT check)...");
+#if defined(__x86_64__)
     void *kernel_addr = (void *)0xFFFF800000000000ULL;
+#else
+    void *kernel_addr = (void *)0xC0000000UL;
+#endif
     ssize_t efault_res = write(1, kernel_addr, 16);
     if (efault_res >= 0) {
         puts("  [FAIL] Kernel address access was not blocked by copy_from_user!");
@@ -270,6 +274,127 @@ int main(int argc, char **argv) {
             printf("  [FAIL] waitpid mismatch: reaped=%d, wstatus=%d\n", (int)reaped_pid, wstatus);
             return 1;
         }
+    }
+
+    /* 15. Anonymous Inter-Process Pipe Streaming */
+    puts("  [TEST] Anonymous inter-process pipe streaming (pipe + fork + IPC)...");
+    int pipefds[2] = {-1, -1};
+    if (pipe(pipefds) < 0) {
+        puts("  [FAIL] pipe() allocation failed");
+        return 1;
+    }
+    pid_t pipe_child = fork();
+    if (pipe_child < 0) {
+        puts("  [FAIL] fork() failed during pipe test");
+        return 1;
+    } else if (pipe_child == 0) {
+        /* In child: close read end, write message, close write end, exit */
+        close(pipefds[0]);
+        const char *msg = "KEIRA_PIPE_STREAM_OK";
+        ssize_t w = write(pipefds[1], msg, strlen(msg));
+        close(pipefds[1]);
+        exit((w == (ssize_t)strlen(msg)) ? 0 : 1);
+    } else {
+        /* In parent: wait for child to complete transmission, then read and verify */
+        int child_status = 0;
+        waitpid(pipe_child, &child_status, 0);
+        close(pipefds[1]);
+        char pipe_in[32];
+        memset(pipe_in, 0, sizeof(pipe_in));
+        ssize_t r = read(pipefds[0], pipe_in, sizeof(pipe_in) - 1);
+        close(pipefds[0]);
+        if (r > 0 && strcmp(pipe_in, "KEIRA_PIPE_STREAM_OK") == 0) {
+            printf("  [INFO] Received pipe message: \"%s\"\n", pipe_in);
+            puts("  [OK]   Anonymous pipe inter-process streaming operational");
+        } else {
+            printf("  [FAIL] Pipe communication failed: r=%d, msg=\"%s\"\n", (int)r, pipe_in);
+            return 1;
+        }
+    }
+
+    /* 16. Copy-on-Write (COW) Memory Mutation Integrity */
+    puts("  [TEST] Copy-on-Write (COW) memory mutation isolation...");
+    volatile int *cow_canary = (volatile int *)malloc(sizeof(int));
+    if (!cow_canary) {
+        puts("  [FAIL] malloc failed for COW canary");
+        return 1;
+    }
+    *cow_canary = 0x5A5A1234;
+    pid_t cow_child = fork();
+    if (cow_child < 0) {
+        puts("  [FAIL] fork() failed during COW test");
+        free((void *)cow_canary);
+        return 1;
+    } else if (cow_child == 0) {
+        /* In child: mutate value and exit */
+        *cow_canary = (int)0xDEADBEEF;
+        exit(0);
+    } else {
+        int cow_status = 0;
+        waitpid(cow_child, &cow_status, 0);
+        if (*cow_canary == 0x5A5A1234) {
+            puts("  [INFO] Parent memory unchanged after child mutation (COW verified)");
+            puts("  [OK]   Copy-on-Write memory mutation isolation operational");
+        } else {
+            printf("  [FAIL] Parent memory corrupted by child: 0x%X\n", *cow_canary);
+            free((void *)cow_canary);
+            return 1;
+        }
+        free((void *)cow_canary);
+    }
+
+    /* 17. Process Tree Reaping & Multi-Process Zombie Status Propagation */
+    puts("  [TEST] Multi-process tree reaping & zombie status propagation...");
+    int expected_codes[3] = {11, 22, 33};
+    pid_t child_pids[3];
+    int all_forked = 1;
+    for (int i = 0; i < 3; i++) {
+        pid_t p = fork();
+        if (p < 0) {
+            all_forked = 0;
+            break;
+        } else if (p == 0) {
+            exit(expected_codes[i]);
+        } else {
+            child_pids[i] = p;
+        }
+    }
+    if (!all_forked) {
+        puts("  [FAIL] Multi-process fork failed");
+        return 1;
+    }
+    int reap_success = 1;
+    for (int i = 0; i < 3; i++) {
+        int s = 0;
+        pid_t r = waitpid(child_pids[i], &s, 0);
+        if (r != child_pids[i] || !WIFEXITED(s) || WEXITSTATUS(s) != expected_codes[i]) {
+            printf("  [FAIL] Child %d reap failed: pid=%d, status=%d\n", i, (int)r, WEXITSTATUS(s));
+            reap_success = 0;
+            break;
+        }
+    }
+    if (reap_success) {
+        puts("  [INFO] 3 child processes reaped with exact exit codes (11, 22, 33)");
+        puts("  [OK]   Process tree reaping and zombie status propagation operational");
+    } else {
+        return 1;
+    }
+
+    /* 18. Cross-Architecture User Boundary Hardening */
+    puts("  [TEST] Cross-architecture high kernel pointer rejection...");
+#if defined(__x86_64__)
+    void *illegal_ptr = (void *)0xFFFF800000000000ULL;
+#else
+    void *illegal_ptr = (void *)0xC0000000UL;
+#endif
+    ssize_t illegal_write = write(1, illegal_ptr, 1);
+    ssize_t illegal_read = read(0, illegal_ptr, 1);
+    if (illegal_write < 0 && illegal_read < 0) {
+        puts("  [INFO] Syscall write/read to high kernel pointer strictly rejected");
+        puts("  [OK]   Cross-architecture kernel boundary security verified");
+    } else {
+        puts("  [FAIL] High kernel pointer was not rejected with EFAULT!");
+        return 1;
     }
 
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");

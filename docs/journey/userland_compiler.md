@@ -31,4 +31,8 @@ graph LR
 * **Environment Variable Management (`environ`)**: Integrated stack-passed `envp` initialization into `crt0` startup, backed by heap-allocated dynamic environment modification (`getenv`, `setenv`, `unsetenv`, `putenv`).
 * **Stream Formatting & Token Scanning (`fprintf`, `sscanf`)**: Advanced formatted stream output and string parsing engine supporting format specifications (`%d`, `%i`, `%u`, `%x`, `%s`, `%c`).
 * **Ring 3 Multiprocess Orchestration**: Preemptive process cloning via `fork()`, exit code propagation to `TaskState::Zombie`, and blocking parent reaping with POSIX `waitpid()` and exit status decoding (`WIFEXITED`, `WEXITSTATUS`).
+* **Anonymous Inter-Process Pipe Streaming**: Bidirectional and unidirectional FIFO memory-backed pipes (`pipe()`, `read()`, `write()`) connecting parent and child userland processes.
+* **Process Memory Mutation Isolation**: Dedicated physical frame duplication and deep page-table cloning during `fork()` guaranteeing strict task isolation and preventing memory corruption on child reap.
+* **Cross-Architecture Kernel Boundary Guard**: Strict user pointer sanitization across canonical user space ranges (`[0x10000, 0x0000_7FFF_FFFF_FFFF]` on `x86_64`, `[0x10000, 0xBFFF_FFFF]` on `i686`) rejecting high-half kernel pointers with `-EFAULT`.
+* **Native In-Kernel Self-Hosting Compilation Loop**: Seamless compilation of C source files into freestanding ELF binaries using native `kcc.elf` and immediate execution under the Keira shell.
 * **Zero-Dependency Self-Contained Ecosystem**: Complete ability to develop, compile, test, and run native applications directly on bare metal without host dependencies.

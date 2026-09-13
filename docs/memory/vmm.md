@@ -34,19 +34,14 @@ Virtual addresses are decomposed into four 9-bit table indices:
 
 ---
 
-## Copy-on-Write (COW) Memory Sharing (`sys_fork`)
+## Process Address Space Duplication & Memory Isolation (`sys_fork`)
 
-Keira implements zero-copy process forking via hardware-assisted Copy-on-Write:
+Keira implements process memory virtualization during task forking:
 
-1. **Address Space Duplication**: During `sys_fork()`, `clone_user_address_space` shares existing physical frames between parent and child instead of allocating eager copies.
-2. **Write-Protection & COW Flag**: All writable user PTEs are marked Read-Only (`PAGE_WRITABLE` cleared) and tagged with `PAGE_COW` (bit 9).
-3. **Hardware Page Fault Resolution**: When either process attempts to write to a shared page, CPU triggers `#PF` (Present = 1, Write = 1):
-   - The handler verifies `(pte & PAGE_COW) != 0`.
-   - Allocates a fresh, private physical frame from PMM.
-   - Copies 4096 bytes from the shared frame into the private frame.
-   - Remaps the virtual page as private and writable (`PAGE_WRITABLE` set, `PAGE_COW` cleared).
-   - Flushes the local CPU TLB via `invlpg(vaddr)`.
-4. **Resumed Execution**: Ring 3 execution resumes transparently with isolated, writable memory.
+1. **Address Space Duplication**: During `sys_fork()`, `clone_user_address_space` allocates a new PML4 and PDPT root hierarchy, preserving kernel identity-map and MMIO regions while duplicating the userland address space.
+2. **Dedicated Physical Frame Isolation**: For every mapped userland page, the VMM allocates a distinct, dedicated physical frame from the PMM and deep-copies the 4096-byte contents from the parent frame to the child frame.
+3. **Safe Memory Reclamation**: Because parent and child hold independent physical frames, process termination and memory reaping in `sys_waitpid()` via `free_user_pages()` releases only the exiting task's private frames, leaving the remaining processes unaffected with zero dangling pointers or page-table corruption.
+4. **Resumed Execution**: Ring 3 execution resumes transparently in both parent and child with completely isolated, independently mutable memory address spaces.
 
 ---
 

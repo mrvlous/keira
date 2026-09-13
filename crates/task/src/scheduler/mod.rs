@@ -350,10 +350,15 @@ pub unsafe fn sys_waitpid(
 
     if !status_ptr.is_null() {
         let ptr_val = status_ptr as u64;
-        if ptr_val < 0x10000
-            || ptr_val > 0x0000_7FFF_FFFF_FFFF
-            || !vmm::is_user_page_mapped(ptr_val, true)
-        {
+        #[cfg(target_arch = "x86_64")]
+        let max_user_addr = 0x0000_7FFF_FFFF_FFFF;
+        #[cfg(target_arch = "x86")]
+        let max_user_addr = 0xBFFF_FFFF;
+        if ptr_val < 0x10000 || ptr_val > max_user_addr {
+            return Err("EFAULT");
+        }
+        #[cfg(target_arch = "x86_64")]
+        if !vmm::is_user_page_mapped(ptr_val, true) {
             return Err("EFAULT");
         }
     }

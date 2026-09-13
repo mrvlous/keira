@@ -11,8 +11,8 @@
 
 use super::free::free_user_pages;
 use super::paging::{
-    active_pml4, map_page_in_pml4, switch_address_space, PAGE_COW, PAGE_NO_EXECUTE, PAGE_PRESENT,
-    PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
+    active_pml4, map_page_in_pml4, switch_address_space, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
+    PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 
@@ -117,30 +117,33 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                     vaddr |= (pt_idx as u64) << 12;
 
                     let phys_frame = pt_entry & PTE_ADDR_MASK;
-                    let is_writable = (pt_entry & PAGE_WRITABLE) != 0;
 
-                    let child_flags = if is_writable {
-                        // Mark both parent and child as Read-Only with PAGE_COW flag set
-                        let cow_flags = (pt_entry & !PAGE_WRITABLE) | PAGE_COW;
-                        *(pt as *mut u64).add(pt_idx) = cow_flags;
-                        keira_arch::cpu::invlpg(vaddr as usize);
-                        cow_flags
-                    } else {
-                        pt_entry
+                    // Allocate dedicated physical frame for child process to ensure full isolation
+                    let child_frame = match pmm::alloc_frame() {
+                        Some(f) => f,
+                        None => {
+                            switch_address_space(current_pml4);
+                            free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
+                            pmm::free_frame(child_pml4_phys);
+                            return Err("Out of memory for child user page frame");
+                        }
                     };
 
-                    // Map shared physical frame in child PML4 with COW protection
+                    // Deep-copy 4KB page content from parent physical frame to child physical frame
+                    core::ptr::copy_nonoverlapping(
+                        phys_frame as *const u8,
+                        child_frame as *mut u8,
+                        4096,
+                    );
+
+                    // Map child's own frame in child PML4 with original permissions
                     if let Err(e) = map_page_in_pml4(
                         child_pml4_phys,
                         vaddr,
-                        phys_frame,
-                        child_flags
-                            & (PAGE_USER
-                                | PAGE_WRITABLE
-                                | PAGE_NO_EXECUTE
-                                | PAGE_COW
-                                | PAGE_PRESENT),
+                        child_frame,
+                        pt_entry & (PAGE_USER | PAGE_WRITABLE | PAGE_NO_EXECUTE | PAGE_PRESENT),
                     ) {
+                        pmm::free_frame(child_frame);
                         switch_address_space(current_pml4);
                         free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
                         pmm::free_frame(child_pml4_phys);

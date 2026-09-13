@@ -24,7 +24,9 @@ typedef unsigned int size_t;
 typedef int ptrdiff_t;
 #endif
 
+#ifndef __KCC__
 typedef long double max_align_t;
+#endif
 
 #define offsetof(type, member) ((size_t)&(((type *)0)->member))
 

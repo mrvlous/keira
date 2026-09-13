@@ -31,6 +31,8 @@ pub struct FileDescriptor {
     pub is_socket: bool,
     pub socket_id: u32,
     pub nonblocking: bool,
+    pub is_pipe: bool,
+    pub pipe_write: bool,
 }
 
 impl FileDescriptor {
@@ -44,6 +46,8 @@ impl FileDescriptor {
             is_socket: false,
             socket_id: 0,
             nonblocking: false,
+            is_pipe: false,
+            pipe_write: false,
         }
     }
 
@@ -57,6 +61,23 @@ impl FileDescriptor {
             is_socket: true,
             socket_id,
             nonblocking,
+            is_pipe: false,
+            pipe_write: false,
+        }
+    }
+
+    pub fn new_pipe(write_mode: bool) -> Self {
+        Self {
+            is_open: true,
+            path: [0u8; 128],
+            path_len: 0,
+            offset: 0,
+            write_mode,
+            is_socket: false,
+            socket_id: 0,
+            nonblocking: false,
+            is_pipe: true,
+            pipe_write: write_mode,
         }
     }
 }

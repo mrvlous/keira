@@ -30,7 +30,7 @@ This document specifies the complete system call vector table supported by Keira
 | `20` | `SYS_MMAP` | `void *addr, size_t len, int prot, int flags` | Map pages into address space |
 | `21` | `SYS_MUNMAP` | `void *addr, size_t len` | Unmap pages from address space |
 | `22` | `SYS_KILL` | `pid_t pid, int sig` | Send POSIX signal to target process PID |
-| `23` | `SYS_PIPE` | - | Create unidirectional data channel pipe |
+| `23` | `SYS_PIPE` | `int pipefd[2]` | Create unidirectional data channel pipe and allocate descriptors |
 | `24` | `SYS_SOCKET` | `int domain, int type, int protocol` | Create network communication endpoint |
 | `25` | `SYS_CONNECT` | `int sockfd, const void *addr, socklen_t len` | Connect to remote socket |
 | `26` | `SYS_UNLINK` | `const char *pathname` | Delete file from filesystem |

@@ -30,7 +30,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_FORK`, `SYS_WAITPID`, `SYS_EXIT`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (18 tests) |
 
 ---
 
@@ -141,6 +141,18 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [TEST] Ring 3 multiprocess orchestration (fork + waitpid)...
   [INFO] Child PID 1 reaped with exit status 42
   [OK]   Ring 3 process orchestration operational
+  [TEST] Anonymous inter-process pipe streaming (pipe + fork + IPC)...
+  [INFO] Received pipe message: "KEIRA_PIPE_STREAM_OK"
+  [OK]   Anonymous pipe inter-process streaming operational
+  [TEST] Copy-on-Write (COW) memory mutation isolation...
+  [INFO] Parent memory unchanged after child mutation (COW verified)
+  [OK]   Copy-on-Write memory mutation isolation operational
+  [TEST] Multi-process tree reaping & zombie status propagation...
+  [INFO] 3 child processes reaped with exact exit codes (11, 22, 33)
+  [OK]   Process tree reaping and zombie status propagation operational
+  [TEST] Cross-architecture high kernel pointer rejection...
+  [INFO] Syscall write/read to high kernel pointer strictly rejected
+  [OK]   Cross-architecture kernel boundary security verified
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

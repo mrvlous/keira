@@ -224,6 +224,19 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
                     if t.fds[fd].is_open {
+                        if t.fds[fd].is_pipe && !t.fds[fd].pipe_write {
+                            let mut kernel_buf = [0u8; 1024];
+                            let to_read = (len as usize).min(kernel_buf.len());
+                            let bytes = keira_ipc::pipe::read_pipe(&mut kernel_buf[..to_read]);
+                            if bytes > 0 {
+                                if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                    return bytes as u64;
+                                }
+                                return errno_to_ret(EFAULT);
+                            }
+                            return 0;
+                        }
+
                         if t.fds[fd].is_socket {
                             let mut kernel_buf = [0u8; 1024];
                             let to_read = (len as usize).min(kernel_buf.len());
@@ -349,6 +362,16 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
                     if t.fds[fd].is_open && t.fds[fd].write_mode {
+                        if t.fds[fd].is_pipe && t.fds[fd].pipe_write {
+                            let mut kernel_buf = [0u8; 1024];
+                            let to_write = (len as usize).min(kernel_buf.len());
+                            if copy_from_user(&mut kernel_buf[..to_write], buf_ptr).is_ok() {
+                                let written = keira_ipc::pipe::write_pipe(&kernel_buf[..to_write]);
+                                return written as u64;
+                            }
+                            return errno_to_ret(EFAULT);
+                        }
+
                         if t.fds[fd].is_socket {
                             let mut kernel_buf = [0u8; 1024];
                             let to_write = (len as usize).min(kernel_buf.len());
@@ -603,11 +626,45 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         }
         // Syscall 23: pipe
         23 => {
-            let pipe_res = unsafe { keira_ipc::pipe::create_pipe() };
-            match pipe_res {
-                Ok((rd, wr)) => (rd as u64) | ((wr as u64) << 32),
-                Err(_) => errno_to_ret(ENOMEM),
+            let pipe_ptr = arg1;
+            let mut rd_slot = None;
+            let mut wr_slot = None;
+
+            unsafe {
+                let task = &mut TASKS[CURRENT_TASK_IDX];
+                if let Some(t) = task {
+                    for i in 3..MAX_FDS {
+                        if !t.fds[i].is_open {
+                            if rd_slot.is_none() {
+                                rd_slot = Some(i);
+                            } else if wr_slot.is_none() {
+                                wr_slot = Some(i);
+                                break;
+                            }
+                        }
+                    }
+
+                    if let (Some(rd), Some(wr)) = (rd_slot, wr_slot) {
+                        let _ = keira_ipc::pipe::create_pipe();
+                        t.fds[rd] = FileDescriptor::new_pipe(false);
+                        t.fds[wr] = FileDescriptor::new_pipe(true);
+
+                        if pipe_ptr != 0 {
+                            let fds_to_copy = [rd as i32, wr as i32];
+                            let raw_bytes: [u8; 8] = core::mem::transmute(fds_to_copy);
+                            if copy_to_user(pipe_ptr, &raw_bytes).is_err() {
+                                t.fds[rd] = FileDescriptor::new();
+                                t.fds[wr] = FileDescriptor::new();
+                                return errno_to_ret(EFAULT);
+                            }
+                            return 0;
+                        } else {
+                            return (rd as u64) | ((wr as u64) << 32);
+                        }
+                    }
+                }
             }
+            errno_to_ret(EMFILE)
         }
         // Syscall 24: socket
         24 => unsafe {

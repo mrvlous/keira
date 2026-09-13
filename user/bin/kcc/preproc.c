@@ -31,6 +31,7 @@ void init_preprocessor(void) {
     k_memset((char *)macro_table, 0, sizeof(macro_table));
 
     define_macro("__KEIRA__", "1");
+    define_macro("__KCC__", "1");
 #if defined(__i386__) || defined(__i686__)
     define_macro("__i386__", "1");
 #else
