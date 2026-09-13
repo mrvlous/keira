@@ -30,7 +30,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_WRITE` | Ring 3 syscall security and fault-injection verification harness |
 
 ---
 
@@ -120,6 +120,15 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [OK]   VMM demand paging operational
   [TEST] Out-of-bounds syscall safety check...
   [OK]   Undefined syscall safely handled without kernel fault
+  [TEST] Buffered standard I/O stream operations...
+  [INFO] Read stream line: "keira"
+  [INFO] Stream seek & single-byte cache hit verified
+  [OK]   Buffered standard I/O operational
+  [TEST] Dual-tier memory allocator (heap & mmap tiers)...
+  [INFO] Heap tier forward coalescing validated
+  [INFO] Mmap tier 256 KiB allocation validated
+  [INFO] Mmap tier deallocation validated
+  [OK]   Dual-tier memory allocator operational
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

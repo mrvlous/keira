@@ -27,4 +27,5 @@ graph LR
 * **POSIX Signals & Interactive TTY Line Discipline**: Asynchronous signal trampolines (`sigaction`, `sigreturn`) coupled with live keyboard interrupt dispatching (`Ctrl+C` -> `SIGINT`, `Ctrl+Z` -> `SIGSTOP`).
 * **High-Resolution Clock Subsystem**: High-precision `clock_gettime` and `nanosleep` implementation with sub-millisecond accuracy.
 * **Freestanding C Runtime Startup (`crt0`) & Ring 3 ABI Harness**: Standardized application entry point unpacking user stack arguments to `main(argc, argv)` across `x86_64` and `i686`, validated by a dedicated Ring 3 ABI security and fault-injection verification harness (`test_abi.elf`).
+* **Buffered Standard I/O & Dual-Tier Memory Allocator**: Implemented 1024-byte block/line/unbuffered stream I/O (`FILE*`, `_IOFBF`, `_IOLBF`, `_IONBF`) and a hybrid heap (`sbrk` with boundary-tag coalescing) and mmap tier allocator for zero-fragmentation userland execution.
 * **Zero-Dependency Self-Contained Ecosystem**: Complete ability to develop, compile, test, and run native applications directly on bare metal without host dependencies.

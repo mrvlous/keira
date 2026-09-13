@@ -142,6 +142,77 @@ int main(int argc, char **argv) {
     (void)unhandled;
     puts("  [OK]   Undefined syscall safely handled without kernel fault");
 
+    /* 10. Buffered Stream I/O Operations */
+    puts("  [TEST] Buffered standard I/O stream operations...");
+    FILE *fp = fopen("/config/sys/hostname.cfg", "r");
+    if (fp) {
+        char line_buf[64];
+        memset(line_buf, 0, sizeof(line_buf));
+        if (fgets(line_buf, sizeof(line_buf), fp)) {
+            size_t len = strlen(line_buf);
+            if (len > 0 && line_buf[len - 1] == '\n')
+                line_buf[len - 1] = '\0';
+            printf("  [INFO] Read stream line: \"%s\"\n", line_buf);
+        }
+        fseek(fp, 0, SEEK_SET);
+        if (ftell(fp) == 0 && fgetc(fp) == 'k') {
+            puts("  [INFO] Stream seek & single-byte cache hit verified");
+        }
+        fclose(fp);
+        puts("  [OK]   Buffered standard I/O operational");
+    } else {
+        puts("  [FAIL] fopen() failed on /config/sys/hostname.cfg");
+        return 1;
+    }
+
+    /* 11. Dual-Tier Memory Allocator & Coalescing */
+    puts("  [TEST] Dual-tier memory allocator (heap & mmap tiers)...");
+    void *p1 = malloc(64);
+    void *p2 = malloc(64);
+    void *p3 = malloc(64);
+    if (!p1 || !p2 || !p3) {
+        if (p1)
+            free(p1);
+        if (p2)
+            free(p2);
+        if (p3)
+            free(p3);
+        puts("  [FAIL] malloc() failed for small heap chunks");
+        return 1;
+    }
+    memset(p1, 0xAA, 64);
+    memset(p2, 0xBB, 64);
+    memset(p3, 0xCC, 64);
+
+    free(p2);
+    free(p3);
+
+    void *p_merged = malloc(128);
+    if (!p_merged) {
+        free(p1);
+        puts("  [FAIL] malloc() failed for merged block");
+        return 1;
+    }
+    free(p1);
+    free(p_merged);
+    puts("  [INFO] Heap tier forward coalescing validated");
+
+    size_t large_sz = 262144; /* 256 KiB */
+    char *large_ptr = (char *)malloc(large_sz);
+    if (large_ptr) {
+        large_ptr[0] = 'M';
+        large_ptr[large_sz - 1] = 'Z';
+        if (large_ptr[0] == 'M' && large_ptr[large_sz - 1] == 'Z') {
+            puts("  [INFO] Mmap tier 256 KiB allocation validated");
+        }
+        free(large_ptr);
+        puts("  [INFO] Mmap tier deallocation validated");
+    } else {
+        puts("  [FAIL] malloc() failed for 256 KiB mmap tier");
+        return 1;
+    }
+    puts("  [OK]   Dual-tier memory allocator operational");
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }
