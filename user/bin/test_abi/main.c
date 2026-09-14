@@ -10,12 +10,14 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
 int main(int argc, char **argv) {
@@ -489,6 +491,91 @@ int main(int argc, char **argv) {
     close(tty_fd);
     puts("  [INFO] /system/dev/tty write and non-blocking read queue drain verified");
     puts("  [OK]   Character device /system/dev/tty stream operational");
+
+    /* 22. TTY Line Discipline & Termios Mode Switching */
+    puts("  [TEST] TTY line discipline and termios mode switching...");
+    int tty_term_fd = open("/system/dev/tty", O_RDWR, 0);
+    if (tty_term_fd < 0) {
+        puts("  [FAIL] open(/system/dev/tty) for termios failed");
+        return 1;
+    }
+    struct termios orig_term;
+    if (tcgetattr(tty_term_fd, &orig_term) != 0) {
+        puts("  [FAIL] tcgetattr failed");
+        close(tty_term_fd);
+        return 1;
+    }
+    if ((orig_term.c_lflag & ICANON) == 0) {
+        puts("  [FAIL] Default termios should have ICANON enabled");
+        close(tty_term_fd);
+        return 1;
+    }
+    /* Switch to raw mode (~ICANON) and write back */
+    struct termios raw_term = orig_term;
+    raw_term.c_lflag &= ~ICANON;
+    if (tcsetattr(tty_term_fd, TCSANOW, &raw_term) != 0) {
+        puts("  [FAIL] tcsetattr to raw mode failed");
+        close(tty_term_fd);
+        return 1;
+    }
+    struct termios verify_term;
+    if (tcgetattr(tty_term_fd, &verify_term) != 0) {
+        puts("  [FAIL] tcgetattr verify failed");
+        close(tty_term_fd);
+        return 1;
+    }
+    if ((verify_term.c_lflag & ICANON) != 0) {
+        puts("  [FAIL] Termios TCSETS failed to persist raw mode");
+        close(tty_term_fd);
+        return 1;
+    }
+    /* Restore canonical mode */
+    tcsetattr(tty_term_fd, TCSANOW, &orig_term);
+    close(tty_term_fd);
+    puts("  [INFO] Termios TCGETS and TCSETS attribute persistence verified");
+    puts("  [OK]   TTY line discipline and termios mode switching operational");
+
+    /* 23. POSIX Signal Masking & Pending Signal Queue */
+    puts("  [TEST] POSIX signal masking (sigprocmask/sigpending)...");
+    sigset_t mask_set;
+    sigemptyset(&mask_set);
+    sigaddset(&mask_set, SIGUSR1);
+    if (!sigismember(&mask_set, SIGUSR1)) {
+        puts("  [FAIL] sigaddset/sigismember mismatch");
+        return 1;
+    }
+    sigset_t old_mask = 0;
+    if (sigprocmask(SIG_BLOCK, &mask_set, &old_mask) != 0) {
+        puts("  [FAIL] sigprocmask(SIG_BLOCK) failed");
+        return 1;
+    }
+    /* Send SIGUSR1 to self while masked */
+    if (kill(getpid(), SIGUSR1) != 0) {
+        puts("  [FAIL] kill failed to queue masked signal");
+        return 1;
+    }
+    /* Verify signal is pending */
+    sigset_t pending_set = 0;
+    if (sigpending(&pending_set) != 0) {
+        puts("  [FAIL] sigpending query failed");
+        return 1;
+    }
+    if (!sigismember(&pending_set, SIGUSR1)) {
+        puts("  [FAIL] Masked SIGUSR1 was not recorded in pending signal queue");
+        return 1;
+    }
+    /* Unblock signal -> pending signal should be dispatched and cleared */
+    if (sigprocmask(SIG_UNBLOCK, &mask_set, NULL) != 0) {
+        puts("  [FAIL] sigprocmask(SIG_UNBLOCK) failed");
+        return 1;
+    }
+    sigpending(&pending_set);
+    if (sigismember(&pending_set, SIGUSR1)) {
+        puts("  [FAIL] Unblocked signal was not cleared from pending queue");
+        return 1;
+    }
+    puts("  [INFO] Masked signal blocked, queued, and delivered on unblock");
+    puts("  [OK]   POSIX signal masking and pending queue operational");
 
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;

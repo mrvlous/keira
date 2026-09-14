@@ -42,8 +42,14 @@ sequenceDiagram
 
 ```rust
 /// Push raw keyboard character into TTY line discipline.
-pub unsafe fn push_char(c: u8);
+pub fn push_char(c: u8);
 
-/// Read cooked characters from the canonical line buffer.
-pub unsafe fn read_line(buf: &mut [u8]) -> usize;
+/// Read cooked characters from the canonical or raw queue.
+pub fn read_tty(buf: &mut [u8]) -> usize;
+
+/// Retrieve active termios configuration.
+pub fn get_termios() -> Termios;
+
+/// Apply new termios configuration.
+pub fn set_termios(t: &Termios);
 ```

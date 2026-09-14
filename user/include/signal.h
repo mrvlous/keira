@@ -34,13 +34,25 @@
 
 typedef int sig_atomic_t;
 typedef void (*sighandler_t)(int);
+typedef uint32_t sigset_t;
 
 #define SIG_DFL ((sighandler_t)0)
 #define SIG_IGN ((sighandler_t)1)
 #define SIG_ERR ((sighandler_t) - 1)
 
+#define SIG_BLOCK 0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
+
 sighandler_t signal(int signum, sighandler_t handler);
 int raise(int sig);
 int kill(pid_t pid, int sig);
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+int sigpending(sigset_t *set);
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signum);
+int sigdelset(sigset_t *set, int signum);
+int sigismember(const sigset_t *set, int signum);
 
 #endif /* _SIGNAL_H */

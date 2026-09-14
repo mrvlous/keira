@@ -1,51 +1,41 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Terminal Control & Line Discipline (`<termios.h>`)
+# Terminal Control Interface (`<termios.h>`)
 
-The `<termios.h>` header provides functions and structures for configuring terminal line discipline, switching between canonical and raw input modes, and adjusting terminal attributes.
-
----
-
-## 1. Structure Definition
-
-```c
-struct termios {
-    tcflag_t c_iflag;    /* Input modes */
-    tcflag_t c_oflag;    /* Output modes */
-    tcflag_t c_cflag;    /* Control modes */
-    tcflag_t c_lflag;    /* Local modes */
-    cc_t c_line;         /* Line discipline */
-    cc_t c_cc[NCCS];     /* Special control characters */
-    speed_t c_ispeed;    /* Input baud rate */
-    speed_t c_ospeed;    /* Output baud rate */
-};
-```
+The `<termios.h>` header provides terminal I/O interfaces, line discipline modes, and attribute querying/configuration functions in Ring 3 userland.
 
 ---
 
-## 2. Terminal Mode Constants
+## 1. Terminal Attribute Modes
 
-| Constant | Description |
-| :--- | :--- |
-| `ICANON` | Canonical input mode (line-buffered with editing) |
-| `ECHO` | Echo input characters |
-| `ISIG` | Enable signals (`Ctrl+C` -> `SIGINT`, `Ctrl+\` -> `SIGQUIT`) |
-| `TCSANOW` | Apply terminal attribute changes immediately |
-| `TCSADRAIN` | Apply changes after all queued output has been transmitted |
-| `TCSAFLUSH` | Apply changes after draining output and discarding unread input |
+### Local Modes (`c_lflag`)
+| Flag | Value | Description |
+| :--- | :--- | :--- |
+| `ICANON` | `0000002` | Canonical mode (line-buffered with backspace editing) |
+| `ECHO` | `0000010` | Automatic echo of typed characters to terminal screen |
+| `ECHOE` | `0000020` | Visual erase character on backspace |
+| `ECHOK` | `0000040` | Kill character erases current line |
+| `ISIG` | `0000001` | Enable asynchronous signal keys (`Ctrl+C` -> `SIGINT`) |
+
+### Terminal Control Actions (`optional_actions`)
+| Action | Value | Description |
+| :--- | :--- | :--- |
+| `TCSANOW` | `0` | Apply terminal attributes immediately |
+| `TCSADRAIN` | `1` | Apply terminal attributes after pending output drains |
+| `TCSAFLUSH` | `2` | Apply attributes after discarding unread input |
 
 ---
 
-## 3. Function Reference
+## 2. Function Reference
 
 ### `tcgetattr`
 ```c
 int tcgetattr(int fd, struct termios *termios_p);
 ```
-Queries current terminal parameters associated with file descriptor `fd` and stores them in `termios_p`.
+Queries current terminal parameters from descriptor `fd` via `SYS_IOCTL` (`TCGETS`). Returns `0` on success, or `-1` on error with `errno` set.
 
 ### `tcsetattr`
 ```c
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p);
 ```
-Configures terminal attributes according to `termios_p` using the specified action (`TCSANOW`, `TCSADRAIN`, `TCSAFLUSH`).
+Configures terminal parameters on descriptor `fd` via `SYS_IOCTL` (`TCSETS`). Switches terminal between canonical line-buffered mode and raw character mode. Returns `0` on success, or `-1` on error.

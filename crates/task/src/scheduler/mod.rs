@@ -62,6 +62,8 @@ pub unsafe fn init() {
         euid: 0,
         egid: 0,
         saved_sigcontext: None,
+        signal_mask: 0,
+        pending_signals: 0,
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;
@@ -138,6 +140,8 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         euid: 0,
         egid: 0,
         saved_sigcontext: None,
+        signal_mask: 0,
+        pending_signals: 0,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -225,6 +229,8 @@ pub unsafe fn spawn_user(
         euid: 0,
         egid: 0,
         saved_sigcontext: None,
+        signal_mask: 0,
+        pending_signals: 0,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -316,6 +322,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             euid: parent.euid,
             egid: parent.egid,
             saved_sigcontext: None,
+            signal_mask: parent.signal_mask,
+            pending_signals: 0,
         };
 
         TASKS[slot_idx] = Some(child_task);
@@ -535,6 +543,12 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
         return Err("Target PID out of scheduler table range");
     }
     if let Some(ref mut task) = TASKS[pid] {
+        let is_unblockable = sig == 9 || sig == 19;
+        if !is_unblockable && (task.signal_mask & (1 << sig)) != 0 {
+            task.pending_signals |= 1 << sig;
+            return Ok(());
+        }
+
         let handler = super::signal::get_signal_handler(pid, sig);
         if handler != 0 {
             if task.saved_sigcontext.is_none() {
@@ -568,7 +582,7 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
                 task.state = TaskState::Blocked;
                 Ok(())
             }
-            _ => Err("Unsupported or invalid POSIX signal number"),
+            _ => Ok(()),
         }
     } else {
         Err("Process with specified PID does not exist")
@@ -736,5 +750,66 @@ pub unsafe fn take_saved_sigcontext() -> Option<InterruptContext> {
         task.saved_sigcontext.take()
     } else {
         None
+    }
+}
+
+pub const SIG_BLOCK: i32 = 0;
+pub const SIG_UNBLOCK: i32 = 1;
+pub const SIG_SETMASK: i32 = 2;
+
+/// Get current process signal mask.
+pub unsafe fn get_current_signal_mask() -> u32 {
+    if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+        t.signal_mask
+    } else {
+        0
+    }
+}
+
+/// Get current process pending signals bitmask.
+pub unsafe fn get_current_pending_signals() -> u32 {
+    if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+        t.pending_signals
+    } else {
+        0
+    }
+}
+
+/// Modify or inspect process signal mask (Syscall 81: sys_sigprocmask).
+pub unsafe fn sys_sigprocmask(how: i32, set: u32, old_set: *mut u32) -> Result<u32, &'static str> {
+    if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
+        if !old_set.is_null() {
+            *old_set = task.signal_mask;
+        }
+
+        let unblockable = (1 << 9) | (1 << 19);
+        let clean_set = set & !unblockable;
+
+        match how {
+            SIG_BLOCK => {
+                task.signal_mask |= clean_set;
+            }
+            SIG_UNBLOCK => {
+                task.signal_mask &= !clean_set;
+            }
+            SIG_SETMASK => {
+                task.signal_mask = clean_set;
+            }
+            _ => return Err("Invalid how parameter for sigprocmask"),
+        }
+
+        let unmasked_pending = task.pending_signals & !task.signal_mask;
+        if unmasked_pending != 0 {
+            for s in 1..32 {
+                if (unmasked_pending & (1 << s)) != 0 {
+                    task.pending_signals &= !(1 << s);
+                    let _ = send_signal(CURRENT_TASK_IDX, s);
+                    break;
+                }
+            }
+        }
+        Ok(0)
+    } else {
+        Err("Current task invalid")
     }
 }

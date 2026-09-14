@@ -230,3 +230,20 @@ void sys_sleep(uint32_t ms) {
 time_t sys_uptime(void) {
     return (time_t)syscall0(SYS_UPTIME);
 }
+
+int sys_kill(pid_t pid, int sig) {
+    return (int)syscall2(SYS_KILL, (uint64_t)pid, (uint64_t)sig);
+}
+
+int sys_sigprocmask(int how, const void *set, void *oldset) {
+    return (int)syscall3(SYS_SIGPROCMASK, (uint64_t)how, (uint64_t)(uintptr_t)set,
+                         (uint64_t)(uintptr_t)oldset);
+}
+
+int sys_sigpending(void *set) {
+    return (int)syscall1(SYS_SIGPENDING, (uint64_t)(uintptr_t)set);
+}
+
+int sys_ioctl(int fd, unsigned long request, void *argp) {
+    return (int)syscall3(SYS_IOCTL, (uint64_t)fd, (uint64_t)request, (uint64_t)(uintptr_t)argp);
+}

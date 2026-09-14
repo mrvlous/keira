@@ -23,10 +23,11 @@ pub use cgroups::{
 };
 pub use scheduler::{
     exit_current, fork_current_task, get_current_egid, get_current_euid, get_current_gid,
-    get_current_uid, init as scheduler_init, list_tasks, schedule_tick, send_signal,
-    set_current_gid, set_current_uid, set_saved_sigcontext, spawn, spawn_user, stop_task,
-    sys_waitpid, take_saved_sigcontext, wait_for_task, CURRENT_TASK_IDX, MAX_TASKS,
-    SCHEDULER_INITIALIZED, TASKS,
+    get_current_pending_signals, get_current_signal_mask, get_current_uid, init as scheduler_init,
+    list_tasks, schedule_tick, send_signal, set_current_gid, set_current_uid, set_saved_sigcontext,
+    spawn, spawn_user, stop_task, sys_sigprocmask, sys_waitpid, take_saved_sigcontext,
+    wait_for_task, CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_INITIALIZED, SIG_BLOCK, SIG_SETMASK,
+    SIG_UNBLOCK, TASKS,
 };
 pub use security as seccomp;
 pub use security::{
@@ -190,6 +191,33 @@ mod tests {
             assert_eq!(rip, 0x40001000);
             assert_eq!(rax, 42);
             assert!(take_saved_sigcontext().is_none());
+        }
+    }
+
+    #[test]
+    fn test_signal_masking_and_pending_signals() {
+        unsafe {
+            scheduler_init();
+
+            assert_eq!(get_current_signal_mask(), 0);
+            assert_eq!(get_current_pending_signals(), 0);
+
+            let set = 1 << 10;
+            let mut old_set = 0u32;
+            assert!(sys_sigprocmask(SIG_BLOCK, set, &mut old_set).is_ok());
+            assert_eq!(old_set, 0);
+            assert_eq!(get_current_signal_mask(), 1 << 10);
+
+            let mut kill_old = 0u32;
+            assert!(sys_sigprocmask(SIG_BLOCK, 1 << 9, &mut kill_old).is_ok());
+            assert_eq!(get_current_signal_mask() & (1 << 9), 0);
+
+            assert!(send_signal(0, 10).is_ok());
+            assert_ne!(get_current_pending_signals() & (1 << 10), 0);
+
+            assert!(sys_sigprocmask(SIG_UNBLOCK, 1 << 10, core::ptr::null_mut()).is_ok());
+            assert_eq!(get_current_signal_mask() & (1 << 10), 0);
+            assert_eq!(get_current_pending_signals() & (1 << 10), 0);
         }
     }
 }

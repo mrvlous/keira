@@ -37,3 +37,14 @@ Before resuming a task from an interrupt or system call return path, the kernel 
 1. Kernel sets up a signal frame on the userland stack.
 2. Changes the return `RIP`/`EIP` to the registered signal handler address.
 3. Upon handler completion, userland executes `sys_sigreturn()` to restore original execution context.
+
+---
+
+## Signal Masking & Pending Queues (`sigprocmask`, `sigpending`)
+
+Processes can dynamically block and unblock signals using `sigprocmask()` (vector 81):
+- `SIG_BLOCK` (`0`): Adds the specified signal set to the task's active `signal_mask`.
+- `SIG_UNBLOCK` (`1`): Removes the specified signals from `signal_mask` and immediately delivers any queued pending signals.
+- `SIG_SETMASK` (`2`): Replaces `signal_mask` with the given set.
+
+Signals generated while masked are recorded in `Task::pending_signals` (queriable via `sigpending()`). `SIGKILL` (`9`) and `SIGSTOP` (`19`) can never be masked or ignored.

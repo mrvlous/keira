@@ -87,3 +87,5 @@ This document specifies the complete system call vector table supported by Keira
 | `78` | `SYS_BPF` | `uint32_t cmd, uint64_t uattr, uint32_t size` | In-kernel extended Berkeley Packet Filter |
 | `79` | `SYS_TPM2` | `uint32_t op, uint64_t arg1, uint64_t arg2` | TPM 2.0 cryptographic enclave interface |
 | `80` | `SYS_PCI_BRIDGE` | `uint32_t bus, uint32_t dev, uint32_t func` | Direct PCI host bridge configuration |
+| `81` | `SYS_SIGPROCMASK` | `int how, const sigset_t *set, sigset_t *oldset` | Examine and change blocked signals mask |
+| `82` | `SYS_SIGPENDING` | `sigset_t *set` | Query currently pending blocked signals mask |

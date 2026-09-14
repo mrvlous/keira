@@ -56,6 +56,8 @@
 #define SYS_SETGID 69
 #define SYS_FCNTL 72
 #define SYS_IOCTL 73
+#define SYS_SIGPROCMASK 81
+#define SYS_SIGPENDING 82
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -89,5 +91,9 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 int sys_munmap(void *addr, size_t length);
 void sys_sleep(uint32_t ms);
 time_t sys_uptime(void);
+int sys_kill(pid_t pid, int sig);
+int sys_sigprocmask(int how, const void *set, void *oldset);
+int sys_sigpending(void *set);
+int sys_ioctl(int fd, unsigned long request, void *argp);
 
 #endif /* _SYS_SYSCALL_H */

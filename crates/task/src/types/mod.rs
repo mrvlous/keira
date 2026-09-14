@@ -111,6 +111,8 @@ pub struct Task {
     pub euid: u32,
     pub egid: u32,
     pub saved_sigcontext: Option<InterruptContext>,
+    pub signal_mask: u32,
+    pub pending_signals: u32,
 }
 
 /// Pushed CPU register context during interrupt or system call transitions.

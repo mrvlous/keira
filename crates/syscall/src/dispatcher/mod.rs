@@ -1153,42 +1153,38 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 }
                 // TCGETS (0x5401)
                 0x5401 => {
-                    #[repr(C)]
-                    struct Termios {
-                        c_iflag: u32,
-                        c_oflag: u32,
-                        c_cflag: u32,
-                        c_lflag: u32,
-                        c_line: u8,
-                        c_cc: [u8; 32],
-                        c_ispeed: u32,
-                        c_ospeed: u32,
-                    }
-                    let mut term = Termios {
-                        c_iflag: 0x0500, // ICRNL | IXON
-                        c_oflag: 0x0005, // OPOST | ONLCR
-                        c_cflag: 0x00BF, // CS8 | CREAD | B38400
-                        c_lflag: 0x8A3B, // ISIG | ICANON | ECHO | ECHOE | ECHOK
-                        c_line: 0,
-                        c_cc: [0u8; 32],
-                        c_ispeed: 38400,
-                        c_ospeed: 38400,
-                    };
-                    term.c_cc[0] = 3; // VINTR (^C)
-                    term.c_cc[1] = 28; // VQUIT (^\)
-                    term.c_cc[2] = 127; // VERASE (DEL/BS)
-                    term.c_cc[3] = 4; // VEOF (^D)
+                    let term = keira_io::tty::get_termios();
                     unsafe {
                         core::ptr::copy_nonoverlapping(
                             &term as *const _ as *const u8,
                             argp,
-                            core::mem::size_of::<Termios>(),
+                            core::mem::size_of::<keira_io::tty::Termios>(),
                         );
                     }
                     0
                 }
                 // TCSETS (0x5402), TCSETSW (0x5403), TCSETSF (0x5404)
-                0x5402 | 0x5403 | 0x5404 => 0,
+                0x5402 | 0x5403 | 0x5404 => {
+                    let mut term = keira_io::tty::Termios {
+                        c_iflag: 0,
+                        c_oflag: 0,
+                        c_cflag: 0,
+                        c_lflag: 0,
+                        c_line: 0,
+                        c_cc: [0u8; 32],
+                        c_ispeed: 0,
+                        c_ospeed: 0,
+                    };
+                    unsafe {
+                        core::ptr::copy_nonoverlapping(
+                            argp,
+                            &mut term as *mut _ as *mut u8,
+                            core::mem::size_of::<keira_io::tty::Termios>(),
+                        );
+                    }
+                    keira_io::tty::set_termios(&term);
+                    0
+                }
                 _ => errno_to_ret(EINVAL),
             }
         }
@@ -1351,6 +1347,71 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         80 => unsafe {
             keira_io::bus::pci::pci_read_config_u32(arg1 as u8, arg2 as u8, arg3 as u8, 0) as u64
         },
+        // Syscall 81: sys_sigprocmask
+        81 => {
+            let how = arg1 as i32;
+            let set_ptr = arg2 as *const u32;
+            let old_set_ptr = arg3 as *mut u32;
+            let mut set_val = 0u32;
+            if !set_ptr.is_null() {
+                let set_slice = unsafe {
+                    core::slice::from_raw_parts_mut(
+                        &mut set_val as *mut u32 as *mut u8,
+                        core::mem::size_of::<u32>(),
+                    )
+                };
+                if unsafe { copy_from_user(set_slice, arg2) }.is_err() {
+                    return errno_to_ret(EFAULT);
+                }
+            }
+            let mut old_set_val = 0u32;
+            let res = unsafe {
+                keira_task::scheduler::sys_sigprocmask(
+                    how,
+                    set_val,
+                    if old_set_ptr.is_null() {
+                        core::ptr::null_mut()
+                    } else {
+                        &mut old_set_val
+                    },
+                )
+            };
+            match res {
+                Ok(_) => {
+                    if !old_set_ptr.is_null() {
+                        let old_slice = unsafe {
+                            core::slice::from_raw_parts(
+                                &old_set_val as *const u32 as *const u8,
+                                core::mem::size_of::<u32>(),
+                            )
+                        };
+                        if unsafe { copy_to_user(arg3, old_slice) }.is_err() {
+                            return errno_to_ret(EFAULT);
+                        }
+                    }
+                    0
+                }
+                Err(_) => errno_to_ret(EINVAL),
+            }
+        }
+        // Syscall 82: sys_sigpending
+        82 => {
+            let set_ptr = arg1 as *mut u32;
+            if set_ptr.is_null() {
+                return errno_to_ret(EFAULT);
+            }
+            let pending = unsafe { keira_task::scheduler::get_current_pending_signals() };
+            let pending_slice = unsafe {
+                core::slice::from_raw_parts(
+                    &pending as *const u32 as *const u8,
+                    core::mem::size_of::<u32>(),
+                )
+            };
+            if unsafe { copy_to_user(arg1, pending_slice) }.is_err() {
+                return errno_to_ret(EFAULT);
+            }
+            0
+        }
         _ => errno_to_ret(ENOSYS),
     }
 }

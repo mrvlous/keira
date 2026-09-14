@@ -32,16 +32,21 @@ pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'
             Ok(buf.len())
         }
         "tty" => {
-            let mut read_bytes = 0;
-            while read_bytes < buf.len() {
-                if let Some(c) = keira_io::ps2::pop_input_char() {
-                    buf[read_bytes] = c;
-                    read_bytes += 1;
-                } else {
-                    break;
+            let n = keira_io::tty::read_tty(buf);
+            if n > 0 {
+                Ok(n)
+            } else {
+                let mut read_bytes = 0;
+                while read_bytes < buf.len() {
+                    if let Some(c) = keira_io::ps2::pop_input_char() {
+                        buf[read_bytes] = c;
+                        read_bytes += 1;
+                    } else {
+                        break;
+                    }
                 }
+                Ok(read_bytes)
             }
-            Ok(read_bytes)
         }
         _ => Err("Unknown device node"),
     }

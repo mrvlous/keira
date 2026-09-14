@@ -111,19 +111,19 @@ pub extern "C" fn keyboard_handler() {
 
                 if c != 0 {
                     push_input_char(c);
-                    if CTRL_PRESSED.load(Ordering::Relaxed) {
+                    let input_ch = if CTRL_PRESSED.load(Ordering::Relaxed) {
                         if c >= b'a' && c <= b'z' {
-                            shell_handle_keypress(c - b'a' + 1);
-                            pic::send_eoi(1);
-                            return;
+                            c - b'a' + 1
+                        } else if c >= b'A' && c <= b'Z' {
+                            c - b'A' + 1
+                        } else {
+                            c
                         }
-                        if c >= b'A' && c <= b'Z' {
-                            shell_handle_keypress(c - b'A' + 1);
-                            pic::send_eoi(1);
-                            return;
-                        }
-                    }
-                    shell_handle_keypress(c);
+                    } else {
+                        c
+                    };
+                    crate::tty::push_char(input_ch);
+                    shell_handle_keypress(input_ch);
                 }
             }
         }
