@@ -45,7 +45,9 @@ pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);
 uid_t geteuid(void);
+int setuid(uid_t uid);
 gid_t getgid(void);
+int setgid(gid_t gid);
 
 pid_t fork(void);
 int execve(const char *pathname, char *const argv[], char *const envp[]);

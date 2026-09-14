@@ -12,5 +12,7 @@
 pub mod keyboard;
 pub mod mouse;
 
-pub use keyboard::{init as keyboard_init, keyboard_handler};
+pub use keyboard::{
+    init as keyboard_init, input_queue_len, keyboard_handler, pop_input_char, push_input_char,
+};
 pub use mouse::{init as mouse_init, mouse_handler, set_resolution as mouse_set_resolution};

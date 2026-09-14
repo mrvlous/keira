@@ -12,10 +12,22 @@ This document details asynchronous signal dispatching, signal masks, and backgro
 | :--- | :--- | :--- | :--- |
 | `1` | `SIGHUP` | Terminate Process | Yes |
 | `2` | `SIGINT` | Terminate Process (Ctrl+C) | Yes |
+| `3` | `SIGQUIT` | Terminate Process (Core Dump) | Yes |
+| `4` | `SIGILL` | Terminate Process (Illegal Instruction) | Yes |
+| `5` | `SIGTRAP` | Trace / Breakpoint Trap | Yes |
+| `6` | `SIGABRT` | Abort Signal | Yes |
+| `7` | `SIGBUS` | Bus Error (Alignment) | Yes |
+| `8` | `SIGFPE` | Floating Point Exception | Yes |
 | `9` | `SIGKILL` | Unconditional Immediate Termination | No |
+| `10` | `SIGUSR1` | User-Defined Signal 1 | Yes |
+| `11` | `SIGSEGV` | Segmentation Violation | Yes |
+| `12` | `SIGUSR2` | User-Defined Signal 2 | Yes |
+| `13` | `SIGPIPE` | Broken Pipe Write | Yes |
+| `14` | `SIGALRM` | Real-Time Timer Alarm | Yes |
 | `15` | `SIGTERM` | Graceful Termination Request | Yes |
-| `19` | `SIGSTOP` | Unconditional Process Suspension | No |
+| `17` | `SIGCHLD` | Child Process State Changed | Yes |
 | `18` | `SIGCONT` | Resume Suspended Process | Yes |
+| `19` | `SIGSTOP` | Unconditional Process Suspension | No |
 
 ---
 

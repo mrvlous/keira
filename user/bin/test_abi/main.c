@@ -397,6 +397,99 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    /* 19. Process Credentials & Privilege Demotion (getuid/setuid) */
+    puts("  [TEST] Process credentials and privilege demotion (getuid/setuid)...");
+    uid_t initial_uid = getuid();
+    if (initial_uid != 0) {
+        printf("  [FAIL] Expected initial UID 0, got %d\n", (int)initial_uid);
+        return 1;
+    }
+    /* Demote to unprivileged UID 1000 */
+    if (setuid(1000) != 0) {
+        puts("  [FAIL] setuid(1000) failed for root caller");
+        return 1;
+    }
+    if (getuid() != 1000) {
+        printf("  [FAIL] Expected demoted UID 1000, got %d\n", (int)getuid());
+        return 1;
+    }
+    /* Attempt unauthorized privilege escalation back to root (UID 0) */
+    if (setuid(0) == 0) {
+        puts("  [FAIL] Unauthorized privilege escalation allowed (security breach)!");
+        return 1;
+    }
+    if (errno != EPERM) {
+        printf("  [FAIL] Expected EPERM (1), got errno %d\n", errno);
+        return 1;
+    }
+    puts("  [INFO] Successfully demoted to UID 1000 and blocked escalation to UID 0 (EPERM)");
+    puts("  [OK]   Process credentials and privilege demotion operational");
+
+    /* 20. POSIX Signal Context Delivery & Sigreturn */
+    puts("  [TEST] POSIX signal context registration and sigreturn verification...");
+    /* Test sigreturn when no signal context is saved -> must return EINVAL (-22) */
+    int64_t invalid_sigret = syscall0(SYS_SIGRETURN);
+    if (invalid_sigret != -EINVAL) {
+        printf("  [FAIL] sys_sigreturn without saved context should fail with -EINVAL, got %ld\n",
+               (long)invalid_sigret);
+        return 1;
+    }
+    /* Register custom handler for SIGUSR1 via SYS_SIGACTION */
+    uint64_t old_handler = 0;
+    int64_t act_ret = syscall3(SYS_SIGACTION, 10, (uint64_t)(uintptr_t)0x40001234,
+                               (uint64_t)(uintptr_t)&old_handler);
+    if (act_ret != 0) {
+        puts("  [FAIL] sys_sigaction failed to register signal handler");
+        return 1;
+    }
+    /* Send SIGUSR1 to self (PID) -> kernel recognizes handler, prepares context */
+    int64_t kill_ret = syscall2(SYS_KILL, (uint64_t)getpid(), 10);
+    if (kill_ret != 0) {
+        puts("  [FAIL] sys_kill failed to dispatch handled signal");
+        return 1;
+    }
+    /* Now sys_sigreturn must succeed and clear context */
+    int64_t valid_sigret = syscall0(SYS_SIGRETURN);
+    if (valid_sigret != 0) {
+        printf("  [FAIL] sys_sigreturn with saved context failed: %ld\n", (long)valid_sigret);
+        return 1;
+    }
+    /* Subsequent sys_sigreturn should return -EINVAL because context was already consumed */
+    int64_t second_sigret = syscall0(SYS_SIGRETURN);
+    if (second_sigret != -EINVAL) {
+        puts("  [FAIL] Second sys_sigreturn should fail after context was consumed");
+        return 1;
+    }
+    puts("  [INFO] Signal handler registered, signal context saved, and restored via sigreturn");
+    puts("  [OK]   POSIX signal context delivery and sigreturn restorer operational");
+
+    /* 21. Character Device /system/dev/tty Stream */
+    puts("  [TEST] Character device /system/dev/tty stream read/write...");
+    int tty_fd = open("/system/dev/tty", O_RDWR, 0);
+    if (tty_fd < 0) {
+        puts("  [FAIL] open(/system/dev/tty) failed");
+        return 1;
+    }
+    /* Write to TTY */
+    const char *tty_msg = " [TTY_ECHO_OK]\n";
+    ssize_t written = write(tty_fd, tty_msg, strlen(tty_msg));
+    if (written != (ssize_t)strlen(tty_msg)) {
+        puts("  [FAIL] write to /system/dev/tty failed");
+        close(tty_fd);
+        return 1;
+    }
+    /* Read from TTY (non-blocking / draining queue) */
+    char tty_in[16];
+    ssize_t tty_read = read(tty_fd, tty_in, sizeof(tty_in));
+    if (tty_read < 0) {
+        puts("  [FAIL] read from /system/dev/tty returned error");
+        close(tty_fd);
+        return 1;
+    }
+    close(tty_fd);
+    puts("  [INFO] /system/dev/tty write and non-blocking read queue drain verified");
+    puts("  [OK]   Character device /system/dev/tty stream operational");
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }

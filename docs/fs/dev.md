@@ -11,6 +11,7 @@ This document specifies the virtual device node manager exposing hardware and vi
 | Node Path | Device Type | Operations Supported | Description |
 | :--- | :--- | :--- | :--- |
 | `/system/dev/console` | Character | Read / Write | Interactive text VGA console and COM1 serial |
+| `/system/dev/tty` | Character | Read / Write | Interactive terminal stream (PS/2 keyboard input & VGA text output) |
 | `/system/dev/null` | Character | Read (EOF) / Write (Sink) | Discards all writes; returns 0 bytes on read |
 | `/system/dev/zero` | Character | Read (Zeroes) / Write (Sink) | Streams infinite null bytes (`0x00`) |
 | `/system/dev/random` | Character | Read (Entropy) | Hardware random entropy stream |

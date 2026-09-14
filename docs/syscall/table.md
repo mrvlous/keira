@@ -74,6 +74,8 @@ This document specifies the complete system call vector table supported by Keira
 | `65` | `SYS_SIGRETURN` | - | Restore saved user register context after signal handler |
 | `66` | `SYS_CLOCK_GETTIME` | `clockid_t clk_id, struct timespec *tp` | Retrieve monotonic or real-time high-resolution clock |
 | `67` | `SYS_NANOSLEEP` | `const struct timespec *req, struct timespec *rem` | High-precision process sleep with sub-millisecond accuracy |
+| `68` | `SYS_GETGID` | - | Get current process group identifier |
+| `69` | `SYS_SETGID` | `gid_t gid` | Set current process group identifier |
 | `70` | `SYS_SYNC` | - | Flush dirty sector buffers to disk |
 | `71` | `SYS_FSYNC` | `int fd` | Synchronize file modified data and metadata |
 | `72` | `SYS_FCNTL` | `int fd, int cmd, ...` | File descriptor control, duplication, and flags |

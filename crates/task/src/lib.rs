@@ -22,9 +22,11 @@ pub use cgroups::{
     init as cgroups_init, set_cgroup_limits, translate_pid_to_namespace, Cgroup, MAX_CGROUPS,
 };
 pub use scheduler::{
-    exit_current, fork_current_task, init as scheduler_init, list_tasks, schedule_tick,
-    send_signal, spawn, spawn_user, stop_task, sys_waitpid, wait_for_task, CURRENT_TASK_IDX,
-    MAX_TASKS, SCHEDULER_INITIALIZED, TASKS,
+    exit_current, fork_current_task, get_current_egid, get_current_euid, get_current_gid,
+    get_current_uid, init as scheduler_init, list_tasks, schedule_tick, send_signal,
+    set_current_gid, set_current_uid, set_saved_sigcontext, spawn, spawn_user, stop_task,
+    sys_waitpid, take_saved_sigcontext, wait_for_task, CURRENT_TASK_IDX, MAX_TASKS,
+    SCHEDULER_INITIALIZED, TASKS,
 };
 pub use security as seccomp;
 pub use security::{
@@ -155,6 +157,39 @@ mod tests {
 
             // Delete custom cgroup
             delete_cgroup("test.slice").expect("Delete failed");
+        }
+    }
+
+    #[test]
+    fn test_task_credentials_and_sigcontext() {
+        unsafe {
+            scheduler_init();
+            assert_eq!(get_current_uid(), 0);
+            assert_eq!(get_current_euid(), 0);
+            assert_eq!(get_current_gid(), 0);
+            assert_eq!(get_current_egid(), 0);
+
+            // Privileged (root) changes to UID 1000
+            assert!(set_current_uid(1000).is_ok());
+            assert_eq!(get_current_uid(), 1000);
+            assert_eq!(get_current_euid(), 1000);
+
+            // Non-root cannot escalate back to 0
+            assert!(set_current_uid(0).is_err());
+            assert_eq!(get_current_uid(), 1000);
+
+            // Sigcontext save and take lifecycle
+            assert!(take_saved_sigcontext().is_none());
+            let mut ctx = InterruptContext::default();
+            ctx.rip = 0x40001000;
+            ctx.rax = 42;
+            set_saved_sigcontext(ctx);
+            let restored = take_saved_sigcontext().expect("Saved context should exist");
+            let rip = restored.rip;
+            let rax = restored.rax;
+            assert_eq!(rip, 0x40001000);
+            assert_eq!(rax, 42);
+            assert!(take_saved_sigcontext().is_none());
         }
     }
 }

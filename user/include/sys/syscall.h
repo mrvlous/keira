@@ -49,7 +49,11 @@
 #define SYS_SETUID 61
 #define SYS_WAITPID 62
 #define SYS_GETPPID 63
+#define SYS_SIGACTION 64
+#define SYS_SIGRETURN 65
 #define SYS_NANOSLEEP 67
+#define SYS_GETGID 68
+#define SYS_SETGID 69
 #define SYS_FCNTL 72
 #define SYS_IOCTL 73
 
@@ -75,6 +79,9 @@ ssize_t sys_getcwd(char *buf, size_t size);
 pid_t sys_getpid(void);
 pid_t sys_getppid(void);
 uid_t sys_getuid(void);
+int sys_setuid(uid_t uid);
+gid_t sys_getgid(void);
+int sys_setgid(gid_t gid);
 pid_t sys_fork(void);
 int sys_socket(int domain, int type, int protocol);
 int sys_connect(int sockfd, const void *addr, size_t addrlen);

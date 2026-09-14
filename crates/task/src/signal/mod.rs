@@ -141,7 +141,8 @@ pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
     Ok(0)
 }
 
-pub static mut SIGNAL_HANDLERS: [[u64; 32]; 16] = [[0; 32]; 16];
+pub const MAX_SIGNAL_TASKS: usize = 64;
+pub static mut SIGNAL_HANDLERS: [[u64; 32]; MAX_SIGNAL_TASKS] = [[0; 32]; MAX_SIGNAL_TASKS];
 
 /// Register a custom user signal handler for a signal (Syscall 64: sys_sigaction).
 pub unsafe fn sys_sigaction(
@@ -156,7 +157,7 @@ pub unsafe fn sys_sigaction(
     if sig == SIGKILL || sig == SIGSTOP {
         return Err("Cannot catch or ignore SIGKILL / SIGSTOP");
     }
-    let p_idx = pid.min(15);
+    let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
     if !old_handler.is_null() {
         *old_handler = SIGNAL_HANDLERS[p_idx][sig as usize];
     }
@@ -169,6 +170,6 @@ pub unsafe fn get_signal_handler(pid: usize, sig: u32) -> u64 {
     if sig == 0 || sig >= 32 {
         return 0;
     }
-    let p_idx = pid.min(15);
+    let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
     SIGNAL_HANDLERS[p_idx][sig as usize]
 }

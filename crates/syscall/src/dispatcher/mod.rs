@@ -19,7 +19,9 @@ use keira_io::vga;
 use keira_mem::pmm;
 use keira_mem::vmm;
 use keira_task::scheduler::{
-    fork_current_task, send_signal, spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX, TASKS,
+    fork_current_task, get_current_gid, get_current_uid, send_signal, set_current_gid,
+    set_current_uid, spawn_user, sys_waitpid, take_saved_sigcontext, wait_for_task,
+    CURRENT_TASK_IDX, TASKS,
 };
 use keira_task::types::{FileDescriptor, MAX_FDS};
 
@@ -952,9 +954,14 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
         }
         // Syscall 60: getuid
-        60 => 0,
+        60 => unsafe { get_current_uid() as u64 },
         // Syscall 61: setuid
-        61 => 0,
+        61 => unsafe {
+            match set_current_uid(arg1 as u32) {
+                Ok(()) => 0,
+                Err(_) => errno_to_ret(EPERM),
+            }
+        },
         // Syscall 62: waitpid (True POSIX process wait with zombie reaping and error classification)
         62 => unsafe {
             match sys_waitpid(arg1 as i64, arg2 as *mut i32, arg3 as u32) {
@@ -988,7 +995,13 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 .unwrap_or(errno_to_ret(EINVAL))
         },
         // Syscall 65: sys_sigreturn
-        65 => 0,
+        65 => unsafe {
+            if let Some(_ctx) = take_saved_sigcontext() {
+                0
+            } else {
+                errno_to_ret(EINVAL)
+            }
+        },
         // Syscall 66: sys_clock_gettime
         66 => {
             let _clock_id = arg1 as u32;
@@ -1031,6 +1044,15 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             0
         }
+        // Syscall 68: getgid
+        68 => unsafe { get_current_gid() as u64 },
+        // Syscall 69: setgid
+        69 => unsafe {
+            match set_current_gid(arg1 as u32) {
+                Ok(()) => 0,
+                Err(_) => errno_to_ret(EPERM),
+            }
+        },
         // Syscall 70: sync
         70 => {
             unsafe {

@@ -45,13 +45,17 @@ int close(int fd);
 ```
 Closes the open file descriptor `fd`.
 
-### `getpid` / `getppid` / `getuid`
+### `getpid` / `getppid` / `getuid` / `geteuid` / `setuid` / `getgid` / `setgid`
 ```c
 pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);
+uid_t geteuid(void);
+int setuid(uid_t uid);
+gid_t getgid(void);
+int setgid(gid_t gid);
 ```
-Retrieves the current process ID, parent process ID, and effective user ID.
+Retrieves process IDs and manages user/group credentials and privilege states. `setuid` and `setgid` enforce POSIX security invariants (unprivileged tasks cannot escalate to UID 0).
 
 ### `lseek`
 ```c

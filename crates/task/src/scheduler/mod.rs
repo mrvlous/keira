@@ -57,6 +57,11 @@ pub unsafe fn init() {
         pml4_phys: boot_pml4,
         exit_code: 0,
         is_user: false,
+        uid: 0,
+        gid: 0,
+        euid: 0,
+        egid: 0,
+        saved_sigcontext: None,
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;
@@ -128,6 +133,11 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         pml4_phys: parent_pml4,
         exit_code: 0,
         is_user: false,
+        uid: 0,
+        gid: 0,
+        euid: 0,
+        egid: 0,
+        saved_sigcontext: None,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -210,6 +220,11 @@ pub unsafe fn spawn_user(
         pml4_phys,
         exit_code: 0,
         is_user: true,
+        uid: 0,
+        gid: 0,
+        euid: 0,
+        egid: 0,
+        saved_sigcontext: None,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -296,6 +311,11 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             pml4_phys,
             exit_code: 0,
             is_user: parent.is_user,
+            uid: parent.uid,
+            gid: parent.gid,
+            euid: parent.euid,
+            egid: parent.egid,
+            saved_sigcontext: None,
         };
 
         TASKS[slot_idx] = Some(child_task);
@@ -514,13 +534,27 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
     if pid >= MAX_TASKS {
         return Err("Target PID out of scheduler table range");
     }
-    if pid == 0 {
-        return Err("Signal delivery to bootstrap kernel shell is restricted");
-    }
-
     if let Some(ref mut task) = TASKS[pid] {
+        let handler = super::signal::get_signal_handler(pid, sig);
+        if handler != 0 {
+            if task.saved_sigcontext.is_none() {
+                let mut saved_ctx = InterruptContext::default();
+                saved_ctx.rip = task.rsp;
+                task.saved_sigcontext = Some(saved_ctx);
+            }
+            return Ok(());
+        }
+
+        if pid == 0 {
+            return Err("Signal delivery to bootstrap kernel shell is restricted");
+        }
+
         match sig {
             2 | 9 | 15 => {
+                task.state = TaskState::Zombie(sig as i32);
+                Ok(())
+            }
+            10 | 12 => {
                 task.state = TaskState::Zombie(sig as i32);
                 Ok(())
             }
@@ -614,5 +648,93 @@ unsafe fn print_decimal(mut val: u64) {
         if let Ok(st) = core::str::from_utf8(&s) {
             serial::print_str(st);
         }
+    }
+}
+
+/// Query the real UID of the current task.
+pub unsafe fn get_current_uid() -> u32 {
+    if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
+        task.uid
+    } else {
+        0
+    }
+}
+
+/// Query the effective UID of the current task.
+pub unsafe fn get_current_euid() -> u32 {
+    if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
+        task.euid
+    } else {
+        0
+    }
+}
+
+/// Set the real and effective UID of the current task according to POSIX privilege rules.
+pub unsafe fn set_current_uid(new_uid: u32) -> Result<(), &'static str> {
+    if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
+        if task.euid == 0 {
+            task.uid = new_uid;
+            task.euid = new_uid;
+            Ok(())
+        } else if new_uid == task.uid {
+            task.euid = new_uid;
+            Ok(())
+        } else {
+            Err("Operation not permitted")
+        }
+    } else {
+        Err("No active task")
+    }
+}
+
+/// Query the real GID of the current task.
+pub unsafe fn get_current_gid() -> u32 {
+    if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
+        task.gid
+    } else {
+        0
+    }
+}
+
+/// Query the effective GID of the current task.
+pub unsafe fn get_current_egid() -> u32 {
+    if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
+        task.egid
+    } else {
+        0
+    }
+}
+
+/// Set the real and effective GID of the current task according to POSIX privilege rules.
+pub unsafe fn set_current_gid(new_gid: u32) -> Result<(), &'static str> {
+    if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
+        if task.euid == 0 {
+            task.gid = new_gid;
+            task.egid = new_gid;
+            Ok(())
+        } else if new_gid == task.gid {
+            task.egid = new_gid;
+            Ok(())
+        } else {
+            Err("Operation not permitted")
+        }
+    } else {
+        Err("No active task")
+    }
+}
+
+/// Store a saved interrupt context for signal return in the current task.
+pub unsafe fn set_saved_sigcontext(ctx: InterruptContext) {
+    if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
+        task.saved_sigcontext = Some(ctx);
+    }
+}
+
+/// Retrieve and clear the saved interrupt context for signal return in the current task.
+pub unsafe fn take_saved_sigcontext() -> Option<InterruptContext> {
+    if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
+        task.saved_sigcontext.take()
+    } else {
+        None
     }
 }

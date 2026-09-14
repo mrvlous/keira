@@ -110,6 +110,7 @@ pub extern "C" fn keyboard_handler() {
                 };
 
                 if c != 0 {
+                    push_input_char(c);
                     if CTRL_PRESSED.load(Ordering::Relaxed) {
                         if c >= b'a' && c <= b'z' {
                             shell_handle_keypress(c - b'a' + 1);
@@ -128,5 +129,39 @@ pub extern "C" fn keyboard_handler() {
         }
 
         pic::send_eoi(1);
+    }
+}
+
+pub const KBD_QUEUE_SIZE: usize = 128;
+static mut KBD_QUEUE: [u8; KBD_QUEUE_SIZE] = [0u8; KBD_QUEUE_SIZE];
+static mut KBD_HEAD: usize = 0;
+static mut KBD_TAIL: usize = 0;
+
+/// Push an ASCII character into the keyboard device input queue.
+pub unsafe fn push_input_char(c: u8) {
+    let next_head = (KBD_HEAD + 1) % KBD_QUEUE_SIZE;
+    if next_head != KBD_TAIL {
+        KBD_QUEUE[KBD_HEAD] = c;
+        KBD_HEAD = next_head;
+    }
+}
+
+/// Pop an ASCII character from the keyboard device input queue.
+pub unsafe fn pop_input_char() -> Option<u8> {
+    if KBD_HEAD == KBD_TAIL {
+        None
+    } else {
+        let c = KBD_QUEUE[KBD_TAIL];
+        KBD_TAIL = (KBD_TAIL + 1) % KBD_QUEUE_SIZE;
+        Some(c)
+    }
+}
+
+/// Query how many characters are currently queued in the keyboard device input queue.
+pub unsafe fn input_queue_len() -> usize {
+    if KBD_HEAD >= KBD_TAIL {
+        KBD_HEAD - KBD_TAIL
+    } else {
+        KBD_QUEUE_SIZE - (KBD_TAIL - KBD_HEAD)
     }
 }

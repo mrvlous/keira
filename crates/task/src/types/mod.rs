@@ -106,6 +106,11 @@ pub struct Task {
     pub pml4_phys: u64,
     pub exit_code: i32,
     pub is_user: bool,
+    pub uid: u32,
+    pub gid: u32,
+    pub euid: u32,
+    pub egid: u32,
+    pub saved_sigcontext: Option<InterruptContext>,
 }
 
 /// Pushed CPU register context during interrupt or system call transitions.

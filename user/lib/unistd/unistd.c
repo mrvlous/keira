@@ -124,7 +124,25 @@ uid_t geteuid(void) {
     return sys_getuid();
 }
 
+int setuid(uid_t uid) {
+    int ret = sys_setuid(uid);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return 0;
+}
+
 gid_t getgid(void) {
+    return sys_getgid();
+}
+
+int setgid(gid_t gid) {
+    int ret = sys_setgid(gid);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
     return 0;
 }
 

@@ -178,6 +178,18 @@ uid_t sys_getuid(void) {
     return (uid_t)syscall0(SYS_GETUID);
 }
 
+int sys_setuid(uid_t uid) {
+    return (int)syscall1(SYS_SETUID, (uint64_t)uid);
+}
+
+gid_t sys_getgid(void) {
+    return (gid_t)syscall0(SYS_GETGID);
+}
+
+int sys_setgid(gid_t gid) {
+    return (int)syscall1(SYS_SETGID, (uint64_t)gid);
+}
+
 pid_t sys_fork(void) {
     return (pid_t)syscall0(SYS_FORK);
 }
