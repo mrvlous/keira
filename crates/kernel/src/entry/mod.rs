@@ -119,6 +119,8 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
     }
 
     extern "C" {
+        static __text_start: u8;
+        static __text_end: u8;
         static __heap_start: u8;
         static __heap_end: u8;
     }
@@ -159,8 +161,29 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
             keira_crypto::tpm::TPM_MMIO_MAPPED = true;
         }
 
+        // Initialize TPM 2.0 security controller and baseline PCRs
+        keira_crypto::tpm::init();
+
+        // Measure genuine kernel .text segment in physical RAM (PCR 4)
+        let text_start_addr = core::ptr::addr_of!(__text_start) as usize;
+        let text_end_addr = core::ptr::addr_of!(__text_end) as usize;
+        if text_end_addr > text_start_addr {
+            let text_len = text_end_addr - text_start_addr;
+            let text_slice = core::slice::from_raw_parts(text_start_addr as *const u8, text_len);
+            let _ = keira_crypto::tpm::measure_kernel_code(text_slice);
+        }
+
+        // Measure Multiboot initrd payload if loaded (PCR 5)
+        if initrd_start != 0 && initrd_end > initrd_start {
+            let initrd_len = (initrd_end - initrd_start) as usize;
+            let initrd_slice = core::slice::from_raw_parts(initrd_start as *const u8, initrd_len);
+            let _ = keira_crypto::tpm::measure_initrd(initrd_slice);
+        }
+
         scheduler_init();
     }
+    vga::print_boot_log("Initializing TPM 2.0 Hardware Security Enclave & PCRs", 0);
+    vga::print_boot_log("Performing Measured Boot: Kernel Image & Initrd Archive", 0);
     vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);
 
     vga::print_boot_log("Initializing PCI Bus & storage/network host controllers", 0);

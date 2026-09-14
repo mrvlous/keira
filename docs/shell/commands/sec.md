@@ -15,7 +15,7 @@ This document details all 7 native built-in commands in Keira Kernel related to 
 | `protect` | `protect <path> [readonly \| hidden \| archive]` | `[Active]` | Configure FAT filesystem attributes and access permissions on files |
 | `seccomp` | `seccomp [status \| strict \| filter \| allow <num> \| deny <num> \| reset]` | `[Active]` | Inspect and configure Secure Computing system call sandbox filters (Syscall 52) |
 | `bpf` | `bpf [status \| list \| maps \| test \| map-get <id> <k> \| map-set <id> <k> <v>]` | `[Active]` | Inspect and execute Extended Berkeley Packet Filter programs and maps (Syscall 78) |
-| `tpm` | `tpm [status \| pcr [idx] \| extend <idx> <data> \| log \| quote [mask]]` | `[Active]` | Query and extend Trusted Platform Module (TPM 2.0) PCR banks and log (Syscall 79) |
+| `tpm` | `tpm [status \| pcr [idx] \| extend <idx> <data> \| seal [mask] <secret> \| unseal \| log \| quote [mask] \| test]` | `[Active]` | Query, extend, seal, and test Trusted Platform Module (TPM 2.0) enclave (Syscall 79) |
 | `mac` | `mac [status \| enforce \| permissive \| disable \| rules \| audit \| test]` | `[Active]` | Inspect and configure Mandatory Access Control Type Enforcement policies |
 
 ---
@@ -87,7 +87,7 @@ eBPF VM Interpreter & Verifier validation completed successfully.
 ---
 
 ### `tpm`
-Interacts with the bare-metal Trusted Platform Module (TPM 2.0) hardware security enclave, 24 SHA-256 Platform Configuration Registers (PCRs), and measured boot event logs:
+Interacts with the bare-metal Trusted Platform Module (TPM 2.0) hardware security enclave, 24 SHA-256 Platform Configuration Registers (PCRs), measured boot event logs, and sealed storage:
 ```bash
 keira> tpm status
 TPM 2.0 Hardware Security Enclave Status:
@@ -96,30 +96,41 @@ TPM 2.0 Hardware Security Enclave Status:
   Hardware Probe    : VID 0x1B36 DID 0x0001 [CONNECTED]
   Active PCR Banks  : SHA-256 (24 Registers [PCR 0..23])
   Total Measurements: 6
-  Event Log Records : 4
+  Event Log Records : 6
   Syscall Interface : Syscall 79 (SYS_TPM2)
 
 keira> tpm pcr 0
-PCR[00] (SHA-256): 57422f39c279430c4e17ef74542bb0029b4a8eef8cfbdadfbba3fb5cffba2f2d
-
-keira> tpm extend 10 "sample_kernel_measurement"
-[OK] TPM2_PCR_Extend successful on PCR[10].
-     New Digest: 8b0728c0b5f1f7be0e49520268bbd47228aa4ff7881f2cb6835260b457007e60
+PCR[00] (SHA-256): fa070e143818114446485b56111b83f5bdc518b9129d2d4a25a83930c2d5831c (Firmware / BIOS IVT)
 
 keira> tpm log
 TPM 2.0 Measured Boot & Integrity Event Log:
   PCR  TYPE        EVENT NAME           SHA-256 DIGEST (PREFIX)
   ---  ----------  -------------------  -----------------------
-  [00]  0x00000001  BIOS_POST_MEASURED   57422f39c279430c...
-  [01]  0x0000000a  PLATFORM_CONFIG      95079a40733a1e20...
-  [04]  0x0000000b  KERNEL_IMAGE_LOAD    7a9b0c29a8ff1024...
-  [07]  0x00000004  SECUREBOOT_POLICY    10ea77b94420ffbe...
-  [10]  0x00000005  SHELL_EXTEND         8b0728c0b5f1f7be...
+  [00] 0x00000001  BIOS_IVT_MEASURED    fa070e1438181144...
+  [01] 0x0000000A  PLATFORM_CONFIG      d282f6092d364274...
+  [02] 0x00000005  HOST_BUS_TOPOLOGY    74b8a44bd0a650e0...
+  [07] 0x00000004  SECUREBOOT_POLICY    24f2d8a2849acbd7...
+  [04] 0x00000005  KERNEL_TEXT_SEGMENT  7816d62ec7be5a8a...
+  [05] 0x00000005  INITRD_ARCHIVE       3ea86060ee0b0b97...
 
-keira> tpm quote
-TPM 2.0 Attestation Quote Generated:
-  PCR Selection Mask : 0x000000FF
-  Quote Digest (SHA2): 4f5e71ba099c2d15be8701aa34e912429f0322bca678ef40c99b8214fa39b02a
+keira> tpm seal 0x000000FF "DATABASE_MASTER_SECRET"
+[OK] Secret sealed successfully under PCR mask 0x000000FF
+  Expected Quote: 4f5e71ba099c2d15be8701aa34e912429f0322bca678ef40c99b8214fa39b02a
+  AES-GCM AuthTag: 2a8f90c1e457bb92019488aef402319c
+  Ciphertext Len: 22 bytes
+
+keira> tpm unseal
+[OK] Secret unsealed successfully (PCR policy attestation verified):
+  Plaintext: DATABASE_MASTER_SECRET
+
+keira> tpm test
+Running Bare-Metal TPM 2.0 Security Subsystem Selftest:
+  [1/4] Generating Attestation Quote (PCR 0,1,4): OK
+  [2/4] Sealing Data under PCR Mask 0x00000013: OK
+  [3/4] Unsealing Secret (Authentic State): OK (Verified)
+  [4/4] Tamper Detection (PCR Extension & Rejection): OK (Correctly Rejected)
+
+[PASS] All TPM 2.0 Hardware Security Assertions Verified Successfully.
 ```
 
 ---

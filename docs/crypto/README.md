@@ -30,6 +30,6 @@ graph TD
 | **SHA-256 & HMAC** | [`sha256.md`](sha256.md) | Pure Rust SHA-256 hash engine, HMAC, and HKDF key derivation | `crates/crypto/src/sha256/` |
 | **AES & AES-GCM** | [`aes.md`](aes.md) | AES-128 block cipher and Galois/Counter Mode (GCM) AEAD encryption | `crates/crypto/src/aes/` |
 | **Curve25519** | [`curve25519.md`](curve25519.md) | X25519 Elliptic Curve Diffie-Hellman (ECDHE) key exchange | `crates/crypto/src/curve25519/` |
-| **TPM 2.0 Enclave** | [`tpm.md`](tpm.md) | Hardware Trusted Platform Module 2.0 commands and PCR extension | `crates/crypto/src/tpm/` |
+| **TPM 2.0 Enclave** | [`tpm.md`](tpm.md) | Hardware Trusted Platform Module 2.0 measured boot, PCRs, and sealed storage | `crates/crypto/src/tpm/` |
 | **Seccomp BPF** | [`seccomp.md`](seccomp.md) | Task-level system call validation and sandboxing engine | `crates/task/src/security/seccomp.rs` |
 | **MAC Security** | [`mac.md`](mac.md) | Mandatory Access Control inode path security and Type Enforcement | `crates/task/src/security/mac.rs` |

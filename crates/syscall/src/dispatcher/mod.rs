@@ -109,7 +109,11 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                     vmm::switch_address_space(child_pml4);
 
                     let entry_point = match load_elf(filename_str) {
-                        Ok(ep) => ep,
+                        Ok(ep) => {
+                            let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
+                            let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename_str);
+                            ep
+                        }
                         Err(_) => {
                             vmm::switch_address_space(parent_pml4);
                             vmm::free_user_pages(child_pml4, 0x600000000000);
@@ -1259,6 +1263,66 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             // 3: TPM Status total measurements
             3 => keira_crypto::tpm::get_status().total_measurements,
+            // 4: Seal secret (arg2 = in_secret_ptr, arg3 = (pcr_mask << 32) | (len & 0xFFFF_FFFF))
+            4 => {
+                let pcr_mask = (arg3 >> 32) as u32;
+                let data_len = (arg3 & 0xFFFF_FFFF) as usize;
+                if data_len == 0 || data_len > keira_crypto::tpm::TPM_MAX_SECRET_LEN {
+                    return errno_to_ret(EINVAL);
+                }
+                let mut secret_buf = [0u8; keira_crypto::tpm::TPM_MAX_SECRET_LEN];
+                if unsafe { copy_from_user(&mut secret_buf[..data_len], arg2) }.is_err() {
+                    return errno_to_ret(EFAULT);
+                }
+                match keira_crypto::tpm::seal_secret(&secret_buf[..data_len], pcr_mask) {
+                    Ok(blob) => {
+                        let blob_bytes = unsafe {
+                            core::slice::from_raw_parts(
+                                &blob as *const _ as *const u8,
+                                core::mem::size_of::<keira_crypto::tpm::TpmSealedBlob>(),
+                            )
+                        };
+                        if unsafe { copy_to_user(arg2, blob_bytes) }.is_ok() {
+                            0
+                        } else {
+                            errno_to_ret(EFAULT)
+                        }
+                    }
+                    Err(_) => errno_to_ret(EINVAL),
+                }
+            }
+            // 5: Unseal secret (arg2 = in_blob_ptr, arg3 = out_plaintext_ptr)
+            5 => {
+                let mut blob = keira_crypto::tpm::TpmSealedBlob {
+                    magic: [0; 4],
+                    pcr_mask: 0,
+                    expected_quote: [0; 32],
+                    nonce: [0; 12],
+                    data_len: 0,
+                    ciphertext: [0; keira_crypto::tpm::TPM_MAX_SECRET_LEN],
+                    auth_tag: [0; 16],
+                };
+                let blob_slice = unsafe {
+                    core::slice::from_raw_parts_mut(
+                        &mut blob as *mut _ as *mut u8,
+                        core::mem::size_of::<keira_crypto::tpm::TpmSealedBlob>(),
+                    )
+                };
+                if unsafe { copy_from_user(blob_slice, arg2) }.is_err() {
+                    return errno_to_ret(EFAULT);
+                }
+                let mut out_buf = [0u8; keira_crypto::tpm::TPM_MAX_SECRET_LEN];
+                match keira_crypto::tpm::unseal_secret(&blob, &mut out_buf) {
+                    Ok(decrypted_len) => {
+                        if unsafe { copy_to_user(arg3, &out_buf[..decrypted_len]) }.is_ok() {
+                            decrypted_len as u64
+                        } else {
+                            errno_to_ret(EFAULT)
+                        }
+                    }
+                    Err(_) => errno_to_ret(EPERM),
+                }
+            }
             _ => errno_to_ret(EINVAL),
         },
         // Syscall 80: sys_pci_bridge

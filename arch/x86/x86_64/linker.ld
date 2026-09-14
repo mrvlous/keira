@@ -29,11 +29,13 @@ SECTIONS
         KEEP(*(.multiboot_header))
     }
 
+    __text_start = .;
     .text : ALIGN(4096)
     {
         *(.text)
         *(.text.*)
     }
+    __text_end = .;
 
     .rodata : ALIGN(4096)
     {

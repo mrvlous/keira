@@ -26,6 +26,17 @@ use crate::vfs;
 use keira_mem::{pmm, vmm};
 
 static mut ELF_FILE_BUF: [u8; 524288] = [0u8; 524288];
+static mut LAST_LOADED_LEN: usize = 0;
+
+/// Retrieve a slice of the raw ELF binary image loaded during the most recent execution.
+///
+/// # Safety
+/// The caller must ensure no concurrent ELF loading occurs while reading the slice.
+pub unsafe fn last_loaded_elf_slice() -> &'static [u8] {
+    let buf_ptr = core::ptr::addr_of!(ELF_FILE_BUF) as *const u8;
+    let len = LAST_LOADED_LEN.min(524288);
+    core::slice::from_raw_parts(buf_ptr, len)
+}
 
 extern "C" {
     fn jump_to_user(entry: u64, stack: u64);
@@ -54,6 +65,7 @@ struct SegmentMapping {
 pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     let file_buf = unsafe { &mut *core::ptr::addr_of_mut!(ELF_FILE_BUF) };
     let file_len = vfs::read_file(filename, file_buf)?;
+    LAST_LOADED_LEN = file_len;
 
     if file_len < 16 {
         return Err("ELF file is smaller than minimum header size");

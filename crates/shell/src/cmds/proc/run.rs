@@ -227,6 +227,8 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         keira_task::scheduler::SCHEDULER_INITIALIZED = false;
 
         let entry_point = load_elf(filename)?;
+        let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
+        let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
         let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
         let ptr = top_stack_page as *mut u8;
         let initial_user_rsp = setup_user_stack_args_32(ptr, top_stack_page, args, entry_point);
@@ -275,7 +277,11 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         };
 
         let entry_point = match load_elf(filename) {
-            Ok(ep) => ep,
+            Ok(ep) => {
+                let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
+                let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
+                ep
+            }
             Err(e) => {
                 cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
                 return Err(e);
