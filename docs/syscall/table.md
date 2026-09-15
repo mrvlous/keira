@@ -27,7 +27,7 @@ This document specifies the complete system call vector table supported by Keira
 | `15` | `SYS_GETCWD` | `char *buf, size_t len` | Retrieve current working directory path |
 | `16` | `SYS_CHDIR` | `const char *path` | Change current working directory |
 | `17` | `SYS_HTTP_GET` | `const char *url, char *buf, size_t max_len` | Perform kernel-level HTTP GET request |
-| `20` | `SYS_MMAP` | `void *addr, size_t len, int prot, int flags` | Map pages into address space |
+| `20` | `SYS_MMAP` | `void *addr, size_t len, int prot, int flags, int fd, off_t offset` | Map anonymous or file-backed pages into user address space with demand paging |
 | `21` | `SYS_MUNMAP` | `void *addr, size_t len` | Unmap pages from address space |
 | `22` | `SYS_KILL` | `pid_t pid, int sig` | Send POSIX signal to target process PID |
 | `23` | `SYS_PIPE` | `int pipefd[2]` | Create unidirectional data channel pipe and allocate descriptors |
@@ -89,3 +89,4 @@ This document specifies the complete system call vector table supported by Keira
 | `80` | `SYS_PCI_BRIDGE` | `uint32_t bus, uint32_t dev, uint32_t func` | Direct PCI host bridge configuration |
 | `81` | `SYS_SIGPROCMASK` | `int how, const sigset_t *set, sigset_t *oldset` | Examine and change blocked signals mask |
 | `82` | `SYS_SIGPENDING` | `sigset_t *set` | Query currently pending blocked signals mask |
+| `83` | `SYS_MSYNC` | `void *addr, size_t length, int flags` | Synchronize mapped memory region with underlying storage |

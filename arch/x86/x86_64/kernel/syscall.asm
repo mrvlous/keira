@@ -103,12 +103,19 @@ syscall_handler_asm:
     push r9
     push r10
 
+    ; Pass 7th argument (a6 = user r9) on stack with 16-byte ABI alignment
+    push 0
+    push r9
+
+    mov r9, r8
+    mov r8, r10
     mov rcx, rdx
     mov rdx, rsi
     mov rsi, rdi
     mov rdi, rax
 
     call syscall_dispatcher
+    add rsp, 16
 
     cmp eax, 0xDEADBEEF
     je .exit_user_mode

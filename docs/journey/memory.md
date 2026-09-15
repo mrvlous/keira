@@ -26,3 +26,4 @@ graph TD
 * **Slab Allocator**: Created power-of-two slab caches (32B to 4096B) to achieve sub-microsecond kernel allocations with minimal heap fragmentation.
 * **Demand Paging & Lazy Allocation**: Implemented on-demand physical frame mapping for anonymous `sys_mmap` and heap `sbrk` expansion, resolving faults transparently via Interrupt 14 (`#PF`) handlers and skipping unaccessed pages in `munmap`.
 * **Dual-Tier Userland Memory Allocator**: Implemented a hybrid userland memory manager integrating boundary-tag coalescing on `sbrk` demand-paged heaps for allocations `<= 128 KiB` and direct anonymous `sys_mmap`/`sys_munmap` page mapping for allocations `> 128 KiB`.
+* **File-Backed Memory Mapping & msync Synchronization**: Implemented full 6-argument `sys_mmap` with VFS and FAT16 storage backing, lazily faulting file sectors into physical frames on `#PF` and syncing dirty pages (`PAGE_DIRTY`) back to persistent storage via `sys_msync` across both `x86_64` and `i686`.

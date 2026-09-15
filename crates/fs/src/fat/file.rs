@@ -13,7 +13,7 @@ use super::cluster::{alloc_cluster, fat_next_cluster, free_cluster_chain};
 use super::dir::{create_directory_entry_with_name, is_dir_empty};
 use super::path::{filename_to_8_3, find_entry, resolve_path};
 use super::table::{read_sector, write_sector};
-use super::types::DirectoryEntry;
+use super::types::{DirectoryEntry, Fat16Volume};
 use super::volume::{cluster_to_sector, VOLUME};
 use keira_io::vga;
 
@@ -340,4 +340,219 @@ pub unsafe fn remove_entry(name: &str) -> Result<(), &'static str> {
 
     write_sector(found.sector, &sector_data)?;
     Ok(())
+}
+
+/// Link a previous FAT cluster to a subsequent cluster in all FAT copies.
+pub unsafe fn link_fat_clusters(
+    prev: u16,
+    next: u16,
+    vol: &Fat16Volume,
+) -> Result<(), &'static str> {
+    let fat_offset = prev as u32 * 2;
+    let s = fat_offset / 512;
+    let offset = (fat_offset % 512) as usize;
+    let sector = vol.fat_start_sector + s;
+
+    let mut fat_sec = [0u8; 512];
+    read_sector(sector, &mut fat_sec)?;
+    fat_sec[offset] = (next & 0xFF) as u8;
+    fat_sec[offset + 1] = ((next >> 8) & 0xFF) as u8;
+
+    for f in 0..vol.num_fats {
+        let fat_sec_idx = vol.fat_start_sector + (f as u32 * vol.sectors_per_fat as u32) + s;
+        write_sector(fat_sec_idx, &fat_sec)?;
+    }
+    Ok(())
+}
+
+/// Get the size in bytes of an existing file.
+pub unsafe fn get_file_size(filename: &str) -> Result<usize, &'static str> {
+    let (dir_cluster, name) = resolve_path(filename)?;
+    let found = find_entry(name, dir_cluster)?;
+    if (found.entry.attr & 0x10) != 0 {
+        return Err("Path is a directory");
+    }
+    Ok(found.entry.file_size as usize)
+}
+
+/// Read file content bytes at a specific byte offset into destination buffer.
+pub unsafe fn read_file_offset(
+    filename: &str,
+    offset: u64,
+    buffer: &mut [u8],
+) -> Result<usize, &'static str> {
+    let vol_ptr = &raw const VOLUME;
+    let vol = match (*vol_ptr).as_ref() {
+        Some(v) => v,
+        None => return Err("FAT16 filesystem is not initialized"),
+    };
+
+    let (dir_cluster, name) = resolve_path(filename)?;
+    let found = find_entry(name, dir_cluster)?;
+    if (found.entry.attr & 0x10) != 0 {
+        return Err("Cannot read content of a directory");
+    }
+    let entry = found.entry;
+
+    let file_size = entry.file_size as u64;
+    if offset >= file_size {
+        return Ok(0);
+    }
+
+    let mut size_left = (file_size - offset) as usize;
+    if size_left > buffer.len() {
+        size_left = buffer.len();
+    }
+
+    let cluster_size = vol.sectors_per_cluster as u64 * 512;
+    let mut cluster_skip = offset / cluster_size;
+    let mut current_cluster = entry.first_cluster_lo;
+
+    while cluster_skip > 0 && (2..0xFFF8).contains(&current_cluster) {
+        current_cluster = fat_next_cluster(current_cluster, vol)?;
+        cluster_skip -= 1;
+    }
+
+    if !(2..0xFFF8).contains(&current_cluster) {
+        return Ok(0);
+    }
+
+    let mut intra_cluster_offset = (offset % cluster_size) as usize;
+    let mut cluster_data = [0u8; 512];
+    let mut bytes_read = 0;
+
+    while (2..0xFFF8).contains(&current_cluster) && size_left > 0 {
+        let first_sector = cluster_to_sector(current_cluster, vol);
+        let sector_start = (intra_cluster_offset / 512) as u32;
+        let mut intra_sector_offset = intra_cluster_offset % 512;
+
+        for s in sector_start..vol.sectors_per_cluster as u32 {
+            if size_left == 0 {
+                break;
+            }
+            read_sector(first_sector + s, &mut cluster_data)?;
+            let avail = 512 - intra_sector_offset;
+            let read_len = if size_left > avail { avail } else { size_left };
+            buffer[bytes_read..bytes_read + read_len].copy_from_slice(
+                &cluster_data[intra_sector_offset..intra_sector_offset + read_len],
+            );
+            bytes_read += read_len;
+            size_left -= read_len;
+            intra_sector_offset = 0;
+        }
+
+        intra_cluster_offset = 0;
+        if size_left == 0 {
+            break;
+        }
+
+        current_cluster = fat_next_cluster(current_cluster, vol)?;
+    }
+
+    Ok(bytes_read)
+}
+
+/// Write data content to a file at a specific byte offset.
+pub unsafe fn write_file_offset(
+    filename: &str,
+    offset: u64,
+    content: &[u8],
+) -> Result<usize, &'static str> {
+    if content.is_empty() {
+        return Ok(0);
+    }
+
+    let vol_ptr = &raw const VOLUME;
+    let vol = match (*vol_ptr).as_ref() {
+        Some(v) => v,
+        None => return Err("FAT16 filesystem is not initialized"),
+    };
+
+    let (dir_cluster, name) = resolve_path(filename)?;
+    let found = find_entry(name, dir_cluster)?;
+    if (found.entry.attr & 0x10) != 0 {
+        return Err("Cannot write content to a directory");
+    }
+
+    let cluster_size_bytes = vol.sectors_per_cluster as usize * 512;
+    let mut first_cluster = found.entry.first_cluster_lo;
+    let mut current_cluster = first_cluster;
+
+    if first_cluster < 2 {
+        let new_c = alloc_cluster(vol)?;
+        first_cluster = new_c;
+        current_cluster = new_c;
+    }
+
+    let cluster_skip = (offset as usize) / cluster_size_bytes;
+    for _ in 0..cluster_skip {
+        let next_c = fat_next_cluster(current_cluster, vol)?;
+        if !(2..0xFFF8).contains(&next_c) {
+            let new_c = alloc_cluster(vol)?;
+            link_fat_clusters(current_cluster, new_c, vol)?;
+            current_cluster = new_c;
+        } else {
+            current_cluster = next_c;
+        }
+    }
+
+    let mut intra_cluster_offset = (offset as usize) % cluster_size_bytes;
+    let mut content_offset = 0usize;
+
+    while content_offset < content.len() {
+        let first_sector = cluster_to_sector(current_cluster, vol);
+        let sector_start = (intra_cluster_offset / 512) as u32;
+        let mut intra_sector_offset = intra_cluster_offset % 512;
+
+        for s in sector_start..vol.sectors_per_cluster as u32 {
+            if content_offset >= content.len() {
+                break;
+            }
+
+            let mut sector_buf = [0u8; 512];
+            read_sector(first_sector + s, &mut sector_buf)?;
+
+            let avail = 512 - intra_sector_offset;
+            let write_len = if (content.len() - content_offset) > avail {
+                avail
+            } else {
+                content.len() - content_offset
+            };
+
+            sector_buf[intra_sector_offset..intra_sector_offset + write_len]
+                .copy_from_slice(&content[content_offset..content_offset + write_len]);
+            content_offset += write_len;
+            intra_sector_offset = 0;
+
+            write_sector(first_sector + s, &sector_buf)?;
+        }
+
+        intra_cluster_offset = 0;
+        if content_offset >= content.len() {
+            break;
+        }
+
+        let next_c = fat_next_cluster(current_cluster, vol)?;
+        if !(2..0xFFF8).contains(&next_c) {
+            let new_c = alloc_cluster(vol)?;
+            link_fat_clusters(current_cluster, new_c, vol)?;
+            current_cluster = new_c;
+        } else {
+            current_cluster = next_c;
+        }
+    }
+
+    let new_size =
+        core::cmp::max(found.entry.file_size as u64, offset + content.len() as u64) as u32;
+    if new_size != found.entry.file_size || first_cluster != found.entry.first_cluster_lo {
+        let mut sector_data = [0u8; 512];
+        read_sector(found.sector, &mut sector_data)?;
+        let entries = sector_data.as_mut_ptr() as *mut DirectoryEntry;
+        let entry = &mut *entries.add(found.index);
+        entry.first_cluster_lo = first_cluster;
+        entry.file_size = new_size;
+        write_sector(found.sector, &sector_data)?;
+    }
+
+    Ok(content.len())
 }

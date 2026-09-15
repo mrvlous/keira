@@ -101,6 +101,12 @@ isr128:
     pop eax
 
     push dword 0
+    push ebp
+    push dword 0
+    push edi
+    push dword 0
+    push esi
+    push dword 0
     push edx
     push dword 0
     push ecx
@@ -110,7 +116,7 @@ isr128:
     push eax
 
     call syscall_dispatcher
-    add esp, 32
+    add esp, 56
 
     cmp eax, 0xDEADBEEF
     je .exit_user_mode

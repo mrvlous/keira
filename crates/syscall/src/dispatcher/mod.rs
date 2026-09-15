@@ -44,7 +44,15 @@ pub const HEAP_MAX_VADDR: u64 = 0x4000_0000;
 
 /// Central system call dispatcher mapping syscall numbers to operations.
 #[no_mangle]
-pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
+pub extern "C" fn syscall_dispatcher(
+    num: u64,
+    arg1: u64,
+    arg2: u64,
+    arg3: u64,
+    arg4: u64,
+    arg5: u64,
+    arg6: u64,
+) -> u64 {
     if num != 52 && !keira_task::security::check_syscall(num) {
         return errno_to_ret(EPERM);
     }
@@ -227,7 +235,12 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
         // Syscall 6: Open File
         6 => {
             let path_ptr = arg1 as *const u8;
-            let write_mode = arg2 != 0;
+            let flags = arg2 as u32;
+            let write_mode = (flags & 0x0003) != 0 || flags == 1;
+            let is_creat = (flags & 0x0040) != 0;
+            let is_trunc = (flags & 0x0200) != 0;
+            let is_append = (flags & 0x0400) != 0;
+
             let mut path_buf = [0u8; 128];
             let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
                 Ok(l) => l,
@@ -254,13 +267,13 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
 
             let exists_val = exists(path_str);
             if !exists_val {
-                if !write_mode {
+                if !write_mode && !is_creat {
                     return errno_to_ret(ENOENT);
                 }
                 if create_file(path_str).is_err() {
                     return errno_to_ret(EACCES);
                 }
-            } else if write_mode {
+            } else if is_trunc {
                 let _ = write_file(path_str, &[]);
             }
 
@@ -276,7 +289,11 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                     }
                     if let Some(fd) = fd_slot {
                         t.fds[fd].is_open = true;
-                        t.fds[fd].offset = 0;
+                        t.fds[fd].offset = if is_append {
+                            keira_fs::vfs::get_file_size(path_str).unwrap_or(0) as u64
+                        } else {
+                            0
+                        };
                         t.fds[fd].write_mode = write_mode;
                         t.fds[fd].path_len = len;
                         t.fds[fd].path[..len].copy_from_slice(&path_buf[..len]);
@@ -679,11 +696,59 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             errno_to_ret(EIO)
         }
-        // Syscall 20: mmap
+        // Syscall 20: mmap (addr, length, prot, flags, fd, offset)
         20 => unsafe {
-            match vmm::sys_mmap(arg1, arg2, arg3 as u32, 0) {
-                Ok(vaddr) => vaddr,
-                Err(_) => errno_to_ret(ENOMEM),
+            let flags = arg4 as u32;
+            let fd = arg5 as i32;
+
+            if (flags & vmm::MAP_ANONYMOUS) != 0 || fd == -1 {
+                match vmm::sys_mmap_file(arg1, arg2, arg3 as u32, flags, None, 0, 0) {
+                    Ok(vaddr) => vaddr,
+                    Err(_) => errno_to_ret(ENOMEM),
+                }
+            } else {
+                if fd < 0 || fd >= MAX_FDS as i32 {
+                    return errno_to_ret(EBADF);
+                }
+
+                let current_idx = CURRENT_TASK_IDX;
+                let task = &TASKS[current_idx];
+                let t = match task.as_ref() {
+                    Some(t) => t,
+                    None => return errno_to_ret(ESRCH),
+                };
+
+                let desc = &t.fds[fd as usize];
+                if !desc.is_open || desc.is_socket || desc.is_pipe {
+                    return errno_to_ret(EBADF);
+                }
+
+                let prot = arg3 as u32;
+                if (prot & vmm::PROT_WRITE) != 0
+                    && !desc.write_mode
+                    && (flags & vmm::MAP_SHARED) != 0
+                {
+                    return errno_to_ret(EACCES);
+                }
+
+                if desc.path_len == 0 || desc.path_len > 128 {
+                    return errno_to_ret(EBADF);
+                }
+
+                let path_str = match core::str::from_utf8(&desc.path[..desc.path_len]) {
+                    Ok(s) => s,
+                    Err(_) => return errno_to_ret(EINVAL),
+                };
+
+                let file_size = match keira_fs::vfs::get_file_size(path_str) {
+                    Ok(sz) => sz as u64,
+                    Err(_) => return errno_to_ret(ENOENT),
+                };
+
+                match vmm::sys_mmap_file(arg1, arg2, prot, flags, Some(path_str), arg6, file_size) {
+                    Ok(vaddr) => vaddr,
+                    Err(_) => errno_to_ret(ENOMEM),
+                }
             }
         },
         // Syscall 21: munmap
@@ -1487,6 +1552,13 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
             }
             0
         }
+        // Syscall 83: msync (addr, length, flags)
+        83 => unsafe {
+            match vmm::sys_msync(arg1, arg2, arg3 as u32) {
+                Ok(()) => 0,
+                Err(_) => errno_to_ret(EINVAL),
+            }
+        },
         _ => errno_to_ret(ENOSYS),
     }
 }

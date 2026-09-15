@@ -249,6 +249,12 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
         }
     }
 
+    keira_mem::vmm::register_file_backing_hooks(file_backing_read, file_backing_sync);
+    vga::print_boot_log(
+        "Registering Virtual Memory demand paging and msync hooks",
+        0,
+    );
+
     unsafe {
         init_user_mode();
     }
@@ -280,4 +286,16 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
             core::arch::asm!("hlt");
         }
     }
+}
+
+fn file_backing_read(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
+    keira_fs::vfs::read_file_offset(path, offset, buf)
+}
+
+fn file_backing_sync(path: &str, offset: u64, buf: &[u8]) -> Result<usize, &'static str> {
+    let res = keira_fs::vfs::write_file_offset(path, offset, buf)?;
+    unsafe {
+        let _ = keira_fs::flush_dirty_sectors();
+    }
+    Ok(res)
 }

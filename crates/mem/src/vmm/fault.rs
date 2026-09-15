@@ -9,7 +9,7 @@
 
 //! Robust Page Fault (#PF, Interrupt 14) handling, user stack auto-growth, and demand paging.
 
-use super::mmap::{find_active_vma, PROT_EXEC, PROT_READ, PROT_WRITE};
+use super::mmap::{find_active_vma, get_file_read_hook, PROT_EXEC, PROT_READ, PROT_WRITE};
 use super::paging::{
     active_pml4, get_pte_mut_in_pml4, map_page, PAGE_COW, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
     PAGE_WRITABLE, PTE_ADDR_MASK,
@@ -108,6 +108,20 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
 
         if let Some(frame) = pmm::alloc_frame() {
             core::ptr::write_bytes(frame as *mut u8, 0, pmm::PAGE_SIZE as usize);
+
+            // Demand paging for file-backed VMA: populate frame from file storage
+            if vma.file_backed {
+                if let (Some(read_fn), Some(path)) = (get_file_read_hook(), vma.file_path_str()) {
+                    let page_delta = fault_page - vma.start;
+                    let file_offset = vma.file_offset + page_delta;
+                    if file_offset < vma.file_size {
+                        let to_read =
+                            core::cmp::min(pmm::PAGE_SIZE, vma.file_size - file_offset) as usize;
+                        let dst_slice = core::slice::from_raw_parts_mut(frame as *mut u8, to_read);
+                        let _ = read_fn(path, file_offset, dst_slice);
+                    }
+                }
+            }
 
             let mut flags = PAGE_PRESENT | PAGE_USER;
             if (vma.prot & PROT_WRITE) != 0 {

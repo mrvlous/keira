@@ -8,6 +8,7 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <sys/mman.h>
 #include <sys/syscall.h>
 
 #if defined(__i386__) || defined(__i686__)
@@ -64,8 +65,17 @@ int64_t syscall5(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a
 
 int64_t syscall6(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5,
                  uint64_t a6) {
-    (void)a6;
-    return syscall5(num, a1, a2, a3, a4, a5);
+    int32_t ret;
+    uint32_t arg6 = (uint32_t)a6;
+    __asm__ volatile("pushl %%ebp\n\t"
+                     "movl %7, %%ebp\n\t"
+                     "int $0x80\n\t"
+                     "popl %%ebp\n\t"
+                     : "=a"(ret)
+                     : "a"((uint32_t)num), "b"((uint32_t)a1), "c"((uint32_t)a2), "d"((uint32_t)a3),
+                       "S"((uint32_t)a4), "D"((uint32_t)a5), "m"(arg6)
+                     : "memory");
+    return (int64_t)ret;
 }
 
 #else
@@ -212,15 +222,40 @@ int sys_connect(int sockfd, const void *addr, size_t addrlen) {
 }
 
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
-    (void)prot;
-    (void)flags;
-    (void)fd;
-    (void)offset;
-    return (void *)(uintptr_t)syscall2(SYS_MMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length);
+    int64_t ret =
+        syscall6(SYS_MMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length, (uint64_t)(uint32_t)prot,
+                 (uint64_t)(uint32_t)flags, (uint64_t)(int64_t)fd, (uint64_t)offset);
+    return (void *)(uintptr_t)ret;
 }
 
 int sys_munmap(void *addr, size_t length) {
     return (int)syscall2(SYS_MUNMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length);
+}
+
+int sys_mprotect(void *addr, size_t len, int prot) {
+    return (int)syscall3(SYS_MPROTECT, (uint64_t)(uintptr_t)addr, (uint64_t)len,
+                         (uint64_t)(uint32_t)prot);
+}
+
+int sys_msync(void *addr, size_t length, int flags) {
+    return (int)syscall3(SYS_MSYNC, (uint64_t)(uintptr_t)addr, (uint64_t)length,
+                         (uint64_t)(uint32_t)flags);
+}
+
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    return sys_mmap(addr, length, prot, flags, fd, offset);
+}
+
+int munmap(void *addr, size_t length) {
+    return sys_munmap(addr, length);
+}
+
+int mprotect(void *addr, size_t len, int prot) {
+    return sys_mprotect(addr, len, prot);
+}
+
+int msync(void *addr, size_t length, int flags) {
+    return sys_msync(addr, length, flags);
 }
 
 void sys_sleep(uint32_t ms) {

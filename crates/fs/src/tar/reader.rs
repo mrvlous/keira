@@ -243,3 +243,113 @@ pub fn read_file_content(target: &str, buf: &mut [u8]) -> Result<usize, &'static
     }
     Err("File not found in Initrd")
 }
+
+/// Read file content bytes from Initrd archive at an offset.
+pub fn read_file_offset(target: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
+    let mut addr = unsafe { INITRD_START };
+    let end = unsafe { INITRD_END };
+    if addr == 0 || end == 0 {
+        return Err("Initrd not loaded");
+    }
+
+    let search_target = if target.starts_with('/') {
+        &target[1..]
+    } else {
+        target
+    };
+
+    while addr < end {
+        let name_ptr = addr as *const u8;
+        unsafe {
+            if *name_ptr == 0 {
+                break;
+            }
+        }
+
+        let size_slice = unsafe { core::slice::from_raw_parts((addr + 124) as *const u8, 11) };
+        let size = octal_str_to_u64(size_slice);
+
+        let mut name_len = 0;
+        unsafe {
+            while name_len < 100 && *(name_ptr.add(name_len)) != 0 {
+                name_len += 1;
+            }
+        }
+        let name = unsafe {
+            core::str::from_utf8_unchecked(core::slice::from_raw_parts(name_ptr, name_len))
+        };
+        let typeflag = unsafe { *((addr + 156) as *const u8) };
+
+        let check_name = if name.starts_with('/') {
+            &name[1..]
+        } else {
+            name
+        };
+
+        if check_name == search_target && (typeflag == b'0' || typeflag == 0) {
+            if offset >= size {
+                return Ok(0);
+            }
+            let avail = (size - offset) as usize;
+            let to_read = core::cmp::min(avail, buf.len());
+            let file_data =
+                unsafe { core::slice::from_raw_parts((addr + 512 + offset) as *const u8, to_read) };
+            buf[..to_read].copy_from_slice(file_data);
+            return Ok(to_read);
+        }
+
+        addr += 512 + size.div_ceil(512) * 512;
+    }
+    Err("File not found in Initrd")
+}
+
+/// Get file size from Initrd archive.
+pub fn get_file_size(target: &str) -> Result<usize, &'static str> {
+    let mut addr = unsafe { INITRD_START };
+    let end = unsafe { INITRD_END };
+    if addr == 0 || end == 0 {
+        return Err("Initrd not loaded");
+    }
+
+    let search_target = if target.starts_with('/') {
+        &target[1..]
+    } else {
+        target
+    };
+
+    while addr < end {
+        let name_ptr = addr as *const u8;
+        unsafe {
+            if *name_ptr == 0 {
+                break;
+            }
+        }
+
+        let size_slice = unsafe { core::slice::from_raw_parts((addr + 124) as *const u8, 11) };
+        let size = octal_str_to_u64(size_slice);
+
+        let mut name_len = 0;
+        unsafe {
+            while name_len < 100 && *(name_ptr.add(name_len)) != 0 {
+                name_len += 1;
+            }
+        }
+        let name = unsafe {
+            core::str::from_utf8_unchecked(core::slice::from_raw_parts(name_ptr, name_len))
+        };
+        let typeflag = unsafe { *((addr + 156) as *const u8) };
+
+        let check_name = if name.starts_with('/') {
+            &name[1..]
+        } else {
+            name
+        };
+
+        if check_name == search_target && (typeflag == b'0' || typeflag == 0) {
+            return Ok(size as usize);
+        }
+
+        addr += 512 + size.div_ceil(512) * 512;
+    }
+    Err("File not found in Initrd")
+}

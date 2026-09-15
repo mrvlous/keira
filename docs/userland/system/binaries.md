@@ -30,7 +30,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (18 tests) |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_MPROTECT`, `SYS_MSYNC`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_SIGACTION`, `SYS_SIGRETURN`, `SYS_SIGPROCMASK`, `SYS_SIGPENDING`, `SYS_GETUID`, `SYS_SETUID`, `SYS_IOCTL`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (26 tests) |
 
 ---
 
@@ -153,6 +153,32 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [TEST] Cross-architecture high kernel pointer rejection...
   [INFO] Syscall write/read to high kernel pointer strictly rejected
   [OK]   Cross-architecture kernel boundary security verified
+  [TEST] Process credentials and privilege demotion (getuid/setuid)...
+  [INFO] Successfully demoted to UID 1000 and blocked escalation to UID 0 (EPERM)
+  [OK]   Process credentials and privilege demotion operational
+  [TEST] POSIX signal context registration and sigreturn verification...
+  [INFO] Signal handler registered, signal context saved, and restored via sigreturn
+  [OK]   POSIX signal context delivery and sigreturn restorer operational
+  [TEST] Character device /system/dev/tty stream read/write...
+[TTY_ECHO_OK]
+  [INFO] /system/dev/tty write and non-blocking read queue drain verified
+  [OK]   Character device /system/dev/tty stream operational
+  [TEST] TTY line discipline and termios mode switching...
+  [INFO] Termios TCGETS and TCSETS attribute persistence verified
+  [OK]   TTY line discipline and termios mode switching operational
+  [TEST] POSIX signal masking (sigprocmask/sigpending)...
+  [INFO] Masked signal blocked, queued, and delivered on unblock
+  [OK]   POSIX signal masking and pending queue operational
+  [TEST] ProcFS dynamic telemetry and DevFS isolation...
+  [INFO] ProcFS metrics and DevFS dynamic nodes verified
+  [OK]   Dynamic pseudo-filesystem operational
+  [TEST] Stack canary protection and argument ABI...
+  [INFO] Stack canary guard initialized (0xaaf338434ec3ca2c), argc=1, argv[0]=/system/bin/test_abi.elf
+  [OK]   Stack canary protection and argument ABI operational
+  [TEST] File-backed mmap, demand paging, and msync synchronization...
+  [INFO] Demand paging verified: read 'INIT_PAYLOAD_KEIRA_MMAP_PERSISTENCE_TEST'
+  [INFO] Disk persistence confirmed: 'DONE_PAYLOAD_KEIRA_MMAP_PERSISTENCE_TEST'
+  [OK]   File-backed mmap, demand paging, and msync synchronization operational
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

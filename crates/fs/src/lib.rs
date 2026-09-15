@@ -61,7 +61,8 @@ pub use tar::reader::{
     read_file_content as tar_read_file_content,
 };
 pub use vfs::ops::{
-    create_dir as vfs_create_dir, create_file, exists, read_file, remove_entry, write_file,
+    create_dir as vfs_create_dir, create_file, exists, get_file_size, read_file, read_file_offset,
+    remove_entry, write_file, write_file_offset,
 };
 pub use vfs::path::{resolve_alias_path, route_path};
 pub use vfs::permissions::{check_access_permission, get_vfs_user, set_vfs_user};

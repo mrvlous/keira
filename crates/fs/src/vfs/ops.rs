@@ -97,3 +97,39 @@ pub fn exists(path: &str) -> bool {
         },
     }
 }
+
+/// Read file content at a specific byte offset from the routed filesystem.
+pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
+    check_access_permission(path, false)?;
+    let (clean_path, fs_type) = route_path(path);
+    match fs_type {
+        FilesystemType::Initrd => tar::read_file_offset(clean_path, offset, buf),
+        FilesystemType::Fat => unsafe { fat::read_file_offset(clean_path, offset, buf) },
+        FilesystemType::Proc => Err("VFS Error: ProcFS does not support offset read"),
+        FilesystemType::Dev => Err("VFS Error: DevFS does not support offset read"),
+    }
+}
+
+/// Write buffer content to a file at a specific byte offset (FAT16 only).
+pub fn write_file_offset(path: &str, offset: u64, content: &[u8]) -> Result<usize, &'static str> {
+    check_access_permission(path, true)?;
+    let (clean_path, fs_type) = route_path(path);
+    match fs_type {
+        FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
+        FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
+        FilesystemType::Dev => Err("VFS Error: DevFS does not support offset write"),
+        FilesystemType::Fat => unsafe { fat::write_file_offset(clean_path, offset, content) },
+    }
+}
+
+/// Get size of a file in bytes from the routed filesystem.
+pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
+    check_access_permission(path, false)?;
+    let (clean_path, fs_type) = route_path(path);
+    match fs_type {
+        FilesystemType::Initrd => tar::get_file_size(clean_path),
+        FilesystemType::Fat => unsafe { fat::get_file_size(clean_path) },
+        FilesystemType::Proc => Err("VFS Error: ProcFS files have dynamic size"),
+        FilesystemType::Dev => Err("VFS Error: DevFS nodes have no size"),
+    }
+}

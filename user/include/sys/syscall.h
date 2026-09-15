@@ -36,6 +36,7 @@
 #define SYS_SOCKET 24
 #define SYS_CONNECT 25
 #define SYS_FORK 30
+#define SYS_MPROTECT 31
 #define SYS_CLOCK_GETTIME 36
 #define SYS_FUTEX 40
 #define SYS_ACCEPT 43
@@ -58,6 +59,7 @@
 #define SYS_IOCTL 73
 #define SYS_SIGPROCMASK 81
 #define SYS_SIGPENDING 82
+#define SYS_MSYNC 83
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -95,5 +97,7 @@ int sys_kill(pid_t pid, int sig);
 int sys_sigprocmask(int how, const void *set, void *oldset);
 int sys_sigpending(void *set);
 int sys_ioctl(int fd, unsigned long request, void *argp);
+int sys_mprotect(void *addr, size_t len, int prot);
+int sys_msync(void *addr, size_t length, int flags);
 
 #endif /* _SYS_SYSCALL_H */

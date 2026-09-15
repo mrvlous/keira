@@ -15,6 +15,8 @@ use keira_arch::cpu::{invlpg, read_cr3, write_cr3};
 pub const PAGE_PRESENT: u64 = 1 << 0;
 pub const PAGE_WRITABLE: u64 = 1 << 1;
 pub const PAGE_USER: u64 = 1 << 2;
+pub const PAGE_ACCESSED: u64 = 1 << 5;
+pub const PAGE_DIRTY: u64 = 1 << 6;
 pub const PAGE_COW: u64 = 1 << 9; // Bit 9: Software Copy-On-Write flag
 pub const PAGE_NO_EXECUTE: u64 = 1 << 63;
 /// Page Size (PS) flag indicating a 2MB huge page (PD level) or 1GB huge page (PDPT level).

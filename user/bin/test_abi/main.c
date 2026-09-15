@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
@@ -671,6 +672,85 @@ int main(int argc, char **argv) {
     printf("  [INFO] Stack canary guard initialized (0x%lx), argc=%d, argv[0]=%s\n",
            (unsigned long)__stack_chk_guard, argc, argv[0]);
     puts("  [OK]   Stack canary protection and argument ABI operational");
+
+    /* 26. File-Backed Memory Mapping, Demand Paging, and msync Synchronization */
+    puts("  [TEST] File-backed mmap, demand paging, and msync synchronization...");
+    const char *test_path = "/config/sys/mmap_abi.txt";
+    int f_init = open(test_path, O_CREAT | O_RDWR | O_TRUNC, 0644);
+    if (f_init < 0) {
+        puts("  [FAIL] Failed to create /config/sys/mmap_abi.txt for mmap test");
+        return 1;
+    }
+    const char *init_payload = "INIT_PAYLOAD_KEIRA_MMAP_PERSISTENCE_TEST";
+    written = write(f_init, init_payload, strlen(init_payload));
+    if (written < (ssize_t)strlen(init_payload)) {
+        puts("  [FAIL] Failed to write initial payload to test file");
+        close(f_init);
+        return 1;
+    }
+    close(f_init);
+
+    int mmap_fd = open(test_path, O_RDWR, 0);
+    if (mmap_fd < 0) {
+        puts("  [FAIL] Failed to reopen test file for mmap");
+        return 1;
+    }
+
+    char *mapped = (char *)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd, 0);
+    if (mapped == MAP_FAILED || mapped == NULL) {
+        puts("  [FAIL] File-backed mmap() returned MAP_FAILED");
+        close(mmap_fd);
+        return 1;
+    }
+
+    /* Verify demand paging: reading triggers #PF which lazily faults in file data */
+    if (strncmp(mapped, init_payload, strlen(init_payload)) != 0) {
+        puts("  [FAIL] Demand paging data mismatch upon initial read");
+        munmap(mapped, 4096);
+        close(mmap_fd);
+        return 1;
+    }
+    printf("  [INFO] Demand paging verified: read '%s'\n", init_payload);
+
+    /* Mutate mapped memory */
+    mapped[0] = 'D';
+    mapped[1] = 'O';
+    mapped[2] = 'N';
+    mapped[3] = 'E';
+
+    /* Synchronize dirty page back to disk */
+    if (msync(mapped, 4096, MS_SYNC) != 0) {
+        puts("  [FAIL] msync() returned non-zero error");
+        munmap(mapped, 4096);
+        close(mmap_fd);
+        return 1;
+    }
+
+    /* Unmap memory */
+    if (munmap(mapped, 4096) != 0) {
+        puts("  [FAIL] munmap() failed");
+        close(mmap_fd);
+        return 1;
+    }
+    close(mmap_fd);
+
+    /* Reopen file from disk and verify mutated bytes persisted */
+    int verify_fd = open(test_path, O_RDONLY, 0);
+    if (verify_fd < 0) {
+        puts("  [FAIL] Failed to open test file for persistence verification");
+        return 1;
+    }
+    char verify_buf[64];
+    memset(verify_buf, 0, sizeof(verify_buf));
+    ssize_t n_read = read(verify_fd, verify_buf, sizeof(verify_buf) - 1);
+    close(verify_fd);
+
+    if (n_read < 4 || strncmp(verify_buf, "DONE", 4) != 0) {
+        printf("  [FAIL] Disk persistence verification failed: read '%s'\n", verify_buf);
+        return 1;
+    }
+    printf("  [INFO] Disk persistence confirmed: '%s'\n", verify_buf);
+    puts("  [OK]   File-backed mmap, demand paging, and msync synchronization operational");
 
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
