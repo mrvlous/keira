@@ -156,9 +156,8 @@ pid_t fork(void) {
 }
 
 int execve(const char *pathname, char *const argv[], char *const envp[]) {
-    (void)argv;
-    (void)envp;
-    int64_t ret = syscall1(SYS_EXEC, (uint64_t)(uintptr_t)pathname);
+    int64_t ret = syscall3(SYS_EXEC, (uint64_t)(uintptr_t)pathname, (uint64_t)(uintptr_t)argv,
+                           (uint64_t)(uintptr_t)envp);
     if (ret < 0) {
         errno = (int)-ret;
         return -1;

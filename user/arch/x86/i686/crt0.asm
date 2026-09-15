@@ -18,13 +18,14 @@ global _start
 extern main
 extern exit
 extern environ
+extern __stack_chk_guard
 
 section .text
 _start:
     ; Terminate stack frame unwinding by clearing EBP
     xor ebp, ebp
 
-    ; Kernel stack setup in run.rs has [ret_sentinel, argc, argv, envp]
+    ; Kernel stack setup has [ret_sentinel, argc, argv, envp]
     ; Advance past sentinel to access parameters
     add esp, 4
     mov eax, [esp]          ; argc
@@ -33,6 +34,33 @@ _start:
 
     ; Store envp in global environ pointer
     mov [environ], ecx
+
+    ; Scan past envp to locate auxv table
+    mov esi, ecx
+.find_auxv:
+    cmp dword [esi], 0
+    lea esi, [esi + 4]
+    jne .find_auxv
+
+    ; Scan auxv pairs for AT_RANDOM (25)
+.scan_auxv:
+    mov edi, [esi]
+    test edi, edi
+    jz .auxv_done
+    cmp edi, 25
+    jne .next_auxv
+    mov ebx, [esi + 4]
+    test ebx, ebx
+    jz .auxv_done
+    mov ebx, [ebx]
+    test ebx, ebx
+    jz .auxv_done
+    mov [__stack_chk_guard], ebx
+    jmp .auxv_done
+.next_auxv:
+    add esi, 8
+    jmp .scan_auxv
+.auxv_done:
 
     ; Align stack pointer to 16 bytes
     and esp, -16

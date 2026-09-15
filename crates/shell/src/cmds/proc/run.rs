@@ -29,195 +29,7 @@ const USER_DEFAULT_BRK: u64 = 0x600000000000;
 #[cfg(target_arch = "x86_64")]
 const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
 
-const AT_NULL: u64 = 0;
-const AT_PAGESZ: u64 = 6;
-const AT_BASE: u64 = 7;
-const AT_FLAGS: u64 = 8;
-const AT_ENTRY: u64 = 9;
-const AT_UID: u64 = 11;
-const AT_EUID: u64 = 12;
-const AT_CLKTCK: u64 = 17;
-const AT_RANDOM: u64 = 25;
-
-/// Format System V AMD64 ABI user stack with argc, argv pointers, envp pointers, auxv, and string data.
-#[cfg(target_arch = "x86_64")]
-unsafe fn setup_user_stack_args_64(
-    page_ptr: *mut u8,
-    top_page_vaddr: u64,
-    args: &[&str],
-    entry_point: u64,
-) -> u64 {
-    let mut offset = 4096usize - 16;
-    let mut arg_vaddrs = [0u64; 16];
-    let argc = if args.is_empty() {
-        1
-    } else {
-        args.len().min(16)
-    };
-
-    for (i, &arg) in args[..argc].iter().enumerate() {
-        let bytes = arg.as_bytes();
-        let len = bytes.len() + 1;
-        if offset < len + 256 {
-            break;
-        }
-        offset -= len;
-        core::ptr::copy_nonoverlapping(bytes.as_ptr(), page_ptr.add(offset), bytes.len());
-        *page_ptr.add(offset + bytes.len()) = 0;
-        arg_vaddrs[i] = top_page_vaddr + offset as u64;
-    }
-
-    // Allocate 16 random entropy bytes for AT_RANDOM stack canary seed
-    offset = offset.saturating_sub(16);
-    let random_entropy = [
-        0x4bu8, 0x65, 0x69, 0x72, 0x61, 0x5f, 0x72, 0x6e, 0x67, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x32,
-        0x36,
-    ];
-    core::ptr::copy_nonoverlapping(random_entropy.as_ptr(), page_ptr.add(offset), 16);
-    let random_vaddr = top_page_vaddr + offset as u64;
-
-    // 16-byte align before pointer words
-    offset &= !15;
-
-    let auxv: [(u64, u64); 8] = [
-        (AT_PAGESZ, 4096),
-        (AT_ENTRY, entry_point),
-        (AT_BASE, 0),
-        (AT_FLAGS, 0),
-        (AT_UID, 0),
-        (AT_EUID, 0),
-        (AT_CLKTCK, 100),
-        (AT_RANDOM, random_vaddr),
-    ];
-    let auxv_words = (auxv.len() + 1) * 2;
-
-    // Total words: argc(1) + argv pointers(argc) + argv_null(1) + envp_null(1) + auxv_words
-    let total_words = 1 + argc + 1 + 1 + auxv_words;
-    if total_words % 2 != 0 {
-        offset = offset.saturating_sub(8);
-    }
-    offset = offset.saturating_sub(total_words * 8);
-
-    let stack_u64 = page_ptr.add(offset) as *mut u64;
-    let mut w_idx = 0;
-
-    // 1. argc
-    *stack_u64.add(w_idx) = argc as u64;
-    w_idx += 1;
-
-    // 2. argv[0..argc]
-    for i in 0..argc {
-        *stack_u64.add(w_idx) = arg_vaddrs[i];
-        w_idx += 1;
-    }
-
-    // 3. argv NULL terminator
-    *stack_u64.add(w_idx) = 0;
-    w_idx += 1;
-
-    // 4. envp NULL terminator
-    *stack_u64.add(w_idx) = 0;
-    w_idx += 1;
-
-    // 5. auxv table
-    for (tag, val) in auxv.iter() {
-        *stack_u64.add(w_idx) = *tag;
-        *stack_u64.add(w_idx + 1) = *val;
-        w_idx += 2;
-    }
-    *stack_u64.add(w_idx) = AT_NULL;
-    *stack_u64.add(w_idx + 1) = 0;
-
-    top_page_vaddr + offset as u64
-}
-
-/// Format 32-bit user stack with argc, argv pointers, envp pointers, auxv, and string data.
-#[cfg(target_arch = "x86")]
-unsafe fn setup_user_stack_args_32(
-    page_ptr: *mut u8,
-    top_page_vaddr: u64,
-    args: &[&str],
-    entry_point: u64,
-) -> u64 {
-    let mut offset = 4096usize - 16;
-    let mut arg_vaddrs = [0u32; 16];
-    let argc = if args.is_empty() {
-        1
-    } else {
-        args.len().min(16)
-    };
-
-    for (i, &arg) in args[..argc].iter().enumerate() {
-        let bytes = arg.as_bytes();
-        let len = bytes.len() + 1;
-        if offset < len + 256 {
-            break;
-        }
-        offset -= len;
-        core::ptr::copy_nonoverlapping(bytes.as_ptr(), page_ptr.add(offset), bytes.len());
-        *page_ptr.add(offset + bytes.len()) = 0;
-        arg_vaddrs[i] = (top_page_vaddr + offset as u64) as u32;
-    }
-
-    // Allocate 16 random entropy bytes for AT_RANDOM stack canary seed
-    offset = offset.saturating_sub(16);
-    let random_entropy = [
-        0x4bu8, 0x65, 0x69, 0x72, 0x61, 0x5f, 0x72, 0x6e, 0x67, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x32,
-        0x36,
-    ];
-    core::ptr::copy_nonoverlapping(random_entropy.as_ptr(), page_ptr.add(offset), 16);
-    let random_vaddr = (top_page_vaddr + offset as u64) as u32;
-
-    offset &= !15;
-
-    let auxv: [(u32, u32); 8] = [
-        (AT_PAGESZ as u32, 4096),
-        (AT_ENTRY as u32, entry_point as u32),
-        (AT_BASE as u32, 0),
-        (AT_FLAGS as u32, 0),
-        (AT_UID as u32, 0),
-        (AT_EUID as u32, 0),
-        (AT_CLKTCK as u32, 100),
-        (AT_RANDOM as u32, random_vaddr),
-    ];
-    let auxv_words = (auxv.len() + 1) * 2;
-
-    // Allocate argv vector array [argv[0], ..., argv[argc-1], NULL, envp_null(1), auxv]
-    let table_words = (argc + 1) + 1 + auxv_words;
-    offset = offset.saturating_sub(table_words * 4);
-    let argv_table_offset = offset;
-    let argv_table_ptr = page_ptr.add(argv_table_offset) as *mut u32;
-
-    let mut w_idx = 0;
-    for i in 0..argc {
-        *argv_table_ptr.add(w_idx) = arg_vaddrs[i];
-        w_idx += 1;
-    }
-    *argv_table_ptr.add(w_idx) = 0; // argv NULL terminator
-    w_idx += 1;
-    *argv_table_ptr.add(w_idx) = 0; // envp NULL terminator
-    w_idx += 1;
-    for (tag, val) in auxv.iter() {
-        *argv_table_ptr.add(w_idx) = *tag;
-        *argv_table_ptr.add(w_idx + 1) = *val;
-        w_idx += 2;
-    }
-    *argv_table_ptr.add(w_idx) = AT_NULL as u32;
-    *argv_table_ptr.add(w_idx + 1) = 0;
-
-    offset &= !15;
-
-    // Allocate cdecl call frame: [ret_sentinel(1), argc(1), argv_ptr(1), envp_ptr(1)]
-    offset = offset.saturating_sub(16);
-    let stack_u32 = page_ptr.add(offset) as *mut u32;
-
-    *stack_u32.add(0) = 0; // NULL return address sentinel for stack unwinder
-    *stack_u32.add(1) = argc as u32; // argc at [ESP+4]
-    *stack_u32.add(2) = (top_page_vaddr + argv_table_offset as u64) as u32; // argv at [ESP+8]
-    *stack_u32.add(3) = (top_page_vaddr + (argv_table_offset + (argc + 1) * 4) as u64) as u32; // envp at [ESP+12]
-
-    top_page_vaddr + offset as u64
-}
+use keira_task::stack::*;
 
 /// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
 pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
@@ -231,7 +43,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
         let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
         let ptr = top_stack_page as *mut u8;
-        let initial_user_rsp = setup_user_stack_args_32(ptr, top_stack_page, args, entry_point);
+        let initial_user_rsp = setup_user_stack_32(ptr, top_stack_page, args, entry_point);
 
         let _job_id = keira_task::signal::add_job(1, filename, true);
         jump_to_user(entry_point, initial_user_rsp);
@@ -308,7 +120,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         }
         let ptr = top_stack_page as *mut u8;
         core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
-        let initial_user_rsp = setup_user_stack_args_64(ptr, top_stack_page, args, entry_point);
+        let initial_user_rsp = setup_user_stack_64(ptr, top_stack_page, args, entry_point);
 
         let mut brk_end = USER_DEFAULT_BRK;
         if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {

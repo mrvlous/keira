@@ -17,6 +17,7 @@ pub mod ext4;
 pub mod fat;
 pub mod lock;
 pub mod lvm;
+pub mod proc;
 pub mod tar;
 pub mod vfs;
 
@@ -54,6 +55,7 @@ pub use lvm::volume::{
     VolumeGroup, LVM_CMD_CREATE_LV, LVM_CMD_CREATE_VG, LVM_CMD_INFO, LVM_CMD_RAID_STATUS,
     LVM_CMD_RAID_SYNC,
 };
+pub use proc::{read_proc_file, register_task_hooks};
 pub use tar::reader::{
     cat_file as tar_cat_file, exists as tar_exists, init as tar_init, list_files as tar_list_files,
     read_file_content as tar_read_file_content,
@@ -64,3 +66,39 @@ pub use vfs::ops::{
 pub use vfs::path::{resolve_alias_path, route_path};
 pub use vfs::permissions::{check_access_permission, get_vfs_user, set_vfs_user};
 pub use vfs::types::FilesystemType;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_procfs_and_devfs_existence() {
+        assert!(exists("/system/dev/null"));
+        assert!(exists("/system/dev/zero"));
+        assert!(exists("/system/dev/random"));
+        assert!(exists("/system/dev/urandom"));
+        assert!(exists("/system/dev/tty"));
+        assert!(exists("/dev/null"));
+        assert!(exists("/dev/zero"));
+
+        assert!(exists("/system/proc/uptime"));
+        assert!(exists("/system/proc/meminfo"));
+        assert!(exists("/system/proc/cpuinfo"));
+        assert!(exists("/system/proc/version"));
+        assert!(exists("/system/proc/loadavg"));
+        assert!(exists("/system/proc/self/status"));
+        assert!(exists("/proc/uptime"));
+    }
+
+    #[test]
+    fn test_read_proc_version_and_cpuinfo() {
+        let mut buf = [0u8; 512];
+        let n = read_proc_file("version", &mut buf).expect("read version failed");
+        let s = core::str::from_utf8(&buf[..n]).expect("utf8 version");
+        assert!(s.contains("Keira Kernel version 0.3.0"));
+
+        let n = read_proc_file("cpuinfo", &mut buf).expect("read cpuinfo failed");
+        let s = core::str::from_utf8(&buf[..n]).expect("utf8 cpuinfo");
+        assert!(s.contains("processor\t: 0"));
+    }
+}

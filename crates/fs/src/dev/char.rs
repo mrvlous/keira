@@ -19,7 +19,7 @@ pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'
             buf.fill(0);
             Ok(buf.len())
         }
-        "random" => {
+        "random" | "urandom" => {
             let lo: u32;
             let hi: u32;
             core::arch::asm!("rdtsc", out("eax") lo, out("edx") hi);
@@ -31,6 +31,7 @@ pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'
             }
             Ok(buf.len())
         }
+        "ptmx" => Ok(0),
         "tty" => {
             let n = keira_io::tty::read_tty(buf);
             if n > 0 {
@@ -55,7 +56,7 @@ pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'
 /// Write bytes to a special character device node.
 pub unsafe fn write_dev_node(node_name: &str, buf: &[u8]) -> Result<usize, &'static str> {
     match node_name {
-        "null" | "zero" | "random" => Ok(buf.len()),
+        "null" | "zero" | "random" | "urandom" | "ptmx" => Ok(buf.len()),
         "tty" => {
             if let Ok(s) = core::str::from_utf8(buf) {
                 vga::print_str(s);
@@ -64,4 +65,13 @@ pub unsafe fn write_dev_node(node_name: &str, buf: &[u8]) -> Result<usize, &'sta
         }
         _ => Err("Unknown device node"),
     }
+}
+
+/// Query whether a character device node exists dynamically.
+pub fn exists(node_name: &str) -> bool {
+    let clean = node_name.trim_start_matches('/');
+    matches!(
+        clean,
+        "null" | "zero" | "random" | "urandom" | "tty" | "ptmx"
+    )
 }

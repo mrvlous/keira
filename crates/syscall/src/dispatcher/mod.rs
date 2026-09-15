@@ -102,6 +102,59 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                 ) {
                     return errno_to_ret(EACCES);
                 }
+
+                let mut arg_storage: [[u8; 128]; 16] = [[0u8; 128]; 16];
+                let mut arg_slices: [&str; 16] = [""; 16];
+                let mut argc = 0;
+
+                if arg2 != 0 {
+                    #[cfg(target_arch = "x86_64")]
+                    let ptr_size = 8;
+                    #[cfg(target_arch = "x86")]
+                    let ptr_size = 4;
+
+                    for (i, storage) in arg_storage.iter_mut().enumerate() {
+                        let mut ptr_bytes = [0u8; 8];
+                        if unsafe {
+                            copy_from_user(
+                                &mut ptr_bytes[..ptr_size],
+                                arg2 + (i as u64 * ptr_size as u64),
+                            )
+                        }
+                        .is_ok()
+                        {
+                            let user_str_ptr = if ptr_size == 8 {
+                                u64::from_le_bytes(ptr_bytes) as usize
+                            } else {
+                                u32::from_le_bytes([
+                                    ptr_bytes[0],
+                                    ptr_bytes[1],
+                                    ptr_bytes[2],
+                                    ptr_bytes[3],
+                                ]) as usize
+                            };
+                            if user_str_ptr == 0 {
+                                break;
+                            }
+                            if let Ok(l) =
+                                unsafe { read_user_string(user_str_ptr as *const u8, storage) }
+                            {
+                                if let Ok(s) = core::str::from_utf8(&storage[..l]) {
+                                    arg_slices[i] = s;
+                                    argc += 1;
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                if argc == 0 {
+                    arg_slices[0] = filename_str;
+                    argc = 1;
+                }
+
                 unsafe {
                     let child_pml4 = match vmm::clone_kernel_pml4() {
                         Ok(p) => p,
@@ -124,7 +177,13 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                     };
 
                     let stack_pages = 256;
-                    let stack_bottom: u64 = 0x7FFFFFD80000;
+                    #[cfg(target_arch = "x86_64")]
+                    let (stack_bottom, top_stack_page): (u64, u64) =
+                        (0x7FFFFFD80000, 0x7FFFFFE00000 - pmm::PAGE_SIZE);
+                    #[cfg(target_arch = "x86")]
+                    let (stack_bottom, top_stack_page): (u64, u64) =
+                        (0x07F00000, 0x07FFF000 - pmm::PAGE_SIZE);
+
                     for p in 0..stack_pages {
                         let page_vaddr = stack_bottom + (p * pmm::PAGE_SIZE);
                         if let Some(frame) = pmm::alloc_frame() {
@@ -137,7 +196,23 @@ pub extern "C" fn syscall_dispatcher(num: u64, arg1: u64, arg2: u64, arg3: u64) 
                             core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
                         }
                     }
-                    let initial_user_rsp: u64 = 0x7FFFFFE00000 - 16;
+
+                    let ptr = top_stack_page as *mut u8;
+                    #[cfg(target_arch = "x86_64")]
+                    let initial_user_rsp = keira_task::stack::setup_user_stack_64(
+                        ptr,
+                        top_stack_page,
+                        &arg_slices[..argc],
+                        entry_point,
+                    );
+                    #[cfg(target_arch = "x86")]
+                    let initial_user_rsp = keira_task::stack::setup_user_stack_32(
+                        ptr,
+                        top_stack_page,
+                        &arg_slices[..argc],
+                        entry_point,
+                    );
+
                     vmm::switch_address_space(parent_pml4);
 
                     match spawn_user("user_app", entry_point, initial_user_rsp, child_pml4) {

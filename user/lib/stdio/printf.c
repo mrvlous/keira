@@ -46,6 +46,20 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
             continue;
         }
 
+        int is_long = 0;
+        int is_long_long = 0;
+        while (*format == 'l' || *format == 'z' || *format == 'h') {
+            if (*format == 'l') {
+                if (is_long)
+                    is_long_long = 1;
+                else
+                    is_long = 1;
+            } else if (*format == 'z') {
+                is_long = 1;
+            }
+            format++;
+        }
+
         if (*format == 's') {
             const char *s = va_arg(ap, const char *);
             if (!s)
@@ -55,7 +69,9 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
             }
             format++;
         } else if (*format == 'd' || *format == 'i') {
-            int val = va_arg(ap, int);
+            long long val = is_long_long ? va_arg(ap, long long)
+                            : is_long    ? (long long)va_arg(ap, long)
+                                         : (long long)va_arg(ap, int);
             char num_buf[32];
             int nidx = 0;
             if (val == 0) {
@@ -77,9 +93,28 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
                 str[idx++] = num_buf[--nidx];
             }
             format++;
+        } else if (*format == 'u') {
+            unsigned long long val = is_long_long ? va_arg(ap, unsigned long long)
+                                     : is_long    ? (unsigned long long)va_arg(ap, unsigned long)
+                                                  : (unsigned long long)va_arg(ap, unsigned int);
+            char num_buf[32];
+            int nidx = 0;
+            if (val == 0) {
+                num_buf[nidx++] = '0';
+            } else {
+                while (val > 0 && nidx < 30) {
+                    num_buf[nidx++] = '0' + (val % 10);
+                    val /= 10;
+                }
+            }
+            while (nidx > 0 && idx + 1 < size) {
+                str[idx++] = num_buf[--nidx];
+            }
+            format++;
         } else if (*format == 'x' || *format == 'X' || *format == 'p') {
-            unsigned long long val =
-                (*format == 'p') ? va_arg(ap, unsigned long long) : va_arg(ap, unsigned int);
+            unsigned long long val = (*format == 'p' || is_long || is_long_long)
+                                         ? va_arg(ap, unsigned long long)
+                                         : (unsigned long long)va_arg(ap, unsigned int);
             char num_buf[32];
             int nidx = 0;
             if (val == 0) {

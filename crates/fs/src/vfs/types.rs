@@ -16,4 +16,8 @@ pub enum FilesystemType {
     Fat,
     /// In-memory UStar Initrd ramdisk.
     Initrd,
+    /// Dynamic ProcFS pseudo-filesystem.
+    Proc,
+    /// Virtual DevFS character device nodes.
+    Dev,
 }

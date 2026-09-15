@@ -18,6 +18,7 @@ global _start
 extern main
 extern exit
 extern environ
+extern __stack_chk_guard
 
 section .text
 _start:
@@ -38,6 +39,33 @@ _start:
 
     ; Store envp in global environ pointer
     mov [rel environ], rdx
+
+    ; Scan past envp to locate auxv table
+    mov rcx, rdx
+.find_auxv:
+    cmp qword [rcx], 0
+    lea rcx, [rcx + 8]
+    jne .find_auxv
+
+    ; Scan auxv pairs for AT_RANDOM (25)
+.scan_auxv:
+    mov r8, [rcx]
+    test r8, r8
+    jz .auxv_done
+    cmp r8, 25
+    jne .next_auxv
+    mov r9, [rcx + 8]
+    test r9, r9
+    jz .auxv_done
+    mov r10, [r9]
+    test r10, r10
+    jz .auxv_done
+    mov [rel __stack_chk_guard], r10
+    jmp .auxv_done
+.next_auxv:
+    add rcx, 16
+    jmp .scan_auxv
+.auxv_done:
 
     ; Align stack pointer to 16 bytes before calling C code
     and rsp, -16

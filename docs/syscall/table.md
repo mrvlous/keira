@@ -14,7 +14,7 @@ This document specifies the complete system call vector table supported by Keira
 | `2` | `SYS_EXIT` | `int status` | Terminate current process image |
 | `3` | `SYS_SLEEP` | `uint32_t ms` | Put calling task to sleep for duration |
 | `4` | `SYS_UPTIME` | - | Return system uptime in milliseconds |
-| `5` | `SYS_EXEC` | `const char *path` | Load and execute a new ELF program image |
+| `5` | `SYS_EXEC` | `const char *path, char *const argv[], char *const envp[]` | Load and execute an ELF binary with argument vector, environment, and auxiliary vector |
 | `6` | `SYS_OPEN` | `const char *path, int flags, int mode` | Open file descriptor |
 | `7` | `SYS_READ` | `int fd, void *buf, size_t count` | Read bytes from open file descriptor |
 | `8` | `SYS_WRITE` | `int fd, const void *buf, size_t count` | Write bytes to open file descriptor |

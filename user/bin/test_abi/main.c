@@ -577,6 +577,101 @@ int main(int argc, char **argv) {
     puts("  [INFO] Masked signal blocked, queued, and delivered on unblock");
     puts("  [OK]   POSIX signal masking and pending queue operational");
 
+    /* 24. ProcFS Dynamic Telemetry & DevFS Isolation */
+    puts("  [TEST] ProcFS dynamic telemetry and DevFS isolation...");
+    char proc_buf[256];
+    memset(proc_buf, 0, sizeof(proc_buf));
+    int up_fd = open("/system/proc/uptime", O_RDONLY, 0);
+    if (up_fd < 0 || read(up_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
+        puts("  [FAIL] Failed to read /system/proc/uptime");
+        if (up_fd >= 0)
+            close(up_fd);
+        return 1;
+    }
+    close(up_fd);
+    if (strchr(proc_buf, '.') == NULL) {
+        puts("  [FAIL] /system/proc/uptime content malformed");
+        return 1;
+    }
+
+    memset(proc_buf, 0, sizeof(proc_buf));
+    int mem_fd = open("/system/proc/meminfo", O_RDONLY, 0);
+    if (mem_fd < 0 || read(mem_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
+        puts("  [FAIL] Failed to read /system/proc/meminfo");
+        if (mem_fd >= 0)
+            close(mem_fd);
+        return 1;
+    }
+    close(mem_fd);
+    if (strstr(proc_buf, "MemTotal:") == NULL) {
+        puts("  [FAIL] /system/proc/meminfo missing MemTotal token");
+        return 1;
+    }
+
+    memset(proc_buf, 0, sizeof(proc_buf));
+    int cpu_fd = open("/system/proc/cpuinfo", O_RDONLY, 0);
+    if (cpu_fd < 0 || read(cpu_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
+        puts("  [FAIL] Failed to read /system/proc/cpuinfo");
+        if (cpu_fd >= 0)
+            close(cpu_fd);
+        return 1;
+    }
+    close(cpu_fd);
+    if (strstr(proc_buf, "vendor_id") == NULL) {
+        puts("  [FAIL] /system/proc/cpuinfo missing vendor_id token");
+        return 1;
+    }
+
+    memset(proc_buf, 0, sizeof(proc_buf));
+    int stat_fd = open("/system/proc/self/status", O_RDONLY, 0);
+    if (stat_fd < 0 || read(stat_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
+        puts("  [FAIL] Failed to read /system/proc/self/status");
+        if (stat_fd >= 0)
+            close(stat_fd);
+        return 1;
+    }
+    close(stat_fd);
+    if (strstr(proc_buf, "State:") == NULL) {
+        puts("  [FAIL] /system/proc/self/status missing State token");
+        return 1;
+    }
+
+    int dev_null = open("/system/dev/null", O_RDONLY, 0);
+    if (dev_null < 0 || read(dev_null, proc_buf, 10) != 0) {
+        puts("  [FAIL] Dynamic /system/dev/null read failed");
+        if (dev_null >= 0)
+            close(dev_null);
+        return 1;
+    }
+    close(dev_null);
+
+    int dev_zero = open("/system/dev/zero", O_RDONLY, 0);
+    if (dev_zero < 0 || read(dev_zero, proc_buf, 8) != 8 || proc_buf[0] != 0) {
+        puts("  [FAIL] Dynamic /system/dev/zero read failed");
+        if (dev_zero >= 0)
+            close(dev_zero);
+        return 1;
+    }
+    close(dev_zero);
+
+    puts("  [INFO] ProcFS metrics and DevFS dynamic nodes verified");
+    puts("  [OK]   Dynamic pseudo-filesystem operational");
+
+    /* 25. Stack Canary Protection & Argument Passing ABI */
+    puts("  [TEST] Stack canary protection and argument ABI...");
+    extern uintptr_t __stack_chk_guard;
+    if (__stack_chk_guard == 0) {
+        puts("  [FAIL] __stack_chk_guard is zero");
+        return 1;
+    }
+    if (argc < 1 || argv == NULL || argv[0] == NULL) {
+        puts("  [FAIL] System V argument stack frame malformed");
+        return 1;
+    }
+    printf("  [INFO] Stack canary guard initialized (0x%lx), argc=%d, argv[0]=%s\n",
+           (unsigned long)__stack_chk_guard, argc, argv[0]);
+    puts("  [OK]   Stack canary protection and argument ABI operational");
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }

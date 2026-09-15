@@ -22,6 +22,8 @@ pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
     match fs_type {
         FilesystemType::Initrd => tar::read_file_content(clean_path, buf),
         FilesystemType::Fat => unsafe { fat::read_file_content(clean_path, buf) },
+        FilesystemType::Proc => crate::proc::read_proc_file(clean_path, buf),
+        FilesystemType::Dev => unsafe { crate::dev::char::read_dev_node(clean_path, buf) },
     }
 }
 
@@ -31,6 +33,8 @@ pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
+        FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
+        FilesystemType::Dev => unsafe { crate::dev::char::write_dev_node(clean_path, content) },
         FilesystemType::Fat => unsafe {
             fat::write_file_content(clean_path, content)?;
             Ok(content.len())
@@ -44,6 +48,8 @@ pub fn create_file(path: &str) -> Result<(), &'static str> {
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
+        FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
+        FilesystemType::Dev => Err("VFS Error: DevFS nodes are static"),
         FilesystemType::Fat => unsafe { fat::create_file(clean_path) },
     }
 }
@@ -54,6 +60,8 @@ pub fn remove_entry(path: &str) -> Result<(), &'static str> {
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
+        FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
+        FilesystemType::Dev => Err("VFS Error: DevFS nodes cannot be removed"),
         FilesystemType::Fat => unsafe { fat::remove_entry(clean_path) },
     }
 }
@@ -64,6 +72,8 @@ pub fn create_dir(path: &str) -> Result<(), &'static str> {
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
+        FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
+        FilesystemType::Dev => Err("VFS Error: DevFS is read-only"),
         FilesystemType::Fat => unsafe { fat::create_dir(clean_path) },
     }
 }
@@ -73,6 +83,8 @@ pub fn exists(path: &str) -> bool {
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => tar::exists(clean_path),
+        FilesystemType::Proc => crate::proc::exists(clean_path),
+        FilesystemType::Dev => crate::dev::char::exists(clean_path),
         FilesystemType::Fat => unsafe {
             let (dir_cluster, name) = match fat::resolve_path(clean_path) {
                 Ok(res) => res,

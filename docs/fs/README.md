@@ -27,7 +27,8 @@ graph TD
 | [`fat.md`](fat.md) | FAT File Systems | FAT12, FAT16, and FAT32 file read/write operations and cluster chaining |
 | [`ext4.md`](ext4.md) | EXT4 File System | Read-only EXT4 superblock parsing, block group descriptors, and inode extents |
 | [`initrd.md`](initrd.md) | USTAR Boot RAM Disk | In-memory archive reader mounted at boot for system binaries and libraries |
-| [`dev.md`](dev.md) | `/system/dev/` Device Nodes | Virtual device filesystem (`null`, `zero`, `random`, `console`, `sda`, `sda1`) |
+| [`dev.md`](dev.md) | `/system/dev/` Device Nodes | Virtual device filesystem (`null`, `zero`, `random`, `urandom`, `tty`, `ptmx`, `console`, `sda`, `sda1`) |
+| [`proc.md`](proc.md) | `/system/proc/` Pseudo-Filesystem | In-memory kernel runtime telemetry, uptime, meminfo, cpuinfo, and process status |
 | [`cache.md`](cache.md) | 16-Slot Sector Cache | Least-Recently-Used (LRU) write-through cache engine with thread-safe synchronization |
 | [`lock.md`](lock.md) | Advisory File Locks | Multi-reader shared and single-writer exclusive file lock tracking |
 | [`lvm_raid.md`](lvm_raid.md) | LVM & Software RAID | Logical Volume Management volume groups and RAID 0/1/5 striping/mirroring |

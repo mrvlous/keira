@@ -410,6 +410,8 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp user/lib/stdio/file.c $(FS_ROOT)/system/lib/file.c
 	$(Q)cp user/lib/stdio/printf.c $(FS_ROOT)/system/lib/printf.c
 	$(Q)cp user/lib/syscall/syscall.c $(FS_ROOT)/system/lib/syscall.c
+	$(Q)cp user/lib/termios/termios.c $(FS_ROOT)/system/lib/termios.c 2>/dev/null || true
+	$(Q)cp user/lib/stdlib/stack_chk.c $(FS_ROOT)/system/lib/stack_chk.c 2>/dev/null || true
 	$(Q)cp user/bin/kcc/*.c $(FS_ROOT)/apps/src/kcc/
 	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
 	$(Q)cp user/bin/sysinfo/*.c $(FS_ROOT)/apps/src/sysinfo/

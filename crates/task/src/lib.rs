@@ -15,6 +15,7 @@ pub mod cgroups;
 pub mod scheduler;
 pub mod security;
 pub mod signal;
+pub mod stack;
 pub mod types;
 
 pub use cgroups::{
@@ -42,6 +43,7 @@ pub use signal::{
     SIGCHLD, SIGCONT, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE, SIGQUIT, SIGSEGV, SIGSTOP,
     SIGTERM, SIGTRAP, SIGUSR1, SIGUSR2,
 };
+pub use stack::*;
 pub use types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 
 #[cfg(test)]
@@ -219,5 +221,20 @@ mod tests {
             assert_eq!(get_current_signal_mask() & (1 << 10), 0);
             assert_eq!(get_current_pending_signals() & (1 << 10), 0);
         }
+    }
+
+    #[test]
+    fn test_user_stack_and_auxv_setup() {
+        let mut page = [0u8; 4096];
+        let top_vaddr = 0x7FFFFFE00000 - 4096;
+        let args = ["/system/bin/test_abi.elf", "arg1", "arg2"];
+        let rsp = unsafe { setup_user_stack_64(page.as_mut_ptr(), top_vaddr, &args, 0x400000) };
+        assert!(rsp > top_vaddr);
+        assert!(rsp < top_vaddr + 4096);
+        assert_eq!(rsp % 16, 0);
+
+        let offset = (rsp - top_vaddr) as usize;
+        let argc = u64::from_le_bytes(page[offset..offset + 8].try_into().unwrap());
+        assert_eq!(argc, 3);
     }
 }
