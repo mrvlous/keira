@@ -2,7 +2,7 @@
 
 # Native Shell Built-In Commands
 
-This directory documents the 75 native built-in commands organized by subsystem domain in Keira Kernel, achieving **100% Active Bare-Metal Implementations** across all 75 commands.
+This directory documents the 76 native built-in commands organized by subsystem domain in Keira Kernel, achieving **100% Active Bare-Metal Implementations** across all 76 commands.
 
 ---
 
@@ -10,8 +10,8 @@ This directory documents the 75 native built-in commands organized by subsystem 
 
 ```mermaid
 graph TD
-    Shell["keira-shell Command Router (75 Commands - 100% Active)"] --> FS["fs/ (16 Commands)<br/>list, view, edit, create, delete, copy, move, folder, write, drives, use, disk, ramdisk, initrd, fileinfo, ext4"]
-    Shell --> Sys["sys/ (15 Commands)<br/>system, runtime, memory, cpu, smp, time, env, hostname, power, reset, sync, service, syslog, unwind, watchpoint"]
+    Shell["keira-shell Command Router (76 Commands - 100% Active)"] --> FS["fs/ (16 Commands)<br/>list, view, edit, create, delete, copy, move, folder, write, drives, use, disk, ramdisk, initrd, fileinfo, ext4"]
+    Shell --> Sys["sys/ (16 Commands)<br/>system, runtime, memory, cpu, smp, time, env, hostname, power, reset, reboot, sync, service, syslog, unwind, watchpoint"]
     Shell --> Proc["proc/ (13 Commands)<br/>tasks, kill, stop, bg, fg, jobs, run, kcc, cgroups, futex, eventfd, perf, timer"]
     Shell --> Net["net/ (8 Commands)<br/>network, download, https, iptables, firewall, ipcs, ipcrm, mqueue"]
     Shell --> Sec["sec/ (7 Commands)<br/>user, login, protect, tpm, seccomp, bpf, mac"]
@@ -30,6 +30,6 @@ graph TD
 | **Process & Scheduling** | `proc/` | 13 | 13 | 0 | [proc.md](proc.md) |
 | **Networking & Sockets** | `net/` | 8 | 8 | 0 | [net.md](net.md) |
 | **Security & Accounts** | `sec/` | 7 | 7 | 0 | [sec.md](sec.md) |
-| **System & Telemetry** | `sys/` | 15 | 15 | 0 | [sys.md](sys.md) |
+| **System & Telemetry** | `sys/` | 16 | 16 | 0 | [sys.md](sys.md) |
 | **Utilities & Shell** | `util/` | 5 | 5 | 0 | [util.md](util.md) |
-| **Total** | | **75** | **75** | **0** | |
+| **Total** | | **76** | **76** | **0** | |

@@ -52,7 +52,7 @@ Keira Kernel follows strict **Semantic Versioning (`MAJOR.MINOR.PATCH`)** for it
 
 * **Baseline (`0.1.0`)**: Represents the unified foundation release featuring 100% pure Rust modular architecture, dual-architecture parity (`x86_64` & `i686`), Ring 3 isolation, freestanding POSIX C SDK, native in-kernel C compiler (`kcc`), FAT16 filesystem, and TCP/IP stack.
 * **Bare-Metal Milestone (`0.2.0`)**: 100% active bare-metal implementation across all 75 shell commands, zero stubs/mocks/placeholders, complete EXT4 extent tree parser, KVM CPUID virtualization framework, and Loadable Kernel Modules (LKM) engine.
-* **Userland & Self-Hosting Toolchain Milestone (`0.3.0`)**: Standard System V ABI & auxv[] stack framing, freestanding C SDK (libc.a), buffered stream I/O, VMM demand paging & 2MB huge pages, memory isolation on fork, anonymous IPC pipes, Ring 3 fault-injection verification harness (test_abi.elf), and native in-kernel C compiler (kcc.elf) self-hosting loop.
+* **Userland & Self-Hosting Toolchain Milestone (`0.3.0`)**: Standard System V ABI & auxv[] stack framing, freestanding C SDK (libc.a), buffered stream I/O, VMM demand paging & file-backed memory mapping with msync persistence, 2MB huge pages, memory isolation on fork, anonymous IPC pipes, Ring 3 fault-injection verification harness (test_abi.elf with 26 tests), 76 active bare-metal shell commands, and native in-kernel C compiler (kcc.elf) self-hosting loop.
 * **Patch Releases (`0.3.x`)**: Reserved for backward-compatible bug fixes, driver optimizations, and security hardening.
 * **Minor Releases (`0.x.0`)**: Introduced when major kernel milestones are achieved.
 * **Major Releases (`x.0.0`)**: Reserved for frozen ABI stability milestones.

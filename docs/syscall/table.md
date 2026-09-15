@@ -2,7 +2,7 @@
 
 # System Call Specification Table
 
-This document specifies the complete system call vector table supported by Keira Kernel across `x86_64` (via `syscall`) and `i686` (via `int 0x80`).
+This document specifies the complete system call vector table supported by Keira Kernel across `x86_64` (via `syscall`) and `i686` (via `int 0x80`), encompassing **80 active system call vectors** (vectors 1 through 83).
 
 ---
 
