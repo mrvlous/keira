@@ -95,6 +95,8 @@ Explore the kernel's core subsystems and design details:
 * System Calls and Privilege: docs/syscall/table.md
 * Cryptographic Subsystem: docs/crypto/README.md
 * Virtual Filesystem (VFS) Layer: docs/fs/README.md
+* Process Information Pseudo-Filesystem (ProcFS): docs/fs/proc.md
+* Virtual Device Filesystem (DevFS): docs/fs/dev.md
 * FAT Filesystem Implementation: docs/fs/fat.md
 * TAR Boot initrd Reader: docs/fs/initrd.md
 * Native KCC Compiler: docs/userland/compiler/README.md
