@@ -34,6 +34,7 @@ pub struct Task {
     pub saved_sigcontext: Option<InterruptContext>,
     pub signal_mask: u32,
     pub pending_signals: u32,
+    pub is_orphan: bool,
 }
 ```
 
@@ -51,3 +52,15 @@ stateDiagram-v2
     Running --> Zombie : exit() / SIGKILL
     Zombie --> [*] : waitpid() (Reaped)
 ```
+
+---
+
+## Automatic Resource & Descriptor Reclamation
+
+When a task transitions to `TaskState::Zombie` via `exit_current(exit_code)` or fatal exception signal:
+1. **Open File Descriptors**: Every open descriptor entry in `task.fds` (`0..MAX_FDS`) is closed.
+2. **Advisory File Locks**: Any active write lock held by the task is released via `keira_fs::lock::flock::release_lock` and `release_all_locks_for_task(idx)`.
+3. **Subsystem Cleanup Hooks**: The registered `TASK_CLEANUP_HOOK` callback is dispatched:
+   - Closes orphaned socket handles in `keira_net`.
+   - Purges stale futex wait slots in `keira_ipc::futex`.
+4. **Memory & Stack Reclamation**: Upon being reaped via `sys_waitpid()` or `reap_orphaned_zombies()`, the user PML4 page tables, demand-paged VMAs, and physical kernel stack frames are reclaimed to the PMM allocator.

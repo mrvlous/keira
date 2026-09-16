@@ -37,6 +37,16 @@ pub static mut TASKS: [Option<Task>; MAX_TASKS] = [const { None }; MAX_TASKS];
 pub static mut CURRENT_TASK_IDX: usize = 0;
 pub static mut SCHEDULER_INITIALIZED: bool = false;
 
+pub type TaskResourceCleanupHook = fn(pid: usize);
+static mut TASK_CLEANUP_HOOK: Option<TaskResourceCleanupHook> = None;
+
+/// Register kernel-level resource cleanup callback (invoked on task exit and zombie reaping).
+pub fn register_task_cleanup_hook(hook: TaskResourceCleanupHook) {
+    unsafe {
+        TASK_CLEANUP_HOOK = Some(hook);
+    }
+}
+
 /// Initialize the scheduler and register the bootstrap thread as Task 0.
 pub unsafe fn init() {
     let mut main_cwd = [0u8; 128];
@@ -64,6 +74,7 @@ pub unsafe fn init() {
         saved_sigcontext: None,
         signal_mask: 0,
         pending_signals: 0,
+        is_orphan: false,
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;
@@ -171,6 +182,16 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         }
     }
 
+    if slot.is_none() {
+        reap_orphaned_zombies();
+        for i in 0..MAX_TASKS {
+            if TASKS[i].is_none() {
+                slot = Some(i);
+                break;
+            }
+        }
+    }
+
     let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
 
     let stack_frame = pmm::alloc_frame().ok_or("Scheduler: Out of memory for task stack")?;
@@ -233,6 +254,7 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         saved_sigcontext: None,
         signal_mask: 0,
         pending_signals: 0,
+        is_orphan: false,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -258,6 +280,16 @@ pub unsafe fn spawn_user(
         if TASKS[i].is_none() {
             slot = Some(i);
             break;
+        }
+    }
+
+    if slot.is_none() {
+        reap_orphaned_zombies();
+        for i in 0..MAX_TASKS {
+            if TASKS[i].is_none() {
+                slot = Some(i);
+                break;
+            }
         }
     }
 
@@ -322,6 +354,7 @@ pub unsafe fn spawn_user(
         saved_sigcontext: None,
         signal_mask: 0,
         pending_signals: 0,
+        is_orphan: false,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -346,6 +379,17 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             slot_idx = i;
             found = true;
             break;
+        }
+    }
+
+    if !found {
+        reap_orphaned_zombies();
+        for i in 1..MAX_TASKS {
+            if TASKS[i].is_none() {
+                slot_idx = i;
+                found = true;
+                break;
+            }
         }
     }
 
@@ -415,6 +459,7 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             saved_sigcontext: None,
             signal_mask: parent.signal_mask,
             pending_signals: 0,
+            is_orphan: false,
         };
 
         TASKS[slot_idx] = Some(child_task);
@@ -429,23 +474,56 @@ pub unsafe fn exit_current(exit_code: i32) {
     core::arch::asm!("cli");
     let idx = CURRENT_TASK_IDX;
     if idx != 0 {
-        if let Some(ref mut task) = TASKS[idx] {
+        let parent_id = if let Some(ref mut task) = TASKS[idx] {
             task.exit_code = exit_code;
             task.state = TaskState::Zombie(exit_code);
 
-            // Wake up parent if blocked
-            let parent_id = task.parent_id;
-            if parent_id < MAX_TASKS {
-                if let Some(ref mut parent) = TASKS[parent_id] {
-                    if parent.state == TaskState::Blocked {
-                        parent.state = TaskState::Ready;
+            // Auto-reclaim open file descriptors and flock write locks
+            for fd in 0..MAX_FDS {
+                if task.fds[fd].is_open {
+                    if task.fds[fd].write_mode {
+                        if let Ok(path_str) =
+                            core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
+                        {
+                            keira_fs::lock::flock::release_lock(path_str, idx);
+                        }
                     }
+                    task.fds[fd] = FileDescriptor::new();
                 }
             }
 
             serial::print_str("Scheduler: Task '");
             serial::print_str(task.name);
             serial::print_str("' exited (Zombie)\n");
+
+            task.parent_id
+        } else {
+            0
+        };
+
+        release_all_locks_for_task(idx);
+
+        if let Some(hook) = TASK_CLEANUP_HOOK {
+            hook(idx);
+        }
+
+        // Reparent any child tasks to PID 0 (kernel_shell / Init)
+        for i in 1..MAX_TASKS {
+            if let Some(ref mut child) = TASKS[i] {
+                if child.parent_id == idx {
+                    child.parent_id = 0;
+                    child.is_orphan = true;
+                }
+            }
+        }
+
+        // Wake up parent if blocked
+        if parent_id < MAX_TASKS {
+            if let Some(ref mut parent) = TASKS[parent_id] {
+                if parent.state == TaskState::Blocked {
+                    parent.state = TaskState::Ready;
+                }
+            }
         }
 
         core::arch::asm!("sti; int 32");
@@ -454,6 +532,35 @@ pub unsafe fn exit_current(exit_code: i32) {
         }
     } else {
         core::arch::asm!("sti");
+    }
+}
+
+/// Scan for and reap any orphaned processes adopted by PID 0 that have transitioned to Zombie.
+/// Fully reclaims file locks, IPC resources, user address space, page tables, and stack frames.
+pub unsafe fn reap_orphaned_zombies() {
+    let curr = CURRENT_TASK_IDX;
+    for i in 1..MAX_TASKS {
+        if i == curr {
+            continue;
+        }
+        if let Some(ref child) = TASKS[i] {
+            if child.is_orphan {
+                if let TaskState::Zombie(_) = child.state {
+                    let reaped_id = child.id;
+                    release_all_locks_for_task(reaped_id);
+                    if let Some(hook) = TASK_CLEANUP_HOOK {
+                        hook(reaped_id);
+                    }
+                    if child.stack_addr != 0 {
+                        vmm::free_user_pages(child.pml4_phys, child.program_break);
+                        pmm::free_frame(child.stack_addr);
+                    } else if child.pml4_phys != 0 {
+                        vmm::cleanup_vmas_for_pml4(child.pml4_phys);
+                    }
+                    TASKS[i] = None;
+                }
+            }
+        }
     }
 }
 
@@ -501,9 +608,14 @@ pub unsafe fn sys_waitpid(
                                 *status_ptr = encoded_status;
                             }
                             release_all_locks_for_task(reaped_id);
+                            if let Some(hook) = TASK_CLEANUP_HOOK {
+                                hook(reaped_id);
+                            }
                             if child.stack_addr != 0 {
                                 vmm::free_user_pages(child.pml4_phys, child.program_break);
                                 pmm::free_frame(child.stack_addr);
+                            } else if child.pml4_phys != 0 {
+                                vmm::cleanup_vmas_for_pml4(child.pml4_phys);
                             }
                             TASKS[i] = None;
                             return Ok(reaped_id);

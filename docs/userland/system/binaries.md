@@ -193,6 +193,15 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [TEST] Persistent core dump diagnostic artifact inspection...
   [INFO] Core dump /data/log/core_6.dmp verified (found 'KEIRA CORE DUMP')
   [OK]   Persistent core dump diagnostic generation operational
+  [TEST] Rapid process fork & reap churn (20 iterations)...
+  [INFO] 20 sequential processes spawned, executed, and reaped cleanly
+  [OK]   Rapid fork and reap churn completed with zero slot or memory leaks
+  [TEST] Orphan process reparenting and PID 0 adoption lifecycle...
+  [INFO] Orphaned grandchild confirmed adopted by PID 0 and reaped cleanly
+  [OK]   Orphan process reparenting and PID 0 adoption lifecycle operational
+  [TEST] File descriptor and write lock auto-reclaim upon process exit...
+  [INFO] File write lock successfully re-acquired immediately after unclosed child exit
+  [OK]   File descriptor and write lock auto-reclaim operational
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

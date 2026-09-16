@@ -25,10 +25,10 @@ pub use cgroups::{
 pub use scheduler::{
     exit_current, fork_current_task, get_current_egid, get_current_euid, get_current_gid,
     get_current_pending_signals, get_current_signal_mask, get_current_uid, init as scheduler_init,
-    list_tasks, schedule_tick, send_signal, set_current_gid, set_current_uid, set_saved_sigcontext,
-    spawn, spawn_user, stop_task, sys_sigprocmask, sys_waitpid, take_saved_sigcontext,
-    wait_for_task, CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_INITIALIZED, SIG_BLOCK, SIG_SETMASK,
-    SIG_UNBLOCK, TASKS,
+    list_tasks, reap_orphaned_zombies, register_task_cleanup_hook, schedule_tick, send_signal,
+    set_current_gid, set_current_uid, set_saved_sigcontext, spawn, spawn_user, stop_task,
+    sys_sigprocmask, sys_waitpid, take_saved_sigcontext, wait_for_task, TaskResourceCleanupHook,
+    CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_INITIALIZED, SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK, TASKS,
 };
 pub use security as seccomp;
 pub use security::{
@@ -236,5 +236,46 @@ mod tests {
         let offset = (rsp - top_vaddr) as usize;
         let argc = u64::from_le_bytes(page[offset..offset + 8].try_into().unwrap());
         assert_eq!(argc, 3);
+    }
+
+    #[test]
+    fn test_orphan_reparenting_and_reap() {
+        unsafe {
+            scheduler_init();
+            assert_eq!(CURRENT_TASK_IDX, 0);
+            assert!(TASKS[0].is_some());
+
+            // Create a dummy zombie child orphaned to PID 0
+            let dummy_task = Task {
+                id: 1,
+                name: "dummy_orphan",
+                rsp: 0,
+                stack_addr: 0,
+                state: TaskState::Zombie(42),
+                fds: [FileDescriptor::new(); MAX_FDS],
+                program_break: 0,
+                program_break_start: 0,
+                cwd: [0u8; 128],
+                cwd_len: 1,
+                parent_id: 0,
+                pml4_phys: 0,
+                exit_code: 42,
+                is_user: false,
+                uid: 0,
+                gid: 0,
+                euid: 0,
+                egid: 0,
+                saved_sigcontext: None,
+                signal_mask: 0,
+                pending_signals: 0,
+                is_orphan: true,
+            };
+            TASKS[1] = Some(dummy_task);
+            assert!(TASKS[1].is_some());
+
+            // Reaping orphaned zombies should find and free slot 1
+            reap_orphaned_zombies();
+            assert!(TASKS[1].is_none());
+        }
     }
 }

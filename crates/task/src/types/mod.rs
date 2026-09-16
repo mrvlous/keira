@@ -113,6 +113,7 @@ pub struct Task {
     pub saved_sigcontext: Option<InterruptContext>,
     pub signal_mask: u32,
     pub pending_signals: u32,
+    pub is_orphan: bool,
 }
 
 /// Pushed CPU register context during interrupt or system call transitions.

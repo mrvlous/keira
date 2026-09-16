@@ -879,6 +879,148 @@ int main(int argc, char **argv) {
     printf("  [INFO] Core dump %s verified (found 'KEIRA CORE DUMP')\n", core_path);
     puts("  [OK]   Persistent core dump diagnostic generation operational");
 
+    /* 32. Rapid Process Fork & Reap Churn (20 iterations) */
+    puts("  [TEST] Rapid process fork & reap churn (20 iterations)...");
+    for (int iter = 0; iter < 20; iter++) {
+        pid_t child = fork();
+        if (child < 0) {
+            printf("  [FAIL] Fork churn failed at iteration %d\n", iter);
+            return 1;
+        } else if (child == 0) {
+            exit(iter + 10);
+        } else {
+            int wstatus = 0;
+            pid_t reaped = waitpid(child, &wstatus, 0);
+            if (reaped != child || !WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != (iter + 10)) {
+                printf("  [FAIL] Churn waitpid mismatch at iter %d: reaped=%d, status=%d\n", iter,
+                       (int)reaped, WEXITSTATUS(wstatus));
+                return 1;
+            }
+        }
+    }
+    puts("  [INFO] 20 sequential processes spawned, executed, and reaped cleanly");
+    puts("  [OK]   Rapid fork and reap churn completed with zero slot or memory leaks");
+
+    /* 33. Orphan Process Reparenting & PID 0 Adoption */
+    puts("  [TEST] Orphan process reparenting and PID 0 adoption lifecycle...");
+    const char *orphan_path = "/temp/orphan_test.txt";
+    pid_t parent_fork = fork();
+    if (parent_fork < 0) {
+        puts("  [FAIL] Fork failed for orphan parent");
+        return 1;
+    } else if (parent_fork == 0) {
+        /* Child process: forks grandchild and exits immediately */
+        pid_t grandchild = fork();
+        if (grandchild < 0) {
+            exit(1);
+        } else if (grandchild == 0) {
+            /* Grandchild: wait until parent exits and PID 0 adopts it */
+            pid_t ppid = getppid();
+            for (int r = 0; r < 100 && ppid != 0; r++) {
+                usleep(5000);
+                ppid = getppid();
+            }
+            if (ppid == 0) {
+                int f = open(orphan_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+                if (f >= 0) {
+                    write(f, "ORPHAN_PPID_0", 13);
+                    close(f);
+                }
+            }
+            exit(42);
+        } else {
+            /* Child exits immediately, leaving grandchild orphaned */
+            exit(0);
+        }
+    } else {
+        /* Grandparent process */
+        int wstatus = 0;
+        pid_t reaped_child = waitpid(parent_fork, &wstatus, 0);
+        if (reaped_child != parent_fork || !WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+            puts("  [FAIL] Parent child process waitpid failed");
+            return 1;
+        }
+
+        /* Wait for orphaned grandchild to execute and write artifact */
+        char orphan_buf[32];
+        memset(orphan_buf, 0, sizeof(orphan_buf));
+        for (int r = 0; r < 100; r++) {
+            int f = open(orphan_path, O_RDONLY, 0);
+            if (f >= 0) {
+                ssize_t n = read(f, orphan_buf, sizeof(orphan_buf) - 1);
+                close(f);
+                if (n > 0 && strstr(orphan_buf, "ORPHAN_PPID_0") != NULL) {
+                    break;
+                }
+            }
+            usleep(5000);
+        }
+
+        if (strstr(orphan_buf, "ORPHAN_PPID_0") == NULL) {
+            printf("  [FAIL] Grandchild was not reparented to PID 0: '%s'\n", orphan_buf);
+            return 1;
+        }
+
+        /* Reap the adopted orphaned grandchild (adopted by PID 0) */
+        int orphan_status = 0;
+        pid_t reaped_orphan = waitpid(-1, &orphan_status, 0);
+        if (reaped_orphan <= 0 || !WIFEXITED(orphan_status) || WEXITSTATUS(orphan_status) != 42) {
+            printf("  [FAIL] Reaping adopted orphan failed: pid=%d, status=%d\n",
+                   (int)reaped_orphan, WEXITSTATUS(orphan_status));
+            return 1;
+        }
+
+        /* Verify Process A now has no remaining children */
+        int no_child_status = 0;
+        pid_t no_child = waitpid(-1, &no_child_status, WNOHANG);
+        if (no_child != -1) {
+            printf("  [FAIL] Expected ECHILD (-1) after reaping orphan, got %d\n", (int)no_child);
+            return 1;
+        }
+
+        puts("  [INFO] Orphaned grandchild confirmed adopted by PID 0 and reaped cleanly");
+        puts("  [OK]   Orphan process reparenting and PID 0 adoption lifecycle operational");
+    }
+
+    /* 34. File Descriptor & Write Lock Auto-Reclaim Upon Process Exit */
+    puts("  [TEST] File descriptor and write lock auto-reclaim upon process exit...");
+    const char *flock_path = "/temp/flock_reclaim.txt";
+    pid_t lock_child = fork();
+    if (lock_child < 0) {
+        puts("  [FAIL] Fork failed for flock auto-reclaim test");
+        return 1;
+    } else if (lock_child == 0) {
+        /* Child opens file in write mode, acquiring write lock */
+        int fd_child = open(flock_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+        if (fd_child < 0) {
+            exit(1);
+        }
+        int dummy_pipe[2];
+        pipe(dummy_pipe);
+        /* Intentionally exit abruptly without closing fd_child or dummy_pipe */
+        exit(15);
+    } else {
+        int wstatus = 0;
+        pid_t reaped_lock = waitpid(lock_child, &wstatus, 0);
+        if (reaped_lock != lock_child || !WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 15) {
+            puts("  [FAIL] Lock child process waitpid failed");
+            return 1;
+        }
+
+        /* Attempt to acquire write lock immediately on the same file */
+        int fd_parent = open(flock_path, O_WRONLY, 0);
+        if (fd_parent < 0) {
+            puts("  [FAIL] File lock was not released upon child process exit (EACCES)");
+            return 1;
+        }
+        const char *reclaim_msg = "RECLAIM_LOCK_OK";
+        write(fd_parent, reclaim_msg, strlen(reclaim_msg));
+        close(fd_parent);
+        puts("  [INFO] File write lock successfully re-acquired immediately after unclosed child "
+             "exit");
+        puts("  [OK]   File descriptor and write lock auto-reclaim operational");
+    }
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }

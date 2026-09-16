@@ -128,6 +128,7 @@ extern "C" {
 /// Initialize User Mode structures: populates GDT TSS entry, reloads GDT,
 /// loads TSS register, and configures syscall MSR registers.
 pub unsafe fn init_user_mode() {
+    keira_task::scheduler::register_task_cleanup_hook(crate::dispatcher::syscall_task_cleanup_hook);
     let tss_addr = &raw const TSS as usize;
     let tss_size = core::mem::size_of::<TaskStateSegment>() - 1;
 

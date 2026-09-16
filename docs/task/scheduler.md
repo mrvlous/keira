@@ -52,6 +52,19 @@ Keira supports standard POSIX signal handling:
 
 ---
 
+## Orphan Process Reparenting & PID 0 Adoption
+
+To prevent resource leaks when a parent process exits before its children:
+1. **Reparenting to PID 0**: In `exit_current(exit_code)`, all living or zombie children of the terminating task (`child.parent_id == idx`) are reparented to PID 0 (`kernel_shell` / Init), with their `is_orphan` flag set to `true`.
+2. **Adoption & Reaping**: The Init loop and shell pending task cycle periodically invoke `reap_orphaned_zombies()`. Any adopted orphan that has transitioned to `TaskState::Zombie` is reaped:
+   - Descriptor and advisory lock allocations are cleared.
+   - The registered `TASK_CLEANUP_HOOK` is invoked (reclaiming sockets and purging futex slots).
+   - PML4 page tables, demand-paged VMAs, and physical stack frames are released back to the PMM allocator.
+   - The task slot in `TASKS` is freed for new processes.
+3. **Starvation Prevention**: `spawn`, `spawn_user`, and `fork_current_task` automatically trigger `reap_orphaned_zombies()` if `TASKS` is exhausted, guaranteeing slot availability under rapid fork/exit churn.
+
+---
+
 ## Core API (`crates/task/src/scheduler/mod.rs`)
 
 ```rust
@@ -60,9 +73,11 @@ pub const MAX_TASKS: usize = 64;
 pub fn init_scheduler();
 pub fn schedule();
 pub fn spawn_task(entry: usize, is_user: bool, name: &str) -> Result<u32, &'static str>;
-pub fn exit_current_task(exit_code: i32) -> !;
+pub fn exit_current(exit_code: i32);
 pub fn get_current_pid() -> u32;
 pub fn fork_current_task() -> Result<usize, &'static str>;
 pub fn sys_waitpid(target_pid: i64, status_ptr: *mut i32, options: u32) -> Result<usize, &'static str>;
 pub fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str>;
+pub unsafe fn reap_orphaned_zombies();
+pub unsafe fn register_task_cleanup_hook(hook: TaskResourceCleanupHook);
 ```

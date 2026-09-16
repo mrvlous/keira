@@ -42,6 +42,21 @@ pub const HEAP_MAX_VADDR: u64 = 0x7000_0000_0000;
 #[cfg(target_arch = "x86")]
 pub const HEAP_MAX_VADDR: u64 = 0x4000_0000;
 
+/// Kernel-wide resource cleanup hook for exiting or reaped processes.
+/// Automatically closes orphaned sockets and purges stale futex wait slots.
+pub fn syscall_task_cleanup_hook(pid: usize) {
+    unsafe {
+        if let Some(ref mut task) = keira_task::scheduler::TASKS[pid] {
+            for fd in 0..keira_task::types::MAX_FDS {
+                if task.fds[fd].is_open && task.fds[fd].is_socket {
+                    let _ = keira_net::socket::close_socket(task.fds[fd].socket_id as u64);
+                }
+            }
+        }
+        keira_ipc::cleanup_futex_waiters_for_pid(pid as u32);
+    }
+}
+
 /// Central system call dispatcher mapping syscall numbers to operations.
 #[no_mangle]
 pub extern "C" fn syscall_dispatcher(
@@ -79,13 +94,13 @@ pub extern "C" fn syscall_dispatcher(
                 0xDEADBEEF
             }
         }
-        // Syscall 3: Sleep (busy halt)
+        // Syscall 3: Sleep (yielding pause until uptime deadline)
         3 => {
             let ms = arg1;
             let start = unsafe { get_uptime_ms() };
             while unsafe { get_uptime_ms() } < start + ms {
                 unsafe {
-                    core::arch::asm!("hlt");
+                    core::arch::asm!("sti; int 32; cli");
                 }
             }
             0

@@ -259,6 +259,7 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
 pub fn process_pending() {
     unsafe {
         service::tick_all();
+        keira_task::scheduler::reap_orphaned_zombies();
 
         if !COMMAND_READY {
             return;

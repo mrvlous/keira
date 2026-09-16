@@ -188,6 +188,19 @@ pub unsafe fn futex_reset() {
     TOTAL_FUTEX_REQUEUES = 0;
 }
 
+/// Release and cancel all pending futex waiters for a specific process PID upon exit.
+///
+/// # Safety
+///
+/// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
+pub unsafe fn cleanup_futex_waiters_for_pid(pid: u32) {
+    for slot in FUTEX_TABLE.iter_mut() {
+        if slot.in_use && slot.pid == pid {
+            *slot = FutexWaiter::empty();
+        }
+    }
+}
+
 /// Fast user-space synchronization dispatcher (Syscall 32 / Syscall 40).
 ///
 /// # Safety

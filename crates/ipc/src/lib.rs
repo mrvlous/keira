@@ -30,10 +30,11 @@ pub use event::eventfd::{
     EFD_SEMAPHORE, MAX_EVENTFDS,
 };
 pub use futex::sync::{
-    self as futex_sync, futex_requeue, futex_reset, futex_wait, futex_wake, get_futex_stats,
-    get_futex_table, sys_futex, FutexWaiter, FUTEX_CMP_REQUEUE, FUTEX_CMP_REQUEUE_PI, FUTEX_FD,
-    FUTEX_LOCK_PI, FUTEX_REQUEUE, FUTEX_TRYLOCK_PI, FUTEX_UNLOCK_PI, FUTEX_WAIT, FUTEX_WAIT_BITSET,
-    FUTEX_WAIT_REQUEUE_PI, FUTEX_WAKE, FUTEX_WAKE_BITSET, FUTEX_WAKE_OP, MAX_FUTEX_WAITERS,
+    self as futex_sync, cleanup_futex_waiters_for_pid, futex_requeue, futex_reset, futex_wait,
+    futex_wake, get_futex_stats, get_futex_table, sys_futex, FutexWaiter, FUTEX_CMP_REQUEUE,
+    FUTEX_CMP_REQUEUE_PI, FUTEX_FD, FUTEX_LOCK_PI, FUTEX_REQUEUE, FUTEX_TRYLOCK_PI,
+    FUTEX_UNLOCK_PI, FUTEX_WAIT, FUTEX_WAIT_BITSET, FUTEX_WAIT_REQUEUE_PI, FUTEX_WAKE,
+    FUTEX_WAKE_BITSET, FUTEX_WAKE_OP, MAX_FUTEX_WAITERS,
 };
 pub use mqueue::queue::{
     self as mqueue_queue, get_mqueue_stats, get_mqueue_table, mq_open, mq_receive, mq_send,
