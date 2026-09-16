@@ -1226,6 +1226,7 @@ mod tests {
 
     #[test]
     fn test_munmap_no_matching_vma() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 
@@ -1241,6 +1242,7 @@ mod tests {
 
     #[test]
     fn test_munmap_exact_vma_deactivates() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 
@@ -1268,6 +1270,7 @@ mod tests {
 
     #[test]
     fn test_munmap_front_trim_metadata() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 
@@ -1292,6 +1295,7 @@ mod tests {
 
     #[test]
     fn test_munmap_back_trim_metadata() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 
@@ -1354,6 +1358,7 @@ mod tests {
 
     #[test]
     fn test_mprotect_noop_same_prot() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 
@@ -1381,6 +1386,7 @@ mod tests {
 
     #[test]
     fn test_mprotect_no_matching_vma() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 
@@ -1501,6 +1507,7 @@ mod tests {
 
     #[test]
     fn test_munmap_ext_exact_bytes_exposed() {
+        let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
         unsafe {
             reset_vma_table_for(TEST_PML4);
 

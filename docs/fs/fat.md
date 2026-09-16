@@ -18,9 +18,9 @@ This document specifies the FAT filesystem implementations in Keira Kernel.
 
 ```rust
 pub fn init() -> Result<(), &'static str>;
-pub fn read_file(path: &str, buffer: &mut [u8]) -> Result<usize, &'static str>;
+pub fn read_file_content(path: &str, buffer: &mut [u8]) -> Result<usize, &'static str>;
 pub fn read_file_offset(filename: &str, offset: u64, buffer: &mut [u8]) -> Result<usize, &'static str>;
-pub fn write_file(path: &str, data: &[u8]) -> Result<(), &'static str>;
+pub fn write_file_content(path: &str, data: &[u8]) -> Result<(), &'static str>;
 pub fn write_file_offset(filename: &str, offset: u64, content: &[u8]) -> Result<usize, &'static str>;
 pub fn get_file_size(filename: &str) -> Result<usize, &'static str>;
 pub fn create_file(path: &str) -> Result<(), &'static str>;

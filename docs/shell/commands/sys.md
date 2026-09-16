@@ -21,6 +21,7 @@ This document details all native commands in Keira Kernel related to hardware di
 | `hostname` | `hostname [get \| set <name>]` | `[Active]` | Query or update persistent system hostname in `/config/sys/hostname.cfg` |
 | `power` | `power [status \| acpi \| shutdown \| reboot]` | `[Active]` | Query ACPI power state, initiate S5 soft-off shutdown, or reboot CPU |
 | `poweroff` | `poweroff` | `[Active]` | Direct alias for `power shutdown` to power off hardware via ACPI S5 |
+| `shutdown` | `shutdown` | `[Active]` | Direct alias for `power shutdown` to initiate ACPI S5 soft-off system shutdown |
 | `reset` | `reset` | `[Active]` | Trigger immediate bare-metal CPU reboot via PS/2 controller port `0x64` |
 | `reboot` | `reboot` | `[Active]` | Direct alias for `reset` to reboot machine via PS/2 fast reset |
 | `sync` | `sync` | `[Active]` | Flush dirty filesystem block cache sectors to physical storage media |

@@ -2,7 +2,7 @@
 
 # System Call Specification Table
 
-This document specifies the complete system call vector table supported by Keira Kernel across `x86_64` (via `syscall`) and `i686` (via `int 0x80`), encompassing **80 active system call vectors** (vectors 1 through 83).
+This document specifies the complete system call vector table supported by Keira Kernel across `x86_64` (via `syscall`) and `i686` (via `int 0x80`), encompassing **79 active system call vectors** (vectors 1 through 83, with vectors 18, 19, 26, 27 unassigned).
 
 ---
 
@@ -19,11 +19,11 @@ This document specifies the complete system call vector table supported by Keira
 | `7` | `SYS_READ` | `int fd, void *buf, size_t count` | Read bytes from open file descriptor |
 | `8` | `SYS_WRITE` | `int fd, const void *buf, size_t count` | Write bytes to open file descriptor |
 | `9` | `SYS_CLOSE` | `int fd` | Close open file descriptor |
-| `10` | `SYS_LIST` | `const char *path, char *buf, size_t count` | Enumerate directory contents |
-| `11` | `SYS_GETPID` | - | Return calling process identifier |
+| `10` | `SYS_LSEEK` | `int fd, off_t offset, int whence` | Reposition read/write file offset |
+| `11` | `SYS_SBRK` | `intptr_t increment` | Expand or shrink heap break with checked arithmetic |
 | `12` | `SYS_BRK` | `void *addr` | Change data segment size (heap expansion) |
-| `13` | `SYS_LSEEK` | `int fd, off_t offset, int whence` | Reposition read/write file offset |
-| `14` | `SYS_OPEN` | `const char *path, int flags` | Extended open syscall vector |
+| `13` | `SYS_WAIT` | `int *status` | Wait for child process state change |
+| `14` | `SYS_GETPID` | - | Return calling process identifier |
 | `15` | `SYS_GETCWD` | `char *buf, size_t len` | Retrieve current working directory path |
 | `16` | `SYS_CHDIR` | `const char *path` | Change current working directory |
 | `17` | `SYS_HTTP_GET` | `const char *url, char *buf, size_t max_len` | Perform kernel-level HTTP GET request |
@@ -33,8 +33,6 @@ This document specifies the complete system call vector table supported by Keira
 | `23` | `SYS_PIPE` | `int pipefd[2]` | Create unidirectional data channel pipe and allocate descriptors |
 | `24` | `SYS_SOCKET` | `int domain, int type, int protocol` | Create network communication endpoint |
 | `25` | `SYS_CONNECT` | `int sockfd, const void *addr, socklen_t len` | Connect to remote socket |
-| `26` | `SYS_UNLINK` | `const char *pathname` | Delete file from filesystem |
-| `27` | `SYS_MKDIR` | `const char *pathname, mode_t mode` | Create directory |
 | `28` | `SYS_SHMGET` | `size_t size` | Allocate shared memory segment |
 | `29` | `SYS_SHMAT` | `int shmid` | Attach shared memory segment to address space |
 | `30` | `SYS_FORK` | - | Clone active process using Copy-on-Write |
@@ -43,7 +41,7 @@ This document specifies the complete system call vector table supported by Keira
 | `33` | `SYS_TLS_CONNECT` | `const char *host` | Establish bare-metal TLS 1.3 encrypted tunnel |
 | `34` | `SYS_INIT_MODULE` | `const char *name, size_t size` | Load, link, and initialize loadable kernel module |
 | `35` | `SYS_DELETE_MODULE` | `const char *name, unsigned int flags` | Unload and unmap registered kernel module |
-| `36` | `SYS_CLOCK_GETTIME` | `clockid_t clk_id, struct timespec *tp` | Retrieve monotonic or real-time clock |
+| `36` | `SYS_CLOCK_GETTIME_FAST` | - | Fast monotonic system uptime in nanoseconds |
 | `37` | `SYS_PTRACE` | `int request, pid_t pid, void *addr, void *data` | Process trace and debug inspection |
 | `38` | `SYS_IO_URING_SETUP` | `unsigned int entries` | Initialize io_uring submission/completion queue pair |
 | `39` | `SYS_IO_URING_ENTER` | `unsigned int fd, unsigned int to_submit` | Enter io_uring kernel submission loop |
@@ -66,6 +64,7 @@ This document specifies the complete system call vector table supported by Keira
 | `56` | `SYS_EPOLL_CTL` | `int epfd, int op, int fd, struct epoll_event *event` | Control epoll interest list |
 | `57` | `SYS_EPOLL_WAIT` | `int epfd, struct epoll_event *events, int maxevents` | Wait for I/O events on epoll descriptor |
 | `58` | `SYS_MQ_OPEN` | `const char *name, int oflag, mode_t mode` | Open POSIX message queue |
+| `59` | `SYS_PRCTL` | `int option, unsigned long arg2` | Process operations control (`PR_SET_NAME`, `PR_GET_NAME`) |
 | `60` | `SYS_GETUID` | - | Get current process user identifier |
 | `61` | `SYS_SETUID` | `uid_t uid` | Set current process user identifier |
 | `62` | `SYS_WAITPID` | `pid_t pid, int *status, int options` | Wait for process state change with zombie reaping |

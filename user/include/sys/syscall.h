@@ -23,12 +23,11 @@
 #define SYS_READ 7
 #define SYS_WRITE 8
 #define SYS_CLOSE 9
-#define SYS_LIST 10
 #define SYS_LSEEK 10
-#define SYS_GETPID 11
+#define SYS_SBRK 11
 #define SYS_BRK 12
 #define SYS_WAIT 13
-#define SYS_OPEN_EXT 14
+#define SYS_GETPID 14
 #define SYS_GETCWD 15
 #define SYS_CHDIR 16
 #define SYS_HTTP 17
@@ -39,8 +38,6 @@
 #define SYS_PIPE 23
 #define SYS_SOCKET 24
 #define SYS_CONNECT 25
-#define SYS_UNLINK 26
-#define SYS_MKDIR 27
 #define SYS_SHMGET 28
 #define SYS_SHMAT 29
 #define SYS_FORK 30
@@ -49,7 +46,7 @@
 #define SYS_TLS_CONNECT 33
 #define SYS_INIT_MODULE 34
 #define SYS_DELETE_MODULE 35
-#define SYS_CLOCK_GETTIME 36
+#define SYS_CLOCK_GETTIME_FAST 36
 #define SYS_PTRACE 37
 #define SYS_IO_URING_SETUP 38
 #define SYS_IO_URING_ENTER 39
@@ -81,6 +78,7 @@
 #define SYS_GETPPID 63
 #define SYS_SIGACTION 64
 #define SYS_SIGRETURN 65
+#define SYS_CLOCK_GETTIME 66
 #define SYS_NANOSLEEP 67
 #define SYS_GETGID 68
 #define SYS_SETGID 69
