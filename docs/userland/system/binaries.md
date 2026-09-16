@@ -179,6 +179,20 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [INFO] Demand paging verified: read 'INIT_PAYLOAD_KEIRA_MMAP_PERSISTENCE_TEST'
   [INFO] Disk persistence confirmed: 'DONE_PAYLOAD_KEIRA_MMAP_PERSISTENCE_TEST'
   [OK]   File-backed mmap, demand paging, and msync synchronization operational
+  [TEST] Illegal instruction (#UD) fault containment and SIGILL delivery...
+  [INFO] Child PID 4 trapped #UD, terminated by signal 4 (SIGILL)
+  [OK]   Illegal instruction hardware exception safely trapped to SIGILL
+  [TEST] Division by zero (#DE) fault containment and SIGFPE delivery...
+  [INFO] Child PID 5 trapped #DE, terminated by signal 8 (SIGFPE)
+  [OK]   Division by zero hardware exception safely trapped to SIGFPE
+  [TEST] Memory dereference fault containment and SIGSEGV delivery...
+  [INFO] Child PID 6 trapped #PF, terminated by signal 11 (SIGSEGV)
+  [OK]   Memory dereference hardware exception safely trapped to SIGSEGV
+  [TEST] Demand-paged VMA memory validation across syscall boundaries...
+  [OK]   Demand-paged VMA populated and validated in syscall copy without EFAULT
+  [TEST] Persistent core dump diagnostic artifact inspection...
+  [INFO] Core dump /data/log/core_6.dmp verified (found 'KEIRA CORE DUMP')
+  [OK]   Persistent core dump diagnostic generation operational
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

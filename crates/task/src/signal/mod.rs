@@ -108,7 +108,7 @@ pub unsafe fn remove_job_by_pid(pid: u32) {
     }
 }
 
-/// Send POSIX signal to target process PID (Syscall 72: sys_kill).
+/// Send POSIX signal to target process PID (Syscall 22: sys_kill).
 pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
     unsafe {
         vga::set_color(vga::Color::White, vga::Color::Black);
@@ -116,13 +116,14 @@ pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
         vga::print_u64(sig as u64);
         vga::print_str(" -> PID ");
         vga::print_u64(pid as u64);
-        vga::print_str(" (Syscall 72)\n");
+        vga::print_str(" (Syscall 22)\n");
 
         for i in 0..JOB_COUNT {
             if let Some(ref mut job) = JOB_TABLE[i] {
                 if job.pid == pid {
                     match sig {
-                        SIGKILL | SIGTERM | SIGINT => {
+                        SIGKILL | SIGTERM | SIGINT | SIGQUIT | SIGABRT | SIGSEGV | SIGILL
+                        | SIGBUS | SIGFPE | SIGPIPE | SIGHUP | SIGUSR1 | SIGUSR2 | SIGALRM => {
                             job.state = JobState::Terminated;
                         }
                         SIGSTOP => {
@@ -137,6 +138,8 @@ pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
             }
         }
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+        super::scheduler::send_signal(pid as usize, sig)?;
     }
     Ok(0)
 }

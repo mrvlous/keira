@@ -752,6 +752,133 @@ int main(int argc, char **argv) {
     printf("  [INFO] Disk persistence confirmed: '%s'\n", verify_buf);
     puts("  [OK]   File-backed mmap, demand paging, and msync synchronization operational");
 
+    /* 27. Illegal Instruction (#UD) Fault Containment */
+    puts("  [TEST] Illegal instruction (#UD) fault containment and SIGILL delivery...");
+    pid_t ud_child = fork();
+    if (ud_child < 0) {
+        puts("  [FAIL] fork() failed for #UD test");
+        return 1;
+    } else if (ud_child == 0) {
+        __asm__ volatile("ud2");
+        exit(0);
+    } else {
+        int wstatus = 0;
+        pid_t reaped = waitpid(ud_child, &wstatus, 0);
+        if (reaped == ud_child && WIFSIGNALED(wstatus) && WTERMSIG(wstatus) == SIGILL) {
+            printf("  [INFO] Child PID %d trapped #UD, terminated by signal %d (SIGILL)\n",
+                   (int)reaped, WTERMSIG(wstatus));
+            puts("  [OK]   Illegal instruction hardware exception safely trapped to SIGILL");
+        } else {
+            printf("  [FAIL] Expected SIGILL (4), got reaped=%d, signaled=%d, termsig=%d\n",
+                   (int)reaped, WIFSIGNALED(wstatus), WTERMSIG(wstatus));
+            return 1;
+        }
+    }
+
+    /* 28. Division by Zero (#DE) Fault Containment */
+    puts("  [TEST] Division by zero (#DE) fault containment and SIGFPE delivery...");
+    pid_t de_child = fork();
+    if (de_child < 0) {
+        puts("  [FAIL] fork() failed for #DE test");
+        return 1;
+    } else if (de_child == 0) {
+        volatile int num = 100;
+        volatile int den = 0;
+        volatile int res = num / den;
+        (void)res;
+        exit(0);
+    } else {
+        int wstatus = 0;
+        pid_t reaped = waitpid(de_child, &wstatus, 0);
+        if (reaped == de_child && WIFSIGNALED(wstatus) && WTERMSIG(wstatus) == SIGFPE) {
+            printf("  [INFO] Child PID %d trapped #DE, terminated by signal %d (SIGFPE)\n",
+                   (int)reaped, WTERMSIG(wstatus));
+            puts("  [OK]   Division by zero hardware exception safely trapped to SIGFPE");
+        } else {
+            printf("  [FAIL] Expected SIGFPE (8), got reaped=%d, signaled=%d, termsig=%d\n",
+                   (int)reaped, WIFSIGNALED(wstatus), WTERMSIG(wstatus));
+            return 1;
+        }
+    }
+
+    /* 29. Memory Dereference (#PF) Fault Containment */
+    puts("  [TEST] Memory dereference fault containment and SIGSEGV delivery...");
+    pid_t pf_child = fork();
+    if (pf_child < 0) {
+        puts("  [FAIL] fork() failed for #PF test");
+        return 1;
+    } else if (pf_child == 0) {
+        *(volatile int *)0x1234 = 99;
+        exit(0);
+    } else {
+        int wstatus = 0;
+        pid_t reaped = waitpid(pf_child, &wstatus, 0);
+        if (reaped == pf_child && WIFSIGNALED(wstatus) && WTERMSIG(wstatus) == SIGSEGV) {
+            printf("  [INFO] Child PID %d trapped #PF, terminated by signal %d (SIGSEGV)\n",
+                   (int)reaped, WTERMSIG(wstatus));
+            puts("  [OK]   Memory dereference hardware exception safely trapped to SIGSEGV");
+        } else {
+            printf("  [FAIL] Expected SIGSEGV (11), got reaped=%d, signaled=%d, termsig=%d\n",
+                   (int)reaped, WIFSIGNALED(wstatus), WTERMSIG(wstatus));
+            return 1;
+        }
+    }
+
+    /* 30. Demand-Paged VMA Memory Validation Across Syscall Boundaries */
+    puts("  [TEST] Demand-paged VMA memory validation across syscall boundaries...");
+    char *vma_buf = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (vma_buf == MAP_FAILED || vma_buf == NULL) {
+        puts("  [FAIL] mmap failed for demand-paging syscall test");
+        return 1;
+    }
+    int pipe_fds[2];
+    if (pipe(pipe_fds) != 0) {
+        puts("  [FAIL] pipe creation failed");
+        munmap(vma_buf, 4096);
+        return 1;
+    }
+    const char *vma_msg = "KEIRA_VMA_OK";
+    if (write(pipe_fds[1], vma_msg, 12) != 12) {
+        puts("  [FAIL] pipe write failed");
+        close(pipe_fds[0]);
+        close(pipe_fds[1]);
+        munmap(vma_buf, 4096);
+        return 1;
+    }
+    ssize_t vma_read = read(pipe_fds[0], vma_buf, 12);
+    close(pipe_fds[0]);
+    close(pipe_fds[1]);
+    if (vma_read != 12 || strncmp(vma_buf, vma_msg, 12) != 0) {
+        printf("  [FAIL] Demand-paged VMA read failed: n=%ld\n", (long)vma_read);
+        munmap(vma_buf, 4096);
+        return 1;
+    }
+    if (munmap(vma_buf, 4096) != 0) {
+        puts("  [FAIL] munmap failed for demand-paged VMA test");
+        return 1;
+    }
+    puts("  [OK]   Demand-paged VMA populated and validated in syscall copy without EFAULT");
+
+    /* 31. Persistent Core Dump Diagnostic Inspection */
+    puts("  [TEST] Persistent core dump diagnostic artifact inspection...");
+    char core_path[64];
+    snprintf(core_path, sizeof(core_path), "/data/log/core_%d.dmp", (int)pf_child);
+    int core_fd = open(core_path, O_RDONLY, 0);
+    if (core_fd < 0) {
+        printf("  [FAIL] Failed to open core dump artifact: %s\n", core_path);
+        return 1;
+    }
+    char core_data[256];
+    memset(core_data, 0, sizeof(core_data));
+    ssize_t core_read = read(core_fd, core_data, sizeof(core_data) - 1);
+    close(core_fd);
+    if (core_read <= 0 || strstr(core_data, "KEIRA CORE DUMP") == NULL) {
+        printf("  [FAIL] Core dump content invalid or missing header in %s\n", core_path);
+        return 1;
+    }
+    printf("  [INFO] Core dump %s verified (found 'KEIRA CORE DUMP')\n", core_path);
+    puts("  [OK]   Persistent core dump diagnostic generation operational");
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }

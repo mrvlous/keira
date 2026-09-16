@@ -12,7 +12,7 @@
 use keira_arch::debug::unwind::unwind_from_frame;
 use keira_io::serial;
 use keira_io::vga;
-use keira_task::scheduler::{exit_current, CURRENT_TASK_IDX};
+use keira_task::scheduler::{exit_current, CURRENT_TASK_IDX, TASKS};
 
 #[cfg(target_arch = "x86_64")]
 #[repr(C, packed)]
@@ -161,47 +161,131 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
             }
         }
 
+        let sig = exception_vector_to_signal(vector);
+
+        let handler = unsafe { keira_task::signal::get_signal_handler(CURRENT_TASK_IDX, sig) };
+        if handler != 0 {
+            let already_in_handler = unsafe {
+                if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                    t.saved_sigcontext.is_some()
+                } else {
+                    false
+                }
+            };
+
+            if !already_in_handler {
+                let mut ctx = keira_task::types::InterruptContext::default();
+                ctx.rip = rip;
+                ctx.rsp = rsp;
+                ctx.rbp = rbp;
+                ctx.rflags = rflags;
+                ctx.rax = rax;
+                ctx.rbx = rbx;
+                ctx.rcx = rcx;
+                ctx.rdx = rdx;
+                ctx.rsi = rsi;
+                ctx.rdi = rdi;
+                unsafe {
+                    keira_task::scheduler::set_saved_sigcontext(ctx);
+                }
+
+                let mut_frame = frame_ptr as *mut ExceptionStackFrame;
+                #[cfg(target_arch = "x86_64")]
+                unsafe {
+                    (*mut_frame).rip = handler;
+                    (*mut_frame).rdi = sig as u64;
+                    let new_rsp = (rsp.saturating_sub(128)) & !0xF;
+                    (*mut_frame).rsp = new_rsp;
+                }
+                #[cfg(target_arch = "x86")]
+                unsafe {
+                    (*mut_frame).eip = handler as u32;
+                    let new_esp = (rsp.saturating_sub(16)) & !0xF;
+                    let stack_ptr = (new_esp as usize) as *mut u32;
+                    if !stack_ptr.is_null() {
+                        *stack_ptr.add(1) = sig;
+                    }
+                    (*mut_frame).user_esp = new_esp as u32;
+                }
+                return;
+            }
+        }
+
+        let cr2 = if vector == 14 {
+            (unsafe { keira_arch::cpu::read_cr2() }) as u64
+        } else {
+            0
+        };
+
+        let task_name = unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                t.name
+            } else {
+                "unknown"
+            }
+        };
+
+        serial::print_str("[CRASH] Process PID ");
+        print_decimal_serial(CURRENT_TASK_IDX as u64);
+        serial::print_str(" (");
+        serial::print_str(task_name);
+        serial::print_str(") terminated by signal ");
+        print_decimal_serial(sig as u64);
+        serial::print_str(" (");
+        serial::print_str(signal_name(sig));
+        serial::print_str(") at RIP: 0x");
+        print_hex_serial(rip);
+        serial::print_str("\n");
+
+        write_core_dump(
+            CURRENT_TASK_IDX,
+            task_name,
+            sig,
+            vector,
+            error_code,
+            rip,
+            rsp,
+            rbp,
+            rflags,
+            cr2,
+        );
+
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("\n*** USER PROCESS CRASHED (CORE DUMP) ***\n");
-        vga::print_str("Exception Vector: ");
+        vga::print_str("PID: ");
+        vga::print_u64(CURRENT_TASK_IDX as u64);
+        vga::print_str(" (");
+        vga::print_str(task_name);
+        vga::print_str(") | Signal: ");
+        vga::print_u64(sig as u64);
+        vga::print_str(" (");
+        vga::print_str(signal_name(sig));
+        vga::print_str(") | Exception: ");
+        vga::print_str(exception_name(vector));
+        vga::print_str(" (Vector ");
         vga::print_u64(vector);
-        if vector == 14 {
-            vga::print_str(" (Page Fault #PF)");
-        } else if vector == 13 {
-            vga::print_str(" (General Protection Fault #GP)");
-        } else if vector == 6 {
-            vga::print_str(" (Invalid Opcode #UD)");
-        }
-        vga::print_str(" | Error Code: 0x");
-        print_hex(error_code);
-        vga::print_str("\n");
-
-        vga::print_str("Registers:\n");
-        vga::print_str("  RIP: 0x");
+        vga::print_str(")\n");
+        vga::print_str("Registers: RIP=0x");
         print_hex(rip);
-        vga::print_str("  RSP: 0x");
+        vga::print_str(" RSP=0x");
         print_hex(rsp);
-        vga::print_str("  RBP: 0x");
+        vga::print_str(" RBP=0x");
         print_hex(rbp);
-        vga::print_str("  RFLAGS: 0x");
-        print_hex(rflags);
         vga::print_str("\n");
-
         if vector == 14 {
-            let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
-            vga::print_str("  Faulting Virtual Address (CR2): 0x");
+            vga::print_str("Faulting Virtual Address (CR2): 0x");
             print_hex(cr2);
             vga::print_str("\n");
         }
-
-        vga::print_str("Stack Backtrace:\n");
-        unwind_from_frame(rbp, rip);
+        vga::print_str("Core dump written to: /data/log/core_");
+        vga::print_u64(CURRENT_TASK_IDX as u64);
+        vga::print_str(".dmp\n");
 
         vga::print_str("Terminating crashed user process...\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
         if CURRENT_TASK_IDX != 0 {
-            exit_current(-11);
+            exit_current(-(sig as i32));
         } else {
             extern "C" {
                 fn abort_user_mode() -> !;
@@ -365,5 +449,146 @@ fn print_decimal_serial(val: u64) {
         if let Ok(s) = core::str::from_utf8(&char_buf) {
             serial::print_str(s);
         }
+    }
+}
+
+fn exception_vector_to_signal(vector: u64) -> u32 {
+    match vector {
+        0 => keira_task::signal::SIGFPE,
+        4 => keira_task::signal::SIGFPE,
+        5 => keira_task::signal::SIGSEGV,
+        6 => keira_task::signal::SIGILL,
+        7 => keira_task::signal::SIGFPE,
+        11 => keira_task::signal::SIGBUS,
+        12 => keira_task::signal::SIGBUS,
+        13 => keira_task::signal::SIGSEGV,
+        14 => keira_task::signal::SIGSEGV,
+        16 => keira_task::signal::SIGFPE,
+        17 => keira_task::signal::SIGBUS,
+        19 => keira_task::signal::SIGFPE,
+        _ => keira_task::signal::SIGSEGV,
+    }
+}
+
+fn exception_name(vector: u64) -> &'static str {
+    match vector {
+        0 => "Division by Zero (#DE)",
+        1 => "Debug Exception (#DB)",
+        2 => "Non-Maskable Interrupt (NMI)",
+        3 => "Breakpoint (#BP)",
+        4 => "Overflow (#OF)",
+        5 => "Bound Range Exceeded (#BR)",
+        6 => "Invalid Opcode (#UD)",
+        7 => "Device Not Available (#NM)",
+        8 => "Double Fault (#DF)",
+        10 => "Invalid TSS (#TS)",
+        11 => "Segment Not Present (#NP)",
+        12 => "Stack-Segment Fault (#SS)",
+        13 => "General Protection Fault (#GP)",
+        14 => "Page Fault (#PF)",
+        16 => "x87 Floating-Point Exception (#MF)",
+        17 => "Alignment Check (#AC)",
+        18 => "Machine Check (#MC)",
+        19 => "SIMD Floating-Point Exception (#XM)",
+        _ => "Unknown Exception",
+    }
+}
+
+fn signal_name(sig: u32) -> &'static str {
+    match sig {
+        1 => "SIGHUP",
+        2 => "SIGINT",
+        3 => "SIGQUIT",
+        4 => "SIGILL",
+        5 => "SIGTRAP",
+        6 => "SIGABRT",
+        7 => "SIGBUS",
+        8 => "SIGFPE",
+        9 => "SIGKILL",
+        10 => "SIGUSR1",
+        11 => "SIGSEGV",
+        12 => "SIGUSR2",
+        13 => "SIGPIPE",
+        14 => "SIGALRM",
+        15 => "SIGTERM",
+        _ => "UNKNOWN",
+    }
+}
+
+struct DumpWriter<'a> {
+    buf: &'a mut [u8],
+    offset: usize,
+}
+
+impl<'a> DumpWriter<'a> {
+    fn new(buf: &'a mut [u8]) -> Self {
+        Self { buf, offset: 0 }
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        &self.buf[..self.offset]
+    }
+}
+
+impl<'a> core::fmt::Write for DumpWriter<'a> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        let bytes = s.as_bytes();
+        let avail = self.buf.len().saturating_sub(self.offset);
+        let to_write = bytes.len().min(avail);
+        self.buf[self.offset..self.offset + to_write].copy_from_slice(&bytes[..to_write]);
+        self.offset += to_write;
+        Ok(())
+    }
+}
+
+fn write_core_dump(
+    pid: usize,
+    task_name: &str,
+    sig: u32,
+    vector: u64,
+    error_code: u64,
+    rip: u64,
+    rsp: u64,
+    rbp: u64,
+    rflags: u64,
+    cr2: u64,
+) {
+    let mut dump_buf = [0u8; 1024];
+    let mut writer = DumpWriter::new(&mut dump_buf);
+    use core::fmt::Write;
+    let _ = core::write!(
+        writer,
+        "=== KEIRA CORE DUMP ===\n\
+         PID: {}\n\
+         Name: {}\n\
+         Signal: {} ({})\n\
+         Vector: {} ({})\n\
+         Error Code: 0x{:X}\n\
+         RIP: 0x{:X}\n\
+         RSP: 0x{:X}\n\
+         RBP: 0x{:X}\n\
+         RFLAGS: 0x{:X}\n\
+         CR2: 0x{:X}\n\
+         Status: TERMINATED BY SIGNAL\n",
+        pid,
+        task_name,
+        sig,
+        signal_name(sig),
+        vector,
+        exception_name(vector),
+        error_code,
+        rip,
+        rsp,
+        rbp,
+        rflags,
+        cr2
+    );
+
+    let mut path_buf = [0u8; 32];
+    let mut p_writer = DumpWriter::new(&mut path_buf);
+    let _ = core::write!(p_writer, "/data/log/core_{}.dmp", pid);
+    if let Ok(path_str) = core::str::from_utf8(p_writer.as_bytes()) {
+        let _ = keira_fs::vfs::create_file(path_str);
+        let _ = keira_fs::vfs::write_file(path_str, writer.as_bytes());
     }
 }

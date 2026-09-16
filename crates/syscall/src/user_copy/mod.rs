@@ -65,7 +65,9 @@ pub unsafe fn validate_user_ptr(ptr: u64, len: u64, require_writable: bool) -> R
         };
 
         while page_start < page_end {
-            if !vmm::is_user_page_mapped(page_start, require_writable) {
+            if !vmm::is_user_page_mapped(page_start, require_writable)
+                && !try_fault_user_page(page_start, require_writable)
+            {
                 return Err(EFAULT);
             }
             page_start += pmm::PAGE_SIZE;
@@ -127,7 +129,9 @@ pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, 
         {
             let page_addr = addr & !(pmm::PAGE_SIZE - 1);
             if page_addr != current_page {
-                if !vmm::is_user_page_mapped(page_addr, false) {
+                if !vmm::is_user_page_mapped(page_addr, false)
+                    && !try_fault_user_page(page_addr, false)
+                {
                     return Err(EFAULT);
                 }
                 current_page = page_addr;
@@ -143,4 +147,36 @@ pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, 
     }
 
     Ok(len)
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn try_fault_user_page(vaddr: u64, require_writable: bool) -> bool {
+    let pml4 = vmm::active_pml4();
+    if let Some(vma) = vmm::find_active_vma(pml4, vaddr) {
+        if require_writable && (vma.prot & vmm::PROT_WRITE) == 0 {
+            return false;
+        }
+        let error_code = if require_writable { 2 } else { 0 };
+        return vmm::handle_page_fault(vaddr, error_code, 0);
+    }
+
+    let task_idx = keira_task::scheduler::CURRENT_TASK_IDX;
+    if let Some(ref t) = keira_task::scheduler::TASKS[task_idx] {
+        if vaddr >= t.program_break_start && vaddr < t.program_break {
+            let fault_page = vaddr & !(pmm::PAGE_SIZE - 1);
+            if let Some(frame) = pmm::alloc_frame() {
+                core::ptr::write_bytes(frame as *mut u8, 0, pmm::PAGE_SIZE as usize);
+                let flags = vmm::PAGE_PRESENT | vmm::PAGE_WRITABLE | vmm::PAGE_USER;
+                if vmm::map_page(fault_page, frame, flags).is_ok() {
+                    keira_arch::cpu::invlpg(fault_page as usize);
+                    return true;
+                } else {
+                    pmm::free_frame(frame);
+                }
+            }
+        }
+    }
+
+    let error_code = if require_writable { 2 } else { 0 };
+    vmm::handle_page_fault(vaddr, error_code, vaddr)
 }

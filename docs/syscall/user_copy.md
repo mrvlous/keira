@@ -11,6 +11,7 @@ This document specifies the hardened memory copying functions that transfer data
 1. **Lower Boundary Check**: Pointer must be `>= 0x10000` to prevent null pointer dereferences and zero-page exploitation.
 2. **Userland Boundary Check**: Pointer and length range must lie strictly within canonical userland (`[0x10000, 0x0000_7FFF_FFFF_FFFF]` on 64-bit `x86_64` / `[0x10000, 0xBFFF_FFFF]` on 32-bit `i686`). Any access attempting to touch kernel space (`>= 0xC000_0000` on 32-bit or `>= 0x8000_0000_0000` / high canonical half `0xFFFF_8000_0000_0000` on 64-bit) immediately fails with `-EFAULT` (14).
 3. **Arithmetic Overflow Guard**: `addr.checked_add(len)` must not wrap around address space boundaries.
+4. **Demand-Paged VMA & Heap Awareness**: If a target page is not yet mapped into active PML4 page tables, `validate_user_ptr` verifies whether the page resides within an active VMA with matching access permissions or within the task heap (`program_break`). Valid demand pages are populated eagerly during pointer validation, preventing kernel-mode `#PF` panics during subsequent `copy_to_user` or `copy_from_user` routines.
 
 ---
 

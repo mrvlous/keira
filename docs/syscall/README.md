@@ -26,3 +26,4 @@ graph LR
 | [`table.md`](table.md) | System Call Vector Table | Numerical vectors, argument types, and return values for system calls |
 | [`dispatcher.md`](dispatcher.md) | Dispatcher & ABI | Syscall routing, register argument unpacking, and POSIX errno mapping |
 | [`user_copy.md`](user_copy.md) | Validated Pointer Copying | Hardened memory transfer between Ring 0 and Ring 3 with boundary checks |
+| [`exception.md`](exception.md) | Fault Containment & Core Dumps | Hardware exception to POSIX signal mapping, crash containment, and core dump logs |

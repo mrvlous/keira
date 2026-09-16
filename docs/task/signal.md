@@ -48,3 +48,25 @@ Processes can dynamically block and unblock signals using `sigprocmask()` (vecto
 - `SIG_SETMASK` (`2`): Replaces `signal_mask` with the given set.
 
 Signals generated while masked are recorded in `Task::pending_signals` (queriable via `sigpending()`). `SIGKILL` (`9`) and `SIGSTOP` (`19`) can never be masked or ignored.
+
+---
+
+## Hardware Exception Traps & Fault Containment
+
+Hardware CPU exceptions in user space are mapped directly into standard POSIX signals by the exception dispatcher (`crates/syscall/src/exception/mod.rs`):
+- `#UD` (Invalid Opcode, Vector 6) $\rightarrow$ `SIGILL` (4)
+- `#DE` (Divide Error, Vector 0) / `#OF` (Overflow, Vector 4) $\rightarrow$ `SIGFPE` (8)
+- `#GP` (General Protection, Vector 13) / `#PF` (Page Fault, Vector 14) $\rightarrow$ `SIGSEGV` (11)
+- `#NP` (Segment Not Present, Vector 11) / `#SS` (Stack Fault, Vector 12) $\rightarrow$ `SIGBUS` (7)
+
+If the process has not registered a custom signal handler, the task terminates with `TaskState::Zombie(-(sig as i32))`. The kernel serial logger records the fault, and a full register dump is written to `/data/log/core_<pid>.dmp`.
+
+---
+
+## Waitpid Signal Decoding (`sys_waitpid`)
+
+When a parent process inspects a child process terminated by a signal via `waitpid(pid, &wstatus, options)`:
+- `wstatus` is encoded as `(-code) & 0x7f`.
+- `WIFSIGNALED(wstatus)` evaluates to true.
+- `WTERMSIG(wstatus)` returns the terminating POSIX signal number.
+
