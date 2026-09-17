@@ -282,3 +282,19 @@ int sys_sigpending(void *set) {
 int sys_ioctl(int fd, unsigned long request, void *argp) {
     return (int)syscall3(SYS_IOCTL, (uint64_t)fd, (uint64_t)request, (uint64_t)(uintptr_t)argp);
 }
+
+int sys_sync(void) {
+    return (int)syscall0(SYS_SYNC);
+}
+
+int sys_fsync(int fd) {
+    return (int)syscall1(SYS_FSYNC, (uint64_t)fd);
+}
+
+int sys_dup(int oldfd) {
+    return (int)syscall1(SYS_DUP, (uint64_t)oldfd);
+}
+
+int sys_dup2(int oldfd, int newfd) {
+    return (int)syscall2(SYS_DUP2, (uint64_t)oldfd, (uint64_t)newfd);
+}

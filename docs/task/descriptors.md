@@ -64,3 +64,12 @@ When a task transitions to `TaskState::Zombie` via `exit_current(exit_code)` or 
    - Closes orphaned socket handles in `keira_net`.
    - Purges stale futex wait slots in `keira_ipc::futex`.
 4. **Memory & Stack Reclamation**: Upon being reaped via `sys_waitpid()` or `reap_orphaned_zombies()`, the user PML4 page tables, demand-paged VMAs, and physical kernel stack frames are reclaimed to the PMM allocator.
+
+---
+
+## Descriptor Duplication & Lock Coherency (`dup` / `dup2`)
+
+Keira supports descriptor cloning via POSIX Syscall 84 (`SYS_DUP`) and Syscall 85 (`SYS_DUP2`):
+- **`SYS_DUP (oldfd)`**: Scans `0..MAX_FDS` for the lowest unallocated slot and copies descriptor metadata from `oldfd`.
+- **`SYS_DUP2 (oldfd, newfd)`**: Atomically closes `newfd` (if previously open, releasing any held resources cleanly) and copies descriptor state to the requested `newfd` index.
+- **Lock Coherency Invariant**: When an open file holds an exclusive advisory write lock (`flock`), duplicating the descriptor copies `write_mode` and the canonical file path. Closing one duplicated descriptor handle checks for sibling open descriptors for the same path in the task table; the write lock is released if and only if no other open descriptors hold the file in write mode.

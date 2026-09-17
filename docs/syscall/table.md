@@ -2,7 +2,7 @@
 
 # System Call Specification Table
 
-This document specifies the complete system call vector table supported by Keira Kernel across `x86_64` (via `syscall`) and `i686` (via `int 0x80`), encompassing **79 active system call vectors** (vectors 1 through 83, with vectors 18, 19, 26, 27 unassigned).
+This document specifies the complete system call vector table supported by Keira Kernel across `x86_64` (via `syscall`) and `i686` (via `int 0x80`), encompassing **81 active system call vectors** (vectors 1 through 85, with vectors 18, 19, 26, 27 unassigned).
 
 ---
 
@@ -89,3 +89,5 @@ This document specifies the complete system call vector table supported by Keira
 | `81` | `SYS_SIGPROCMASK` | `int how, const sigset_t *set, sigset_t *oldset` | Examine and change blocked signals mask |
 | `82` | `SYS_SIGPENDING` | `sigset_t *set` | Query currently pending blocked signals mask |
 | `83` | `SYS_MSYNC` | `void *addr, size_t length, int flags` | Synchronize mapped memory region with underlying storage |
+| `84` | `SYS_DUP` | `int oldfd` | Duplicate open file descriptor to lowest unallocated slot |
+| `85` | `SYS_DUP2` | `int oldfd, int newfd` | Duplicate open file descriptor explicitly targeting newfd slot |

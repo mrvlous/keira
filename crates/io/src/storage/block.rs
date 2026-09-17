@@ -22,6 +22,11 @@ pub trait BlockDevice {
 
     /// Get the human-readable identifier of the device (e.g. "ide0", "ahci0", "ram0").
     fn get_name(&self) -> &'static str;
+
+    /// Flush volatile write caches on the underlying block device hardware.
+    fn flush(&self) -> Result<(), &'static str> {
+        Ok(())
+    }
 }
 
 const MAX_DEVICES: usize = 4;
@@ -68,6 +73,15 @@ pub fn mount_device(name: &str) -> Result<&'static dyn BlockDevice, &'static str
 /// Get the currently mounted root block device.
 pub fn get_mounted_device() -> Option<&'static dyn BlockDevice> {
     unsafe { MOUNTED_DEVICE }
+}
+
+/// Flush volatile write caches on the currently mounted root block device.
+pub fn flush_mounted_device() -> Result<(), &'static str> {
+    if let Some(dev) = get_mounted_device() {
+        dev.flush()
+    } else {
+        Ok(())
+    }
 }
 
 /// Iterate through all registered storage block devices and invoke callback.

@@ -30,7 +30,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_MPROTECT`, `SYS_MSYNC`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_SIGACTION`, `SYS_SIGRETURN`, `SYS_SIGPROCMASK`, `SYS_SIGPENDING`, `SYS_GETUID`, `SYS_SETUID`, `SYS_IOCTL`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (26 tests) |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_MPROTECT`, `SYS_MSYNC`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_SIGACTION`, `SYS_SIGRETURN`, `SYS_SIGPROCMASK`, `SYS_SIGPENDING`, `SYS_GETUID`, `SYS_SETUID`, `SYS_IOCTL`, `SYS_SYNC`, `SYS_FSYNC`, `SYS_DUP`, `SYS_DUP2`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (37 tests) |
 
 ---
 
@@ -202,8 +202,18 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [TEST] File descriptor and write lock auto-reclaim upon process exit...
   [INFO] File write lock successfully re-acquired immediately after unclosed child exit
   [OK]   File descriptor and write lock auto-reclaim operational
+  [TEST] File system and hardware storage cache synchronization...
+  [INFO] Hardware ATA write cache flush and sector barrier verified
+  [OK]   File system and hardware cache synchronization operational
+  [TEST] POSIX descriptor duplication and targeting (dup & dup2)...
+  [INFO] Independent file handle targeting and lifecycle verified
+  [OK]   Descriptor duplication and explicit slot targeting operational
+  [TEST] Descriptor advisory lock coherency across duplicated handles...
+  [INFO] Closing duplicated handle preserved lock until final handle closure
+  [OK]   Advisory write lock coherency across duplicated descriptors verified
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.
 admin@keira:~$
 ```
+

@@ -57,6 +57,9 @@ int pipe(int pipefd[2]);
 int dup(int oldfd);
 int dup2(int oldfd, int newfd);
 
+int sync(void);
+int fsync(int fd);
+
 unsigned int sleep(unsigned int seconds);
 int usleep(unsigned int usec);
 

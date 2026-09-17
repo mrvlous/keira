@@ -96,6 +96,8 @@
 #define SYS_SIGPROCMASK 81
 #define SYS_SIGPENDING 82
 #define SYS_MSYNC 83
+#define SYS_DUP 84
+#define SYS_DUP2 85
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -135,5 +137,9 @@ int sys_sigpending(void *set);
 int sys_ioctl(int fd, unsigned long request, void *argp);
 int sys_mprotect(void *addr, size_t len, int prot);
 int sys_msync(void *addr, size_t length, int flags);
+int sys_sync(void);
+int sys_fsync(int fd);
+int sys_dup(int oldfd);
+int sys_dup2(int oldfd, int newfd);
 
 #endif /* _SYS_SYSCALL_H */

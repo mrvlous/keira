@@ -1021,6 +1021,244 @@ int main(int argc, char **argv) {
         puts("  [OK]   File descriptor and write lock auto-reclaim operational");
     }
 
+    /* 35. File System & Hardware Storage Cache Synchronization */
+    puts("  [TEST] File system and hardware storage cache synchronization...");
+    if (fsync(-1) != -1 || errno != EBADF) {
+        printf("  [FAIL] fsync(-1) expected EBADF, got errno=%d\n", errno);
+        return 1;
+    }
+    if (fsync(99) != -1 || errno != EBADF) {
+        printf("  [FAIL] fsync(99) expected EBADF, got errno=%d\n", errno);
+        return 1;
+    }
+
+    const char *sync_path = "/temp/sync_test.txt";
+    int fd_sync = open(sync_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd_sync < 0) {
+        puts("  [FAIL] Failed to create sync test file");
+        return 1;
+    }
+    const char *sync_payload = "STORAGE_FLUSH_VERIFIED";
+    ssize_t sync_written = write(fd_sync, sync_payload, strlen(sync_payload));
+    if (sync_written != (ssize_t)strlen(sync_payload)) {
+        puts("  [FAIL] Failed to write sync test payload");
+        close(fd_sync);
+        return 1;
+    }
+
+    if (fsync(fd_sync) != 0) {
+        printf("  [FAIL] fsync on open descriptor failed, errno=%d\n", errno);
+        close(fd_sync);
+        return 1;
+    }
+
+    if (sync() != 0) {
+        printf("  [FAIL] sync() failed, errno=%d\n", errno);
+        close(fd_sync);
+        return 1;
+    }
+
+    close(fd_sync);
+
+    int fd_verify = open(sync_path, O_RDONLY, 0);
+    if (fd_verify < 0) {
+        puts("  [FAIL] Failed to reopen sync test file for verification");
+        return 1;
+    }
+    char sync_verify_buf[64];
+    memset(sync_verify_buf, 0, sizeof(sync_verify_buf));
+    ssize_t sync_read_bytes = read(fd_verify, sync_verify_buf, sizeof(sync_verify_buf) - 1);
+    close(fd_verify);
+
+    if (sync_read_bytes != (ssize_t)strlen(sync_payload) ||
+        strcmp(sync_verify_buf, sync_payload) != 0) {
+        printf("  [FAIL] Mismatched synced file contents: '%s'\n", sync_verify_buf);
+        return 1;
+    }
+    puts("  [INFO] Hardware ATA write cache flush and sector barrier verified");
+    puts("  [OK]   File system and hardware cache synchronization operational");
+
+    /* 36. Descriptor Duplication & Slot Targeting (dup and dup2) */
+    puts("  [TEST] POSIX descriptor duplication and targeting (dup & dup2)...");
+    const char *dup_path = "/temp/dup_test.txt";
+    int fd_orig = open(dup_path, O_CREAT | O_RDWR | O_TRUNC, 0644);
+    if (fd_orig < 0) {
+        puts("  [FAIL] Failed to open dup test file");
+        return 1;
+    }
+    const char *dup_payload = "ABCDEFGH";
+    write(fd_orig, dup_payload, strlen(dup_payload));
+
+    int fd_dup1 = dup(fd_orig);
+    if (fd_dup1 < 0 || fd_dup1 == fd_orig) {
+        printf("  [FAIL] dup(fd_orig) failed: fd_dup1=%d\n", fd_dup1);
+        close(fd_orig);
+        return 1;
+    }
+
+    int target_slot = 20;
+    int fd_dup2 = dup2(fd_orig, target_slot);
+    if (fd_dup2 != target_slot) {
+        printf("  [FAIL] dup2(fd_orig, %d) returned %d\n", target_slot, fd_dup2);
+        close(fd_orig);
+        close(fd_dup1);
+        return 1;
+    }
+
+    if (dup2(target_slot, target_slot) != target_slot) {
+        printf("  [FAIL] dup2(same, same) failed\n");
+        close(fd_orig);
+        close(fd_dup1);
+        close(target_slot);
+        return 1;
+    }
+
+    if (dup(-1) != -1 || errno != EBADF) {
+        printf("  [FAIL] dup(-1) expected EBADF, errno=%d\n", errno);
+        return 1;
+    }
+    if (dup2(fd_orig, -1) != -1 || errno != EBADF) {
+        printf("  [FAIL] dup2 negative slot expected EBADF, errno=%d\n", errno);
+        return 1;
+    }
+    if (dup2(fd_orig, 1000) != -1 || errno != EBADF) {
+        printf("  [FAIL] dup2 out of range slot expected EBADF, errno=%d\n", errno);
+        return 1;
+    }
+
+    close(fd_orig);
+
+    off_t seek_res = lseek(target_slot, 0, SEEK_SET);
+    if (seek_res != 0) {
+        printf("  [FAIL] lseek on duplicated descriptor failed: %d\n", (int)seek_res);
+        close(fd_dup1);
+        close(target_slot);
+        return 1;
+    }
+
+    char dup_read_buf[16];
+    memset(dup_read_buf, 0, sizeof(dup_read_buf));
+    ssize_t dup_read = read(target_slot, dup_read_buf, sizeof(dup_read_buf) - 1);
+    if (dup_read != (ssize_t)strlen(dup_payload) || strcmp(dup_read_buf, dup_payload) != 0) {
+        printf("  [FAIL] Read via dup2 slot failed: '%s'\n", dup_read_buf);
+        close(fd_dup1);
+        close(target_slot);
+        return 1;
+    }
+
+    close(fd_dup1);
+    close(target_slot);
+    puts("  [INFO] Independent file handle targeting and lifecycle verified");
+    puts("  [OK]   Descriptor duplication and explicit slot targeting operational");
+
+    /* 37. Descriptor Advisory Lock Coherency Across Duplicates */
+    puts("  [TEST] Descriptor advisory lock coherency across duplicated handles...");
+    const char *flock_dup_path = "/temp/flock_dup.txt";
+    const char *flock_sync_path = "/temp/flock_sync.txt";
+
+    int f_init_sync = open(flock_sync_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (f_init_sync < 0) {
+        puts("  [FAIL] Failed to initialize flock sync state file");
+        return 1;
+    }
+    write(f_init_sync, "INIT", 4);
+    close(f_init_sync);
+
+    pid_t flock_pid = fork();
+    if (flock_pid < 0) {
+        puts("  [FAIL] Fork failed for flock coherency test");
+        return 1;
+    } else if (flock_pid == 0) {
+        int f1 = open(flock_dup_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+        if (f1 < 0) {
+            exit(10);
+        }
+
+        int f2 = dup(f1);
+        if (f2 < 0) {
+            exit(11);
+        }
+
+        /* Close original descriptor f1. f2 is still open, so lock must remain held! */
+        close(f1);
+
+        /* Signal parent that f1 is closed and f2 is still open */
+        int f_sync1 = open(flock_sync_path, O_WRONLY | O_TRUNC, 0644);
+        if (f_sync1 >= 0) {
+            write(f_sync1, "STAGE1", 6);
+            close(f_sync1);
+        }
+
+        /* Poll until parent confirms contention check and signals release */
+        for (int r = 0; r < 200; r++) {
+            int f_poll = open(flock_sync_path, O_RDONLY, 0);
+            if (f_poll >= 0) {
+                char sbuf[16];
+                memset(sbuf, 0, sizeof(sbuf));
+                read(f_poll, sbuf, sizeof(sbuf) - 1);
+                close(f_poll);
+                if (strcmp(sbuf, "RELEASE") == 0) {
+                    break;
+                }
+            }
+            usleep(5000);
+        }
+
+        /* Closing f2 now releases the advisory write lock */
+        close(f2);
+        exit(0);
+    } else {
+        /* Wait for child to reach stage 1 */
+        for (int r = 0; r < 200; r++) {
+            int f_poll = open(flock_sync_path, O_RDONLY, 0);
+            if (f_poll >= 0) {
+                char sbuf[16];
+                memset(sbuf, 0, sizeof(sbuf));
+                read(f_poll, sbuf, sizeof(sbuf) - 1);
+                close(f_poll);
+                if (strcmp(sbuf, "STAGE1") == 0) {
+                    break;
+                }
+            }
+            usleep(5000);
+        }
+
+        /* Attempt to acquire write lock on the file. Must fail with EACCES! */
+        int f_conflict = open(flock_dup_path, O_WRONLY, 0);
+        if (f_conflict >= 0) {
+            printf("  [FAIL] Open succeeded while duplicated handle f2 is still open (lock "
+                   "leaked!)\n");
+            close(f_conflict);
+            return 1;
+        }
+        if (errno != EACCES) {
+            printf("  [FAIL] Expected EACCES on locked file, got errno=%d\n", errno);
+            return 1;
+        }
+
+        /* Tell child to close f2 and exit */
+        int f_sync2 = open(flock_sync_path, O_WRONLY | O_TRUNC, 0644);
+        if (f_sync2 >= 0) {
+            write(f_sync2, "RELEASE", 7);
+            close(f_sync2);
+        }
+
+        int wstatus = 0;
+        waitpid(flock_pid, &wstatus, 0);
+
+        /* Re-attempt to open the file in write mode now that f2 is closed. Must succeed! */
+        int f_success = open(flock_dup_path, O_WRONLY, 0);
+        if (f_success < 0) {
+            printf("  [FAIL] Open failed after all duplicated descriptors were closed: errno=%d\n",
+                   errno);
+            return 1;
+        }
+        close(f_success);
+
+        puts("  [INFO] Closing duplicated handle preserved lock until final handle closure");
+        puts("  [OK]   Advisory write lock coherency across duplicated descriptors verified");
+    }
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }

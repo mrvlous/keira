@@ -91,3 +91,5 @@ pub const SYS_PCI_BRIDGE: u64 = 80;
 pub const SYS_SIGPROCMASK: u64 = 81;
 pub const SYS_SIGPENDING: u64 = 82;
 pub const SYS_MSYNC: u64 = 83;
+pub const SYS_DUP: u64 = 84;
+pub const SYS_DUP2: u64 = 85;

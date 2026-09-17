@@ -85,6 +85,10 @@ impl BlockDevice for AhciBlockDevice {
     fn get_name(&self) -> &'static str {
         "ahci0"
     }
+
+    fn flush(&self) -> Result<(), &'static str> {
+        unsafe { sata_flush_cache(self.port_num) }
+    }
 }
 
 pub static mut AHCI_DEVICE: Option<AhciBlockDevice> = None;
@@ -203,6 +207,76 @@ unsafe fn sata_dma_transfer(port: usize, sector: u32, write: bool) -> Result<(),
         return Err("AHCI: SATA Task File Error post-transfer");
     }
 
+    Ok(())
+}
+
+/// Send ATA SYNCHRONIZE CACHE EXT command to flush SATA drive hardware write buffers.
+unsafe fn sata_flush_cache(port: usize) -> Result<(), &'static str> {
+    if !PORT_DMA_ALLOCATED {
+        return Ok(());
+    }
+
+    write_port(port, PORT_REG_IS, 0xFFFFFFFF);
+    write_port(port, PORT_REG_SERR, 0xFFFFFFFF);
+
+    let cmd_header = CLB_PHYS as *mut CmdHeader;
+    // opts: CFL=5 (5 DWORDs = 20 bytes FIS), write=0 (no data), prdtl=0
+    (*cmd_header).opts = 5;
+    (*cmd_header).prdtl = 0;
+    (*cmd_header).prdbc = 0;
+    (*cmd_header).ctba = CTB_PHYS as u32;
+    (*cmd_header).ctbau = (CTB_PHYS >> 32) as u32;
+    for i in 0..4 {
+        (*cmd_header).rsv1[i] = 0;
+    }
+
+    let cfis = CTB_PHYS as *mut u8;
+    core::ptr::write_bytes(cfis, 0, 128);
+
+    *cfis.add(0) = 0x27; // Host to Device Register FIS
+    *cfis.add(1) = 0x80; // Command bit set
+    *cfis.add(2) = 0xEA; // ATA Command: FLUSH CACHE EXT
+
+    let mut t = 1_000_000;
+    while t > 0 {
+        let tfd = read_port(port, 0x20);
+        if (tfd & ((1 << 7) | (1 << 3))) == 0 {
+            break;
+        }
+        io_delay();
+        t -= 1;
+    }
+    if t == 0 {
+        return Err("AHCI: Port busy timeout before flush");
+    }
+
+    write_port(port, 0x38, 1);
+
+    t = 1_000_000;
+    while t > 0 {
+        let ci = read_port(port, 0x38);
+        if (ci & 1) == 0 {
+            break;
+        }
+
+        let tfd = read_port(port, 0x20);
+        if (tfd & (1 << 0)) != 0 {
+            return Err("AHCI: SATA Task File Error during flush");
+        }
+
+        io_delay();
+        t -= 1;
+    }
+    if t == 0 {
+        return Err("AHCI: SATA cache flush timeout");
+    }
+
+    let tfd = read_port(port, 0x20);
+    if (tfd & (1 << 0)) != 0 {
+        return Err("AHCI: SATA Task File Error post-flush");
+    }
+
+    flush_dma_cache();
     Ok(())
 }
 

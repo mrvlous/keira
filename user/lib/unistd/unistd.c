@@ -193,19 +193,39 @@ int pipe(int pipefd[2]) {
 }
 
 int dup(int oldfd) {
-    int64_t ret = syscall3(SYS_FCNTL, (uint64_t)oldfd, 0, 0);
+    int ret = sys_dup(oldfd);
     if (ret < 0) {
-        errno = (int)-ret;
+        errno = -ret;
         return -1;
     }
-    return (int)ret;
+    return ret;
 }
 
 int dup2(int oldfd, int newfd) {
-    if (oldfd == newfd)
-        return oldfd;
-    close(newfd);
-    return dup(oldfd);
+    int ret = sys_dup2(oldfd, newfd);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return ret;
+}
+
+int sync(void) {
+    int ret = sys_sync();
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return 0;
+}
+
+int fsync(int fd) {
+    int ret = sys_fsync(fd);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return 0;
 }
 
 unsigned int sleep(unsigned int seconds) {

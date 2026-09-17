@@ -568,11 +568,18 @@ pub extern "C" fn syscall_dispatcher(
                         if t.fds[fd].is_socket {
                             let _ = keira_net::socket::close_socket(t.fds[fd].socket_id as u64);
                         } else if t.fds[fd].write_mode {
-                            if let Ok(path_str) =
-                                core::str::from_utf8(&t.fds[fd].path[..t.fds[fd].path_len])
-                            {
-                                let task_id = CURRENT_TASK_IDX;
-                                let _ = keira_fs::lock::release_lock(path_str, task_id);
+                            let path_slice = &t.fds[fd].path[..t.fds[fd].path_len];
+                            let other_open = (0..MAX_FDS).any(|i| {
+                                i != fd
+                                    && t.fds[i].is_open
+                                    && t.fds[i].write_mode
+                                    && &t.fds[i].path[..t.fds[i].path_len] == path_slice
+                            });
+                            if !other_open {
+                                if let Ok(path_str) = core::str::from_utf8(path_slice) {
+                                    let task_id = CURRENT_TASK_IDX;
+                                    let _ = keira_fs::lock::release_lock(path_str, task_id);
+                                }
                             }
                         }
                         t.fds[fd] = FileDescriptor::new();
@@ -1212,13 +1219,30 @@ pub extern "C" fn syscall_dispatcher(
         70 => {
             unsafe {
                 let _ = keira_fs::fat::flush_dirty_sectors();
+                let _ = keira_io::storage::block::flush_mounted_device();
+                keira_io::storage::ahci::flush_dma_cache();
             }
             0
         }
-        // Syscall 71: fsync
+        // Syscall 71: fsync (int fd)
         71 => {
+            let fd = arg1 as usize;
+            if fd >= MAX_FDS {
+                return errno_to_ret(EBADF);
+            }
             unsafe {
+                let task = &TASKS[CURRENT_TASK_IDX];
+                if let Some(t) = task {
+                    if !t.fds[fd].is_open {
+                        return errno_to_ret(EBADF);
+                    }
+                } else {
+                    return errno_to_ret(EBADF);
+                }
+
                 let _ = keira_fs::fat::flush_dirty_sectors();
+                let _ = keira_io::storage::block::flush_mounted_device();
+                keira_io::storage::ahci::flush_dma_cache();
             }
             0
         }
@@ -1572,6 +1596,70 @@ pub extern "C" fn syscall_dispatcher(
             match vmm::sys_msync(arg1, arg2, arg3 as u32) {
                 Ok(()) => 0,
                 Err(_) => errno_to_ret(EINVAL),
+            }
+        },
+        // Syscall 84: dup (int oldfd)
+        84 => unsafe {
+            let oldfd = arg1 as usize;
+            if oldfd >= MAX_FDS {
+                return errno_to_ret(EBADF);
+            }
+            let task = &mut TASKS[CURRENT_TASK_IDX];
+            if let Some(t) = task {
+                if !t.fds[oldfd].is_open {
+                    return errno_to_ret(EBADF);
+                }
+                for i in 0..MAX_FDS {
+                    if !t.fds[i].is_open {
+                        t.fds[i] = t.fds[oldfd];
+                        return i as u64;
+                    }
+                }
+                errno_to_ret(EMFILE)
+            } else {
+                errno_to_ret(EBADF)
+            }
+        },
+        // Syscall 85: dup2 (int oldfd, int newfd)
+        85 => unsafe {
+            let oldfd = arg1 as usize;
+            let newfd = arg2 as usize;
+            if oldfd >= MAX_FDS || newfd >= MAX_FDS {
+                return errno_to_ret(EBADF);
+            }
+            let task = &mut TASKS[CURRENT_TASK_IDX];
+            if let Some(t) = task {
+                if !t.fds[oldfd].is_open {
+                    return errno_to_ret(EBADF);
+                }
+                if oldfd == newfd {
+                    return newfd as u64;
+                }
+                // If newfd is open, close it cleanly first
+                if t.fds[newfd].is_open {
+                    if t.fds[newfd].is_socket {
+                        let _ = keira_net::socket::close_socket(t.fds[newfd].socket_id as u64);
+                    } else if t.fds[newfd].write_mode {
+                        let path_slice = &t.fds[newfd].path[..t.fds[newfd].path_len];
+                        let other_open = (0..MAX_FDS).any(|i| {
+                            i != newfd
+                                && t.fds[i].is_open
+                                && t.fds[i].write_mode
+                                && &t.fds[i].path[..t.fds[i].path_len] == path_slice
+                        });
+                        if !other_open {
+                            if let Ok(path_str) = core::str::from_utf8(path_slice) {
+                                let task_id = CURRENT_TASK_IDX;
+                                let _ = keira_fs::lock::release_lock(path_str, task_id);
+                            }
+                        }
+                    }
+                    t.fds[newfd] = FileDescriptor::new();
+                }
+                t.fds[newfd] = t.fds[oldfd];
+                newfd as u64
+            } else {
+                errno_to_ret(EBADF)
             }
         },
         _ => errno_to_ret(ENOSYS),

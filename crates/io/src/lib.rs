@@ -39,8 +39,8 @@ pub use serial::uart::{
 };
 pub use storage::ahci::{self, flush_dma_cache, init as ahci_init, AhciBlockDevice, AHCI_DEVICE};
 pub use storage::block::{
-    self, for_each_device, get_device, get_mounted_device, mount_device, register_device,
-    BlockDevice,
+    self, flush_mounted_device, for_each_device, get_device, get_mounted_device, mount_device,
+    register_device, BlockDevice,
 };
 pub use storage::ide::{
     self, identify as ide_identify, read_sector as ide_read_sector,

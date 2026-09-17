@@ -46,4 +46,18 @@ pub unsafe fn read_sectors(port_idx: usize, lba: u64, count: u32, buf: &mut [u8]
 
 /// Write 512-byte sectors from kernel memory to SATA drive via DMA.
 pub unsafe fn write_sectors(port_idx: usize, lba: u64, count: u32, buf: &[u8]) -> Result<(), &'static str>;
+
+/// Flush volatile storage write cache using ATA FLUSH CACHE EXT (0xEA).
+pub unsafe fn sata_flush_cache(port_idx: usize) -> Result<(), &'static str>;
 ```
+
+---
+
+## Hardware Flush & Barrier Semantics
+
+To guarantee durability and prevent data corruption across sudden power loss or reboots, Keira implements explicit storage cache barriers:
+
+1. **Software Sector Flush**: Dirty sectors cached in FAT cluster buffers are flushed via `flush_dirty_sectors()`.
+2. **Physical Device Flush**: ATA command `0xEA` (`FLUSH CACHE EXT`) is transmitted over the SATA link to commit onboard disk volatile RAM to non-volatile platters or flash cells.
+3. **CPU Memory Fence**: `core::arch::x86_64::_mm_mfence()` or `asm!("mfence")` enforces processor memory ordering across DMA controller boundaries.
+
