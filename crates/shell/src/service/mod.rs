@@ -565,18 +565,24 @@ pub unsafe fn tick_all() {
                     keira_fs::fat::append_file_content("/data/log/syslog.log", &log_buf[..offset]);
                 SERVICES[i].log_event("Syslog heartbeat recorded", now);
             } else if name == "watchdogd" {
-                // Memory & heap health supervisor
-                let (total_frames, alloc_frames, free_frames) = keira_mem::pmm::get_stats();
+                // Memory, concurrency & lockup health supervisor
+                let (total_frames, _alloc_frames, free_frames) = keira_mem::pmm::get_stats();
                 let pmm_res = keira_mem::verify_pmm_invariants();
+                let is_lockup = keira_arch::power::acpi::check_soft_lockup(25000);
+                keira_arch::power::acpi::pet_watchdog();
 
-                if total_frames > 0 && free_frames < total_frames / 20 {
+                if is_lockup {
+                    SERVICES[i].log_event("WARN: CPU core soft lockup detected", now);
+                    let alert = b"[WARN] watchdogd: CPU heartbeat stall / soft lockup detected\n";
+                    let _ = keira_fs::fat::append_file_content("/data/log/syslog.log", alert);
+                } else if total_frames > 0 && free_frames < total_frames / 20 {
                     SERVICES[i].log_event("WARN: Low physical memory threshold", now);
                     let alert = b"[WARN] watchdogd: Physical memory below 5% threshold\n";
                     let _ = keira_fs::fat::append_file_content("/data/log/syslog.log", alert);
                 } else if pmm_res.is_err() {
                     SERVICES[i].log_event("WARN: PMM invariant check anomaly", now);
                 } else {
-                    SERVICES[i].log_event("Memory & PMM invariant check healthy", now);
+                    SERVICES[i].log_event("Memory, SMP locks & PMM healthy", now);
                 }
             } else if name == "timed" {
                 // CMOS RTC & system clock sync daemon

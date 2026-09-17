@@ -211,9 +211,16 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [TEST] Descriptor advisory lock coherency across duplicated handles...
   [INFO] Closing duplicated handle preserved lock until final handle closure
   [OK]   Advisory write lock coherency across duplicated descriptors verified
+  [TEST] Multi-process concurrent syscall & memory stress...
+  [INFO] Concurrent heap mutations and pipe transfers completed without corruption
+  [OK]   Multi-process concurrent syscall & memory stress verified
+  [TEST] Lock contention & non-blocking deadlock immunity...
+  [INFO] Lock contention correctly rejected with EACCES without scheduler deadlock
+  [OK]   Lock contention & non-blocking deadlock immunity verified
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.
 admin@keira:~$
 ```
+
 

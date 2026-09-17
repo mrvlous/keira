@@ -242,8 +242,9 @@ mod tests {
     fn test_orphan_reparenting_and_reap() {
         unsafe {
             scheduler_init();
-            assert_eq!(CURRENT_TASK_IDX, 0);
-            assert!(TASKS[0].is_some());
+            let cur_idx = core::ptr::read_volatile(&raw const CURRENT_TASK_IDX);
+            assert_eq!(cur_idx, 0);
+            assert!((*(&raw const TASKS))[0].is_some());
 
             // Create a dummy zombie child orphaned to PID 0
             let dummy_task = Task {

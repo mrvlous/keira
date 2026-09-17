@@ -10,7 +10,7 @@
 //! Hardened segregated free-list kernel heap allocator with size classes and active reclamation.
 
 use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
-use keira_core::sync::SpinLock;
+use keira_core::sync::{IrqSpinLock, LockRank};
 
 /// Alignment required for all heap allocations (16 bytes).
 pub const HEAP_ALIGNMENT: usize = 16;
@@ -50,7 +50,7 @@ static ACTIVE_ALLOC_COUNT: AtomicUsize = AtomicUsize::new(0);
 static CURRENT_USED: AtomicUsize = AtomicUsize::new(0);
 static PEAK_USED: AtomicUsize = AtomicUsize::new(0);
 
-static HEAP_LOCK: SpinLock = SpinLock::new();
+static HEAP_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::Heap);
 
 static FREE_LISTS: [AtomicPtr<BlockHeader>; NUM_SIZE_CLASSES] = [
     AtomicPtr::new(core::ptr::null_mut()),
@@ -85,7 +85,7 @@ pub extern "C" fn heap_init(start: *mut u8, size: usize) {
         return;
     }
 
-    HEAP_LOCK.lock();
+    let _guard = HEAP_LOCK.lock();
 
     let start_addr = (start as usize + HEAP_ALIGN_MASK) & !HEAP_ALIGN_MASK;
     let aligned_start = start_addr as *mut u8;
@@ -107,8 +107,6 @@ pub extern "C" fn heap_init(start: *mut u8, size: usize) {
     for list in &FREE_LISTS {
         list.store(core::ptr::null_mut(), Ordering::SeqCst);
     }
-
-    HEAP_LOCK.unlock();
 }
 
 /// Allocate a contiguous memory block from the kernel heap with 16-byte alignment.
@@ -118,14 +116,13 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
         return core::ptr::null_mut();
     }
 
-    HEAP_LOCK.lock();
+    let _guard = HEAP_LOCK.lock();
 
     let start = HEAP_START.load(Ordering::SeqCst);
     let end = HEAP_END.load(Ordering::SeqCst);
     let current = HEAP_NEXT.load(Ordering::SeqCst);
 
     if start.is_null() || current.is_null() || end.is_null() {
-        HEAP_LOCK.unlock();
         return core::ptr::null_mut();
     }
 
@@ -159,7 +156,6 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
                     }
                 }
 
-                HEAP_LOCK.unlock();
                 return (free_head as *mut u8).add(HEADER_SIZE);
             }
         }
@@ -169,7 +165,6 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
         let end_addr = end as usize;
 
         if current_addr + block_total < current_addr || current_addr + block_total > end_addr {
-            HEAP_LOCK.unlock();
             return core::ptr::null_mut();
         }
 
@@ -198,7 +193,6 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
             }
         }
 
-        HEAP_LOCK.unlock();
         return unsafe { (header as *mut u8).add(HEADER_SIZE) };
     }
 
@@ -208,7 +202,6 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
     let end_addr = end as usize;
 
     if current_addr + block_total < current_addr || current_addr + block_total > end_addr {
-        HEAP_LOCK.unlock();
         return core::ptr::null_mut();
     }
 
@@ -237,7 +230,6 @@ pub extern "C" fn kmalloc(size: usize) -> *mut u8 {
         }
     }
 
-    HEAP_LOCK.unlock();
     unsafe { (header as *mut u8).add(HEADER_SIZE) }
 }
 
@@ -248,14 +240,13 @@ pub extern "C" fn kfree(ptr: *mut u8) {
         return;
     }
 
-    HEAP_LOCK.lock();
+    let _guard = HEAP_LOCK.lock();
 
     let start = HEAP_START.load(Ordering::SeqCst) as usize;
     let next = HEAP_NEXT.load(Ordering::SeqCst) as usize;
     let ptr_addr = ptr as usize;
 
     if ptr_addr < start + HEADER_SIZE || ptr_addr > next {
-        HEAP_LOCK.unlock();
         return;
     }
 
@@ -263,18 +254,15 @@ pub extern "C" fn kfree(ptr: *mut u8) {
     let header_addr = header as usize;
 
     if header_addr < start || header_addr + HEADER_SIZE > next {
-        HEAP_LOCK.unlock();
         return;
     }
 
     unsafe {
         if (*header).magic != BLOCK_MAGIC {
-            HEAP_LOCK.unlock();
             return;
         }
 
         if (*header).is_free != 0 {
-            HEAP_LOCK.unlock();
             return;
         }
 
@@ -305,8 +293,6 @@ pub extern "C" fn kfree(ptr: *mut u8) {
             }
         }
     }
-
-    HEAP_LOCK.unlock();
 }
 
 /// Get the total configured capacity of the kernel heap in bytes.

@@ -10,6 +10,7 @@
 //! Preemptive Round-Robin multitasking scheduler, context switching, and task lifecycle management.
 
 use super::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
+use keira_core::sync::{IrqSpinLock, LockRank};
 use keira_fs::lock::flock::release_all_locks_for_task;
 use keira_io::serial;
 use keira_io::vga;
@@ -33,6 +34,7 @@ extern "C" {
 
 pub const MAX_TASKS: usize = 64;
 
+pub static SCHEDULER_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::Scheduler);
 pub static mut TASKS: [Option<Task>; MAX_TASKS] = [const { None }; MAX_TASKS];
 pub static mut CURRENT_TASK_IDX: usize = 0;
 pub static mut SCHEDULER_INITIALIZED: bool = false;
@@ -368,8 +370,37 @@ pub unsafe fn spawn_user(
     Ok(slot_idx)
 }
 
+/// Scan for and reap any orphaned processes adopted by PID 0 that have transitioned to Zombie (assumes SCHEDULER_LOCK held).
+pub unsafe fn reap_orphaned_zombies_locked() {
+    let curr = CURRENT_TASK_IDX;
+    for i in 1..MAX_TASKS {
+        if i == curr {
+            continue;
+        }
+        if let Some(ref child) = TASKS[i] {
+            if child.is_orphan {
+                if let TaskState::Zombie(_) = child.state {
+                    let reaped_id = child.id;
+                    release_all_locks_for_task(reaped_id);
+                    if let Some(hook) = TASK_CLEANUP_HOOK {
+                        hook(reaped_id);
+                    }
+                    if child.stack_addr != 0 {
+                        vmm::free_user_pages(child.pml4_phys, child.program_break);
+                        pmm::free_frame(child.stack_addr);
+                    } else if child.pml4_phys != 0 {
+                        vmm::cleanup_vmas_for_pml4(child.pml4_phys);
+                    }
+                    TASKS[i] = None;
+                }
+            }
+        }
+    }
+}
+
 /// Clones the currently running task into a new child process (fork).
 pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
+    let _guard = SCHEDULER_LOCK.lock();
     let parent_idx = CURRENT_TASK_IDX;
 
     let mut slot_idx = 0;
@@ -383,7 +414,7 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
     }
 
     if !found {
-        reap_orphaned_zombies();
+        reap_orphaned_zombies_locked();
         for i in 1..MAX_TASKS {
             if TASKS[i].is_none() {
                 slot_idx = i;
@@ -471,61 +502,69 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
 
 /// Terminate the currently running task with an exit code, transitioning to Zombie.
 pub unsafe fn exit_current(exit_code: i32) {
-    core::arch::asm!("cli");
-    let idx = CURRENT_TASK_IDX;
-    if idx != 0 {
-        let parent_id = if let Some(ref mut task) = TASKS[idx] {
-            task.exit_code = exit_code;
-            task.state = TaskState::Zombie(exit_code);
+    let parent_id = {
+        let _guard = SCHEDULER_LOCK.lock();
+        let idx = CURRENT_TASK_IDX;
+        if idx != 0 {
+            let pid = if let Some(ref mut task) = TASKS[idx] {
+                task.exit_code = exit_code;
+                task.state = TaskState::Zombie(exit_code);
 
-            // Auto-reclaim open file descriptors and flock write locks
-            for fd in 0..MAX_FDS {
-                if task.fds[fd].is_open {
-                    if task.fds[fd].write_mode {
-                        if let Ok(path_str) =
-                            core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
-                        {
-                            keira_fs::lock::flock::release_lock(path_str, idx);
+                // Auto-reclaim open file descriptors and flock write locks
+                for fd in 0..MAX_FDS {
+                    if task.fds[fd].is_open {
+                        if task.fds[fd].write_mode {
+                            if let Ok(path_str) =
+                                core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
+                            {
+                                keira_fs::lock::flock::release_lock(path_str, idx);
+                            }
                         }
+                        task.fds[fd] = FileDescriptor::new();
                     }
-                    task.fds[fd] = FileDescriptor::new();
+                }
+
+                serial::print_str("Scheduler: Task '");
+                serial::print_str(task.name);
+                serial::print_str("' exited (Zombie)\n");
+
+                task.parent_id
+            } else {
+                0
+            };
+
+            release_all_locks_for_task(idx);
+
+            if let Some(hook) = TASK_CLEANUP_HOOK {
+                hook(idx);
+            }
+
+            // Reparent any child tasks to PID 0 (kernel_shell / Init)
+            for i in 1..MAX_TASKS {
+                if let Some(ref mut child) = TASKS[i] {
+                    if child.parent_id == idx {
+                        child.parent_id = 0;
+                        child.is_orphan = true;
+                    }
                 }
             }
 
-            serial::print_str("Scheduler: Task '");
-            serial::print_str(task.name);
-            serial::print_str("' exited (Zombie)\n");
+            // Wake up parent if blocked
+            if pid < MAX_TASKS {
+                if let Some(ref mut parent) = TASKS[pid] {
+                    if parent.state == TaskState::Blocked {
+                        parent.state = TaskState::Ready;
+                    }
+                }
+            }
 
-            task.parent_id
+            pid
         } else {
             0
-        };
-
-        release_all_locks_for_task(idx);
-
-        if let Some(hook) = TASK_CLEANUP_HOOK {
-            hook(idx);
         }
+    };
 
-        // Reparent any child tasks to PID 0 (kernel_shell / Init)
-        for i in 1..MAX_TASKS {
-            if let Some(ref mut child) = TASKS[i] {
-                if child.parent_id == idx {
-                    child.parent_id = 0;
-                    child.is_orphan = true;
-                }
-            }
-        }
-
-        // Wake up parent if blocked
-        if parent_id < MAX_TASKS {
-            if let Some(ref mut parent) = TASKS[parent_id] {
-                if parent.state == TaskState::Blocked {
-                    parent.state = TaskState::Ready;
-                }
-            }
-        }
-
+    if parent_id != 0 || CURRENT_TASK_IDX != 0 {
         core::arch::asm!("sti; int 32");
         loop {
             core::arch::asm!("hlt");
@@ -538,30 +577,8 @@ pub unsafe fn exit_current(exit_code: i32) {
 /// Scan for and reap any orphaned processes adopted by PID 0 that have transitioned to Zombie.
 /// Fully reclaims file locks, IPC resources, user address space, page tables, and stack frames.
 pub unsafe fn reap_orphaned_zombies() {
-    let curr = CURRENT_TASK_IDX;
-    for i in 1..MAX_TASKS {
-        if i == curr {
-            continue;
-        }
-        if let Some(ref child) = TASKS[i] {
-            if child.is_orphan {
-                if let TaskState::Zombie(_) = child.state {
-                    let reaped_id = child.id;
-                    release_all_locks_for_task(reaped_id);
-                    if let Some(hook) = TASK_CLEANUP_HOOK {
-                        hook(reaped_id);
-                    }
-                    if child.stack_addr != 0 {
-                        vmm::free_user_pages(child.pml4_phys, child.program_break);
-                        pmm::free_frame(child.stack_addr);
-                    } else if child.pml4_phys != 0 {
-                        vmm::cleanup_vmas_for_pml4(child.pml4_phys);
-                    }
-                    TASKS[i] = None;
-                }
-            }
-        }
-    }
+    let _guard = SCHEDULER_LOCK.lock();
+    reap_orphaned_zombies_locked();
 }
 
 /// Wait for a child process to change state (waitpid), reaping zombies with safe pointer validation.
@@ -592,50 +609,65 @@ pub unsafe fn sys_waitpid(
     let parent_idx = CURRENT_TASK_IDX;
 
     loop {
-        // 1. Check if child already exited (Zombie)
-        for i in 1..MAX_TASKS {
-            if let Some(ref child) = TASKS[i] {
-                if child.parent_id == parent_idx {
-                    if target_pid == -1 || child.id == target_pid as usize {
-                        if let TaskState::Zombie(code) = child.state {
-                            let reaped_id = child.id;
-                            if !status_ptr.is_null() {
+        let (reaped_id, status_val, has_living_child) = {
+            let _guard = SCHEDULER_LOCK.lock();
+
+            // 1. Check if child already exited (Zombie)
+            let mut reaped = None;
+            for i in 1..MAX_TASKS {
+                if let Some(ref child) = TASKS[i] {
+                    if child.parent_id == parent_idx {
+                        if target_pid == -1 || child.id == target_pid as usize {
+                            if let TaskState::Zombie(code) = child.state {
+                                let id = child.id;
                                 let encoded_status = if code >= 0 {
                                     (code & 0xff) << 8
                                 } else {
                                     (-code) & 0x7f
                                 };
-                                *status_ptr = encoded_status;
+                                release_all_locks_for_task(id);
+                                if let Some(hook) = TASK_CLEANUP_HOOK {
+                                    hook(id);
+                                }
+                                if child.stack_addr != 0 {
+                                    vmm::free_user_pages(child.pml4_phys, child.program_break);
+                                    pmm::free_frame(child.stack_addr);
+                                } else if child.pml4_phys != 0 {
+                                    vmm::cleanup_vmas_for_pml4(child.pml4_phys);
+                                }
+                                TASKS[i] = None;
+                                reaped = Some((id, encoded_status));
+                                break;
                             }
-                            release_all_locks_for_task(reaped_id);
-                            if let Some(hook) = TASK_CLEANUP_HOOK {
-                                hook(reaped_id);
-                            }
-                            if child.stack_addr != 0 {
-                                vmm::free_user_pages(child.pml4_phys, child.program_break);
-                                pmm::free_frame(child.stack_addr);
-                            } else if child.pml4_phys != 0 {
-                                vmm::cleanup_vmas_for_pml4(child.pml4_phys);
-                            }
-                            TASKS[i] = None;
-                            return Ok(reaped_id);
                         }
                     }
                 }
             }
-        }
 
-        // 2. Check if any matching child is still alive
-        let mut has_living_child = false;
-        for i in 1..MAX_TASKS {
-            if let Some(ref child) = TASKS[i] {
-                if child.parent_id == parent_idx
-                    && (target_pid == -1 || child.id == target_pid as usize)
-                {
-                    has_living_child = true;
-                    break;
+            if let Some((id, st)) = reaped {
+                (Some(id), st, true)
+            } else {
+                // 2. Check if any matching child is still alive
+                let mut living = false;
+                for i in 1..MAX_TASKS {
+                    if let Some(ref child) = TASKS[i] {
+                        if child.parent_id == parent_idx
+                            && (target_pid == -1 || child.id == target_pid as usize)
+                        {
+                            living = true;
+                            break;
+                        }
+                    }
                 }
+                (None, 0, living)
             }
+        };
+
+        if let Some(id) = reaped_id {
+            if !status_ptr.is_null() {
+                *status_ptr = status_val;
+            }
+            return Ok(id);
         }
 
         if !has_living_child {
@@ -648,8 +680,11 @@ pub unsafe fn sys_waitpid(
         }
 
         // 3. Block parent until a child exits
-        if let Some(ref mut parent) = TASKS[parent_idx] {
-            parent.state = TaskState::Blocked;
+        {
+            let _guard = SCHEDULER_LOCK.lock();
+            if let Some(ref mut parent) = TASKS[parent_idx] {
+                parent.state = TaskState::Blocked;
+            }
         }
 
         core::arch::asm!("sti; int 32; cli");
@@ -665,6 +700,7 @@ pub unsafe fn wait_for_task(child_id: usize) {
 #[no_mangle]
 pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
     vga::handle_timer_tick();
+    keira_arch::power::acpi::record_cpu_heartbeat();
 
     if !SCHEDULER_INITIALIZED {
         return current_rsp;

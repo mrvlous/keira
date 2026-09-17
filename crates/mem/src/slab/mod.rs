@@ -11,7 +11,7 @@
 
 use crate::heap::{kfree, kmalloc};
 use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
-use keira_core::sync::SpinLock;
+use keira_core::sync::{IrqSpinLock, LockRank};
 
 /// Kernel object cache for fixed-size, frequently allocated descriptors.
 pub struct KmemCache {
@@ -21,7 +21,7 @@ pub struct KmemCache {
     free_list: AtomicPtr<u8>,
     allocated_count: AtomicUsize,
     total_count: AtomicUsize,
-    lock: SpinLock,
+    lock: IrqSpinLock,
 }
 
 unsafe impl Send for KmemCache {}
@@ -43,24 +43,24 @@ impl KmemCache {
             free_list: AtomicPtr::new(core::ptr::null_mut()),
             allocated_count: AtomicUsize::new(0),
             total_count: AtomicUsize::new(0),
-            lock: SpinLock::new(),
+            lock: IrqSpinLock::with_rank(LockRank::Heap),
         }
     }
 
     /// Allocate an object from the cache, reusing freed instances when available.
     pub fn alloc(&self) -> *mut u8 {
-        self.lock.lock();
-        let head = self.free_list.load(Ordering::SeqCst);
-        if !head.is_null() {
-            unsafe {
-                let next = *(head as *mut *mut u8);
-                self.free_list.store(next, Ordering::SeqCst);
+        {
+            let _guard = self.lock.lock();
+            let head = self.free_list.load(Ordering::SeqCst);
+            if !head.is_null() {
+                unsafe {
+                    let next = *(head as *mut *mut u8);
+                    self.free_list.store(next, Ordering::SeqCst);
+                }
+                self.allocated_count.fetch_add(1, Ordering::SeqCst);
+                return head;
             }
-            self.allocated_count.fetch_add(1, Ordering::SeqCst);
-            self.lock.unlock();
-            return head;
         }
-        self.lock.unlock();
 
         let ptr = kmalloc(self.obj_size);
         if !ptr.is_null() {
@@ -76,23 +76,24 @@ impl KmemCache {
             return;
         }
 
-        self.lock.lock();
+        let _guard = self.lock.lock();
         unsafe {
             let current_head = self.free_list.load(Ordering::SeqCst);
             *(ptr as *mut *mut u8) = current_head;
             self.free_list.store(ptr, Ordering::SeqCst);
         }
         self.allocated_count.fetch_sub(1, Ordering::SeqCst);
-        self.lock.unlock();
     }
 
     /// Free all currently cached, unused objects back to the kernel heap.
     pub fn reap(&self) {
-        self.lock.lock();
-        let mut head = self.free_list.load(Ordering::SeqCst);
-        self.free_list
-            .store(core::ptr::null_mut(), Ordering::SeqCst);
-        self.lock.unlock();
+        let mut head = {
+            let _guard = self.lock.lock();
+            let h = self.free_list.load(Ordering::SeqCst);
+            self.free_list
+                .store(core::ptr::null_mut(), Ordering::SeqCst);
+            h
+        };
 
         while !head.is_null() {
             let next = unsafe { *(head as *mut *mut u8) };

@@ -15,7 +15,11 @@ pub const ACPI_SLEEP_S0: u8 = 0;
 pub const ACPI_SLEEP_S3: u8 = 3;
 pub const ACPI_SLEEP_S5: u8 = 5;
 
+use core::sync::atomic::{AtomicUsize, Ordering};
+
 pub static mut NMI_WATCHDOG_ACTIVE: bool = true;
+static CPU_HEARTBEAT_TICKS: AtomicUsize = AtomicUsize::new(0);
+static LAST_PET_TICK: AtomicUsize = AtomicUsize::new(0);
 
 /// Power off system via QEMU/Bochs ACPI or VirtualBox power registers.
 pub fn poweroff() -> ! {
@@ -54,11 +58,35 @@ pub fn set_power_state(_state: u8) -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Record CPU timer tick heartbeat for soft lockup detection.
+#[inline]
+pub fn record_cpu_heartbeat() {
+    CPU_HEARTBEAT_TICKS.fetch_add(1, Ordering::Relaxed);
+}
+
+/// Query current CPU heartbeat tick count.
+#[inline]
+pub fn get_cpu_heartbeat() -> usize {
+    CPU_HEARTBEAT_TICKS.load(Ordering::Relaxed)
+}
+
 /// Feed NMI hardware watchdog timer to prevent kernel deadlocks.
 pub fn pet_watchdog() {
+    let current_ticks = get_cpu_heartbeat();
+    LAST_PET_TICK.store(current_ticks, Ordering::Relaxed);
     unsafe {
         if NMI_WATCHDOG_ACTIVE {
             // Reset hardware NMI watchdog counter
         }
     }
+}
+
+/// Detect whether a CPU core has suffered a soft lockup (heartbeat stalled beyond threshold).
+pub fn check_soft_lockup(threshold_ticks: usize) -> bool {
+    let current = get_cpu_heartbeat();
+    let last = LAST_PET_TICK.load(Ordering::Relaxed);
+    if last == 0 {
+        return false;
+    }
+    current > last && (current - last) > threshold_ticks
 }

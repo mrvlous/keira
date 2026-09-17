@@ -1259,6 +1259,190 @@ int main(int argc, char **argv) {
         puts("  [OK]   Advisory write lock coherency across duplicated descriptors verified");
     }
 
+    /* 38. Multi-Process Concurrent Syscall & Memory Stress */
+    puts("  [TEST] Multi-process concurrent syscall & memory stress...");
+    int stress_pipe[2];
+    if (pipe(stress_pipe) < 0) {
+        puts("  [FAIL] Failed to create stress pipe");
+        return 1;
+    }
+
+    pid_t worker1 = fork();
+    if (worker1 < 0) {
+        puts("  [FAIL] Failed to fork worker 1");
+        return 1;
+    } else if (worker1 == 0) {
+        close(stress_pipe[0]);
+        /* Worker 1 performs repeated memory break allocations and writes pattern */
+        for (int iter = 0; iter < 16; iter++) {
+            void *brk_new = sbrk(4096);
+            if (brk_new == (void *)-1) {
+                exit(101);
+            }
+            char *buf = (char *)brk_new;
+            memset(buf, 0xA5 + iter, 4096);
+            for (int k = 0; k < 4096; k += 512) {
+                if ((unsigned char)buf[k] != (unsigned char)(0xA5 + iter)) {
+                    exit(102);
+                }
+            }
+            int d = dup(stress_pipe[1]);
+            if (d < 0) {
+                exit(103);
+            }
+            char msg = 'A' + iter;
+            if (write(d, &msg, 1) != 1) {
+                exit(104);
+            }
+            close(d);
+            usleep(1000);
+        }
+        close(stress_pipe[1]);
+        exit(0);
+    }
+
+    pid_t worker2 = fork();
+    if (worker2 < 0) {
+        puts("  [FAIL] Failed to fork worker 2");
+        return 1;
+    } else if (worker2 == 0) {
+        close(stress_pipe[0]);
+        /* Worker 2 performs concurrent heap allocation and descriptor stress */
+        for (int iter = 0; iter < 16; iter++) {
+            void *p = malloc(1024);
+            if (!p) {
+                exit(201);
+            }
+            memset(p, 0x5A + iter, 1024);
+            char *c = (char *)p;
+            for (int k = 0; k < 1024; k += 128) {
+                if ((unsigned char)c[k] != (unsigned char)(0x5A + iter)) {
+                    exit(202);
+                }
+            }
+            free(p);
+            int d = dup(stress_pipe[1]);
+            if (d < 0) {
+                exit(203);
+            }
+            char msg = 'a' + iter;
+            if (write(d, &msg, 1) != 1) {
+                exit(204);
+            }
+            close(d);
+            usleep(1000);
+        }
+        close(stress_pipe[1]);
+        exit(0);
+    }
+
+    close(stress_pipe[1]);
+
+    int status1 = 0, status2 = 0;
+    if (waitpid(worker1, &status1, 0) != worker1) {
+        puts("  [FAIL] Failed waiting for worker 1");
+        return 1;
+    }
+    if (waitpid(worker2, &status2, 0) != worker2) {
+        puts("  [FAIL] Failed waiting for worker 2");
+        return 1;
+    }
+
+    if (WEXITSTATUS(status1) != 0 || WEXITSTATUS(status2) != 0) {
+        printf("  [FAIL] Concurrent worker error: worker1=%d worker2=%d\n", WEXITSTATUS(status1),
+               WEXITSTATUS(status2));
+        return 1;
+    }
+
+    /* All 32 bytes committed by workers, now drain the pipe */
+    int bytes_read = 0;
+    char read_buf[64];
+    while (bytes_read < 32) {
+        ssize_t n = read(stress_pipe[0], read_buf + bytes_read, sizeof(read_buf) - bytes_read);
+        if (n <= 0) {
+            break;
+        }
+        bytes_read += n;
+    }
+    close(stress_pipe[0]);
+
+    if (bytes_read != 32) {
+        printf("  [FAIL] Incomplete pipe transfer: got %d/32 bytes\n", bytes_read);
+        return 1;
+    }
+    puts("  [INFO] Concurrent heap mutations and pipe transfers completed without corruption");
+    puts("  [OK]   Multi-process concurrent syscall & memory stress verified");
+
+    /* 39. Lock Contention & Non-Blocking Deadlock Immunity */
+    puts("  [TEST] Lock contention & non-blocking deadlock immunity...");
+    const char *contention_file = "/temp/contention_lock.txt";
+    int fd_lock = open(contention_file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd_lock < 0) {
+        puts("  [FAIL] Failed to create contention lock test file");
+        return 1;
+    }
+    write(fd_lock, "HELD", 4);
+
+    pid_t contender = fork();
+    if (contender < 0) {
+        puts("  [FAIL] Failed to fork contender process");
+        return 1;
+    } else if (contender == 0) {
+        /* Contender attempts non-blocking/immediate lock acquisition which should fail gracefully
+         * without deadlocking */
+        int f = open(contention_file, O_WRONLY, 0);
+        if (f >= 0) {
+            close(f);
+            exit(1); /* Lock was held by parent, open in write mode should fail! */
+        }
+        if (errno != EACCES) {
+            exit(2);
+        }
+        exit(0);
+    }
+
+    /* Verify non-blocking waitpid with WNOHANG handles active process safely */
+    int final_status = 0;
+    int wnohang_status = 0;
+    pid_t wnohang_res = waitpid(contender, &wnohang_status, WNOHANG);
+    if (wnohang_res < 0) {
+        puts("  [FAIL] waitpid with WNOHANG returned error");
+        return 1;
+    }
+
+    if (wnohang_res == contender) {
+        /* Contender already finished and was reaped by WNOHANG */
+        final_status = wnohang_status;
+    } else {
+        /* Contender still running, wait blocking for completion */
+        int cstatus = 0;
+        pid_t wres = waitpid(contender, &cstatus, 0);
+        if (wres != contender) {
+            printf("  [FAIL] Failed waiting for contender: wres=%d\n", (int)wres);
+            return 1;
+        }
+        final_status = cstatus;
+    }
+
+    if (WEXITSTATUS(final_status) != 0) {
+        printf("  [FAIL] Contender failed or deadlocked: exit=%d\n", WEXITSTATUS(final_status));
+        return 1;
+    }
+
+    /* Release parent lock */
+    close(fd_lock);
+
+    /* Contention is cleared: subsequent open must succeed immediately */
+    int f_cleared = open(contention_file, O_WRONLY, 0);
+    if (f_cleared < 0) {
+        printf("  [FAIL] Failed opening file after contention released: errno=%d\n", errno);
+        return 1;
+    }
+    close(f_cleared);
+
+    puts("  [INFO] Lock contention correctly rejected with EACCES without scheduler deadlock");
+    puts("  [OK]   Lock contention & non-blocking deadlock immunity verified");
+
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;
 }

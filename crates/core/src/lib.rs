@@ -28,5 +28,9 @@ pub use module::{
     resolve_symbol, sys_delete_module, sys_init_module, unregister_module, KernelModule,
     KernelSymbol, ModuleState, BASE_KALLSYMS, MAX_MODULES,
 };
+pub use sync::irq::{interrupts_enabled, irq_restore, irq_save, IrqState};
+pub use sync::irq_mutex::{IrqMutex, IrqMutexGuard};
+pub use sync::irq_spinlock::{IrqSpinLock, IrqSpinLockGuard};
+pub use sync::lock_order::{check_lock_order, record_lock_acquire, record_lock_release, LockRank};
 pub use sync::mutex::{SpinMutex, SpinMutexGuard};
 pub use sync::spinlock::SpinLock;
