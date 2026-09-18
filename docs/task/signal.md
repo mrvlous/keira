@@ -69,4 +69,3 @@ When a parent process inspects a child process terminated by a signal via `waitp
 - `wstatus` is encoded as `(-code) & 0x7f`.
 - `WIFSIGNALED(wstatus)` evaluates to true.
 - `WTERMSIG(wstatus)` returns the terminating POSIX signal number.
-

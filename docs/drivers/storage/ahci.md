@@ -60,4 +60,3 @@ To guarantee durability and prevent data corruption across sudden power loss or 
 1. **Software Sector Flush**: Dirty sectors cached in FAT cluster buffers are flushed via `flush_dirty_sectors()`.
 2. **Physical Device Flush**: ATA command `0xEA` (`FLUSH CACHE EXT`) is transmitted over the SATA link to commit onboard disk volatile RAM to non-volatile platters or flash cells.
 3. **CPU Memory Fence**: `core::arch::x86_64::_mm_mfence()` or `asm!("mfence")` enforces processor memory ordering across DMA controller boundaries.
-

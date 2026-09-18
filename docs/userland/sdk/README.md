@@ -13,7 +13,7 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
 ```
 +----------------------------------------------------------------+
 |                Ring 3 Userland Applications                    |
-|             (kcc.elf, sysinfo.elf, test_abi.elf)               |
+|        (kcc.elf, sysinfo.elf, test_abi.elf, fuzz_abi.elf)      |
 +----------------------------------------------------------------+
                                |
                                v
@@ -87,4 +87,4 @@ run /apps/bin/app.elf
 ```
 
 ### C. Standard C Runtime (`crt0.asm`) & Static Archive (`libc.a`):
-All freestanding C runtime modules in `user/lib/` are compiled into independent object files and archived into `libc.a` (`build/x86/<arch>/lib/libc.a`), which is deployed to `/system/lib/libc.a`. Ring 3 applications (`kcc.elf`, `sysinfo.elf`, `test_abi.elf`) link directly against this archive along with the standard architecture-specific C runtime startup (`user/arch/x86/<arch>/crt0.asm`) and linker scripts (`user/arch/x86/<arch>/linker.ld`).
+All freestanding C runtime modules in `user/lib/` are compiled into independent object files and archived into `libc.a` (`build/x86/<arch>/lib/libc.a`), which is deployed to `/system/lib/libc.a`. Ring 3 applications (`kcc.elf`, `sysinfo.elf`, `test_abi.elf`, `fuzz_abi.elf`) link directly against this archive along with the standard architecture-specific C runtime startup (`user/arch/x86/<arch>/crt0.asm`) and linker scripts (`user/arch/x86/<arch>/linker.ld`).

@@ -16,9 +16,11 @@ graph TD
     Main --> KCC["kcc.elf<br/>Native C Compiler"]
     Main --> Sysinfo["sysinfo.elf<br/>System Diagnostic Utility"]
     Main --> TestABI["test_abi.elf<br/>ABI Security & Fault Harness"]
+    Main --> FuzzABI["fuzz_abi.elf<br/>Syscall Fuzzing & Chaos Stress Harness"]
     KCC --> LibC["libc.a<br/>Freestanding C Library"]
     Sysinfo --> LibC
     TestABI --> LibC
+    FuzzABI --> LibC
     LibC -->|Syscall INT 0x80 / SYSCALL| Kernel
 ```
 
@@ -30,7 +32,8 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | `kcc.elf` | `/system/bin/kcc.elf`, `/apps/bin/kcc.elf` | `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_BRK`, `SYS_EXIT` | Self-hosting C compiler generating ELF binaries |
 | `sysinfo.elf` | `/system/bin/sysinfo.elf`, `/apps/bin/sysinfo.elf` | `SYS_GETPID`, `SYS_UPTIME`, `SYS_OPEN`, `SYS_READ`, `SYS_WRITE`, `SYS_EXIT` | Ring 3 system and process state diagnostic utility |
-| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_MPROTECT`, `SYS_MSYNC`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_SIGACTION`, `SYS_SIGRETURN`, `SYS_SIGPROCMASK`, `SYS_SIGPENDING`, `SYS_GETUID`, `SYS_SETUID`, `SYS_IOCTL`, `SYS_SYNC`, `SYS_FSYNC`, `SYS_DUP`, `SYS_DUP2`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (37 tests) |
+| `test_abi.elf` | `/system/bin/test_abi.elf`, `/apps/bin/test_abi.elf` | `SYS_GETPID`, `SYS_GETPPID`, `SYS_CHDIR`, `SYS_GETCWD`, `SYS_LSEEK`, `SYS_SOCKET`, `SYS_CONNECT`, `SYS_BRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_MPROTECT`, `SYS_MSYNC`, `SYS_PIPE`, `SYS_FORK`, `SYS_WAITPID`, `SYS_SIGACTION`, `SYS_SIGRETURN`, `SYS_SIGPROCMASK`, `SYS_SIGPENDING`, `SYS_GETUID`, `SYS_SETUID`, `SYS_IOCTL`, `SYS_SYNC`, `SYS_FSYNC`, `SYS_DUP`, `SYS_DUP2`, `SYS_EXIT`, `SYS_WRITE`, `SYS_READ` | Ring 3 syscall security and fault-injection verification harness (40 tests) |
+| `fuzz_abi.elf` | `/system/bin/fuzz_abi.elf`, `/apps/bin/fuzz_abi.elf` | `SYS_UPTIME`, `SYS_FORK`, `SYS_WAITPID`, `SYS_OPEN`, `SYS_CLOSE`, `SYS_WRITE`, `SYS_SBRK`, `SYS_MMAP`, `SYS_MUNMAP`, `SYS_SIGACTION`, `SYS_KILL`, Vectors 1..85 | Ring 3 automated syscall fuzzing & chaos stress harness (10,000+ iterations) |
 
 ---
 
@@ -217,10 +220,71 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [TEST] Lock contention & non-blocking deadlock immunity...
   [INFO] Lock contention correctly rejected with EACCES without scheduler deadlock
   [OK]   Lock contention & non-blocking deadlock immunity verified
+  [TEST] Automated syscall boundary fuzzing (1,000 rapid mutated vectors)...
+  [INFO] 1,000 mutated vectors executed without triggering unhandled exceptions
+  [OK]   Automated syscall boundary fuzzing & Syzkaller-Lite smoke test verified
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.
 admin@keira:~$
 ```
 
+---
 
+## Ring 3 Automated Syscall Fuzzing & Chaos Harness (`fuzz_abi.elf`)
+
+`fuzz_abi.elf` is an automated, high-throughput Syzkaller-Lite syscall fuzzing and chaos engineering harness. It subjects the kernel to randomized boundary values and multi-phase resource stress directly from an unprivileged Ring 3 environment:
+
+1. **Phase 1: Syzkaller-Lite Randomized Boundary Injection**: Executes 10,000 rapid iterations testing system calls (vectors 1 through 85) against crafted boundary pools (NULL pointers, high kernel canonical addresses, misaligned offsets, and integer extremes).
+2. **Phase 2: Chaos File Descriptor Exhaustion**: Opens hundreds of concurrent file handles to force `EMFILE` limits and verifies clean multi-descriptor reclamation upon closure.
+3. **Phase 3: Chaos Virtual Memory & Heap Exhaustion**: Expands the process break toward upper virtual boundaries to trigger `ENOMEM`, then tests page fault recovery and demand paging resilience.
+4. **Phase 4: Chaos Multiprocess Fork Churn**: Spawns and reaps concurrent child processes in rapid bursts, testing PID recycling and zombie cleanup without task slot leaks.
+5. **Phase 5: Chaos Signal Storm & Sigreturn**: Dispatches rapid signal bursts and manipulates signal mask registers to verify signal delivery integrity.
+
+```text
+admin@keira:~$ run /system/bin/fuzz_abi.elf
+Loading ELF binary: /system/bin/fuzz_abi.elf
+Keira Ring 3 Automated Syscall Fuzzing & Chaos Stress Harness
+================================================================================
+  [SEED] PRNG initialized with seed: 0x2a
+  [CFG]  Iteration target: 10,000 syscall boundary mutations
+
+[PHASE 1] Syzkaller-Lite Randomized Syscall Boundary Fuzzing
+  Executing 10,000 randomized boundary mutations across vectors 1..85...
+  ... 1,000 / 10,000 iterations completed
+  ... 2,000 / 10,000 iterations completed
+  ... 3,000 / 10,000 iterations completed
+  ... 4,000 / 10,000 iterations completed
+  ... 5,000 / 10,000 iterations completed
+  ... 6,000 / 10,000 iterations completed
+  ... 7,000 / 10,000 iterations completed
+  ... 8,000 / 10,000 iterations completed
+  ... 9,000 / 10,000 iterations completed
+  ... 10,000 / 10,000 iterations completed
+  [INFO] 10,000 boundary vectors dispatched in 331 ms
+  [OK]   Phase 1 completed: Zero kernel panics, unhandled faults, or leaks
+
+[PHASE 2] Chaos File Descriptor Exhaustion & Recovery
+  [INFO] Exhausted 256 file descriptor slots (EMFILE correctly enforced)
+  [INFO] Closed all descriptor slots and verified reclamation
+  [OK]   Phase 2 completed: Descriptor exhaustion handled safely
+
+[PHASE 3] Chaos Virtual Memory & Heap Saturation
+  [INFO] sbrk boundary expansion rejected safely with ENOMEM
+  [INFO] Large mmap boundary allocation and unmap completed
+  [OK]   Phase 3 completed: Virtual memory saturation handled safely
+
+[PHASE 4] Chaos Burst Fork Churn & PID Allocation
+  [INFO] 16 rapid fork-and-exit cycles executed and reaped
+  [OK]   Phase 4 completed: Process churn and PID recycling operational
+
+[PHASE 5] Chaos Signal Storm & Mask Manipulation
+  [INFO] Signal handler registered and signal storm dispatched
+  [INFO] Signal mask alternation (sigprocmask) verified
+  [OK]   Phase 5 completed: Signal storm delivered and restored cleanly
+
+================================================================================
+[DONE] All 5 Fuzzing & Chaos Stress Phases PASSED with ZERO Kernel Crashes.
+Program exited normally.
+admin@keira:~$
+```
