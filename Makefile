@@ -126,7 +126,11 @@ TEST_ABI_ELF    := $(BIN_DIR)/test_abi.elf
 TEST_ABI_SRCS   := $(shell find user/bin/test_abi -type f -name "*.c")
 TEST_ABI_OBJS   := $(patsubst user/bin/test_abi/%.c,$(OBJ_DIR)/user/bin/test_abi/%.o,$(TEST_ABI_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF)
+FUZZ_ABI_ELF    := $(BIN_DIR)/fuzz_abi.elf
+FUZZ_ABI_SRCS   := $(shell find user/bin/fuzz_abi -type f -name "*.c" 2>/dev/null)
+FUZZ_ABI_OBJS   := $(patsubst user/bin/fuzz_abi/%.c,$(OBJ_DIR)/user/bin/fuzz_abi/%.o,$(FUZZ_ABI_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -358,6 +362,16 @@ $(TEST_ABI_ELF): $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_S
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TEST_ABI_ELF)
 	@$(LOG_DONE) "$(TEST_ABI_ELF) ready"
 
+# Userland automated fuzzing & chaos test tool (fuzz_abi.elf)
+$(OBJ_DIR)/user/bin/fuzz_abi/%.o: user/bin/fuzz_abi/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+
+$(FUZZ_ABI_ELF): $(USER_CRT_OBJ) $(FUZZ_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: fuzz_abi ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(FUZZ_ABI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(FUZZ_ABI_ELF)
+	@$(LOG_DONE) "$(FUZZ_ABI_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -371,6 +385,7 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/apps/src/kcc/include
 	$(Q)mkdir -p $(FS_ROOT)/apps/src/sysinfo
 	$(Q)mkdir -p $(FS_ROOT)/apps/src/test_abi
+	$(Q)mkdir -p $(FS_ROOT)/apps/src/fuzz_abi
 	$(Q)mkdir -p $(FS_ROOT)/config/boot
 	$(Q)mkdir -p $(FS_ROOT)/config/sys
 	$(Q)mkdir -p $(FS_ROOT)/users/admin
@@ -382,6 +397,8 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/apps/bin/sysinfo.elf
 	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/system/bin/test_abi.elf
 	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/apps/bin/test_abi.elf
+	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/system/bin/fuzz_abi.elf
+	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/apps/bin/fuzz_abi.elf
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/system/lib/libc.a
 	$(Q)for cmd in $(SHELL_CMDS); do \
 	    printf "ELF\002\001\001\000Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
@@ -416,6 +433,7 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
 	$(Q)cp user/bin/sysinfo/*.c $(FS_ROOT)/apps/src/sysinfo/
 	$(Q)cp user/bin/test_abi/*.c $(FS_ROOT)/apps/src/test_abi/
+	$(Q)cp user/bin/fuzz_abi/*.c $(FS_ROOT)/apps/src/fuzz_abi/
 	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
@@ -443,7 +461,7 @@ $(DISK_IMG): fs-root
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/apps/src/test_abi ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/apps/src/test_abi ::/apps/src/fuzz_abi ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
 	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \
