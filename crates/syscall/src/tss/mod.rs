@@ -113,6 +113,8 @@ pub static mut TSS: TaskStateSegment = TaskStateSegment {
     iomap_base: 104,
 };
 
+static mut BOOT_KERNEL_STACK_TOP: usize = 0;
+
 extern "C" {
     #[cfg(target_arch = "x86_64")]
     static mut tss_descriptor: [u8; 16];
@@ -137,7 +139,8 @@ pub unsafe fn init_user_mode() {
 
     #[cfg(target_arch = "x86_64")]
     {
-        TSS.rsp0 = stack_frame + pmm::PAGE_SIZE;
+        BOOT_KERNEL_STACK_TOP = (stack_frame + pmm::PAGE_SIZE) as usize;
+        TSS.rsp0 = BOOT_KERNEL_STACK_TOP as u64;
 
         let desc = &raw mut tss_descriptor;
 
@@ -157,7 +160,8 @@ pub unsafe fn init_user_mode() {
 
     #[cfg(target_arch = "x86")]
     {
-        TSS.esp0 = (stack_frame + pmm::PAGE_SIZE) as u32;
+        BOOT_KERNEL_STACK_TOP = (stack_frame + pmm::PAGE_SIZE) as usize;
+        TSS.esp0 = BOOT_KERNEL_STACK_TOP as u32;
         TSS.ss0 = 0x10;
 
         let desc = &raw mut tss_descriptor;
@@ -184,4 +188,10 @@ pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
     {
         TSS.esp0 = sp0 as u32;
     }
+}
+
+/// Retrieve the initial privilege stack top allocated at bootstrap.
+#[no_mangle]
+pub unsafe extern "C" fn get_boot_kernel_stack() -> usize {
+    BOOT_KERNEL_STACK_TOP
 }

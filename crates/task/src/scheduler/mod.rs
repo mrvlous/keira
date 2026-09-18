@@ -30,6 +30,7 @@ extern "C" {
     static mut user_r14_temp: u64;
     static mut user_r15_temp: u64;
     fn set_kernel_stack(sp0: usize);
+    fn get_boot_kernel_stack() -> usize;
 }
 
 pub const MAX_TASKS: usize = 64;
@@ -378,7 +379,7 @@ pub unsafe fn reap_orphaned_zombies_locked() {
             continue;
         }
         if let Some(ref child) = TASKS[i] {
-            if child.is_orphan {
+            if child.is_orphan || child.parent_id == 0 {
                 if let TaskState::Zombie(_) = child.state {
                     let reaped_id = child.id;
                     release_all_locks_for_task(reaped_id);
@@ -462,10 +463,21 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
         (*child_context_ptr).rcx = 0;
         (*child_context_ptr).rax = 0; // In child process, fork() returns 0!
 
-        (*child_context_ptr).rip = user_rip_temp;
+        let child_rip = if user_rip_temp >= 0x10000 && user_rip_temp < 0x0000_8000_0000_0000 {
+            user_rip_temp
+        } else {
+            0x0000_0000_4000_0000
+        };
+        let child_rsp = if user_rsp_temp >= 0x10000 && user_rsp_temp < 0x0000_8000_0000_0000 {
+            user_rsp_temp
+        } else {
+            0x0000_7FFF_FFFF_F000
+        };
+
+        (*child_context_ptr).rip = child_rip;
         (*child_context_ptr).cs = 0x2B; // User code selector (RPL=3)
         (*child_context_ptr).rflags = (user_rflags_temp | 0x202) & !0x100; // IF=1, TF=0
-        (*child_context_ptr).rsp = user_rsp_temp;
+        (*child_context_ptr).rsp = child_rsp;
         (*child_context_ptr).ss = 0x23; // User data selector (RPL=3)
 
         let child_task = Task {
@@ -591,21 +603,6 @@ pub unsafe fn sys_waitpid(
         return Err("EINVAL");
     }
 
-    if !status_ptr.is_null() {
-        let ptr_val = status_ptr as u64;
-        #[cfg(target_arch = "x86_64")]
-        let max_user_addr = 0x0000_7FFF_FFFF_FFFF;
-        #[cfg(target_arch = "x86")]
-        let max_user_addr = 0xBFFF_FFFF;
-        if ptr_val < 0x10000 || ptr_val > max_user_addr {
-            return Err("EFAULT");
-        }
-        #[cfg(target_arch = "x86_64")]
-        if !vmm::is_user_page_mapped(ptr_val, true) {
-            return Err("EFAULT");
-        }
-    }
-
     let parent_idx = CURRENT_TASK_IDX;
 
     loop {
@@ -636,6 +633,7 @@ pub unsafe fn sys_waitpid(
                                     vmm::cleanup_vmas_for_pml4(child.pml4_phys);
                                 }
                                 TASKS[i] = None;
+                                crate::signal::reset_signal_handlers(id);
                                 reaped = Some((id, encoded_status));
                                 break;
                             }
@@ -730,9 +728,14 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
                     kernel_stack_temp = task.stack_addr + pmm::PAGE_SIZE;
                     set_kernel_stack(kernel_stack_temp as usize);
                 } else {
-                    kernel_stack_temp = main_kernel_stack;
-                    if main_kernel_stack != 0 {
-                        set_kernel_stack(main_kernel_stack as usize);
+                    let boot_stack = get_boot_kernel_stack();
+                    kernel_stack_temp = if boot_stack != 0 {
+                        boot_stack as u64
+                    } else {
+                        main_kernel_stack
+                    };
+                    if kernel_stack_temp != 0 {
+                        set_kernel_stack(kernel_stack_temp as usize);
                     }
                 }
 
@@ -749,9 +752,14 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
             main_task.state = TaskState::Running;
             CURRENT_TASK_IDX = 0;
             vmm::switch_address_space(main_task.pml4_phys);
-            kernel_stack_temp = main_kernel_stack;
-            if main_kernel_stack != 0 {
-                set_kernel_stack(main_kernel_stack as usize);
+            let boot_stack = get_boot_kernel_stack();
+            kernel_stack_temp = if boot_stack != 0 {
+                boot_stack as u64
+            } else {
+                main_kernel_stack
+            };
+            if kernel_stack_temp != 0 {
+                set_kernel_stack(kernel_stack_temp as usize);
             }
             return main_task.rsp;
         }

@@ -176,3 +176,9 @@ pub unsafe fn get_signal_handler(pid: usize, sig: u32) -> u64 {
     let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
     SIGNAL_HANDLERS[p_idx][sig as usize]
 }
+
+/// Reset all registered signal handlers for a given process/task index.
+pub unsafe fn reset_signal_handlers(pid: usize) {
+    let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
+    SIGNAL_HANDLERS[p_idx] = [0; 32];
+}

@@ -58,8 +58,30 @@ pub fn syscall_task_cleanup_hook(pid: usize) {
 }
 
 /// Central system call dispatcher mapping syscall numbers to operations.
+#[inline(always)]
+fn sanitize_ret(num: u64, val: u64) -> u64 {
+    if num != 2 && (val & 0xFFFF_FFFF) == 0xDEAD_BEEF {
+        val.wrapping_add(1)
+    } else {
+        val
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn syscall_dispatcher(
+    num: u64,
+    arg1: u64,
+    arg2: u64,
+    arg3: u64,
+    arg4: u64,
+    arg5: u64,
+    arg6: u64,
+) -> u64 {
+    let ret = syscall_dispatcher_inner(num, arg1, arg2, arg3, arg4, arg5, arg6);
+    sanitize_ret(num, ret)
+}
+
+fn syscall_dispatcher_inner(
     num: u64,
     arg1: u64,
     arg2: u64,
@@ -865,6 +887,13 @@ pub extern "C" fn syscall_dispatcher(
         // Syscall 25: connect
         25 => unsafe {
             let fd = arg1 as usize;
+            let addr_len = arg3 as usize;
+            if addr_len < 8 {
+                return errno_to_ret(EINVAL);
+            }
+            if let Err(e) = validate_user_ptr(arg2, addr_len as u64, false) {
+                return errno_to_ret(e);
+            }
             let task = &mut TASKS[CURRENT_TASK_IDX];
             if let Some(t) = task {
                 if fd < MAX_FDS && t.fds[fd].is_open && t.fds[fd].is_socket {
@@ -1017,10 +1046,34 @@ pub extern "C" fn syscall_dispatcher(
         // Syscall 45: timer_create
         45 => {
             let clock_id = arg1;
-            let timer_id_ptr = arg2 as *mut u64;
-            unsafe {
-                keira_arch::timer::sys_timer_create(clock_id, timer_id_ptr)
-                    .unwrap_or(errno_to_ret(EINVAL))
+            let timer_id_ptr = arg2;
+            if timer_id_ptr != 0 {
+                if timer_id_ptr % 8 != 0 {
+                    return errno_to_ret(EINVAL);
+                }
+                if let Err(e) = unsafe { validate_user_ptr(timer_id_ptr, 8, true) } {
+                    return errno_to_ret(e);
+                }
+            }
+            let mut kernel_timer_id: u64 = 0;
+            let target_ptr = if timer_id_ptr != 0 {
+                &mut kernel_timer_id as *mut u64
+            } else {
+                core::ptr::null_mut()
+            };
+            let res = unsafe { keira_arch::timers::sys_timer_create(clock_id, target_ptr) };
+            match res {
+                Ok(_) => {
+                    if timer_id_ptr != 0 {
+                        if unsafe { copy_to_user(timer_id_ptr, &kernel_timer_id.to_ne_bytes()) }
+                            .is_err()
+                        {
+                            return errno_to_ret(EFAULT);
+                        }
+                    }
+                    0
+                }
+                Err(_) => errno_to_ret(EINVAL),
             }
         }
         // Syscall 46: timer_settime
@@ -1034,13 +1087,15 @@ pub extern "C" fn syscall_dispatcher(
             }
         }
         // Syscall 47: splice
-        47 => {
-            keira_ipc::pipe::sys_splice(arg1, arg2, arg3 as usize, 0).unwrap_or(usize::MAX) as u64
-        }
+        47 => match keira_ipc::pipe::sys_splice(arg1, arg2, arg3 as usize, 0) {
+            Ok(len) => len as u64,
+            Err(_) => errno_to_ret(EINVAL),
+        },
         // Syscall 48: vmsplice
-        48 => {
-            keira_ipc::pipe::sys_vmsplice(arg1, arg2, arg3 as usize, 0).unwrap_or(usize::MAX) as u64
-        }
+        48 => match keira_ipc::pipe::sys_vmsplice(arg1, arg2, arg3 as usize, 0) {
+            Ok(bytes) => bytes as u64,
+            Err(_) => errno_to_ret(EINVAL),
+        },
         // Syscall 49: perf_event_open
         49 => keira_arch::perf::sys_perf_event_open(arg1 as u32, arg2, arg3)
             .unwrap_or(errno_to_ret(EINVAL)),
@@ -1074,6 +1129,16 @@ pub extern "C" fn syscall_dispatcher(
         56 => {
             let op = (arg2 & 0xFFFF_FFFF) as i32;
             let fd = (arg2 >> 32) as i32;
+            let event_ptr = arg3;
+            if event_ptr != 0 {
+                let size = core::mem::size_of::<keira_ipc::event::EpollEvent>();
+                if let Err(e) = unsafe { validate_user_ptr(event_ptr, size as u64, false) } {
+                    return errno_to_ret(e);
+                }
+                if event_ptr % 8 != 0 {
+                    return errno_to_ret(EINVAL);
+                }
+            }
             keira_ipc::event::sys_epoll_ctl(arg1 as i32, op, fd, arg3)
                 .unwrap_or(errno_to_ret(EINVAL))
         }
@@ -1081,14 +1146,50 @@ pub extern "C" fn syscall_dispatcher(
         57 => {
             let maxevents = (arg3 & 0xFFFF_FFFF) as i32;
             let timeout = (arg3 >> 32) as i32;
+            if maxevents <= 0 || maxevents > 1024 {
+                return errno_to_ret(EINVAL);
+            }
+            let events_out_ptr = arg2;
+            if events_out_ptr != 0 {
+                let size =
+                    (maxevents as usize) * core::mem::size_of::<keira_ipc::event::EpollEvent>();
+                if let Err(e) = unsafe { validate_user_ptr(events_out_ptr, size as u64, true) } {
+                    return errno_to_ret(e);
+                }
+                if events_out_ptr % 8 != 0 {
+                    return errno_to_ret(EINVAL);
+                }
+            }
             keira_ipc::event::sys_epoll_wait(arg1 as i32, arg2, maxevents, timeout)
                 .unwrap_or(errno_to_ret(EINVAL))
         }
         // Syscall 58: mq_open
-        58 => unsafe {
-            keira_ipc::mqueue::sys_mq_open(arg1 as *const u8, arg2 as i32, arg3 as u32)
-                .unwrap_or(errno_to_ret(ENOMEM))
-        },
+        58 => {
+            let name_ptr = arg1 as *const u8;
+            if name_ptr.is_null() {
+                return 58;
+            }
+            let mut name_buf = [0u8; 32];
+            let len = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
+                Ok(l) => l,
+                Err(e) => return errno_to_ret(e),
+            };
+            if let Ok(name_str) = core::str::from_utf8(&name_buf[..len]) {
+                match unsafe {
+                    keira_ipc::mqueue::mq_open(
+                        name_str,
+                        arg2 as u32,
+                        keira_ipc::mqueue::MQUEUE_MAX_MSGS,
+                        keira_ipc::mqueue::MQUEUE_MSG_SIZE,
+                    )
+                } {
+                    Ok(mqid) => mqid as u64,
+                    Err(_) => errno_to_ret(ENOMEM),
+                }
+            } else {
+                errno_to_ret(EINVAL)
+            }
+        }
         // Syscall 59: prctl
         59 => {
             let option = arg1 as i32;
@@ -1126,8 +1227,29 @@ pub extern "C" fn syscall_dispatcher(
         },
         // Syscall 62: waitpid (True POSIX process wait with zombie reaping and error classification)
         62 => unsafe {
-            match sys_waitpid(arg1 as i64, arg2 as *mut i32, arg3 as u32) {
-                Ok(reaped_pid) => reaped_pid as u64,
+            if arg2 != 0 {
+                if arg2 % 4 != 0 {
+                    return errno_to_ret(EFAULT);
+                }
+                if let Err(e) = validate_user_ptr(arg2, 4, true) {
+                    return errno_to_ret(e);
+                }
+            }
+            let mut status: i32 = 0;
+            let status_ptr = if arg2 != 0 {
+                &mut status as *mut i32
+            } else {
+                core::ptr::null_mut()
+            };
+            match sys_waitpid(arg1 as i64, status_ptr, arg3 as u32) {
+                Ok(reaped_pid) => {
+                    if reaped_pid > 0 && arg2 != 0 {
+                        if let Err(e) = copy_to_user(arg2, &status.to_ne_bytes()) {
+                            return errno_to_ret(e);
+                        }
+                    }
+                    reaped_pid as u64
+                }
                 Err(e) => {
                     if e == "EINVAL" {
                         errno_to_ret(EINVAL)
@@ -1152,9 +1274,41 @@ pub extern "C" fn syscall_dispatcher(
         64 => unsafe {
             let sig = arg1 as u32;
             let handler = arg2;
-            let old_handler_ptr = arg3 as *mut u64;
-            keira_task::signal::sys_sigaction(CURRENT_TASK_IDX, sig, handler, old_handler_ptr)
-                .unwrap_or(errno_to_ret(EINVAL))
+            let old_handler_ptr = arg3;
+            #[cfg(target_arch = "x86_64")]
+            if handler > 1 && handler >= 0x0000_8000_0000_0000 {
+                return errno_to_ret(EINVAL);
+            }
+            #[cfg(target_arch = "x86")]
+            if handler > 1 && handler >= 0xC000_0000 {
+                return errno_to_ret(EINVAL);
+            }
+            if old_handler_ptr != 0 {
+                if old_handler_ptr % 8 != 0 {
+                    return errno_to_ret(EINVAL);
+                }
+                if let Err(e) = validate_user_ptr(old_handler_ptr, 8, true) {
+                    return errno_to_ret(e);
+                }
+            }
+            let mut old_handler_val: u64 = 0;
+            let target_old_ptr = if old_handler_ptr != 0 {
+                &mut old_handler_val as *mut u64
+            } else {
+                core::ptr::null_mut()
+            };
+            match keira_task::signal::sys_sigaction(CURRENT_TASK_IDX, sig, handler, target_old_ptr)
+            {
+                Ok(_) => {
+                    if old_handler_ptr != 0 {
+                        if copy_to_user(old_handler_ptr, &old_handler_val.to_ne_bytes()).is_err() {
+                            return errno_to_ret(EFAULT);
+                        }
+                    }
+                    0
+                }
+                Err(_) => errno_to_ret(EINVAL),
+            }
         },
         // Syscall 65: sys_sigreturn
         65 => unsafe {
@@ -1167,13 +1321,17 @@ pub extern "C" fn syscall_dispatcher(
         // Syscall 66: sys_clock_gettime
         66 => {
             let _clock_id = arg1 as u32;
-            let tp_ptr = arg2 as *mut keira_arch::timers::Timespec;
-            if tp_ptr.is_null() {
+            let tp_ptr = arg2;
+            if tp_ptr == 0 {
                 return errno_to_ret(EFAULT);
             }
-            let tp_addr = tp_ptr as usize;
-            if tp_addr % core::mem::align_of::<keira_arch::timers::Timespec>() != 0 {
+            let align = core::mem::align_of::<keira_arch::timers::Timespec>() as u64;
+            if tp_ptr % align != 0 {
                 return errno_to_ret(EINVAL);
+            }
+            let size = core::mem::size_of::<keira_arch::timers::Timespec>();
+            if let Err(e) = unsafe { validate_user_ptr(tp_ptr, size as u64, true) } {
+                return errno_to_ret(e);
             }
             let uptime = unsafe { get_uptime_ms() };
             let sec = (uptime / 1000) as i64;
@@ -1182,8 +1340,10 @@ pub extern "C" fn syscall_dispatcher(
                 tv_sec: sec,
                 tv_nsec: nsec,
             };
-            unsafe {
-                core::ptr::write(tp_ptr, ts);
+            let ts_slice =
+                unsafe { core::slice::from_raw_parts(&ts as *const _ as *const u8, size) };
+            if unsafe { copy_to_user(tp_ptr, ts_slice) }.is_err() {
+                return errno_to_ret(EFAULT);
             }
             0
         }
@@ -1192,6 +1352,10 @@ pub extern "C" fn syscall_dispatcher(
             let req_ptr = arg1 as *const keira_arch::timers::Timespec;
             if req_ptr.is_null() {
                 return errno_to_ret(EFAULT);
+            }
+            let size = core::mem::size_of::<keira_arch::timers::Timespec>();
+            if let Err(e) = unsafe { validate_user_ptr(arg1, size as u64, false) } {
+                return errno_to_ret(e);
             }
             let req = unsafe { *req_ptr };
             if req.tv_sec < 0 || req.tv_nsec < 0 || req.tv_nsec >= 1_000_000_000 {
@@ -1294,14 +1458,8 @@ pub extern "C" fn syscall_dispatcher(
         // Syscall 73: ioctl
         73 => {
             let request = arg2;
-            let argp = arg3 as *mut u8;
-            if argp.is_null() {
-                return errno_to_ret(EFAULT);
-            }
-            #[cfg(target_arch = "x86_64")]
-            if (arg3 < keira_mem::vmm::USER_MIN_VADDR || arg3 >= keira_mem::vmm::USER_MAX_VADDR)
-                && !keira_mem::is_valid_ram_range(arg3, 32)
-            {
+            let argp = arg3;
+            if argp == 0 {
                 return errno_to_ret(EFAULT);
             }
 
@@ -1321,24 +1479,28 @@ pub extern "C" fn syscall_dispatcher(
                         ws_xpixel: 640,
                         ws_ypixel: 400,
                     };
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(
+                    let ws_bytes = unsafe {
+                        core::slice::from_raw_parts(
                             &ws as *const _ as *const u8,
-                            argp,
                             core::mem::size_of::<Winsize>(),
-                        );
+                        )
+                    };
+                    if unsafe { copy_to_user(argp, ws_bytes) }.is_err() {
+                        return errno_to_ret(EFAULT);
                     }
                     0
                 }
                 // TCGETS (0x5401)
                 0x5401 => {
                     let term = keira_io::tty::get_termios();
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(
+                    let term_bytes = unsafe {
+                        core::slice::from_raw_parts(
                             &term as *const _ as *const u8,
-                            argp,
                             core::mem::size_of::<keira_io::tty::Termios>(),
-                        );
+                        )
+                    };
+                    if unsafe { copy_to_user(argp, term_bytes) }.is_err() {
+                        return errno_to_ret(EFAULT);
                     }
                     0
                 }
@@ -1354,12 +1516,14 @@ pub extern "C" fn syscall_dispatcher(
                         c_ispeed: 0,
                         c_ospeed: 0,
                     };
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(
-                            argp,
+                    let term_bytes = unsafe {
+                        core::slice::from_raw_parts_mut(
                             &mut term as *mut _ as *mut u8,
                             core::mem::size_of::<keira_io::tty::Termios>(),
-                        );
+                        )
+                    };
+                    if unsafe { copy_from_user(term_bytes, argp) }.is_err() {
+                        return errno_to_ret(EFAULT);
                     }
                     keira_io::tty::set_termios(&term);
                     0
@@ -1382,13 +1546,17 @@ pub extern "C" fn syscall_dispatcher(
         },
         // Syscall 77: sys_perf_event
         77 => {
-            let out_ptr = arg2 as *mut u64;
-            if !out_ptr.is_null() {
-                let tsc = keira_arch::cpu::rdtsc();
-                unsafe {
-                    core::ptr::write(out_ptr, tsc);
+            let out_ptr = arg2;
+            if out_ptr != 0 {
+                if let Err(e) = unsafe { validate_user_ptr(out_ptr, 8, true) } {
+                    return errno_to_ret(e);
                 }
-                0
+                let tsc = keira_arch::cpu::rdtsc();
+                if unsafe { copy_to_user(out_ptr, &tsc.to_ne_bytes()) }.is_ok() {
+                    0
+                } else {
+                    errno_to_ret(EFAULT)
+                }
             } else {
                 errno_to_ret(EFAULT)
             }

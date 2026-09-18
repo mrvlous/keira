@@ -164,7 +164,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         let sig = exception_vector_to_signal(vector);
 
         let handler = unsafe { keira_task::signal::get_signal_handler(CURRENT_TASK_IDX, sig) };
-        if handler != 0 {
+        if handler > 1 && handler >= 0x10000 && handler < 0x0000_8000_0000_0000 {
             let already_in_handler = unsafe {
                 if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
                     t.saved_sigcontext.is_some()

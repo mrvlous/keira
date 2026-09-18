@@ -48,6 +48,8 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         let _job_id = keira_task::signal::add_job(1, filename, true);
         jump_to_user(entry_point, initial_user_rsp);
         keira_task::signal::remove_job_by_pid(1);
+        keira_task::signal::reset_signal_handlers(0);
+        keira_task::security::seccomp_reset();
 
         keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
         core::arch::asm!("sti");
@@ -71,6 +73,9 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
             if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
                 task.pml4_phys = parent_pml4;
                 task.state = keira_task::TaskState::Running;
+                task.saved_sigcontext = None;
+                task.signal_mask = 0;
+                task.pending_signals = 0;
                 for fd in 0..keira_task::MAX_FDS {
                     if task.fds[fd].is_open {
                         if task.fds[fd].write_mode {
@@ -86,6 +91,8 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
             }
             vmm::switch_address_space(parent_pml4);
             vmm::free_user_pages(child, brk);
+            keira_task::signal::reset_signal_handlers(0);
+            keira_task::security::seccomp_reset();
         };
 
         let entry_point = match load_elf(filename) {
