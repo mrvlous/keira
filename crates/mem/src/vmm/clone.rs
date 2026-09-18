@@ -11,8 +11,8 @@
 
 use super::free::free_user_pages;
 use super::paging::{
-    active_pml4, map_page_in_pml4, switch_address_space, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
-    PAGE_WRITABLE, PTE_ADDR_MASK,
+    active_pml4, map_page_in_pml4, switch_address_space, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT,
+    PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 
@@ -56,6 +56,14 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     // Set new PML4[0] = new PDPT with present + writable + user flags so userland under PDPT[1..2] is accessible
     *new_pml4 = (new_pdpt_phys & PTE_ADDR_MASK) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
 
+    // Share higher-half kernel PML4 entries (256..512) if present
+    for i in 256..512 {
+        let entry = *boot_pml4.add(i);
+        if (entry & PAGE_PRESENT) != 0 {
+            *new_pml4.add(i) = entry;
+        }
+    }
+
     Ok(new_pml4_phys)
 }
 
@@ -70,14 +78,21 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
 
     let parent_pml4 = parent_pml4_phys as *const u64;
 
-    // Walk all PML4 entries
-    for pml4_idx in 0..512 {
+    // Walk all canonical user PML4 entries in lower half (0..256)
+    for pml4_idx in 0..256 {
         let pml4_entry = *parent_pml4.add(pml4_idx);
         if (pml4_entry & PAGE_PRESENT) == 0 {
             continue;
         }
 
+        if pml4_idx > 0 && (pml4_entry & PAGE_USER) == 0 {
+            continue;
+        }
+
         let pdpt_phys = pml4_entry & PTE_ADDR_MASK;
+        if !pmm::is_valid_ram_range(pdpt_phys, pmm::PAGE_SIZE) {
+            continue;
+        }
         let pdpt = pdpt_phys as *const u64;
 
         for pdpt_idx in 0..512 {
@@ -87,20 +102,36 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
             }
 
             let pdpt_entry = *pdpt.add(pdpt_idx);
-            if (pdpt_entry & PAGE_PRESENT) == 0 {
+            if (pdpt_entry & PAGE_PRESENT) == 0 || (pdpt_entry & PAGE_USER) == 0 {
+                continue;
+            }
+
+            // Skip 1GB huge page entries
+            if (pdpt_entry & PAGE_HUGE) != 0 {
                 continue;
             }
 
             let pd_phys = pdpt_entry & PTE_ADDR_MASK;
+            if !pmm::is_valid_ram_range(pd_phys, pmm::PAGE_SIZE) {
+                continue;
+            }
             let pd = pd_phys as *const u64;
 
             for pd_idx in 0..512 {
                 let pd_entry = *pd.add(pd_idx);
-                if (pd_entry & PAGE_PRESENT) == 0 {
+                if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_USER) == 0 {
+                    continue;
+                }
+
+                // Skip 2MB huge page entries
+                if (pd_entry & PAGE_HUGE) != 0 {
                     continue;
                 }
 
                 let pt_phys = pd_entry & PTE_ADDR_MASK;
+                if !pmm::is_valid_ram_range(pt_phys, pmm::PAGE_SIZE) {
+                    continue;
+                }
                 let pt = pt_phys as *const u64;
 
                 for pt_idx in 0..512 {
@@ -117,6 +148,9 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                     vaddr |= (pt_idx as u64) << 12;
 
                     let phys_frame = pt_entry & PTE_ADDR_MASK;
+                    if !pmm::is_valid_ram_range(phys_frame, pmm::PAGE_SIZE) {
+                        continue;
+                    }
 
                     // Allocate dedicated physical frame for child process to ensure full isolation
                     let child_frame = match pmm::alloc_frame() {

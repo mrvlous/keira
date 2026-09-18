@@ -466,7 +466,7 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
     }
     #[cfg(not(test))]
     {
-        if pml4_phys == 0 {
+        if pml4_phys == 0 || !crate::pmm::is_valid_ram_range(pml4_phys, crate::pmm::PAGE_SIZE) {
             return None;
         }
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
@@ -480,7 +480,11 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
             return None;
         }
 
-        let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+        let pdpt_phys = pml4_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pdpt_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pdpt = pdpt_phys as *const u64;
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 {
             return None;
@@ -490,7 +494,11 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
             return Some(pdpt_entry);
         }
 
-        let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_phys = pdpt_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pd_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pd = pd_phys as *const u64;
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 {
             return None;
@@ -500,7 +508,11 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
             return Some(pd_entry);
         }
 
-        let pt = (pd_entry & PTE_ADDR_MASK) as *const u64;
+        let pt_phys = pd_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pt_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pt = pt_phys as *const u64;
         let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 {
             return None;
@@ -519,7 +531,7 @@ pub unsafe fn get_pte_mut_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<*
     }
     #[cfg(not(test))]
     {
-        if pml4_phys == 0 {
+        if pml4_phys == 0 || !crate::pmm::is_valid_ram_range(pml4_phys, crate::pmm::PAGE_SIZE) {
             return None;
         }
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
@@ -533,19 +545,31 @@ pub unsafe fn get_pte_mut_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<*
             return None;
         }
 
-        let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+        let pdpt_phys = pml4_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pdpt_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pdpt = pdpt_phys as *const u64;
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 || (pdpt_entry & PAGE_HUGE) != 0 {
             return None;
         }
 
-        let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_phys = pdpt_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pd_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pd = pd_phys as *const u64;
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_HUGE) != 0 {
             return None;
         }
 
-        let pt = (pd_entry & PTE_ADDR_MASK) as *mut u64;
+        let pt_phys = pd_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pt_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pt = pt_phys as *mut u64;
         let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 {
             return None;
@@ -569,7 +593,7 @@ pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option
     }
     #[cfg(not(test))]
     {
-        if pml4_phys == 0 {
+        if pml4_phys == 0 || !crate::pmm::is_valid_ram_range(pml4_phys, crate::pmm::PAGE_SIZE) {
             return None;
         }
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
@@ -583,7 +607,11 @@ pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option
             return None;
         }
 
-        let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
+        let pdpt_phys = pml4_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pdpt_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pdpt = pdpt_phys as *const u64;
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 {
             return None;
@@ -592,7 +620,11 @@ pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option
             return Some(translate_pte_to_phys(pdpt_entry, virtual_addr, 3));
         }
 
-        let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
+        let pd_phys = pdpt_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pd_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pd = pd_phys as *const u64;
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 {
             return None;
@@ -601,7 +633,11 @@ pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option
             return Some(translate_pte_to_phys(pd_entry, virtual_addr, 2));
         }
 
-        let pt = (pd_entry & PTE_ADDR_MASK) as *const u64;
+        let pt_phys = pd_entry & PTE_ADDR_MASK;
+        if !crate::pmm::is_valid_ram_range(pt_phys, crate::pmm::PAGE_SIZE) {
+            return None;
+        }
+        let pt = pt_phys as *const u64;
         let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 {
             return None;
