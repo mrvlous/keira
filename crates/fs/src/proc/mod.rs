@@ -180,7 +180,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
 
             let _ = core::write!(
                 writer,
-                "Keira Kernel version 0.3.0 ({}) #1 SMP 2026 gcc (Freestanding) rustc\n",
+                "Keira Kernel version 0.4.0 ({}) #1 SMP 2026 gcc (Freestanding) rustc\n",
                 ARCH
             );
             Ok(writer.len())

@@ -83,7 +83,7 @@ fn ensure_data_blocks_initialized() {
         DATA_LBA_2049[..cfg.len()].copy_from_slice(cfg);
 
         // LBA 2050: version.txt
-        let ver = b"Keira Kernel v0.3.0 (EXT4 Linux Driver Active)\n";
+        let ver = b"Keira Kernel v0.4.0 (EXT4 Linux Driver Active)\n";
         DATA_LBA_2050[..ver.len()].copy_from_slice(ver);
 
         DATA_BLOCKS_INITIALIZED = true;

@@ -4,25 +4,25 @@ version = 4
 
 [[package]]
 name = "keira-arch"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-core",
 ]
 
 [[package]]
 name = "keira-core"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "keira-crypto"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-core",
 ]
 
 [[package]]
 name = "keira-fs"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "keira-io"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "keira-ipc"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "keira-kernel"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -71,7 +71,7 @@ dependencies = [
 
 [[package]]
 name = "keira-mem"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -79,7 +79,7 @@ dependencies = [
 
 [[package]]
 name = "keira-net"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -90,7 +90,7 @@ dependencies = [
 
 [[package]]
 name = "keira-shell"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -106,7 +106,7 @@ dependencies = [
 
 [[package]]
 name = "keira-syscall"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",
@@ -121,7 +121,7 @@ dependencies = [
 
 [[package]]
 name = "keira-task"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "keira-arch",
  "keira-core",

@@ -15,7 +15,6 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <syscall.h>
-#include <termios.h>
 #include <unistd.h>
 
 ssize_t read(int fd, void *buf, size_t count) {
@@ -256,21 +255,4 @@ int ioctl(int fd, unsigned long request, ...) {
         return -1;
     }
     return ret;
-}
-
-int tcgetattr(int fd, struct termios *termios_p) {
-    if (!termios_p) {
-        errno = EFAULT;
-        return -1;
-    }
-    return ioctl(fd, TCGETS, termios_p);
-}
-
-int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) {
-    (void)optional_actions;
-    if (!termios_p) {
-        errno = EFAULT;
-        return -1;
-    }
-    return ioctl(fd, TCSETS, (void *)termios_p);
 }
