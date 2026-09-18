@@ -9,8 +9,6 @@
 
 //! Submission Queue (SQ) and Completion Queue (CQ) ring buffers (`io_uring`).
 
-use keira_io::vga;
-
 #[derive(Copy, Clone)]
 pub struct SubmissionQueueEntry {
     pub opcode: u8,
@@ -42,21 +40,11 @@ pub static mut CQ_ENTRIES: [CompletionQueueEntry; 32] = [CompletionQueueEntry {
 }; 32];
 
 /// Setup io_uring submission & completion ring buffers.
-pub fn setup_ring(entries: u32) -> Result<u64, &'static str> {
-    vga::set_color(vga::Color::White, vga::Color::Black);
-    vga::print_str("[IO_URING] Initialized SQ/CQ Ring Buffers (");
-    vga::print_u64(entries as u64);
-    vga::print_str(" slots).\n");
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+pub fn setup_ring(_entries: u32) -> Result<u64, &'static str> {
     Ok(0x8000000)
 }
 
 /// Submit queued async I/O requests and reap completed results.
 pub fn enter_ring(to_submit: u32, _min_complete: u32) -> Result<u32, &'static str> {
-    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-    vga::print_str("[IO_URING] Processed ");
-    vga::print_u64(to_submit as u64);
-    vga::print_str(" async I/O requests.\n");
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     Ok(to_submit)
 }

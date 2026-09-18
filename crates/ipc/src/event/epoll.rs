@@ -103,6 +103,9 @@ pub fn sys_epoll_ctl(epfd: i32, op: i32, fd: i32, event_ptr: u64) -> Result<u64,
     }
 
     let event = if event_ptr != 0 {
+        if event_ptr % 8 != 0 {
+            return Err("Unaligned event pointer");
+        }
         unsafe { *(event_ptr as *const EpollEvent) }
     } else {
         EpollEvent {
@@ -228,6 +231,9 @@ pub fn sys_epoll_wait(
 ) -> Result<u64, &'static str> {
     if maxevents <= 0 {
         return Err("Invalid maxevents");
+    }
+    if events_out_ptr != 0 && events_out_ptr % 8 != 0 {
+        return Err("Unaligned events_out_ptr");
     }
 
     unsafe {
