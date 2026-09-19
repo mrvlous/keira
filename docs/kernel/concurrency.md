@@ -15,14 +15,14 @@ graph TD
     VFS --> Scheduler["Scheduler & Task Table Lock (Rank 3)"]
     Scheduler --> Heap["Heap Allocator & Slab Cache Lock (Rank 2)"]
     Heap --> PMM["Physical Memory Manager Lock (Rank 1)"]
-    
+
     subgraph LockDefense["Deadlock & Concurrency Defense Engine"]
         Hierarchy["Strict Descending Rank Hierarchy"]
         Recursion["CPUID Core Recursion Detection"]
         IrqDisable["Atomic Local IRQ Disabling (CLI/STI)"]
         Watchdog["Soft Lockup Heartbeat Watchdog"]
     end
-    
+
     VFS -.-> LockDefense
     Scheduler -.-> LockDefense
     Heap -.-> LockDefense

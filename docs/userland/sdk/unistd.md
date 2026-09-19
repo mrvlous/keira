@@ -45,6 +45,12 @@ int close(int fd);
 ```
 Closes the open file descriptor `fd`.
 
+### `unlink`
+```c
+int unlink(const char *pathname);
+```
+Removes a link to a file from the filesystem. If that was the last link and no processes have the file open, the file is deleted and its space is reclaimed.
+
 ### `getpid` / `getppid` / `getuid` / `geteuid` / `setuid` / `getgid` / `setgid`
 ```c
 pid_t getpid(void);
@@ -108,6 +114,19 @@ int dup2(int oldfd, int newfd);
 ```
 `pipe` creates a unidirectional data channel (`pipefd[0]` for read, `pipefd[1]` for write).
 `dup` and `dup2` allocate a new descriptor referring to the same open file description.
+
+### `sync` / `fsync`
+```c
+int sync(void);
+int fsync(int fd);
+```
+`sync` schedules all modified in-core filesystem sector buffers to disk storage. `fsync` transfers all dirty data and metadata belonging to the open file descriptor `fd` to the underlying disk hardware.
+
+### `isatty`
+```c
+int isatty(int fd);
+```
+Tests whether file descriptor `fd` refers to an active terminal or standard TTY console stream. Returns `1` if the descriptor is a terminal, or `0` otherwise.
 
 ---
 

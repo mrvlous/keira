@@ -6,7 +6,22 @@ The `<termios.h>` header provides terminal I/O interfaces, line discipline modes
 
 ---
 
-## 1. Terminal Attribute Modes
+## 1. Terminal Structure & Attribute Modes
+
+### Structure Definition
+
+```c
+struct termios {
+    tcflag_t c_iflag;      /* Input mode flags */
+    tcflag_t c_oflag;      /* Output mode flags */
+    tcflag_t c_cflag;      /* Control mode flags */
+    tcflag_t c_lflag;      /* Local mode flags */
+    cc_t     c_line;       /* Line discipline */
+    cc_t     c_cc[NCCS];   /* Control characters (VINTR, VQUIT, VERASE, VKILL, VEOF) */
+    speed_t  c_ispeed;     /* Input baud rate */
+    speed_t  c_ospeed;     /* Output baud rate */
+};
+```
 
 ### Local Modes (`c_lflag`)
 | Flag | Value | Description |

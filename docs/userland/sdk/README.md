@@ -19,10 +19,11 @@ Applications developed with the Keira C SDK execute in unprivileged Ring 3 prote
                                v
 +----------------------------------------------------------------+
 |                 Keira POSIX C Standard Library                 |
-|  <stdio.h>    <stdlib.h>    <string.h>    <unistd.h>           |
-|  <math.h>     <time.h>      <ctype.h>     <signal.h>           |
-|  <sys/stat.h> <sys/mman.h>  <dirent.h>    <assert.h>           |
-|  <setjmp.h>   <sys/socket.h><syscall.h>                        |
+|  <stdio.h>     <stdlib.h>     <string.h>     <unistd.h>        |
+|  <math.h>      <time.h>       <ctype.h>      <signal.h>        |
+|  <sys/stat.h>  <sys/mman.h>   <dirent.h>     <assert.h>        |
+|  <setjmp.h>    <termios.h>    <sys/ioctl.h>  <sys/socket.h>    |
+|  <sys/wait.h>  <fcntl.h>      <errno.h>      <syscall.h>       |
 +----------------------------------------------------------------+
                                |
                                v
