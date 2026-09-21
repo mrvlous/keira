@@ -15,6 +15,7 @@ use keira_arch::timer::{
     cancel_timer, create_timer, get_timer_stats, get_timer_table, CLOCK_MONOTONIC, CLOCK_REALTIME,
     MAX_POSIX_TIMERS,
 };
+use keira_arch::timers::hpet;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
@@ -24,10 +25,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: timer <subcommand> [args]\n\n");
             vga::print_str(
-                "Description:\n  Query and manage POSIX High-Resolution Interval Timers (Syscall 45 & 46).\n\n",
+                "Description:\n  Query and manage POSIX High-Resolution Interval Timers and HPET hardware.\n\n",
             );
             vga::print_str("Subcommands:\n");
             vga::print_str("  status                         Display timer subsystem statistics and clock source\n");
+            vga::print_str("  hpet                           Inspect High-Precision Event Timer (HPET) hardware MMIO\n");
             vga::print_str(
                 "  list                           List active interval timers and overrun stats\n",
             );
@@ -48,7 +50,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("  Subsystem Engine : ");
                 vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                vga::print_str("Active (Hardware APIC / LAPIC Tick Driver)\n");
+                if hpet::is_initialized() {
+                    vga::print_str("Active (HPET MMIO Sub-Nanosecond Clock Engine)\n");
+                } else {
+                    vga::print_str("Active (Hardware APIC / PIT Tick Driver)\n");
+                }
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("  Clock Sources    : CLOCK_MONOTONIC (1), CLOCK_REALTIME (0)\n");
                 vga::print_str("  Active Timers    : ");
@@ -60,8 +66,80 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_u64(expirations);
                 vga::print_str(" interrupts serviced\n");
                 vga::print_str(
-                    "  Syscall Vectors  : Syscall 45 (timer_create) / Syscall 46 (timer_settime)\n",
+                    "  Syscall Vectors  : Syscall 36 (fast nanos), 45 (timer_create), 46 (timer_settime), 66 (clock_gettime)\n",
                 );
+            }
+            "hpet" => {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("High-Precision Event Timer (HPET) Hardware Diagnostics:\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+                if !hpet::is_initialized() {
+                    vga::print_str("  Driver Status    : ");
+                    vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                    vga::print_str("Uninitialized (HPET table not present or disabled)\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
+
+                if let Some(info) = hpet::get_info() {
+                    vga::print_str("  MMIO Base Address: ");
+                    vga::print_hex(info.base_address);
+                    vga::print_str("\n");
+                    vga::print_str("  PCI Vendor ID    : ");
+                    vga::print_hex(info.vendor_id as u64);
+                    vga::print_str(" (Revision: ");
+                    vga::print_u64(info.revision_id as u64);
+                    vga::print_str(")\n");
+                    vga::print_str("  Hardware Timers  : ");
+                    vga::print_u64(info.num_timers as u64);
+                    vga::print_str(" comparators available\n");
+                    vga::print_str("  Counter Width    : ");
+                    vga::print_str(if info.is_64bit {
+                        "64-bit wide\n"
+                    } else {
+                        "32-bit wide\n"
+                    });
+                    vga::print_str("  Legacy Routing   : ");
+                    vga::set_color(
+                        if info.legacy_route_capable {
+                            vga::Color::LightGreen
+                        } else {
+                            vga::Color::LightGrey
+                        },
+                        vga::Color::Black,
+                    );
+                    vga::print_str(if info.legacy_route_capable {
+                        "Supported (IRQ0/IRQ8 legacy route)\n"
+                    } else {
+                        "Not Supported\n"
+                    });
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    vga::print_str("  Clock Period     : ");
+                    vga::print_u64(info.period_fs as u64);
+                    vga::print_str(" femtoseconds (");
+                    vga::print_u64((info.period_fs / 1_000_000) as u64);
+                    vga::print_str(".");
+                    vga::print_u64(((info.period_fs % 1_000_000) / 100_000) as u64);
+                    vga::print_str(" ns)\n");
+                    vga::print_str("  Operating Freq   : ");
+                    vga::print_u64(info.frequency_hz / 1_000_000);
+                    vga::print_str(".");
+                    vga::print_u64((info.frequency_hz % 1_000_000) / 100_000);
+                    vga::print_str(" MHz\n");
+                }
+
+                let cnt = hpet::read_counter();
+                let nanos = hpet::get_elapsed_nanos();
+                vga::print_str("  Live Main Counter: ");
+                vga::print_u64(cnt);
+                vga::print_str(" ticks\n");
+                vga::print_str("  Elapsed Monotonic: ");
+                vga::print_u64(nanos / 1_000_000_000);
+                vga::print_str(" s ");
+                vga::print_u64((nanos % 1_000_000_000) / 1_000_000);
+                vga::print_str(" ms\n");
+                vga::print_str("  Resolution Engine: Sub-nanosecond fixed-point (128-bit math)\n");
             }
             "list" => {
                 vga::set_color(vga::Color::White, vga::Color::Black);

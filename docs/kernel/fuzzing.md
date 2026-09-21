@@ -113,4 +113,4 @@ Keira Kernel v0.4.0 is certified for production readiness when:
 - **Zero Kernel Panics**: 10,000+ continuous randomized syscall invocations with mutated arguments result in 0 kernel panics.
 - **Clean Errno Mapping**: 100% of rejected system calls return valid POSIX error codes.
 - **Resource Neutrality**: Complete reclamation of descriptors, heap allocations, and process slots following chaos stress runs.
-- **Regression Parity**: Both `test_abi.elf` (40 comprehensive unit tests) and `fuzz_abi.elf` pass without errors.
+- **Regression Parity**: Both `test_abi.elf` (42 comprehensive unit tests) and `fuzz_abi.elf` pass without errors.

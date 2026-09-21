@@ -171,6 +171,16 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
         } else {
             keira_arch::power::acpi::init();
         }
+
+        // Map and initialize High-Precision Event Timer (HPET) MMIO registers
+        let hpet_phys = if keira_arch::power::acpi::ACPI_TOPOLOGY.hpet_found {
+            keira_arch::power::acpi::ACPI_TOPOLOGY.hpet_address
+        } else {
+            keira_arch::timers::DEFAULT_HPET_BASE
+        };
+        let _ = vmm::map_page(hpet_phys, hpet_phys, vmm::PAGE_WRITABLE);
+        let _ = keira_arch::timers::hpet::init_at(hpet_phys);
+
         keira_arch::smp::init_smp();
 
         // Initialize TPM 2.0 security controller and baseline PCRs
@@ -198,6 +208,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
         "Parsing ACPI MADT & discovering multi-core APIC topology",
         0,
     );
+    vga::print_boot_log("Initializing High-Precision Event Timer (HPET) MMIO", 0);
     vga::print_boot_log("Initializing TPM 2.0 Hardware Security Enclave & PCRs", 0);
     vga::print_boot_log("Performing Measured Boot: Kernel Image & Initrd Archive", 0);
     vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);

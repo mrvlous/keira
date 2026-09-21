@@ -8,14 +8,17 @@ This document details hardware timer calibration, Local APIC programming, legacy
 
 ## Timer Hierarchy
 
-Keira Kernel integrates three tiers of timer hardware:
+Keira Kernel integrates four tiers of timer hardware:
 
 ```mermaid
 graph TD
+    HPET["High-Precision Event Timer (HPET)<br/>Sub-nanosecond Monotonic Clock & Syscalls"] --> HpetDoc["hpet.md<br/>Syscall 36, 66, 67"]
     PIT["Programmable Interval Timer (PIT 8254)<br/>Channel 0: 1000 Hz System Tick"] --> Sched["Scheduler Preemption Trigger"]
     APIC["Local APIC Timer<br/>High-precision CPU Core Timer"] --> Calib["Core-level Tick Counter"]
     RTC["Real-Time Clock (CMOS)<br/>Port 0x70 / 0x71"] --> Time["Wall-Clock Time & Date"]
 ```
+
+For comprehensive details on HPET MMIO registers and clock mathematics, see [`hpet.md`](hpet.md).
 
 ---
 

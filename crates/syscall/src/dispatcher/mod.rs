@@ -991,7 +991,13 @@ fn syscall_dispatcher_inner(
             }
         }
         // Syscall 36: clock_gettime
-        36 => unsafe { get_uptime_ms() * 1_000_000 },
+        36 => {
+            if keira_arch::timers::hpet::is_initialized() {
+                keira_arch::timers::hpet::get_elapsed_nanos()
+            } else {
+                unsafe { get_uptime_ms() * 1_000_000 }
+            }
+        }
         // Syscall 37: ptrace
         37 => {
             let pid = arg2 as usize;
@@ -1341,9 +1347,16 @@ fn syscall_dispatcher_inner(
             if let Err(e) = unsafe { validate_user_ptr(tp_ptr, size as u64, true) } {
                 return errno_to_ret(e);
             }
-            let uptime = unsafe { get_uptime_ms() };
-            let sec = (uptime / 1000) as i64;
-            let nsec = ((uptime % 1000) * 1_000_000) as i64;
+            let (sec, nsec) = if keira_arch::timers::hpet::is_initialized() {
+                let nanos = keira_arch::timers::hpet::get_elapsed_nanos();
+                (
+                    (nanos / 1_000_000_000) as i64,
+                    (nanos % 1_000_000_000) as i64,
+                )
+            } else {
+                let uptime = unsafe { get_uptime_ms() };
+                ((uptime / 1000) as i64, ((uptime % 1000) * 1_000_000) as i64)
+            };
             let ts = keira_arch::timers::Timespec {
                 tv_sec: sec,
                 tv_nsec: nsec,
@@ -1369,11 +1382,21 @@ fn syscall_dispatcher_inner(
             if req.tv_sec < 0 || req.tv_nsec < 0 || req.tv_nsec >= 1_000_000_000 {
                 return errno_to_ret(EINVAL);
             }
-            let ms = (req.tv_sec as u64) * 1000 + (req.tv_nsec as u64) / 1_000_000;
-            let start = unsafe { get_uptime_ms() };
-            while unsafe { get_uptime_ms() } < start + ms {
-                unsafe {
-                    core::arch::asm!("hlt");
+            let total_nanos = (req.tv_sec as u64)
+                .saturating_mul(1_000_000_000)
+                .saturating_add(req.tv_nsec as u64);
+            if total_nanos == 0 {
+                return 0;
+            }
+            if keira_arch::timers::hpet::is_initialized() {
+                keira_arch::timers::hpet::delay_nanos(total_nanos);
+            } else {
+                let ms = total_nanos / 1_000_000;
+                let start = unsafe { get_uptime_ms() };
+                while unsafe { get_uptime_ms() } < start + ms {
+                    unsafe {
+                        core::arch::asm!("hlt");
+                    }
                 }
             }
             0

@@ -593,6 +593,14 @@ mod tests {
     }
 
     #[test]
+    fn test_timer_command() {
+        execute_command_inner("timer");
+        execute_command_inner("timer status");
+        execute_command_inner("timer hpet");
+        execute_command_inner("timer list");
+    }
+
+    #[test]
     fn test_env_command() {
         execute_command_inner("env");
     }
@@ -620,6 +628,50 @@ mod tests {
         execute_command_inner("ipcs -q");
         execute_command_inner("ipcs -u");
         execute_command_inner("ipcs -a");
+    }
+
+    #[test]
+    fn test_all_cmds_direct_execution() {
+        let direct_cmds = [
+            "memory",
+            "drives",
+            "tasks",
+            "devices",
+            "network",
+            "disk",
+            "drivers",
+            "lkm",
+            "perf",
+            "timer",
+            "syslog",
+            "cgroups",
+            "futex",
+            "bpf",
+            "tpm",
+            "swap",
+            "seccomp",
+            "epoll",
+            "eventfd",
+            "mac",
+            "mqueue",
+            "jobs",
+            "lvm",
+            "raid",
+            "iptables",
+            "firewall",
+            "service",
+            "unwind",
+            "watchpoint",
+            "framebuffer",
+            "usb",
+            "ext4",
+            "nvme",
+            "kvm",
+        ];
+
+        for cmd in direct_cmds {
+            execute_command_inner(cmd);
+        }
     }
 
     #[test]

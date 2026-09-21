@@ -20,6 +20,7 @@
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 int main(int argc, char **argv) {
@@ -1561,6 +1562,53 @@ int main(int argc, char **argv) {
 
     io_uring_queue_exit(&ring);
     puts("  [OK]   Bare-metal io_uring asynchronous engine verified");
+
+    /* 42. High-Precision Event Timer (HPET) & Monotonic Clock Verification */
+    puts("  [TEST] High-precision monotonic clock & timer precision (clock_gettime)...");
+    struct timespec ts1, ts2;
+    int cg_res1 = clock_gettime(CLOCK_MONOTONIC, &ts1);
+    if (cg_res1 < 0) {
+        printf("  [FAIL] clock_gettime(CLOCK_MONOTONIC) failed: errno=%d\n", errno);
+        return 1;
+    }
+    if (ts1.tv_sec < 0 || ts1.tv_nsec < 0 || ts1.tv_nsec >= 1000000000L) {
+        printf("  [FAIL] clock_gettime returned invalid timespec: sec=%lld, nsec=%ld\n",
+               (long long)ts1.tv_sec, ts1.tv_nsec);
+        return 1;
+    }
+
+    uint64_t fast_nanos1 = (uint64_t)syscall0(SYS_CLOCK_GETTIME_FAST);
+
+    volatile uint64_t spin_acc = 0;
+    for (int si = 0; si < 50000; si++) {
+        spin_acc += (uint64_t)si;
+    }
+
+    int cg_res2 = clock_gettime(CLOCK_MONOTONIC, &ts2);
+    if (cg_res2 < 0) {
+        printf("  [FAIL] clock_gettime second invocation failed: errno=%d\n", errno);
+        return 1;
+    }
+    uint64_t fast_nanos2 = (uint64_t)syscall0(SYS_CLOCK_GETTIME_FAST);
+
+    uint64_t total_ns1 = ((uint64_t)ts1.tv_sec * 1000000000ULL) + (uint64_t)ts1.tv_nsec;
+    uint64_t total_ns2 = ((uint64_t)ts2.tv_sec * 1000000000ULL) + (uint64_t)ts2.tv_nsec;
+
+    if (total_ns2 < total_ns1) {
+        printf("  [FAIL] Monotonic clock regressed: t1=%llu ns, t2=%llu ns\n",
+               (unsigned long long)total_ns1, (unsigned long long)total_ns2);
+        return 1;
+    }
+    if (fast_nanos2 < fast_nanos1) {
+        printf("  [FAIL] Fast clock syscall regressed: f1=%llu ns, f2=%llu ns\n",
+               (unsigned long long)fast_nanos1, (unsigned long long)fast_nanos2);
+        return 1;
+    }
+
+    printf("  [INFO] Monotonic clock delta: %llu ns, fast clock delta: %llu ns (acc=%llu)\n",
+           (unsigned long long)(total_ns2 - total_ns1),
+           (unsigned long long)(fast_nanos2 - fast_nanos1), (unsigned long long)spin_acc);
+    puts("  [OK]   High-precision monotonic clock & timer precision verified");
 
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;

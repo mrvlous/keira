@@ -21,6 +21,7 @@ graph TD
     Main --> Concurrency["concurrency.md<br/>SMP Concurrency & Deadlock Defense"]
     Main --> Fuzzing["fuzzing.md<br/>Syscall Fuzzing & Chaos Stress"]
     Main --> ACPI["acpi.md<br/>ACPI Table Parser & Motherboard Topology"]
+    Main --> HPET["hpet.md<br/>HPET Sub-Nanosecond Clock Driver"]
 ```
 
 ---
@@ -33,6 +34,7 @@ graph TD
 | [`gdt_tss.md`](gdt_tss.md) | GDT & TSS Context | Kernel/User code/data segment descriptors and Task State Segment stacks |
 | [`idt_exceptions.md`](idt_exceptions.md) | Interrupt Vector Table | 256-entry IDT table, hardware IRQ dispatching, and CPU exception handlers (`#DB`, `#PF`, `#GP`, `#DF`) |
 | [`apic_timers.md`](apic_timers.md) | Timers & Interrupt Routing | Local APIC calibration, IO-APIC routing, SMP multi-core IPIs, PIT frequency divisor, and RTC clock |
+| [`hpet.md`](hpet.md) | High-Precision Event Timer | 64-bit MMIO up-counter, sub-nanosecond 128-bit math, atomic i686/x86_64 access, and clock syscalls |
 | [`acpi.md`](acpi.md) | ACPI & Hardware Topology | RSDP detection, XSDT/RSDT traversal, MADT interrupt controller parsing, and multi-core APIC discovery |
 | [`hal.md`](hal.md) | Hardware Abstraction Layer | Architecture-independent hardware interfaces for CPU, MMU, and Interrupts |
 | [`panic.md`](panic.md) | Kernel Panic Engine | Dual-architecture stack frame unwinding and formatted serial/VGA crash logging |

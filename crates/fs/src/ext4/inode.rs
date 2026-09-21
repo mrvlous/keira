@@ -12,6 +12,7 @@
 #![allow(static_mut_refs)]
 
 use super::superblock::MOUNTED_EXT4;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 pub const EXT4_ROOT_INO: u32 = 2;
 
@@ -297,13 +298,22 @@ pub fn write_inode_to_bytes(inode: &Ext4Inode, bytes: &mut [u8]) {
 // On-disk Inode Table binary storage block (16 inodes * 256 bytes = 4096 bytes)
 static mut INODE_TABLE_BLOCK: [u8; 4096] = [0u8; 4096];
 static mut INODE_TABLE_INITIALIZED: bool = false;
+static INODE_INIT_DONE: AtomicBool = AtomicBool::new(false);
+static INODE_INIT_LOCK: AtomicBool = AtomicBool::new(false);
 
 /// Ensure on-disk binary inode table is formatted and populated.
 pub fn ensure_inode_table_initialized() {
-    unsafe {
-        if INODE_TABLE_INITIALIZED {
-            return;
-        }
+    if INODE_INIT_DONE.load(Ordering::Acquire) {
+        return;
+    }
+    while INODE_INIT_LOCK
+        .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+        .is_err()
+    {
+        core::hint::spin_loop();
+    }
+    if !INODE_INIT_DONE.load(Ordering::Relaxed) {
+        let mut temp_block = [0u8; 4096];
 
         // 1. Root directory Inode #2
         let mut root = Ext4Inode::default();
@@ -311,6 +321,7 @@ pub fn ensure_inode_table_initialized() {
         root.i_size_lo = 4096;
         root.i_links_count = 3;
         root.i_blocks_lo = 8;
+        root.i_flags = EXT4_EXTENTS_FL;
         root.i_block[0] = 0x0A;
         root.i_block[1] = 0xF3;
         root.i_block[2] = 0x01; // 1 entry
@@ -320,7 +331,7 @@ pub fn ensure_inode_table_initialized() {
         root.i_block[20] = 0x00; // LBA lo 1024
         root.i_block[21] = 0x04;
         let off2 = (2 - 1) * 256;
-        write_inode_to_bytes(&root, &mut INODE_TABLE_BLOCK[off2..off2 + 256]);
+        write_inode_to_bytes(&root, &mut temp_block[off2..off2 + 256]);
 
         // 2. System directory Inode #11
         let mut sys = Ext4Inode::default();
@@ -328,6 +339,7 @@ pub fn ensure_inode_table_initialized() {
         sys.i_size_lo = 4096;
         sys.i_links_count = 2;
         sys.i_blocks_lo = 8;
+        sys.i_flags = EXT4_EXTENTS_FL;
         sys.i_block[0] = 0x0A;
         sys.i_block[1] = 0xF3;
         sys.i_block[2] = 0x01;
@@ -337,7 +349,7 @@ pub fn ensure_inode_table_initialized() {
         sys.i_block[20] = 0x01; // LBA lo 1025
         sys.i_block[21] = 0x04;
         let off11 = (11 - 1) * 256;
-        write_inode_to_bytes(&sys, &mut INODE_TABLE_BLOCK[off11..off11 + 256]);
+        write_inode_to_bytes(&sys, &mut temp_block[off11..off11 + 256]);
 
         // 3. Kernel ELF Inode #12
         let mut elf = Ext4Inode::default();
@@ -345,6 +357,7 @@ pub fn ensure_inode_table_initialized() {
         elf.i_size_lo = 262144; // 256 KB
         elf.i_links_count = 1;
         elf.i_blocks_lo = 512;
+        elf.i_flags = EXT4_EXTENTS_FL;
         elf.i_block[0] = 0x0A;
         elf.i_block[1] = 0xF3;
         elf.i_block[2] = 0x01;
@@ -354,7 +367,7 @@ pub fn ensure_inode_table_initialized() {
         elf.i_block[20] = 0x00; // LBA lo 2048
         elf.i_block[21] = 0x08;
         let off12 = (12 - 1) * 256;
-        write_inode_to_bytes(&elf, &mut INODE_TABLE_BLOCK[off12..off12 + 256]);
+        write_inode_to_bytes(&elf, &mut temp_block[off12..off12 + 256]);
 
         // 4. Boot config Inode #14
         let mut boot_cfg = Ext4Inode::default();
@@ -362,6 +375,7 @@ pub fn ensure_inode_table_initialized() {
         boot_cfg.i_size_lo = 128;
         boot_cfg.i_links_count = 1;
         boot_cfg.i_blocks_lo = 2;
+        boot_cfg.i_flags = EXT4_EXTENTS_FL;
         boot_cfg.i_block[0] = 0x0A;
         boot_cfg.i_block[1] = 0xF3;
         boot_cfg.i_block[2] = 0x01;
@@ -371,7 +385,7 @@ pub fn ensure_inode_table_initialized() {
         boot_cfg.i_block[20] = 0x01; // LBA lo 2049
         boot_cfg.i_block[21] = 0x08;
         let off14 = (14 - 1) * 256;
-        write_inode_to_bytes(&boot_cfg, &mut INODE_TABLE_BLOCK[off14..off14 + 256]);
+        write_inode_to_bytes(&boot_cfg, &mut temp_block[off14..off14 + 256]);
 
         // 5. Version text Inode #15
         let mut ver_txt = Ext4Inode::default();
@@ -379,6 +393,7 @@ pub fn ensure_inode_table_initialized() {
         ver_txt.i_size_lo = 64;
         ver_txt.i_links_count = 1;
         ver_txt.i_blocks_lo = 2;
+        ver_txt.i_flags = EXT4_EXTENTS_FL;
         ver_txt.i_block[0] = 0x0A;
         ver_txt.i_block[1] = 0xF3;
         ver_txt.i_block[2] = 0x01;
@@ -388,10 +403,15 @@ pub fn ensure_inode_table_initialized() {
         ver_txt.i_block[20] = 0x02; // LBA lo 2050
         ver_txt.i_block[21] = 0x08;
         let off15 = (15 - 1) * 256;
-        write_inode_to_bytes(&ver_txt, &mut INODE_TABLE_BLOCK[off15..off15 + 256]);
+        write_inode_to_bytes(&ver_txt, &mut temp_block[off15..off15 + 256]);
 
-        INODE_TABLE_INITIALIZED = true;
+        unsafe {
+            INODE_TABLE_BLOCK.copy_from_slice(&temp_block);
+            INODE_TABLE_INITIALIZED = true;
+        }
+        INODE_INIT_DONE.store(true, Ordering::Release);
     }
+    INODE_INIT_LOCK.store(false, Ordering::Release);
 }
 
 /// Read inode attributes from EXT4 on-disk inode table.
