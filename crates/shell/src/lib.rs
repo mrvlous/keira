@@ -613,6 +613,16 @@ mod tests {
     }
 
     #[test]
+    fn test_ipcs_command() {
+        execute_command_inner("ipcs");
+        execute_command_inner("ipcs -m");
+        execute_command_inner("ipcs -s");
+        execute_command_inner("ipcs -q");
+        execute_command_inner("ipcs -u");
+        execute_command_inner("ipcs -a");
+    }
+
+    #[test]
     fn test_unknown_and_direct_executor() {
         execute_command("unknown_kernel_cmd_test_xyz");
         execute_command("help");

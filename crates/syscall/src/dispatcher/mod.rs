@@ -1004,9 +1004,17 @@ fn syscall_dispatcher_inner(
             }
         }
         // Syscall 38: io_uring_setup
-        38 => keira_ipc::uring::setup_ring(arg1 as u32).unwrap_or(errno_to_ret(ENOMEM)),
+        38 => keira_ipc::uring::setup_ring_ext(arg1 as u32, arg2).unwrap_or(errno_to_ret(ENOMEM)),
         // Syscall 39: io_uring_enter
-        39 => keira_ipc::uring::enter_ring(arg1 as u32, arg2 as u32).unwrap_or(u32::MAX) as u64,
+        39 => match keira_ipc::uring::enter_ring_ext(
+            arg1 as u32,
+            arg2 as u32,
+            arg3 as u32,
+            arg4 as u32,
+        ) {
+            Ok(count) => count,
+            Err(_) => errno_to_ret(EINVAL),
+        },
         // Syscall 40: futex
         40 => {
             let uaddr = arg1 as *mut u32;

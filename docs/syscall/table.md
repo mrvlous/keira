@@ -43,8 +43,8 @@ This document specifies the complete system call vector table supported by Keira
 | `35` | `SYS_DELETE_MODULE` | `const char *name, unsigned int flags` | Unload and unmap registered kernel module |
 | `36` | `SYS_CLOCK_GETTIME_FAST` | - | Fast monotonic system uptime in nanoseconds |
 | `37` | `SYS_PTRACE` | `int request, pid_t pid, void *addr, void *data` | Process trace and debug inspection |
-| `38` | `SYS_IO_URING_SETUP` | `unsigned int entries` | Initialize io_uring submission/completion queue pair |
-| `39` | `SYS_IO_URING_ENTER` | `unsigned int fd, unsigned int to_submit` | Enter io_uring kernel submission loop |
+| `38` | `SYS_IO_URING_SETUP` | `unsigned int entries, struct io_uring_params *params` | Initialize io_uring submission/completion queue pair |
+| `39` | `SYS_IO_URING_ENTER` | `unsigned int fd, unsigned int to_submit, unsigned int min_complete, unsigned int flags` | Enter io_uring kernel submission loop |
 | `40` | `SYS_FUTEX` | `int *uaddr, int op, int val` | Fast user-space synchronization mutex wait/wake/requeue |
 | `41` | `SYS_CLONE_THREAD` | `unsigned long flags, void *stack` | Thread clone interface |
 | `42` | `SYS_KVM_CREATE_VM` | - | Allocate isolated guest virtual machine context |

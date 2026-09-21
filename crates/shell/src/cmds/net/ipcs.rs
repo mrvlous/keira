@@ -9,7 +9,7 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//! Query System V / POSIX IPC facilities (Shared Memory, Semaphores, Message Queues).
+//! Query System V, POSIX, and io_uring IPC facilities (Shared Memory, Semaphores, Message Queues, io_uring).
 
 use crate::args::CliArgs;
 use keira_io::vga;
@@ -21,14 +21,15 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if args.has_flag('h', "help") {
         unsafe {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Usage: ipcs [-m] [-s] [-q] [-a]\n\n");
+            vga::print_str("Usage: ipcs [-m] [-s] [-q] [-u] [-a]\n\n");
             vga::print_str(
-                "Description:\n  Query status of System V and POSIX IPC facilities (Syscall 38-40).\n\n",
+                "Description:\n  Query status of System V, POSIX, and io_uring IPC facilities (Syscall 28-29, 38-40).\n\n",
             );
             vga::print_str("Options:\n");
             vga::print_str("  -m, --shm      Display active Shared Memory segments\n");
             vga::print_str("  -s, --sem      Display active Semaphore arrays\n");
             vga::print_str("  -q, --queues   Display active Message Queues\n");
+            vga::print_str("  -u, --uring    Display active io_uring instances\n");
             vga::print_str("  -a, --all      Display all IPC facilities (default)\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -39,7 +40,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let show_shm = args.has_flag('m', "shm");
     let show_sem = args.has_flag('s', "sem");
     let show_queues = args.has_flag('q', "queues");
-    let show_all = args.has_flag('a', "all") || (!show_shm && !show_sem && !show_queues);
+    let show_uring = args.has_flag('u', "uring");
+    let show_all =
+        args.has_flag('a', "all") || (!show_shm && !show_sem && !show_queues && !show_uring);
 
     unsafe {
         // 1. Shared Memory
@@ -137,6 +140,45 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             }
             if count == 0 {
                 vga::print_str("  (no active message queues)\n");
+            }
+            vga::print_str("\n");
+        }
+
+        // 4. io_uring Ring Instances
+        if show_all || show_uring {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("------ io_uring Ring Instances ------\n");
+            vga::print_str("ID   SQ_ENTRIES  CQ_ENTRIES  SUBMITTED   COMPLETED   FLAGS\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+            let mut count = 0;
+            for i in 0..keira_ipc::uring::MAX_IO_URING_INSTANCES {
+                if let Some(ring) = keira_ipc::uring::get_ring(i as u32) {
+                    vga::print_u64(i as u64);
+                    vga::print_str("    ");
+                    vga::print_u64(ring.sq_entries as u64);
+                    vga::print_str("          ");
+                    vga::print_u64(ring.cq_entries as u64);
+                    vga::print_str("          ");
+                    vga::print_u64(
+                        ring.submitted_count
+                            .load(core::sync::atomic::Ordering::Relaxed)
+                            as u64,
+                    );
+                    vga::print_str("           ");
+                    vga::print_u64(
+                        ring.completed_count
+                            .load(core::sync::atomic::Ordering::Relaxed)
+                            as u64,
+                    );
+                    vga::print_str("           ");
+                    vga::print_hex(ring.flags as u64);
+                    vga::print_str("\n");
+                    count += 1;
+                }
+            }
+            if count == 0 {
+                vga::print_str("  (no active io_uring instances)\n");
             }
         }
     }

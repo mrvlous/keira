@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/io_uring.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
@@ -1488,6 +1489,78 @@ int main(int argc, char **argv) {
     printf("  [INFO] 1,000 mutated vectors executed (errors handled: %d, success: %d)\n",
            fuzz_errors, fuzz_success);
     puts("  [OK]   Automated syscall boundary fuzzing & Syzkaller-Lite smoke test verified");
+
+    /* 41. Bare-Metal io_uring Asynchronous Engine & ABI Verification */
+    puts("  [TEST] Bare-metal io_uring asynchronous engine & ABI lifecycle...");
+    struct io_uring ring;
+    int ring_res = io_uring_queue_init(16, &ring, 0);
+    if (ring_res < 0) {
+        printf("  [FAIL] io_uring_queue_init failed with error %d\n", ring_res);
+        return 1;
+    }
+    if (ring.params.sq_entries != 16 || ring.params.cq_entries != 32) {
+        printf("  [FAIL] Unexpected ring parameters: sq=%u, cq=%u\n", ring.params.sq_entries,
+               ring.params.cq_entries);
+        return 1;
+    }
+
+    /* Test 41a: IORING_OP_NOP */
+    struct io_uring_sqe *sqe_nop = io_uring_get_sqe(&ring);
+    if (!sqe_nop) {
+        puts("  [FAIL] Failed to allocate SQE for NOP");
+        return 1;
+    }
+    sqe_nop->opcode = IORING_OP_NOP;
+    sqe_nop->user_data = 0xABCD1111;
+
+    int sub_res = io_uring_submit(&ring);
+    if (sub_res != 1) {
+        printf("  [FAIL] io_uring_submit expected 1 processed, got %d\n", sub_res);
+        return 1;
+    }
+
+    struct io_uring_cqe *cqe = NULL;
+    if (io_uring_peek_cqe(&ring, &cqe) < 0 || !cqe) {
+        puts("  [FAIL] Failed to peek CQE for NOP");
+        return 1;
+    }
+    if (cqe->user_data != 0xABCD1111 || cqe->res != 0) {
+        printf("  [FAIL] NOP CQE invalid: user_data=0x%lx, res=%d\n", (unsigned long)cqe->user_data,
+               cqe->res);
+        return 1;
+    }
+    io_uring_cqe_seen(&ring, cqe);
+
+    /* Test 41b: IORING_OP_FSYNC */
+    struct io_uring_sqe *sqe_fsync = io_uring_get_sqe(&ring);
+    if (!sqe_fsync) {
+        puts("  [FAIL] Failed to allocate SQE for FSYNC");
+        return 1;
+    }
+    sqe_fsync->opcode = IORING_OP_FSYNC;
+    sqe_fsync->fd = 1;
+    sqe_fsync->user_data = 0xABCD2222;
+
+    sub_res = io_uring_submit(&ring);
+    if (sub_res != 1) {
+        printf("  [FAIL] io_uring_submit FSYNC expected 1 processed, got %d\n", sub_res);
+        return 1;
+    }
+
+    cqe = NULL;
+    if (io_uring_peek_cqe(&ring, &cqe) < 0 || !cqe) {
+        puts("  [FAIL] Failed to peek CQE for FSYNC");
+        return 1;
+    }
+    if (cqe->user_data != 0xABCD2222 || cqe->res != 0) {
+        printf("  [FAIL] FSYNC CQE invalid: user_data=0x%lx, res=%d\n",
+               (unsigned long)cqe->user_data, cqe->res);
+        return 1;
+    }
+    io_uring_cqe_seen(&ring, cqe);
+
+    io_uring_queue_exit(&ring);
+    puts("  [OK]   Bare-metal io_uring asynchronous engine verified");
 
     puts("\n[DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.");
     return 0;

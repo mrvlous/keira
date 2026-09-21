@@ -15,7 +15,7 @@ This document details all native commands in Keira Kernel related to network int
 | `https` | `https <url>` | `[Active]` | Securely fetch remote HTTPS payload using native bare-metal TLS 1.3 |
 | `firewall` | `firewall [status \| enable \| disable]` | `[Active]` | Display Netfilter packet filter status and drop/accept statistics |
 | `iptables` | `iptables [list \| add <rule> \| flush]` | `[Active]` | Inspect and configure Netfilter packet filtering rules |
-| `ipcs` | `ipcs [-m] [-s] [-q] [-a]` | `[Active]` | Query status of System V and POSIX IPC facilities (Syscall 38-40, 75) |
+| `ipcs` | `ipcs [-m] [-s] [-q] [-u] [-a]` | `[Active]` | Query status of System V, POSIX, and io_uring IPC facilities (Syscall 28-29, 38-40, 75) |
 | `ipcrm` | `ipcrm [-m <id>] [-s <id>] [-q <id>]` | `[Active]` | Remove System V and POSIX IPC facilities from kernel memory (Syscall 41-42, 75) |
 | `mqueue` | `mqueue <status \| list \| create \| send \| recv \| unlink>` | `[Active]` | Inspect and manage in-kernel POSIX Message Queue descriptors (Syscall 58) |
 
@@ -88,6 +88,10 @@ ID   KEY          VALUE   WAITERS
 ------ POSIX Message Queues ------
 ID   NAME             MSGS   MAX_MSGS  MSG_SIZE
 0    /keira_sys_mq    1      8         128 B
+
+------ io_uring Ring Instances ------
+ID   SQ_ENTRIES  CQ_ENTRIES  SUBMITTED   COMPLETED   FLAGS
+0    16          32          2           2           0x0
 ```
 
 ### `ipcrm`

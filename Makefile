@@ -43,6 +43,7 @@ OBJ_DIR         := $(BUILD_DIR)/obj
 STAGING_DIR     := $(BUILD_DIR)/staging
 ISO_DIR         := $(STAGING_DIR)/isofiles
 FS_ROOT         := $(STAGING_DIR)/fs_root
+FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp
 
 KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
 KERNEL_ISO      := $(ISO_OUT_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
@@ -373,7 +374,7 @@ $(FUZZ_ABI_ELF): $(USER_CRT_OBJ) $(FUZZ_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_S
 	@$(LOG_DONE) "$(FUZZ_ABI_ELF) ready"
 
 # Canonical root filesystem & disk image rules
-fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
+$(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT)
 	$(Q)mkdir -p $(FS_ROOT)/system/bin
@@ -429,6 +430,7 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp user/lib/syscall/syscall.c $(FS_ROOT)/system/lib/syscall.c
 	$(Q)cp user/lib/termios/termios.c $(FS_ROOT)/system/lib/termios.c 2>/dev/null || true
 	$(Q)cp user/lib/stdlib/stack_chk.c $(FS_ROOT)/system/lib/stack_chk.c 2>/dev/null || true
+	$(Q)cp user/lib/uring/uring.c $(FS_ROOT)/system/lib/uring.c 2>/dev/null || true
 	$(Q)cp user/bin/kcc/*.c $(FS_ROOT)/apps/src/kcc/
 	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
 	$(Q)cp user/bin/sysinfo/*.c $(FS_ROOT)/apps/src/sysinfo/
@@ -454,8 +456,12 @@ fs-root: $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)printf "[INFO] Keira Service Controller (ksvc) system logger initialized.\n" > $(FS_ROOT)/data/log/syslog.log
 	$(Q)printf "[INFO] Keira Telemetry Monitor (monitord) initialized.\n" > $(FS_ROOT)/data/log/monitor.log
 	$(Q)touch $(FS_ROOT)/temp/.keep
+	$(Q)touch $(FS_ROOT_STAMP)
+	@$(LOG_DONE) "Canonical root filesystem ready ($(ARCH))"
 
-$(DISK_IMG): fs-root
+fs-root: $(FS_ROOT_STAMP)
+
+$(DISK_IMG): $(FS_ROOT_STAMP)
 	@rm -f $(DISK_IMG)
 	@$(LOG_DISK) "Creating $(DISK_SIZE)MB FAT16 disk image ($(ARCH))..."
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
@@ -468,7 +474,7 @@ $(DISK_IMG): fs-root
 	done
 	@$(LOG_DONE) "$(DISK_IMG) ready"
 
-$(INITRD_TAR): fs-root | dirs
+$(INITRD_TAR): $(FS_ROOT_STAMP) | dirs
 	@$(LOG_INFO) "Building RAM Disk (Initrd) ($(ARCH))..."
 	$(Q)cd $(FS_ROOT) && tar -cf $(CURDIR)/$(INITRD_TAR) *
 	@$(LOG_DONE) "$(INITRD_TAR) ready"
