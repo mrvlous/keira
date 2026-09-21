@@ -17,9 +17,13 @@ use keira_mem::pmm;
 #[cfg(target_arch = "x86_64")]
 use keira_mem::vmm;
 
+#[cfg(not(test))]
 extern "C" {
     fn jump_to_user(entry: u64, stack: u64);
 }
+
+#[cfg(test)]
+unsafe fn jump_to_user(_entry: u64, _stack: u64) {}
 
 #[cfg(target_arch = "x86")]
 const USER_STACK_TOP: u64 = 0x07FFF000 - 16;

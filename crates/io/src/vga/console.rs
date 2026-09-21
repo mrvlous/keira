@@ -33,10 +33,13 @@ unsafe fn vga_set_hardware_cursor(col: u16, row: u16) {
 #[no_mangle]
 pub extern "C" fn vga_init() {
     unsafe {
-        let buf = 0xB8000 as *mut u16;
-        let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
-        for i in 0..(80 * 25) {
-            *buf.offset(i) = blank;
+        #[cfg(target_os = "none")]
+        {
+            let buf = 0xB8000 as *mut u16;
+            let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+            for i in 0..(80 * 25) {
+                *buf.offset(i) = blank;
+            }
         }
         TEXT_CURSOR_X = 0;
         TEXT_CURSOR_Y = 0;
@@ -74,6 +77,7 @@ pub extern "C" fn vga_get_cursor_row() -> u16 {
 pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
     let byte = c as u8;
     unsafe {
+        #[cfg(target_os = "none")]
         let buf = 0xB8000 as *mut u16;
         if byte == b'\n' {
             TEXT_CURSOR_X = 0;
@@ -87,11 +91,17 @@ pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
                 TEXT_CURSOR_Y -= 1;
                 TEXT_CURSOR_X = 79;
             }
-            let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
-            *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+            #[cfg(target_os = "none")]
+            {
+                let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
+                *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+            }
         } else {
-            let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
-            *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (byte as u16);
+            #[cfg(target_os = "none")]
+            {
+                let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
+                *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (byte as u16);
+            }
             TEXT_CURSOR_X += 1;
             if TEXT_CURSOR_X >= 80 {
                 TEXT_CURSOR_X = 0;
@@ -100,10 +110,13 @@ pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
         }
 
         while TEXT_CURSOR_Y >= 25 {
-            core::ptr::copy(buf.offset(80), buf, 80 * 24);
-            let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
-            for x in 0..80 {
-                *buf.offset(80 * 24 + x) = blank;
+            #[cfg(target_os = "none")]
+            {
+                core::ptr::copy(buf.offset(80), buf, 80 * 24);
+                let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+                for x in 0..80 {
+                    *buf.offset(80 * 24 + x) = blank;
+                }
             }
             TEXT_CURSOR_Y -= 1;
         }
@@ -128,10 +141,13 @@ pub extern "C" fn vga_backspace() {
 #[no_mangle]
 pub extern "C" fn vga_clear_line_from(col: u16) {
     unsafe {
-        let buf = 0xB8000 as *mut u16;
-        let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
-        for x in (col.min(79))..80 {
-            *buf.offset((TEXT_CURSOR_Y * 80 + x) as isize) = blank;
+        #[cfg(target_os = "none")]
+        {
+            let buf = 0xB8000 as *mut u16;
+            let blank = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+            for x in (col.min(79))..80 {
+                *buf.offset((TEXT_CURSOR_Y * 80 + x) as isize) = blank;
+            }
         }
         TEXT_CURSOR_X = col.min(79);
         vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
@@ -411,10 +427,17 @@ pub fn draw_cell(row: u16, col: u16, ch: u8, fg: Color, bg: Color) {
         if fb_active() {
             draw_char(ch, col as u32, row as u32, fg.to_rgb(), bg.to_rgb());
         } else if row < 25 && col < 80 {
-            let buf = 0xB8000 as *mut u16;
-            let attr = ((bg as u8 & 0x0F) << 4) | (fg as u8 & 0x0F);
-            let val = ((attr as u16) << 8) | (ch as u16);
-            core::ptr::write_volatile(buf.add((row * 80 + col) as usize), val);
+            #[cfg(target_os = "none")]
+            {
+                let buf = 0xB8000 as *mut u16;
+                let attr = ((bg as u8 & 0x0F) << 4) | (fg as u8 & 0x0F);
+                let val = ((attr as u16) << 8) | (ch as u16);
+                core::ptr::write_volatile(buf.add((row * 80 + col) as usize), val);
+            }
+            #[cfg(not(target_os = "none"))]
+            {
+                let _ = (ch, fg, bg);
+            }
         }
     }
 }

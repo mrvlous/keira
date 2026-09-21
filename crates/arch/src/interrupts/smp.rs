@@ -11,6 +11,7 @@
 
 use crate::cpu::invlpg;
 use crate::interrupts::apic;
+use crate::power::acpi;
 
 pub const MAX_CORES: usize = 16;
 
@@ -85,7 +86,7 @@ pub fn tlb_shootdown(vaddr: u64) {
     invlpg(vaddr as usize);
 }
 
-/// Initialize SMP subsystem and discover physical/logical CPU cores via CPUID.
+/// Initialize SMP subsystem and discover physical/logical CPU cores via ACPI MADT (or CPUID fallback).
 pub fn init_smp() {
     unsafe {
         if SMP_INITIALIZED {
@@ -102,7 +103,32 @@ pub fn init_smp() {
             status: CoreStatus::Online,
         });
 
-        // Query CPU topology from CPUID Leaf 1
+        let acpi_topo = acpi::get_acpi_topology();
+        if acpi_topo.madt_found && acpi_topo.core_count > 0 {
+            // Hardware ACPI MADT topology discovery
+            let mut registered = 1;
+            for i in 0..acpi_topo.core_count {
+                let target_apic_id = acpi_topo.cores[i].apic_id;
+                if target_apic_id != bsp_apic_id && registered < MAX_CORES {
+                    send_init_ipi(target_apic_id);
+                    send_startup_ipi(target_apic_id, 0x08);
+                    send_startup_ipi(target_apic_id, 0x08);
+
+                    SMP_CORES[registered] = Some(CpuCore {
+                        core_id: registered as u8,
+                        apic_id: target_apic_id,
+                        is_bsp: false,
+                        status: CoreStatus::Online,
+                    });
+                    registered += 1;
+                }
+            }
+            SMP_CORES_COUNT = registered;
+            SMP_INITIALIZED = true;
+            return;
+        }
+
+        // Fallback: Query CPU topology from CPUID Leaf 1 when ACPI is not present
         #[cfg(target_arch = "x86_64")]
         let leaf1 = core::arch::x86_64::__cpuid(1);
         #[cfg(target_arch = "x86")]

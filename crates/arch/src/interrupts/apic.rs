@@ -25,22 +25,42 @@ pub const LAPIC_TIMER_DIV_REG: u32 = 0x3E0;
 /// Signal End Of Interrupt (EOI) to Local APIC.
 #[inline(always)]
 pub unsafe fn eoi() {
-    let eoi_ptr = (LAPIC_DEFAULT_BASE + LAPIC_EOI_REG as u64) as *mut u32;
-    core::ptr::write_volatile(eoi_ptr, 0);
+    #[cfg(not(target_os = "none"))]
+    {}
+    #[cfg(target_os = "none")]
+    {
+        let eoi_ptr = (LAPIC_DEFAULT_BASE + LAPIC_EOI_REG as u64) as *mut u32;
+        core::ptr::write_volatile(eoi_ptr, 0);
+    }
 }
 
 /// Read a 32-bit register from the Local APIC.
 #[inline(always)]
 pub unsafe fn read_reg(offset: u32) -> u32 {
-    let reg_ptr = (LAPIC_DEFAULT_BASE + offset as u64) as *const u32;
-    core::ptr::read_volatile(reg_ptr)
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = offset;
+        0
+    }
+    #[cfg(target_os = "none")]
+    {
+        let reg_ptr = (LAPIC_DEFAULT_BASE + offset as u64) as *const u32;
+        core::ptr::read_volatile(reg_ptr)
+    }
 }
 
 /// Write a 32-bit register to the Local APIC.
 #[inline(always)]
 pub unsafe fn write_reg(offset: u32, val: u32) {
-    let reg_ptr = (LAPIC_DEFAULT_BASE + offset as u64) as *mut u32;
-    core::ptr::write_volatile(reg_ptr, val);
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = (offset, val);
+    }
+    #[cfg(target_os = "none")]
+    {
+        let reg_ptr = (LAPIC_DEFAULT_BASE + offset as u64) as *mut u32;
+        core::ptr::write_volatile(reg_ptr, val);
+    }
 }
 
 /// Read the current Local APIC ID (CPU ID).

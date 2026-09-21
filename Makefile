@@ -499,7 +499,7 @@ qemu-net: preflight-qemu all ## Launch Keira in QEMU with e1000 NIC emulation
 # Automated testing & verification
 test: preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
-	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none -serial stdio > $(BUILD_DIR)/test.log 2>&1 || true
+	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none </dev/null > $(BUILD_DIR)/test.log 2>&1 || true
 	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
 
 test-all: preflight-qemu ## Run automated headless smoke tests on all architectures

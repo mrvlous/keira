@@ -9,8 +9,7 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-//!
-//! Query ACPI Power Management and NMI hardware watchdog status.
+//! Query ACPI Power Management, hardware topology, and NMI hardware watchdog status.
 
 use crate::executor::is_admin_mode;
 use keira_io::vga;
@@ -20,7 +19,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = sub {
         unsafe {
             vga::print_str("Usage: power [status|acpi|shutdown|poweroff|reboot]\n\n");
-            vga::print_str("Description:\n  Query ACPI power management states (S0/S3/S5), initiate hardware shutdown, or reboot.\n\n");
+            vga::print_str("Description:\n  Query ACPI power management states, MADT topology, or initiate system shutdown/reboot.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
@@ -53,6 +52,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
+        let topo = keira_arch::power::acpi::get_acpi_topology();
+
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("ACPI Power Management & Hardware Watchdog:\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -61,5 +62,74 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
         vga::print_str("[OK]\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("\nMotherboard ACPI Hardware Topology:\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+        if topo.rsdp_found {
+            vga::print_str("  RSDP Status   : Detected (");
+            if topo.rsdp_revision >= 2 {
+                vga::print_str("ACPI 2.0+ / XSDT");
+            } else {
+                vga::print_str("ACPI 1.0 / RSDT");
+            }
+            vga::print_str(", OEM: ");
+            if let Ok(oem_str) = core::str::from_utf8(&topo.oem_id) {
+                vga::print_str(oem_str.trim());
+            }
+            vga::print_str(")\n");
+        } else {
+            vga::print_str("  RSDP Status   : Fallback (BIOS ROM scanning / CPUID emulation)\n");
+        }
+
+        if topo.madt_found {
+            vga::print_str("  Local APIC    : 0x");
+            vga::print_hex(topo.lapic_address);
+            vga::print_str("\n");
+
+            if topo.ioapic_count > 0 {
+                vga::print_str("  I/O APIC      : 0x");
+                vga::print_hex(topo.ioapics[0].address as u64);
+                vga::print_str(" (ID: ");
+                vga::print_u64(topo.ioapics[0].id as u64);
+                vga::print_str(", GSI Base: ");
+                vga::print_u64(topo.ioapics[0].gsi_base as u64);
+                vga::print_str(")\n");
+            }
+
+            vga::print_str("  MADT Cores    : ");
+            vga::print_u64(topo.core_count as u64);
+            vga::print_str(" cores discovered [APIC IDs: ");
+            for i in 0..topo.core_count {
+                if i > 0 {
+                    vga::print_str(", ");
+                }
+                vga::print_u64(topo.cores[i].apic_id as u64);
+            }
+            vga::print_str("]\n");
+
+            if topo.iso_count > 0 {
+                vga::print_str("  IRQ Overrides : ");
+                for i in 0..topo.iso_count {
+                    if i > 0 {
+                        vga::print_str(", ");
+                    }
+                    vga::print_str("IRQ ");
+                    vga::print_u64(topo.isos[i].source_irq as u64);
+                    vga::print_str("->GSI ");
+                    vga::print_u64(topo.isos[i].gsi as u64);
+                }
+                vga::print_str("\n");
+            }
+        } else {
+            vga::print_str("  MADT Table    : Not Present (Legacy dual 8259 PIC mode)\n");
+        }
+
+        if topo.hpet_found {
+            vga::print_str("  HPET Base MMIO: 0x");
+            vga::print_hex(topo.hpet_address);
+            vga::print_str("\n");
+        }
     }
 }

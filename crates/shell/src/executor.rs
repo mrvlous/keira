@@ -46,31 +46,38 @@ pub fn print_2digit(n: u64) {
 }
 
 pub fn count_pci_devices() -> u64 {
-    let mut count = 0u64;
-    for bus in 0..=255u16 {
-        for slot in 0..32u8 {
-            let address = ((bus as u32) << 16) | ((slot as u32) << 11) | 0x80000000u32;
-            unsafe {
-                core::arch::asm!(
-                    "out dx, eax",
-                    in("dx") 0xCF8u16,
-                    in("eax") address,
-                    options(nomem, nostack, preserves_flags)
-                );
-                let value: u32;
-                core::arch::asm!(
-                    "in eax, dx",
-                    out("eax") value,
-                    in("dx") 0xCFCu16,
-                    options(nomem, nostack, preserves_flags)
-                );
-                if (value & 0xFFFF) != 0xFFFF {
-                    count += 1;
+    #[cfg(not(target_os = "none"))]
+    {
+        0
+    }
+    #[cfg(target_os = "none")]
+    {
+        let mut count = 0u64;
+        for bus in 0..=255u16 {
+            for slot in 0..32u8 {
+                let address = ((bus as u32) << 16) | ((slot as u32) << 11) | 0x80000000u32;
+                unsafe {
+                    core::arch::asm!(
+                        "out dx, eax",
+                        in("dx") 0xCF8u16,
+                        in("eax") address,
+                        options(nomem, nostack, preserves_flags)
+                    );
+                    let value: u32;
+                    core::arch::asm!(
+                        "in eax, dx",
+                        out("eax") value,
+                        in("dx") 0xCFCu16,
+                        options(nomem, nostack, preserves_flags)
+                    );
+                    if (value & 0xFFFF) != 0xFFFF {
+                        count += 1;
+                    }
                 }
             }
         }
+        count
     }
-    count
 }
 
 static mut HOME_PATH_BUF: [u8; 32] = [0u8; 32];

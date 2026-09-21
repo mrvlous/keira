@@ -79,6 +79,28 @@ Core 2  0x2    AP    Online (Active)
 Core 3  0x3    AP    Online (Active)
 ```
 
+### `power` & `power acpi`
+Queries ACPI power management state, hardware watchdog, and motherboard ACPI MADT topology:
+```bash
+keira> power acpi
+ACPI Power Management & Hardware Watchdog:
+  ACPI State    : S0 (Working)
+  NMI Watchdog  : PETTED / ACTIVE [OK]
+
+Motherboard ACPI Hardware Topology:
+  RSDP Status   : Detected (ACPI 2.0+ / XSDT, OEM: BOCHS )
+  Local APIC    : 0xFEE00000
+  I/O APIC      : 0xFEC00000 (ID: 0, GSI Base: 0)
+  Discovered    : 4 Cores via MADT
+  Core 0 APIC ID: 0x0
+  Core 1 APIC ID: 0x1
+  Core 2 APIC ID: 0x2
+  Core 3 APIC ID: 0x3
+  ISO Mappings  : 2 Overrides
+    IRQ 0 -> GSI 2 (Flags: 0x0)
+    IRQ 9 -> GSI 9 (Flags: 0xD)
+```
+
 ### `watchpoint`
 Programs x86 hardware debug address registers (`DR0`-`DR3`) and debug control (`DR7`):
 ```bash

@@ -468,4 +468,154 @@ mod tests {
             BUFFER_LEN = 0;
         }
     }
+
+    #[test]
+    fn test_all_builtin_commands_help_dispatch() {
+        let all_cmds = [
+            "env",
+            "login",
+            "user",
+            "hostname",
+            "drives",
+            "use",
+            "ramdisk",
+            "system",
+            "cpu",
+            "smp",
+            "runtime",
+            "time",
+            "memory",
+            "devices",
+            "network",
+            "download",
+            "initrd",
+            "wipe",
+            "run",
+            "tasks",
+            "stop",
+            "disk",
+            "sync",
+            "list",
+            "go",
+            "view",
+            "write",
+            "create",
+            "folder",
+            "delete",
+            "edit",
+            "copy",
+            "help",
+            "history",
+            "move",
+            "search",
+            "protect",
+            "fileinfo",
+            "framebuffer",
+            "usb",
+            "https",
+            "drivers",
+            "lkm",
+            "unwind",
+            "watchpoint",
+            "power",
+            "perf",
+            "timer",
+            "syslog",
+            "kvm",
+            "nvme",
+            "ext4",
+            "cgroups",
+            "futex",
+            "bpf",
+            "tpm",
+            "swap",
+            "seccomp",
+            "epoll",
+            "eventfd",
+            "mac",
+            "mqueue",
+            "kill",
+            "jobs",
+            "fg",
+            "bg",
+            "lvm",
+            "raid",
+            "ipcs",
+            "ipcrm",
+            "iptables",
+            "firewall",
+            "service",
+            "kcc",
+        ];
+
+        for cmd in all_cmds {
+            let mut invocation = [0u8; 64];
+            let cmd_bytes = cmd.as_bytes();
+            invocation[..cmd_bytes.len()].copy_from_slice(cmd_bytes);
+            let suffix = b" --help";
+            invocation[cmd_bytes.len()..cmd_bytes.len() + suffix.len()].copy_from_slice(suffix);
+            let full_cmd =
+                core::str::from_utf8(&invocation[..cmd_bytes.len() + suffix.len()]).unwrap();
+            execute_command_inner(full_cmd);
+        }
+    }
+
+    #[test]
+    fn test_power_and_acpi_commands() {
+        execute_command_inner("power");
+        execute_command_inner("power acpi");
+        execute_command_inner("power --help");
+    }
+
+    #[test]
+    fn test_help_command() {
+        execute_command_inner("help");
+    }
+
+    #[test]
+    fn test_cpu_command() {
+        execute_command_inner("cpu");
+    }
+
+    #[test]
+    fn test_smp_command() {
+        execute_command_inner("smp");
+    }
+
+    #[test]
+    fn test_runtime_command() {
+        execute_command_inner("runtime");
+    }
+
+    #[test]
+    fn test_time_command() {
+        execute_command_inner("time");
+    }
+
+    #[test]
+    fn test_env_command() {
+        execute_command_inner("env");
+    }
+
+    #[test]
+    fn test_hostname_command() {
+        execute_command_inner("hostname");
+    }
+
+    #[test]
+    fn test_history_command() {
+        execute_command_inner("history");
+    }
+
+    #[test]
+    fn test_system_command() {
+        execute_command_inner("system");
+    }
+
+    #[test]
+    fn test_unknown_and_direct_executor() {
+        execute_command("unknown_kernel_cmd_test_xyz");
+        execute_command("help");
+        execute_command("power acpi");
+    }
 }

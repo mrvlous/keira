@@ -88,6 +88,7 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
 
     let mut initrd_start = 0u64;
     let mut initrd_end = 0u64;
+    let mut acpi_rsdp_ptr = 0u64;
     unsafe {
         let mut addr = multiboot_info_ptr + 8;
         loop {
@@ -106,6 +107,9 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
                 vga::FRAMEBUFFER_WIDTH = *((addr + 20) as *const u32);
                 vga::FRAMEBUFFER_HEIGHT = *((addr + 24) as *const u32);
                 vga::FRAMEBUFFER_BPP = *((addr + 28) as *const u8);
+            }
+            if tag_type == 14 || tag_type == 15 {
+                acpi_rsdp_ptr = (addr + 8) as u64;
             }
             addr += ((tag_size as usize) + 7) & !7;
         }
@@ -161,6 +165,14 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
             keira_crypto::tpm::TPM_MMIO_MAPPED = true;
         }
 
+        // Initialize ACPI table parser and discover motherboard APIC topology
+        if acpi_rsdp_ptr != 0 {
+            keira_arch::power::acpi::init_from_rsdp(acpi_rsdp_ptr);
+        } else {
+            keira_arch::power::acpi::init();
+        }
+        keira_arch::smp::init_smp();
+
         // Initialize TPM 2.0 security controller and baseline PCRs
         keira_crypto::tpm::init();
 
@@ -182,6 +194,10 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
 
         scheduler_init();
     }
+    vga::print_boot_log(
+        "Parsing ACPI MADT & discovering multi-core APIC topology",
+        0,
+    );
     vga::print_boot_log("Initializing TPM 2.0 Hardware Security Enclave & PCRs", 0);
     vga::print_boot_log("Performing Measured Boot: Kernel Image & Initrd Archive", 0);
     vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);

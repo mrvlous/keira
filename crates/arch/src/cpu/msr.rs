@@ -9,6 +9,7 @@
 
 //! Model Specific Registers (MSR) accessors and constants.
 
+#[cfg(target_os = "none")]
 use core::arch::asm;
 
 pub const IA32_APIC_BASE_MSR: u32 = 0x1B;
@@ -27,16 +28,31 @@ pub const IA32_PERF_STATUS_MSR: u32 = 0x198;
 /// Read a 64-bit Model Specific Register (MSR).
 #[inline(always)]
 pub unsafe fn rdmsr(msr: u32) -> u64 {
-    let low: u32;
-    let high: u32;
-    asm!("rdmsr", in("ecx") msr, out("eax") low, out("edx") high, options(nomem, nostack, preserves_flags));
-    ((high as u64) << 32) | (low as u64)
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = msr;
+        0
+    }
+    #[cfg(target_os = "none")]
+    {
+        let low: u32;
+        let high: u32;
+        asm!("rdmsr", in("ecx") msr, out("eax") low, out("edx") high, options(nomem, nostack, preserves_flags));
+        ((high as u64) << 32) | (low as u64)
+    }
 }
 
 /// Write a 64-bit Model Specific Register (MSR).
 #[inline(always)]
 pub unsafe fn wrmsr(msr: u32, val: u64) {
-    let low = val as u32;
-    let high = (val >> 32) as u32;
-    asm!("wrmsr", in("ecx") msr, in("eax") low, in("edx") high, options(nomem, nostack, preserves_flags));
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = (msr, val);
+    }
+    #[cfg(target_os = "none")]
+    {
+        let low = val as u32;
+        let high = (val >> 32) as u32;
+        asm!("wrmsr", in("ecx") msr, in("eax") low, in("edx") high, options(nomem, nostack, preserves_flags));
+    }
 }
