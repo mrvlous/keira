@@ -10,33 +10,14 @@
 ; Low-Level System Call Trampolines and User Mode Privilege Transitions (i686 32-Bit)
 
 global jump_to_user
-global user_rsp_temp
-global kernel_stack_temp
+global abort_user_mode
 global main_kernel_stack
-global user_rip_temp
-global user_rflags_temp
-global user_rbx_temp
-global user_rbp_temp
-global user_r12_temp
-global user_r13_temp
-global user_r14_temp
-global user_r15_temp
 
 extern syscall_dispatcher
 
 section .data
-align 8
-user_rsp_temp:     dq 0
-kernel_stack_temp: dq 0
-main_kernel_stack: dq 0
-user_rip_temp:     dq 0
-user_rflags_temp:  dq 0
-user_rbx_temp:     dq 0
-user_rbp_temp:     dq 0
-user_r12_temp:     dq 0
-user_r13_temp:     dq 0
-user_r14_temp:     dq 0
-user_r15_temp:     dq 0
+align 4
+main_kernel_stack: dd 0
 
 section .text
 bits 32
@@ -50,7 +31,6 @@ jump_to_user:
     push esi
     push edi
 
-    mov [kernel_stack_temp], esp
     mov [main_kernel_stack], esp
     cli
 
@@ -136,7 +116,6 @@ isr128:
     iretd
 
 .exit_user_mode:
-global abort_user_mode
 abort_user_mode:
     mov esp, [main_kernel_stack]
     mov ax, 0x10

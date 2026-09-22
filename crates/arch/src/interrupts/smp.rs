@@ -95,6 +95,8 @@ pub fn init_smp() {
 
         let bsp_apic_id = (apic::get_current_lapic_id() & 0xFF) as u8;
 
+        crate::cpu::percpu::init_percpu(0);
+
         // Register BSP (Bootstrap Processor)
         SMP_CORES[0] = Some(CpuCore {
             core_id: 0,
@@ -110,6 +112,7 @@ pub fn init_smp() {
             for i in 0..acpi_topo.core_count {
                 let target_apic_id = acpi_topo.cores[i].apic_id;
                 if target_apic_id != bsp_apic_id && registered < MAX_CORES {
+                    crate::cpu::percpu::init_percpu(registered);
                     send_init_ipi(target_apic_id);
                     send_startup_ipi(target_apic_id, 0x08);
                     send_startup_ipi(target_apic_id, 0x08);
@@ -152,6 +155,7 @@ pub fn init_smp() {
         for core_id in 1..detected_cores {
             let target_apic_id = core_id as u8;
             if target_apic_id != bsp_apic_id {
+                crate::cpu::percpu::init_percpu(core_id);
                 send_init_ipi(target_apic_id);
                 send_startup_ipi(target_apic_id, 0x08);
                 send_startup_ipi(target_apic_id, 0x08);

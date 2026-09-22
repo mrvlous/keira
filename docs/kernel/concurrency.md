@@ -128,3 +128,73 @@ sequenceDiagram
 The Ring 3 verification harness (`user/bin/test_abi/main.c`) validates SMP concurrency defenses through automated end-to-end tests:
 - **Test 38 (`Multi-process concurrent syscall & memory stress`)**: Spawns concurrent worker processes performing intensive heap expansions (`sbrk`), memory allocations, descriptor cloning (`dup`), and inter-process pipe transfers under preemptive timer slicing without data corruption.
 - **Test 39 (`Lock contention & non-blocking deadlock immunity`)**: Spawns contending worker processes on exclusive advisory file locks, verifying that `EACCES` is delivered without scheduler deadlock and non-blocking `WNOHANG` options return immediately.
+
+---
+
+## 7. Per-CPU Kernel Stacks & Race-Free `swapgs` Syscall Hardening
+
+In multi-core Symmetric Multiprocessing (SMP) systems, concurrent privilege transitions from Ring 3 userland into Ring 0 kernel space via the `syscall` instruction present severe re-entrancy challenges. If kernel trampolines rely on shared static memory in `.data` to stage registers or stack pointers, simultaneous syscall execution from multiple CPU cores clobbers stack frames and user state.
+
+Keira resolves this through hardware-assisted Model Specific Registers (MSRs) and per-CPU data structures:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Core0 as CPU Core 0 (Task A)
+    actor Core1 as CPU Core 1 (Task B)
+    participant MSR0 as Core 0 GS MSRs
+    participant MSR1 as Core 1 GS MSRs
+    participant CPU0 as Core 0 Stack (gs:[0x10])
+    participant CPU1 as Core 1 Stack (gs:[0x10])
+
+    par Concurrent Syscall
+        Core0->>MSR0: swapgs
+        Core1->>MSR1: swapgs
+    end
+    Note over MSR0,MSR1: Each core independently swaps GS to its dedicated PerCpu struct
+    par Private Stack Transition
+        Core0->>CPU0: mov rsp, [gs:0x10]
+        Core1->>CPU1: mov rsp, [gs:0x10]
+    end
+    Note over CPU0,CPU1: Completely isolated stack frames. Zero shared variables.
+```
+
+### Memory Layout & Cache-Line Alignment
+
+Each CPU core is assigned an independent, 64-byte cache-line aligned `PerCpu` descriptor defined in [`crates/arch/src/cpu/percpu.rs`](../../crates/arch/src/cpu/percpu.rs) and a dedicated 16 KiB page-aligned kernel stack:
+
+```rust
+#[repr(C, align(64))]
+pub struct PerCpu {
+    pub self_ptr: u64,          // 0x00: Pointer to &PerCpu
+    pub user_rsp_scratch: u64,  // 0x08: Staged user RSP
+    pub kernel_stack: u64,      // 0x10: Dedicated kernel stack top
+    pub main_stack: u64,        // 0x18: Saved kernel entry stack
+    pub core_id: u32,           // 0x20: Logical core ID (0..MAX_CORES-1)
+    pub syscall_depth: u32,     // 0x24: Re-entrancy depth
+    pub user_rip: u64,          // 0x28: Snapshot user RIP for fork()
+    pub user_rflags: u64,       // 0x30: Snapshot user RFLAGS
+    pub user_rbx: u64,          // 0x38: Snapshot user RBX
+    pub user_rbp: u64,          // 0x40: Snapshot user RBP
+    pub user_r12: u64,          // 0x48: Snapshot user R12
+    pub user_r13: u64,          // 0x50: Snapshot user R13
+    pub user_r14: u64,          // 0x58: Snapshot user R14
+    pub user_r15: u64,          // 0x60: Snapshot user R15
+    pub user_rsp: u64,          // 0x68: Snapshot user RSP for fork()
+    pub current_task_id: u64,   // 0x70: Active scheduler PID
+    pub reserved: [u64; 1],     // 0x78: Padding to 128 bytes (2 cache lines)
+}
+```
+
+### Transition Lifecycle
+
+1. **Privilege Demotion (`jump_to_user`)**:
+   - The kernel saves the caller's stack into `[gs:0x18]`.
+   - Before executing `iretq`, the CPU executes `swapgs`. Active `IA32_GS_BASE_MSR` (`0xC0000101`) is swapped with shadow `IA32_KERNEL_GS_BASE_MSR` (`0xC0000102`), leaving `PerCpu` in shadow MSR while user mode executes.
+2. **Fast Entry (`syscall_handler_asm`)**:
+   - The very first instruction executed on entry is `swapgs`.
+   - User `RSP` is parked into `[gs:0x08]`, and `RSP` is switched to `[gs:0x10]` (the core's private kernel stack).
+   - User register snapshots are written to `[gs:0x28]..[gs:0x68]` for query by [`fork_current_task`](../../crates/task/src/scheduler/mod.rs).
+3. **Atomic Return (`sysret`)**:
+   - General-purpose registers and user `RSP` are popped from the private kernel stack.
+   - The CPU executes `swapgs` to restore user GS and returns to Ring 3 via `o64 sysret`.

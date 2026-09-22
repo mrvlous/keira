@@ -40,5 +40,5 @@ graph TD
 | [`panic.md`](panic.md) | Kernel Panic Engine | Dual-architecture stack frame unwinding and formatted serial/VGA crash logging |
 | [`lkm.md`](lkm.md) | Loadable Kernel Modules | Module lifecycle states, dynamic symbol export, kallsyms, and Syscalls 34 & 35 |
 | [`kvm.md`](kvm.md) | KVM Hypervisor | Hardware Intel VMX / AMD SVM detection, guest vCPU execution, VM-exits, and Syscalls 42 & 43 |
-| [`concurrency.md`](concurrency.md) | SMP Concurrency & Deadlock Defense | Strict lock ranking hierarchy, CPUID recursion detection, interrupt inversion defense, and watchdog |
+| [`concurrency.md`](concurrency.md) | SMP Concurrency & Deadlock Defense | Strict lock ranking hierarchy, CPUID recursion detection, Per-CPU swapgs syscall stacks, and watchdog |
 | [`fuzzing.md`](fuzzing.md) | Syscall Fuzzing & Chaos Stress | High-throughput Syzkaller-Lite mutation strategy, boundary pools, 5-phase chaos stress, and zero-panic metrics |

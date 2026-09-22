@@ -18,17 +18,7 @@ use keira_mem::pmm;
 use keira_mem::vmm;
 
 extern "C" {
-    static mut kernel_stack_temp: u64;
     static mut main_kernel_stack: u64;
-    static mut user_rsp_temp: u64;
-    static mut user_rip_temp: u64;
-    static mut user_rflags_temp: u64;
-    static mut user_rbx_temp: u64;
-    static mut user_rbp_temp: u64;
-    static mut user_r12_temp: u64;
-    static mut user_r13_temp: u64;
-    static mut user_r14_temp: u64;
-    static mut user_r15_temp: u64;
     fn set_kernel_stack(sp0: usize);
     fn get_boot_kernel_stack() -> usize;
 }
@@ -447,36 +437,38 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
         let context_size = core::mem::size_of::<InterruptContext>() as u64;
         let child_context_ptr = (stack_top - context_size) as *mut InterruptContext;
 
-        (*child_context_ptr).r15 = user_r15_temp;
-        (*child_context_ptr).r14 = user_r14_temp;
-        (*child_context_ptr).r13 = user_r13_temp;
-        (*child_context_ptr).r12 = user_r12_temp;
+        let percpu = keira_arch::cpu::get_current_percpu();
+
+        (*child_context_ptr).r15 = percpu.user_r15;
+        (*child_context_ptr).r14 = percpu.user_r14;
+        (*child_context_ptr).r13 = percpu.user_r13;
+        (*child_context_ptr).r12 = percpu.user_r12;
         (*child_context_ptr).r11 = 0;
         (*child_context_ptr).r10 = 0;
         (*child_context_ptr).r9 = 0;
         (*child_context_ptr).r8 = 0;
         (*child_context_ptr).rdi = 0;
         (*child_context_ptr).rsi = 0;
-        (*child_context_ptr).rbp = user_rbp_temp;
-        (*child_context_ptr).rbx = user_rbx_temp;
+        (*child_context_ptr).rbp = percpu.user_rbp;
+        (*child_context_ptr).rbx = percpu.user_rbx;
         (*child_context_ptr).rdx = 0;
         (*child_context_ptr).rcx = 0;
         (*child_context_ptr).rax = 0; // In child process, fork() returns 0!
 
-        let child_rip = if user_rip_temp >= 0x10000 && user_rip_temp < 0x0000_8000_0000_0000 {
-            user_rip_temp
+        let child_rip = if percpu.user_rip >= 0x10000 && percpu.user_rip < 0x0000_8000_0000_0000 {
+            percpu.user_rip
         } else {
             0x0000_0000_4000_0000
         };
-        let child_rsp = if user_rsp_temp >= 0x10000 && user_rsp_temp < 0x0000_8000_0000_0000 {
-            user_rsp_temp
+        let child_rsp = if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0x0000_8000_0000_0000 {
+            percpu.user_rsp
         } else {
             0x0000_7FFF_FFFF_F000
         };
 
         (*child_context_ptr).rip = child_rip;
         (*child_context_ptr).cs = 0x2B; // User code selector (RPL=3)
-        (*child_context_ptr).rflags = (user_rflags_temp | 0x202) & !0x100; // IF=1, TF=0
+        (*child_context_ptr).rflags = (percpu.user_rflags | 0x202) & !0x100; // IF=1, TF=0
         (*child_context_ptr).rsp = child_rsp;
         (*child_context_ptr).ss = 0x23; // User data selector (RPL=3)
 
@@ -725,17 +717,17 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
 
                 vmm::switch_address_space(task.pml4_phys);
                 if task.stack_addr != 0 {
-                    kernel_stack_temp = task.stack_addr + pmm::PAGE_SIZE;
-                    set_kernel_stack(kernel_stack_temp as usize);
+                    let kstack = (task.stack_addr + pmm::PAGE_SIZE) as usize;
+                    set_kernel_stack(kstack);
                 } else {
                     let boot_stack = get_boot_kernel_stack();
-                    kernel_stack_temp = if boot_stack != 0 {
-                        boot_stack as u64
+                    let kstack = if boot_stack != 0 {
+                        boot_stack
                     } else {
-                        main_kernel_stack
+                        main_kernel_stack as usize
                     };
-                    if kernel_stack_temp != 0 {
-                        set_kernel_stack(kernel_stack_temp as usize);
+                    if kstack != 0 {
+                        set_kernel_stack(kstack);
                     }
                 }
 
@@ -753,13 +745,13 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
             CURRENT_TASK_IDX = 0;
             vmm::switch_address_space(main_task.pml4_phys);
             let boot_stack = get_boot_kernel_stack();
-            kernel_stack_temp = if boot_stack != 0 {
-                boot_stack as u64
+            let kstack = if boot_stack != 0 {
+                boot_stack
             } else {
-                main_kernel_stack
+                main_kernel_stack as usize
             };
-            if kernel_stack_temp != 0 {
-                set_kernel_stack(kernel_stack_temp as usize);
+            if kstack != 0 {
+                set_kernel_stack(kstack);
             }
             return main_task.rsp;
         }

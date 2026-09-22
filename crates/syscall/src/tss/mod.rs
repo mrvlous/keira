@@ -156,6 +156,8 @@ pub unsafe fn init_user_mode() {
         reload_gdt();
         load_tss();
         init_syscall_msrs();
+        keira_arch::cpu::percpu::init_percpu(0);
+        keira_arch::cpu::percpu::set_current_kernel_stack(BOOT_KERNEL_STACK_TOP as u64);
     }
 
     #[cfg(target_arch = "x86")]
@@ -177,12 +179,14 @@ pub unsafe fn init_user_mode() {
     }
 }
 
-/// Dynamically updates the TSS RSP0/ESP0 stack pointer loaded when switching from Ring 3 to Ring 0.
+/// Dynamically updates the TSS RSP0/ESP0 stack pointer and Per-CPU kernel stack
+/// loaded when switching from Ring 3 to Ring 0.
 #[no_mangle]
 pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
     #[cfg(target_arch = "x86_64")]
     {
         TSS.rsp0 = sp0 as u64;
+        keira_arch::cpu::percpu::set_current_kernel_stack(sp0 as u64);
     }
     #[cfg(target_arch = "x86")]
     {

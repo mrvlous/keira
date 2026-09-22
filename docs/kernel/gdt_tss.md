@@ -62,6 +62,8 @@ pub unsafe fn init_user_mode() -> Result<(), &'static str> {
     reload_gdt();
     load_tss();
     init_syscall_msrs();
+    init_percpu(0);
+    set_current_kernel_stack(TSS.rsp0);
 
     Ok(())
 }

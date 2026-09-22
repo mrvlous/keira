@@ -12,34 +12,14 @@
 global init_syscall_msrs
 global syscall_handler_asm
 global jump_to_user
-
-global user_rsp_temp
-global kernel_stack_temp
+global abort_user_mode
 global main_kernel_stack
-global user_rip_temp
-global user_rflags_temp
-global user_rbx_temp
-global user_rbp_temp
-global user_r12_temp
-global user_r13_temp
-global user_r14_temp
-global user_r15_temp
 
 extern syscall_dispatcher
 
 section .data
 align 8
-user_rsp_temp:     dq 0
-kernel_stack_temp: dq 0
 main_kernel_stack: dq 0
-user_rip_temp:     dq 0
-user_rflags_temp:  dq 0
-user_rbx_temp:     dq 0
-user_rbp_temp:     dq 0
-user_r12_temp:     dq 0
-user_r13_temp:     dq 0
-user_r14_temp:     dq 0
-user_r15_temp:     dq 0
 
 section .text
 bits 64
@@ -75,18 +55,11 @@ init_syscall_msrs:
 
 ; syscall_handler_asm - Direct entry handler for 64-bit `syscall` instructions
 syscall_handler_asm:
-    mov [rel user_rsp_temp], rsp
-    mov [rel user_rip_temp], rcx
-    mov [rel user_rflags_temp], r11
-    mov [rel user_rbx_temp], rbx
-    mov [rel user_rbp_temp], rbp
-    mov [rel user_r12_temp], r12
-    mov [rel user_r13_temp], r13
-    mov [rel user_r14_temp], r14
-    mov [rel user_r15_temp], r15
-    mov rsp, [rel kernel_stack_temp]
+    swapgs
+    mov [gs:0x08], rsp
+    mov rsp, [gs:0x10]
 
-    push qword [rel user_rsp_temp]
+    push qword [gs:0x08]
     push r11
     push rcx
     push rbp
@@ -95,6 +68,18 @@ syscall_handler_asm:
     push r13
     push r14
     push r15
+
+    mov [gs:0x28], rcx
+    mov [gs:0x30], r11
+    mov [gs:0x38], rbx
+    mov [gs:0x40], rbp
+    mov [gs:0x48], r12
+    mov [gs:0x50], r13
+    mov [gs:0x58], r14
+    mov r15, [rsp]
+    mov [gs:0x60], r15
+    mov r15, [gs:0x08]
+    mov [gs:0x68], r15
 
     push rdx
     push rsi
@@ -135,15 +120,18 @@ syscall_handler_asm:
     pop rbp
     pop rcx
     pop r11
-    pop qword [rel user_rsp_temp]
+    pop rsp
 
-    mov rsp, [rel user_rsp_temp]
+    swapgs
     o64 sysret
 
 .exit_user_mode:
-global abort_user_mode
 abort_user_mode:
+    mov rsp, [gs:0x18]
+    test rsp, rsp
+    jnz .stack_ok
     mov rsp, [rel main_kernel_stack]
+.stack_ok:
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -167,7 +155,7 @@ jump_to_user:
     push r14
     push r15
 
-    mov [rel kernel_stack_temp], rsp
+    mov [gs:0x18], rsp
     mov [rel main_kernel_stack], rsp
     cli
 
@@ -196,4 +184,5 @@ jump_to_user:
     xor r14, r14
     xor r15, r15
 
+    swapgs
     iretq

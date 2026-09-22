@@ -11,8 +11,10 @@
 
 pub mod instructions;
 pub mod msr;
+pub mod percpu;
 pub mod registers;
 
 pub use instructions::*;
 pub use msr::*;
+pub use percpu::*;
 pub use registers::*;
