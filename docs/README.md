@@ -20,11 +20,11 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | Domain Module | Path | Description |
 | :--- | :--- | :--- |
 | **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 6 |
-| **Kernel Core** | [`kernel/`](kernel/README.md) | Multiboot2, entry trampolines, GDT, TSS, IDT, APIC timers, HAL, and panic |
+| **Kernel Core** | [`kernel/`](kernel/README.md) | Multiboot2, SMP bootstrap trampolines, GDT, TSS, IDT, Local/IO-APIC, HPET, ACPI, and panic |
 | **Memory** | [`memory/`](memory/README.md) | Physical frame allocator (PMM), 4-level paging (VMM), heap, DMA, and swap |
 | **Task & Scheduling** | [`task/`](task/README.md) | Preemptive scheduler, context switching, task descriptors, cgroups, and signals |
 | **System Calls** | [`syscall/`](syscall/README.md) | System call vector table, dispatcher ABI, and validated user copying |
-| **IPC** | [`ipc/`](ipc/README.md) | Anonymous pipes, zero-copy splice, shared memory, futex, eventfd, epoll, and mqueue |
+| **IPC** | [`ipc/`](ipc/README.md) | Anonymous pipes, zero-copy splice, shared memory, futex, eventfd, epoll, mqueue, and io_uring |
 | **Filesystems** | [`fs/`](fs/README.md) | Virtual Filesystem (VFS), FAT12/16/32, EXT4, USTAR initrd, LVM/RAID, and sector caching |
 | **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, PCI/USB, and TTYs |
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3, and firewall |

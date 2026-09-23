@@ -31,3 +31,4 @@ sequenceDiagram
 1. **Multiboot2 Compliance**: Implemented compliant 64-bit and 32-bit Multiboot2 headers supporting memory maps, linear framebuffers, and initrd boot modules.
 2. **Long Mode Transition**: Configured 4-level page tables (PML4, PDPT, PD, PT) with 2MB huge pages to map the kernel seamlessly into higher-half virtual memory.
 3. **Interrupt Vector Table**: Initialized IDT with 256 vector gates, capturing double faults, general protection faults, and hardware IRQs without triple faults.
+4. **Multi-Core SMP Bootstrap**: Deployed 16-bit real-mode bootstrap trampolines at reserved physical address `0x8000`, waking secondary AP cores via Local APIC `INIT-SIPI-SIPI` signals and synchronizing execution via dynamic parameter blocks.

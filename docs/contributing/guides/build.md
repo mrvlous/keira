@@ -41,7 +41,8 @@ graph LR
 * `make preflight-format`: Validates presence of code formatting utilities (`cargo`, `clang-format`).
 * `make preflight-lint`: Validates presence of static analysis utilities (`clang-tidy`).
 * `make check`: Full diagnostic checklist of all 15 build, emulation, formatting, and linting tools with copy-paste installation commands on missing items.
-* `make run`: Boots active `ARCH` in QEMU with AHCI SATA, IDE, HDA sound, and COM1 serial output (triggers `preflight-qemu`).
+* `make run`: Boots active `ARCH` in QEMU with AHCI SATA, IDE, HDA sound, multi-core SMP (`-smp 2`), and COM1 serial output (triggers `preflight-qemu`).
+* `make run SMP=4`: Boots active `ARCH` in QEMU with 4-core Symmetric Multiprocessing enabled.
 * `make run-32`: Boots pure 32-bit `i686` kernel in QEMU.
 * `make test`: Runs automated headless QEMU smoke test for current architecture.
 * `make test-all`: Runs headless automated test harness across all target architectures.

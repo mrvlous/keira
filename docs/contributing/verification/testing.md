@@ -51,7 +51,7 @@ The 20-cycle automated stress test verifies that repeated execution of kernel co
 
 ## 4. Ring 3 Syscall Security & Fault Harness (`test_abi.elf`)
 
-The ABI verification suite exercises 40 distinct security, memory isolation, process orchestration, signal delivery, file descriptor management, and fault-containment tests:
+The ABI verification suite exercises 42 distinct security, memory isolation, process orchestration, signal delivery, file descriptor management, asynchronous I/O, and fault-containment tests across both `x86_64` and `i686`:
 
 ```bash
 run /system/bin/test_abi.elf
@@ -63,6 +63,8 @@ Key verification domains:
 * **POSIX Signals & Restorers**: Tests `sigaction`, `sigreturn`, `sigprocmask`, and `sigpending` delivery integrity.
 * **Hardware Exception Containment**: Traps `#UD` (SIGILL), `#DE` (SIGFPE), and `#PF` (SIGSEGV) safely in child processes with automated persistent core dump generation (`/data/log/core_<PID>.dmp`).
 * **VMM Demand Paging & msync**: Confirms lazy allocation via `#PF` and disk persistence synchronization.
+* **Asynchronous I/O Engine**: Exercises bare-metal `io_uring` submission queue (SQ) and completion queue (CQ) processing for `IORING_OP_NOP` and `IORING_OP_FSYNC`.
+* **High-Precision Monotonic Clock**: Validates sub-nanosecond monotonic timing and delta consistency via `clock_gettime(CLOCK_MONOTONIC)` and `clock_gettime_fast`.
 
 ---
 

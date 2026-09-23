@@ -198,3 +198,7 @@ pub struct PerCpu {
 3. **Atomic Return (`sysret`)**:
    - General-purpose registers and user `RSP` are popped from the private kernel stack.
    - The CPU executes `swapgs` to restore user GS and returns to Ring 3 via `o64 sysret`.
+
+### SMP Application Processor (AP) Bringup & MSR Setup
+
+During multi-core bootstrap, the Bootstrap Processor (BSP) initializes `PER_CPU_DATA[core_id]` before dispatching the `INIT-SIPI-SIPI` sequence. Upon waking from the 16-bit real-mode trampoline at `0x8000` and transitioning into 64-bit Long Mode (documented in [`boot.md`](boot.md)), each secondary AP core executes `load_percpu_msrs(core_id)` within `ap_main` to program its local `IA32_GS_BASE_MSR` and `IA32_KERNEL_GS_BASE_MSR`, guaranteeing that every online core possesses an isolated, race-free syscall re-entrancy context prior to executing any scheduler or user tasks.
