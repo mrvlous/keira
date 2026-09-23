@@ -129,6 +129,7 @@ struct io_uring {
     struct io_uring_params params;
     struct io_uring_sqe *sqes;
     struct io_uring_cqe *cqes;
+    uint32_t sq_head;
     uint32_t sq_tail;
     uint32_t cq_head;
 };

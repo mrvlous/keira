@@ -62,12 +62,14 @@ sequenceDiagram
     BSP->>APIC: Assert INIT IPI (Delivery Mode 0b101, Level Assert)
     APIC-->>AP: Enter INIT Reset State
     BSP->>APIC: De-assert INIT IPI (Level De-assert)
-    BSP->>APIC: Startup IPI #1 (SIPI, Vector = Trampoline Page)
-    APIC-->>AP: Begin Real-Mode Execution at Trampoline Page
-    opt If AP Not Online
-        BSP->>APIC: Startup IPI #2 (SIPI Retry)
+    BSP->>APIC: Startup IPI #1 (SIPI, Vector 0x08 -> 0x8000)
+    APIC-->>AP: Begin Real-Mode Execution at 0x8000
+    Note over AP: Real Mode -> PM32 -> Long Mode (x86_64)<br/>Load Stack & CR3 from Parameter Block
+    AP->>AP: Call ap_main(core_id) & Set ap_status_flag=1
+    opt If AP Not Online within 10ms
+        BSP->>APIC: Startup IPI #2 (SIPI Retry, Vector 0x08)
     end
-    AP-->>BSP: Set CoreStatus::Online
+    AP-->>BSP: CoreStatus::Online confirmed
 ```
 
 ### ICR Register Configuration:

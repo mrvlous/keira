@@ -11,9 +11,50 @@
 
 use crate::cpu::invlpg;
 use crate::interrupts::apic;
+#[cfg(target_os = "none")]
 use crate::power::acpi;
 
 pub const MAX_CORES: usize = 16;
+pub const AP_TRAMPOLINE_PHYS: usize = 0x8000;
+
+#[cfg(target_os = "none")]
+extern "C" {
+    static ap_trampoline_start: u8;
+    static ap_trampoline_end: u8;
+    static mut ap_cr3_val: usize;
+    static mut ap_stack_val: usize;
+    static mut ap_entry_val: usize;
+    static mut ap_core_id: usize;
+    static mut ap_status_flag: usize;
+    #[cfg(target_arch = "x86_64")]
+    fn reload_gdt();
+}
+
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static ap_trampoline_start: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static ap_trampoline_end: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static mut ap_cr3_val: usize = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static mut ap_stack_val: usize = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static mut ap_entry_val: usize = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static mut ap_core_id: usize = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals, dead_code)]
+static mut ap_status_flag: usize = 0;
+
+#[cfg(all(not(target_os = "none"), target_arch = "x86_64"))]
+#[allow(dead_code)]
+unsafe fn reload_gdt() {}
 
 /// Operational status of a physical or logical CPU core.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -36,54 +77,109 @@ pub static mut SMP_CORES: [Option<CpuCore>; MAX_CORES] = [None; MAX_CORES];
 pub static mut SMP_CORES_COUNT: usize = 1;
 pub static mut SMP_INITIALIZED: bool = false;
 
-/// Send an Inter-Processor Interrupt (IPI) to a specific target APIC CPU core.
-pub fn send_ipi(dest_apic_id: u8, vector: u8) {
-    unsafe {
-        // ICR High: Destination Field (bits 24..31)
-        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, (dest_apic_id as u32) << 24);
-        // ICR Low: Delivery Mode Fixed (0), Edge Triggered (0), Vector (bits 0..7)
-        apic::write_reg(apic::LAPIC_ICR_LOW_REG, vector as u32);
+/// Retrieve the total number of currently online CPU cores.
+pub fn get_online_cores_count() -> usize {
+    unsafe { SMP_CORES_COUNT }
+}
+
+/// Retrieve the metadata structure of a specific initialized CPU core.
+pub fn get_core_info(index: usize) -> Option<CpuCore> {
+    if index >= MAX_CORES {
+        None
+    } else {
+        unsafe { SMP_CORES[index] }
     }
 }
 
-/// Send an INIT IPI to target APIC core for hardware initialization.
-pub fn send_init_ipi(dest_apic_id: u8) {
+/// Send Inter-Processor Interrupt (IPI) to a specific target Local APIC.
+pub fn send_ipi(target_apic_id: u8, vector: u8) {
     unsafe {
-        // ICR High: Destination Field
-        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, (dest_apic_id as u32) << 24);
-        // ICR Low: Delivery Mode = 5 (INIT), Assert = 1 (Level=1), Trigger = Edge (0)
-        apic::write_reg(apic::LAPIC_ICR_LOW_REG, 0x0000_4500);
-
-        let mut timeout = 10_000;
-        while (apic::read_reg(apic::LAPIC_ICR_LOW_REG) & (1 << 12)) != 0 && timeout > 0 {
-            core::hint::spin_loop();
-            timeout -= 1;
-        }
-
-        // De-assert INIT
-        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, (dest_apic_id as u32) << 24);
-        apic::write_reg(apic::LAPIC_ICR_LOW_REG, 0x0000_0500);
+        let icr_high = (target_apic_id as u32) << 24;
+        let icr_low = (vector as u32) | (0 << 8) | (0 << 11);
+        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
+        apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
     }
 }
 
-/// Send a Startup IPI (SIPI) with the real-mode trampoline page address.
-pub fn send_startup_ipi(dest_apic_id: u8, vector_page: u8) {
+/// Send INIT Inter-Processor Interrupt (IPI) to reset an Application Processor (AP).
+pub fn send_init_ipi(target_apic_id: u8) {
     unsafe {
-        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, (dest_apic_id as u32) << 24);
-        // Delivery Mode = 6 (Startup), Vector = vector_page
-        apic::write_reg(apic::LAPIC_ICR_LOW_REG, 0x0000_0600 | (vector_page as u32));
+        let icr_high = (target_apic_id as u32) << 24;
+        let icr_low = 0x0000_4500;
+        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
+        apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
+    }
+}
 
-        let mut timeout = 10_000;
-        while (apic::read_reg(apic::LAPIC_ICR_LOW_REG) & (1 << 12)) != 0 && timeout > 0 {
-            core::hint::spin_loop();
-            timeout -= 1;
-        }
+/// Send Startup Inter-Processor Interrupt (SIPI) to begin AP execution at `vector * 0x1000`.
+pub fn send_startup_ipi(target_apic_id: u8, vector: u8) {
+    unsafe {
+        let icr_high = (target_apic_id as u32) << 24;
+        let icr_low = 0x0000_4600 | (vector as u32);
+        apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
+        apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
     }
 }
 
 /// Execute cross-core TLB Shootdown to invalidate page address across all CPU cores.
 pub fn tlb_shootdown(vaddr: u64) {
     invlpg(vaddr as usize);
+}
+
+/// Application Processor (AP) kernel main entry point and idle worker loop.
+///
+/// # Safety
+/// Invoked on a secondary CPU core after the real-mode trampoline transitions
+/// the core into 64-bit Long Mode (x86_64) or 32-bit Protected Mode (i686).
+#[no_mangle]
+pub unsafe extern "C" fn ap_main(core_id: usize) -> ! {
+    #[cfg(target_os = "none")]
+    {
+        // 1. Enable Local APIC on this core
+        apic::enable_lapic();
+
+        // 2. Load the global Interrupt Descriptor Table into IDTR
+        crate::interrupts::idt::load_current_idt();
+
+        #[cfg(target_arch = "x86_64")]
+        {
+            // 3. Reload full 64-bit kernel GDT
+            reload_gdt();
+        }
+
+        // 4. Configure Per-CPU GS Base MSR for race-free swapgs syscall re-entrancy
+        crate::cpu::percpu::init_percpu(core_id);
+
+        // 5. Update core status to Online
+        if core_id < MAX_CORES {
+            if let Some(ref mut core) = SMP_CORES[core_id] {
+                core.status = CoreStatus::Online;
+            }
+        }
+
+        // 6. Signal the Bootstrap Processor (BSP) via the trampoline parameter block
+        let start_addr = core::ptr::addr_of!(ap_trampoline_start) as usize;
+        let offset_flag = (core::ptr::addr_of!(ap_status_flag) as usize) - start_addr;
+        let param_flag = (AP_TRAMPOLINE_PHYS + offset_flag) as *mut usize;
+        core::ptr::write_volatile(param_flag, 1);
+
+        // 7. Enable hardware interrupts on this AP core
+        core::arch::asm!("sti", options(nomem, nostack, preserves_flags));
+
+        // 8. Enter low-power AP idle loop waiting for scheduler IPIs or timer ticks
+        loop {
+            core::hint::spin_loop();
+            core::arch::asm!("hlt", options(nomem, nostack, preserves_flags));
+        }
+    }
+
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = core_id;
+        loop {
+            core::hint::spin_loop();
+        }
+    }
 }
 
 /// Initialize SMP subsystem and discover physical/logical CPU cores via ACPI MADT (or CPUID fallback).
@@ -105,95 +201,192 @@ pub fn init_smp() {
             status: CoreStatus::Online,
         });
 
-        let acpi_topo = acpi::get_acpi_topology();
-        if acpi_topo.madt_found && acpi_topo.core_count > 0 {
-            // Hardware ACPI MADT topology discovery
-            let mut registered = 1;
-            for i in 0..acpi_topo.core_count {
-                let target_apic_id = acpi_topo.cores[i].apic_id;
-                if target_apic_id != bsp_apic_id && registered < MAX_CORES {
-                    crate::cpu::percpu::init_percpu(registered);
-                    send_init_ipi(target_apic_id);
-                    send_startup_ipi(target_apic_id, 0x08);
-                    send_startup_ipi(target_apic_id, 0x08);
+        #[cfg(target_os = "none")]
+        {
+            // 1. Copy real-mode trampoline code into physical address 0x8000
+            let start_addr = core::ptr::addr_of!(ap_trampoline_start) as usize;
+            let end_addr = core::ptr::addr_of!(ap_trampoline_end) as usize;
+            let trampoline_len = end_addr - start_addr;
 
+            core::ptr::copy_nonoverlapping(
+                start_addr as *const u8,
+                AP_TRAMPOLINE_PHYS as *mut u8,
+                trampoline_len,
+            );
+
+            // 2. Compute dynamic parameter offsets relative to 0x8000
+            let offset_cr3 = (core::ptr::addr_of!(ap_cr3_val) as usize) - start_addr;
+            let offset_stack = (core::ptr::addr_of!(ap_stack_val) as usize) - start_addr;
+            let offset_entry = (core::ptr::addr_of!(ap_entry_val) as usize) - start_addr;
+            let offset_core_id = (core::ptr::addr_of!(ap_core_id) as usize) - start_addr;
+            let offset_flag = (core::ptr::addr_of!(ap_status_flag) as usize) - start_addr;
+
+            let param_cr3 = (AP_TRAMPOLINE_PHYS + offset_cr3) as *mut usize;
+            let param_stack = (AP_TRAMPOLINE_PHYS + offset_stack) as *mut usize;
+            let param_entry = (AP_TRAMPOLINE_PHYS + offset_entry) as *mut usize;
+            let param_core_id = (AP_TRAMPOLINE_PHYS + offset_core_id) as *mut usize;
+            let param_flag = (AP_TRAMPOLINE_PHYS + offset_flag) as *mut usize;
+
+            // Populate active CR3 root and Rust entrypoint function pointer
+            #[cfg(target_arch = "x86_64")]
+            let cr3_val = {
+                let mut cr3: u64;
+                core::arch::asm!("mov {}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
+                cr3 as usize
+            };
+            #[cfg(target_arch = "x86")]
+            let cr3_val = {
+                let mut cr3: u32;
+                core::arch::asm!("mov {:e}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
+                cr3 as usize
+            };
+
+            core::ptr::write_volatile(param_cr3, cr3_val);
+            core::ptr::write_volatile(param_entry, ap_main as *const () as usize);
+
+            let acpi_topo = acpi::get_acpi_topology();
+            if acpi_topo.madt_found && acpi_topo.core_count > 0 {
+                // Hardware ACPI MADT topology discovery
+                let mut registered = 1;
+                for i in 0..acpi_topo.core_count {
+                    let target_apic_id = acpi_topo.cores[i].apic_id;
+                    if target_apic_id != bsp_apic_id && registered < MAX_CORES {
+                        SMP_CORES[registered] = Some(CpuCore {
+                            core_id: registered as u8,
+                            apic_id: target_apic_id,
+                            is_bsp: false,
+                            status: CoreStatus::Booting,
+                        });
+
+                        let stack_top = (core::ptr::addr_of!(
+                            crate::cpu::percpu::PER_CPU_STACKS[registered].stack
+                        ) as usize)
+                            + crate::cpu::percpu::PER_CPU_STACK_SIZE;
+
+                        core::ptr::write_volatile(param_stack, stack_top);
+                        core::ptr::write_volatile(param_core_id, registered);
+                        core::ptr::write_volatile(param_flag, 0);
+
+                        crate::cpu::percpu::init_percpu_data(registered);
+
+                        // INIT-SIPI-SIPI sequence
+                        send_init_ipi(target_apic_id);
+                        crate::timers::hpet::delay_millis(10);
+                        send_startup_ipi(target_apic_id, 0x08);
+
+                        let mut online = false;
+                        for _ in 0..100 {
+                            crate::timers::hpet::delay_micros(100);
+                            if core::ptr::read_volatile(param_flag) == 1 {
+                                online = true;
+                                break;
+                            }
+                        }
+
+                        if !online {
+                            send_startup_ipi(target_apic_id, 0x08);
+                            for _ in 0..200 {
+                                crate::timers::hpet::delay_micros(100);
+                                if core::ptr::read_volatile(param_flag) == 1 {
+                                    online = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if online {
+                            if let Some(ref mut core) = SMP_CORES[registered] {
+                                core.status = CoreStatus::Online;
+                            }
+                        } else if let Some(ref mut core) = SMP_CORES[registered] {
+                            core.status = CoreStatus::Offline;
+                        }
+                        registered += 1;
+                    }
+                }
+                SMP_CORES_COUNT = registered;
+                SMP_INITIALIZED = true;
+                return;
+            }
+
+            // Fallback: Query CPU topology from CPUID Leaf 1 when ACPI is not present
+            #[cfg(target_arch = "x86_64")]
+            let leaf1 = core::arch::x86_64::__cpuid(1);
+            #[cfg(target_arch = "x86")]
+            let leaf1 = core::arch::x86::__cpuid(1);
+
+            let max_logical_cores = ((leaf1.ebx >> 16) & 0xFF) as usize;
+            let detected_cores = if max_logical_cores > 0 && max_logical_cores <= MAX_CORES {
+                max_logical_cores
+            } else {
+                1
+            };
+
+            let mut registered = 1;
+            for core_id in 1..detected_cores {
+                let target_apic_id = core_id as u8;
+                if target_apic_id != bsp_apic_id && registered < MAX_CORES {
                     SMP_CORES[registered] = Some(CpuCore {
                         core_id: registered as u8,
                         apic_id: target_apic_id,
                         is_bsp: false,
-                        status: CoreStatus::Online,
+                        status: CoreStatus::Booting,
                     });
+
+                    let stack_top =
+                        (core::ptr::addr_of!(crate::cpu::percpu::PER_CPU_STACKS[registered].stack)
+                            as usize)
+                            + crate::cpu::percpu::PER_CPU_STACK_SIZE;
+
+                    core::ptr::write_volatile(param_stack, stack_top);
+                    core::ptr::write_volatile(param_core_id, registered);
+                    core::ptr::write_volatile(param_flag, 0);
+
+                    crate::cpu::percpu::init_percpu_data(registered);
+
+                    send_init_ipi(target_apic_id);
+                    crate::timers::hpet::delay_millis(10);
+                    send_startup_ipi(target_apic_id, 0x08);
+
+                    let mut online = false;
+                    for _ in 0..100 {
+                        crate::timers::hpet::delay_micros(100);
+                        if core::ptr::read_volatile(param_flag) == 1 {
+                            online = true;
+                            break;
+                        }
+                    }
+
+                    if !online {
+                        send_startup_ipi(target_apic_id, 0x08);
+                        for _ in 0..200 {
+                            crate::timers::hpet::delay_micros(100);
+                            if core::ptr::read_volatile(param_flag) == 1 {
+                                online = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if online {
+                        if let Some(ref mut core) = SMP_CORES[registered] {
+                            core.status = CoreStatus::Online;
+                        }
+                    } else if let Some(ref mut core) = SMP_CORES[registered] {
+                        core.status = CoreStatus::Offline;
+                    }
                     registered += 1;
                 }
             }
+
             SMP_CORES_COUNT = registered;
             SMP_INITIALIZED = true;
-            return;
         }
 
-        // Fallback: Query CPU topology from CPUID Leaf 1 when ACPI is not present
-        #[cfg(target_arch = "x86_64")]
-        let leaf1 = core::arch::x86_64::__cpuid(1);
-        #[cfg(target_arch = "x86")]
-        let leaf1 = core::arch::x86::__cpuid(1);
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-        let leaf1 = core::arch::x86_64::CpuidResult {
-            eax: 0,
-            ebx: 0,
-            ecx: 0,
-            edx: 0,
-        };
-
-        let max_logical_cores = ((leaf1.ebx >> 16) & 0xFF) as usize;
-        let detected_cores = if max_logical_cores > 0 && max_logical_cores <= MAX_CORES {
-            max_logical_cores
-        } else {
-            1
-        };
-
-        // Bootstrap detected secondary AP cores via INIT-SIPI-SIPI sequence
-        for core_id in 1..detected_cores {
-            let target_apic_id = core_id as u8;
-            if target_apic_id != bsp_apic_id {
-                crate::cpu::percpu::init_percpu(core_id);
-                send_init_ipi(target_apic_id);
-                send_startup_ipi(target_apic_id, 0x08);
-                send_startup_ipi(target_apic_id, 0x08);
-
-                SMP_CORES[core_id] = Some(CpuCore {
-                    core_id: core_id as u8,
-                    apic_id: target_apic_id,
-                    is_bsp: false,
-                    status: CoreStatus::Online,
-                });
-            }
-        }
-
-        SMP_CORES_COUNT = detected_cores;
-        SMP_INITIALIZED = true;
-    }
-}
-
-/// Retrieve the number of active CPU cores.
-pub fn get_online_cores_count() -> usize {
-    unsafe {
-        if !SMP_INITIALIZED {
-            init_smp();
-        }
-        SMP_CORES_COUNT
-    }
-}
-
-/// Retrieve information about a specific core.
-pub fn get_core_info(idx: usize) -> Option<CpuCore> {
-    unsafe {
-        if !SMP_INITIALIZED {
-            init_smp();
-        }
-        if idx < MAX_CORES {
-            SMP_CORES[idx]
-        } else {
-            None
+        #[cfg(not(target_os = "none"))]
+        {
+            SMP_CORES_COUNT = 1;
+            SMP_INITIALIZED = true;
         }
     }
 }

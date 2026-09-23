@@ -72,6 +72,7 @@ ifeq ($(ARCH),i686)
     QEMU        := qemu-system-i386
     ASM_SRCS    := arch/x86/common/boot/multiboot2_header.asm \
                    arch/x86/i686/boot/entry.asm \
+                   arch/x86/i686/boot/ap_trampoline.asm \
                    arch/x86/i686/kernel/gdt.asm \
                    arch/x86/i686/kernel/idt.asm \
                    arch/x86/i686/kernel/isr.asm \
@@ -92,6 +93,7 @@ else
     ASM_SRCS    := arch/x86/common/boot/multiboot2_header.asm \
                    arch/x86/x86_64/boot/entry32.asm \
                    arch/x86/x86_64/boot/entry64.asm \
+                   arch/x86/x86_64/boot/ap_trampoline.asm \
                    arch/x86/x86_64/kernel/gdt.asm \
                    arch/x86/x86_64/kernel/paging.asm \
                    arch/x86/x86_64/kernel/idt.asm \
@@ -103,8 +105,10 @@ else
                    -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
                    -Iuser/include
     USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
-                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie
+                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 endif
+
+SMP             ?= 2
 
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS        := $(ASM_OBJS)
@@ -135,6 +139,7 @@ USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
+                   -smp $(SMP) \
                    -device ahci,id=ahci0 \
                    -drive file=$(DISK_IMG),format=raw,id=sata0,if=none \
                    -device ide-hd,drive=sata0,bus=ahci0.0 \

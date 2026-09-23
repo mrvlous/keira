@@ -112,8 +112,10 @@ Offset 4: 64-bit Local APIC Physical Address (8 bytes)
 Before initializing secondary Application Processors (APs), `init_smp()` queries the parsed ACPI topology (`acpi::get_acpi_topology()`):
 
 1. **Bootstrap Processor (BSP)**: Detects the active core via Local APIC ID register (`apic::get_current_lapic_id()`) and registers it at `SMP_CORES[0]`.
-2. **Application Processors (APs)**: For each core in the MADT record list whose `apic_id != bsp_apic_id`, Keira broadcasts the standard INIT-SIPI-SIPI sequence to `target_apic_id`.
-3. **Fallback Mode**: If booting on an ancient architecture or a minimal VM where ACPI is absent, the kernel transparently falls back to CPUID Leaf 1 enumeration without panicking.
+2. **Real-Mode Trampoline Deployment**: Copies the 16-bit real-mode bootstrap trampoline to reserved physical page `0x8000` and configures the parameter block (`CR3`, per-CPU stack, entrypoint pointer, logical core ID).
+3. **Application Processors (APs)**: For each core in the MADT record list whose `apic_id != bsp_apic_id`, Keira dispatches the hardware `INIT-SIPI-SIPI` sequence to `target_apic_id` targeting page `0x08` (`0x8000`).
+4. **Synchronization Handshake**: Waits up to 30ms via HPET microsecond timers for the AP to transition into 64-bit Long Mode (or 32-bit Protected Mode on i686) and set `ap_status_flag = 1`.
+5. **Fallback Mode**: If booting on an ancient architecture or a minimal VM where ACPI is absent, the kernel transparently falls back to CPUID Leaf 1 enumeration without panicking.
 
 ---
 

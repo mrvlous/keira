@@ -221,8 +221,13 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
   [INFO] Lock contention correctly rejected with EACCES without scheduler deadlock
   [OK]   Lock contention & non-blocking deadlock immunity verified
   [TEST] Automated syscall boundary fuzzing (1,000 rapid mutated vectors)...
-  [INFO] 1,000 mutated vectors executed without triggering unhandled exceptions
+  [INFO] 1,000 mutated vectors executed (errors handled: 575, success: 284)
   [OK]   Automated syscall boundary fuzzing & Syzkaller-Lite smoke test verified
+  [TEST] Bare-metal io_uring asynchronous engine & ABI lifecycle...
+  [OK]   Bare-metal io_uring asynchronous engine verified
+  [TEST] High-precision monotonic clock & timer precision (clock_gettime)...
+  [INFO] Monotonic clock delta: 373890 ns, fast clock delta: 269250 ns (acc=1249975000)
+  [OK]   High-precision monotonic clock & timer precision verified
 
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.

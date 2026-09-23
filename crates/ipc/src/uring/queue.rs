@@ -126,6 +126,7 @@ pub struct IoSqringOffsets {
     pub array: u32,
     pub resv1: u32,
     pub user_addr: u64,
+    pub pad: [u64; 2],
 }
 
 /// Offsets structure for Completion Queue memory layout.
@@ -141,6 +142,7 @@ pub struct IoCqringOffsets {
     pub flags: u32,
     pub resv1: u32,
     pub user_addr: u64,
+    pub pad: [u64; 2],
 }
 
 /// Parameters passed to and returned from `io_uring_setup`.
@@ -336,7 +338,9 @@ pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str
             (*params).sq_off.flags = 16;
             (*params).sq_off.dropped = 20;
             (*params).sq_off.array = 24;
+            (*params).sq_off.resv1 = 0;
             (*params).sq_off.user_addr = core::ptr::addr_of!(ring.sqes) as u64;
+            (*params).sq_off.pad = [0; 2];
 
             (*params).cq_off.head = 0;
             (*params).cq_off.tail = 4;
@@ -345,7 +349,30 @@ pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str
             (*params).cq_off.overflow = 16;
             (*params).cq_off.cqes = 20;
             (*params).cq_off.flags = 24;
+            (*params).cq_off.resv1 = 0;
             (*params).cq_off.user_addr = core::ptr::addr_of!(ring.cqes) as u64;
+            (*params).cq_off.pad = [0; 2];
+
+            #[cfg(target_os = "none")]
+            {
+                let page_size = keira_mem::pmm::PAGE_SIZE as usize;
+                let ring_start = (core::ptr::addr_of!(RINGS) as usize) & !(page_size - 1);
+                let ring_end = (core::ptr::addr_of!(RINGS) as usize
+                    + core::mem::size_of_val(&RINGS)
+                    + page_size
+                    - 1)
+                    & !(page_size - 1);
+                for page in (ring_start..ring_end).step_by(page_size) {
+                    let _ = keira_mem::vmm::map_page(
+                        page as u64,
+                        page as u64,
+                        keira_mem::vmm::PAGE_USER
+                            | keira_mem::vmm::PAGE_WRITABLE
+                            | keira_mem::vmm::PAGE_PRESENT,
+                    );
+                    keira_arch::cpu::invlpg(page);
+                }
+            }
         }
 
         Ok(slot_idx as u64)

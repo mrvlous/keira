@@ -15,7 +15,7 @@ use super::user_copy::{
 };
 use keira_fs::elf::loader::load_elf;
 use keira_fs::vfs::{create_file, exists, read_file, resolve_alias_path, write_file};
-use keira_io::vga;
+use keira_io::{serial, vga};
 use keira_mem::pmm;
 use keira_mem::vmm;
 use keira_task::scheduler::{
@@ -40,7 +40,7 @@ pub fn validate_fd(fd: i32) -> Result<(), i64> {
 #[cfg(target_arch = "x86_64")]
 pub const HEAP_MAX_VADDR: u64 = 0x7000_0000_0000;
 #[cfg(target_arch = "x86")]
-pub const HEAP_MAX_VADDR: u64 = 0x4000_0000;
+pub const HEAP_MAX_VADDR: u64 = 0x0400_0000;
 
 /// Kernel-wide resource cleanup hook for exiting or reaped processes.
 /// Automatically closes orphaned sockets and purges stale futex wait slots.
@@ -480,11 +480,13 @@ fn syscall_dispatcher_inner(
                     }
                     if let Ok(s) = core::str::from_utf8(&chunk[..to_read]) {
                         vga::print_str(s);
+                        serial::print_str(s);
                     } else {
                         for &b in &chunk[..to_read] {
                             let single = [b];
                             if let Ok(s) = core::str::from_utf8(&single) {
                                 vga::print_str(s);
+                                serial::print_str(s);
                             }
                         }
                     }

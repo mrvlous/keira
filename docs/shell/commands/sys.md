@@ -71,12 +71,12 @@ keira> smp
 Symmetric Multiprocessing (SMP) Hardware Topology:
   Total Online Cores : 4
 
-CORE  APIC ID  ROLE  STATUS
-----  -------  ----  --------------
-Core 0  0x0    BSP   Online (Active)
-Core 1  0x1    AP    Online (Active)
-Core 2  0x2    AP    Online (Active)
-Core 3  0x3    AP    Online (Active)
+CORE     APIC ID    ROLE    STATUS
+-------  ---------  ------  ----------------
+Core 0   0x00       BSP     Online (Active)
+Core 1   0x01       AP      Online (Active)
+Core 2   0x02       AP      Online (Active)
+Core 3   0x03       AP      Online (Active)
 ```
 
 ### `power` & `power acpi`

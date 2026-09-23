@@ -111,33 +111,65 @@ exception_no_err 31
 
 global exception_common
 exception_common:
+    test byte [rsp + 24], 3
+    jz .exc_entry_kernel
+    swapgs
+.exc_entry_kernel:
     pushaq
     mov rdi, rsp
     call exception_dispatcher
     popaq
     add rsp, 16
+    test byte [rsp + 8], 3
+    jz .exc_exit_kernel
+    swapgs
+.exc_exit_kernel:
     iretq
 
 ; ISR 32: Programmable Interval Timer (IRQ 0). Preemptive context switch entry.
 isr32:
+    test byte [rsp + 8], 3
+    jz .pit_entry_kernel
+    swapgs
+.pit_entry_kernel:
     pushaq
     call pit_handler
     mov rdi, rsp
     call schedule_tick
     mov rsp, rax
     popaq
+    test byte [rsp + 8], 3
+    jz .pit_exit_kernel
+    swapgs
+.pit_exit_kernel:
     iretq
 
 ; ISR 33: PS/2 Keyboard (IRQ 1)
 isr33:
+    test byte [rsp + 8], 3
+    jz .kbd_entry_kernel
+    swapgs
+.kbd_entry_kernel:
     pushaq
     call keyboard_handler
     popaq
+    test byte [rsp + 8], 3
+    jz .kbd_exit_kernel
+    swapgs
+.kbd_exit_kernel:
     iretq
 
 ; ISR 44: PS/2 Mouse (IRQ 12)
 isr44:
+    test byte [rsp + 8], 3
+    jz .mouse_entry_kernel
+    swapgs
+.mouse_entry_kernel:
     pushaq
     call mouse_handler
     popaq
+    test byte [rsp + 8], 3
+    jz .mouse_exit_kernel
+    swapgs
+.mouse_exit_kernel:
     iretq

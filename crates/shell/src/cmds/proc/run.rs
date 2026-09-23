@@ -26,6 +26,8 @@ extern "C" {
 unsafe fn jump_to_user(_entry: u64, _stack: u64) {}
 
 #[cfg(target_arch = "x86")]
+const USER_DEFAULT_BRK: u64 = 0x0200_0000;
+#[cfg(target_arch = "x86")]
 const USER_STACK_TOP: u64 = 0x07FFF000 - 16;
 
 #[cfg(target_arch = "x86_64")]
@@ -41,6 +43,11 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
     {
         let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
         keira_task::scheduler::SCHEDULER_INITIALIZED = false;
+
+        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+            task.program_break = USER_DEFAULT_BRK;
+            task.program_break_start = USER_DEFAULT_BRK;
+        }
 
         let entry_point = load_elf(filename)?;
         let elf_bytes = keira_fs::elf::last_loaded_elf_slice();

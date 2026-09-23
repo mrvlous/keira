@@ -125,15 +125,15 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         }
     }
 
-    if (cs & 3) == 3 {
-        // 1. Attempt to resolve user mode Page Fault on-demand (Demand Paging / Stack Auto-Growth / Heap)
-        if vector == 14 {
-            let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
+    // 1. Attempt to resolve user address Page Fault on-demand (Demand Paging / Stack Auto-Growth / Heap)
+    if vector == 14 {
+        let cr2 = unsafe { keira_arch::cpu::read_cr2() } as u64;
+        if cr2 >= 0x1000 && cr2 <= super::user_copy::USER_MAX_ADDR {
             if unsafe { keira_mem::vmm::handle_page_fault(cr2, error_code, rsp) } {
                 return;
             }
 
-            // 2. Demand Paging for task heap (program_break)
+            // Demand Paging for task heap (program_break)
             unsafe {
                 if let Some(ref t) =
                     keira_task::scheduler::TASKS[keira_task::scheduler::CURRENT_TASK_IDX]
@@ -160,7 +160,9 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
                 }
             }
         }
+    }
 
+    if (cs & 3) == 3 {
         let sig = exception_vector_to_signal(vector);
 
         let handler = unsafe { keira_task::signal::get_signal_handler(CURRENT_TASK_IDX, sig) };

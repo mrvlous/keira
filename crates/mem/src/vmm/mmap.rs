@@ -32,7 +32,14 @@ pub const MS_ASYNC: u32 = 1;
 pub const MS_INVALIDATE: u32 = 2;
 pub const MS_SYNC: u32 = 4;
 
+#[cfg(target_arch = "x86")]
+pub const MMAP_START: u64 = 0x0400_0000;
+#[cfg(target_arch = "x86")]
+pub const MMAP_END: u64 = 0x0700_0000;
+
+#[cfg(not(target_arch = "x86"))]
 pub const MMAP_START: u64 = 0x5000_0000_0000;
+#[cfg(not(target_arch = "x86"))]
 pub const MMAP_END: u64 = 0x7000_0000_0000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

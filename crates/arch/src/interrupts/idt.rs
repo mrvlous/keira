@@ -212,6 +212,15 @@ pub fn init() {
     }
 }
 
+/// Load the global Interrupt Descriptor Table into IDTR on the current core.
+///
+/// # Safety
+/// Must be executed on a CPU core with interrupts disabled.
+pub unsafe fn load_current_idt() {
+    #[cfg(target_os = "none")]
+    idt_load(core::ptr::addr_of!(IDTR) as usize);
+}
+
 /// Generic ISR dispatcher called from assembly handlers if required.
 #[no_mangle]
 pub extern "C" fn isr_handler(vector: usize) {

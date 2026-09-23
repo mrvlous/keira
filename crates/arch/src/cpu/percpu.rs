@@ -87,11 +87,11 @@ pub static mut PER_CPU_DATA: [PerCpu; MAX_CORES] = [const {
     }
 }; MAX_CORES];
 
-/// Initialize Per-CPU data structure, stack top, and MSR registers for the specified core.
+/// Initialize Per-CPU data structure fields and stack top for the specified core.
 ///
 /// # Safety
-/// Must be invoked during early CPU core bootstrap or SMP bringup with interrupts disabled.
-pub unsafe fn init_percpu(core_id: usize) {
+/// Must be invoked during early CPU core bootstrap or SMP bringup.
+pub unsafe fn init_percpu_data(core_id: usize) {
     if core_id >= MAX_CORES {
         return;
     }
@@ -116,12 +116,31 @@ pub unsafe fn init_percpu(core_id: usize) {
     (*percpu_ptr).user_rsp = 0;
     (*percpu_ptr).current_task_id = 0;
     (*percpu_ptr).reserved = [0; 1];
+}
 
+/// Load GS base MSRs for the calling CPU core.
+///
+/// # Safety
+/// Must only be executed by the target core on itself.
+pub unsafe fn load_percpu_msrs(core_id: usize) {
+    if core_id >= MAX_CORES {
+        return;
+    }
     #[cfg(all(target_arch = "x86_64", target_os = "none"))]
     {
+        let percpu_ptr = &raw mut PER_CPU_DATA[core_id];
         crate::cpu::msr::wrmsr(crate::cpu::msr::IA32_GS_BASE_MSR, percpu_ptr as u64);
         crate::cpu::msr::wrmsr(crate::cpu::msr::IA32_KERNEL_GS_BASE_MSR, 0);
     }
+}
+
+/// Initialize Per-CPU data structure, stack top, and MSR registers for the current core.
+///
+/// # Safety
+/// Must be invoked during CPU core bootstrap with interrupts disabled.
+pub unsafe fn init_percpu(core_id: usize) {
+    init_percpu_data(core_id);
+    load_percpu_msrs(core_id);
 }
 
 /// Retrieve the hardware or logical ID of the calling CPU core.

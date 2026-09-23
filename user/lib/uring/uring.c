@@ -38,6 +38,7 @@ int io_uring_queue_init(uint32_t entries, struct io_uring *ring, uint32_t flags)
     ring->ring_fd = ret;
     ring->sqes = (struct io_uring_sqe *)(uintptr_t)ring->params.sq_off.user_addr;
     ring->cqes = (struct io_uring_cqe *)(uintptr_t)ring->params.cq_off.user_addr;
+    ring->sq_head = 0;
     ring->sq_tail = 0;
     ring->cq_head = 0;
 
@@ -48,10 +49,7 @@ struct io_uring_sqe *io_uring_get_sqe(struct io_uring *ring) {
     if (!ring || !ring->sqes) {
         return NULL;
     }
-    uint32_t mask = ring->params.sq_off.ring_mask;
-    if (mask == 0) {
-        mask = ring->params.sq_entries - 1;
-    }
+    uint32_t mask = ring->params.sq_entries > 0 ? (ring->params.sq_entries - 1) : 0;
     struct io_uring_sqe *sqe = &ring->sqes[ring->sq_tail & mask];
     memset(sqe, 0, sizeof(*sqe));
     ring->sq_tail++;
@@ -62,8 +60,8 @@ int io_uring_submit(struct io_uring *ring) {
     if (!ring) {
         return -EINVAL;
     }
-    uint32_t to_submit = ring->sq_tail;
-    ring->sq_tail = 0;
+    uint32_t to_submit = ring->sq_tail - ring->sq_head;
+    ring->sq_head = ring->sq_tail;
     return io_uring_enter(ring->ring_fd, to_submit, 0, 0);
 }
 
@@ -71,10 +69,7 @@ int io_uring_peek_cqe(struct io_uring *ring, struct io_uring_cqe **cqe_ptr) {
     if (!ring || !ring->cqes || !cqe_ptr) {
         return -EINVAL;
     }
-    uint32_t mask = ring->params.cq_off.ring_mask;
-    if (mask == 0) {
-        mask = ring->params.cq_entries - 1;
-    }
+    uint32_t mask = ring->params.cq_entries > 0 ? (ring->params.cq_entries - 1) : 0;
     *cqe_ptr = &ring->cqes[ring->cq_head & mask];
     return 0;
 }

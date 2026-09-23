@@ -68,3 +68,15 @@ pub unsafe fn write_reg(offset: u32, val: u32) {
 pub unsafe fn get_current_lapic_id() -> u32 {
     (read_reg(LAPIC_ID_REG) >> 24) & 0xFF
 }
+
+/// Enable the Local APIC on the current CPU core.
+///
+/// # Safety
+/// Writes to MMIO registers of the Local APIC.
+#[inline(always)]
+pub unsafe fn enable_lapic() {
+    // Spurious Interrupt Vector Register (SVR): Vector 0xFF, APIC Software Enable bit 8 = 1
+    write_reg(LAPIC_SVR_REG, 0x1FF);
+    // Task Priority Register (TPR): 0 (accept all interrupt priorities)
+    write_reg(LAPIC_TPR_REG, 0);
+}
