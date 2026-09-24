@@ -12,6 +12,9 @@
 pub mod mac;
 pub mod seccomp;
 
+#[cfg(test)]
+mod tests;
+
 pub use mac::{
     check_path_access, get_audit_log, get_mode as get_mac_mode, get_rules as get_mac_rules,
     get_stats as get_mac_stats, init_rules as init_mac_rules, reset_stats as reset_mac_stats,

@@ -7,15 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Task lifecycle transitions, termination, and process synchronization.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod exit;
+pub mod reap;
+pub mod wait;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use exit::{exit_current, stop_task};
+pub use reap::{reap_orphaned_zombies, reap_orphaned_zombies_locked};
+pub use wait::{sys_waitpid, wait_for_task};

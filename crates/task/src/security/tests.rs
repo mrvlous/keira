@@ -7,15 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Integration tests for security policies combining seccomp and MAC.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+use super::*;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+#[test]
+fn test_security_subsystem_exports() {
+    assert_eq!(get_seccomp_mode(), SeccompMode::Disabled);
+    assert!(check_syscall(1));
+    assert!(check_path_access(0, "/", MAC_READ));
+}

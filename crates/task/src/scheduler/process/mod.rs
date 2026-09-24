@@ -7,15 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Process creation, thread spawning, and fork operations.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod fork;
+pub mod spawn;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use fork::fork_current_task;
+pub use spawn::{spawn, spawn_user};

@@ -7,15 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Task descriptor representations and state machine.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod descriptor;
+pub mod state;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use descriptor::{Task, MAX_TASKS};
+pub use state::TaskState;

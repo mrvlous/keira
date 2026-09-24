@@ -7,15 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Seccomp system call sandbox filter and execution interceptor.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod filter;
+pub mod syscall;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use filter::{
+    allow_syscall, check_syscall, deny_syscall, get_mode, get_stats, is_syscall_allowed, reset,
+    set_mode, SECCOMP_STATE, SECCOMP_STRICT_ACTIVE,
+};
+pub use syscall::sys_seccomp;

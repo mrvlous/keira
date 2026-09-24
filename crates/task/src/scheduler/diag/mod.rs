@@ -7,15 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Task diagnostics and process table visualization.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod table;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use table::list_tasks;
+pub(crate) use table::print_decimal;

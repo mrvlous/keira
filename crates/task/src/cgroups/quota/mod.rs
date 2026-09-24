@@ -7,15 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Resource quota management and memory limits.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod limits;
+pub mod memory;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use limits::set_cgroup_limits;
+pub use memory::check_memory_limit;

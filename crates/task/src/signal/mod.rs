@@ -7,178 +7,23 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! POSIX signal generation, delivery, and process termination handling.
+//! POSIX signal generation, delivery, job control, and process termination handling.
 
-use keira_io::vga;
+pub mod action;
+pub mod dispatch;
+pub mod job;
+pub mod posix;
 
-pub const SIGHUP: u32 = 1;
-pub const SIGINT: u32 = 2;
-pub const SIGQUIT: u32 = 3;
-pub const SIGILL: u32 = 4;
-pub const SIGTRAP: u32 = 5;
-pub const SIGABRT: u32 = 6;
-pub const SIGBUS: u32 = 7;
-pub const SIGFPE: u32 = 8;
-pub const SIGKILL: u32 = 9;
-pub const SIGUSR1: u32 = 10;
-pub const SIGSEGV: u32 = 11;
-pub const SIGUSR2: u32 = 12;
-pub const SIGPIPE: u32 = 13;
-pub const SIGALRM: u32 = 14;
-pub const SIGTERM: u32 = 15;
-pub const SIGCHLD: u32 = 17;
-pub const SIGCONT: u32 = 18;
-pub const SIGSTOP: u32 = 19;
+#[cfg(test)]
+mod tests;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum JobState {
-    Running,
-    Stopped,
-    Terminated,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct JobInfo {
-    pub job_id: u32,
-    pub pid: u32,
-    pub name: [u8; 32],
-    pub name_len: usize,
-    pub state: JobState,
-    pub is_foreground: bool,
-}
-
-pub const MAX_JOBS: usize = 64;
-
-pub static mut JOB_TABLE: [Option<JobInfo>; MAX_JOBS] = [const { None }; MAX_JOBS];
-pub static mut JOB_COUNT: usize = 0;
-
-/// Register a new background or foreground process job into Job Control Table.
-pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
-    let job_id = (JOB_COUNT + 1) as u32;
-    let nbytes = name.as_bytes();
-    let len = if nbytes.len() > 32 { 32 } else { nbytes.len() };
-
-    let mut info = JobInfo {
-        job_id,
-        pid,
-        name: [0u8; 32],
-        name_len: len,
-        state: JobState::Running,
-        is_foreground: is_fg,
-    };
-    info.name[..len].copy_from_slice(&nbytes[..len]);
-
-    if JOB_COUNT < MAX_JOBS {
-        JOB_TABLE[JOB_COUNT] = Some(info);
-        JOB_COUNT += 1;
-    } else {
-        JOB_TABLE[0] = Some(info);
-    }
-    job_id
-}
-
-/// Query the currently running foreground job PID, if any.
-pub unsafe fn get_foreground_job_pid() -> Option<u32> {
-    for i in 0..JOB_COUNT {
-        if let Some(ref job) = JOB_TABLE[i] {
-            if job.is_foreground && job.state == JobState::Running {
-                return Some(job.pid);
-            }
-        }
-    }
-    None
-}
-
-/// Remove a job from the table by process ID.
-pub unsafe fn remove_job_by_pid(pid: u32) {
-    for i in 0..JOB_COUNT {
-        if let Some(ref job) = JOB_TABLE[i] {
-            if job.pid == pid {
-                JOB_TABLE[i] = None;
-                for j in i..(JOB_COUNT.saturating_sub(1)) {
-                    JOB_TABLE[j] = JOB_TABLE[j + 1];
-                }
-                if JOB_COUNT > 0 {
-                    JOB_TABLE[JOB_COUNT - 1] = None;
-                    JOB_COUNT -= 1;
-                }
-                break;
-            }
-        }
-    }
-}
-
-/// Send POSIX signal to target process PID (Syscall 22: sys_kill).
-pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
-    unsafe {
-        vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("[SIGNAL] Dispatched POSIX Signal ");
-        vga::print_u64(sig as u64);
-        vga::print_str(" -> PID ");
-        vga::print_u64(pid as u64);
-        vga::print_str(" (Syscall 22)\n");
-
-        for i in 0..JOB_COUNT {
-            if let Some(ref mut job) = JOB_TABLE[i] {
-                if job.pid == pid {
-                    match sig {
-                        SIGKILL | SIGTERM | SIGINT | SIGQUIT | SIGABRT | SIGSEGV | SIGILL
-                        | SIGBUS | SIGFPE | SIGPIPE | SIGHUP | SIGUSR1 | SIGUSR2 | SIGALRM => {
-                            job.state = JobState::Terminated;
-                        }
-                        SIGSTOP => {
-                            job.state = JobState::Stopped;
-                        }
-                        SIGCONT => {
-                            job.state = JobState::Running;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-
-        super::scheduler::send_signal(pid as usize, sig)?;
-    }
-    Ok(0)
-}
-
-pub const MAX_SIGNAL_TASKS: usize = 64;
-pub static mut SIGNAL_HANDLERS: [[u64; 32]; MAX_SIGNAL_TASKS] = [[0; 32]; MAX_SIGNAL_TASKS];
-
-/// Register a custom user signal handler for a signal (Syscall 64: sys_sigaction).
-pub unsafe fn sys_sigaction(
-    pid: usize,
-    sig: u32,
-    handler: u64,
-    old_handler: *mut u64,
-) -> Result<u64, &'static str> {
-    if sig == 0 || sig >= 32 {
-        return Err("Invalid signal number");
-    }
-    if sig == SIGKILL || sig == SIGSTOP {
-        return Err("Cannot catch or ignore SIGKILL / SIGSTOP");
-    }
-    let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
-    if !old_handler.is_null() {
-        *old_handler = SIGNAL_HANDLERS[p_idx][sig as usize];
-    }
-    SIGNAL_HANDLERS[p_idx][sig as usize] = handler;
-    Ok(0)
-}
-
-/// Retrieve the active signal handler for a process.
-pub unsafe fn get_signal_handler(pid: usize, sig: u32) -> u64 {
-    if sig == 0 || sig >= 32 {
-        return 0;
-    }
-    let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
-    SIGNAL_HANDLERS[p_idx][sig as usize]
-}
-
-/// Reset all registered signal handlers for a given process/task index.
-pub unsafe fn reset_signal_handlers(pid: usize) {
-    let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
-    SIGNAL_HANDLERS[p_idx] = [0; 32];
-}
+pub use action::{
+    get_signal_handler, reset_signal_handlers, sys_sigaction, MAX_SIGNAL_TASKS, SIGNAL_HANDLERS,
+};
+pub use dispatch::sys_kill;
+pub use job::{
+    add_job, get_foreground_job_pid, remove_job_by_pid, JobInfo, JobState, JOB_COUNT, JOB_TABLE,
+    MAX_JOBS,
+};
+pub use posix as constants;
+pub use posix::*;

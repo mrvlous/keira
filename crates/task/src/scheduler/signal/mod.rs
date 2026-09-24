@@ -7,15 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Task-level signal state and delivery mechanisms.
 
 pub mod context;
-pub mod fd;
-pub mod task;
+pub mod delivery;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use context::{set_saved_sigcontext, take_saved_sigcontext};
+pub use delivery::{
+    get_current_pending_signals, get_current_signal_mask, send_signal, sys_sigprocmask, SIG_BLOCK,
+    SIG_SETMASK, SIG_UNBLOCK,
+};

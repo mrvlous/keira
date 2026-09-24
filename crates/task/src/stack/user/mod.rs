@@ -7,15 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Architecture-specific initial user stack formatting.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod amd64;
+pub mod i386;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use amd64::setup_user_stack_64;
+pub use i386::setup_user_stack_32;

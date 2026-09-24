@@ -7,15 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Mandatory Access Control policy models, domains, and rule descriptors.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod audit;
+pub mod domain;
+pub mod rule;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use audit::{MacAuditEvent, MacMode, MAC_AUDIT_LOG_CAPACITY};
+pub use domain::MacDomain;
+pub use rule::{MacRule, MAC_APPEND, MAC_EXEC, MAC_READ, MAC_WRITE, MAX_MAC_RULES};

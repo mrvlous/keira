@@ -7,15 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Container PID namespace isolation and control group hierarchy table.
 
-pub mod context;
-pub mod fd;
-pub mod task;
+pub mod pid;
+pub mod table;
 
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+pub use pid::translate_pid_to_namespace;
+pub use table::{
+    create_cgroup, delete_cgroup, get_cgroup_stats, get_cgroup_table, init, CGROUP_TABLE,
+    NEXT_CGROUP_ID,
+};

@@ -7,29 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Secure Computing (Seccomp) system call sandboxing, strict enforcement, and bitmask filtering.
+//! Seccomp system call bitmap filtering and violation enforcement.
 
-#![allow(static_mut_refs)]
-
-use keira_io::vga;
-
-pub const SECCOMP_SET_MODE_STRICT: u32 = 0;
-pub const SECCOMP_SET_MODE_FILTER: u32 = 1;
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum SeccompMode {
-    Disabled,
-    Strict,
-    Filter,
-}
-
-pub struct SeccompState {
-    pub mode: SeccompMode,
-    pub allowed_mask: [u64; 2],
-    pub total_checked: u64,
-    pub total_violations: u64,
-    pub last_violation_syscall: u64,
-}
+use crate::security::seccomp::model::{SeccompMode, SeccompState};
 
 pub static mut SECCOMP_STATE: SeccompState = SeccompState {
     mode: SeccompMode::Disabled,
@@ -147,26 +127,5 @@ pub fn reset() {
         SECCOMP_STATE.total_violations = 0;
         SECCOMP_STATE.last_violation_syscall = 0;
         SECCOMP_STRICT_ACTIVE = false;
-    }
-}
-
-/// Enforce seccomp system call sandbox filter (Syscall 52).
-pub fn sys_seccomp(op: u32, _flags: u32, _args_ptr: u64) -> Result<u64, &'static str> {
-    match op {
-        SECCOMP_SET_MODE_STRICT => {
-            set_mode(SeccompMode::Strict);
-            vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("[SECCOMP] Strict Mode Sandbox Enforced\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            Ok(0)
-        }
-        SECCOMP_SET_MODE_FILTER => {
-            set_mode(SeccompMode::Filter);
-            vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("[SECCOMP] Filter Mode Sandbox Enforced\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            Ok(0)
-        }
-        _ => Err("Invalid seccomp operation"),
     }
 }

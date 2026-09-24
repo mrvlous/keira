@@ -7,15 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task control block (TCB) types, CPU execution contexts, and lifecycle states.
+//! Process ID virtualization across container namespaces.
 
-pub mod context;
-pub mod fd;
-pub mod task;
-
-#[cfg(test)]
-mod tests;
-
-pub use context::InterruptContext;
-pub use fd::{FileDescriptor, MAX_FDS};
-pub use task::{Task, TaskState, MAX_TASKS};
+/// Translate host PID to container PID namespace.
+pub fn translate_pid_to_namespace(host_pid: u64, ns_id: u64) -> u64 {
+    if ns_id == 0 {
+        host_pid
+    } else {
+        host_pid + (ns_id * 1000)
+    }
+}

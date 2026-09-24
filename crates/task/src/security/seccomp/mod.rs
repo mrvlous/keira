@@ -7,18 +7,16 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Process memory limit enforcement, CPU slice accounting, and container PID namespaces.
+//! Secure Computing (Seccomp) system call sandboxing and bitmask filtering.
 
 pub mod model;
-pub mod namespace;
-pub mod quota;
+pub mod sandbox;
 
 #[cfg(test)]
 mod tests;
 
-pub use model::{Cgroup, MAX_CGROUPS};
-pub use namespace::{
-    create_cgroup, delete_cgroup, get_cgroup_stats, get_cgroup_table, init,
-    translate_pid_to_namespace, CGROUP_TABLE, NEXT_CGROUP_ID,
+pub use model::{SeccompMode, SeccompState, SECCOMP_SET_MODE_FILTER, SECCOMP_SET_MODE_STRICT};
+pub use sandbox::{
+    allow_syscall, check_syscall, deny_syscall, get_mode, get_stats, is_syscall_allowed, reset,
+    set_mode, sys_seccomp, SECCOMP_STATE, SECCOMP_STRICT_ACTIVE,
 };
-pub use quota::{check_memory_limit, set_cgroup_limits};
