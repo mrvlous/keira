@@ -12,5 +12,5 @@
 pub mod hmac;
 pub mod sha256;
 
-pub use hmac::hmac_sha256;
-pub use sha256::{sha256, Sha256};
+pub use self::hmac::*;
+pub use self::sha256::*;

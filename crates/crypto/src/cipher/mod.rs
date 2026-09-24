@@ -7,10 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! AES-128 block cipher and Galois/Counter Mode (GCM) AEAD encryption.
+//! Symmetric block ciphers and authenticated encryption algorithms.
 
 pub mod aes;
 pub mod gcm;
 
-pub use aes::Aes128;
-pub use gcm::{aes128_gcm_decrypt, aes128_gcm_encrypt};
+pub use aes::*;
+pub use gcm::*;

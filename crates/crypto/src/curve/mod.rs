@@ -7,8 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Elliptic-curve cryptography and Diffie-Hellman key exchange (X25519).
+//! Elliptic curve cryptography (Curve25519 / X25519).
 
-pub mod curve25519;
+pub mod x25519;
 
-pub use curve25519::{x25519, X25519_BASEPOINT};
+pub use self::x25519::*;
+
+/// Compatibility re-export module for `curve::curve25519`.
+pub mod curve25519 {
+    pub use super::x25519::*;
+}

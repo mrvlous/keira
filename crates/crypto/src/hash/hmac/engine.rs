@@ -9,7 +9,7 @@
 
 //! HMAC-SHA-256 (RFC 2104) keyed-hash message authentication code generator.
 
-use super::sha256::{sha256, Sha256};
+use crate::hash::sha256::{sha256, Sha256};
 
 /// Compute HMAC-SHA-256 keyed-hash message authentication code.
 pub fn hmac_sha256(key: &[u8], message: &[u8]) -> [u8; 32] {

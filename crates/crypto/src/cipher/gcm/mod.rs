@@ -7,20 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Pure freestanding cryptographic primitives (SHA-256, HMAC, AES-128-GCM, Curve25519, TPM 2.0).
+//! Galois/Counter Mode (GCM) authenticated encryption subsystem.
 
-#![no_std]
-#![allow(clippy::needless_range_loop)]
+mod core;
 
-pub mod cipher;
-pub mod curve;
-pub mod hash;
-pub mod tpm;
-
-pub use self::cipher::*;
-pub use self::curve::*;
-pub use self::hash::*;
-pub use self::tpm::*;
+pub use self::core::*;
 
 #[cfg(test)]
 mod tests;

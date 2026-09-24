@@ -9,7 +9,7 @@
 
 //! Galois/Counter Mode (GCM) Authenticated Encryption with Associated Data (AEAD).
 
-use super::aes::Aes128;
+use crate::cipher::aes::Aes128;
 
 #[inline(always)]
 fn gcm_inc32(counter: &mut [u8; 16]) {

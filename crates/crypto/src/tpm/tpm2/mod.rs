@@ -7,20 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Pure freestanding cryptographic primitives (SHA-256, HMAC, AES-128-GCM, Curve25519, TPM 2.0).
+//! Trusted Platform Module (TPM 2.0) interface and subsystem.
 
-#![no_std]
-#![allow(clippy::needless_range_loop)]
+pub mod hardware;
+pub mod pcr;
+pub mod sealed;
 
-pub mod cipher;
-pub mod curve;
-pub mod hash;
-pub mod tpm;
-
-pub use self::cipher::*;
-pub use self::curve::*;
-pub use self::hash::*;
-pub use self::tpm::*;
-
-#[cfg(test)]
-mod tests;
+pub use self::hardware::*;
+pub use self::pcr::*;
+pub use self::sealed::*;

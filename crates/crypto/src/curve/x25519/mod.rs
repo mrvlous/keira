@@ -7,20 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Pure freestanding cryptographic primitives (SHA-256, HMAC, AES-128-GCM, Curve25519, TPM 2.0).
+//! Curve25519 and X25519 Diffie-Hellman key exchange subsystem.
 
-#![no_std]
-#![allow(clippy::needless_range_loop)]
+pub mod field;
+pub mod scalar;
 
-pub mod cipher;
-pub mod curve;
-pub mod hash;
-pub mod tpm;
-
-pub use self::cipher::*;
-pub use self::curve::*;
-pub use self::hash::*;
-pub use self::tpm::*;
+pub use self::field::*;
+pub use self::scalar::*;
 
 #[cfg(test)]
 mod tests;
