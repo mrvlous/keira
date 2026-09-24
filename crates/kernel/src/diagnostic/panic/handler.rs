@@ -9,11 +9,15 @@
 
 //! Panic handler implementation for freestanding `#![no_std]` execution.
 
+#[cfg(target_os = "none")]
 use core::panic::PanicInfo;
+#[cfg(target_os = "none")]
 use keira_io::serial;
+#[cfg(target_os = "none")]
 use keira_io::vga;
 
-/// Kernel panic handler : prints panic info to serial and VGA and halts.
+/// Kernel panic handler: prints panic diagnostics to serial COM1 and VGA blue screen and halts CPU.
+#[cfg(target_os = "none")]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     serial::print_str("\n\n!!! KERNEL PANIC !!!\n");
