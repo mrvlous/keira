@@ -8,25 +8,33 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Deterministic kernel lock hierarchy ordering and deadlock prevention.
+//!
+//! Enforces a strict total acquisition order across kernel subsystem locks,
+//! eliminating circular-wait deadlock conditions at runtime.
 
 use core::sync::atomic::{AtomicU8, Ordering};
 
-/// Formal kernel lock ranks enforcing acquisition order (Rank N -> Rank < N).
+/// Formal kernel lock ranks enforcing hierarchical acquisition order.
 ///
-/// Acquiring a lower-ranked lock while holding a higher-ranked lock is forbidden
-/// to eliminate circular wait deadlocks across subsystems.
+/// Lock acquisition must strictly follow descending order (Vfs -> Scheduler -> Heap -> Pmm).
+/// Acquiring a higher or equal rank while holding a lock is forbidden and triggers an error.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum LockRank {
+    /// Unranked lock without hierarchy constraints.
     None = 0,
+    /// Physical Memory Manager (PMM) allocation locks.
     Pmm = 1,
+    /// Kernel heap allocator locks.
     Heap = 2,
+    /// Task scheduler and runqueue locks.
     Scheduler = 3,
+    /// Virtual File System (VFS) and inode locks.
     Vfs = 4,
 }
 
 impl LockRank {
-    /// Convert raw u8 rank to `LockRank`.
+    /// Converts a raw `u8` integer into its corresponding `LockRank`.
     #[inline]
     pub const fn from_u8(val: u8) -> Self {
         match val {
@@ -41,7 +49,7 @@ impl LockRank {
 
 static CURRENT_HELD_RANK: AtomicU8 = AtomicU8::new(0);
 
-/// Check if acquiring `rank` obeys the strict lock ordering hierarchy.
+/// Verifies that acquiring `rank` obeys the strict lock ordering hierarchy.
 ///
 /// Returns `Ok(())` if compliant, or `Err(&'static str)` if an inversion is detected.
 #[inline]
@@ -50,7 +58,6 @@ pub fn check_lock_order(rank: LockRank) -> Result<(), &'static str> {
     let target = rank as u8;
 
     // Strict hierarchy: a held lock cannot acquire a higher or equal numerical rank.
-    // Lock acquisition must follow descending order (Vfs -> Scheduler -> Heap -> Pmm).
     if current != 0 && target >= current {
         return Err(
             "Lock order inversion: attempted to acquire higher or equal rank while holding lock",
@@ -60,7 +67,7 @@ pub fn check_lock_order(rank: LockRank) -> Result<(), &'static str> {
     Ok(())
 }
 
-/// Record lock acquisition rank for the active critical section.
+/// Records the acquisition of a lock rank for the active critical section.
 ///
 /// Returns the previously recorded rank to allow nested critical section restoration.
 #[inline]
@@ -69,7 +76,7 @@ pub fn record_lock_acquire(rank: LockRank) -> LockRank {
     LockRank::from_u8(old)
 }
 
-/// Restore the recorded lock acquisition rank upon release.
+/// Restores the recorded lock acquisition rank upon release.
 #[inline]
 pub fn record_lock_release(prior: LockRank) {
     CURRENT_HELD_RANK.store(prior as u8, Ordering::Relaxed);

@@ -8,67 +8,36 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Synchronization primitives for freestanding kernel environments.
+//!
+//! Subdivided into dedicated modules for atomic memory barriers, hardware interrupt
+//! masking, spinlocks, scoped mutexes, and deadlock-prevention lock hierarchy ordering.
 
+pub mod atomic;
 pub mod irq;
-pub mod irq_mutex;
-pub mod irq_spinlock;
-pub mod lock_order;
 pub mod mutex;
+pub mod ordering;
 pub mod spinlock;
 
-pub use irq::{interrupts_enabled, irq_restore, irq_save, IrqState};
-pub use irq_mutex::{IrqMutex, IrqMutexGuard};
-pub use irq_spinlock::{IrqSpinLock, IrqSpinLockGuard};
-pub use lock_order::{check_lock_order, record_lock_acquire, record_lock_release, LockRank};
-pub use mutex::{SpinMutex, SpinMutexGuard};
-pub use spinlock::SpinLock;
-
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod tests;
 
-    #[test]
-    fn test_irq_save_restore_lifecycle() {
-        let state = irq_save();
-        assert!(!interrupts_enabled());
-        irq_restore(state);
-        assert!(interrupts_enabled());
-    }
+pub use atomic::{memory_barrier_compiler, memory_barrier_hardware, spin_loop_hint};
+pub use irq::{interrupts_enabled, irq_restore, irq_save, IrqState};
+pub use mutex::{IrqMutex, IrqMutexGuard, SpinMutex, SpinMutexGuard};
+pub use ordering::{check_lock_order, record_lock_acquire, record_lock_release, LockRank};
+pub use spinlock::{current_core_id, IrqSpinLock, IrqSpinLockGuard, SpinLock};
 
-    #[test]
-    fn test_irq_spinlock_basic() {
-        let lock = IrqSpinLock::new();
-        assert!(!lock.is_locked());
-        {
-            let _guard = lock.lock();
-            assert!(lock.is_locked());
-            assert!(!interrupts_enabled());
-        }
-        assert!(!lock.is_locked());
-        assert!(interrupts_enabled());
-    }
+/// Backward-compatibility alias module for legacy sync::irq_mutex imports.
+pub mod irq_mutex {
+    pub use super::mutex::irq_safe::*;
+}
 
-    #[test]
-    fn test_irq_mutex_deref_mut() {
-        let mutex = IrqMutex::new(42);
-        {
-            let mut guard = mutex.lock();
-            assert_eq!(*guard, 42);
-            *guard = 100;
-        }
-        {
-            let guard = mutex.lock();
-            assert_eq!(*guard, 100);
-        }
-    }
+/// Backward-compatibility alias module for legacy sync::irq_spinlock imports.
+pub mod irq_spinlock {
+    pub use super::spinlock::irq_safe::*;
+}
 
-    #[test]
-    fn test_lock_hierarchy_ordering() {
-        assert!(check_lock_order(LockRank::Pmm).is_ok());
-        let prior = record_lock_acquire(LockRank::Pmm);
-        // Rank 2 (Heap) after Rank 1 (Pmm) should be rejected
-        assert!(check_lock_order(LockRank::Heap).is_err());
-        record_lock_release(prior);
-        assert!(check_lock_order(LockRank::Heap).is_ok());
-    }
+/// Backward-compatibility alias module for legacy sync::lock_order imports.
+pub mod lock_order {
+    pub use super::ordering::*;
 }
