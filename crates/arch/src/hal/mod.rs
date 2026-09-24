@@ -8,6 +8,9 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Hardware Abstraction Layer (HAL) interfaces for Keira Kernel.
+//!
+//! Subdivided into dedicated traits for CPU execution, interrupt controllers,
+//! Memory Management Units (MMU), serial communication, and hardware timers.
 
 pub mod cpu;
 pub mod interrupt;

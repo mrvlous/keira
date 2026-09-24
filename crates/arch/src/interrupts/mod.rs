@@ -7,7 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Interrupt controllers, Local APIC, Dual 8259 PIC, IDT, and SMP.
+//! Interrupt controllers, Local APIC, Dual 8259 PIC, IDT, and SMP subsystem.
+//!
+//! Subdivided into dedicated modules for Local APIC, Interrupt Descriptor Table,
+//! Dual 8259 PIC, and Symmetric Multiprocessing Inter-Processor Interrupts.
 
 pub mod apic;
 pub mod idt;
