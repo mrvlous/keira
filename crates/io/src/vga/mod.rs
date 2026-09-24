@@ -14,7 +14,7 @@ pub mod console;
 pub mod cursor;
 pub mod font;
 
-pub use color::Color;
-pub use console::*;
-pub use cursor::*;
-pub use font::*;
+pub use self::color::Color;
+pub use self::console::*;
+pub use self::cursor::*;
+pub use self::font::*;

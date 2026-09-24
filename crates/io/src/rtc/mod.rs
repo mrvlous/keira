@@ -11,4 +11,4 @@
 
 pub mod cmos;
 
-pub use cmos::{get_time, init, RtcTime};
+pub use self::cmos::{get_time, init, RtcTime};

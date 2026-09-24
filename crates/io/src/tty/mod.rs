@@ -9,8 +9,8 @@
 
 //! Virtual terminal (TTY) manager and session multiplexing.
 
-pub mod line_discipline;
+pub mod ldisc;
 pub mod term;
 
-pub use line_discipline::*;
-pub use term::*;
+pub use self::ldisc::*;
+pub use self::term::*;

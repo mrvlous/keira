@@ -11,4 +11,4 @@
 
 pub mod lfb;
 
-pub use lfb::*;
+pub use self::lfb::*;

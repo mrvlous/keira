@@ -11,7 +11,7 @@
 name = "keira-io"
 version = "0.4.0"
 edition = "2021"
-authors = ["Moh. Ananda Firmansyah Putra <mrvlous@proton.me>"]
+authors = ["Moh. Ananda Firmansyah Putra"]
 license = "GPL-2.0-only"
 description = "Display, Serial UART, PCI/PCIe, NVMe, AHCI, USB, and Audio drivers for Keira Kernel"
 

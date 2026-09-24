@@ -12,5 +12,5 @@
 pub mod pci;
 pub mod pcie;
 
-pub use pci::*;
-pub use pcie as pci_express;
+pub use self::pci::*;
+pub use self::pcie as pci_express;

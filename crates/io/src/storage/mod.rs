@@ -15,8 +15,8 @@ pub mod ide;
 pub mod nvme;
 pub mod ramdisk;
 
-pub use ahci as ahci_sata;
-pub use block::*;
-pub use ide as ata_ide;
-pub use nvme as nvme_ssd;
-pub use ramdisk::*;
+pub use self::ahci as ahci_sata;
+pub use self::block::*;
+pub use self::ide as ata_ide;
+pub use self::nvme as nvme_ssd;
+pub use self::ramdisk::*;
