@@ -9,19 +9,13 @@
 
 //! Filesystem and storage management shell commands.
 
-pub mod copy;
-pub mod create;
-pub mod delete;
-pub mod disk;
-pub mod drives;
-pub mod edit;
-pub mod ext4;
-pub mod fileinfo;
-pub mod folder;
-pub mod initrd;
-pub mod list;
-pub mod r#move;
-pub mod ramdisk;
-pub mod r#use;
-pub mod view;
-pub mod write;
+pub mod dir;
+pub mod file;
+pub mod mount;
+
+#[cfg(test)]
+mod tests;
+
+pub use dir::{folder, list};
+pub use file::{copy, create, delete, edit, fileinfo, r#move, view, write};
+pub use mount::{disk, drives, ext4, initrd, r#use, ramdisk};

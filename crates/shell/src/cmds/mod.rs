@@ -17,7 +17,9 @@ pub mod sec;
 pub mod sys;
 pub mod util;
 
-// Flat re-exports for backward-compatibility and direct access
+#[cfg(test)]
+mod tests;
+
 pub use dev::*;
 pub use fs::*;
 pub use net::*;

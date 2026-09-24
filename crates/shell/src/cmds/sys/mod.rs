@@ -9,18 +9,13 @@
 
 //! System configuration, telemetry, services, and power shell commands.
 
-pub mod cpu;
-pub mod env;
-pub mod hostname;
-pub mod memory;
-pub mod power;
-pub mod reset;
-pub mod runtime;
-pub mod service;
-pub mod smp;
-pub mod sync;
-pub mod syslog;
-pub mod system;
-pub mod time;
-pub mod unwind;
-pub mod watchpoint;
+pub mod control;
+pub mod daemon;
+pub mod info;
+
+#[cfg(test)]
+mod tests;
+
+pub use control::{power, reset, runtime, sync};
+pub use daemon::{env, service, syslog, watchpoint};
+pub use info::{cpu, hostname, memory, smp, system, time, unwind};

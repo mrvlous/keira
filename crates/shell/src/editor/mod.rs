@@ -7,8 +7,15 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Terminal text editor (kvi).
+//! Terminal text editor (`kvi`) subsystem.
 
-pub mod kvi;
+pub mod buffer;
+pub mod input;
+pub mod render;
 
-pub use kvi::*;
+#[cfg(test)]
+mod tests;
+
+pub use buffer::{editor_save_file, editor_start};
+pub use input::handler::editor_handle_keypress;
+pub use render::view::editor_redraw;

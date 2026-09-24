@@ -9,8 +9,11 @@
 
 //! General shell utilities, navigation, scripts, and help manuals.
 
-pub mod go;
-pub mod help;
-pub mod history;
-pub mod search;
-pub mod wipe;
+pub mod misc;
+pub mod nav;
+
+#[cfg(test)]
+mod tests;
+
+pub use misc::{help, history, wipe};
+pub use nav::{go, search};

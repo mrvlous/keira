@@ -9,10 +9,11 @@
 
 //! Security, authentication, authorization, and sandboxing shell commands.
 
-pub mod bpf;
-pub mod login;
-pub mod mac;
-pub mod protect;
-pub mod seccomp;
-pub mod tpm;
-pub mod user;
+pub mod auth;
+pub mod sandbox;
+
+#[cfg(test)]
+mod tests;
+
+pub use auth::{login, protect, user};
+pub use sandbox::{bpf, mac, seccomp, tpm};

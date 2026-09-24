@@ -9,11 +9,13 @@
 
 //! Network interfaces, socket communications, and IPC shell commands.
 
-pub mod download;
-pub mod firewall;
-pub mod https;
-pub mod ipcrm;
-pub mod ipcs;
-pub mod iptables;
-pub mod mqueue;
-pub mod network;
+pub mod client;
+pub mod filter;
+pub mod ipc;
+
+#[cfg(test)]
+mod tests;
+
+pub use client::{download, https, network};
+pub use filter::{firewall, iptables};
+pub use ipc::{ipcrm, ipcs, mqueue};

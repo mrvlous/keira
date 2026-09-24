@@ -9,14 +9,13 @@
 
 //! Hardware devices, peripheral drivers, and volume management shell commands.
 
-pub mod devices;
-pub mod drivers;
-pub mod epoll;
-pub mod framebuffer;
-pub mod kvm;
-pub mod lkm;
-pub mod lvm;
-pub mod nvme;
-pub mod raid;
-pub mod swap;
-pub mod usb;
+pub mod hardware;
+pub mod storage;
+pub mod virt;
+
+#[cfg(test)]
+mod tests;
+
+pub use hardware::{devices, framebuffer, usb};
+pub use storage::{lvm, nvme, raid, swap};
+pub use virt::{drivers, epoll, kvm, lkm};
