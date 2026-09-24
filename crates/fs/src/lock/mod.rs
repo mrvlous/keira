@@ -7,8 +7,16 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Filesystem file lock primitives and concurrent access protection.
+//! Mutual exclusion file write locks (`flock`) and process-level concurrency control.
+//!
+//! Subdivided into specialized hyper-modular sub-packages:
+//! - `flock/`: Advisory lock descriptors and atomic table operations.
 
 pub mod flock;
 
-pub use flock::*;
+#[cfg(test)]
+mod tests;
+
+pub use self::flock::{
+    acquire_lock, release_all_locks_for_task, release_lock, FileLock, FILE_LOCKS, MAX_FILE_LOCKS,
+};

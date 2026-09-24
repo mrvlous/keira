@@ -8,13 +8,28 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Virtual File System (VFS) abstractions, path routing, and access permissions.
+//!
+//! Subdivided into specialized hyper-modular sub-packages:
+//! - `types/`: Filesystem backend identifiers, node kinds, and stat attributes.
+//! - `path/`: Path alias resolution and destination routing engine.
+//! - `permission/`: Active user tracking and access control policies.
+//! - `ops/`: Unified file, directory, and node operation dispatchers.
 
 pub mod ops;
 pub mod path;
-pub mod permissions;
+pub mod permission;
 pub mod types;
 
-pub use ops::*;
-pub use path::*;
-pub use permissions::*;
-pub use types::*;
+#[cfg(test)]
+mod tests;
+
+pub use self::ops::{
+    create_dir, create_file, exists, get_file_size, read_file, read_file_offset, remove_entry,
+    write_file, write_file_offset,
+};
+pub use self::path::{resolve_alias_path, route_path};
+pub use self::permission as permissions;
+pub use self::permission::{
+    check_access_permission, get_vfs_user, set_vfs_user, CURRENT_VFS_USER, CURRENT_VFS_USER_LEN,
+};
+pub use self::types::{FileStat, FilesystemType, NodeKind};

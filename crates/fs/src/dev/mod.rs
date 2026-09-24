@@ -8,7 +8,13 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Special virtual device nodes (`/system/dev/*`).
+//!
+//! Subdivided into specialized hyper-modular sub-packages:
+//! - `char/`: Character device node drivers and dispatcher.
 
 pub mod char;
 
-pub use char::*;
+#[cfg(test)]
+mod tests;
+
+pub use self::char::{exists, read_dev_node, write_dev_node};

@@ -7,10 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! ELF64 executable loader and Ring 3 execution environment.
+//! ELF executable loader and Ring 3 execution environment.
 
 pub mod loader;
 pub mod types;
+
+#[cfg(test)]
+mod tests;
 
 pub use loader::*;
 pub use types::*;

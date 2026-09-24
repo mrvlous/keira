@@ -7,9 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-#![no_std]
+//! Filesystem abstraction layer (VFS, FAT16, Ext4, Tar/Initrd, ELF, Character Devices, Locks, LVM).
 
-//! Filesystem abstraction layer (VFS, FAT16, Ext4, Tar/Initrd, ELF64, Character Devices, Locks, LVM).
+#![no_std]
+#![allow(static_mut_refs)]
 
 pub mod dev;
 pub mod elf;
@@ -69,37 +70,4 @@ pub use vfs::permissions::{check_access_permission, get_vfs_user, set_vfs_user};
 pub use vfs::types::FilesystemType;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_procfs_and_devfs_existence() {
-        assert!(exists("/system/dev/null"));
-        assert!(exists("/system/dev/zero"));
-        assert!(exists("/system/dev/random"));
-        assert!(exists("/system/dev/urandom"));
-        assert!(exists("/system/dev/tty"));
-        assert!(exists("/dev/null"));
-        assert!(exists("/dev/zero"));
-
-        assert!(exists("/system/proc/uptime"));
-        assert!(exists("/system/proc/meminfo"));
-        assert!(exists("/system/proc/cpuinfo"));
-        assert!(exists("/system/proc/version"));
-        assert!(exists("/system/proc/loadavg"));
-        assert!(exists("/system/proc/self/status"));
-        assert!(exists("/proc/uptime"));
-    }
-
-    #[test]
-    fn test_read_proc_version_and_cpuinfo() {
-        let mut buf = [0u8; 512];
-        let n = read_proc_file("version", &mut buf).expect("read version failed");
-        let s = core::str::from_utf8(&buf[..n]).expect("utf8 version");
-        assert!(s.contains("Keira Kernel version 0.4.0"));
-
-        let n = read_proc_file("cpuinfo", &mut buf).expect("read cpuinfo failed");
-        let s = core::str::from_utf8(&buf[..n]).expect("utf8 cpuinfo");
-        assert!(s.contains("processor\t: 0"));
-    }
-}
+mod tests;
