@@ -7,8 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Direct Memory Access (DMA) buffers and Scatter-Gather lists.
+//! Contiguous physical Direct Memory Access (DMA) buffer allocation.
+//!
+//! Subdivided into specialized buffer allocation implementations and scatter-gather representations.
 
-pub mod allocator;
+pub mod buffer;
 
-pub use allocator::*;
+pub use buffer::{alloc_dma_buffer, DmaBuffer, ScatterGatherEntry};
+
+#[cfg(test)]
+mod tests;

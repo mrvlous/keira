@@ -7,16 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel object cache (slab-like allocator) for fixed-size kernel descriptors.
-//!
-//! Subdivided into specialized cache manager implementations for descriptor structures.
+//! Swap space slot allocator and paging manager.
 
-pub mod cache;
+pub mod manager;
 
-pub use cache::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
+pub use manager::{
+    alloc_swap_slot, free_swap_slot, is_active, swap_stats, swapoff, swapon, sys_swapoff,
+    sys_swapon, SwapStats, MAX_SWAP_SLOTS, SWAP_BITMAP_WORDS,
 };
-
-#[cfg(test)]
-mod tests;

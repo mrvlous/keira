@@ -7,15 +7,17 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Tree-based user-space memory page and page-table deallocation with strict kernel mapping preservation.
+//! Tree-based user-space memory page and page-table deallocation.
 
-use super::mmap::cleanup_vmas_for_pml4;
-use super::paging::{PAGE_HUGE, PAGE_PRESENT, PAGE_USER, PTE_ADDR_MASK};
+use super::super::area::cleanup_vmas_for_pml4;
+use super::super::table::{
+    PAGE_HUGE, PAGE_PRESENT, PAGE_USER, PTE_ADDR_MASK, PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M,
+};
 use crate::pmm;
 
 #[inline]
 fn is_valid_page_table_frame(phys: u64) -> bool {
-    if !phys.is_multiple_of(pmm::PAGE_SIZE) || phys == 0 {
+    if (phys % pmm::PAGE_SIZE) != 0 || phys == 0 {
         return false;
     }
     #[cfg(test)]
@@ -30,9 +32,14 @@ fn is_valid_page_table_frame(phys: u64) -> bool {
     }
 }
 
-/// Free all user-owned mapped pages and user page-table frames from a process's PML4.
-/// Walks the entire 4-level page table structure, ensuring every user physical frame is freed exactly once
-/// without relying on hard-coded address ranges, while strictly preserving shared kernel mappings.
+/// Frees all user-owned mapped pages and intermediate page-table frames from a PML4 table.
+///
+/// Recursively walks lower-half page table trees, reclaiming individual physical frames
+/// and intermediate table frames while strictly preserving shared kernel mappings.
+///
+/// # Safety
+///
+/// Deallocates physical memory frames and clears active page table pointers.
 pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
     if !is_valid_page_table_frame(pml4_phys) {
         return;
@@ -40,16 +47,13 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
 
     let pml4 = pml4_phys as *const u64;
 
-    // 1. Clean up user regions under PML4[0] (User code and low user mappings)
     let pml4_0 = *pml4;
     if (pml4_0 & PAGE_PRESENT) != 0 {
         let pdpt_phys = pml4_0 & PTE_ADDR_MASK;
         if is_valid_page_table_frame(pdpt_phys) {
             let pdpt = pdpt_phys as *const u64;
 
-            // Traverse all entries under PDPT
             for i in 0..512 {
-                // Strictly protect kernel mappings: PDPT[0] (identity map 0..1GB) and PDPT[3] (MMIO 3..4GB)
                 if i == 0 || i == 3 {
                     continue;
                 }
@@ -57,10 +61,9 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
                 let pdpt_entry = *pdpt.add(i);
                 if (pdpt_entry & PAGE_PRESENT) != 0 && (pdpt_entry & PAGE_USER) != 0 {
                     if (pdpt_entry & PAGE_HUGE) != 0 {
-                        // 1GiB Huge Page leaf frame under PML4[0]
-                        let frame = pdpt_entry & super::paging::PTE_ADDR_MASK_1G;
+                        let frame = pdpt_entry & PTE_ADDR_MASK_1G;
                         if frame >= pmm::KERNEL_BASE_1MB
-                            && frame.is_multiple_of(0x4000_0000)
+                            && (frame % 0x4000_0000) == 0
                             && pmm::is_valid_ram_range(frame, 0x4000_0000)
                         {
                             pmm::free_contiguous_frames(frame, 512 * 512);
@@ -74,14 +77,12 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
                 }
             }
 
-            // Free the child process's dedicated PDPT frame if dynamically allocated
             if pdpt_phys >= pmm::KERNEL_BASE_1MB {
                 pmm::free_frame(pdpt_phys);
             }
         }
     }
 
-    // 2. Clean up user regions under PML4[1..256] (User heap, mmap, stack in lower canonical half)
     for i in 1..256 {
         let entry = *pml4.add(i);
         if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
@@ -92,18 +93,22 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
         }
     }
 
-    // 3. Clean up process VMA metadata
     cleanup_vmas_for_pml4(pml4_phys);
 
-    // 4. Free the PML4 root frame itself if dynamically allocated
     if pml4_phys >= pmm::KERNEL_BASE_1MB {
         pmm::free_frame(pml4_phys);
     }
 }
 
-/// Recursively walk a user page table tree, freeing all user-owned mapped physical page frames
-/// (at level 1) and all intermediate page table frames (at levels 2 and 3).
-/// Level 3 = PDPT, Level 2 = PD, Level 1 = PT
+/// Recursively walks a user page table tree, reclaiming allocated page frames.
+///
+/// * `level == 3`: PDPT level.
+/// * `level == 2`: PD level.
+/// * `level == 1`: PT level.
+///
+/// # Safety
+///
+/// Deallocates physical memory and dereferences raw physical addresses.
 unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
     if !is_valid_page_table_frame(table_phys) {
         return;
@@ -112,7 +117,6 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
     let table = table_phys as *const u64;
 
     if level == 1 {
-        // Level 1: Page Table (PT). Each present user entry is a mapped 4KB user physical frame.
         for i in 0..512 {
             let entry = *table.add(i);
             if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
@@ -123,21 +127,14 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
             }
         }
     } else {
-        // Level 2 (PD) or Level 3 (PDPT): Walk intermediate entries
         for i in 0..512 {
             let entry = *table.add(i);
             if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
                 if (entry & PAGE_HUGE) != 0 {
-                    // Huge page (2MB at level 2, 1GB at level 3) is a leaf frame.
-                    // Reclaim underlying physical frames if dynamically allocated and owned by user.
                     let (frame, count, size) = if level == 3 {
-                        (
-                            entry & super::paging::PTE_ADDR_MASK_1G,
-                            512 * 512,
-                            0x4000_0000,
-                        )
+                        (entry & PTE_ADDR_MASK_1G, 512 * 512, 0x4000_0000)
                     } else {
-                        (entry & super::paging::PTE_ADDR_MASK_2M, 512, 0x20_0000)
+                        (entry & PTE_ADDR_MASK_2M, 512, 0x20_0000)
                     };
                     if frame >= pmm::KERNEL_BASE_1MB && pmm::is_valid_ram_range(frame, size) {
                         pmm::free_contiguous_frames(frame, count);
@@ -152,57 +149,7 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
         }
     }
 
-    // Free the page table frame itself
     if table_phys >= pmm::KERNEL_BASE_1MB {
         pmm::free_frame(table_phys);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[repr(align(4096))]
-    struct AlignedTable([u64; 512]);
-
-    static mut TEST_PML4: AlignedTable = AlignedTable([0; 512]);
-    static mut TEST_PDPT: AlignedTable = AlignedTable([0; 512]);
-
-    #[test]
-    fn test_free_user_pages_with_1gib_huge_mapping_under_pml4_0() {
-        let _lock = pmm::TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
-        pmm::reset_pmm_stats();
-        let frame_1gb = 0x4000_0000u64;
-
-        unsafe {
-            let pdpt_ptr = core::ptr::addr_of_mut!(TEST_PDPT.0).cast::<u64>();
-            let pml4_ptr = core::ptr::addr_of_mut!(TEST_PML4.0).cast::<u64>();
-
-            for i in 0..512 {
-                *pml4_ptr.add(i) = 0;
-                *pdpt_ptr.add(i) = 0;
-            }
-
-            *pdpt_ptr.add(1) = frame_1gb | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
-
-            let pdpt_phys = pdpt_ptr as u64;
-            assert_eq!(pdpt_phys % 4096, 0);
-
-            *pml4_ptr = pdpt_phys | PAGE_PRESENT | PAGE_USER;
-
-            let pml4_phys = pml4_ptr as u64;
-            assert_eq!(pml4_phys % 4096, 0);
-
-            // Register usable physical RAM region covering the 1GB huge page
-            pmm::set_test_ram_region(0x4000_0000, 0x8000_0000);
-
-            // Verify that 0 frames were freed before
-            assert_eq!(pmm::get_freed_frame_count(), 0);
-
-            free_user_pages(pml4_phys, 0x600000000000);
-
-            // Verify that the 1GB huge page (262,144 4KB frames) was completely reclaimed
-            assert_eq!(pmm::get_freed_frame_count(), 262_144);
-        }
     }
 }

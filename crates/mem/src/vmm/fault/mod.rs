@@ -7,16 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel object cache (slab-like allocator) for fixed-size kernel descriptors.
-//!
-//! Subdivided into specialized cache manager implementations for descriptor structures.
+//! Page Fault (#PF) interrupt dispatching, stack growth, and COW fault resolution.
 
-pub mod cache;
+pub mod handler;
 
-pub use cache::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
-};
-
-#[cfg(test)]
-mod tests;
+pub use handler::{handle_page_fault, USER_STACK_BOTTOM, USER_STACK_TOP};

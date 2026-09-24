@@ -7,16 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel object cache (slab-like allocator) for fixed-size kernel descriptors.
-//!
-//! Subdivided into specialized cache manager implementations for descriptor structures.
+//! Fixed-size slab object cache subsystem.
 
-pub mod cache;
+pub mod manager;
 
-pub use cache::{
+pub use manager::{
     kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
     TASK_CACHE, VMA_CACHE,
 };
-
-#[cfg(test)]
-mod tests;

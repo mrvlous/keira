@@ -7,16 +7,24 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Virtual Memory Management (VMM) subsystem.
+//! Virtual Memory Manager (VMM) 4-level paging, VMA address space, and page fault handling.
+//!
+//! Subdivided into specialized modules for page table entries, hardware traversal,
+//! page mapping and protection, virtual memory areas, demand paging, cloning, and reclamation.
 
+pub mod area;
 pub mod clone;
 pub mod fault;
-pub mod free;
-pub mod mmap;
-pub mod paging;
+pub mod mapping;
+pub mod reclaim;
+pub mod table;
 
+pub use area::*;
 pub use clone::*;
 pub use fault::*;
-pub use free::*;
-pub use mmap::*;
-pub use paging::*;
+pub use mapping::*;
+pub use reclaim::*;
+pub use table::*;
+
+#[cfg(test)]
+mod tests;

@@ -7,16 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel object cache (slab-like allocator) for fixed-size kernel descriptors.
-//!
-//! Subdivided into specialized cache manager implementations for descriptor structures.
+//! Page mapping, unmapping, protection attributes, and TLB invalidation.
 
-pub mod cache;
+pub mod map;
+pub mod protect;
+pub mod unmap;
 
-pub use cache::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
-};
-
-#[cfg(test)]
-mod tests;
+pub use map::{map_huge_2m_page, map_page, map_page_in_pml4};
+pub use protect::{is_user_page_mapped, mprotect_page};
+pub use unmap::{free_and_unmap_page, unmap_huge_2m_page, unmap_page};

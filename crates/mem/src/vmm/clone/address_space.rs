@@ -7,26 +7,30 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! PML4 Address space cloning preserving kernel identity map, MMIO, and user space memory with failure rollback.
+//! PML4 address space cloning preserving kernel identity mapping, MMIO, and process isolation.
 
-use super::free::free_user_pages;
-use super::paging::{
-    active_pml4, map_page_in_pml4, switch_address_space, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT,
-    PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
+use super::super::mapping::map_page_in_pml4;
+use super::super::reclaim::free_user_pages;
+use super::super::table::{
+    active_pml4, switch_address_space, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
+    PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 
-/// Clone the boot PML4, sharing kernel identity-map (PDPT[0]) and MMIO (PDPT[3]).
-/// User-space entries are left empty for a new process to populate.
+/// Clones the boot PML4 table, sharing the kernel identity mapping (PDPT[0]) and MMIO (PDPT[3]).
+///
+/// User-space address ranges are left unpopulated for the child process.
+///
+/// # Safety
+///
+/// Directly reads physical memory, modifies page tables, and allocates page frames.
 pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     let boot_pml4_phys = active_pml4();
     let boot_pml4 = boot_pml4_phys as *const u64;
 
-    // Allocate a new PML4 frame (zeroed by pmm::alloc_frame)
     let new_pml4_phys = pmm::alloc_frame().ok_or("Out of memory for new PML4")?;
     let new_pml4 = new_pml4_phys as *mut u64;
 
-    // Read the boot PML4[0] entry - it points to the boot PDPT
     let boot_pml4_0 = *boot_pml4;
     if (boot_pml4_0 & PAGE_PRESENT) == 0 {
         pmm::free_frame(new_pml4_phys);
@@ -36,7 +40,6 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     let boot_pdpt_phys = boot_pml4_0 & PTE_ADDR_MASK;
     let boot_pdpt = boot_pdpt_phys as *const u64;
 
-    // Allocate a new PDPT for the child process
     let new_pdpt_phys = match pmm::alloc_frame() {
         Some(p) => p,
         None => {
@@ -46,17 +49,11 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     };
     let new_pdpt = new_pdpt_phys as *mut u64;
 
-    // Copy kernel identity map (PDPT[0]: 0..1GB) and kernel MMIO/Framebuffer (PDPT[3]: 3..4GB).
-    // Enforce strictly that kernel mappings remain Supervisor-Only (U/S bit = 0).
-    // Architectural Invariant: Effective Ring 3 User access requires U/S=1 across all hierarchy levels.
-    // Because PDPT[0] and PDPT[3] have U/S=0, Ring 3 cannot access kernel identity memory or MMIO.
     *new_pdpt.add(0) = (*boot_pdpt.add(0)) & !PAGE_USER;
     *new_pdpt.add(3) = (*boot_pdpt.add(3)) & !PAGE_USER;
 
-    // Set new PML4[0] = new PDPT with present + writable + user flags so userland under PDPT[1..2] is accessible
     *new_pml4 = (new_pdpt_phys & PTE_ADDR_MASK) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
 
-    // Share higher-half kernel PML4 entries (256..512) if present
     for i in 256..512 {
         let entry = *boot_pml4.add(i);
         if (entry & PAGE_PRESENT) != 0 {
@@ -67,9 +64,13 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     Ok(new_pml4_phys)
 }
 
-/// Deep clone an entire parent process address space (kernel mappings + user pages).
-/// Allocates separate physical frames for every mapped user page to guarantee isolation.
-/// Cleans up and rolls back completely on any allocation or mapping failure.
+/// Clones an entire parent process address space into a newly allocated PML4 hierarchy.
+///
+/// Performs deep page duplication for all user-mapped frames to enforce memory isolation.
+///
+/// # Safety
+///
+/// Modifies address space configurations, page tables, and copies frame contents.
 pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'static str> {
     let child_pml4_phys = clone_kernel_pml4()?;
 
@@ -78,7 +79,6 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
 
     let parent_pml4 = parent_pml4_phys as *const u64;
 
-    // Walk all canonical user PML4 entries in lower half (0..256)
     for pml4_idx in 0..256 {
         let pml4_entry = *parent_pml4.add(pml4_idx);
         if (pml4_entry & PAGE_PRESENT) == 0 {
@@ -96,7 +96,6 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
         let pdpt = pdpt_phys as *const u64;
 
         for pdpt_idx in 0..512 {
-            // Skip kernel identity map (pml4_idx=0, pdpt_idx=0) and MMIO (pml4_idx=0, pdpt_idx=3)
             if pml4_idx == 0 && (pdpt_idx == 0 || pdpt_idx == 3) {
                 continue;
             }
@@ -106,7 +105,6 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                 continue;
             }
 
-            // Skip 1GB huge page entries
             if (pdpt_entry & PAGE_HUGE) != 0 {
                 continue;
             }
@@ -123,7 +121,6 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                     continue;
                 }
 
-                // Skip 2MB huge page entries
                 if (pd_entry & PAGE_HUGE) != 0 {
                     continue;
                 }
@@ -140,7 +137,6 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                         continue;
                     }
 
-                    // Calculate virtual address
                     let mut vaddr = 0u64;
                     vaddr |= (pml4_idx as u64) << 39;
                     vaddr |= (pdpt_idx as u64) << 30;
@@ -152,7 +148,6 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                         continue;
                     }
 
-                    // Allocate dedicated physical frame for child process to ensure full isolation
                     let child_frame = match pmm::alloc_frame() {
                         Some(f) => f,
                         None => {
@@ -163,14 +158,12 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                         }
                     };
 
-                    // Deep-copy 4KB page content from parent physical frame to child physical frame
                     core::ptr::copy_nonoverlapping(
                         phys_frame as *const u8,
                         child_frame as *mut u8,
                         4096,
                     );
 
-                    // Map child's own frame in child PML4 with original permissions
                     if let Err(e) = map_page_in_pml4(
                         child_pml4_phys,
                         vaddr,

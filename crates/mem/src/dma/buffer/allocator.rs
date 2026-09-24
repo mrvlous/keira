@@ -11,20 +11,22 @@
 
 use crate::pmm;
 
-/// A Scatter-Gather list entry mapping a physical address with length.
+/// A Scatter-Gather list entry mapping a physical address with segment byte length.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ScatterGatherEntry {
     pub phys_addr: u64,
     pub length: u32,
 }
 
 /// A contiguous physical memory DMA buffer descriptor.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DmaBuffer {
     pub vaddr: u64,
     pub paddr: u64,
     pub size: usize,
 }
 
-/// Allocate a physically contiguous DMA memory buffer for hardware bus master drivers.
+/// Allocates a physically contiguous DMA memory buffer for hardware bus master device drivers.
 pub fn alloc_dma_buffer(size: usize) -> Result<DmaBuffer, &'static str> {
     let frame = pmm::alloc_frame().ok_or("Out of physical frames for DMA buffer")?;
     Ok(DmaBuffer {

@@ -7,16 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel object cache (slab-like allocator) for fixed-size kernel descriptors.
-//!
-//! Subdivided into specialized cache manager implementations for descriptor structures.
+//! Synchronization guards, CPU affinity, and reentrancy detection for PMM.
 
-pub mod cache;
+pub mod guard;
 
-pub use cache::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
-};
+pub use guard::{get_current_cpu_id, PmmGuard};
 
 #[cfg(test)]
-mod tests;
+pub use guard::{clear_test_cpu_id, set_test_cpu_id, TEST_MUTEX};

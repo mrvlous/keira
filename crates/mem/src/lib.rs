@@ -7,6 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
+//! Memory Management Subsystem for Keira Kernel.
+//!
+//! Encompasses physical frame allocation (PMM), 4-level paging and virtual memory areas (VMM),
+//! segregated kernel heap (Heap), slab-like descriptor object caches (Slab), contiguous
+//! bus master buffers (DMA), and anonymous page slot swapping (Swap).
+
 #![cfg_attr(not(test), no_std)]
 
 #[cfg(test)]
@@ -28,12 +34,12 @@ pub use heap::{
 #[cfg(test)]
 pub use pmm::TEST_MUTEX;
 pub use pmm::{
-    alloc_frame, free_contiguous_frames, free_frame, get_freed_frame_count, get_stats,
+    alloc_frame, free_contiguous_frames, free_frame, free_memory, get_freed_frame_count, get_stats,
     init as pmm_init, is_frame_allocated, is_valid_ram_range, mark_frame_allocated,
     mark_frame_free, max_physical_address, reset_pmm_stats, set_test_ram_region,
-    set_test_ram_region_empty, total_memory, total_usable_memory, verify_pmm_invariants,
-    verify_pmm_invariants_locked, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES,
-    PAGE_SIZE, PAGE_SIZE_4K,
+    set_test_ram_region_empty, total_memory, total_usable_memory, used_memory,
+    verify_pmm_invariants, verify_pmm_invariants_locked, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT,
+    MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use slab::{
     kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
@@ -56,7 +62,12 @@ pub use vmm::{
     PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR, USER_MIN_VADDR,
 };
 
-/// Initialize the PMM and VMM subsystems.
+/// Initializes early physical and virtual memory subsystems from Multiboot2 descriptors.
+///
+/// # Safety
+///
+/// The caller must ensure `multiboot_info_ptr` references valid bootloader structures,
+/// and `initrd_end` / `heap_end` specify accurate kernel boundary markers.
 pub unsafe fn init(multiboot_info_ptr: u64, initrd_end: u64, heap_end: u64) {
     let kernel_end = if initrd_end > heap_end {
         initrd_end
@@ -66,3 +77,6 @@ pub unsafe fn init(multiboot_info_ptr: u64, initrd_end: u64, heap_end: u64) {
 
     pmm::init(multiboot_info_ptr, kernel_end);
 }
+
+#[cfg(test)]
+mod tests;

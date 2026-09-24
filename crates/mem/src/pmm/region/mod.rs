@@ -7,11 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Physical memory page frame types and fundamental constants.
+//! Usable physical RAM region management and early bootloader memory map parsing.
 
-/// Standard 4KB x86_64 page and physical frame size.
-pub const PAGE_SIZE: u64 = 4096;
-/// 4KB Page size alias.
-pub const PAGE_SIZE_4K: u64 = 4096;
-/// 1MB Kernel physical memory base address.
-pub const KERNEL_BASE_1MB: u64 = 0x100000;
+pub mod boot;
+pub mod descriptor;
+
+pub use boot::init;
+pub use descriptor::{is_valid_ram_range, UsableRegion};

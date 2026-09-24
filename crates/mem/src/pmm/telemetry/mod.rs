@@ -7,16 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel object cache (slab-like allocator) for fixed-size kernel descriptors.
-//!
-//! Subdivided into specialized cache manager implementations for descriptor structures.
+//! Memory usage telemetry, capacity reporting, and structural consistency validation.
 
-pub mod cache;
+pub mod invariants;
+pub mod metrics;
 
-pub use cache::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
+pub use invariants::{verify_pmm_invariants, verify_pmm_invariants_locked};
+pub use metrics::{
+    free_memory, get_stats, max_physical_address, total_memory, total_usable_memory, used_memory,
 };
-
-#[cfg(test)]
-mod tests;
