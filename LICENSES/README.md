@@ -25,7 +25,7 @@ LICENSES/
 ### 1. `LICENSES/preferred/`
 Contains licenses that are officially supported and encouraged for kernel core code, drivers, and userland SDK components:
 * **[`GPL-2.0`](preferred/GPL-2.0)**: The primary copyleft license covering the kernel core (`crates/*`), bootstrap assembly, and memory management.
-* **[`MIT`](preferred/MIT)**: Permissive license option for userland C SDK headers (`user/include/`) and standalone toolchain utilities.
+* **[`MIT`](preferred/MIT)**: Permissive license option for userland C SDK headers (`userland/include/`) and standalone toolchain utilities.
 
 ### 2. `LICENSES/exceptions/`
 Contains license exception texts that modify or grant additional permissions to base licenses:

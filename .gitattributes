@@ -19,9 +19,15 @@
 *.ld text
 *.toml text
 *.json text
+*.md text
+*.sh text
 Makefile text
 
-# Mark executable binary files as binary
+# Mark executable and archive binary files as binary
 *.bin binary
 *.iso binary
 *.img binary
+*.a binary
+*.o binary
+*.elf binary
+*.tar binary

@@ -51,3 +51,14 @@ indent_size = 4
 [*.json]
 indent_style = space
 indent_size = 4
+
+# Indentation settings for Markdown documentation
+[*.md]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+# Indentation settings for Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 4
