@@ -54,6 +54,7 @@ INITRD_TAR      := $(DISK_DIR)/initrd.tar
 # Configurable build parameters
 DISK_SIZE       ?= 32
 QEMU_MEM        ?= 128M
+USER_DIR        ?= userland
 
 # Verbose mode: set V=1 to display raw command executions
 ifeq ($(V),1)
@@ -77,10 +78,10 @@ ifeq ($(ARCH),i686)
                    arch/x86/i686/kernel/idt.asm \
                    arch/x86/i686/kernel/isr.asm \
                    arch/x86/i686/kernel/syscall.asm
-    USER_LINKER_SCRIPT := user/arch/x86/i686/linker.ld
+    USER_LINKER_SCRIPT := $(USER_DIR)/arch/x86/i686/linker.ld
     USER_CFLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx \
-                   -Iuser/include
+                   -I$(USER_DIR)/include
     USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
                     -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
@@ -99,11 +100,11 @@ else
                    arch/x86/x86_64/kernel/idt.asm \
                    arch/x86/x86_64/kernel/isr.asm \
                    arch/x86/x86_64/kernel/syscall.asm
-    USER_LINKER_SCRIPT := user/arch/x86/x86_64/linker.ld
+    USER_LINKER_SCRIPT := $(USER_DIR)/arch/x86/x86_64/linker.ld
     USER_CFLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
                    -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
-                   -Iuser/include
+                   -I$(USER_DIR)/include
     USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
                     -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 endif
@@ -113,27 +114,27 @@ SMP             ?= 2
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS        := $(ASM_OBJS)
 
-USER_CRT_SRC    := user/arch/x86/$(ARCH)/crt0.asm
+USER_CRT_SRC    := $(USER_DIR)/arch/x86/$(ARCH)/crt0.asm
 USER_CRT_OBJ    := $(OBJ_DIR)/$(USER_CRT_SRC).o
 
 USER_LIBC_A     := $(BUILD_DIR)/lib/libc.a
-USER_LIB_SRCS   := $(shell find user/lib -type f -name "*.c")
-USER_LIB_OBJS   := $(patsubst user/lib/%.c,$(OBJ_DIR)/user/lib/%.o,$(USER_LIB_SRCS))
+USER_LIB_SRCS   := $(shell find $(USER_DIR)/lib -type f -name "*.c")
+USER_LIB_OBJS   := $(patsubst $(USER_DIR)/lib/%.c,$(OBJ_DIR)/$(USER_DIR)/lib/%.o,$(USER_LIB_SRCS))
 
-USER_KCC_SRCS   := $(shell find user/bin/kcc -type f -name "*.c")
-USER_KCC_OBJS   := $(patsubst user/bin/kcc/%.c,$(OBJ_DIR)/user/bin/kcc/%.o,$(USER_KCC_SRCS))
+USER_KCC_SRCS   := $(shell find $(USER_DIR)/bin/kcc -type f -name "*.c")
+USER_KCC_OBJS   := $(patsubst $(USER_DIR)/bin/kcc/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/kcc/%.o,$(USER_KCC_SRCS))
 
 SYSINFO_ELF     := $(BIN_DIR)/sysinfo.elf
-SYSINFO_SRCS    := $(shell find user/bin/sysinfo -type f -name "*.c")
-SYSINFO_OBJS    := $(patsubst user/bin/sysinfo/%.c,$(OBJ_DIR)/user/bin/sysinfo/%.o,$(SYSINFO_SRCS))
+SYSINFO_SRCS    := $(shell find $(USER_DIR)/bin/sysinfo -type f -name "*.c")
+SYSINFO_OBJS    := $(patsubst $(USER_DIR)/bin/sysinfo/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/sysinfo/%.o,$(SYSINFO_SRCS))
 
 TEST_ABI_ELF    := $(BIN_DIR)/test_abi.elf
-TEST_ABI_SRCS   := $(shell find user/bin/test_abi -type f -name "*.c")
-TEST_ABI_OBJS   := $(patsubst user/bin/test_abi/%.c,$(OBJ_DIR)/user/bin/test_abi/%.o,$(TEST_ABI_SRCS))
+TEST_ABI_SRCS   := $(shell find $(USER_DIR)/bin/test_abi -type f -name "*.c")
+TEST_ABI_OBJS   := $(patsubst $(USER_DIR)/bin/test_abi/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/test_abi/%.o,$(TEST_ABI_SRCS))
 
 FUZZ_ABI_ELF    := $(BIN_DIR)/fuzz_abi.elf
-FUZZ_ABI_SRCS   := $(shell find user/bin/fuzz_abi -type f -name "*.c" 2>/dev/null)
-FUZZ_ABI_OBJS   := $(patsubst user/bin/fuzz_abi/%.c,$(OBJ_DIR)/user/bin/fuzz_abi/%.o,$(FUZZ_ABI_SRCS))
+FUZZ_ABI_SRCS   := $(shell find $(USER_DIR)/bin/fuzz_abi -type f -name "*.c" 2>/dev/null)
+FUZZ_ABI_OBJS   := $(patsubst $(USER_DIR)/bin/fuzz_abi/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/fuzz_abi/%.o,$(FUZZ_ABI_SRCS))
 
 USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF)
 
@@ -328,20 +329,21 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
 # Userland freestanding C standard library (libc.a)
-$(OBJ_DIR)/user/lib/%.o: user/lib/%.c | dirs
+$(OBJ_DIR)/$(USER_DIR)/lib/%.o: $(USER_DIR)/lib/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
 
 $(USER_LIBC_A): $(USER_LIB_OBJS) | dirs
 	@$(LOG_INFO) "Archiving freestanding C standard library: libc.a ($(ARCH))..."
 	$(Q)mkdir -p $(dir $@)
+	$(Q)rm -f $@
 	$(Q)ar rcs $@ $(USER_LIB_OBJS)
 	@$(LOG_DONE) "$(USER_LIBC_A) ready"
 
 # Userland C compiler (kcc.elf)
-$(OBJ_DIR)/user/bin/kcc/%.o: user/bin/kcc/%.c | dirs
+$(OBJ_DIR)/$(USER_DIR)/bin/kcc/%.o: $(USER_DIR)/bin/kcc/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -Iuser/bin/kcc/include -c $< -o $@
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/kcc/include -c $< -o $@
 
 $(USER_ELF): $(USER_CRT_OBJ) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Linking user space program: kcc ($(ARCH))..."
@@ -349,9 +351,9 @@ $(USER_ELF): $(USER_CRT_OBJ) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIP
 	@$(LOG_DONE) "$(USER_ELF) ready"
 
 # Userland diagnostic tool (sysinfo.elf)
-$(OBJ_DIR)/user/bin/sysinfo/%.o: user/bin/sysinfo/%.c | dirs
+$(OBJ_DIR)/$(USER_DIR)/bin/sysinfo/%.o: $(USER_DIR)/bin/sysinfo/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/sysinfo/include -c $< -o $@
 
 $(SYSINFO_ELF): $(USER_CRT_OBJ) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Linking user space program: sysinfo ($(ARCH))..."
@@ -359,9 +361,9 @@ $(SYSINFO_ELF): $(USER_CRT_OBJ) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCR
 	@$(LOG_DONE) "$(SYSINFO_ELF) ready"
 
 # Userland ABI verification & fault injection test tool (test_abi.elf)
-$(OBJ_DIR)/user/bin/test_abi/%.o: user/bin/test_abi/%.c | dirs
+$(OBJ_DIR)/$(USER_DIR)/bin/test_abi/%.o: $(USER_DIR)/bin/test_abi/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/test_abi/include -c $< -o $@
 
 $(TEST_ABI_ELF): $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Linking user space program: test_abi ($(ARCH))..."
@@ -369,9 +371,9 @@ $(TEST_ABI_ELF): $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_S
 	@$(LOG_DONE) "$(TEST_ABI_ELF) ready"
 
 # Userland automated fuzzing & chaos test tool (fuzz_abi.elf)
-$(OBJ_DIR)/user/bin/fuzz_abi/%.o: user/bin/fuzz_abi/%.c | dirs
+$(OBJ_DIR)/$(USER_DIR)/bin/fuzz_abi/%.o: $(USER_DIR)/bin/fuzz_abi/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/fuzz_abi/include -c $< -o $@
 
 $(FUZZ_ABI_ELF): $(USER_CRT_OBJ) $(FUZZ_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
 	@$(LOG_INFO) "Linking user space program: fuzz_abi ($(ARCH))..."
@@ -414,33 +416,13 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	    printf "KEIRA_DRIVER\001\000[Driver: %s]\nStatus=Active\nType=KernelSubsystem\n" "$$drv" > $(FS_ROOT)/system/drivers/$$drv; \
 	done
 	$(Q)printf "console\nnull\nzero\nrandom\nurandom\nptmx\ntty\nfb0\nsda\nsda1\n" > $(FS_ROOT)/system/dev/devices.list
-	$(Q)cp -r user/include/* $(FS_ROOT)/system/include/
-	$(Q)cp user/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
-	$(Q)cp user/lib/math/math.c $(FS_ROOT)/system/lib/math.c
-	$(Q)cp user/lib/string/string.c $(FS_ROOT)/system/lib/string.c
-	$(Q)cp user/lib/stdlib/stdlib.c $(FS_ROOT)/system/lib/stdlib.c
-	$(Q)cp user/lib/unistd/unistd.c $(FS_ROOT)/system/lib/unistd.c
-	$(Q)cp user/lib/socket/socket.c $(FS_ROOT)/system/lib/socket.c
-	$(Q)cp user/lib/assert/assert.c $(FS_ROOT)/system/lib/assert.c
-	$(Q)cp user/lib/dirent/dirent.c $(FS_ROOT)/system/lib/dirent.c
-	$(Q)cp user/lib/stat/stat.c $(FS_ROOT)/system/lib/stat.c
-	$(Q)cp user/lib/signal/signal.c $(FS_ROOT)/system/lib/signal.c
-	$(Q)cp user/lib/time/time.c $(FS_ROOT)/system/lib/time.c
-	$(Q)cp user/lib/setjmp/setjmp.c $(FS_ROOT)/system/lib/setjmp.c
-	$(Q)cp user/lib/ctype/ctype.c $(FS_ROOT)/system/lib/ctype.c
-	$(Q)cp user/lib/errno/errno.c $(FS_ROOT)/system/lib/errno.c
-	$(Q)cp user/lib/mem/malloc.c $(FS_ROOT)/system/lib/malloc.c
-	$(Q)cp user/lib/stdio/file.c $(FS_ROOT)/system/lib/file.c
-	$(Q)cp user/lib/stdio/printf.c $(FS_ROOT)/system/lib/printf.c
-	$(Q)cp user/lib/syscall/syscall.c $(FS_ROOT)/system/lib/syscall.c
-	$(Q)cp user/lib/termios/termios.c $(FS_ROOT)/system/lib/termios.c 2>/dev/null || true
-	$(Q)cp user/lib/stdlib/stack_chk.c $(FS_ROOT)/system/lib/stack_chk.c 2>/dev/null || true
-	$(Q)cp user/lib/uring/uring.c $(FS_ROOT)/system/lib/uring.c 2>/dev/null || true
-	$(Q)cp user/bin/kcc/*.c $(FS_ROOT)/apps/src/kcc/
-	$(Q)cp user/bin/kcc/include/*.h $(FS_ROOT)/apps/src/kcc/include/
-	$(Q)cp user/bin/sysinfo/*.c $(FS_ROOT)/apps/src/sysinfo/
-	$(Q)cp user/bin/test_abi/*.c $(FS_ROOT)/apps/src/test_abi/
-	$(Q)cp user/bin/fuzz_abi/*.c $(FS_ROOT)/apps/src/fuzz_abi/
+	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/system/include/
+	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
+	$(Q)cp -r $(USER_DIR)/lib/* $(FS_ROOT)/system/lib/
+	$(Q)cp -r $(USER_DIR)/bin/kcc/* $(FS_ROOT)/apps/src/kcc/
+	$(Q)cp -r $(USER_DIR)/bin/sysinfo/* $(FS_ROOT)/apps/src/sysinfo/
+	$(Q)cp -r $(USER_DIR)/bin/test_abi/* $(FS_ROOT)/apps/src/test_abi/
+	$(Q)cp -r $(USER_DIR)/bin/fuzz_abi/* $(FS_ROOT)/apps/src/fuzz_abi/
 	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
@@ -473,6 +455,9 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
 	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/apps/src/test_abi ::/apps/src/fuzz_abi ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
+	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
+	done
 	@$(LOG_DISK) "Populating disk image with system files ($(ARCH))..."
 	$(Q)for f in $$(cd $(FS_ROOT) && find . -type f | sed 's|^\./||'); do \
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \
@@ -537,7 +522,7 @@ format: preflight-format ## Format Rust and C source code
 
 lint: preflight-lint ## Static analysis of C userland code using clang-tidy
 	@$(LOG_INFO) "Linting userland C code..."
-	$(Q)find user -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I user/include -I user/bin/kcc/include -ffreestanding -m64 \;
+	$(Q)find $(USER_DIR) -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I $(USER_DIR)/include -I $(USER_DIR)/bin/kcc/include -I $(USER_DIR)/bin/sysinfo/include -I $(USER_DIR)/bin/test_abi/include -I $(USER_DIR)/bin/fuzz_abi/include -ffreestanding -m64 \;
 	@$(LOG_DONE) "Linting complete"
 
 # Inspection & diagnostic utilities
