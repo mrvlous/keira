@@ -17,7 +17,7 @@ use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    EAGAIN, EBADF, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ESRCH,
+    EAGAIN, EBADF, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSPC, ESRCH,
 };
 
 /// Syscall 6: Open file or device node with POSIX flags.
@@ -302,7 +302,15 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 let mut current_size = read_file(path_str, file_buf).unwrap_or(0);
 
                 let offset = t.fds[fd].offset as usize;
+                if offset >= 4096 {
+                    pmm::free_frame(frame);
+                    return errno_to_ret(ENOSPC);
+                }
                 let to_write = (len as usize).min(4096 - offset);
+                if to_write == 0 {
+                    pmm::free_frame(frame);
+                    return 0;
+                }
                 if let Err(e) = copy_from_user(&mut file_buf[offset..offset + to_write], buf_ptr) {
                     pmm::free_frame(frame);
                     return errno_to_ret(e);
