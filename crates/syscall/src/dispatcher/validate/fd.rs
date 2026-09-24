@@ -7,16 +7,17 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! File descriptor validation routines.
 
-pub mod numbers;
-pub mod vectors;
+use keira_task::types::MAX_FDS;
 
-#[cfg(test)]
-mod tests;
+use crate::user_copy::errno::EBADF;
 
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+/// Validates whether a file descriptor index falls within the valid range `[0, MAX_FDS)`.
+pub fn validate_fd(fd: i32) -> Result<(), i64> {
+    if (0..MAX_FDS as i32).contains(&fd) {
+        Ok(())
+    } else {
+        Err(EBADF)
+    }
+}

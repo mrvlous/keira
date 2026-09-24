@@ -7,16 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Task State Segment (TSS) layout and kernel privilege stack management.
 
-pub mod numbers;
-pub mod vectors;
+pub mod stack;
+pub mod types;
 
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub use stack::{get_boot_kernel_stack, set_kernel_stack, BOOT_KERNEL_STACK_TOP, TSS};
+pub use types::TaskStateSegment;

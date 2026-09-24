@@ -7,16 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! User mode initialization, descriptor configuration, and MSR setup.
 
-pub mod numbers;
-pub mod vectors;
+pub mod gdt;
+pub mod init;
+pub mod msr;
 
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub use gdt::configure_gdt_tss;
+pub use init::init_user_mode;
+pub use msr::configure_syscall_msrs;

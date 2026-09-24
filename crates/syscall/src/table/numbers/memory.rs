@@ -7,16 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Virtual memory and heap system call numbers.
 
-pub mod numbers;
-pub mod vectors;
-
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub const SYS_SBRK: u64 = 11;
+pub const SYS_BRK: u64 = 12;
+pub const SYS_MMAP: u64 = 20;
+pub const SYS_MUNMAP: u64 = 21;
+pub const SYS_MPROTECT: u64 = 31;
+pub const SYS_MADVISE: u64 = 32;
+pub const SYS_MSYNC: u64 = 83;

@@ -7,16 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Memory bounds constants and validation limits for process heap.
 
-pub mod numbers;
-pub mod vectors;
+#[cfg(target_arch = "x86_64")]
+pub const HEAP_MAX_VADDR: u64 = 0x7000_0000_0000;
 
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+#[cfg(target_arch = "x86")]
+pub const HEAP_MAX_VADDR: u64 = 0x0400_0000;

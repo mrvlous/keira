@@ -7,16 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Primitives for copying data between kernel address space and user address space.
 
-pub mod numbers;
-pub mod vectors;
+pub mod buffer;
+pub mod typed;
 
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub use buffer::{copy_from_user, copy_to_user};
+pub use typed::{copy_val_from_user, copy_val_to_user};

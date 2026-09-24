@@ -7,16 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Signal management and mask system call numbers.
 
-pub mod numbers;
-pub mod vectors;
-
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub const SYS_KILL: u64 = 22;
+pub const SYS_SIGACTION: u64 = 64;
+pub const SYS_SIGRETURN: u64 = 65;
+pub const SYS_SIGPROCMASK: u64 = 81;
+pub const SYS_SIGPENDING: u64 = 82;

@@ -7,16 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! User space virtual address boundary validation and page fault verification.
 
-pub mod numbers;
-pub mod vectors;
+pub mod bounds;
+pub mod checker;
+pub mod fault;
 
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub use bounds::{check_user_bounds, USER_MAX_ADDR, USER_MIN_ADDR};
+pub use checker::validate_user_ptr;
+pub use fault::try_fault_user_page;

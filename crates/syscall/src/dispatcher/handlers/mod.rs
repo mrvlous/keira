@@ -7,16 +7,20 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Modular domain-specific system call handler functions.
 
-pub mod numbers;
-pub mod vectors;
+pub mod fs;
+pub mod ipc;
+pub mod memory;
+pub mod net;
+pub mod process;
+pub mod signal;
+pub mod system;
 
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub use fs::*;
+pub use ipc::*;
+pub use memory::*;
+pub use net::*;
+pub use process::*;
+pub use signal::*;
+pub use system::*;

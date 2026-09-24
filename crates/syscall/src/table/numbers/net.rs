@@ -7,16 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call numbers and vector classifications supported by Keira Kernel.
+//! Networking and socket system call numbers.
 
-pub mod numbers;
-pub mod vectors;
-
-#[cfg(test)]
-mod tests;
-
-pub use numbers::*;
-pub use vectors::{
-    is_io_syscall, is_ipc_syscall, is_memory_syscall, is_process_syscall, is_valid_syscall,
-    syscall_name,
-};
+pub const SYS_HTTP: u64 = 17;
+pub const SYS_HTTP_GET: u64 = 17;
+pub const SYS_SOCKET: u64 = 24;
+pub const SYS_CONNECT: u64 = 25;
+pub const SYS_TLS_CONNECT: u64 = 33;
+pub const SYS_ACCEPT: u64 = 43;
+pub const SYS_LISTEN: u64 = 43;
+pub const SYS_NETFILTER: u64 = 76;

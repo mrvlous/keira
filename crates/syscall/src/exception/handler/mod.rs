@@ -9,13 +9,12 @@
 
 //! Rust exception dispatcher for CPU exceptions, signal delivery, and core dump generation.
 
-pub mod frame;
-pub mod handler;
+pub mod dispatch;
+pub mod dump;
+pub mod panic;
+pub mod signals;
 
-#[cfg(test)]
-mod tests;
-
-pub use frame::ExceptionStackFrame;
-pub use handler::{
-    exception_dispatcher, exception_name, exception_vector_to_signal, signal_name, write_core_dump,
-};
+pub use dispatch::exception_dispatcher;
+pub use dump::{write_core_dump, DumpWriter};
+pub use panic::{panic_exception_dump, print_decimal_serial, print_hex, print_hex_serial};
+pub use signals::{exception_name, exception_vector_to_signal, signal_name};
