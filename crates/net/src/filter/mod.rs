@@ -14,3 +14,6 @@ pub mod firewall;
 
 pub use bpf::*;
 pub use firewall::*;
+
+#[cfg(test)]
+mod tests;

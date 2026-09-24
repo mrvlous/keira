@@ -7,8 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Ethernet layer data framing and MAC protocol constants.
+//! IEEE 802.3 Ethernet framing and MAC address handling.
 
 pub mod frame;
 
-pub use frame::*;
+#[cfg(test)]
+mod tests;
+
+pub use frame::{EthernetHeader, ETHERTYPE_ARP, ETHERTYPE_IPV4, ETHERTYPE_IPV6};

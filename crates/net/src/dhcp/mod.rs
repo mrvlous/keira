@@ -7,8 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic Host Configuration Protocol (DHCP) services.
+//! Dynamic Host Configuration Protocol (DHCP) client.
 
 pub mod client;
 
-pub use client::*;
+#[cfg(test)]
+mod tests;
+
+pub use client::{dhcp_auto_configure, DhcpConfig, SYSTEM_DHCP};

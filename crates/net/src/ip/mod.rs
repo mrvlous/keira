@@ -7,8 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! IPv4 network layer protocol processing and checksum utilities.
+//! Internet Protocol (IPv4) packet handling and routing.
 
-pub mod ipv4;
+pub mod v4;
 
-pub use ipv4::*;
+#[cfg(test)]
+mod tests;
+
+pub use v4 as ipv4;
+pub use v4::{ip_checksum, parse_ipv4_addr, Ipv4Header, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP};

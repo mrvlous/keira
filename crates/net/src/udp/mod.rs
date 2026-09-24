@@ -11,4 +11,7 @@
 
 pub mod packet;
 
-pub use packet::*;
+#[cfg(test)]
+mod tests;
+
+pub use packet::{udp_checksum, UdpHeader};

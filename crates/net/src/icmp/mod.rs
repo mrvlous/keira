@@ -7,8 +7,15 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Internet Control Message Protocol (ICMP) packet processing and echo diagnostics.
+//! Internet Control Message Protocol (ICMP) network diagnostics.
 
-pub mod ping;
+pub mod echo;
 
-pub use ping::*;
+#[cfg(test)]
+mod tests;
+
+pub use echo::send_ping;
+
+pub mod ping {
+    pub use super::echo::send_ping;
+}
