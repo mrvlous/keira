@@ -14,3 +14,6 @@ pub mod eventfd;
 
 pub use epoll::*;
 pub use eventfd::*;
+
+#[cfg(test)]
+mod tests;

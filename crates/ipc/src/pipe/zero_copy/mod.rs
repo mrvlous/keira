@@ -7,21 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! Zero-copy page frame swapping and buffer slicing primitives.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod splice;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use splice::{sys_splice, sys_vmsplice};

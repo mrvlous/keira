@@ -7,21 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! io_uring Submission Queue descriptors and memory layouts.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod entry;
+pub mod ring;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use entry::{
+    SubmissionQueueEntry, IOSQE_ASYNC, IOSQE_BUFFER_SELECT, IOSQE_FIXED_FILE, IOSQE_IO_DRAIN,
+    IOSQE_IO_HARDLINK, IOSQE_IO_LINK,
+};
+pub use ring::IoSqringOffsets;

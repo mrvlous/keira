@@ -7,21 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! Shared memory segment structures and semaphore descriptors.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod types;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use super::manager::*;
+pub use types::{
+    Semaphore, ShmSegment, SEM_CMD_RM, SHM_CMD_AT, SHM_CMD_DT, SHM_CMD_GET, SHM_CMD_INFO,
+    SHM_CMD_RM,
+};

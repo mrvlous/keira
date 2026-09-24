@@ -7,21 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! In-kernel futex hash table and syscall dispatchers.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod table;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use table::{
+    futex_reset, get_futex_stats, get_futex_table, sys_futex, FUTEX_TABLE, TOTAL_FUTEX_REQUEUES,
+    TOTAL_FUTEX_WAITS, TOTAL_FUTEX_WAKES,
+};

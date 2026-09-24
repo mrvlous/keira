@@ -7,21 +7,8 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! Futex wake-up and queue requeuing operations.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod requeue;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use requeue::{futex_requeue, futex_wake};

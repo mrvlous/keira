@@ -7,21 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! Ring buffer pipe primitives and unidirectional FIFO channels.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod buffer;
+pub mod ops;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use buffer::{PipeBuffer, PIPE_BUFFER_SIZE, SYSTEM_PIPE};
+pub use ops::{create_pipe, read_pipe, write_pipe};

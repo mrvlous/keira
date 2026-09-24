@@ -7,77 +7,19 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! In-kernel priority message queues (`sys_mq_open`, `sys_mq_send`, `sys_mq_receive`).
+//! In-kernel POSIX message queue table and priority operations.
 
 #![allow(static_mut_refs)]
 
-use keira_io::vga;
+use crate::mqueue::queue::message::{
+    MQueueMessage, PosixMessageQueue, MAX_MQUEUES, MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE,
+};
 
-pub const MAX_MQUEUES: usize = 8;
-pub const MQUEUE_MAX_MSGS: usize = 8;
-pub const MQUEUE_MSG_SIZE: usize = 128;
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct MQueueMessage {
-    pub data: [u8; MQUEUE_MSG_SIZE],
-    pub len: usize,
-    pub prio: u32,
-    pub in_use: bool,
-}
-
-impl MQueueMessage {
-    pub const fn empty() -> Self {
-        Self {
-            data: [0u8; MQUEUE_MSG_SIZE],
-            len: 0,
-            prio: 0,
-            in_use: false,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct PosixMessageQueue {
-    pub id: u32,
-    pub name: [u8; 32],
-    pub name_len: usize,
-    pub flags: u32,
-    pub max_msg: usize,
-    pub msg_size: usize,
-    pub cur_msgs: usize,
-    pub messages: [MQueueMessage; MQUEUE_MAX_MSGS],
-    pub in_use: bool,
-}
-
-impl PosixMessageQueue {
-    pub const fn empty(id: u32) -> Self {
-        Self {
-            id,
-            name: [0u8; 32],
-            name_len: 0,
-            flags: 0,
-            max_msg: MQUEUE_MAX_MSGS,
-            msg_size: MQUEUE_MSG_SIZE,
-            cur_msgs: 0,
-            messages: [MQueueMessage::empty(); MQUEUE_MAX_MSGS],
-            in_use: false,
-        }
-    }
-
-    pub fn name_as_str(&self) -> &str {
-        if self.name_len == 0 {
-            ""
-        } else {
-            core::str::from_utf8(&self.name[..self.name_len]).unwrap_or("")
-        }
-    }
-}
-
-static mut MQUEUE_TABLE: [PosixMessageQueue; MAX_MQUEUES] = [
+pub static mut MQUEUE_TABLE: [PosixMessageQueue; MAX_MQUEUES] = [
     PosixMessageQueue {
         id: 0,
-        name: *b"/keira_sys_mq\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
-        name_len: 13,
+        name: *b"/system_events\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        name_len: 14,
         flags: 0,
         max_msg: MQUEUE_MAX_MSGS,
         msg_size: MQUEUE_MSG_SIZE,
@@ -86,18 +28,22 @@ static mut MQUEUE_TABLE: [PosixMessageQueue; MAX_MQUEUES] = [
             MQueueMessage {
                 data: {
                     let mut d = [0u8; MQUEUE_MSG_SIZE];
-                    let init_msg = b"System IPC readiness milestone confirmed";
-                    let mut i = 0;
-                    while i < init_msg.len() {
-                        d[i] = init_msg[i];
-                        i += 1;
-                    }
+                    d[0] = b'O';
+                    d[1] = b'K';
                     d
                 },
-                len: 40,
+                len: 2,
                 prio: 10,
                 in_use: true,
             },
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
+            MQueueMessage::empty(),
             MQueueMessage::empty(),
             MQueueMessage::empty(),
             MQueueMessage::empty(),
@@ -120,7 +66,6 @@ static mut MQUEUE_TABLE: [PosixMessageQueue; MAX_MQUEUES] = [
 /// Retrieve reference to the in-kernel POSIX message queue table.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn get_mqueue_table() -> &'static [PosixMessageQueue] {
     &MQUEUE_TABLE
@@ -129,7 +74,6 @@ pub unsafe fn get_mqueue_table() -> &'static [PosixMessageQueue] {
 /// Retrieve total active queues and total queued messages across all queues.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn get_mqueue_stats() -> (usize, usize) {
     let mut queues = 0;
@@ -146,7 +90,6 @@ pub unsafe fn get_mqueue_stats() -> (usize, usize) {
 /// Create or open an in-kernel POSIX message queue by name.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn mq_open(
     name: &str,
@@ -195,7 +138,6 @@ pub unsafe fn mq_open(
 /// Enqueue a message into the specified message queue with priority.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn mq_send(name_or_id: &str, payload: &[u8], prio: u32) -> Result<(), &'static str> {
     if payload.len() > MQUEUE_MSG_SIZE {
@@ -226,7 +168,6 @@ pub unsafe fn mq_send(name_or_id: &str, payload: &[u8], prio: u32) -> Result<(),
 /// Dequeue the highest-priority message from the specified queue.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn mq_receive(
     name_or_id: &str,
@@ -268,7 +209,6 @@ pub unsafe fn mq_receive(
 /// Unlink and deallocate an in-kernel message queue by name.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative task context.
 pub unsafe fn mq_unlink(name: &str) -> Result<(), &'static str> {
     for q in MQUEUE_TABLE.iter_mut() {
@@ -287,7 +227,6 @@ pub unsafe fn mq_unlink(name: &str) -> Result<(), &'static str> {
 /// Unlink and deallocate an in-kernel message queue by numeric ID.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative task context.
 pub unsafe fn mq_unlink_by_id(id: u32) -> Result<(), &'static str> {
     for q in MQUEUE_TABLE.iter_mut() {
@@ -306,10 +245,10 @@ pub unsafe fn mq_unlink_by_id(id: u32) -> Result<(), &'static str> {
 /// Helper to find a mutable reference to a message queue by numeric ID or string name.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative task context.
-unsafe fn find_queue_mut(name_or_id: &str) -> Result<&'static mut PosixMessageQueue, &'static str> {
-    // Check if numeric ID
+pub unsafe fn find_queue_mut(
+    name_or_id: &str,
+) -> Result<&'static mut PosixMessageQueue, &'static str> {
     if let Ok(id) = parse_u32(name_or_id) {
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.id == id {
@@ -318,7 +257,6 @@ unsafe fn find_queue_mut(name_or_id: &str) -> Result<&'static mut PosixMessageQu
         }
     }
 
-    // Match by name
     for q in MQUEUE_TABLE.iter_mut() {
         if q.in_use && q.name_as_str() == name_or_id {
             return Ok(q);
@@ -328,7 +266,7 @@ unsafe fn find_queue_mut(name_or_id: &str) -> Result<&'static mut PosixMessageQu
     Err("Specified message queue does not exist")
 }
 
-fn parse_u32(s: &str) -> Result<u32, ()> {
+pub fn parse_u32(s: &str) -> Result<u32, ()> {
     if s.is_empty() {
         return Err(());
     }
@@ -341,38 +279,4 @@ fn parse_u32(s: &str) -> Result<u32, ()> {
         val = val.checked_add((b - b'0') as u32).ok_or(())?;
     }
     Ok(val)
-}
-
-/// Open or create a POSIX message queue (Syscall 58).
-///
-/// # Safety
-///
-/// Caller must provide valid user pointer or null pointer.
-pub unsafe fn sys_mq_open(name_ptr: *const u8, oflag: i32, mode: u32) -> Result<u64, &'static str> {
-    if name_ptr.is_null() {
-        return Ok(58);
-    }
-    // Read up to 32 bytes from user
-    let mut name_buf = [0u8; 32];
-    let mut len = 0;
-    while len < 31 {
-        let b = *name_ptr.add(len);
-        if b == 0 {
-            break;
-        }
-        name_buf[len] = b;
-        len += 1;
-    }
-    let name_str = core::str::from_utf8(&name_buf[..len]).unwrap_or("/mq_unnamed");
-    let mqid = mq_open(name_str, oflag as u32, MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE)?;
-
-    vga::set_color(vga::Color::White, vga::Color::Black);
-    vga::print_str("[MQUEUE] Opened POSIX Message Queue (MQFD #");
-    vga::print_u64(mqid as u64);
-    vga::print_str(", Mode: 0o");
-    vga::print_u64(mode as u64);
-    vga::print_str(")\n");
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-
-    Ok(mqid as u64)
 }

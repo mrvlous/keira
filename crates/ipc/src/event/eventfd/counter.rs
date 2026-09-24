@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Counter notification file descriptors (`eventfd`) and signal file descriptors (`signalfd`).
+//! Counter notification file descriptors (`eventfd`) state and operations.
 
 #![allow(static_mut_refs)]
 
@@ -19,6 +19,7 @@ pub const MAX_EVENTFDS: usize = 16;
 
 pub type EventFd = EventFdEntry;
 
+/// Descriptor representing an allocated EventFD notification channel.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct EventFdEntry {
     pub id: u32,
@@ -38,7 +39,7 @@ impl EventFdEntry {
     }
 }
 
-static mut EVENTFD_TABLE: [EventFdEntry; MAX_EVENTFDS] = [
+pub static mut EVENTFD_TABLE: [EventFdEntry; MAX_EVENTFDS] = [
     EventFdEntry {
         id: 0,
         count: 1,
@@ -62,14 +63,13 @@ static mut EVENTFD_TABLE: [EventFdEntry; MAX_EVENTFDS] = [
     EventFdEntry::empty(),
 ];
 
-static mut NEXT_EFD_ID: u32 = 1;
-static mut TOTAL_EVENTFD_WRITES: u64 = 1;
-static mut TOTAL_EVENTFD_READS: u64 = 0;
+pub static mut NEXT_EFD_ID: u32 = 1;
+pub static mut TOTAL_EVENTFD_WRITES: u64 = 1;
+pub static mut TOTAL_EVENTFD_READS: u64 = 0;
 
 /// Retrieve reference to the in-kernel EventFD descriptor table.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn get_eventfd_table() -> &'static [EventFdEntry] {
     &EVENTFD_TABLE
@@ -78,7 +78,6 @@ pub unsafe fn get_eventfd_table() -> &'static [EventFdEntry] {
 /// Retrieve telemetry of active EventFD descriptors and cumulative operations.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn get_eventfd_stats() -> (usize, u64, u64) {
     let mut active = 0;
@@ -93,7 +92,6 @@ pub unsafe fn get_eventfd_stats() -> (usize, u64, u64) {
 /// Allocate a new in-kernel EventFD notification descriptor.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn create_eventfd(init_val: u64, flags: u32) -> Result<u32, &'static str> {
     for slot in EVENTFD_TABLE.iter_mut() {
@@ -116,7 +114,6 @@ pub unsafe fn create_eventfd(init_val: u64, flags: u32) -> Result<u32, &'static 
 /// Read and consume counter value from an EventFD descriptor.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn read_eventfd(id: u32) -> Result<u64, &'static str> {
     for slot in EVENTFD_TABLE.iter_mut() {
@@ -141,7 +138,6 @@ pub unsafe fn read_eventfd(id: u32) -> Result<u64, &'static str> {
 /// Write and increment counter value on an EventFD descriptor.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn write_eventfd(id: u32, val: u64) -> Result<(), &'static str> {
     if val == 0 {
@@ -163,7 +159,6 @@ pub unsafe fn write_eventfd(id: u32, val: u64) -> Result<(), &'static str> {
 /// Close and deallocate an EventFD descriptor.
 ///
 /// # Safety
-///
 /// Caller must ensure single-threaded kernel execution or cooperative scheduling context.
 pub unsafe fn close_eventfd(id: u32) -> Result<(), &'static str> {
     for slot in EVENTFD_TABLE.iter_mut() {
@@ -173,22 +168,4 @@ pub unsafe fn close_eventfd(id: u32) -> Result<(), &'static str> {
         }
     }
     Err("EventFD descriptor not found")
-}
-
-/// Create an eventfd file descriptor for event notification (Syscall 50).
-///
-/// # Safety
-///
-/// Caller must ensure valid flags or single-threaded kernel execution.
-pub unsafe fn sys_eventfd(init_val: u32, flags: u32) -> Result<u64, &'static str> {
-    create_eventfd(init_val as u64, flags).map(|id| id as u64)
-}
-
-/// Create a signalfd file descriptor for POSIX signal routing (Syscall 51).
-///
-/// # Safety
-///
-/// Caller must ensure valid signal mask.
-pub unsafe fn sys_signalfd(_fd: i32, _mask: u64, _flags: u32) -> Result<u64, &'static str> {
-    create_eventfd(1, 0).map(|id| id as u64)
 }

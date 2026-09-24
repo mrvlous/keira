@@ -7,21 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! Linux ABI-compatible io_uring Completion Queue Entry (CQE).
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
-
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
+/// Linux ABI-compatible Completion Queue Entry (CQE).
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default)]
+pub struct CompletionQueueEntry {
+    pub user_data: u64,
+    pub res: i32,
+    pub flags: u32,
 }
-
-#[cfg(test)]
-mod tests;

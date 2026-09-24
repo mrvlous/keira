@@ -7,21 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Fast user-space synchronization (`futex`).
+//! Message queue descriptors and priority message slots.
 
-pub mod hash;
-pub mod wait;
-pub mod wake;
+pub mod message;
 
-pub use hash::*;
-pub use wait::*;
-pub use wake::*;
-
-pub mod sync {
-    pub use super::hash::*;
-    pub use super::wait::*;
-    pub use super::wake::*;
-}
-
-#[cfg(test)]
-mod tests;
+pub use super::manager::*;
+pub use message::{
+    MQueueMessage, PosixMessageQueue, MAX_MQUEUES, MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE,
+};

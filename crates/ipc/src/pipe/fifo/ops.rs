@@ -7,25 +7,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Ring buffer pipe primitives for data stream redirection between processes (`sys_pipe`).
+//! Pipe read, write, and descriptor creation operations.
 
-pub const PIPE_BUFFER_SIZE: usize = 1024;
-
-pub struct PipeBuffer {
-    pub data: [u8; PIPE_BUFFER_SIZE],
-    pub read_pos: usize,
-    pub write_pos: usize,
-    pub count: usize,
-}
-
-pub static mut SYSTEM_PIPE: PipeBuffer = PipeBuffer {
-    data: [0; PIPE_BUFFER_SIZE],
-    read_pos: 0,
-    write_pos: 0,
-    count: 0,
-};
+use crate::pipe::fifo::buffer::{PIPE_BUFFER_SIZE, SYSTEM_PIPE};
 
 /// Write data bytes into the kernel IPC pipe buffer.
+///
+/// # Safety
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
 pub unsafe fn write_pipe(buf: &[u8]) -> usize {
     let pipe_ptr = &raw mut SYSTEM_PIPE;
     let pipe = &mut *pipe_ptr;
@@ -45,6 +34,9 @@ pub unsafe fn write_pipe(buf: &[u8]) -> usize {
 }
 
 /// Read available data bytes from the kernel IPC pipe buffer.
+///
+/// # Safety
+/// Caller must ensure single-threaded kernel execution or cooperative task context.
 pub unsafe fn read_pipe(buf: &mut [u8]) -> usize {
     let pipe_ptr = &raw mut SYSTEM_PIPE;
     let pipe = &mut *pipe_ptr;
@@ -64,6 +56,9 @@ pub unsafe fn read_pipe(buf: &mut [u8]) -> usize {
 }
 
 /// Create a new pipe descriptor pair (sys_pipe Vector 23).
+///
+/// # Safety
+/// Resets global pipe state and returns descriptor pair (read_fd, write_fd).
 pub unsafe fn create_pipe() -> Result<(usize, usize), &'static str> {
     let pipe_ptr = &raw mut SYSTEM_PIPE;
     let pipe = &mut *pipe_ptr;

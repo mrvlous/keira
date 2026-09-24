@@ -9,6 +9,10 @@
 
 //! POSIX priority message queue IPC.
 
+pub mod manager;
 pub mod queue;
 
 pub use queue::*;
+
+#[cfg(test)]
+mod tests;
