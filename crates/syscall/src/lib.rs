@@ -18,7 +18,9 @@ pub mod tss;
 pub mod user_copy;
 
 pub use dispatcher::{syscall_dispatcher, validate_fd};
-pub use exception::{exception_dispatcher, ExceptionStackFrame};
+pub use exception::{
+    exception_dispatcher, get_cpu_exception_count, ExceptionStackFrame, TOTAL_CPU_EXCEPTIONS,
+};
 pub use table::*;
 pub use tss::{get_boot_kernel_stack, init_user_mode, set_kernel_stack, TaskStateSegment, TSS};
 pub use user_copy::{

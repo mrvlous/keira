@@ -56,4 +56,14 @@ pub mod test {
             assert_eq!(size, 60);
         }
     }
+
+    #[test]
+    fn test_exception_telemetry_counters() {
+        let count = get_cpu_exception_count();
+        let _ = count;
+        assert_eq!(
+            TOTAL_CPU_EXCEPTIONS.load(core::sync::atomic::Ordering::Relaxed) as u64,
+            count
+        );
+    }
 }

@@ -17,5 +17,6 @@ mod tests;
 
 pub use frame::ExceptionStackFrame;
 pub use handler::{
-    exception_dispatcher, exception_name, exception_vector_to_signal, signal_name, write_core_dump,
+    exception_dispatcher, exception_name, exception_vector_to_signal, get_cpu_exception_count,
+    signal_name, write_core_dump, TOTAL_CPU_EXCEPTIONS,
 };

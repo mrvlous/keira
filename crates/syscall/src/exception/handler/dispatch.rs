@@ -19,6 +19,15 @@ use crate::exception::handler::panic::{
     panic_exception_dump, print_decimal_serial, print_hex, print_hex_serial,
 };
 use crate::exception::handler::signals::{exception_name, exception_vector_to_signal, signal_name};
+use core::sync::atomic::{AtomicUsize, Ordering};
+
+/// Total hardware exceptions intercepted by the exception dispatcher.
+pub static TOTAL_CPU_EXCEPTIONS: AtomicUsize = AtomicUsize::new(0);
+
+/// Retrieves total CPU exceptions trapped by the kernel.
+pub fn get_cpu_exception_count() -> u64 {
+    TOTAL_CPU_EXCEPTIONS.load(Ordering::Relaxed) as u64
+}
 
 #[cfg(not(test))]
 extern "C" {
@@ -33,6 +42,7 @@ unsafe fn abort_user_mode() -> ! {
 /// Central CPU exception dispatcher invoked by low-level assembly ISR handlers.
 #[no_mangle]
 pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFrame) {
+    TOTAL_CPU_EXCEPTIONS.fetch_add(1, Ordering::Relaxed);
     let frame = &*frame_ptr;
 
     #[cfg(target_arch = "x86_64")]
