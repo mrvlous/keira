@@ -2,22 +2,31 @@
 
 # `kcc.elf` Compiler Executable
 
-`kcc` is invoked from the Keira shell to compile C source code directly to ELF executables.
+`kcc` compiles C source code directly to freestanding Ring 3 ELF executables within the Keira environment.
 
 ---
 
-## Command Usage
+## 1. Invocation Modes
 
+### A. Native Shell Command
 ```bash
-kcc [-o output.elf] [-c] [-I include_dir] source.c
+kcc /data/main.c -o /apps/bin/app.elf
+```
+
+### B. Freestanding Userland ELF
+```bash
+run /system/bin/kcc.elf /data/main.c -o /apps/bin/app.elf
 ```
 
 ---
 
-## Execution Flow
+## 2. Compilation & Execution Workflow
 
-1. Parses command line flags using standard `getopt`.
-2. Invokes the preprocessor on the input source file.
-3. Generates the AST, executes semantic validation and symbol resolution.
-4. Generates x86 machine code and packages output as an executable ELF binary.
-5. Sets executable file permissions (`0755`) on the target file.
+1. **Preprocessing**: Resolves standard `#include` headers from `/system/include/` and source directories.
+2. **Lexing & Parsing**: Generates the Abstract Syntax Tree (AST), performs symbol resolution, and allocates stack frames.
+3. **Machine Code Generation**: Emits target architecture instructions (`x86_64` or `i686`).
+4. **ELF Packaging**: Encapsulates executable code into a valid 64-bit/32-bit ELF binary with standard program headers.
+5. **Execution**: The compiled binary can be launched immediately in an isolated address space:
+   ```bash
+   run /apps/bin/app.elf
+   ```
