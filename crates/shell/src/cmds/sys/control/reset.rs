@@ -20,25 +20,23 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
+    vga::set_color(vga::Color::White, vga::Color::Black);
+    vga::print_str("Rebooting Keira Kernel via PS/2 controller...\n");
+    #[cfg(target_os = "none")]
     unsafe {
-        vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Rebooting Keira Kernel via PS/2 controller...\n");
-        #[cfg(target_os = "none")]
-        {
-            core::arch::asm!(
-                "out dx, al",
-                in("dx") 0x64u16,
-                in("al") 0xFEu8,
-                options(nomem, nostack, preserves_flags)
-            );
+        core::arch::asm!(
+            "out dx, al",
+            in("dx") 0x64u16,
+            in("al") 0xFEu8,
+            options(nomem, nostack, preserves_flags)
+        );
 
-            let null_idt: [u8; 6] = [0; 6];
-            core::arch::asm!(
-                "lidt [{}]",
-                "int3",
-                in(reg) null_idt.as_ptr(),
-                options(noreturn)
-            );
-        }
+        let null_idt: [u8; 6] = [0; 6];
+        core::arch::asm!(
+            "lidt [{}]",
+            "int3",
+            in(reg) null_idt.as_ptr(),
+            options(noreturn)
+        );
     }
 }
