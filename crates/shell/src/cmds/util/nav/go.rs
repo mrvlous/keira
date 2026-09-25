@@ -21,7 +21,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Usage: go [path]\n\n");
                 vga::print_str("Description:\n  Change current working directory on the active FAT16 volume. Supports relative (., ..), absolute paths, and tilde (~).\n\n");
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-                vga::print_str("Examples:\n  go ~\n  go /users/admin\n  go ..\n");
+                vga::print_str("Examples:\n  go ~\n  go /data\n  go ..\n");
                 return;
             }
             Some(s) => s,
