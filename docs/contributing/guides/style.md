@@ -124,8 +124,8 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 
 All runtime and VFS paths must adhere to the canonical 6-directory hierarchy:
 
-* `/system`: Core binaries (`/system/bin`), device nodes (`/system/dev`), drivers (`/system/drivers`), headers (`/system/include`, `/system/include/sys`), and runtime C libraries (`/system/lib`).
-* `/apps`: Userland executables (`/apps/bin`) and organized C source trees (`/apps/src/kcc`).
+* `/system`: Core binaries (`/system/bin`), device nodes (`/system/dev`), headers (`/system/include`, `/system/include/sys`), and runtime C libraries (`/system/lib`).
+* `/apps`: Userland executables (`/apps/bin`).
 * `/config`: Boot configuration (`/config/boot`) and kernel system configurations (`/config/sys`).
 * `/users`: Kernel user workspace (`/users/admin`).
 * `/data`: Persistent diagnostic logs (`/data/log/`) and compiler test programs (`/data/main.c`).
