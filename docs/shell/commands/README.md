@@ -1,35 +1,19 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Native Shell Built-In Commands
+# Keira Built-in Command Reference Manual
 
-This directory documents the 76 native built-in commands organized by subsystem domain in Keira Kernel, achieving **100% Active Bare-Metal Implementations** across all 76 commands.
-
----
-
-## Command Domain Architecture
-
-```mermaid
-graph TD
-    Shell["keira-shell Command Router (76 Commands - 100% Active)"] --> FS["fs/ (16 Commands)<br/>list, view, edit, create, delete, copy, move, folder, write, drives, use, disk, ramdisk, initrd, fileinfo, ext4"]
-    Shell --> Sys["sys/ (16 Commands)<br/>system, runtime, memory, cpu, smp, time, env, hostname, power, reset, reboot, sync, service, syslog, unwind, watchpoint"]
-    Shell --> Proc["proc/ (13 Commands)<br/>tasks, kill, stop, bg, fg, jobs, run, kcc, cgroups, futex, eventfd, perf, timer"]
-    Shell --> Net["net/ (8 Commands)<br/>network, download, https, iptables, firewall, ipcs, ipcrm, mqueue"]
-    Shell --> Sec["sec/ (7 Commands)<br/>user, login, protect, tpm, seccomp, bpf, mac"]
-    Shell --> Dev["dev/ (11 Commands)<br/>devices, drivers, framebuffer, usb, epoll, kvm, lkm, lvm, nvme, raid, swap"]
-    Shell --> Util["util/ (5 Commands)<br/>help, history, search, go, wipe"]
-```
+Keira Shell provides 65 native built-in commands partitioned into 7 functional categories.
 
 ---
 
-## Subsystem Domain Summary
+## Category Directory Map
 
-| Domain | Path | Total Commands | Active | Preview | Documentation |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Hardware & Devices** | `dev/` | 11 | 11 | 0 | [dev.md](dev.md) |
-| **Filesystem & Storage** | `fs/` | 16 | 16 | 0 | [fs.md](fs.md) |
-| **Process & Scheduling** | `proc/` | 13 | 13 | 0 | [proc.md](proc.md) |
-| **Networking & Sockets** | `net/` | 8 | 8 | 0 | [net.md](net.md) |
-| **Security & Accounts** | `sec/` | 7 | 7 | 0 | [sec.md](sec.md) |
-| **System & Telemetry** | `sys/` | 16 | 16 | 0 | [sys.md](sys.md) |
-| **Utilities & Shell** | `util/` | 5 | 5 | 0 | [util.md](util.md) |
-| **Total** | | **76** | **76** | **0** | |
+| Category | Path | Scope | Command Count |
+| :--- | :--- | :--- | :--- |
+| **System** | [`sys.md`](sys.md) | CPU telemetry, APIC, time, reboot, shutdown | 9 commands |
+| **Filesystem** | [`fs.md`](fs.md) | Directory listing, file view, copy, move, disk format | 13 commands |
+| **Process** | [`proc.md`](proc.md) | Task listing, kill, cgroups, execution, toolchain | 8 commands |
+| **Device** | [`dev.md`](dev.md) | PCI scan, ATA/AHCI drives, virtio, LKM, KVM | 9 commands |
+| **Network** | [`net.md`](net.md) | Interfaces, ARP table, ping, DNS query, HTTP/HTTPS client | 11 commands |
+| **Security** | [`sec.md`](sec.md) | Seccomp filters, TPM PCR measurements, permissions | 6 commands |
+| **Utilities** | [`util.md`](util.md) | Text editor (`kvi`), checksums, help, clear | 9 commands |

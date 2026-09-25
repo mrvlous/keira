@@ -1,32 +1,30 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Interactive Shell Subsystem
+# Keira Interactive Shell & Command Subsystem
 
-The `shell` subsystem provides an interactive command line interface, command executor, line editor (`kvi`), tab auto-completion engine, history ring buffer, service supervisor, and 76 native utilities.
+The `shell` domain provides the user-facing command-line interface, modal editor, daemon supervisor, and 65 built-in tools.
 
 ---
 
-## Architecture Pipeline
+## Shell Architecture
 
 ```mermaid
 graph TD
-    Input["Keyboard Scancodes"] --> LineDisc["TTY Line Discipline"]
-    LineDisc --> Buffer["Input Buffer & Autocomplete"]
-    Buffer --> Exec["executor.rs<br/>Command Dispatcher"]
-    Exec --> Cmds["commands/<br/>76 Native Shell Commands"]
-    Exec --> LKM["lkm.rs<br/>Dynamic Kernel Modules"]
-    Exec --> ELF["Userland ELF Loader"]
+    Shell["Interactive Shell"] --> Terminal["terminal/<br/>Prompt, Keyboard & Console Palette"]
+    Shell --> Executor["executor/<br/>Command Dispatch & CliArgs"]
+    Shell --> Editor["editor/<br/>kvi Modal Text Editor"]
+    Shell --> Service["service/<br/>ksvc Background Daemon Supervisor"]
+    Shell --> Cmds["commands/<br/>65 Built-in Commands"]
 ```
 
 ---
 
 ## Submodule Index
 
-| Module | Focus Area | Description |
+| Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`executor.md`](executor.md) | Command Executor | String tokenization, variable expansion (`$PATH`, `$USER`), pipelines (`|`), and file redirection (`>`, `>>`) |
-| [`editor.md`](editor.md) | `kvi` Text Editor | Fullscreen interactive text editor with file saving and cut/paste buffers |
-| [`autocomplete.md`](autocomplete.md) | Auto-Completion | Dynamic file path, device node, and command name completion engine |
-| [`history.md`](history.md) | History Buffer | Circular command history ring buffer with Up/Down arrow navigation |
-| [`service.md`](service.md) | Service Supervisor | Background service supervisor managing persistent kernel daemons |
-| [`commands/`](commands/README.md) | Native Commands Catalog | Hyper-modular catalog covering all 76 built-in shell utilities |
+| [`terminal/`](terminal/README.md) | Terminal UI | Prompt rendering, keyboard input, monochrome palette |
+| [`executor/`](executor/README.md) | Command Execution | Argument parsing, pipe routing, execution dispatch |
+| [`editor/`](editor/README.md) | Text Editor | `kvi` modal vim-like text editor with syntax highlighting |
+| [`service/`](service/README.md) | Daemon Manager | `ksvc` background supervisor (`syslogd`, `syncd`, etc.) |
+| [`commands/`](commands/README.md) | Built-in Commands | Reference manuals for all 65 built-in shell commands |
