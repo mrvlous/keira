@@ -20,5 +20,5 @@ pub use allocator::{
 };
 pub use stats::{
     heap_get_active_alloc_count, heap_get_alloc_count, heap_get_arena_used, heap_get_free,
-    heap_get_peak, heap_get_total, heap_get_used,
+    heap_get_peak, heap_get_telemetry, heap_get_total, heap_get_used, heap_stress_test,
 };

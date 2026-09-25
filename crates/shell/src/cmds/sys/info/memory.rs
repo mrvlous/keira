@@ -18,7 +18,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if args.has_flag('h', "help") {
         {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Usage: memory [-m] [-k] [-b] [-s]\n\n");
+            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t]\n\n");
             vga::print_str(
                 "Description:\n  Display physical frame allocator and kernel heap statistics.\n\n",
             );
@@ -27,8 +27,32 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("  -k, --kilo     Format all memory values in Kilobytes (KB)\n");
             vga::print_str("  -b, --bytes    Format all memory values in raw bytes\n");
             vga::print_str("  -s, --summary  Display compact one-line memory summary\n");
+            vga::print_str("  -t, --test     Run bare-metal allocator stress test\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        }
+        return;
+    }
+
+    if args.has_flag('t', "test") {
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Running kernel heap allocator stress test...\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        match keira_mem::heap_stress_test() {
+            Ok(()) => {
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str(
+                    "[OK] Heap stress test passed successfully (32 mixed-size blocks, 0 leaks).\n",
+                );
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
+            Err(err) => {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("[FAIL] Heap stress test failed: ");
+                vga::print_str(err);
+                vga::print_str("\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
         }
         return;
     }
@@ -102,10 +126,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
         vga::print_str("\n\n");
 
-        let (alloc_count, peak_bytes) = (
-            keira_mem::heap_get_alloc_count() as u64,
-            keira_mem::heap_get_peak() as u64,
-        );
+        let (_total, _used, _free, peak_bytes, active_allocs, fragmentation_pct) =
+            keira_mem::heap_get_telemetry();
+        let alloc_count = keira_mem::heap_get_alloc_count() as u64;
+        let arena_bytes = keira_mem::heap_get_arena_used() as u64;
 
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Heap Allocator Statistics:\n");
@@ -113,11 +137,22 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str("  Total Allocations : ");
         vga::print_u64(alloc_count);
         vga::print_str(" requests\n");
+        vga::print_str("  Active Allocations: ");
+        vga::print_u64(active_allocs as u64);
+        vga::print_str(" blocks\n");
         vga::print_str("  Peak Heap Usage   : ");
-        vga::print_u64(peak_bytes);
+        vga::print_u64(peak_bytes as u64);
         vga::print_str(" bytes (");
-        vga::print_u64(peak_bytes / 1024);
+        vga::print_u64((peak_bytes as u64) / 1024);
         vga::print_str(" KB)\n");
+        vga::print_str("  Arena Consumed    : ");
+        vga::print_u64(arena_bytes);
+        vga::print_str(" bytes (");
+        vga::print_u64(arena_bytes / 1024);
+        vga::print_str(" KB)\n");
+        vga::print_str("  Fragmentation     : ");
+        vga::print_u64(fragmentation_pct as u64);
+        vga::print_str(" %\n");
     }
 }
 

@@ -17,6 +17,8 @@ use keira_mem::vmm;
 extern "C" {
     static __bss_end: u8;
     static stack_top: u8;
+    static __heap_start: u8;
+    static __heap_end: u8;
 }
 
 #[cfg(not(target_os = "none"))]
@@ -25,6 +27,12 @@ static __bss_end: u8 = 0;
 #[cfg(not(target_os = "none"))]
 #[allow(non_upper_case_globals)]
 static stack_top: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals)]
+static __heap_start: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals)]
+static __heap_end: u8 = 0;
 
 /// Initialize Physical Frame Allocator (PMM), Paging (VMM), and Segregated Free-List Heap.
 ///
@@ -33,9 +41,17 @@ static stack_top: u8 = 0;
 pub unsafe fn init_memory(multiboot_info_ptr: usize, initrd_end: u64) {
     let bss_end_addr = core::ptr::addr_of!(__bss_end) as u64;
     let stack_top_addr = core::ptr::addr_of!(stack_top) as u64;
-    let heap_end_addr = core::cmp::max(bss_end_addr, stack_top_addr);
+    let heap_start_addr = core::ptr::addr_of!(__heap_start) as u64;
+    let heap_end_addr = core::ptr::addr_of!(__heap_end) as u64;
 
-    keira_mem::init(multiboot_info_ptr as u64, initrd_end, heap_end_addr);
+    let kernel_limit = core::cmp::max(core::cmp::max(bss_end_addr, stack_top_addr), heap_end_addr);
+
+    keira_mem::init(multiboot_info_ptr as u64, initrd_end, kernel_limit);
+
+    if heap_end_addr > heap_start_addr {
+        let heap_size = (heap_end_addr - heap_start_addr) as usize;
+        keira_mem::heap_init(heap_start_addr as *mut u8, heap_size);
+    }
 
     let fb_addr = vga::FRAMEBUFFER_ADDR;
     let fb_pitch = vga::FRAMEBUFFER_PITCH;

@@ -150,3 +150,40 @@ fn test_invalid_pointer_free_safety() {
     kfree(0x1234_5678 as *mut u8);
     assert_eq!(heap_get_active_alloc_count(), 0);
 }
+
+#[test]
+fn test_heap_telemetry_calculation() {
+    let _lock = HEAP_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    let mut buffer = [0u8; 16384];
+    heap_init(buffer.as_mut_ptr(), buffer.len());
+
+    let (total, used, free, peak, active, frag) = heap_get_telemetry();
+    assert_eq!(total, 16384);
+    assert_eq!(used, 0);
+    assert_eq!(free, 16384);
+    assert_eq!(active, 0);
+    assert_eq!(frag, 0);
+    let _ = peak;
+
+    let p = kmalloc(128);
+    assert!(!p.is_null());
+    let (_, used_after, _, _, active_after, _) = heap_get_telemetry();
+    assert!(used_after >= 128);
+    assert_eq!(active_after, 1);
+
+    kfree(p);
+    let (_, used_end, _, _, active_end, _) = heap_get_telemetry();
+    assert_eq!(used_end, 0);
+    assert_eq!(active_end, 0);
+}
+
+#[test]
+fn test_heap_stress_test_execution() {
+    let _lock = HEAP_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    let mut buffer = [0u8; 65536];
+    heap_init(buffer.as_mut_ptr(), buffer.len());
+
+    let res = heap_stress_test();
+    assert!(res.is_ok(), "heap_stress_test must complete with Ok");
+    assert_eq!(heap_get_active_alloc_count(), 0);
+}
