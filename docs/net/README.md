@@ -1,37 +1,37 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Layered Bare-Metal TCP/IP Protocol Stack
+# Keira Layered Bare-Metal Network Stack
 
-The `net` subsystem implements a complete, zero-dependency TCP/IP stack from raw Ethernet frame parsing to socket abstraction, native TLS 1.3, and stateful packet filtering.
+The `net` domain provides a self-contained bare-metal network stack spanning Layer 2 Ethernet through Layer 7 TLS 1.3 and firewall filtering.
 
 ---
 
-## Network Stack Protocol Hierarchy
+## Network Stack Architecture
 
 ```mermaid
 graph TD
-    App["Application Layer<br/>(HTTP Download, HTTPS, DNS, DHCP)"] --> Socket["socket.md<br/>BSD Socket Table"]
-    Socket --> Transport["Transport Layer<br/>(tcp.md, udp.md)"]
-    Socket --> TLS["tls.md<br/>Native TLS 1.3 Engine"]
-    Transport --> Network["Network Layer<br/>(ip.md, icmp.md, firewall.md)"]
-    Network --> Link["Data Link Layer<br/>(ethernet.md, arp.md)"]
-    Link --> Drivers["NIC Drivers<br/>(Intel e1000, Realtek RTL8139)"]
+    App["Application / Sockets"] --> TLS["app/tls.md<br/>TLS 1.3 Engine"]
+    App --> DNS["app/dns.md<br/>DNS Client"]
+    App --> DHCP["app/dhcp.md<br/>DHCP Client"]
+    TLS --> TCP["transport/tcp.md<br/>TCP State Machine"]
+    DNS --> UDP["transport/udp.md<br/>UDP Datagrams"]
+    TCP --> IP["network/ip.md<br/>IPv4 Protocol & ICMP"]
+    UDP --> IP
+    IP --> Filter["filter/firewall.md<br/>Stateful Firewall & eBPF"]
+    Filter --> Link["link/ethernet.md<br/>Ethernet II & ARP"]
+    Link --> Drivers["driver/e1000.md<br/>e1000 & RTL8139 NICs"]
 ```
 
 ---
 
-## Network Protocol Index
+## Submodule Index
 
-| Layer | Protocol | Document | Description |
-| :--- | :--- | :--- | :--- |
-| **Layer 2** | Ethernet | [`ethernet.md`](ethernet.md) | IEEE 802.3 framing, EtherType dispatching, and MAC parsing |
-| **Layer 2.5** | ARP | [`arp.md`](arp.md) | Address Resolution Protocol table cache and query broadcast |
-| **Layer 3** | IPv4 | [`ip.md`](ip.md) | IPv4 packet routing, fragment reassembly, and header checksums |
-| **Layer 3** | ICMP | [`icmp.md`](icmp.md) | Internet Control Message Protocol Echo Request/Reply (Ping) |
-| **Layer 4** | UDP | [`udp.md`](udp.md) | Stateless User Datagram Protocol packet processing |
-| **Layer 4** | TCP | [`tcp.md`](tcp.md) | Stateful TCP 3-way handshake, retransmission timers, and windowing |
-| **Layer 7** | DHCP | [`dhcp.md`](dhcp.md) | Dynamic Host Configuration Protocol auto-configuration client |
-| **Layer 7** | DNS | [`dns.md`](dns.md) | Domain Name System resolver over UDP port 53 |
-| **Security** | TLS 1.3 | [`tls.md`](tls.md) | Bare-metal Transport Layer Security 1.3 with AES-128-GCM |
-| **Security** | Firewall | [`firewall.md`](firewall.md) | Stateful Netfilter packet filter and iptables rules |
-| **API** | Sockets | [`socket.md`](socket.md) | POSIX BSD socket descriptor table and API |
+| Submodule | Focus Area | Description |
+| :--- | :--- | :--- |
+| [`link/`](link/README.md) | Data Link Layer | Ethernet II framing and ARP cache resolution |
+| [`network/`](network/README.md) | Network Layer | IPv4 packet handling, routing, and ICMP echo |
+| [`transport/`](transport/README.md) | Transport Layer | UDP datagrams and stateful TCP connection engine |
+| [`app/`](app/README.md) | Application Layer | DHCP network auto-config, DNS resolver, and native TLS 1.3 |
+| [`socket/`](socket/README.md) | Socket Layer | BSD socket descriptor table, handle abstraction |
+| [`driver/`](driver/README.md) | Network Drivers | Intel e1000, Realtek RTL8139, and VirtIO-Net drivers |
+| [`filter/`](filter/README.md) | Packet Filtering | Stateful packet inspection firewall and in-kernel eBPF |
