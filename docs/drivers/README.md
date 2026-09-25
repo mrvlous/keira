@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Hardware Device Drivers
+# Keira Hardware Device Drivers
 
-The `drivers` subsystem implements native, bare-metal hardware drivers across storage controllers, network cards, video displays, serial ports, sound hardware, system busses, and virtual terminals.
+The `drivers` domain contains low-level device drivers for block storage, video displays, serial ports, buses, and terminal line disciplines.
 
 ---
 
@@ -10,23 +10,21 @@ The `drivers` subsystem implements native, bare-metal hardware drivers across st
 
 ```mermaid
 graph TD
-    Drivers["Hardware Drivers"] --> Storage["storage/<br/>IDE, AHCI, NVMe, RAM Disk"]
-    Drivers --> Net["net/<br/>Intel e1000, Realtek RTL8139"]
-    Drivers --> Display["display/<br/>VGA Console, VBE Framebuffer"]
-    Drivers --> Serial["serial/<br/>16550 UART COM1"]
-    Drivers --> Bus["bus/<br/>PCI / PCIe ECAM, USB"]
-    Drivers --> TTY["tty/<br/>Virtual Terminals tty1-tty4"]
+    Drivers["Driver Subsystems"] --> Storage["storage/<br/>AHCI, NVMe, IDE, RAM Disk"]
+    Drivers --> Display["display/<br/>VGA 80x25 & VBE Framebuffer"]
+    Drivers --> Serial["serial/<br/>16550 UART (COM1)"]
+    Drivers --> Bus["bus/<br/>PCI & PCIe Discovery, USB Host"]
+    Drivers --> TTY["tty/<br/>Line Discipline & Virtual Terminals"]
 ```
 
 ---
 
-## Driver Module Index
+## Submodule Index
 
-| Submodule | Focus Area | Hardware Covered |
+| Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`storage/`](storage/README.md) | Block Storage | Legacy IDE/ATA PIO, AHCI SATA NCQ, NVMe PCIe, and RAM Disks |
-| [`net/`](net/README.md) | Network Interface Cards | Intel 82540EM (e1000) Gigabit and Realtek RTL8139 Fast Ethernet |
-| [`display/`](display/README.md) | Video & Consoles | 80x25 Text-Mode Console and VBE Linear Framebuffer (LFB) |
-| [`serial/`](serial/README.md) | Serial Communications | 16550 UART Serial Controller (`COM1` at `0x3F8`) |
-| [`bus/`](bus/README.md) | System & Peripheral Busses | PCI Configuration Space, PCIe ECAM/MSI, and USB Host Controllers |
-| [`tty/`](tty/README.md) | Terminal Subsystems | Multi-Virtual Terminals (`tty1`–`tty4`) and TTY Line Discipline |
+| [`storage/`](storage/README.md) | Block Storage | AHCI SATA, NVMe, legacy IDE, and RAM disk drivers |
+| [`display/`](display/README.md) | Video Output | VGA text mode console and linear VBE framebuffer |
+| [`serial/`](serial/README.md) | Serial Ports | Standard 16550 UART COM1 serial controller |
+| [`bus/`](bus/README.md) | System Buses | PCI/PCIe enumeration, USB host controller interface |
+| [`tty/`](tty/README.md) | Terminals | Line discipline, canonical/raw mode, virtual terminals |

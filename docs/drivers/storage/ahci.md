@@ -1,62 +1,35 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Advanced Host Controller Interface (AHCI / SATA) Driver
+# AHCI SATA Storage Controller Driver
 
-This document specifies the Serial ATA (SATA) AHCI 1.3 host controller driver, Physical Region Descriptor Tables (PRDT), and FIS-based DMA command execution in Keira Kernel.
-
----
-
-## AHCI Command Execution Flow
-
-```mermaid
-sequenceDiagram
-    participant Kernel as Keira Block Device Layer
-    participant AHCI as AHCI Port Controller (ABAR)
-    participant SATA as SATA SSD / HDD Drive
-
-    Kernel->>AHCI: 1. Build Command Table (H2D FIS + PRDT DMA pointers)
-    Kernel->>AHCI: 2. Set Command Header in Command List
-    Kernel->>AHCI: 3. Write Port Command Issue (P_xCI Bit N)
-    AHCI->>SATA: 4. Transmit DMA Command over SATA link
-    SATA->>AHCI: 5. DMA Transfer to Host RAM + Send D2H FIS
-    AHCI-->>Kernel: 6. Interrupt / P_xCI Cleared (Transfer Complete)
-```
+The Advanced Host Controller Interface (AHCI) driver provides high-performance DMA access to SATA hard drives and solid-state drives.
 
 ---
 
-## Technical Specifications
+## 1. AHCI Memory Map
 
-| Parameter | Specification | Description |
-| :--- | :--- | :--- |
-| **PCI Class** | `0x010601` | Serial ATA Advanced Host Controller |
-| **Ports Supported** | Up to 32 SATA Ports | Dedicated command lists and FIS structures per port |
-| **DMA PRDTs** | Up to 65,535 entries per table | 4MB scatter-gather buffer chaining |
-| **Addressing Mode** | LBA48 (48-bit Logical Block Addressing) | Supports drives larger than 2 Terabytes |
-
----
-
-## Core API (`crates/io/src/storage/ahci.rs`)
-
-```rust
-/// Probe PCI bus for AHCI controller, map ABAR MMIO, and initialize SATA ports.
-pub unsafe fn init() -> Result<(), &'static str>;
-
-/// Read 512-byte sectors from SATA drive into kernel memory via DMA.
-pub unsafe fn read_sectors(port_idx: usize, lba: u64, count: u32, buf: &mut [u8]) -> Result<(), &'static str>;
-
-/// Write 512-byte sectors from kernel memory to SATA drive via DMA.
-pub unsafe fn write_sectors(port_idx: usize, lba: u64, count: u32, buf: &[u8]) -> Result<(), &'static str>;
-
-/// Flush volatile storage write cache using ATA FLUSH CACHE EXT (0xEA).
-pub unsafe fn sata_flush_cache(port_idx: usize) -> Result<(), &'static str>;
-```
+AHCI controllers expose Memory-Mapped I/O via PCI BAR5 (`ABAR`):
+* **Generic Host Control (GHC)**:
+  * `0x00`: Host Capabilities (`CAP`).
+  * `0x04`: Global Host Control (`GHC`, AHCI Enable bit 31).
+  * `0x08`: Interrupt Status (`IS`).
+  * `0x0C`: Ports Implemented (`PI`).
+* **Port Registers (0x100 + port * 0x80)**:
+  * `PxCLB`: Command List Base Address (1 KiB aligned).
+  * `PxFB`: Received FIS Base Address (256-byte aligned).
+  * `PxIS`: Port Interrupt Status.
+  * `PxIE`: Port Interrupt Enable.
+  * `PxCMD`: Port Command and Status (Start bit 0, FIS Receive Enable bit 4).
+  * `PxTFD`: Task File Data (Status & Error registers).
+  * `PxSSTS`: SATA Status (Device detection: `0x3` = Device present and PHY established).
+  * `PxCI`: Command Issue bitmask (32 command slots).
 
 ---
 
-## Hardware Flush & Barrier Semantics
+## 2. DMA Command Execution Flow
 
-To guarantee durability and prevent data corruption across sudden power loss or reboots, Keira implements explicit storage cache barriers:
-
-1. **Software Sector Flush**: Dirty sectors cached in FAT cluster buffers are flushed via `flush_dirty_sectors()`.
-2. **Physical Device Flush**: ATA command `0xEA` (`FLUSH CACHE EXT`) is transmitted over the SATA link to commit onboard disk volatile RAM to non-volatile platters or flash cells.
-3. **CPU Memory Fence**: `core::arch::x86_64::_mm_mfence()` or `asm!("mfence")` enforces processor memory ordering across DMA controller boundaries.
+1. Construct Command Header pointing to Command Table.
+2. Fill Command Table with Command FIS (`0x27` Register H2D) requesting `READ DMA EXT` (`0x25`) or `WRITE DMA EXT` (`0x35`).
+3. Set Physical Region Descriptor Table (PRDT) entries pointing to physical DMA destination frames.
+4. Set slot bit in `PxCI`.
+5. Await interrupt or poll `PxCI` bit until cleared by hardware DMA engine.
