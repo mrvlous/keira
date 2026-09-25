@@ -206,7 +206,7 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
             }
         }
 
-        let prefixes = ["/system/bin/", "/apps/bin/", "/initrd/apps/bin/", "/"];
+        let prefixes = ["/system/bin/", "/apps/bin/", "/"];
         let suffixes = ["", ".elf"];
 
         if !found {

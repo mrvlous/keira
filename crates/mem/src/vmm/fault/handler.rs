@@ -85,6 +85,9 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         if let Some(frame) = pmm::alloc_frame() {
             core::ptr::write_bytes(frame as *mut u8, 0, pmm::PAGE_SIZE as usize);
 
+            #[cfg(target_arch = "x86_64")]
+            let flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_NO_EXECUTE;
+            #[cfg(not(target_arch = "x86_64"))]
             let flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
             if map_page(fault_page, frame, flags).is_ok() {
                 invlpg(fault_page as usize);
