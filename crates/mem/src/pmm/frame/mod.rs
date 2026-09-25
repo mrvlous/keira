@@ -13,9 +13,9 @@ pub mod bitmap;
 pub mod types;
 
 pub use bitmap::{
-    alloc_frame, free_contiguous_frames, free_frame, get_freed_frame_count, is_frame_allocated,
-    mark_frame_allocated, mark_frame_free, reset_pmm_stats, set_test_ram_region,
-    set_test_ram_region_empty, ALLOCATION_BITMAP,
+    alloc_contiguous_frames, alloc_frame, alloc_order, free_contiguous_frames, free_frame,
+    get_freed_frame_count, is_frame_allocated, mark_frame_allocated, mark_frame_free,
+    reset_pmm_stats, set_test_ram_region, set_test_ram_region_empty, ALLOCATION_BITMAP,
 };
 pub use types::{
     BITMAP_WORDS, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, MAX_TRACKED_FRAMES, PAGE_SIZE,

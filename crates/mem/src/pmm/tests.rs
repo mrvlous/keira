@@ -464,3 +464,40 @@ fn test_irq_disabled_entry_exit_preservation() {
     let guard_if_was_disabled = PmmGuard { irq_state: false };
     assert!(!guard_if_was_disabled.irq_state);
 }
+
+#[test]
+fn test_alloc_contiguous_and_order_frames() {
+    let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    reset_pmm_stats();
+    set_test_ram_region_empty(0x20_0000, 0x120_0000);
+
+    // Order 0: 1 frame (4 KiB)
+    let f0 = alloc_order(0);
+    assert!(f0.is_some());
+    let addr0 = f0.unwrap();
+    assert!(is_frame_allocated(addr0));
+    assert!(free_frame(addr0));
+
+    // Order 2: 4 frames (16 KiB)
+    let f2 = alloc_order(2);
+    assert!(f2.is_some());
+    let addr2 = f2.unwrap();
+    for i in 0..4 {
+        assert!(is_frame_allocated(addr2 + (i as u64) * PAGE_SIZE));
+    }
+    assert!(free_contiguous_frames(addr2, 4));
+
+    // Contiguous allocation of 8 frames
+    let c8 = alloc_contiguous_frames(8);
+    assert!(c8.is_some());
+    let addr8 = c8.unwrap();
+    for i in 0..8 {
+        assert!(is_frame_allocated(addr8 + (i as u64) * PAGE_SIZE));
+    }
+    assert!(free_contiguous_frames(addr8, 8));
+
+    // Zero count returns None
+    assert_eq!(alloc_contiguous_frames(0), None);
+    // Huge order (>10) returns None
+    assert_eq!(alloc_order(11), None);
+}

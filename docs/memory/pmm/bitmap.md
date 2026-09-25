@@ -62,3 +62,13 @@ During bootstrap, the following ranges are marked permanently reserved:
 2. Kernel ELF Code and Data segments.
 3. Multiboot2 Information Structure and modules (initrd).
 4. Physical frames mapped to the PMM bitmap itself.
+
+---
+
+## 4. Multi-Order & Contiguous Physical Frame Allocation
+
+For high-performance hardware drivers (DMA ring buffers, AHCI PRDT, NVMe submission queues, and 2 MiB / 1 GiB huge pages), the PMM provides multi-order contiguous frame allocation:
+
+* `alloc_contiguous_frames(count: usize) -> Option<u64>`: Searches the bitmap for a contiguous span of `count` unallocated page frames within valid RAM ranges and zero-clears all bytes.
+* `alloc_order(order: u8) -> Option<u64>`: Allocates $2^{\text{order}}$ contiguous physical frames (Order 0 = 4 KiB, Order 9 = 2 MiB, Order 10 = 4 MiB).
+* `free_contiguous_frames(start: u64, count: usize) -> bool`: Reclaims a contiguous block of allocated frames back to the available physical pool with bounds validation.

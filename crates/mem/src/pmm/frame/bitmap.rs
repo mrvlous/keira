@@ -69,6 +69,105 @@ pub fn alloc_frame() -> Option<u64> {
     }
 }
 
+/// Allocates `count` contiguous 4 KiB physical page frames.
+///
+/// Returns the physical base address of the allocated contiguous span on success,
+/// or `None` if physical memory is exhausted or cannot satisfy the contiguous request.
+pub fn alloc_contiguous_frames(count: usize) -> Option<u64> {
+    if count == 0 {
+        return None;
+    }
+    if count == 1 {
+        return alloc_frame();
+    }
+
+    let _guard = PmmGuard::lock();
+
+    unsafe {
+        let needed_bytes = match (count as u64).checked_mul(PAGE_SIZE) {
+            Some(b) => b,
+            None => return None,
+        };
+
+        while CURRENT_REGION_IDX < REGION_COUNT {
+            let region = &mut REGIONS[CURRENT_REGION_IDX];
+            if region.current.checked_add(needed_bytes)? <= region.end {
+                let start_frame = region.current;
+                region.current += needed_bytes;
+
+                for i in 0..count {
+                    let frame = start_frame + (i as u64) * PAGE_SIZE;
+                    mark_frame_allocated(frame);
+                }
+                USED_FRAMES_COUNT += count as u64;
+
+                #[cfg(not(test))]
+                {
+                    let ptr = start_frame as *mut u64;
+                    let u64_count = count * 512;
+                    for i in 0..u64_count {
+                        *ptr.add(i) = 0;
+                    }
+                }
+                return Some(start_frame);
+            }
+            CURRENT_REGION_IDX += 1;
+        }
+
+        // Secondary fallback: linear scan across tracked frames in valid regions
+        let max_search = MAX_PHYS_ADDR.min(MAX_PHYS_ADDR_LIMIT);
+        let max_frames = (max_search / PAGE_SIZE) as usize;
+        let mut run_start = 0usize;
+        let mut run_len = 0usize;
+
+        let start_idx = (KERNEL_BASE_1MB / PAGE_SIZE) as usize;
+        for idx in start_idx..max_frames {
+            let frame_addr = (idx as u64) * PAGE_SIZE;
+            if !is_frame_allocated(frame_addr) {
+                if run_len == 0 {
+                    run_start = idx;
+                }
+                run_len += 1;
+                if run_len == count {
+                    let start_addr = (run_start as u64) * PAGE_SIZE;
+                    if is_valid_ram_range(start_addr, needed_bytes) {
+                        for i in 0..count {
+                            let frame = start_addr + (i as u64) * PAGE_SIZE;
+                            mark_frame_allocated(frame);
+                        }
+                        USED_FRAMES_COUNT += count as u64;
+
+                        #[cfg(not(test))]
+                        {
+                            let ptr = start_addr as *mut u64;
+                            let u64_count = count * 512;
+                            for i in 0..u64_count {
+                                *ptr.add(i) = 0;
+                            }
+                        }
+                        return Some(start_addr);
+                    }
+                    run_len = 0;
+                }
+            } else {
+                run_len = 0;
+            }
+        }
+
+        None
+    }
+}
+
+/// Allocates $2^{\text{order}}$ contiguous 4 KiB physical page frames.
+///
+/// Order 0 = 4 KiB (1 page), Order 9 = 2 MiB (512 pages), Order 10 = 4 MiB (1024 pages).
+pub fn alloc_order(order: u8) -> Option<u64> {
+    if order > 10 {
+        return None;
+    }
+    alloc_contiguous_frames(1usize << order)
+}
+
 /// Checks whether a physical frame is currently marked as allocated in the PMM bitmap.
 pub fn is_frame_allocated(frame: u64) -> bool {
     if frame >= MAX_PHYS_ADDR_LIMIT || (frame % PAGE_SIZE) != 0 {
