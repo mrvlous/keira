@@ -178,9 +178,6 @@ SHELL_CMDS      := login drives use ramdisk system cpu smp runtime time memory \
                    kill jobs fg bg lvm raid ipcs ipcrm iptables firewall service \
                    shutdown reboot
 
-DRIVER_FILES    := serial.sys vga.sys keyboard.sys mouse.sys rtc.sys \
-                   ide.sys ahci.sys e1000.sys
-
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 debug clean rust iso dirs \
         format lint user disk initrd help info check size objdump qemu-net test test-all fs-root \
@@ -386,51 +383,25 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)rm -rf $(FS_ROOT)
 	$(Q)mkdir -p $(FS_ROOT)/system/bin
 	$(Q)mkdir -p $(FS_ROOT)/system/dev
-	$(Q)mkdir -p $(FS_ROOT)/system/drivers
 	$(Q)mkdir -p $(FS_ROOT)/system/include/sys
 	$(Q)mkdir -p $(FS_ROOT)/system/lib
 	$(Q)mkdir -p $(FS_ROOT)/apps/bin
-	$(Q)mkdir -p $(FS_ROOT)/apps/src/kcc/include
-	$(Q)mkdir -p $(FS_ROOT)/apps/src/sysinfo
-	$(Q)mkdir -p $(FS_ROOT)/apps/src/test_abi
-	$(Q)mkdir -p $(FS_ROOT)/apps/src/fuzz_abi
 	$(Q)mkdir -p $(FS_ROOT)/config/boot
 	$(Q)mkdir -p $(FS_ROOT)/config/sys
 	$(Q)mkdir -p $(FS_ROOT)/users/admin
 	$(Q)mkdir -p $(FS_ROOT)/temp
 	$(Q)mkdir -p $(FS_ROOT)/data/log
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
-	$(Q)cp $(USER_ELF) $(FS_ROOT)/apps/bin/kcc.elf
 	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/system/bin/sysinfo.elf
-	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/apps/bin/sysinfo.elf
 	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/system/bin/test_abi.elf
-	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/apps/bin/test_abi.elf
 	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/system/bin/fuzz_abi.elf
-	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/apps/bin/fuzz_abi.elf
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/system/lib/libc.a
-	$(Q)for cmd in $(SHELL_CMDS); do \
-	    printf "ELF\002\001\001\000Keira Builtin Command: %s\n" "$$cmd" > $(FS_ROOT)/system/bin/$$cmd.elf; \
-	    chmod +x $(FS_ROOT)/system/bin/$$cmd.elf; \
-	done
-	$(Q)for drv in $(DRIVER_FILES); do \
-	    printf "KEIRA_DRIVER\001\000[Driver: %s]\nStatus=Active\nType=KernelSubsystem\n" "$$drv" > $(FS_ROOT)/system/drivers/$$drv; \
-	done
-	$(Q)printf "console\nnull\nzero\nrandom\nurandom\nptmx\ntty\nfb0\nsda\nsda1\n" > $(FS_ROOT)/system/dev/devices.list
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/system/include/
 	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
 	$(Q)cp -r $(USER_DIR)/lib/* $(FS_ROOT)/system/lib/
-	$(Q)cp -r $(USER_DIR)/bin/kcc/* $(FS_ROOT)/apps/src/kcc/
-	$(Q)cp -r $(USER_DIR)/bin/sysinfo/* $(FS_ROOT)/apps/src/sysinfo/
-	$(Q)cp -r $(USER_DIR)/bin/test_abi/* $(FS_ROOT)/apps/src/test_abi/
-	$(Q)cp -r $(USER_DIR)/bin/fuzz_abi/* $(FS_ROOT)/apps/src/fuzz_abi/
-	$(Q)touch $(FS_ROOT)/apps/src/.keep
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/config/sys/hostname.cfg
-	$(Q)printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > $(FS_ROOT)/config/sys/resolv.conf
-	$(Q)printf "127.0.0.1\tlocalhost\n127.0.1.1\tkeira\n" > $(FS_ROOT)/config/sys/hosts
-	$(Q)printf "admin:keira\n" > $(FS_ROOT)/config/sys/passwd
-	$(Q)printf "# Keira Kernel System Services Configuration\n[syslogd]\nenabled=true\nfile=/data/log/syslog.log\n\n[syncd]\nenabled=true\ninterval=30\n\n[watchdogd]\nenabled=true\ntimeout=60\n\n[timed]\nenabled=true\ninterval=30\n\n[monitord]\nenabled=true\ninterval=10\n\n[netd]\nenabled=true\ninterval=15\n" > $(FS_ROOT)/config/sys/services.conf
 	$(Q)printf "# Keira Service Configuration\nname=syncd\ndescription=FAT16 Auto-Sync & Cache Flush Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/syncd.conf
 	$(Q)printf "# Keira Service Configuration\nname=syslogd\ndescription=Kernel Event & Audit Logger Service\nenabled=1\nauto_restart=1\ninterval=5\n" > $(FS_ROOT)/config/sys/syslogd.conf
 	$(Q)printf "# Keira Service Configuration\nname=watchdogd\ndescription=Memory & Task Health Watchdog\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/watchdogd.conf
@@ -440,8 +411,6 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
 	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/data/log/boot.log
 	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
-	$(Q)printf "[INFO] Keira Service Controller (ksvc) system logger initialized.\n" > $(FS_ROOT)/data/log/syslog.log
-	$(Q)printf "[INFO] Keira Telemetry Monitor (monitord) initialized.\n" > $(FS_ROOT)/data/log/monitor.log
 	$(Q)touch $(FS_ROOT)/temp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Canonical root filesystem ready ($(ARCH))"
@@ -454,7 +423,7 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/drivers ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/apps/src ::/apps/src/kcc ::/apps/src/kcc/include ::/apps/src/sysinfo ::/apps/src/test_abi ::/apps/src/fuzz_abi ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
 	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
 	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
 	done
@@ -584,7 +553,7 @@ info: ## Display build configuration and toolchain versions
 	@printf "    Assembly     : $(words $(ASM_SRCS)) files\n"
 	@printf "    Kernel Core  : Pure Rust (12 crates)\n"
 	@printf "    Shell Cmds   : $(words $(SHELL_CMDS)) commands\n"
-	@printf "    Drivers      : $(words $(DRIVER_FILES)) descriptors\n\n"
+	@printf "    Drivers      : In-Kernel Subsystems\n\n"
 	@printf "  Rust Target\n"
 	@printf "    Spec         : $(RUST_TARGET)\n"
 	@printf "    Profile      : $(RUST_MODE)\n"
