@@ -2,4 +2,4 @@
 
 # Shell Prompt & History Navigation
 
-Renders `admin@keira:~$ ` prompt and supports Up/Down command history navigation.
+Renders `keira:/path# ` prompt and supports Up/Down command history navigation.
