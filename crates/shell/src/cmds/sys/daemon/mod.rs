@@ -7,9 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System service controller, kernel syslog, debug watchpoints, and environment variable commands.
+//! Kernel syslog ring buffer and hardware debug watchpoint commands.
 
-pub mod env;
-pub mod service;
 pub mod syslog;
 pub mod watchpoint;

@@ -17,5 +17,5 @@ pub mod info;
 mod tests;
 
 pub use control::{power, reset, runtime, sync};
-pub use daemon::{env, service, syslog, watchpoint};
+pub use daemon::{syslog, watchpoint};
 pub use info::{cpu, hostname, memory, smp, system, time, unwind};

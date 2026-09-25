@@ -40,20 +40,6 @@ fn test_sys_sync() {
 }
 
 #[test]
-fn test_sys_env() {
-    let mut args = "env --help".split_whitespace();
-    args.next();
-    env::run(&mut args);
-}
-
-#[test]
-fn test_sys_service() {
-    let mut args = "service --help".split_whitespace();
-    args.next();
-    service::run(&mut args);
-}
-
-#[test]
 fn test_sys_syslog() {
     let mut args = "syslog --help".split_whitespace();
     args.next();

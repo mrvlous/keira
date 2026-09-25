@@ -26,8 +26,8 @@ pub mod test {
             let res = get_env_var("PATH", &mut buf);
             assert!(res.is_ok());
 
-            let res_user = get_env_var("USER", &mut buf);
-            assert!(res_user.is_ok());
+            let res_shell = get_env_var("SHELL", &mut buf);
+            assert!(res_shell.is_ok());
 
             let set_res = set_env_var("PATH", "/custom/bin");
             assert!(set_res.is_ok());
