@@ -1,53 +1,21 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# POSIX File Descriptors & Stream I/O
+# POSIX I/O Architecture & Stream Semantics
 
-This document specifies the POSIX file descriptor table, standard streams (`stdin`, `stdout`, `stderr`), and stream I/O semantics in Keira Kernel.
-
----
-
-## File Descriptor Hierarchy
-
-```mermaid
-graph LR
-    Proc["Userland Process"] --> FDT["File Descriptor Table (0..31 per task)"]
-    FDT --> FD0["FD 0: stdin (/system/dev/console)"]
-    FDT --> FD1["FD 1: stdout (/system/dev/console)"]
-    FDT --> FD2["FD 2: stderr (/system/dev/console)"]
-    FDT --> FDX["FD 3+: Dynamic Files, Sockets, Pipes, Epoll"]
-```
+Covers the stream abstraction connecting userland processes to kernel filesystems and character devices.
 
 ---
 
-## Access Mode Flags (`sys/fcntl.h`)
+## File Descriptor Tables
 
-| Constant | Value | Description |
-| :--- | :--- | :--- |
-| `O_RDONLY` | `0` | Open file for reading only |
-| `O_WRONLY` | `1` | Open file for writing only |
-| `O_RDWR` | `2` | Open file for both reading and writing |
-| `O_CREAT` | `64` | Create file if it does not already exist |
-| `O_TRUNC` | `512` | Truncate file length to 0 on open |
-| `O_APPEND` | `1024` | Force all write operations to seek to the end of file |
+Each process maintains an array of open file description pointers:
+* Index 0: `stdin` (Standard Input)
+* Index 1: `stdout` (Standard Output)
+* Index 2: `stderr` (Standard Error)
 
 ---
 
-## Standard Stream System Calls
+## Non-Blocking & Asynchronous Modes
 
-```rust
-pub fn sys_open(path: *const u8, flags: i32, mode: u32) -> Result<u32, u64>;
-pub fn sys_read(fd: u32, buf: *mut u8, count: usize) -> Result<usize, u64>;
-pub fn sys_write(fd: u32, buf: *const u8, count: usize) -> Result<usize, u64>;
-pub fn sys_lseek(fd: u32, offset: i64, whence: i32) -> Result<i64, u64>;
-pub fn sys_close(fd: u32) -> Result<(), u64>;
-```
-
----
-
-## Socket & IPC Descriptor Multiplexing
-
-Dynamic descriptors (FD 3+) support unified descriptor multiplexing:
-
-- When an allocated descriptor has `is_socket == true`, invocations of `sys_read` and `sys_write` automatically route to `recv_socket` and `send_socket` in the network subsystem.
-- Invocations of `sys_close` automatically tear down and reclaim the corresponding socket table slot via `close_socket`.
-- File descriptors registered with `epoll` are dynamically polled for read/write readiness, allowing event-driven asynchronous I/O architectures.
+* `O_NONBLOCK`: `read` and `write` return `EAGAIN` or `EWOULDBLOCK` instead of suspending the task when data is unavailable.
+* File status flags can be manipulated at runtime via `fcntl(fd, F_SETFL, flags)`.

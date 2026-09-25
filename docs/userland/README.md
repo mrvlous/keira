@@ -1,28 +1,31 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Userland Subsystems & C Toolchain
+# Keira Userland Runtime, Native C Compiler & POSIX C Library
 
-The `userland` documentation is hyper-modularized into 4 specialized domains covering the freestanding C SDK (`libc.a`), in-kernel KCC C compiler, dynamic ELF loader, and userland applications.
+The `userland` domain comprises the Ring 3 execution environment, architecture bootstrap stubs, standard C library (libc), native C compiler (`kcc`), Ring 3 userspace binaries, and multi-user system configuration.
 
 ---
 
-## Userland Submodules
+## Userland Subsystem Architecture
 
 ```mermaid
 graph TD
-    Userland["Userland Subsystems"] --> SDK["sdk/<br/>Freestanding C Standard Library (libc.a)"]
-    Userland --> Compiler["compiler/<br/>In-Kernel KCC C Compiler Internals"]
-    Userland --> Loader["loader/<br/>Dynamic ELF64 Binary Loader & Process Memory"]
-    Userland --> System["system/<br/>Users, Permissions, Hostname, Init & POSIX I/O"]
+    Kernel["Keira Microkernel / Syscall Dispatcher"] <--> Trap["INT 0x80 / SYSCALL / SYSENTER"]
+    Trap <--> Libc["libc/<br/>POSIX Standard C Library & Syscall Wrappers"]
+    Arch["arch/<br/>i686 & x86_64 crt0.S & Linker Scripts"] --> Binaries["binaries/<br/>Userland Executable Binaries"]
+    Libc --> Binaries
+    Compiler["compiler/<br/>KCC Native In-Kernel C Compiler"] --> Binaries
+    System["system/<br/>Credentials, Permissions, Hostname & Posix I/O"] --> Binaries
 ```
 
 ---
 
-## Userland Module Index
+## Submodule Index
 
 | Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`sdk/`](sdk/README.md) | Freestanding C SDK | Standard headers and archived static library (`libc.a`) |
-| [`compiler/`](compiler/README.md) | Native KCC Compiler | Preprocessor, lexer tokenization, recursive descent parser, and code generator |
-| [`loader/`](loader/README.md) | Dynamic ELF64 Loader | Program header validation, segment loading, address space setup, and rollback |
-| [`system/`](system/README.md) | System Services & Apps | Ring 3 native applications (`kcc`, `sysinfo`, `test_abi`, `fuzz_abi`), user database, and POSIX I/O |
+| [`arch/`](arch/README.md) | Architecture Stubs | CRT0 entry stubs (`crt0.S`) and ELF linker scripts (`linker.ld`) for i686 and x86_64 |
+| [`libc/`](libc/README.md) | Standard C Library | Hyper-modular ISO C and POSIX libc routines, headers, and system call wrappers |
+| [`compiler/`](compiler/README.md) | KCC Native Compiler | Preprocessor, recursive descent parser, lexer, AST, and x86 code generator |
+| [`binaries/`](binaries/README.md) | Ring 3 Binaries | Native ELF executables: `kcc.elf`, `sysinfo.elf`, `test_abi.elf`, `fuzz_abi.elf` |
+| [`system/`](system/README.md) | Userland Runtime | Multi-user credentials, file permissions, hostname configuration, and initialization |

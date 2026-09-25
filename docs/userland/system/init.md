@@ -1,42 +1,14 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# System Initialization & Userland Process Bootstrap
+# System Initialization & PID 1
 
-This document details the userland process initialization pipeline, root process spawning, and runtime environment preparation in Keira Kernel.
-
----
-
-## Initialization Pipeline
-
-```mermaid
-sequenceDiagram
-    participant Kernel as kernel_main()
-    participant TSS as TSS & Syscall MSRs
-    participant VFS as VFS & Initrd
-    participant Shell as Interactive Shell (PID 1)
-
-    Kernel->>TSS: 1. Setup TSS Ring 0 Stack & LSTAR MSR
-    Kernel->>VFS: 2. Mount Boot Initrd & Primary FAT16 Partition
-    Kernel->>Kernel: 3. Parse /config/sys/hostname.cfg & passwd
-    Kernel->>Shell: 4. Spawn Root Session on /system/dev/console (tty1)
-    Shell->>Shell: 5. Display Banner, Run /config/boot/boot.cfg & Enter Event Loop
-```
+Describes the transition from kernel boot to userland initialization.
 
 ---
 
-## Userland Runtime Environment
+## Initialization Sequence
 
-When userland applications are launched, the kernel prepares a dedicated execution context:
-1. **Isolated Address Space**: Private PML4 page table mapping user memory below `0x0000_7FFF_FFFF_FFFF`.
-2. **Userland Stack**: 64 KB user stack (`RSP` pointing to top of stack).
-3. **Privilege Transition**: Drops CPU privilege level from Ring 0 to Ring 3 using `sysretq` (64-bit) or `iret` (32-bit).
-
----
-
-## Startup Configuration Scripts
-
-| Configuration File | Path | Description |
-| :--- | :--- | :--- |
-| **Boot Script** | `/config/boot/boot.cfg` | Shell script executed automatically during early user session startup |
-| **Kernel Release** | `/config/sys/kernel.cfg` | Kernel release, version string, and architecture identity |
-| **User Database** | `/config/sys/passwd` | Kernel user database and authentication records |
+1. The kernel finishes driver bringup, mounts the root filesystem (`/`), and initializes the process table.
+2. The kernel spawns the first userland process (PID 1) executing `/system/bin/init` or the interactive shell `/system/bin/sh`.
+3. PID 1 configures the system hostname, runs startup scripts from `/etc/rc.d`, mounts virtual filesystems (`/proc`, `/dev`), and launches login terminals.
+4. PID 1 adopts orphaned processes and reaps terminated zombie tasks via `waitpid()`.

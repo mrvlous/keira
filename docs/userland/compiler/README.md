@@ -1,32 +1,32 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# In-Kernel Keira C Compiler (KCC) Architecture
+# Keira C Compiler (`kcc`) Architecture
 
-This submodule details the internal architecture of `kcc.elf`, the standalone in-kernel C compiler capable of compiling C programs directly into native executables.
+`kcc` is a native, self-hosting C compiler designed to run directly within Keira Ring 3 (`userland/bin/kcc/`).
 
 ---
 
-## Compilation Pipeline
+## Compiler Pipeline
 
 ```mermaid
 graph LR
-    Source["C Source File (.c)"] --> Preproc["preproc.md<br/>Preprocessor & Macros"]
-    Preproc --> Lexer["lexer.md<br/>Lexical Tokenizer"]
-    Lexer --> Parser["parser.md<br/>Recursive Descent Parser"]
-    Parser --> AST["Abstract Syntax Tree (AST)"]
-    AST --> Codegen["codegen.md<br/>x86_64 Machine Codegen"]
-    Codegen --> Driver["driver.md<br/>ELF Binary Emission"]
-    Driver --> Output["Executable ELF Binary (.elf)"]
+    Source["C Source File (.c)"] --> Preproc["preproc/<br/>Preprocessor"]
+    Preproc --> Lexer["lexer/<br/>Tokenizer"]
+    Lexer --> Parser["parser/<br/>AST Generator"]
+    Parser --> Symbols["symbols/<br/>Scope & Symbol Table"]
+    Symbols --> Codegen["codegen/<br/>x86 Code Generator"]
+    Codegen --> ELF["elf/<br/>ELF32/64 Writer"]
+    ELF --> Binary["Executable Binary (.elf)"]
 ```
 
 ---
 
-## Compiler Submodule Index
+## Submodule Documents
 
-| Component | Document | Description |
+| Document | Focus Area | Description |
 | :--- | :--- | :--- |
-| **Preprocessor** | [`preproc.md`](preproc.md) | Header inclusion, macro expansion, and conditional compilation directives |
-| **Lexer** | [`lexer.md`](lexer.md) | Keyword recognition, string literal escape processing, and numeric tokens |
-| **Parser** | [`parser.md`](parser.md) | Recursive descent grammar parser, prototypes, and AST node construction |
-| **Code Generator** | [`codegen.md`](codegen.md) | x86_64 machine code generation, stack frame setup, and register mapping |
-| **Driver & CLI** | [`driver.md`](driver.md) | Compiler command line arguments, target specifications, and ELF output |
+| [`preproc.md`](preproc.md) | Preprocessor | Macro expansion, `#include` resolution, conditional compilation (`#ifdef`) |
+| [`lexer.md`](lexer.md) | Lexical Analysis | Stream tokenization, keywords, numeric/string literals, operators |
+| [`parser.md`](parser.md) | AST Construction | Recursive descent parser, grammar rules, expression operator precedence |
+| [`codegen.md`](codegen.md) | Machine Code Generation | x86 target code emission, register allocation, stack frame layout |
+| [`elf.md`](elf.md) | ELF Object Generation | Direct generation of statically linked ELF32/64 binary executables |

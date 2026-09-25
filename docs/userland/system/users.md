@@ -1,40 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Multi-User Accounts & Authentication Subsystem
+# Multi-User Credentials & Authentication
 
-This document details user account management, password hashing, credential verification, and user sessions in Keira Kernel.
-
----
-
-## Authentication Architecture
-
-```mermaid
-graph TD
-    Login["login / auth command"] --> AuthEngine["Kernel Authentication Engine"]
-    AuthEngine --> Hash["SHA-256 / HMAC Password Hashing"]
-    AuthEngine --> PasswdDB["/config/sys/passwd on FAT16 Storage"]
-    PasswdDB --> Validate["Verify Password Hash Match"]
-    Validate -->|Success| SetSession["Set Task UID / GID Context"]
-    Validate -->|Failure| Deny["Access Denied"]
-```
+Keira implements a multi-user credential system adhering to POSIX standards.
 
 ---
 
-## User Database File Format (`/config/sys/passwd`)
+## User & Group Identifiers
 
-```text
-username:password
-admin:keira
-```
+* **Superuser**: UID `0` (`root`), GID `0` (`root`). Possesses unrestricted permissions to hardware, kernel modules, and raw disk blocks.
+* **Standard Users**: UID $\ge 1000$. Restricted by file permission masks and process isolation.
+* **System Accounts**: UID `1`--`999` reserved for system daemons (e.g. `daemon`, `nobody`).
 
 ---
 
-## Core API (`crates/task/src/security/mod.rs`)
+## Configuration Files
 
-```rust
-/// Validate user credentials against persistent password database.
-pub fn authenticate_user(user: &str, pass: &str) -> bool;
-
-/// Query UID and GID for a target username.
-pub fn get_user_id(username: &str) -> Option<(u32, u32)>;
-```
+* `/etc/passwd`: `username:x:uid:gid:gecos:home_dir:shell`
+* `/etc/group`: `groupname:x:gid:member1,member2`

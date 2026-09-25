@@ -1,31 +1,17 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# System Daemons, Users & Environment Configuration
+# Userland System Architecture & Runtime Configuration
 
-This directory details userland system initialization (`init`), multi-user authentication (`users`), POSIX permission enforcement, host configuration, and standard I/O in Keira Kernel.
-
----
-
-## Userland System Subsystem Architecture
-
-```mermaid
-graph TD
-    Init["System Init (docs/userland/system/init.md)"] --> MultiUser["Multi-User Subsystem (users.md)"]
-    MultiUser --> Perms["POSIX File & Inode Permissions (permissions.md)"]
-    Init --> Host["System Hostname & Environment (hostname.md)"]
-    Init --> POSIXIO["POSIX Standard I/O Streams (posix_io.md)"]
-    Init --> Binaries["Ring 3 Native Binaries (binaries.md)"]
-```
+Defines multi-user credentials, permissions, system initialization, and POSIX I/O models.
 
 ---
 
-## System Subsystem Index
+## Submodule Documents
 
-| Document | Topic | Description |
+| Document | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`binaries.md`](binaries.md) | Native Ring 3 Binaries | Native ELF applications (`kcc`, `sysinfo`, `test_abi`, `fuzz_abi`) and libc linkage |
-| [`init.md`](init.md) | Userland Init Stage | Early userland bootstrap, root filesystem mount, and daemon startup |
-| [`users.md`](users.md) | Multi-User Management | User accounts (`/config/passwd`), UID/GID mappings, and sessions |
-| [`permissions.md`](permissions.md) | POSIX Permissions | Standard `rwxrwxrwx` octal mode bits, `chmod`, and ownership |
-| [`hostname.md`](hostname.md) | System Hostname | Node name resolution, `/config/hostname`, and runtime configuration |
-| [`posix_io.md`](posix_io.md) | POSIX File I/O | Standard streams (`stdin`, `stdout`, `stderr`) and descriptor tables |
+| [`users.md`](users.md) | Multi-User Model | User accounts, `/etc/passwd`, `/etc/group`, UIDs, GIDs, root privilege |
+| [`hostname.md`](hostname.md) | Hostname System | System hostname storage, `/etc/hostname`, `gethostname`, `sethostname` |
+| [`permissions.md`](permissions.md) | File Permissions | POSIX permission bits (`rwxrwxrwx`), umask, ownership validation |
+| [`init.md`](init.md) | System Initialization | Early userspace initialization, init process (PID 1), daemon startup |
+| [`posix_io.md`](posix_io.md) | POSIX I/O Architecture | Standard stream descriptors, non-blocking I/O, file offset semantics |

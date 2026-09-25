@@ -1,28 +1,16 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# KCC Recursive Descent Parser (`parser.c`)
+# KCC Recursive Descent Parser (`userland/bin/kcc/parser/`)
 
-This document details grammar analysis, precedence climbing expression parsing, and AST construction in the KCC C compiler.
+Transforms token streams into an Abstract Syntax Tree (AST) representing functions, control structures, and expressions.
 
 ---
 
-## AST Node Types
+## Expression Parsing (Precedence Climbing)
 
-```c
-typedef enum {
-    AST_PROGRAM,
-    AST_FUNCTION_DEF,
-    AST_VAR_DECL,
-    AST_BLOCK,
-    AST_RETURN,
-    AST_IF_STMT,
-    AST_WHILE_STMT,
-    AST_FOR_STMT,
-    AST_BINARY_OP,
-    AST_UNARY_OP,
-    AST_FUNC_CALL,
-    AST_LITERAL_NUM,
-    AST_LITERAL_STR,
-    AST_VARIABLE,
-} AstNodeType;
-```
+Operator precedence is resolved using Pratt / precedence climbing parsing:
+1. Primary expressions (literals, variables, parenthesized sub-expressions).
+2. Postfix operators (function calls `f()`, array indexing `a[i]`, member access `.`, `->`).
+3. Unary operators (`*`, `&`, `-`, `!`, `~`, `sizeof`).
+4. Multiplicative (`*`, `/`, `%`), Additive (`+`, `-`).
+5. Shift (`<<`, `>>`), Relational, Equality, Bitwise, Logical, Conditional (`?:`), Assignment.
