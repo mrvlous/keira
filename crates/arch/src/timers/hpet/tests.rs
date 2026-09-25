@@ -14,19 +14,23 @@ use keira_core::sync::mutex::SpinMutex;
 
 static HPET_TEST_LOCK: SpinMutex<()> = SpinMutex::new(());
 
+unsafe fn reset_mock_hpet() {
+    HPET_INITIALIZED = false;
+    MOCK_HPET_MEM = [0u8; 1024];
+    let mock_gcap = (10_000_000u64 << 32)
+        | (0x8086u64 << 16)
+        | (1u64 << 15)
+        | (1u64 << 13)
+        | (2u64 << 8)
+        | 1u64;
+    write_reg64(HPET_REG_GCAP_ID, mock_gcap);
+}
+
 #[test]
 fn test_hpet_init_and_capabilities() {
     let _guard = HPET_TEST_LOCK.lock();
     unsafe {
-        HPET_INITIALIZED = false;
-        MOCK_HPET_MEM = [0u8; 1024];
-        let mock_gcap = (10_000_000u64 << 32)
-            | (0x8086u64 << 16)
-            | (1u64 << 15)
-            | (1u64 << 13)
-            | (2u64 << 8)
-            | 1u64;
-        write_reg64(HPET_REG_GCAP_ID, mock_gcap);
+        reset_mock_hpet();
     }
 
     let info = init_at(0xFED0_0000).expect("HPET initialization failed");
@@ -47,6 +51,9 @@ fn test_hpet_init_and_capabilities() {
 #[test]
 fn test_hpet_counter_monotonic_advance() {
     let _guard = HPET_TEST_LOCK.lock();
+    unsafe {
+        reset_mock_hpet();
+    }
     let _ = init_at(0xFED0_0000);
     let c1 = read_counter();
     let c2 = read_counter();
@@ -59,6 +66,9 @@ fn test_hpet_counter_monotonic_advance() {
 #[test]
 fn test_hpet_ticks_to_nanos_math() {
     let _guard = HPET_TEST_LOCK.lock();
+    unsafe {
+        reset_mock_hpet();
+    }
     let _ = init_at(0xFED0_0000);
     let nanos100 = ticks_to_nanos(100);
     assert_eq!(nanos100, 1_000);
@@ -79,11 +89,17 @@ fn test_hpet_invalid_period_rejection() {
 
     let res = init_at(0xFED0_0000);
     assert!(res.is_err());
+    unsafe {
+        reset_mock_hpet();
+    }
 }
 
 #[test]
 fn test_hpet_delay_routines() {
     let _guard = HPET_TEST_LOCK.lock();
+    unsafe {
+        reset_mock_hpet();
+    }
     let _ = init_at(0xFED0_0000);
     delay_nanos(100);
     delay_micros(1);
