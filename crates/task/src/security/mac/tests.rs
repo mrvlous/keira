@@ -19,15 +19,15 @@ fn test_mac_mode_transitions_and_rules() {
     // Permissive mode
     set_mode(MacMode::Permissive);
     assert_eq!(get_mode(), MacMode::Permissive);
-    assert!(check_path_access(2, "/config/sys/passwd", MAC_WRITE));
+    assert!(check_path_access(2, "/config/sys/kernel.cfg", MAC_WRITE));
 
     // Enforcing mode
     set_mode(MacMode::Enforcing);
     assert_eq!(get_mode(), MacMode::Enforcing);
 
     assert!(check_path_access(2, "/system/bin/ls", MAC_READ));
-    assert!(!check_path_access(2, "/config/sys/passwd", MAC_WRITE));
-    assert!(check_path_access(1, "/config/sys/passwd", MAC_WRITE));
+    assert!(!check_path_access(2, "/config/sys/kernel.cfg", MAC_WRITE));
+    assert!(check_path_access(1, "/config/sys/kernel.cfg", MAC_WRITE));
 
     let (checks, violations) = get_stats();
     assert!(checks > 0);

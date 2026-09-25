@@ -52,11 +52,11 @@ pub fn init_rules() {
             MAC_READ | MAC_WRITE | MAC_APPEND,
         );
 
-        // Rule 3: User domain has full access to /users/
+        // Rule 3: User domain has full access to /data/
         add_rule_internal(
             3,
             MacDomain::User,
-            "/users/",
+            "/data/",
             MAC_READ | MAC_WRITE | MAC_EXEC | MAC_APPEND,
         );
 
