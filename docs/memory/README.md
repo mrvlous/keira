@@ -1,32 +1,31 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Memory Subsystems
+# Keira Memory Management Subsystems
 
-The `memory` subsystem encompasses physical page frame allocation (PMM), 4-level virtual paging (VMM), kernel bump and slab heaps, Direct Memory Access (DMA) buffers, swap paging, and Kernel Address Space Layout Randomization (KASLR).
+The `memory` domain encompasses physical frame management, virtual memory paging, dynamic heap allocation, swap partitions, and DMA buffering.
 
 ---
 
-## Memory Subsystem Architecture
+## Memory Architecture
 
 ```mermaid
 graph TD
-    HardwareRAM["Physical RAM<br/>(Multiboot2 Memory Map)"] --> PMM["pmm.md<br/>Physical Memory Manager (Bitmap)"]
-    PMM --> VMM["vmm.md<br/>Virtual Memory Manager (Paging)"]
-    PMM --> Heap["heap.md<br/>Kernel Bump & Slab Heap (kmalloc)"]
-    PMM --> DMA["dma.md<br/>Contiguous DMA Allocator"]
-    VMM --> Swap["swap.md<br/>Swap Page Eviction & Allocation"]
-    VMM --> KASLR["kaslr.md<br/>Kernel Address Space Randomization"]
+    App["Application / Kernel"] --> Heap["heap/<br/>Free-List Allocator & Slab Cache"]
+    App --> VMM["vmm/<br/>Virtual Memory Manager & 4-Level Paging"]
+    VMM --> PMM["pmm/<br/>Physical Frame Bitmap Allocator"]
+    VMM --> Swap["swap/<br/>Disk Paging Engine"]
+    Driver["Device Drivers"] --> DMA["dma/<br/>Contiguous DMA Buffers"]
+    DMA --> PMM
 ```
 
 ---
 
-## Memory Module Index
+## Submodule Index
 
-| Document | Component | Description |
+| Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`pmm.md`](pmm.md) | Physical Frame Allocator | 4KB physical frame bitmapped tracking, usable RAM detection, and watermark metrics |
-| [`vmm.md`](vmm.md) | Virtual Memory Manager | 4-level paging (PML4, PDPT, PD, PT), 32-bit two-level paging, and page table walks |
-| [`heap.md`](heap.md) | Kernel Heap Allocator | 16-byte aligned bump allocator and slab allocator with `kmalloc` / `kfree` |
-| [`dma.md`](dma.md) | DMA Buffer Subsystem | Physically contiguous buffers for PCI bus master devices (AHCI, e1000, NVMe) |
-| [`swap.md`](swap.md) | Swap Paging Engine | Swap partition backing store and least-recently-used page frame eviction |
-| [`kaslr.md`](kaslr.md) | Address Randomization | Random kernel base address offset generation using hardware RDRAND / TSC |
+| [`pmm/`](pmm/README.md) | Physical Memory | Bitmap allocator, usable memory regions, physical frames |
+| [`vmm/`](vmm/README.md) | Virtual Memory | 4-level/2-level paging, address spaces, page fault handler |
+| [`heap/`](heap/README.md) | Kernel Heap | Segregated free-list, size classes, slab object caching |
+| [`swap/`](swap/README.md) | Swap Engine | Disk-backed virtual memory paging and page-out daemon |
+| [`dma/`](dma/README.md) | DMA Buffering | Physically contiguous, non-cached direct memory access buffers |
