@@ -441,7 +441,7 @@ pub unsafe fn print_firewall_status() {
 
     if rule_count == 0 {
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str("  (No active firewall rules. Run 'iptables -A ...' to add)\n");
+        vga::print_str("  (No active firewall rules. Run 'firewall -A ...' to add)\n");
     }
 }
 
