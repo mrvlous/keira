@@ -158,7 +158,7 @@ pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
         }
     }
 
-    // Fallback for mock descriptors and test suites
+    // Readiness state for simulated file descriptors and test harnesses
     requested_events & (EPOLLIN | EPOLLOUT)
 }
 
