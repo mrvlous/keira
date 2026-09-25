@@ -1,26 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Development Journey: Storage Drivers & Virtual File System
+# Journey Milestone 4: Storage Drivers & Virtual Filesystems
 
-This document chronicles the development of block storage drivers (AHCI, NVMe, IDE, RAM Disk) and the Virtual File System (VFS) in Keira Kernel.
-
----
-
-## Storage Architecture Evolution
-
-```mermaid
-graph TD
-    RAMDisk["1. In-Memory USTAR Initrd Archive"] --> IDE["2. Legacy ATA / IDE PIO Driver"]
-    IDE --> FAT16["3. Complete FAT16 Read/Write Engine"]
-    FAT16 --> AHCI["4. AHCI SATA NCQ DMA Storage"]
-    AHCI --> NVMe["5. NVMe PCIe Submission/Completion Queues"]
-    NVMe --> VFSUnified["6. Unified VFS Inode / Mount Hierarchy"]
-```
+This milestone documents the layered storage architecture, from block device controllers to userland filesystem APIs.
 
 ---
 
-## Key Engineering Milestones
+## Key Achievements
 
-* **Unified VFS Abstraction**: Designed common inode operations (`read`, `write`, `lookup`, `readdir`, `stat`) across FAT16, Initrd, and DevFS.
-* **Robust FAT16 Implementation**: Implemented cluster chain allocation, directory entry management, long file names (LFN), and file truncation.
-* **High-Speed AHCI/NVMe DMA**: Enabled direct hardware memory-to-disk transfers without CPU-intensive programmed I/O loops.
+1. **Block Driver Subsystem**: AHCI SATA, NVMe controller, legacy IDE, and in-memory RAM disk drivers.
+2. **Virtual Filesystem (VFS)**: Mount table dispatching paths to concrete filesystem implementations.
+3. **FAT12/16/32 Driver**: Cluster chain traversal, directory parsing, file creation, reading, and writing.
+4. **EXT4 Reader**: Inode parsing, superblock verification, and extent tree navigation.
+5. **USTAR Initrd**: Early boot ramdisk archive extraction.

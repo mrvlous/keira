@@ -1,28 +1,14 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Development Journey: Bare-Metal Network Stack & TLS 1.3
+# Journey Milestone 5: Bare-Metal Networking & TLS
 
-This document chronicles the implementation of the pure Rust networking stack, Intel e1000 DMA drivers, TCP state machine, and native TLS 1.3 encryption in Keira Kernel.
-
----
-
-## Network Stack Layering
-
-```mermaid
-graph TD
-    App["Shell / User Applications ('download https://...')"] --> TLS["Native TLS 1.3 (AES-128-GCM + X25519)"]
-    TLS --> HTTP["HTTP/1.1 Client & Chunked Decoder"]
-    HTTP --> TCP["TCP State Machine (SYN / ACK / ESTABLISHED / FIN)"]
-    TCP --> IP["IPv4 Routing & ICMP Engine"]
-    IP --> ARP["ARP Resolution & LRU Cache"]
-    ARP --> E1000["Intel 82540EM Gigabit NIC Driver (DMA Rings)"]
-```
+This milestone explores building a complete TCP/IP network stack from raw Ethernet frames up to TLS 1.3 encrypted HTTP communication.
 
 ---
 
-## Key Engineering Milestones
+## Key Achievements
 
-* **Pure Rust TCP Engine**: Built reliable TCP connection handling with 3-way handshakes, sequence tracking, window management, and retransmission.
-* **Native Bare-Metal TLS 1.3**: Implemented pure Rust TLS 1.3 handshake without external dependencies, integrating AES-128-GCM, SHA-256, HKDF, and Curve25519.
-* **Continuous Streaming Downloads**: Enabled streaming downloads directly over HTTP/HTTPS with cargo-style progress badges saved directly to FAT16 storage.
-* **In-Kernel BSD Socket Layer & Async Epoll Readiness**: Implemented a global socket descriptor table integrated into task file descriptors (`SYS_SOCKET`, `SYS_CONNECT`), unified `read`/`write` multiplexing, and dynamic readiness polling (`EPOLLIN` / `EPOLLOUT`) for scalable `epoll_wait` event loops.
+1. **Network Interface Cards**: Intel e1000 and Realtek RTL8139 hardware drivers with circular DMA ring buffers.
+2. **Layer 2 & 3 Protocols**: Ethernet II frame framing, ARP cache resolution, IPv4 routing, and ICMP echo.
+3. **Layer 4 Transport**: UDP datagrams and stateful TCP connection state machine (`SYN`, `ESTABLISHED`, `FIN`).
+4. **Layer 7 & Security**: DHCP client configuration, DNS resolution, and native TLS 1.3 with AES-128-GCM and X25519.

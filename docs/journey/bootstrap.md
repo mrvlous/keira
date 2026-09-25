@@ -1,34 +1,16 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Development Journey: The Bootstrap Phase
+# Journey Milestone 1: Bare-Metal Bootstrap & CPU Bringup
 
-This document chronicles the design, challenges, and implementation of early Multiboot2 bootloading, GDT/IDT descriptor setup, and 64-bit Long Mode transition in Keira Kernel.
-
----
-
-## Bootstrap Sequence
-
-```mermaid
-sequenceDiagram
-    participant GRUB as GRUB2 Bootloader
-    participant ASM as Multiboot2 Entry (boot.s)
-    participant Paging as Early Page Tables (PML4)
-    participant Kernel as Rust Kernel Main (kernel_main)
-
-    GRUB->>ASM: Jump to 32-bit Protected Mode Entry
-    ASM->>ASM: Verify Multiboot2 Magic (0x36D76289)
-    ASM->>Paging: Setup Identity Map for First 1GB
-    ASM->>ASM: Enable PAE & Long Mode (EFER.LME = 1)
-    ASM->>ASM: Load 64-bit GDT & Jump to 64-bit Code Segment
-    ASM->>Kernel: Call kernel_main(magic, multiboot_addr)
-    Note over Kernel: Initialize Serial, VGA, Memory & Interrupts
-```
+This milestone explores the initial transition from firmware bootloader execution to 64-bit Long Mode and 32-bit Protected Mode.
 
 ---
 
-## Key Milestones & Engineering Challenges
+## Key Achievements
 
-1. **Multiboot2 Compliance**: Implemented compliant 64-bit and 32-bit Multiboot2 headers supporting memory maps, linear framebuffers, and initrd boot modules.
-2. **Long Mode Transition**: Configured 4-level page tables (PML4, PDPT, PD, PT) with 2MB huge pages to map the kernel seamlessly into higher-half virtual memory.
-3. **Interrupt Vector Table**: Initialized IDT with 256 vector gates, capturing double faults, general protection faults, and hardware IRQs without triple faults.
-4. **Multi-Core SMP Bootstrap**: Deployed 16-bit real-mode bootstrap trampolines at reserved physical address `0x8000`, waking secondary AP cores via Local APIC `INIT-SIPI-SIPI` signals and synchronizing execution via dynamic parameter blocks.
+1. **Multiboot2 Handshake**: Parsing Multiboot2 tags for physical memory maps, framebuffers, and initrd modules.
+2. **Symmetrical Dual-Architecture Entry**:
+   - `x86_64`: 32-bit entry (`entry32.asm`), long mode page table initialization (`paging.asm`), and 64-bit jump (`entry64.asm`).
+   - `i686`: Pure 32-bit protected mode entry (`entry.asm`).
+3. **Interrupt & Exception Vectoring**: GDT setup, TSS segment loading, IDT population with 256 interrupt gates, and ISR stubs.
+4. **Symmetric Multiprocessing (SMP)**: Real-mode AP trampoline bootstrap at physical address `0x8000`, waking auxiliary CPU cores via Local APIC `INIT-SIPI-SIPI` sequences.

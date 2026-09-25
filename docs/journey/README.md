@@ -1,35 +1,31 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# The Keira Kernel Learning Journey
+# The Keira Learning Journey
 
-> *"The best way to truly understand how a freestanding kernel works is not merely to read about it, but to build one from the very first instruction."*
-
-This module is an open engineering journal and educational roadmap detailing the design decisions, challenges, and lessons learned while developing **Keira Kernel** from scratch in safe Rust, C, and Assembly.
-
-* **Live Evidence & Interactive Showcase**: [https://mrvlous.github.io/keira/](https://mrvlous.github.io/keira/)
+The Keira project is conceived as an exploratory systems programming journey—building an entire operating system from bare silicon to a native Ring 3 C toolchain.
 
 ---
 
-## Learning Milestones Index
+## Journey Milestones
 
 ```mermaid
-graph TD
-    M1["1. bootstrap.md<br/>CPU Bootstrap, GDT & Interrupts"] --> M2["2. memory.md<br/>Frame Allocator & 4-Level Paging"]
-    M2 --> M3["3. multitasking.md<br/>Preemptive Scheduling & Context Switching"]
-    M3 --> M4["4. storage_vfs.md<br/>Virtual Filesystem, FAT16 & Caching"]
-    M4 --> M5["5. networking.md<br/>Bare-Metal TCP/IP Stack & TLS 1.3"]
-    M5 --> M6["6. userland_compiler.md<br/>Ring 3 Isolation, Syscalls & KCC Compiler"]
+graph LR
+    M1["1. Bootstrap & Hardware Bringup"] --> M2["2. Memory & Paging"]
+    M2 --> M3["3. Multitasking & Scheduling"]
+    M3 --> M4["4. Storage & Filesystems"]
+    M4 --> M5["5. Bare-Metal Networking"]
+    M5 --> M6["6. Userland & C Compiler"]
 ```
 
 ---
 
-## Milestone Catalog
+## Milestone Chapters
 
-| Milestone | Document | Focus Area & Key Takeaways |
+| Milestone | Chapter Document | Topics Covered |
 | :--- | :--- | :--- |
-| **Milestone 1** | [`bootstrap.md`](bootstrap.md) | Multiboot2, 32-bit/64-bit trampolines, GDT, TSS, and IDT exception handling |
-| **Milestone 2** | [`memory.md`](memory.md) | Physical frame bitmap (PMM), 4-level paging (VMM), and bump/slab heap design |
-| **Milestone 3** | [`multitasking.md`](multitasking.md) | Preemptive timer ticks, task state machines, context switching, and spinlocks |
-| **Milestone 4** | [`storage_vfs.md`](storage_vfs.md) | Unified VFS traits, FAT12/16/32, EXT4 parsing, and LRU sector caching |
-| **Milestone 5** | [`networking.md`](networking.md) | Intel e1000/RTL8139 drivers, ARP, IPv4, TCP 3-way handshakes, and TLS 1.3 |
-| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | Ring 3 userland privilege separation, System V ABI & auxv, POSIX signals, and native C compiler |
+| **Milestone 1** | [`bootstrap.md`](bootstrap.md) | Multiboot2, GDT, TSS, IDT, PIC/APIC, and 16-bit AP trampolines |
+| **Milestone 2** | [`memory.md`](memory.md) | Physical frame allocator, 4-level paging, kernel heap, and swap |
+| **Milestone 3** | [`multitasking.md`](multitasking.md) | Context switching, preemptive scheduler, cgroups, and signals |
+| **Milestone 4** | [`storage_vfs.md`](storage_vfs.md) | VFS architecture, FAT16, EXT4, USTAR initrd, and block cache |
+| **Milestone 5** | [`networking.md`](networking.md) | Bare-metal TCP/IP stack, e1000 driver, sockets, TLS 1.3 |
+| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | Ring 3 userland, libc runtime, and native in-kernel KCC compiler |
