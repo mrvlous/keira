@@ -168,14 +168,14 @@ LOG_CHECK       := printf "  [OK]    %s\n"
 LOG_MISS        := printf "  [MISS]  %s\n"
 
 # Canonical filesystem manifests
-SHELL_CMDS      := login drives use ramdisk system cpu smp runtime time memory \
+SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
                    devices initrd wipe reset run write tasks disk list \
                    go view create folder delete edit copy help history \
-                   move search download network stop env sync \
-                   protect fileinfo framebuffer usb https user hostname syslog kvm \
+                   move search download network stop sync \
+                   fileinfo framebuffer usb https hostname syslog kvm \
                    nvme ext4 cgroups futex bpf tpm swap seccomp epoll \
                    drivers lkm unwind watchpoint power perf timer eventfd mac mqueue \
-                   kill jobs fg bg lvm raid ipcs ipcrm iptables firewall service \
+                   kill jobs fg bg lvm raid firewall \
                    shutdown reboot
 
 # Phony targets declaration
@@ -388,7 +388,6 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/apps/bin
 	$(Q)mkdir -p $(FS_ROOT)/config/boot
 	$(Q)mkdir -p $(FS_ROOT)/config/sys
-	$(Q)mkdir -p $(FS_ROOT)/users/admin
 	$(Q)mkdir -p $(FS_ROOT)/temp
 	$(Q)mkdir -p $(FS_ROOT)/data/log
 	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
@@ -402,12 +401,6 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/config/sys/hostname.cfg
-	$(Q)printf "# Keira Service Configuration\nname=syncd\ndescription=FAT16 Auto-Sync & Cache Flush Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/syncd.conf
-	$(Q)printf "# Keira Service Configuration\nname=syslogd\ndescription=Kernel Event & Audit Logger Service\nenabled=1\nauto_restart=1\ninterval=5\n" > $(FS_ROOT)/config/sys/syslogd.conf
-	$(Q)printf "# Keira Service Configuration\nname=watchdogd\ndescription=Memory & Task Health Watchdog\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/watchdogd.conf
-	$(Q)printf "# Keira Service Configuration\nname=timed\ndescription=CMOS RTC & System Clock Sync Daemon\nenabled=1\nauto_restart=1\ninterval=30\n" > $(FS_ROOT)/config/sys/timed.conf
-	$(Q)printf "# Keira Service Configuration\nname=monitord\ndescription=System Health & Telemetry Daemon\nenabled=1\nauto_restart=1\ninterval=10\n" > $(FS_ROOT)/config/sys/monitord.conf
-	$(Q)printf "# Keira Service Configuration\nname=netd\ndescription=Network State & ARP Daemon\nenabled=1\nauto_restart=1\ninterval=15\n" > $(FS_ROOT)/config/sys/netd.conf
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
 	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/data/log/boot.log
 	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
@@ -423,7 +416,7 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/config ::/config/boot ::/config/sys ::/users ::/users/admin ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/config ::/config/boot ::/config/sys ::/temp ::/data ::/data/log 2>/dev/null || true
 	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
 	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
 	done

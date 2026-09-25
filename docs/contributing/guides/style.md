@@ -122,12 +122,11 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 
 ## 4. Filesystem & Path Standards
 
-All runtime and VFS paths must adhere to the canonical 6-directory hierarchy:
+All runtime and VFS paths must adhere to the canonical 5-directory hierarchy:
 
 * `/system`: Core binaries (`/system/bin`), device nodes (`/system/dev`), headers (`/system/include`, `/system/include/sys`), and runtime C libraries (`/system/lib`).
 * `/apps`: Userland executables (`/apps/bin`).
 * `/config`: Boot configuration (`/config/boot`) and kernel system configurations (`/config/sys`).
-* `/users`: Kernel user workspace (`/users/admin`).
 * `/data`: Persistent diagnostic logs (`/data/log/`) and compiler test programs (`/data/main.c`).
 * `/temp`: Temporary runtime scratch workspace (`/temp/.keep`).
 
@@ -176,7 +175,7 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 ### A. Color Palette Matrix:
 | Element / Role | Color Constant | Hex RGB | Semantic Usage |
 | :--- | :--- | :--- | :--- |
-| **Headers & Prompts** | `vga::Color::White` | `#FFFFFF` | Table column headers, command prompts (`admin@keira:~$`), titles, category headings. |
+| **Headers & Prompts** | `vga::Color::White` | `#FFFFFF` | Table column headers, command prompts (`keira:/path#`), titles, category headings. |
 | **Body & Data Lines** | `vga::Color::LightGrey` | `#AAAAAA` | Default stdout, file listings, telemetry metrics, register values, memory addresses. |
 | **Success Badges** | `vga::Color::LightGreen` | `#55FF55` | Minimal status tokens: `[OK]`, `[Mounted]`, `RUNNING`, `UP (e1000)`, `Connecting`, `Downloading`, `Finished`. |
 | **Warning Badges** | `vga::Color::Yellow` | `#FFFF55` | Alerts, cache invalidations, fallback notices: `[ WARN ]`, `[REBUILDING]`, `Warning`. |
