@@ -2,4 +2,4 @@
 
 # Process & IPC Commands
 
-`tasks`, `cgroups`, `futex`, `eventfd`, `epoll`, `mqueue`, `timer`, `service`, `run`, `kcc`.
+`tasks`, `run`, `stop`, `kill`, `jobs`, `fg`, `bg`, `cgroups`, `futex`, `eventfd`, `epoll`, `mqueue`, `timer`, `kcc`.

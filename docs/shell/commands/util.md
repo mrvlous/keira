@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Utilities & Help Commands
+# General Utility Commands
 
-`help`, `history`, `search`, `edit`, `power`, `reset`, `wipe`.
+`help`, `history`, `wipe`, `search`.

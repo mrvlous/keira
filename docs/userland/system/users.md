@@ -1,20 +1,14 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Multi-User Credentials & Authentication
+# Kernel Privilege & Execution Security
 
-Keira implements a multi-user credential system adhering to POSIX standards.
-
----
-
-## User & Group Identifiers
-
-* **Superuser**: UID `0` (`root`), GID `0` (`root`). Possesses unrestricted permissions to hardware, kernel modules, and raw disk blocks.
-* **Standard Users**: UID $\ge 1000$. Restricted by file permission masks and process isolation.
-* **System Accounts**: UID `1`--`999` reserved for system daemons (e.g. `daemon`, `nobody`).
+Keira operates strictly as a freestanding Ring 0 monolithic kernel without multi-user distribution bloat (`/etc/passwd`, `/etc/group`, pseudo-PAM, or login managers).
 
 ---
 
-## Configuration Files
+## Security Model
 
-* `/etc/passwd`: `username:x:uid:gid:gecos:home_dir:shell`
-* `/etc/group`: `groupname:x:gid:member1,member2`
+* **Kernel Space (Ring 0)**: Unrestricted direct hardware access, interrupt handling, and memory page allocation.
+* **Userland Sandbox (Ring 3)**: Isolated address spaces per process, preemptive task scheduling, and syscall ABI verification.
+* **Mandatory Access Control (MAC)**: Capability enforcement and matrix validation restricting process actions at the kernel boundary.
+* **Seccomp Filtering**: Dynamic system call whitelisting to sandbox untrusted userland workloads.

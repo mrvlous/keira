@@ -2,4 +2,4 @@
 
 # Filesystem & Storage Commands
 
-`drives`, `disk`, `ramdisk`, `initrd`, `sync`, `ext4`, `swap`, `lvm`, `raid`, `list`, `folder`, `create`, `write`, `view`, `fileinfo`, `copy`, `move`, `delete`.
+`drives`, `use`, `disk`, `ramdisk`, `initrd`, `sync`, `ext4`, `swap`, `lvm`, `raid`, `list`, `go`, `folder`, `create`, `write`, `view`, `fileinfo`, `copy`, `move`, `delete`, `edit`.

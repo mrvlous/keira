@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Network & Socket Commands
+# Network Commands
 
-`network`, `firewall`, `iptables`, `ipcs`, `ipcrm`, `bpf`.
+`network`, `download`, `https`, `firewall`, `bpf`.

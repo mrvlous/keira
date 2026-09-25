@@ -2,4 +2,4 @@
 
 # Security & Sandboxing Commands
 
-`seccomp`, `mac`, `tpm`, `login`.
+`seccomp`, `mac`, `tpm`.

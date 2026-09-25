@@ -1,16 +1,16 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# File System Permissions & Access Control
+# File System Modes & Access Boundaries
 
-Access control evaluation follows standard POSIX discretionary access control (DAC).
+Keira enforces filesystem safety through VFS route permissions, node type validations, and Ring 3 boundary isolation.
 
 ---
 
-## Permission Bitmask
+## VFS Node Kinds
 
-Each VFS inode stores a 16-bit mode word:
-* **File Type** (Bits 15--12): Regular file (`0100000`), Directory (`0040000`), Character device (`0020000`), Block device (`0060000`), FIFO (`0010000`).
-* **Special Flags** (Bits 11--9): SUID (`04000`), SGID (`02000`), Sticky Bit (`01000`).
-* **Owner Permissions** (Bits 8--6): Read (`r`), Write (`w`), Execute (`x`).
-* **Group Permissions** (Bits 5--3): Read (`r`), Write (`w`), Execute (`x`).
-* **Other Permissions** (Bits 2--0): Read (`r`), Write (`w`), Execute (`x`).
+Each VFS inode distinguishes file types and access characteristics:
+* **Regular File**: Byte-stream storage on FAT16, EXT4, or Initrd backends.
+* **Directory**: Hierarchical path container with cluster or record resolution.
+* **Character Device**: Streaming hardware endpoints under `/system/dev/` (e.g. `tty0`, `urandom`).
+* **Block Device**: Block-addressed storage volumes (e.g. `ram0`, `sata0`, `nvme0`).
+* **Pseudo-Nodes**: Dynamic kernel state telemetry endpoints under `/system/proc/` (e.g. `uptime`, `meminfo`).

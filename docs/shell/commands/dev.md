@@ -2,4 +2,4 @@
 
 # Device & Diagnostics Commands
 
-`syslog`, `drivers`, `lkm`, `unwind`, `perf`, `kvm`, `framebuffer`.
+`syslog`, `drivers`, `lkm`, `unwind`, `watchpoint`, `perf`, `kvm`, `framebuffer`, `usb`.
