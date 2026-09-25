@@ -180,7 +180,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 debug clean rust iso dirs \
-        format lint user disk initrd help info check size objdump qemu-net test test-all fs-root \
+        format lint user disk initrd help info check size objdump qemu-net test test-all test-unit fs-root \
         preflight preflight-qemu preflight-format preflight-lint
 
 .DEFAULT_GOAL   := all
@@ -455,6 +455,11 @@ qemu-net: preflight-qemu all ## Launch Keira in QEMU with e1000 NIC emulation
 	$(Q)$(QEMU) $(QEMU_NET_FLAGS)
 
 # Automated testing & verification
+test-unit: ## Run cargo host unit tests across all workspace crates
+	@$(LOG_INFO) "Running cargo host unit tests across workspace..."
+	$(Q)$(CARGO) test --workspace
+	@$(LOG_DONE) "Host unit tests completed successfully"
+
 test: preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
 	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none </dev/null > $(BUILD_DIR)/test.log 2>&1 || true
