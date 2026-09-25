@@ -13,18 +13,6 @@ use super::*;
 
 #[test]
 fn test_sec_commands_help_invocation() {
-    let mut args = "login --help".split_whitespace();
-    args.next();
-    login::run(&mut args);
-
-    let mut args = "protect --help".split_whitespace();
-    args.next();
-    protect::run(&mut args);
-
-    let mut args = "user --help".split_whitespace();
-    args.next();
-    user::run(&mut args);
-
     let mut args = "bpf --help".split_whitespace();
     args.next();
     bpf::run(&mut args);

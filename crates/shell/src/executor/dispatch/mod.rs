@@ -7,14 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Command dispatching, authorization validation, and built-in handlers.
+//! Command dispatching, execution entry, and built-in router handlers.
 
-pub mod auth;
 pub mod entry;
 pub mod hardware;
 pub mod router;
 
-pub use auth::*;
 pub use entry::*;
 pub use hardware::*;
 pub use router::*;

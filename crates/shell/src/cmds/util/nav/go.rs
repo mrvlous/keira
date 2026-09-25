@@ -25,35 +25,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 return;
             }
             Some(s) => s,
-            None => "~",
+            None => "/",
         };
 
-        // Tilde expansion to current user's home directory (/users/<username>)
-        let mut path_buf = [0u8; 80];
-
-        let resolved_arg = if arg == "~" || arg.starts_with("~/") {
-            let prefix = b"/users/";
-            path_buf[..prefix.len()].copy_from_slice(prefix);
-            let mut path_len = prefix.len();
-            let ubytes = &CURRENT_USER[..CURRENT_USER_LEN];
-            if ubytes.is_empty() {
-                let default_user = b"admin";
-                path_buf[path_len..path_len + default_user.len()].copy_from_slice(default_user);
-                path_len += default_user.len();
-            } else {
-                let copy_len = core::cmp::min(ubytes.len(), 80 - path_len);
-                path_buf[path_len..path_len + copy_len].copy_from_slice(&ubytes[..copy_len]);
-                path_len += copy_len;
-            }
-
-            if arg.starts_with("~/") {
-                let rest = &arg[1..]; // includes leading '/' from "~/..."
-                let rest_bytes = rest.as_bytes();
-                let copy_len = core::cmp::min(rest_bytes.len(), 80 - path_len);
-                path_buf[path_len..path_len + copy_len].copy_from_slice(&rest_bytes[..copy_len]);
-                path_len += copy_len;
-            }
-            core::str::from_utf8(&path_buf[..path_len]).unwrap_or("/users/admin")
+        let resolved_arg = if arg == "~" || arg == "/" {
+            "/"
+        } else if let Some(stripped) = arg.strip_prefix("~/") {
+            stripped
         } else {
             arg
         };

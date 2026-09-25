@@ -7,13 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Security, authentication, authorization, and sandboxing shell commands.
+//! Security, sandboxing, and policy enforcement shell commands.
 
-pub mod auth;
 pub mod sandbox;
 
 #[cfg(test)]
 mod tests;
 
-pub use auth::{login, protect, user};
 pub use sandbox::{bpf, mac, seccomp, tpm};

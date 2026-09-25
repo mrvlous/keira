@@ -17,8 +17,7 @@ use crate::editor::editor_handle_keypress;
 use crate::history::history_load;
 use crate::state::session::{
     BUFFER_LEN, BUFFER_SIZE, COMMAND_READY, HISTORY_COUNT, HISTORY_INDEX, HISTORY_SIZE,
-    INPUT_BUFFER, IN_EDITOR_MODE, IN_LOGIN_MODE, IN_PLEASE_MODE, LOGIN_USERNAME,
-    LOGIN_USERNAME_LEN, PLEASE_COMMAND, PLEASE_COMMAND_LEN, PROMPT_COL, PROMPT_ROW,
+    INPUT_BUFFER, IN_EDITOR_MODE, PROMPT_COL, PROMPT_ROW,
 };
 use crate::terminal::prompt::display::print_prompt;
 
@@ -28,41 +27,6 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
     unsafe {
         if IN_EDITOR_MODE {
             editor_handle_keypress(c);
-            return;
-        }
-
-        if IN_PLEASE_MODE || IN_LOGIN_MODE {
-            match c {
-                3 => {
-                    vga::print_str("^C\n");
-                    BUFFER_LEN = 0;
-                    INPUT_BUFFER = [0u8; BUFFER_SIZE];
-                    IN_PLEASE_MODE = false;
-                    IN_LOGIN_MODE = false;
-                    PLEASE_COMMAND = [0u8; 128];
-                    PLEASE_COMMAND_LEN = 0;
-                    LOGIN_USERNAME = [0u8; 16];
-                    LOGIN_USERNAME_LEN = 0;
-                    print_prompt();
-                }
-                10 | 13 => {
-                    vga::print_str("\n");
-                    COMMAND_READY = true;
-                }
-                8 => {
-                    if BUFFER_LEN > 0 {
-                        BUFFER_LEN -= 1;
-                        INPUT_BUFFER[BUFFER_LEN] = 0;
-                    }
-                }
-                9 | KEY_UP | KEY_DOWN => {}
-                _ => {
-                    if BUFFER_LEN < BUFFER_SIZE - 1 {
-                        INPUT_BUFFER[BUFFER_LEN] = c;
-                        BUFFER_LEN += 1;
-                    }
-                }
-            }
             return;
         }
 

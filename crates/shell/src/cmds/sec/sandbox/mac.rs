@@ -255,22 +255,22 @@ fn run_mac_tests() {
     let t1 = check_path_access(2, "/system/bin/ls", MAC_READ);
     print_decision(t1, true);
 
-    // Test 2: User writing to /config/sys/passwd
+    // Test 2: User writing to /config/sys/kernel.cfg
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [2/4] User (PID 2) WRITE on /config/sys/passwd ... ");
-    let t2 = check_path_access(2, "/config/sys/passwd", MAC_WRITE);
+    vga::print_str("  [2/4] User (PID 2) WRITE on /config/sys/kernel.cfg ... ");
+    let t2 = check_path_access(2, "/config/sys/kernel.cfg", MAC_WRITE);
     print_decision(t2, false);
 
-    // Test 3: System (PID 1) WRITE on /config/sys/passwd
+    // Test 3: System (PID 1) WRITE on /config/sys/kernel.cfg
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [3/4] System (PID 1) WRITE on /config/sys/passwd ... ");
-    let t3 = check_path_access(1, "/config/sys/passwd", MAC_WRITE);
+    vga::print_str("  [3/4] System (PID 1) WRITE on /config/sys/kernel.cfg ... ");
+    let t3 = check_path_access(1, "/config/sys/kernel.cfg", MAC_WRITE);
     print_decision(t3, true);
 
-    // Test 4: User EXEC on /users/admin/script.sh
+    // Test 4: User EXEC on /data/script.sh
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [4/4] User (PID 2) EXEC on /users/admin/script.sh ... ");
-    let t4 = check_path_access(2, "/users/admin/script.sh", MAC_EXEC);
+    vga::print_str("  [4/4] User (PID 2) EXEC on /data/script.sh ... ");
+    let t4 = check_path_access(2, "/data/script.sh", MAC_EXEC);
     print_decision(t4, true);
 
     set_mode(prev_mode);

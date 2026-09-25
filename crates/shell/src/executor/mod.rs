@@ -17,8 +17,7 @@ pub mod pipeline;
 mod tests;
 
 pub use dispatch::{
-    check_write_permission, count_pci_devices, execute_command, execute_command_inner,
-    get_current_user_home, is_admin_mode, print_2digit, vga_init, RtcTime,
+    count_pci_devices, execute_command, execute_command_inner, print_2digit, vga_init, RtcTime,
 };
 pub use env::expand_env_vars;
 pub use pipeline::{

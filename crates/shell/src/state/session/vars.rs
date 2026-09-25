@@ -54,18 +54,6 @@ pub static mut SEARCH_LEN: usize = 0;
 pub static mut SHELL_PATH: [u8; 80] = [0u8; 80];
 pub static mut SHELL_PATH_LEN: usize = 0;
 
-pub static mut IN_PLEASE_MODE: bool = false;
-pub static mut PLEASE_COMMAND: [u8; 128] = [0; 128];
-pub static mut PLEASE_COMMAND_LEN: usize = 0;
-pub static mut PLEASE_ATTEMPTS: usize = 0;
-pub static mut IN_LOGIN_MODE: bool = false;
-pub static mut LOGIN_USERNAME: [u8; 16] = [0; 16];
-pub static mut LOGIN_USERNAME_LEN: usize = 0;
-pub static mut LOGIN_ATTEMPTS: usize = 0;
-pub static mut CURRENT_USER: [u8; 16] = *b"admin           ";
-pub static mut CURRENT_USER_LEN: usize = 5;
-pub static mut IS_ADMIN: bool = false;
-
 pub static mut HOSTNAME: [u8; 32] = *b"keira                           ";
 pub static mut HOSTNAME_LEN: usize = 5;
 

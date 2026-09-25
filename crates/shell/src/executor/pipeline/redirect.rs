@@ -11,7 +11,6 @@
 
 use keira_io::vga;
 
-use crate::executor::dispatch::auth::check_write_permission;
 use crate::executor::dispatch::router::execute_command_inner;
 
 /// Parse input redirection `<` and load file into VGA pipe buffer.
@@ -55,16 +54,6 @@ pub unsafe fn execute_with_redirection(
     input_file: Option<&str>,
 ) {
     if let Some(filename) = target_file {
-        if !check_write_permission() {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str("Permission denied: Non-admin users cannot write outside their home directory. Use 'please' to run as admin.\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            if input_file.is_some() {
-                keira_io::vga::PIPE_ACTIVE = false;
-            }
-            return;
-        }
-
         keira_io::vga::REDIRECT_TO_FILE = true;
         keira_io::vga::REDIRECT_LEN = 0;
         keira_io::vga::REDIRECT_BUFFER = [0; 4096];

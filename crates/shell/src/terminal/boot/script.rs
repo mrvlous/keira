@@ -9,25 +9,17 @@
 
 //! Early shell startup initialization and boot script execution.
 
-use crate::service::daemon::auto_start_enabled_services;
-use crate::state::session::{CURRENT_USER, CURRENT_USER_LEN, SHELL_PATH, SHELL_PATH_LEN};
+use crate::state::session::{SHELL_PATH, SHELL_PATH_LEN};
 
-/// Execute initial environment setup and start background services.
+/// Execute initial environment setup and configure default working directory.
 pub fn run_boot_script() {
     unsafe {
         crate::cmds::hostname::load_hostname();
 
-        CURRENT_USER = [0u8; 16];
-        let admin_str = b"admin";
-        CURRENT_USER[..admin_str.len()].copy_from_slice(admin_str);
-        CURRENT_USER_LEN = admin_str.len();
-
-        if keira_fs::fat::change_directory("/users/admin").is_ok() {
-            let initial_path = "users/admin";
+        if keira_fs::fat::change_directory("/system").is_ok() {
+            let initial_path = "system";
             SHELL_PATH[..initial_path.len()].copy_from_slice(initial_path.as_bytes());
             SHELL_PATH_LEN = initial_path.len();
         }
-
-        auto_start_enabled_services();
     }
 }
