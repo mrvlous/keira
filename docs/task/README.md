@@ -1,28 +1,30 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Task & Scheduling Subsystem
+# Keira Task Management & Scheduling
 
-The `task` subsystem provides preemptive multitasking, round-robin scheduling, task control blocks (TCB), cgroups resource limits, and POSIX signal delivery.
+The `task` domain governs process control blocks, preemptive scheduling, POSIX signal dispatch, cgroups resource controls, and security policies.
 
 ---
 
-## Subsystem Architecture
+## Task Submodules
 
 ```mermaid
 graph TD
-    Timer["PIT Timer Tick (1000 Hz)"] --> Sched["scheduler.md<br/>Preemptive Round-Robin Scheduler"]
-    Sched --> TCB["descriptors.md<br/>Task Descriptors & Context Switching"]
-    Sched --> CG["cgroups.md<br/>Cgroups Limits & CPU Shares"]
-    Sched --> Sig["signal.md<br/>POSIX Signal Queues & Handlers"]
+    Task["Task Subsystem"] --> Sched["scheduler/<br/>Round-Robin Preemptive Scheduler"]
+    Task --> Context["context/<br/>PCB, Context Switch & Stacks"]
+    Task --> Signal["signal/<br/>POSIX Signals & sigreturn"]
+    Task --> Cgroups["cgroups/<br/>Resource Quotas & Limits"]
+    Task --> Security["security/<br/>Seccomp BPF & MAC Policies"]
 ```
 
 ---
 
-## Task Module Index
+## Submodule Index
 
-| Document | Component | Description |
+| Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`scheduler.md`](scheduler.md) | Preemptive Scheduler | Timer-tick driven context switching, runqueue management, and yield loops |
-| [`descriptors.md`](descriptors.md) | Task Descriptors | `TaskControlBlock`, CPU register context (`TaskContext`), states, and file descriptors |
-| [`cgroups.md`](cgroups.md) | Control Groups (Cgroups) | Resource quotas, CPU share scheduling, and memory ceiling limits |
-| [`signal.md`](signal.md) | POSIX Signals | Signal masking, asynchronous delivery (`SIGINT`, `SIGKILL`, `SIGTERM`), and job tables |
+| [`scheduler/`](scheduler/README.md) | Task Scheduling | Preemptive round-robin scheduler, dispatch, lifecycle |
+| [`context/`](context/README.md) | Task Context | Process Control Block (PCB), register frames, stack setup |
+| [`signal/`](signal/README.md) | Signal Subsystem | POSIX signal delivery, signal masks, `sigreturn` frame |
+| [`cgroups/`](cgroups/README.md) | Resource Control | Control groups, CPU quota throttling, process count limits |
+| [`security/`](security/README.md) | Security Layer | Seccomp BPF syscall filter, Mandatory Access Control (MAC) |
