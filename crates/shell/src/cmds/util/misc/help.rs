@@ -27,31 +27,29 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::print_str("System & Hardware:\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str("  system    cpu       smp       memory    devices   time      runtime\n");
-        vga::print_str("  power     reset     env       hostname  user      login     syslog\n");
         vga::print_str(
-            "  drivers   lkm       watchpoint unwind    perf      kvm       framebuffer\n\n",
+            "  power     reset     hostname  syslog    drivers   lkm       watchpoint\n",
         );
+        vga::print_str("  unwind    perf      kvm       framebuffer usb\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Storage & Filesystem:\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str("  drives    use       disk      ramdisk   initrd    sync      ext4\n");
         vga::print_str("  list      go        folder    create    delete    copy      move\n");
-        vga::print_str(
-            "  view      write     edit      fileinfo  protect   swap      lvm       raid\n\n",
-        );
+        vga::print_str("  view      write     edit      fileinfo  swap      lvm       raid\n\n");
 
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("Process & Services:\n");
+        vga::print_str("Process, Scheduling & IPC:\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str("  tasks     run       stop      kill      jobs      fg        bg\n");
-        vga::print_str("  cgroups   futex     eventfd   epoll     mqueue    timer     service\n\n");
+        vga::print_str("  cgroups   futex     eventfd   epoll     mqueue    timer     kcc\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Network & Security:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  network   download  https     firewall  iptables  ipcs      ipcrm\n");
-        vga::print_str("  bpf       seccomp   mac       tpm\n\n");
+        vga::print_str("  network   download  https     firewall  bpf       seccomp   mac\n");
+        vga::print_str("  tpm\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("General Utilities:\n");

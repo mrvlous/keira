@@ -22,9 +22,9 @@ fn test_expand_env_vars_literal() {
 
 #[test]
 fn test_parse_input_redirection() {
-    let (cmd, file) = parse_input_redirection("view < /users/admin/notes.txt");
+    let (cmd, file) = parse_input_redirection("view < /data/notes.txt");
     assert_eq!(cmd, "view");
-    assert_eq!(file, Some("/users/admin/notes.txt"));
+    assert_eq!(file, Some("/data/notes.txt"));
 
     let (cmd2, file2) = parse_input_redirection("view");
     assert_eq!(cmd2, "view");

@@ -12,7 +12,6 @@
 #![allow(unused_variables, unused_unsafe)]
 
 use crate::args::CliArgs;
-use crate::executor::*;
 use keira_io::vga;
 use keira_net::driver::e1000;
 use keira_net::icmp::send_ping;
@@ -61,15 +60,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
-        if !is_admin_mode() {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str(
-                "Permission denied: This command requires admin privileges. Use 'please <command>'.\n",
-            );
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            return;
-        }
-
         let sub = args.first_positional();
 
         if args.has_flag('c', "cache") || sub == Some("dns-cache") || sub == Some("cache") {

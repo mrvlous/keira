@@ -29,18 +29,6 @@ fn test_net_commands_help_invocation() {
     args.next();
     firewall::run(&mut args);
 
-    let mut args = "iptables --help".split_whitespace();
-    args.next();
-    iptables::run(&mut args);
-
-    let mut args = "ipcrm --help".split_whitespace();
-    args.next();
-    ipcrm::run(&mut args);
-
-    let mut args = "ipcs --help".split_whitespace();
-    args.next();
-    ipcs::run(&mut args);
-
     let mut args = "mqueue --help".split_whitespace();
     args.next();
     mqueue::run(&mut args);

@@ -11,7 +11,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-use crate::executor::*;
 use crate::state::*;
 use keira_io::vga;
 
@@ -60,13 +59,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             Some(name) => {
-                if !is_admin_mode() {
-                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                    vga::print_str("Permission denied: Only admin can change the hostname.\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                    return;
-                }
-
                 let name_bytes = name.as_bytes();
                 if name_bytes.is_empty() || name_bytes.len() > 31 {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);

@@ -13,7 +13,6 @@
 #![allow(unused_variables, unused_unsafe)]
 
 use crate::args::CliArgs;
-use crate::executor::*;
 use keira_io::vga;
 use keira_net::tcp::fetch_http_stream;
 use keira_net::tls::fetch_https_stream;
@@ -29,17 +28,6 @@ unsafe fn print_cargo_tag(tag: &str, color: vga::Color) {
 }
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if !unsafe { is_admin_mode() } {
-        unsafe {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str(
-                "Permission denied: This command requires admin privileges. Use 'please <command>'.\n",
-            );
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        }
-        return;
-    }
-
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") || args.is_empty() {

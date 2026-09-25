@@ -25,9 +25,6 @@ pub fn execute_command_inner(cmd: &str) {
         .unwrap_or(raw_command);
 
     match command {
-        "env" => crate::cmds::env::run(&mut parts),
-        "login" => crate::cmds::login::run(&mut parts),
-        "user" => crate::cmds::user::run(&mut parts),
         "hostname" => crate::cmds::hostname::run(&mut parts),
         "drives" => crate::cmds::drives::run(&mut parts),
         "use" => crate::cmds::r#use::run(&mut parts),
@@ -63,7 +60,6 @@ pub fn execute_command_inner(cmd: &str) {
         "history" => crate::cmds::history::run(&mut parts),
         "move" => crate::cmds::r#move::run(&mut parts),
         "search" => crate::cmds::search::run(&mut parts),
-        "protect" => crate::cmds::protect::run(&mut parts),
         "fileinfo" => crate::cmds::fileinfo::run(&mut parts),
         "framebuffer" => crate::cmds::framebuffer::run(&mut parts),
         "usb" => crate::cmds::usb::run(&mut parts),
@@ -96,11 +92,7 @@ pub fn execute_command_inner(cmd: &str) {
         "bg" => crate::cmds::bg::run(&mut parts),
         "lvm" => crate::cmds::lvm::run(&mut parts),
         "raid" => crate::cmds::raid::run(&mut parts),
-        "ipcs" => crate::cmds::ipcs::run(&mut parts),
-        "ipcrm" => crate::cmds::ipcrm::run(&mut parts),
-        "iptables" => crate::cmds::iptables::run(&mut parts),
         "firewall" => crate::cmds::firewall::run(&mut parts),
-        "service" | "ksvc" => crate::cmds::service::run(&mut parts),
         "kcc" => crate::cmds::proc::kcc::run(&mut parts),
         _ => {
             if crate::cmds::run::run_direct(command) {

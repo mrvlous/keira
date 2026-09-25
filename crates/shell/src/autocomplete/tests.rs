@@ -49,12 +49,12 @@ fn test_commands_list_sorted_and_non_empty() {
     assert!(!COMMANDS_LIST.is_empty());
     assert!(COMMANDS_LIST.contains(&"help"));
     assert!(COMMANDS_LIST.contains(&"system"));
-    assert!(COMMANDS_LIST.contains(&"login"));
+    assert!(COMMANDS_LIST.contains(&"devices"));
 }
 
 #[test]
 fn test_standard_paths() {
     assert!(STANDARD_PATHS.contains(&"system/"));
     assert!(STANDARD_PATHS.contains(&"apps/"));
-    assert!(STANDARD_PATHS.contains(&"users/"));
+    assert!(STANDARD_PATHS.contains(&"data/"));
 }

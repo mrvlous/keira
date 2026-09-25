@@ -9,6 +9,4 @@
 
 //! Inter-process communication and POSIX message queue commands.
 
-pub mod ipcrm;
-pub mod ipcs;
 pub mod mqueue;

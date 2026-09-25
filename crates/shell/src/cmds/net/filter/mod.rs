@@ -10,4 +10,3 @@
 //! Packet filtering and firewall commands.
 
 pub mod firewall;
-pub mod iptables;

@@ -11,19 +11,10 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-use crate::executor::*;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
-        unsafe {
-            if !is_admin_mode() {
-                vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
-            }
-        }
         let dev_name = parts.next();
         match dev_name {
             Some("-h") | Some("--help") => {

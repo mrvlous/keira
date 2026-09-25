@@ -11,19 +11,10 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-use crate::executor::*;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
-        unsafe {
-            if !check_write_permission() {
-                vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("Permission denied: Non-admin users cannot write outside their home directory. Use 'please' to run as admin.\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
-            }
-        }
         let arg = match parts.next() {
             Some("-h") | Some("--help") => {
                 vga::print_str("Usage: folder <foldername>\n\n");

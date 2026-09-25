@@ -11,26 +11,18 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-use crate::executor::*;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
         unsafe {
             vga::print_str("Usage: reset\n\n");
-            vga::print_str("Description:\n  Reboot the system via hardware reset (requires admin privileges).\n");
+            vga::print_str("Description:\n  Reboot the system via hardware reset.\n");
         }
         return;
     }
 
     unsafe {
-        if !is_admin_mode() {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            return;
-        }
-
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Rebooting Keira Kernel via PS/2 controller...\n");
         #[cfg(target_os = "none")]

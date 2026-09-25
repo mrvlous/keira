@@ -17,5 +17,5 @@ pub mod ipc;
 mod tests;
 
 pub use client::{download, https, network};
-pub use filter::{firewall, iptables};
-pub use ipc::{ipcrm, ipcs, mqueue};
+pub use filter::firewall;
+pub use ipc::mqueue;

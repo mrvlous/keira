@@ -18,7 +18,6 @@ pub mod cmds;
 pub mod editor;
 pub mod executor;
 pub mod history;
-pub mod service;
 pub mod state;
 pub mod terminal;
 

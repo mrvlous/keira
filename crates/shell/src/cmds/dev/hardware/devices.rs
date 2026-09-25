@@ -11,7 +11,6 @@
 
 #![allow(unused_variables, unused_unsafe)]
 
-use crate::executor::*;
 use keira_io::vga;
 
 fn print_hex_u16(val: u16) {
@@ -32,13 +31,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("Usage: devices\n\n");
             vga::print_str("Description:\n  Scan PCI bus slots and enumerate detected hardware devices, vendor IDs, device IDs, and class types.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-            return;
-        }
-
-        if !is_admin_mode() {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
-            vga::print_str("Permission denied: This command requires admin privileges. Use 'please <command>'.\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             return;
         }
 
