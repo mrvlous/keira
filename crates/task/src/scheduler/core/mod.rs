@@ -17,6 +17,7 @@ pub use hooks::{
     TaskResourceCleanupHook, TASK_CLEANUP_HOOK,
 };
 pub use state::{
-    get_boot_kernel_stack, init, main_kernel_stack, set_kernel_stack, CURRENT_TASK_IDX, MAX_TASKS,
-    SCHEDULER_INITIALIZED, SCHEDULER_LOCK, TASKS,
+    get_boot_kernel_stack, init, main_kernel_stack, scheduler_get_stats, set_kernel_stack,
+    CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_INITIALIZED, SCHEDULER_LOCK, TASKS,
+    TOTAL_CONTEXT_SWITCHES, TOTAL_SCHEDULER_TICKS,
 };

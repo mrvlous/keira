@@ -103,6 +103,8 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         signal_mask: 0,
         pending_signals: 0,
         is_orphan: false,
+        cpu_ticks: 0,
+        switches: 0,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -206,6 +208,8 @@ pub unsafe fn spawn_user(
         signal_mask: 0,
         pending_signals: 0,
         is_orphan: false,
+        cpu_ticks: 0,
+        switches: 0,
     };
 
     TASKS[slot_idx] = Some(new_task);

@@ -116,6 +116,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_u64(tsc_val);
         vga::print_str("\n");
 
+        let (switches, ticks, _) = keira_task::scheduler_get_stats();
+        vga::print_str("  Context Switch: ");
+        vga::print_u64(switches);
+        vga::print_str(" switches\n");
+        vga::print_str("  Timer Ticks   : ");
+        vga::print_u64(ticks);
+        vga::print_str(" ticks (1000 Hz)\n");
+
         let mut temp_c: Option<u32> = None;
         if vendor_str == "GenuineIntel" {
             let status = keira_arch::cpu::msr::rdmsr(keira_arch::cpu::msr::IA32_THERM_STATUS_MSR);

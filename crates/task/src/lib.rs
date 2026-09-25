@@ -26,10 +26,11 @@ pub use cgroups::{
 pub use scheduler::{
     exit_current, fork_current_task, get_current_egid, get_current_euid, get_current_gid,
     get_current_pending_signals, get_current_signal_mask, get_current_uid, init as scheduler_init,
-    list_tasks, reap_orphaned_zombies, register_task_cleanup_hook, schedule_tick, send_signal,
-    set_current_gid, set_current_uid, set_saved_sigcontext, spawn, spawn_user, stop_task,
-    sys_sigprocmask, sys_waitpid, take_saved_sigcontext, wait_for_task, TaskResourceCleanupHook,
-    CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_INITIALIZED, SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK, TASKS,
+    list_tasks, reap_orphaned_zombies, register_task_cleanup_hook, schedule_tick,
+    scheduler_get_stats, send_signal, set_current_gid, set_current_uid, set_saved_sigcontext,
+    spawn, spawn_user, stop_task, sys_sigprocmask, sys_waitpid, take_saved_sigcontext,
+    wait_for_task, TaskResourceCleanupHook, CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_INITIALIZED,
+    SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK, TASKS,
 };
 pub use security as seccomp;
 pub use security::{

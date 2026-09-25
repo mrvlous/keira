@@ -131,6 +131,8 @@ fn test_orphan_reparenting_and_reap() {
             signal_mask: 0,
             pending_signals: 0,
             is_orphan: true,
+            cpu_ticks: 0,
+            switches: 0,
         };
         TASKS[1] = Some(dummy_task);
         assert!(TASKS[1].is_some());
@@ -139,4 +141,16 @@ fn test_orphan_reparenting_and_reap() {
         reap_orphaned_zombies();
         assert!(TASKS[1].is_none());
     }
+}
+
+#[test]
+fn test_scheduler_telemetry_counters() {
+    let _lock = TestLock::acquire();
+    unsafe {
+        init();
+    }
+    let (switches, ticks, active) = scheduler_get_stats();
+    let _ = switches;
+    let _ = ticks;
+    assert!(active >= 1, "At least task 0 must be active in scheduler");
 }

@@ -9,6 +9,7 @@
 
 //! Global scheduler state, spinlocks, and task descriptor table.
 
+use core::sync::atomic::{AtomicUsize, Ordering};
 use keira_core::sync::{IrqSpinLock, LockRank};
 use keira_mem::vmm;
 
@@ -26,6 +27,20 @@ pub static SCHEDULER_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::Schedu
 pub static mut TASKS: [Option<Task>; MAX_TASKS] = [const { None }; MAX_TASKS];
 pub static mut CURRENT_TASK_IDX: usize = 0;
 pub static mut SCHEDULER_INITIALIZED: bool = false;
+
+/// Total CPU context switches executed across all tasks.
+pub static TOTAL_CONTEXT_SWITCHES: AtomicUsize = AtomicUsize::new(0);
+
+/// Total timer scheduling ticks processed by the scheduler.
+pub static TOTAL_SCHEDULER_TICKS: AtomicUsize = AtomicUsize::new(0);
+
+/// Retrieves scheduler telemetry metrics: `(total_context_switches, total_ticks, active_tasks)`.
+pub fn scheduler_get_stats() -> (u64, u64, usize) {
+    let switches = TOTAL_CONTEXT_SWITCHES.load(Ordering::Relaxed) as u64;
+    let ticks = TOTAL_SCHEDULER_TICKS.load(Ordering::Relaxed) as u64;
+    let active = unsafe { TASKS.iter().filter(|t| t.is_some()).count() };
+    (switches, ticks, active)
+}
 
 /// Initialize the scheduler and register the bootstrap thread as Task 0.
 ///
@@ -58,6 +73,8 @@ pub unsafe fn init() {
         signal_mask: 0,
         pending_signals: 0,
         is_orphan: false,
+        cpu_ticks: 0,
+        switches: 1,
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;

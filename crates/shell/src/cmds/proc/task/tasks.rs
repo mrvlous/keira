@@ -24,7 +24,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             );
             vga::print_str("Options:\n");
             vga::print_str("  -a, --all      Display all kernel worker tasks and threads\n");
-            vga::print_str("  -s, --summary  Display total active process count summary\n");
+            vga::print_str(
+                "  -s, --summary  Display total active process count and scheduler summary\n",
+            );
             vga::print_str("  -h, --help     Show this help message and exit\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
@@ -33,10 +35,16 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
     unsafe {
         if args.has_flag('s', "summary") {
+            let (switches, ticks, active) = keira_task::scheduler_get_stats();
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Process Summary: ");
+            vga::print_str("Process & Scheduler Summary: ");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            vga::print_str("1 running, 0 sleeping, Max Slots: 16\n");
+            vga::print_u64(active as u64);
+            vga::print_str(" active tasks | ");
+            vga::print_u64(switches);
+            vga::print_str(" context switches | ");
+            vga::print_u64(ticks);
+            vga::print_str(" ticks (Max Slots: 64)\n");
             return;
         }
 

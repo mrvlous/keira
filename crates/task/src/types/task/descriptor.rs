@@ -40,4 +40,6 @@ pub struct Task {
     pub signal_mask: u32,
     pub pending_signals: u32,
     pub is_orphan: bool,
+    pub cpu_ticks: u64,
+    pub switches: u64,
 }

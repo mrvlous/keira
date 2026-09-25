@@ -9,12 +9,13 @@
 
 //! Preemptive timer tick dispatch and round-robin CPU context switching.
 
+use core::sync::atomic::Ordering;
 use keira_io::vga;
 use keira_mem::{pmm, vmm};
 
 use crate::scheduler::core::{
     get_boot_kernel_stack, main_kernel_stack, set_kernel_stack, CURRENT_TASK_IDX, MAX_TASKS,
-    SCHEDULER_INITIALIZED, TASKS,
+    SCHEDULER_INITIALIZED, TASKS, TOTAL_CONTEXT_SWITCHES, TOTAL_SCHEDULER_TICKS,
 };
 use crate::types::TaskState;
 
@@ -31,9 +32,12 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
         return current_rsp;
     }
 
+    TOTAL_SCHEDULER_TICKS.fetch_add(1, Ordering::Relaxed);
+
     let current_idx = CURRENT_TASK_IDX;
 
     if let Some(ref mut task) = TASKS[current_idx] {
+        task.cpu_ticks += 1;
         if task.state == TaskState::Running {
             task.rsp = current_rsp;
             task.state = TaskState::Ready;
@@ -48,6 +52,10 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
         if let Some(ref mut task) = TASKS[next_idx] {
             if task.state == TaskState::Ready {
                 task.state = TaskState::Running;
+                if next_idx != current_idx {
+                    TOTAL_CONTEXT_SWITCHES.fetch_add(1, Ordering::Relaxed);
+                    task.switches += 1;
+                }
                 CURRENT_TASK_IDX = next_idx;
 
                 vmm::switch_address_space(task.pml4_phys);
@@ -76,6 +84,8 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
 
     if let Some(ref mut main_task) = TASKS[0] {
         if current_idx != 0 {
+            TOTAL_CONTEXT_SWITCHES.fetch_add(1, Ordering::Relaxed);
+            main_task.switches += 1;
             main_task.state = TaskState::Running;
             CURRENT_TASK_IDX = 0;
             vmm::switch_address_space(main_task.pml4_phys);

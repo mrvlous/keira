@@ -137,6 +137,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
                 signal_mask: parent.signal_mask,
                 pending_signals: 0,
                 is_orphan: false,
+                cpu_ticks: 0,
+                switches: 0,
             };
 
             TASKS[slot_idx] = Some(child_task);
