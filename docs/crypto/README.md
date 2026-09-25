@@ -1,35 +1,28 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Cryptographic & Security Subsystems
+# Keira Cryptography Subsystem Architecture
 
-The `crypto` subsystem provides bare-metal cryptographic primitives, hardware TPM 2.0 enclave communication, Seccomp BPF system call filters, and Mandatory Access Control (MAC) policies in Keira Kernel.
+The `crypto` domain provides bare-metal cryptographic algorithms and hardware security module drivers.
 
 ---
 
-## Cryptography & Security Subsystem Architecture
+## Cryptography Submodules
 
 ```mermaid
 graph TD
-    App["Userland / Kernel Applications"] --> TLS["Native TLS 1.3 Engine"]
-    App --> Sandbox["Seccomp BPF & MAC Policy Layer"]
-    TLS --> Ciphers["Cryptographic Primitives (crates/crypto)"]
-    Ciphers --> SHA256["SHA-256 / HMAC / HKDF"]
-    Ciphers --> AESGCM["AES-128-GCM (AEAD Encryption)"]
-    Ciphers --> Curve["Curve25519 / X25519 ECDHE"]
-    Sandbox --> MAC["Mandatory Access Control (Path/Cap Rules)"]
-    Sandbox --> Seccomp["Seccomp Syscall Filtering"]
-    Ciphers --> TPM["Hardware TPM 2.0 PCR Measurements"]
+    Crypto["Crypto Subsystems"] --> Cipher["cipher/<br/>AES-128-GCM & CTR Mode"]
+    Crypto --> Hash["hash/<br/>SHA-256, HMAC & HKDF"]
+    Crypto --> Curve["curve/<br/>Curve25519 / X25519 ECDHE"]
+    Crypto --> TPM["tpm/<br/>Hardware TPM 2.0 MMIO Enclave"]
 ```
 
 ---
 
-## Cryptography & Security Module Index
+## Submodule Index
 
-| Component | Document | Description | Implementation |
-| :--- | :--- | :--- | :--- |
-| **SHA-256 & HMAC** | [`sha256.md`](sha256.md) | Pure Rust SHA-256 hash engine, HMAC, and HKDF key derivation | `crates/crypto/src/sha256/` |
-| **AES & AES-GCM** | [`aes.md`](aes.md) | AES-128 block cipher and Galois/Counter Mode (GCM) AEAD encryption | `crates/crypto/src/aes/` |
-| **Curve25519** | [`curve25519.md`](curve25519.md) | X25519 Elliptic Curve Diffie-Hellman (ECDHE) key exchange | `crates/crypto/src/curve25519/` |
-| **TPM 2.0 Enclave** | [`tpm.md`](tpm.md) | Hardware Trusted Platform Module 2.0 measured boot, PCRs, and sealed storage | `crates/crypto/src/tpm/` |
-| **Seccomp BPF** | [`seccomp.md`](seccomp.md) | Task-level system call validation and sandboxing engine | `crates/task/src/security/seccomp.rs` |
-| **MAC Security** | [`mac.md`](mac.md) | Mandatory Access Control inode path security and Type Enforcement | `crates/task/src/security/mac.rs` |
+| Submodule | Focus Area | Description |
+| :--- | :--- | :--- |
+| [`cipher/`](cipher/README.md) | Symmetric Ciphers | AES-128 block cipher and Galois/Counter Mode (GCM) |
+| [`hash/`](hash/README.md) | Hash Functions | SHA-256 digest, HMAC message auth, HKDF expansion |
+| [`curve/`](curve/README.md) | Elliptic Curves | X25519 scalar multiplication and ECDHE key exchange |
+| [`tpm/`](tpm/README.md) | Hardware Enclave | TPM 2.0 TIS MMIO communication, PCR measurement |
