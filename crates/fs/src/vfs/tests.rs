@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for Virtual File System (VFS) path routing and permissions.
+//! Unit tests for Virtual File System (VFS) path routing.
 
 use super::*;
 
@@ -46,24 +46,7 @@ fn test_route_path() {
     assert_eq!(p, "system/kernel.elf");
     assert_eq!(fs, FilesystemType::Initrd);
 
-    let (p, fs) = route_path("/users/admin/test.txt");
-    assert_eq!(p, "/users/admin/test.txt");
+    let (p, fs) = route_path("/data/test.txt");
+    assert_eq!(p, "/data/test.txt");
     assert_eq!(fs, FilesystemType::Fat);
-}
-
-#[test]
-fn test_vfs_user_and_permissions() {
-    set_vfs_user("admin");
-    assert_eq!(get_vfs_user(), "admin");
-    assert!(check_access_permission("/system/config.sys", true).is_ok());
-    assert!(check_access_permission("/users/guest/data.txt", true).is_ok());
-
-    set_vfs_user("alice");
-    assert_eq!(get_vfs_user(), "alice");
-    assert!(check_access_permission("/system/config.sys", false).is_ok());
-    assert!(check_access_permission("/system/config.sys", true).is_err());
-    assert!(check_access_permission("/users/alice/work.txt", true).is_ok());
-    assert!(check_access_permission("/users/bob/secret.txt", false).is_err());
-
-    set_vfs_user("admin");
 }

@@ -66,7 +66,6 @@ pub use vfs::ops::{
     remove_entry, write_file, write_file_offset,
 };
 pub use vfs::path::{resolve_alias_path, route_path};
-pub use vfs::permissions::{check_access_permission, get_vfs_user, set_vfs_user};
 pub use vfs::types::FilesystemType;
 
 #[cfg(test)]

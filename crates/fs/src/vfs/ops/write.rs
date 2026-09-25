@@ -11,12 +11,10 @@
 
 use crate::fat;
 use crate::vfs::path::router::route_path;
-use crate::vfs::permission::checker::check_access_permission;
 use crate::vfs::types::FilesystemType;
 
 /// Writes byte buffer content into a file on the target routed filesystem.
 pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
-    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -31,7 +29,6 @@ pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
 
 /// Writes byte buffer content at a specific offset in a file on the routed filesystem.
 pub fn write_file_offset(path: &str, offset: u64, content: &[u8]) -> Result<usize, &'static str> {
-    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),

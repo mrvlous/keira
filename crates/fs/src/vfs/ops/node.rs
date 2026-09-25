@@ -12,12 +12,10 @@
 use crate::fat;
 use crate::tar;
 use crate::vfs::path::router::route_path;
-use crate::vfs::permission::checker::check_access_permission;
 use crate::vfs::types::FilesystemType;
 
 /// Creates a new empty file on the routed filesystem.
 pub fn create_file(path: &str) -> Result<(), &'static str> {
-    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -29,7 +27,6 @@ pub fn create_file(path: &str) -> Result<(), &'static str> {
 
 /// Removes a file or directory entry on the routed filesystem.
 pub fn remove_entry(path: &str) -> Result<(), &'static str> {
-    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -41,7 +38,6 @@ pub fn remove_entry(path: &str) -> Result<(), &'static str> {
 
 /// Creates a directory entry on the routed filesystem.
 pub fn create_dir(path: &str) -> Result<(), &'static str> {
-    check_access_permission(path, true)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -73,7 +69,6 @@ pub fn exists(path: &str) -> bool {
 
 /// Retrieves the size of a file in bytes from the routed filesystem.
 pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
-    check_access_permission(path, false)?;
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => tar::get_file_size(clean_path),

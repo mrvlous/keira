@@ -50,6 +50,6 @@ fn test_lfn_checksum() {
 #[test]
 fn test_sanitize_path() {
     assert_eq!(sanitize_path("/system/bin/"), "system/bin");
-    assert_eq!(sanitize_path("///users/admin///"), "users/admin");
+    assert_eq!(sanitize_path("///data/docs///"), "data/docs");
     assert_eq!(sanitize_path("   data/test.txt   "), "data/test.txt");
 }
