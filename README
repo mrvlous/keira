@@ -89,7 +89,7 @@ Welcome! Start your systems development journey here:
 * Build Pipeline: docs/contributing/guides/build.md
 * Coding Style: docs/contributing/guides/style.md
 * Contribution Workflow: docs/contributing/guides/workflow.md
-* Bootstrapping Sequence: docs/kernel/boot.md
+* Bootstrapping Sequence: docs/kernel/boot/README.md
 
 Academic Researcher
 -------------------
@@ -97,20 +97,20 @@ Academic Researcher
 Explore the kernel's core subsystems and design details:
 
 * Memory Management: docs/memory/README.md
-* Task Scheduler: docs/task/scheduler.md
-* System Calls and Privilege: docs/syscall/table.md
+* Task Scheduler: docs/task/scheduler/README.md
+* System Calls and Privilege: docs/syscall/table/README.md
 * Cryptographic Subsystem: docs/crypto/README.md
 * Virtual Filesystem (VFS) Layer: docs/fs/README.md
-* Process Information Pseudo-Filesystem (ProcFS): docs/fs/proc.md
-* Virtual Device Filesystem (DevFS): docs/fs/dev.md
-* FAT Filesystem Implementation: docs/fs/fat.md
-* TAR Boot initrd Reader: docs/fs/initrd.md
+* Process Information Pseudo-Filesystem (ProcFS): docs/fs/proc/README.md
+* Virtual Device Filesystem (DevFS): docs/fs/dev/README.md
+* FAT Filesystem Implementation: docs/fs/fat/README.md
+* TAR Boot initrd Reader: docs/fs/storage/tar_initrd.md
 * Native KCC Compiler: docs/userland/compiler/README.md
-* Freestanding C SDK: docs/userland/sdk/README.md
-* Service Controller & Daemons: docs/shell/service.md
-* Epoll Event Multiplexer: docs/ipc/epoll.md
-* Asynchronous I/O (io_uring): docs/ipc/uring.md
-* Logical Volume Manager & RAID: docs/fs/lvm_raid.md
+* Freestanding POSIX C Library: docs/userland/libc/README.md
+* Service Controller & Daemons: docs/shell/service/README.md
+* Epoll Event Multiplexer: docs/ipc/event/epoll.md
+* Asynchronous I/O (io_uring): docs/ipc/uring/README.md
+* Logical Volume Manager & RAID: docs/fs/storage/lvm_raid.md
 * Multi-User Accounts & System Hostname: docs/userland/system/users.md
 * POSIX File Permissions & Multi-TTY: docs/userland/system/permissions.md
 
@@ -123,7 +123,7 @@ Write and support hardware device drivers:
 * VGA Text Console & VBE Framebuffer: docs/drivers/display/README.md
 * Serial UART COM1: docs/drivers/serial/README.md
 * Storage (IDE, AHCI, NVMe): docs/drivers/storage/README.md
-* Intel e1000 Network Driver: docs/drivers/net/e1000.md
+* Intel e1000 Network Driver: docs/net/driver/e1000.md
 * USB Host Controller Driver: docs/drivers/bus/usb.md
 
 AI Coding Assistant
