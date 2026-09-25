@@ -124,6 +124,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_u64(ticks);
         vga::print_str(" ticks (1000 Hz)\n");
 
+        let total_irqs = keira_arch::irq_get_total();
+        vga::print_str("  Interrupts    : ");
+        vga::print_u64(total_irqs);
+        vga::print_str(" IRQ events\n");
+
         let mut temp_c: Option<u32> = None;
         if vendor_str == "GenuineIntel" {
             let status = keira_arch::cpu::msr::rdmsr(keira_arch::cpu::msr::IA32_THERM_STATUS_MSR);

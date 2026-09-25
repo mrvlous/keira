@@ -23,6 +23,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
+    vga::print_str("Kernel Unwinder & CPU Exception Telemetry:\n");
+    vga::print_str("  Total Trapped Exceptions: ");
+    vga::print_u64(keira_syscall::get_cpu_exception_count());
+    vga::print_str("\n");
+
     #[cfg(target_os = "none")]
     keira_arch::unwind::unwind_stack();
 }
