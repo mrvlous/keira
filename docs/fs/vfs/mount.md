@@ -53,5 +53,5 @@ At boot time, Keira mounts:
 * `/`: USTAR archive initrd from GRUB boot modules.
 * `/dev`: Pseudo-filesystem exposing character and block devices (`/dev/null`, `/dev/zero`, `/dev/console`, `/dev/sda`).
 * `/proc`: Dynamic kernel metrics and process telemetry pseudo-filesystem.
-* `/system`: Read-only system distribution files (`/system/bin`, `/system/lib`, `/system/include`).
+* `/system`: Read-only kernel and userland runtime binaries (`/system/bin`, `/system/lib`, `/system/include`).
 * `/data`: Persistent writable partition (FAT32 or EXT4) on detected AHCI/IDE block storage.

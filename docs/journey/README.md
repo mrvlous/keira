@@ -2,7 +2,7 @@
 
 # The Keira Learning Journey
 
-The Keira project is conceived as an exploratory systems programming journey—building an entire operating system from bare silicon to a native Ring 3 C toolchain.
+The Keira project is conceived as an exploratory systems programming journey—building an entire freestanding monolithic kernel from scratch on bare silicon to a native Ring 3 C toolchain.
 
 ---
 

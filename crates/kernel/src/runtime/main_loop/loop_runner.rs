@@ -12,7 +12,7 @@
 use keira_io::vga;
 use keira_shell as shell;
 
-/// Launch interactive terminal session and enter the primary operating system event loop.
+/// Launch interactive terminal session and enter the primary kernel event loop.
 pub fn enter_main_loop() -> ! {
     vga::init();
 

@@ -74,6 +74,6 @@ pub extern "C" fn kernel_main(multiboot_info_ptr: usize) -> ! {
         runtime::enter_userspace();
     }
 
-    // Stage 10: Interactive shell & main operating system loop
+    // Stage 10: Interactive shell & main kernel event loop
     runtime::enter_main_loop();
 }

@@ -58,7 +58,7 @@ pub const MMAP_START: u64 = 0x5000_0000_0000;
 #[cfg(not(target_arch = "x86"))]
 pub const MMAP_END: u64 = 0x7000_0000_0000;
 
-/// Maximum number of tracked VMAs across the entire operating system.
+/// Maximum number of tracked VMAs across the kernel.
 pub const MAX_VMAS: usize = 64;
 
 /// Virtual Memory Area descriptor defining a mapped address span and access policies.
