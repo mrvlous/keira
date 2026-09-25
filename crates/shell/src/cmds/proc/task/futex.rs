@@ -9,8 +9,6 @@
 
 //! Query and manage Fast Userspace Mutex (Futex) wait queues (Syscall 32 & 40).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_ipc::futex::{
     futex_requeue, futex_reset, futex_wait, futex_wake, get_futex_stats, get_futex_table,
@@ -20,7 +18,7 @@ use keira_ipc::futex::{
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     if subcmd == Some("-h") || subcmd == Some("--help") || subcmd.is_none() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: futex <subcommand> [args]\n\n");
             vga::print_str(

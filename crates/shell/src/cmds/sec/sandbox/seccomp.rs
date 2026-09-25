@@ -9,8 +9,6 @@
 
 //! Inspect and configure Secure Computing (Seccomp) system call filtering sandbox (Syscall 52).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::security::seccomp::{
     allow_syscall, deny_syscall, get_mode, get_stats, reset, set_mode, SeccompMode,
@@ -87,7 +85,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("Seccomp sandbox reset and set to Disabled.\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
-        Some(other) => {
+        Some(_) => {
             print_err("Unknown subcommand. Run 'seccomp --help' for usage.");
         }
     }

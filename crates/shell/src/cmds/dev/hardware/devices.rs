@@ -9,8 +9,6 @@
 
 //! Implementation of the 'devices' shell command to scan and list PCI devices.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 fn print_hex_u16(val: u16) {

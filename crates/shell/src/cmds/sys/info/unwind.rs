@@ -9,14 +9,12 @@
 
 //! Trigger kernel stack frame unwinder backtrace (Syscall 37).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 #[inline(never)]
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
-        unsafe {
+        {
             vga::print_str("Usage: unwind\n\n");
             vga::print_str(
                 "Description:\n  Trigger kernel stack frame unwinder backtrace (Syscall 37).\n",

@@ -9,8 +9,6 @@
 
 //! Implementation of the 'go' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::state::*;
 use keira_io::vga;
 

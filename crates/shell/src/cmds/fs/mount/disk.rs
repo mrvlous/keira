@@ -9,8 +9,6 @@
 
 //! Implementation of the 'disk' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {

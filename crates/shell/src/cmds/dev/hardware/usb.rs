@@ -10,8 +10,6 @@
 //! Implementation of the 'usb' shell command to manage USB Mass Storage flash drives,
 //! HID devices, and bus enumeration (Syscall 73).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::usb::storage as usb_storage;
 use keira_io::vga;
 
@@ -23,7 +21,7 @@ fn print_hex_u16(val: u16) {
     let b0 = chars[(val & 0xF) as usize];
     let buf = [b3, b2, b1, b0];
     if let Ok(s) = core::str::from_utf8(&buf) {
-        unsafe {
+        {
             vga::print_str(s);
         }
     }
@@ -32,7 +30,7 @@ fn print_hex_u16(val: u16) {
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let sub = parts.next();
     if sub == Some("-h") || sub == Some("--help") {
-        unsafe {
+        {
             vga::print_str("Usage: usb [scan|mount|lsusb|eject]\n\n");
             vga::print_str("Description:\n  Manage USB Mass Storage flash drives, HID devices, and PCI USB enumeration (Syscall 73).\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");

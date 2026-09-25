@@ -9,20 +9,18 @@
 
 //! Implementation of the 'runtime' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
-        unsafe {
+        {
             vga::print_str("Usage: runtime\n\n");
             vga::print_str("Description:\n  Display system uptime since boot.\n");
         }
         return;
     }
 
-    unsafe {
+    {
         let ms = keira_arch::timers::get_uptime_ms();
         let hours = ms / 3600000;
         let minutes = (ms % 3600000) / 60000;

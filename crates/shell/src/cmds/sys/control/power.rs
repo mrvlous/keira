@@ -9,14 +9,12 @@
 
 //! Query ACPI Power Management, hardware topology, and NMI hardware watchdog status.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let sub = parts.next();
     if let Some("-h") | Some("--help") = sub {
-        unsafe {
+        {
             vga::print_str("Usage: power [status|acpi|shutdown|poweroff|reboot]\n\n");
             vga::print_str("Description:\n  Query ACPI power management states, MADT topology, or initiate system shutdown/reboot.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
@@ -25,20 +23,20 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     if let Some("shutdown") | Some("poweroff") | Some("off") = sub {
-        unsafe {
+        {
             vga::set_color(vga::Color::Yellow, vga::Color::Black);
             vga::print_str("Powering off Keira Kernel via ACPI S5 Soft-Off...\n");
             keira_arch::power::acpi::poweroff();
         }
     } else if let Some("reboot") | Some("restart") | Some("reset") = sub {
-        unsafe {
+        {
             vga::set_color(vga::Color::Yellow, vga::Color::Black);
             vga::print_str("Rebooting Keira Kernel via PS/2 controller...\n");
             keira_arch::power::acpi::reboot();
         }
     }
 
-    unsafe {
+    {
         let topo = keira_arch::power::acpi::get_acpi_topology();
 
         vga::set_color(vga::Color::White, vga::Color::Black);

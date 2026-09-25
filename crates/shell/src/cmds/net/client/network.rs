@@ -9,8 +9,6 @@
 
 //! Implementation of the 'network' shell command for PCI network interface control and ICMP ping testing.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_io::vga;
 use keira_net::driver::e1000;
@@ -22,7 +20,7 @@ fn print_hex_byte(b: u8) {
     buf[0] = chars[((b >> 4) & 0xF) as usize];
     buf[1] = chars[(b & 0xF) as usize];
     if let Ok(s) = core::str::from_utf8(&buf) {
-        unsafe {
+        {
             vga::print_str(s);
         }
     }
@@ -32,7 +30,7 @@ fn print_mac(mac: &[u8; 6]) {
     for i in 0..6 {
         print_hex_byte(mac[i]);
         if i < 5 {
-            unsafe {
+            {
                 vga::print_str(":");
             }
         }
@@ -43,7 +41,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str(
                 "Usage: network [dhcp|ping <ip>|resolve <domain>|dns-cache] [-s] [-a]\n\n",
@@ -93,7 +91,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("Configuring network interface eth0 via DHCP...\n");
                 let mac = e1000::E1000_MAC;
                 match keira_net::dhcp::dhcp_auto_configure(&mac) {
-                    Ok(cfg) => {
+                    Ok(_cfg) => {
                         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                         vga::print_str("[OK] DHCP Configuration successful:\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

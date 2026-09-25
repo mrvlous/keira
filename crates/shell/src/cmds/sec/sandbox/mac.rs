@@ -9,8 +9,6 @@
 
 //! Inspect and configure Mandatory Access Control (MAC) and Type Enforcement policies.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::security::mac::{
     check_path_access, get_audit_log, get_mode, get_rules, get_stats, set_mode, MacMode,
@@ -72,7 +70,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         Some("test") => {
             run_mac_tests();
         }
-        Some(other) => {
+        Some(_) => {
             print_err("Unknown subcommand. Run 'mac --help' for usage.");
         }
     }

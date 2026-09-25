@@ -9,8 +9,6 @@
 
 //! Implementation of the 'initrd' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_io::vga;
 
@@ -18,7 +16,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: initrd [-c]\n\n");
             vga::print_str(
@@ -32,7 +30,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
-    unsafe {
+    {
         keira_fs::tar::list_files();
     }
 }

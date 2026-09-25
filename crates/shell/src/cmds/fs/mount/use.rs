@@ -9,12 +9,10 @@
 
 //! Implementation of the 'use' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    unsafe {
+    {
         let dev_name = parts.next();
         match dev_name {
             Some("-h") | Some("--help") => {

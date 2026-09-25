@@ -9,8 +9,6 @@
 
 //! Implementation of the 'memory' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_io::vga;
 
@@ -18,7 +16,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: memory [-m] [-k] [-b] [-s]\n\n");
             vga::print_str(
@@ -44,7 +42,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let (phys_total, phys_used, phys_free) = keira_mem::pmm::get_stats();
 
     if args.has_flag('s', "summary") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("RAM: ");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);

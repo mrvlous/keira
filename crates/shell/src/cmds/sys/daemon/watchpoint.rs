@@ -9,8 +9,6 @@
 
 //! Hardware debug register (DR0-DR7) watchpoint control command.
 
-#![allow(unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_arch::debug::breakpoint::{
     clear_watchpoint, read_dr0, read_dr1, read_dr2, read_dr3, read_dr6, read_dr7, set_watchpoint,
@@ -41,7 +39,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: watchpoint [list | set <slot> <addr> [w|rw|x] [1|2|4|8] | clear <slot>]\n\n");
             vga::print_str("Description:\n");
@@ -66,7 +64,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             let slot_str = match args.positional(1) {
                 Some(s) => s,
                 None => {
-                    unsafe {
+                    {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
                         vga::print_str("Error: missing watchpoint slot (0..3)\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -78,7 +76,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             let slot: usize = match slot_str.parse() {
                 Ok(s) if s < 4 => s,
                 _ => {
-                    unsafe {
+                    {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
                         vga::print_str("Error: slot must be an integer between 0 and 3\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -90,7 +88,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             let addr_str = match args.positional(2) {
                 Some(s) => s,
                 None => {
-                    unsafe {
+                    {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
                         vga::print_str(
                             "Error: missing linear memory address (hex format: 0x...)\n",
@@ -104,7 +102,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             let addr = match parse_hex(addr_str) {
                 Some(a) => a,
                 None => {
-                    unsafe {
+                    {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
                         vga::print_str("Error: invalid hexadecimal address format\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -127,7 +125,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             };
 
             match set_watchpoint(slot, addr, cond, size) {
-                Ok(()) => unsafe {
+                Ok(()) => {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("[OK] Hardware watchpoint set on slot ");
                     vga::print_u64(slot as u64);
@@ -135,21 +133,21 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::print_hex(addr as u64);
                     vga::print_str("\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                },
-                Err(e) => unsafe {
+                }
+                Err(e) => {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("Error: ");
                     vga::print_str(e);
                     vga::print_str("\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                },
+                }
             }
         }
         "clear" => {
             let slot_str = match args.positional(1) {
                 Some(s) => s,
                 None => {
-                    unsafe {
+                    {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
                         vga::print_str("Error: missing watchpoint slot (0..3)\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -161,7 +159,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             let slot: usize = match slot_str.parse() {
                 Ok(s) if s < 4 => s,
                 _ => {
-                    unsafe {
+                    {
                         vga::set_color(vga::Color::LightRed, vga::Color::Black);
                         vga::print_str("Error: slot must be an integer between 0 and 3\n");
                         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -171,20 +169,20 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             };
 
             match clear_watchpoint(slot) {
-                Ok(()) => unsafe {
+                Ok(()) => {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("[OK] Hardware watchpoint cleared on slot ");
                     vga::print_u64(slot as u64);
                     vga::print_str("\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                },
-                Err(e) => unsafe {
+                }
+                Err(e) => {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);
                     vga::print_str("Error: ");
                     vga::print_str(e);
                     vga::print_str("\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                },
+                }
             }
         }
         _ => unsafe {

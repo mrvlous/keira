@@ -9,8 +9,6 @@
 
 //! Query and manage POSIX High-Resolution Timers (Syscall 45 & 46).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_arch::timer::{
     cancel_timer, create_timer, get_timer_stats, get_timer_table, CLOCK_MONOTONIC, CLOCK_REALTIME,
     MAX_POSIX_TIMERS,
@@ -21,7 +19,7 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     if subcmd == Some("-h") || subcmd == Some("--help") || subcmd.is_none() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: timer <subcommand> [args]\n\n");
             vga::print_str(

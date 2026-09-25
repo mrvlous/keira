@@ -9,7 +9,7 @@
 
 //! Implementation of the 'kcc' shell command to compile C source code into Ring 3 ELF binaries.
 
-#![allow(unused_variables, unused_unsafe, static_mut_refs)]
+#![allow(static_mut_refs)]
 
 use core::str::SplitWhitespace;
 use keira_io::vga;

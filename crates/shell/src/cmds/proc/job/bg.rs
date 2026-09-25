@@ -9,15 +9,13 @@
 
 //! Implementation of the 'bg' shell command to resume stopped process job in background.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::signal;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let arg = parts.next();
     if arg == Some("-h") || arg == Some("--help") {
-        unsafe {
+        {
             vga::print_str("Usage: bg [job_id]\n\n");
             vga::print_str(
                 "Description:\n  Resume stopped process job execution in background context.\n\n",

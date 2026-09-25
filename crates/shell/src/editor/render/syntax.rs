@@ -12,13 +12,13 @@
 /// Check if byte is an ASCII alphabetic character.
 #[inline]
 pub fn is_alpha(b: u8) -> bool {
-    (b'a'..=b'z').contains(&b) || (b'A'..=b'Z').contains(&b)
+    b.is_ascii_alphabetic()
 }
 
 /// Check if byte is an alphanumeric identifier character.
 #[inline]
 pub fn is_alnum(b: u8) -> bool {
-    is_alpha(b) || (b'0'..=b'9').contains(&b) || b == b'_'
+    b.is_ascii_alphanumeric() || b == b'_'
 }
 
 /// Check if byte slice matches a known keyword across supported languages.

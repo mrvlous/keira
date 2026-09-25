@@ -9,8 +9,6 @@
 
 //! Implementation of the 'run' shell command to launch Ring 3 user space ELF programs.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_fs::elf::loader::load_elf;
 use keira_io::vga;
 use keira_mem::pmm;

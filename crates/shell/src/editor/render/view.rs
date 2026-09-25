@@ -205,7 +205,7 @@ pub unsafe fn editor_redraw() {
                     let fg_override = highlight_remaining > 0;
                     let ch = EDITOR_GRID[actual_y][x];
 
-                    if (b'0'..=b'9').contains(&ch) {
+                    if ch.is_ascii_digit() {
                         let fg = if fg_override {
                             vga::Color::Black
                         } else {

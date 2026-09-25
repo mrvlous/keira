@@ -10,8 +10,6 @@
 //! Implementation of the 'https' shell command to perform encrypted HTTPS GET
 //! requests over the Native TLS 1.3 Cryptographic Engine.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {

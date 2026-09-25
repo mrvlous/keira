@@ -10,8 +10,6 @@
 //! Implementation of the 'download' shell command to stream network resources over
 //! encrypted HTTPS (Native TLS 1.3 Engine) or plain HTTP and save payloads directly to FAT16 storage.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_io::vga;
 use keira_net::tcp::fetch_http_stream;
@@ -31,7 +29,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") || args.is_empty() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: download <URL> <target_file_path>\n\n");
             vga::print_str("Description:\n  Stream network resources over encrypted TLS 1.3 HTTPS or HTTP and save directly to FAT16 disk storage.\n\n");
@@ -48,7 +46,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let url = match args.first_positional() {
         Some(u) => u,
         None => {
-            unsafe {
+            {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);
                 vga::print_str("Usage: download <URL> <target_file_path>\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -60,7 +58,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let target_file = match args.second_positional() {
         Some(f) => f,
         None => {
-            unsafe {
+            {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);
                 vga::print_str("Usage: download <URL> <target_file_path>\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);

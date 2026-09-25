@@ -9,8 +9,6 @@
 
 //! Native Linux EXT4 filesystem inspection and traversal command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_fs::ext4::{
     get_dir_entries, get_ext4_stats, get_ext4_superblock, lookup_path, read_file_content,
     read_inode, EXT4_ROOT_INO,
@@ -20,7 +18,7 @@ use keira_io::vga;
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     match subcmd {
-        Some("-h") | Some("--help") => unsafe {
+        Some("-h") | Some("--help") => {
             vga::print_str("Usage: ext4 [status|info|inodes|ls [path]|cat <path>|test]\n\n");
             vga::print_str(
                 "Description:\n  Inspect and traverse native Linux EXT4 / EXT2 filesystem partitions.\n\n",
@@ -41,8 +39,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(
                 "\nOptions:\n  -h, --help               Show this help message and exit\n",
             );
-        },
-        Some("info") => unsafe {
+        }
+        Some("info") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("EXT4 Superblock & Feature Flags (Partition /system/dev/sda2):\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -80,13 +78,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str(if sb.has_filetype() { "YES" } else { "NO" });
                 vga::print_str(", 64Bit=YES\n");
             }
-        },
-        Some("inodes") => unsafe {
+        }
+        Some("inodes") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("EXT4 Inode Table & Extent Tree Status:\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            let (mounted, inodes, blocks, total_mb, free_mb) = get_ext4_stats();
+            let (_mounted, inodes, _blocks, _total_mb, _free_mb) = get_ext4_stats();
             vga::print_str("  Total Inodes: ");
             vga::print_u64(inodes as u64);
             vga::print_str("\n  Root Inode  : #");
@@ -121,11 +119,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::print_str(" blocks)\n");
                 }
             }
-        },
-        Some("ls") => unsafe {
+        }
+        Some("ls") => {
             let target_path = parts.next().unwrap_or("/");
             match lookup_path(target_path) {
-                Ok((ino, node)) => {
+                Ok((ino, _node)) => {
                     vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str("EXT4 Directory [");
                     vga::print_str(target_path);
@@ -156,8 +154,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("cat") => unsafe {
+        }
+        Some("cat") => {
             if let Some(target_file) = parts.next() {
                 let mut buf = [0u8; 512];
                 match read_file_content(target_file, &mut buf) {
@@ -182,8 +180,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             } else {
                 vga::print_str("Usage: ext4 cat <path>\n");
             }
-        },
-        Some("test") => unsafe {
+        }
+        Some("test") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("[TEST] Executing Native Linux EXT4 Driver Self-Test...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -219,15 +217,15 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[PASS] Native Linux EXT4 Filesystem Driver operational.\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        },
-        _ => unsafe {
+        }
+        _ => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Native Linux EXT4 Filesystem Driver ");
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[Active]\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            let (mounted, inodes, blocks, total_mb, free_mb) = get_ext4_stats();
+            let (_mounted, inodes, _blocks, total_mb, free_mb) = get_ext4_stats();
             vga::print_str("  Status      : Mounted (/system/dev/sda2)\n");
             vga::print_str("  Storage     : ");
             vga::print_u64(total_mb);
@@ -239,6 +237,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(" total (61440 free)\n");
             vga::print_str("  Block Size  : 4096 bytes\n");
             vga::print_str("  Features    : Extents, 64-Bit, Flex-BG, Dir-Index\n");
-        },
+        }
     }
 }

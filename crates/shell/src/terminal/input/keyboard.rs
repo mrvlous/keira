@@ -46,7 +46,6 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
                 if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
                     vga::print_str("^Z\n");
                     let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
-                    return;
                 }
             }
             12 => {

@@ -9,7 +9,7 @@
 
 //! Implementation of the 'search' shell command to locate matching string patterns in files or pipe streams.
 
-#![allow(unused_variables, unused_unsafe, static_mut_refs)]
+#![allow(static_mut_refs)]
 
 use keira_io::vga;
 

@@ -9,8 +9,6 @@
 
 //! Trusted Platform Module (TPM 2.0) hardware security enclave, PCR banks, sealed storage, and measured boot log (Syscall 79).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_crypto::tpm::{
     extend_pcr, get_event_log_slice, get_status, quote_pcrs, read_pcr, seal_secret, unseal_secret,
     TpmSealedBlob, TPM_PCR_COUNT,
@@ -167,7 +165,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         Some("test") => {
             run_selftest();
         }
-        Some(other) => {
+        Some(_) => {
             print_err("Unknown subcommand. Run 'tpm --help' for usage.");
         }
     }
@@ -313,7 +311,7 @@ fn run_selftest() {
 
     // 1. Attestation Quote
     let mask = 0x0000_0013; // PCR 0, 1, 4
-    let quote = quote_pcrs(mask);
+    let _quote = quote_pcrs(mask);
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     vga::print_str("  [1/4] Generating Attestation Quote (PCR 0,1,4): ");
     vga::set_color(vga::Color::LightGreen, vga::Color::Black);

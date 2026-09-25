@@ -10,8 +10,6 @@
 //! Implementation of the 'system' shell command to display kernel specifications,
 //! CPU architecture information, memory utilization, and system uptime.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use crate::executor::*;
 use keira_io::vga;
@@ -20,7 +18,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: system [-v] [-u] [-s]\n\n");
             vga::print_str("Description:\n  Display kernel specifications, CPU architecture, and system telemetry.\n\n");
@@ -34,7 +32,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
-    unsafe {
+    {
         let ms = keira_arch::timers::get_uptime_ms();
         let hours = ms / 3600000;
         let minutes = (ms % 3600000) / 60000;

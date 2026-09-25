@@ -9,15 +9,13 @@
 
 //! Query Hardware Performance Monitoring Counters & CPU Profiling (Syscall 47, 48 & 77).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_arch::perf::{get_perf_telemetry, reset_perf_counters};
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     if subcmd == Some("-h") || subcmd == Some("--help") || subcmd.is_none() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: perf <subcommand> [args]\n\n");
             vga::print_str(

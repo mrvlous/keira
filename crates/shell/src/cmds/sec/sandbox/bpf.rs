@@ -9,8 +9,6 @@
 
 //! Inspect and execute Extended Berkeley Packet Filter (eBPF) runtime virtual machine programs (Syscall 78).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_net::filter::bpf::{
     bpf_run_filter, bpf_verify, get_maps, get_programs, get_status, map_lookup, map_update,
@@ -89,7 +87,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 print_err("Usage: bpf map-set <map_id> <key> <value>");
             }
         }
-        Some(other) => {
+        Some(_) => {
             print_err("Unknown subcommand. Run 'bpf --help' for usage.");
         }
     }

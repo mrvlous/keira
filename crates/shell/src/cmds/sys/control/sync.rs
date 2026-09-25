@@ -9,14 +9,12 @@
 
 //! Flush dirty filesystem block cache pages to physical storage device.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_fs::fat;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
-        unsafe {
+        {
             vga::print_str("Usage: sync\n\n");
             vga::print_str(
                 "Description:\n  Flush dirty filesystem block cache pages to physical storage.\n",

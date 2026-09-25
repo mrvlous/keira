@@ -9,13 +9,11 @@
 
 //! Query active C and Rust kernel device drivers.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
-        unsafe {
+        {
             vga::print_str("Usage: drivers\n\n");
             vga::print_str("Description:\n  Query active C and Rust hardware device drivers.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");

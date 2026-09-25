@@ -9,12 +9,10 @@
 
 //! Implementation of the 'help' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(_parts: &mut core::str::SplitWhitespace) {
-    unsafe {
+    {
         let bg = vga::Color::Black;
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Keira Kernel Built-in Commands\n");

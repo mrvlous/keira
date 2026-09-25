@@ -9,8 +9,6 @@
 
 //! Implementation of the 'edit' / 'nano' terminal text editor shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use crate::editor::editor_start;
 use keira_io::vga;

@@ -9,15 +9,13 @@
 
 //! Implementation of the 'jobs' shell command to list active background and stopped process jobs.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::signal;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let arg = parts.next();
     if arg == Some("-h") || arg == Some("--help") {
-        unsafe {
+        {
             vga::print_str("Usage: jobs\n\n");
             vga::print_str("Description:\n  List active background and stopped process jobs in Job Control Table.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");

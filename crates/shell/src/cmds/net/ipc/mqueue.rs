@@ -9,8 +9,6 @@
 
 //! Inspect and manage POSIX Message Queue descriptors & message backlog (Syscall 58).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_ipc::mqueue::{
     get_mqueue_stats, get_mqueue_table, mq_open, mq_receive, mq_send, mq_unlink, mq_unlink_by_id,
@@ -20,7 +18,7 @@ use keira_ipc::mqueue::{
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     if subcmd == Some("-h") || subcmd == Some("--help") || subcmd.is_none() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: mqueue <subcommand> [args]\n\n");
             vga::print_str(

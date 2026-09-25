@@ -9,8 +9,6 @@
 
 //! Inspect and manage process resource control groups (cgroups) & limits.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::cgroups::{
     create_cgroup, delete_cgroup, get_cgroup_stats, get_cgroup_table, set_cgroup_limits,
@@ -20,7 +18,7 @@ use keira_task::cgroups::{
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     if subcmd == Some("-h") || subcmd == Some("--help") || subcmd.is_none() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: cgroups <subcommand> [args]\n\n");
             vga::print_str(

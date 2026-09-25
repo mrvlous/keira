@@ -9,8 +9,6 @@
 
 //! Inspect and manage Loadable Kernel Modules (LKM) and dynamic symbol table (Syscall 34 & 35).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_core::module::{
     get_module, get_modules_snapshot, register_module, register_symbol, resolve_symbol,
     unregister_module, BASE_KALLSYMS,
@@ -19,12 +17,12 @@ use keira_io::vga;
 
 /// Print standard Linux `lsmod` table format.
 pub fn list_modules() {
-    unsafe {
+    {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Module                  Size  Used by  State     Load Address\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-        let (snapshot, count) = get_modules_snapshot();
+        let (snapshot, _count) = get_modules_snapshot();
         for slot in snapshot.iter() {
             if let Some(m) = slot {
                 // Name column (padded to 22 chars)
@@ -68,7 +66,7 @@ pub fn list_modules() {
 
 /// Print dynamic kernel symbol table (`kallsyms`).
 pub fn list_symbols() {
-    unsafe {
+    {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Kernel Symbol Table (kallsyms):\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -91,7 +89,7 @@ pub fn list_symbols() {
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     match subcmd {
-        Some("-h") | Some("--help") => unsafe {
+        Some("-h") | Some("--help") => {
             vga::print_str(
                 "Usage: lkm [status|lsmod|list|load <name> [size]|unload <name>|symbols|test]\n\n",
             );
@@ -118,14 +116,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(
                 "\nOptions:\n  -h, --help               Show this help message and exit\n",
             );
-        },
+        }
         Some("lsmod") | Some("list") => {
             list_modules();
         }
         Some("symbols") | Some("kallsyms") => {
             list_symbols();
         }
-        Some("load") => unsafe {
+        Some("load") => {
             if let Some(mod_name) = parts.next() {
                 let size = parts
                     .next()
@@ -156,8 +154,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             } else {
                 vga::print_str("Usage: lkm load <name> [size]\n");
             }
-        },
-        Some("unload") => unsafe {
+        }
+        Some("unload") => {
             if let Some(mod_name) = parts.next() {
                 match unregister_module(mod_name) {
                     Ok(()) => {
@@ -178,8 +176,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             } else {
                 vga::print_str("Usage: lkm unload <name>\n");
             }
-        },
-        Some("test") => unsafe {
+        }
+        Some("test") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("[TEST] Executing Loadable Kernel Module Subsystem Self-Test...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -229,15 +227,15 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[PASS] Loadable Kernel Module Subsystem operational.\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        },
-        _ => unsafe {
+        }
+        _ => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Loadable Kernel Module (LKM) Subsystem ");
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[Active]\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            let (snapshot, count) = get_modules_snapshot();
+            let (_snapshot, count) = get_modules_snapshot();
             vga::print_str("  Status      : Online (Syscall 34 & 35 active)\n");
             vga::print_str("  Loaded Mods : ");
             vga::print_u64(count as u64);
@@ -246,6 +244,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_u64(BASE_KALLSYMS.len() as u64);
             vga::print_str(" base symbols exported\n");
             vga::print_str("  Syscalls    : 34 (init_module), 35 (delete_module)\n");
-        },
+        }
     }
 }

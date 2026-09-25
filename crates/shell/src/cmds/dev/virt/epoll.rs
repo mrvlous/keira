@@ -9,8 +9,6 @@
 
 //! Inspect and manage epoll scalable I/O event multiplexer instances (Syscall 55, 56 & 57).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_ipc::event::{
     epoll_ctl_internal, get_epoll_instances, get_epoll_stats, sys_epoll_create, sys_epoll_wait,
@@ -20,7 +18,7 @@ use keira_ipc::event::{
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     match subcmd {
-        Some("-h") | Some("--help") => unsafe {
+        Some("-h") | Some("--help") => {
             vga::print_str("Usage: epoll [status|list|create|ctl|wait|test]\n\n");
             vga::print_str(
                 "Description:\n  Inspect and manage epoll scalable I/O event multiplexer instances (Syscall 55, 56 & 57).\n\n",
@@ -43,8 +41,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(
                 "\nOptions:\n  -h, --help               Show this help message and exit\n",
             );
-        },
-        Some("list") => unsafe {
+        }
+        Some("list") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active Epoll Instances & Interest Lists:\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -94,8 +92,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     "  No active epoll instances registered. Use 'epoll create' or 'epoll test'.\n",
                 );
             }
-        },
-        Some("create") => unsafe {
+        }
+        Some("create") => {
             let size = parts
                 .next()
                 .and_then(|s| s.parse::<i32>().ok())
@@ -118,8 +116,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("ctl") => unsafe {
+        }
+        Some("ctl") => {
             let epfd = match parts.next().and_then(|s| s.parse::<i32>().ok()) {
                 Some(val) => val,
                 None => {
@@ -168,8 +166,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("wait") => unsafe {
+        }
+        Some("wait") => {
             let epfd = match parts.next().and_then(|s| s.parse::<i32>().ok()) {
                 Some(val) => val,
                 None => {
@@ -212,8 +210,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("test") => unsafe {
+        }
+        Some("test") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("[TEST] Executing Epoll Scalable I/O Engine Verification...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -262,8 +260,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        _ => unsafe {
+        }
+        _ => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Epoll Scalable I/O Multiplexer Engine (Syscall 55, 56 & 57) ");
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
@@ -282,6 +280,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 "  Features    : Edge-Triggered (EPOLLET), EPOLLIN, EPOLLOUT, EPOLLERR, EPOLLHUP\n",
             );
             vga::print_str("  Syscalls    : 55 (epoll_create), 56 (epoll_ctl), 57 (epoll_wait)\n");
-        },
+        }
     }
 }

@@ -9,8 +9,6 @@
 
 //! Implementation of the file copy command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_fs::vfs;
 
 static mut COPY_BUFFER: [u8; 65536] = [0; 65536];

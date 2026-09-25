@@ -9,15 +9,13 @@
 
 //! Implementation of the 'kill' shell command to dispatch POSIX signals to processes (Syscall 72).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::signal;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let arg1 = parts.next();
     if arg1 == Some("-h") || arg1 == Some("--help") {
-        unsafe {
+        {
             vga::print_str("Usage: kill [-signal_number] <pid>\n\n");
             vga::print_str(
                 "Description:\n  Dispatch POSIX real-time signal to process PID (Syscall 72).\n\n",
@@ -48,14 +46,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         if let Ok(pid) = ps.parse::<u32>() {
             let _ = signal::sys_kill(pid, sig);
         } else {
-            unsafe {
+            {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
                 vga::print_str("kill: Invalid process PID\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
         }
     } else {
-        unsafe {
+        {
             vga::set_color(vga::Color::Yellow, vga::Color::Black);
             vga::print_str("Usage: kill [-signal_number] <pid>\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);

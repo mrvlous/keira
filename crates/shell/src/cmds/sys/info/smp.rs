@@ -9,8 +9,6 @@
 
 //! Symmetric Multiprocessing (SMP) core topology and APIC inspector command.
 
-#![allow(unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_arch::smp::{get_core_info, get_online_cores_count, init_smp, CoreStatus};
 use keira_io::vga;
@@ -20,7 +18,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: smp [-h]\n\n");
             vga::print_str("Description:\n");
@@ -37,7 +35,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     init_smp();
     let total_cores = get_online_cores_count();
 
-    unsafe {
+    {
         vga::set_color(vga::Color::Yellow, vga::Color::Black);
         vga::print_str("Symmetric Multiprocessing (SMP) Hardware Topology:\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

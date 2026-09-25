@@ -9,8 +9,6 @@
 
 //! Kernel-based Virtual Machine (KVM) hardware virtualization control (Syscall 42 & 43).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_arch::kvm::{
     create_vm, destroy_vm, get_all_vms, get_kvm_stats, get_vm_snapshot, probe_hardware_virt,
     run_vcpu, VmExitReason,
@@ -19,12 +17,12 @@ use keira_io::vga;
 
 /// Format and display table of active Virtual Machines.
 pub fn list_vms() {
-    unsafe {
+    {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("VM ID   Status    Memory (MB)   vCPUs   Total VM-Exits\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-        let (vms, count) = get_all_vms();
+        let (vms, _count) = get_all_vms();
         for slot in vms.iter() {
             if let Some(vm) = slot {
                 // VM ID
@@ -61,7 +59,7 @@ pub fn list_vms() {
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     match subcmd {
-        Some("-h") | Some("--help") => unsafe {
+        Some("-h") | Some("--help") => {
             vga::print_str("Usage: kvm [status|list|create|run <vm_id> <vcpu_id>|vcpu <vm_id> <vcpu_id>|test]\n\n");
             vga::print_str(
                 "Description:\n  Kernel-based Virtual Machine (KVM) hardware virtualization control (Syscall 42 & 43).\n\n",
@@ -80,29 +78,27 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(
                 "\nOptions:\n  -h, --help               Show this help message and exit\n",
             );
-        },
+        }
         Some("list") => {
             list_vms();
         }
-        Some("create") => unsafe {
-            match create_vm() {
-                Ok(vm_id) => {
-                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                    vga::print_str("[OK] Created Guest Virtual Machine #");
-                    vga::print_u64(vm_id);
-                    vga::print_str(" with 1 vCPU and 64 MB RAM.\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                }
-                Err(err) => {
-                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                    vga::print_str("[ERROR] Failed to allocate virtual machine: ");
-                    vga::print_str(err);
-                    vga::print_str("\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                }
+        Some("create") => match create_vm() {
+            Ok(vm_id) => {
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("[OK] Created Guest Virtual Machine #");
+                vga::print_u64(vm_id);
+                vga::print_str(" with 1 vCPU and 64 MB RAM.\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
+            Err(err) => {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("[ERROR] Failed to allocate virtual machine: ");
+                vga::print_str(err);
+                vga::print_str("\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
         },
-        Some("run") => unsafe {
+        Some("run") => {
             let vm_id = parts
                 .next()
                 .and_then(|s| s.parse::<u64>().ok())
@@ -160,8 +156,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("vcpu") => unsafe {
+        }
+        Some("vcpu") => {
             let vm_id = parts
                 .next()
                 .and_then(|s| s.parse::<u64>().ok())
@@ -219,8 +215,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightRed, vga::Color::Black);
             vga::print_str("[ERROR] Target vCPU not found.\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        },
-        Some("test") => unsafe {
+        }
+        Some("test") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("[TEST] Executing Kernel Virtual Machine (KVM) Self-Test...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -264,15 +260,15 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[PASS] Kernel-based Virtual Machine Subsystem operational.\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        },
-        _ => unsafe {
+        }
+        _ => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Kernel-based Virtual Machine (KVM) Subsystem ");
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[Active]\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            let hw = probe_hardware_virt();
+            let _hw = probe_hardware_virt();
             let (has_vmx, has_svm, count, total_exits) = get_kvm_stats();
 
             vga::print_str("  Hardware Ext: Intel VMX=");
@@ -288,6 +284,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_u64(total_exits);
             vga::print_str(" transitions handled\n");
             vga::print_str("  Syscalls    : 42 (kvm_create_vm), 43 (kvm_run_vcpu)\n");
-        },
+        }
     }
 }

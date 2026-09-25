@@ -9,8 +9,6 @@
 
 //! Implementation of the file move/rename command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_fs::vfs;
 
 static mut MOVE_BUFFER: [u8; 65536] = [0; 65536];

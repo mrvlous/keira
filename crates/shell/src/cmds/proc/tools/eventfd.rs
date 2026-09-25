@@ -9,8 +9,6 @@
 
 //! Inspect and manage EventFD notification counters (Syscall 50 & 51).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_ipc::event::eventfd::{
     close_eventfd, create_eventfd, get_eventfd_stats, get_eventfd_table, read_eventfd,
@@ -20,7 +18,7 @@ use keira_ipc::event::eventfd::{
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     if subcmd == Some("-h") || subcmd == Some("--help") || subcmd.is_none() {
-        unsafe {
+        {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: eventfd <subcommand> [args]\n\n");
             vga::print_str(

@@ -14,7 +14,7 @@ use keira_io::vga;
 use crate::executor::dispatch::router::execute_command_inner;
 
 /// Parse input redirection `<` and load file into VGA pipe buffer.
-pub fn parse_input_redirection<'a>(cmd: &'a str) -> (&'a str, Option<&'a str>) {
+pub fn parse_input_redirection(cmd: &str) -> (&str, Option<&str>) {
     if let Some(pos) = cmd.find('<') {
         let cmd_part = &cmd[..pos];
         let file_part = &cmd[pos + 1..];
@@ -27,7 +27,7 @@ pub fn parse_input_redirection<'a>(cmd: &'a str) -> (&'a str, Option<&'a str>) {
 }
 
 /// Parse output redirection `>` or `>>` returning base command, optional target file, and append flag.
-pub fn parse_output_redirection<'a>(cmd: &'a str) -> (&'a str, Option<&'a str>, bool) {
+pub fn parse_output_redirection(cmd: &str) -> (&str, Option<&str>, bool) {
     if let Some(pos) = cmd.find(">>") {
         let cmd_part = &cmd[..pos];
         let file_part = &cmd[pos + 2..];

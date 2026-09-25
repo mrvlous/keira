@@ -9,8 +9,6 @@
 
 //! Implementation of the 'time' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use crate::executor::*;
 use keira_io::vga;
@@ -19,7 +17,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
-        unsafe {
+        {
             vga::print_str("Usage: time [-d] [-t]\n\n");
             vga::print_str(
                 "Description:\n  Display real-time clock (RTC) current system date and time.\n",
@@ -31,7 +29,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
-    unsafe {
+    {
         let time = keira_io::rtc::get_time();
 
         vga::set_color(vga::Color::White, vga::Color::Black);

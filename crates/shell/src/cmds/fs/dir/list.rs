@@ -9,8 +9,6 @@
 
 //! Implementation of the 'list' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::args::CliArgs;
 use keira_io::vga;
 

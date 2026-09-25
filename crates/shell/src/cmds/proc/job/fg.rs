@@ -9,15 +9,13 @@
 
 //! Implementation of the 'fg' shell command to bring background process job to terminal foreground.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 use keira_task::signal;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let arg = parts.next();
     if arg == Some("-h") || arg == Some("--help") {
-        unsafe {
+        {
             vga::print_str("Usage: fg [job_id]\n\n");
             vga::print_str("Description:\n  Bring background or stopped process job to terminal foreground context.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");

@@ -9,12 +9,10 @@
 
 //! Implementation of the 'delete' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    unsafe {
+    {
         let arg = match parts.next() {
             Some("-h") | Some("--help") => {
                 vga::print_str("Usage: delete <name>\n\n");

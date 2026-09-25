@@ -9,13 +9,11 @@
 
 //! Implementation of the 'reset' shell command.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
-        unsafe {
+        {
             vga::print_str("Usage: reset\n\n");
             vga::print_str("Description:\n  Reboot the system via hardware reset.\n");
         }

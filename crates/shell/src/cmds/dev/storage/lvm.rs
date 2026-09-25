@@ -9,15 +9,13 @@
 
 //! Logical Volume Manager (LVM) control command (Syscall 74).
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_fs::lvm::{create_lv_named, create_vg_named, get_lvm_stats, sys_raid_lvm, LVM_CMD_INFO};
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     match subcmd {
-        Some("-h") | Some("--help") => unsafe {
+        Some("-h") | Some("--help") => {
             vga::print_str("Usage: lvm [status|list|info|create|lvcreate|test]\n\n");
             vga::print_str(
                 "Description:\n  Manage Logical Volume Manager (LVM) physical volumes and volume groups (Syscall 74).\n\n",
@@ -42,11 +40,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(
                 "\nOptions:\n  -h, --help               Show this help message and exit\n",
             );
-        },
+        }
         Some("list") | Some("info") => unsafe {
             let _ = sys_raid_lvm(LVM_CMD_INFO, 0, 0);
         },
-        Some("create") => unsafe {
+        Some("create") => {
             let vg_name = match parts.next() {
                 Some(name) => name,
                 None => {
@@ -77,8 +75,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("lvcreate") => unsafe {
+        }
+        Some("lvcreate") => {
             let vg_name = match parts.next() {
                 Some(name) => name,
                 None => {
@@ -124,13 +122,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 }
             }
-        },
-        Some("test") => unsafe {
+        }
+        Some("test") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("[TEST] Executing LVM Subsystem Self-Test...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            let (vgs, total, free, lvs) = get_lvm_stats();
+            let (vgs, _total, _free, lvs) = get_lvm_stats();
             vga::print_str("  1. Querying initial topology: ");
             vga::print_u64(vgs as u64);
             vga::print_str(" VGs, ");
@@ -146,8 +144,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str("[PASS] LVM volume topology verification successful (Syscall 74).\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        },
-        _ => unsafe {
+        }
+        _ => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Logical Volume Manager (LVM) ");
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
@@ -168,6 +166,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_u64(lvs as u64);
             vga::print_str(" mapped block devices\n");
             vga::print_str("  Syscall     : 74 (SYS_RAID_LVM)\n");
-        },
+        }
     }
 }

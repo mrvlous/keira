@@ -9,15 +9,13 @@
 
 //! Inspect and manage NVMe PCIe solid-state storage controller and namespaces.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::storage::nvme::{get_nvme_controller, get_nvme_stats};
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let subcmd = parts.next();
     match subcmd {
-        Some("-h") | Some("--help") => unsafe {
+        Some("-h") | Some("--help") => {
             vga::print_str("Usage: nvme [status|list|identify|namespaces|test]\n\n");
             vga::print_str(
                 "Description:\n  Inspect high-speed NVMe 1.4 PCIe SSD storage controller and namespaces.\n\n",
@@ -41,8 +39,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(
                 "\nOptions:\n  -h, --help               Show this help message and exit\n",
             );
-        },
-        Some("list") | Some("namespaces") => unsafe {
+        }
+        Some("list") | Some("namespaces") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Registered NVMe Namespaces:\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -71,8 +69,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             } else {
                 vga::print_str("  No NVMe controller detected.\n");
             }
-        },
-        Some("identify") => unsafe {
+        }
+        Some("identify") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("NVMe Controller Identification (Identify Controller & Namespaces):\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -98,8 +96,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             } else {
                 vga::print_str("  No NVMe controller detected.\n");
             }
-        },
-        Some("test") => unsafe {
+        }
+        Some("test") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("[TEST] Executing NVMe Controller & Namespace Verification...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -122,8 +120,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_str("[FAIL] NVMe controller initialization error.\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
-        },
-        _ => unsafe {
+        }
+        _ => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("NVMe PCIe Storage Controller Subsystem ");
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
@@ -148,6 +146,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("  Capacity    : ");
             vga::print_u64(cap_mb);
             vga::print_str(" MB\n");
-        },
+        }
     }
 }

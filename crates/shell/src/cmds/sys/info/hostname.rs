@@ -9,8 +9,6 @@
 
 //! View or set the system hostname. Hostname is persisted to `/config/sys/hostname.cfg` on FAT16 disk.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use crate::state::*;
 use keira_io::vga;
 

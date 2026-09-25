@@ -9,8 +9,6 @@
 
 //! Implementation of the 'write' shell command to write or append text content to a FAT16 file.
 
-#![allow(unused_variables, unused_unsafe)]
-
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
