@@ -18,6 +18,9 @@ pub mod pic;
 pub mod smp;
 
 pub use apic::*;
-pub use idt::{isr_handler, load_current_idt, set_gate, IdtEntry, IdtPtr};
+pub use idt::{
+    irq_get_counter, irq_get_total, isr_handler, load_current_idt, set_gate, IdtEntry, IdtPtr,
+    IRQ_HIT_COUNTERS,
+};
 pub use pic::{clear_mask as pic_clear_mask, send_eoi as pic_send_eoi, set_mask as pic_set_mask};
 pub use smp::*;

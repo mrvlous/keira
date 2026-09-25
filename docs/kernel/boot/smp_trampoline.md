@@ -45,3 +45,14 @@ Vector `0x08` maps directly to physical address `0x00008000`, located safely wit
 4. **64-bit Long Mode Transition (on x86_64)**: Sets `CR4.PAE = 1`, `EFER.LME = 1`, and enables paging `CR0.PG = 1`.
 5. **Private Stack Allocation**: Reads CPU Local APIC ID, indexes into per-CPU stack array, and loads stack pointer (`RSP` / `ESP`).
 6. **Kernel Entry**: Calls `ap_startup_entry()` in Rust kernel core.
+
+---
+
+## 4. Rendezvous Barrier Synchronization
+
+Once auxiliary Application Processors transition into 64-bit/32-bit execution mode, they coordinate rendezvous using atomic synchronization fences:
+
+* **Atomic Rendezvous Counter (`SMP_BOOT_BARRIER`)**: Backed by `AtomicUsize` with sequentially consistent (`Ordering::SeqCst`) memory orderings.
+* `smp_barrier_arrive() -> usize`: Increments the barrier count as each core finishes initialization.
+* `smp_barrier_count() -> usize`: Inspects current arrived cores.
+* `smp_barrier_reset(initial: usize)`: Resets barrier for subsequent synchronization phases.

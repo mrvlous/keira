@@ -59,3 +59,14 @@ When Vector `14` (`#PF`) triggers:
    * **Bit 2 (U/S)**: `0` = Kernel mode; `1` = User mode (Ring 3).
    * **Bit 3 (RSVD)**: `1` = Reserved bit set in page table entry.
    * **Bit 4 (I/D)**: `1` = Instruction fetch fault (NX bit violation).
+
+---
+
+## 4. Interrupt & Exception Telemetry Accounting
+
+The architecture layer actively tracks hardware interrupts and CPU exception dispatch events:
+
+* **Per-Vector IRQ Hit Counters (`IRQ_HIT_COUNTERS[0..256]`)**: Atomic counters updated within `isr_handler()` across all hardware IRQs and software vectors.
+* `irq_get_counter(vector: usize) -> u64`: Queries total hits for a given interrupt vector.
+* `irq_get_total() -> u64`: Computes cumulative interrupt counts across all vectors.
+* `get_cpu_exception_count() -> u64`: Returns total trapped CPU exceptions handled by `exception_dispatcher()`.

@@ -9,6 +9,8 @@
 
 //! Symmetric Multiprocessing (SMP), Inter-Processor Interrupts (IPI), and cross-core TLB shootdown.
 
+use core::sync::atomic::{AtomicUsize, Ordering};
+
 use crate::cpu::invlpg;
 use crate::interrupts::apic;
 #[cfg(target_os = "none")]
@@ -76,6 +78,24 @@ pub struct CpuCore {
 pub static mut SMP_CORES: [Option<CpuCore>; MAX_CORES] = [None; MAX_CORES];
 pub static mut SMP_CORES_COUNT: usize = 1;
 pub static mut SMP_INITIALIZED: bool = false;
+
+/// Atomic rendezvous barrier counter tracking online core boot synchronization.
+pub static SMP_BOOT_BARRIER: AtomicUsize = AtomicUsize::new(1);
+
+/// Increments the SMP rendezvous barrier indicating that a core has arrived at the boot gate.
+pub fn smp_barrier_arrive() -> usize {
+    SMP_BOOT_BARRIER.fetch_add(1, Ordering::SeqCst) + 1
+}
+
+/// Retrieves the current arrival count at the SMP boot barrier.
+pub fn smp_barrier_count() -> usize {
+    SMP_BOOT_BARRIER.load(Ordering::SeqCst)
+}
+
+/// Resets the SMP rendezvous barrier back to an initial count.
+pub fn smp_barrier_reset(initial: usize) {
+    SMP_BOOT_BARRIER.store(initial, Ordering::SeqCst);
+}
 
 /// Retrieve the total number of currently online CPU cores.
 pub fn get_online_cores_count() -> usize {

@@ -39,3 +39,24 @@ fn test_perf_telemetry_and_reset() {
         perf::reset_perf_counters();
     }
 }
+
+#[test]
+fn test_irq_telemetry_counters() {
+    let before = irq_get_total();
+    isr_handler(32);
+    let after = irq_get_total();
+    assert_eq!(after, before + 1);
+    assert!(irq_get_counter(32) >= 1);
+    assert_eq!(irq_get_counter(256), 0);
+}
+
+#[test]
+fn test_smp_boot_barrier_synchronization() {
+    smp_barrier_reset(1);
+    assert_eq!(smp_barrier_count(), 1);
+    let count = smp_barrier_arrive();
+    assert_eq!(count, 2);
+    assert_eq!(smp_barrier_count(), 2);
+    smp_barrier_reset(1);
+    assert_eq!(smp_barrier_count(), 1);
+}
