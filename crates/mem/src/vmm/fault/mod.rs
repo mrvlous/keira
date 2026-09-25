@@ -11,4 +11,4 @@
 
 pub mod handler;
 
-pub use handler::{handle_page_fault, USER_STACK_BOTTOM, USER_STACK_TOP};
+pub use handler::{handle_page_fault, vmm_get_fault_stats, USER_STACK_BOTTOM, USER_STACK_TOP};

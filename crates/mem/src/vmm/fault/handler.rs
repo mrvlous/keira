@@ -9,6 +9,8 @@
 
 //! Page Fault (#PF, Interrupt 14) handling, stack auto-growth, and demand paging.
 
+use core::sync::atomic::{AtomicUsize, Ordering};
+
 use super::super::area::{find_active_vma, get_file_read_hook, PROT_EXEC, PROT_READ, PROT_WRITE};
 use super::super::mapping::map_page;
 use super::super::table::{
@@ -28,6 +30,37 @@ pub const USER_STACK_TOP: u64 = 0x7FFFFFE00000;
 #[cfg(target_arch = "x86_64")]
 pub const USER_STACK_BOTTOM: u64 = 0x7FFFFFD80000;
 
+/// Total page fault events trapped by the kernel.
+pub static TOTAL_PAGE_FAULTS: AtomicUsize = AtomicUsize::new(0);
+
+/// Total Copy-on-Write (COW) page frame duplications.
+pub static COW_FAULTS: AtomicUsize = AtomicUsize::new(0);
+
+/// Total user stack auto-growth expansions.
+pub static STACK_GROWTH_FAULTS: AtomicUsize = AtomicUsize::new(0);
+
+/// Total demand-paged VMA frame allocations.
+pub static DEMAND_PAGING_FAULTS: AtomicUsize = AtomicUsize::new(0);
+
+/// Total unrecoverable memory protection violations (SIGSEGV).
+pub static PROTECTION_VIOLATIONS: AtomicUsize = AtomicUsize::new(0);
+
+/// Total processor TLB page invalidations via `invlpg`.
+pub static TLB_INVLPG_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+/// Retrieves virtual memory fault telemetry metrics:
+/// `(total_faults, cow_faults, stack_growths, demand_pages, violations, tlb_flushes)`.
+pub fn vmm_get_fault_stats() -> (u64, u64, u64, u64, u64, u64) {
+    (
+        TOTAL_PAGE_FAULTS.load(Ordering::Relaxed) as u64,
+        COW_FAULTS.load(Ordering::Relaxed) as u64,
+        STACK_GROWTH_FAULTS.load(Ordering::Relaxed) as u64,
+        DEMAND_PAGING_FAULTS.load(Ordering::Relaxed) as u64,
+        PROTECTION_VIOLATIONS.load(Ordering::Relaxed) as u64,
+        TLB_INVLPG_COUNT.load(Ordering::Relaxed) as u64,
+    )
+}
+
 /// Processes an active page fault interrupt vector.
 ///
 /// Resolves recoverable page faults via:
@@ -42,6 +75,8 @@ pub const USER_STACK_BOTTOM: u64 = 0x7FFFFFD80000;
 ///
 /// Reads and modifies live processor page tables and invalidates the processor TLB.
 pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
+    TOTAL_PAGE_FAULTS.fetch_add(1, Ordering::Relaxed);
+
     let pml4 = active_pml4();
     let is_present = (error_code & 1) != 0;
     let is_write = (error_code & 2) != 0;
@@ -49,6 +84,7 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
 
     let fault_page = cr2 & !(pmm::PAGE_SIZE - 1);
     if fault_page == 0 {
+        PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
         return false;
     }
 
@@ -65,15 +101,19 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
                         | (pte & !(PTE_ADDR_MASK | PAGE_COW))
                         | PAGE_WRITABLE;
 
+                    COW_FAULTS.fetch_add(1, Ordering::Relaxed);
+                    TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
                     invlpg(fault_page as usize);
                     return true;
                 }
             }
         }
+        PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
         return false;
     }
 
     if is_present {
+        PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
         return false;
     }
 
@@ -90,23 +130,29 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
             #[cfg(not(target_arch = "x86_64"))]
             let flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
             if map_page(fault_page, frame, flags).is_ok() {
+                STACK_GROWTH_FAULTS.fetch_add(1, Ordering::Relaxed);
+                TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
                 invlpg(fault_page as usize);
                 return true;
             } else {
                 pmm::free_frame(frame);
             }
         }
+        PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
         return false;
     }
 
     if let Some(vma) = find_active_vma(pml4, cr2) {
         if is_write && (vma.prot & PROT_WRITE) == 0 {
+            PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
         if is_instruction && (vma.prot & PROT_EXEC) == 0 {
+            PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
         if !is_write && !is_instruction && (vma.prot & (PROT_READ | PROT_EXEC)) == 0 {
+            PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
 
@@ -135,6 +181,8 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
             }
 
             if map_page(fault_page, frame, flags).is_ok() {
+                DEMAND_PAGING_FAULTS.fetch_add(1, Ordering::Relaxed);
+                TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
                 invlpg(fault_page as usize);
                 return true;
             } else {
@@ -143,5 +191,6 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         }
     }
 
+    PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
     false
 }

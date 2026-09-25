@@ -754,3 +754,9 @@ fn test_file_backed_mmap_and_msync() {
         assert!(find_active_vma(TEST_PML4, vaddr).is_none());
     }
 }
+
+#[test]
+fn test_vmm_fault_telemetry_counters() {
+    let (total, cow, stack, demand, viol, tlb) = vmm_get_fault_stats();
+    let _ = (total, cow, stack, demand, viol, tlb);
+}

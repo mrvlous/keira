@@ -18,9 +18,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if args.has_flag('h', "help") {
         {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t]\n\n");
+            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p]\n\n");
             vga::print_str(
-                "Description:\n  Display physical frame allocator and kernel heap statistics.\n\n",
+                "Description:\n  Display physical frame allocator, kernel heap, and paging statistics.\n\n",
             );
             vga::print_str("Options:\n");
             vga::print_str("  -m, --mega     Format all memory values in Megabytes (MB)\n");
@@ -28,9 +28,36 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("  -b, --bytes    Format all memory values in raw bytes\n");
             vga::print_str("  -s, --summary  Display compact one-line memory summary\n");
             vga::print_str("  -t, --test     Run bare-metal allocator stress test\n");
+            vga::print_str("  -p, --paging   Display virtual memory and page fault telemetry\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
+        return;
+    }
+
+    if args.has_flag('p', "paging") {
+        let (total, cow, stack, demand, viol, tlb) = keira_mem::vmm_get_fault_stats();
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Virtual Memory & Paging Telemetry:\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("  Total Page Faults  : ");
+        vga::print_u64(total);
+        vga::print_str(" (#PF trapped)\n");
+        vga::print_str("  Stack Auto-Growths : ");
+        vga::print_u64(stack);
+        vga::print_str(" pages (W^X protected)\n");
+        vga::print_str("  COW Replications   : ");
+        vga::print_u64(cow);
+        vga::print_str(" pages duplicated\n");
+        vga::print_str("  Demand Pages Mapped: ");
+        vga::print_u64(demand);
+        vga::print_str(" pages loaded\n");
+        vga::print_str("  Access Violations  : ");
+        vga::print_u64(viol);
+        vga::print_str(" violations (SIGSEGV)\n");
+        vga::print_str("  TLB Invalidations  : ");
+        vga::print_u64(tlb);
+        vga::print_str(" flushes (invlpg)\n");
         return;
     }
 

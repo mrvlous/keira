@@ -56,10 +56,10 @@ pub use vmm::{
     map_huge_2m_page, map_page, mmap_anonymous, mprotect_pages, munmap_pages,
     register_file_backing_hooks, switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect,
     sys_msync, sys_munmap, sys_munmap_ext, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
-    validate_virt_addr_range, verify_vma_pte_invariants, FileReadHook, FileSyncHook,
-    GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED, PAGE_DIRTY, PAGE_HUGE,
-    PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK, PTE_ADDR_MASK_1G,
-    PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR, USER_MIN_VADDR,
+    validate_virt_addr_range, verify_vma_pte_invariants, vmm_get_fault_stats, FileReadHook,
+    FileSyncHook, GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED, PAGE_DIRTY,
+    PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
+    PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR, USER_MIN_VADDR,
 };
 
 /// Initializes early physical and virtual memory subsystems from Multiboot2 descriptors.
