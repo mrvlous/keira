@@ -1,65 +1,66 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Kernel Debugging with GDB, Serial & QEMU Monitor
+# Debugging & Diagnostics Guide
 
-This document details remote GDB debugging, serial UART logging, register inspection, and QEMU monitor interaction in Keira Kernel.
-
----
-
-## Remote GDB Debugging Architecture
-
-```mermaid
-sequenceDiagram
-    participant HostGDB as Host GDB Client (gdb build/x86/x86_64/bin/keira.bin)
-    participant QEMUTCP as QEMU GDB Server (localhost:1234)
-    participant Kernel as Keira Kernel Ring 0
-
-    HostGDB->>QEMUTCP: 1. target remote localhost:1234
-    HostGDB->>QEMUTCP: 2. break kernel_main
-    HostGDB->>QEMUTCP: 3. continue
-    QEMUTCP->>Kernel: 4. Execute until kernel_main breakpoint
-    Kernel-->>HostGDB: 5. Breakpoint hit (Inspect registers, stack, paging)
-```
+This document details techniques for debugging Keira Kernel using GDB, QEMU serial traces, stack unwinding, and hardware breakpoint inspection.
 
 ---
 
-## 1. Remote GDB Debugging Workflow
+## 1. Remote GDB Debugging via QEMU
 
-Launch Keira in QEMU debug mode (freezes CPU execution at Multiboot2 entry and waits for GDB on TCP port `1234`):
-```bash
-make debug
-```
+QEMU includes a built-in GDB stub allowing full remote kernel debugging:
 
-In a separate terminal, launch GDB and connect:
 ```bash
+# 1. Launch kernel in QEMU with GDB stub enabled (-s) and CPU halted at start (-S)
+qemu-system-x86_64 -s -S -cdrom build/x86/x86_64/iso/keira-x86_64.iso -serial stdio
+
+# 2. In a separate terminal, launch GDB
 gdb build/x86/x86_64/bin/keira.bin
-(gdb) target remote localhost:1234
+```
+
+Inside GDB:
+```gdb
+# Connect to QEMU GDB server on localhost:1234
+(gdb) target remote :1234
+
+# Set breakpoint at kernel main entry
 (gdb) break kernel_main
 (gdb) continue
-```
 
-### Useful GDB Commands for Bare-Metal Kernel:
-* `info registers`: Dump all general-purpose CPU registers (`RAX` through `R15`, `RIP`, `RFLAGS`).
-* `x/16gx $rsp`: Inspect top 16 64-bit quadwords on the stack.
-* `x/8i $rip`: Disassemble the next 8 instructions at the current program counter.
-* `p/x $cr3`: Read the root page table physical base address.
+# Inspect register values
+(gdb) info registers
 
----
+# Print backtrace
+(gdb) backtrace
 
-## 2. COM1 Serial Tracing & Automated Telemetry
-
-All early boot milestone messages and kernel panic dumps are output directly to COM1 serial (`-serial stdio`). To redirect serial output directly to a log file:
-```bash
-qemu-system-x86_64 -cdrom build/x86/x86_64/iso/keira-x86_64-*.iso -serial file:serial.log -display none
+# Step instruction by instruction
+(gdb) stepi
+(gdb) nexti
 ```
 
 ---
 
-## 3. QEMU Interactive Monitor
+## 2. Serial Console Logging
 
-Access the interactive QEMU monitor console by pressing `Ctrl+Alt+2` in graphical mode, or run:
+Keira configures UART 16550 COM1 (`0x3F8`) as early diagnostic output:
+* Launch with `make run` or pass `-serial stdio` to view all kernel printk logs directly in host terminal.
+* High-volume tracing: Pass `-serial file:serial.log` to capture boot logs to disk.
+
+---
+
+## 3. Kernel Panic Analysis & Registers
+
+When a fatal condition occurs, `keira_kernel::runtime::panic` captures CPU state:
+```text
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               KERNEL PANIC
+  Reason: Page fault at unmapped address 0xDEADBEEF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CPU: 0  |  CR2: 0xDEADBEEF  |  CR3: 0x00201000
+RAX: 0x00000000  RBX: 0x00100000  RCX: 0x00000001
+RIP: 0x0010542A  RSP: 0xFFFF80000001FE90
+```
+Use `addr2line` on host to locate the exact source file and line:
 ```bash
-info registers
-info mem
-info pci
+addr2line -e build/x86/x86_64/bin/keira.bin 0x0010542A
 ```

@@ -1,15 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Verification, Testing & Debugging
+# Verification, Testing & Debugging Manuals
 
-This directory specifies automated test suites, remote GDB debugging, and unsafe Rust safety contracts in Keira Kernel.
+This directory documents verification procedures, automated test harnesses, QEMU debugging configurations, and safety invariant validation in Keira Kernel.
 
 ---
 
 ## Verification Index
 
-| Document | Topic | Description |
+| Document | Focus Area | Description |
 | :--- | :--- | :--- |
-| **Testing Suite** | [`testing.md`](testing.md) | Headless smoke testing, QMP scripts, 20-cycle stress tests, ABI verification, and syscall fuzzing |
-| **Kernel Debugging** | [`debugging.md`](debugging.md) | Remote GDB debugging on TCP port 1234, register dumps, and QEMU monitor |
-| **Unsafe Guidelines** | [`unsafe_guidelines.md`](unsafe_guidelines.md) | Memory safety invariants, user pointer validation, and `# Safety` docs |
+| [`testing.md`](testing.md) | Automated Testing | QEMU smoke tests, `test_abi`, `fuzz_abi`, and CI verification |
+| [`debugging.md`](debugging.md) | GDB & Diagnostics | QEMU GDB stub debugging, serial logging, and panic unwinding |
+| [`unsafe_guidelines.md`](unsafe_guidelines.md) | Unsafe Rust Safety | Preconditions, invariants, and `# Safety` documentation rules |

@@ -1,74 +1,58 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Git Workflow, Commit Standards & Pull Requests
+# Git Workflow & Collaboration Guidelines
 
-This document specifies branch naming conventions, Conventional Commit formatting, and pull request review standards for Keira Kernel.
-
----
-
-## Branch Naming Conventions
-
-* `feature/<domain>-<short-description>`: E.g., `feature/net-ipv6-support`
-* `fix/<subsystem>-<issue>`: E.g., `fix/vmm-page-unmap`
-* `refactor/<target>`: E.g., `refactor/ipc-uring-queue`
-* `docs/<topic>`: E.g., `docs/contributing-guides`
+This document outlines the branch management, contribution workflow, automated quality checks, and commit structuring rules for Keira Kernel.
 
 ---
 
-## Commit Message Format (Conventional Commits)
+## Branching Strategy
 
-Each commit must follow the standard conventional commit format:
-```text
-<type>(<scope>): <short imperative summary>
-
-[optional detailed description explaining WHY, not just what]
+```mermaid
+gitGraph
+    commit id: "v0.4.0"
+    branch feat/ext4-extent
+    checkout feat/ext4-extent
+    commit id: "feat(fs): add extent tree traversal"
+    commit id: "test(fs): add extent fixture tests"
+    checkout main
+    merge feat/ext4-extent id: "Merge branch 'feat/ext4-extent'"
+    branch fix/e1000-rx-overflow
+    checkout fix/e1000-rx-overflow
+    commit id: "fix(net): handle e1000 rx ring buffer wrap"
+    checkout main
+    merge fix/e1000-rx-overflow id: "Merge branch 'fix/e1000-rx-overflow'"
 ```
 
-### Allowed Commit Types:
-* `feat`: New driver, syscall, shell command, or kernel subsystem feature.
-* `fix`: Bug fix, race condition resolution, or panic prevention.
-* `refactor`: Code reorganization with zero behavior change.
-* `perf`: Performance optimization in memory allocation, TLB, or packets.
-* `docs`: Documentation addition or clarification.
-* `style`: Formatting, whitespace, or rustfmt fixes.
-* `test`: Automated QEMU test harness or unit test additions.
-* `build`: Build system, Makefile, toolchain, or dependency updates.
-* `chore`: Repository maintenance, metadata, or auxiliary tasks.
+* **`main`**: The protected mainline development branch. Must always compile cleanly (`0` errors, `0` warnings) across both `x86_64` and `i686` targets.
+* **Feature Branches**: `feat/<scope>-<short-description>` (e.g., `feat/fs-ext4-extents`, `feat/net-tls-cipher`).
+* **Fix Branches**: `fix/<scope>-<issue-description>` (e.g., `fix/apic-timer-overflow`, `fix/syscall-write-bounds`).
 
 ---
 
-## Architecture & Code Review Principles
+## Developer Quality Gate Checklist
 
-1. **Unidirectional Layering**: Lower-level crates (`core`, `arch`, `mem`) must NEVER import from higher-level crates (`fs`, `net`, `task`, `shell`).
-2. **Single Responsibility**: Decompose large modules into granular sub-files (`mod.rs`, `types.rs`, `operations.rs`).
-3. **No Dead Code / Scaffolding**: Avoid empty files, empty directories, or empty scaffolding without concrete implementations.
-4. **Zero Userland Bloat**: The userland footprint is restricted to clean, standalone C tools (`kcc.elf`).
+Before proposing or committing changes, execute the full local validation sequence:
 
----
+```bash
+# 1. Format code across Rust and C trees
+make format
 
-## Release Versioning & Git Tagging Lifecycle
+# 2. Run static analysis on userland C
+make lint
 
-Keira Kernel follows strict **Semantic Versioning (`MAJOR.MINOR.PATCH`)** for its release lifecycle:
+# 3. Compile kernel binaries and bootable images for both architectures
+make full
 
-* **Baseline (`0.1.0`)**: Represents the unified foundation release featuring 100% pure Rust modular architecture, dual-architecture parity (`x86_64` & `i686`), Ring 3 isolation, freestanding POSIX C SDK, native in-kernel C compiler (`kcc`), FAT16 filesystem, and TCP/IP stack.
-* **Bare-Metal Milestone (`0.2.0`)**: 100% active bare-metal implementation across all 75 shell commands, zero stubs/mocks/placeholders, complete EXT4 extent tree parser, KVM CPUID virtualization framework, and Loadable Kernel Modules (LKM) engine.
-* **Userland & Self-Hosting Toolchain Milestone (`0.3.0`)**: Standard System V ABI & auxv[] stack framing, freestanding C SDK (libc.a), buffered stream I/O, VMM demand paging & file-backed memory mapping with msync persistence, 2MB huge pages, memory isolation on fork, anonymous IPC pipes, Ring 3 fault-injection verification harness (test_abi.elf with 26 tests), 76 active bare-metal shell commands, and native in-kernel C compiler (kcc.elf) self-hosting loop.
-* **Production Reliability, SMP Concurrency & Fuzzing Milestone (`0.4.0`)**: 81 active system call vectors, 16-bit real-mode AP bootstrap trampolines at `0x8000`, 4-core Symmetric Multiprocessing (SMP) via ACPI MADT and INIT-SIPI-SIPI sequencing, strict lock ranking hierarchy and deadlock prevention, soft lockup heartbeat watchdog, automated Syzkaller-Lite syscall boundary fuzzing (`fuzz_abi.elf` with 10,000+ iterations across 5 chaos stress phases), bare-metal `io_uring` asynchronous engine, High-Precision Event Timer (HPET) monotonic clock, Ring 3 ABI verification harness expanded to 42 tests (`test_abi.elf`), and zero-panic kernel guarantees across `x86_64` and `i686`.
-* **Patch Releases (`0.4.x`)**: Reserved for backward-compatible bug fixes, driver optimizations, and security hardening.
-* **Minor Releases (`0.x.0`)**: Introduced when major kernel milestones are achieved.
-* **Major Releases (`x.0.0`)**: Reserved for frozen ABI stability milestones.
-
-### Release Git Tagging
-
-Release tags use the standard prefix `v` (e.g., `v0.4.0`). Tags are created only on major milestones and release commits.
+# 4. Run automated headless test suite across both architectures
+make test-all
+```
 
 ---
 
-## Pull Request Checklist
+## Atomic & Granular Commits
 
-Before opening a pull request, ensure:
-1. `make check` passes with all dependencies satisfied (or `make preflight` succeeds).
-2. `make format` and `make lint` run cleanly without modifying unstaged formatting.
-3. `cargo check --workspace -Zjson-target-spec -Zbuild-std=core,compiler_builtins --target targets/x86/x86_64/x86_64-keira-none.json` produces **0 errors and 0 warnings**.
-4. `make all` and `make test` pass cleanly.
-5. All new files contain clean GPL-2.0-only license headers with the author's full name (no email addresses in headers).
+Keira adheres to a strict **atomic commit invariant**:
+* Do **NOT** combine unrelated changes across different subsystems into a single commit.
+* Separate documentation updates, kernel core fixes, driver changes, and userland code into distinct commits.
+* Ensure every commit compiles independently so `git bisect` remains effective for regression testing.

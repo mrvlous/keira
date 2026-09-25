@@ -88,7 +88,7 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
    - Global constants and static variables: `SCREAMING_SNAKE_CASE`.
 2. **Defensive Kernel Programming**:
    - Pure `#![no_std]` environment across all crates.
-   - Avoid `unwrap()` and `panic!` in kernel-space paths. Prefer `Result<T, &'static str>` or custom error enums.
+   - Avoid `unwrap()` and `panic!` in kernel-space runtime paths. Prefer `Result<T, &'static str>` or custom error enums.
    - Every `unsafe` function and block must provide a formal `# Safety` docstring explaining preconditions.
 3. **Documentation**:
    - Write clear, formal English rustdoc comments (`///`) on all public types, constants, and functions.
@@ -100,19 +100,21 @@ Every source file (`.rs`, `.c`, `.h`, `.asm`, `.inc`), build script (`Makefile`)
 
 ## 3. C & Assembly Conventions
 
-1. **Userland C (`user/`)**:
+1. **Userland C (`userland/`)**:
    - Follow standard Linux kernel C conventions (4-space indentation, braces on new lines for functions).
    - Use freestanding headers and standard type definitions from `<stdint.h>`, `<stddef.h>`, and `<stdbool.h>`.
    - Protect all header files with standard header guards:
      ```c
      #ifndef _KEIRA_HEADERNAME_H
      #define _KEIRA_HEADERNAME_H
-     ...
+
+     /* Declarations */
+
      #endif /* _KEIRA_HEADERNAME_H */
      ```
    - Run `clang-format` and `clang-tidy` (enforced via `make format` and `make lint`).
 2. **Low-Level Assembly (`arch/x86/`)**:
-   - Use standard NASM x86_64 syntax.
+   - Use standard NASM syntax.
    - Use semicolon (`;`) for comments.
    - Maintain 16-byte stack alignment across all interrupt service routines and context switches.
 
@@ -162,6 +164,9 @@ Keira <version>
 * `build`: Build system, Makefile, toolchain, or dependency updates.
 * `chore`: Repository maintenance, metadata, or auxiliary tasks.
 
+#### Allowed Scopes:
+`arch`, `core`, `crypto`, `mem`, `io`, `fs`, `ipc`, `net`, `task`, `syscall`, `shell`, `kernel`, `userland`, `build`, `docs`.
+
 ---
 
 ## 6. Console Output & CLI Styling Standards
@@ -181,7 +186,7 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 > **Strict Prohibition**: Never use recreational or non-standard console colors (`Cyan`, `LightCyan`, `Magenta`, `LightBlue`, `Brown`). The console palette must remain austere, professional, and consistent with the Linux monochrome standard.
 
 ### B. CLI Argument & Flag Parser Conventions:
-- Shell commands with flags must utilize the `#![no_std]` [`CliArgs`](../../../crates/shell/src/args.rs) parser engine.
+- Shell commands with flags must utilize the `#![no_std]` [`CliArgs`](../../../crates/shell/src/args/parser/cli.rs) parser engine.
 - Support standard POSIX single-letter short flags (`-l`, `-a`, `-c`, `-m`, `-s`, `-v`, `-u`, `-f`, `-r`, `-d`, `-t`, `-n`, `-L`) and GNU long flags (`--long`, `--all`, `--version`, `--help`).
 - Commands without arguments or configurations (`sync`, `reset`, `unwind`, `runtime`, `wipe`) execute immediately without blocking on `-h` boilerplate.
 - Network download and streaming progress bars must adhere to the `rustc`/`cargo` compiler format with 12-character right-aligned status tags (`Connecting`, `Downloading`, `Downloaded`, `Finished`) and size metrics (`Bytes`, `KiB`, `MiB`).
@@ -211,34 +216,10 @@ All shell commands, driver logging, and terminal output must strictly adhere to 
 
 1. **Strict 100% English Policy**:
    - All code comments, docstrings (`//!`, `///`), documentation files, commit messages, and terminal outputs **MUST** be written in formal, grammatically correct English.
-   - Non-English comments or phrases (e.g. Indonesian) are strictly forbidden in the codebase.
+   - Non-English comments or phrases are strictly forbidden in the codebase.
 2. **Grammar & Tone**:
    - Write clear, concise, and professional documentation and docstrings.
-   - Use imperative mood for commit summaries (e.g. `"feat(user): add dual-architecture support..."`) and spell out words like `"and"` instead of ampersands (`&`) in commit subjects.
+   - Use imperative mood for commit summaries (e.g. `"feat(user): add dual-architecture support"`) and spell out words like `"and"` instead of ampersands (`&`) in commit subjects.
 3. **Comment Formatting & Decorative Banner Policy**:
    - Decorative banner symbols in code comments (such as `// ===`, `// ---`, `/* === */`, or `; ===`) are strictly prohibited.
    - Use clean, concise single-line `//` comments or formal rustdoc docstrings (`//!`, `///`) without ASCII art or divider lines.
-
----
-
-## 9. Multi-Architecture 4-Tier Symmetrical Organization
-
-All architectural code, target specifications, userland linkers, and build outputs maintain strict 1:1 symmetry across `i686` and `x86_64`:
-
-1. **Kernel Bootstrap & Assembly (`arch/x86/`)**:
-   - Shared multiboot headers: `arch/x86/common/boot/multiboot2_header.asm`
-   - Shared assembly includes: `arch/x86/common/include/constants.inc`
-   - Pure 32-bit bootstrap & kernel: `arch/x86/i686/` (`entry.asm`, `gdt.asm`, `idt.asm`, `isr.asm`, `syscall.asm`, `linker.ld`)
-   - 64-bit Long Mode bootstrap & kernel: `arch/x86/x86_64/` (`entry32.asm`, `entry64.asm`, `gdt.asm`, `idt.asm`, `isr.asm`, `paging.asm`, `syscall.asm`, `linker.ld`)
-
-2. **Cargo Target Specifications (`targets/x86/`)**:
-   - `targets/x86/x86_64/x86_64-keira-none.json` (64-bit Long Mode)
-   - `targets/x86/i686/i686-keira-none.json` (32-bit Protected Mode)
-
-3. **Userland Linker Scripts (`user/arch/x86/`)**:
-   - `user/arch/x86/x86_64/linker.ld` (`x86_64` virtual base `0x40000000`)
-   - `user/arch/x86/i686/linker.ld` (`i686` virtual base `0x01000000`)
-
-4. **Build Output Hierarchy (`build/x86/`)**:
-   - `build/x86/x86_64/` (`bin/`, `disk/`, `iso/`, `obj/`, `staging/`)
-   - `build/x86/i686/` (`bin/`, `disk/`, `iso/`, `obj/`, `staging/`)

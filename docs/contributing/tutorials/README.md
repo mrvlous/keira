@@ -1,15 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Developer Tutorials & Extension Guides
+# Keira Development Tutorials
 
-This directory provides hands-on, step-by-step developer tutorials for extending Keira Kernel subsystems.
+Practical guides for implementing new functionality in Keira Kernel.
 
 ---
 
-## Tutorial Index
+## Tutorials Index
 
-| Tutorial | Document | Description |
+| Tutorial | Focus Area | Description |
 | :--- | :--- | :--- |
-| **Adding System Calls** | [`adding_syscalls.md`](adding_syscalls.md) | Vector assignment, dispatcher registration, and C SDK exposure |
-| **Adding Shell Commands** | [`adding_commands.md`](adding_commands.md) | Creating built-in commands, argument parsing, and executor routing |
-| **Adding Hardware Drivers** | [`adding_drivers.md`](adding_drivers.md) | PCI discovery, MMIO register mapping, and DMA buffer allocation |
+| [`adding_commands.md`](adding_commands.md) | Shell Commands | Creating, parsing arguments, and registering new built-in commands |
+| [`adding_drivers.md`](adding_drivers.md) | Hardware Drivers | PCI scanning, MMIO setup, DMA allocation, and device registration |
+| [`adding_syscalls.md`](adding_syscalls.md) | System Calls | Defining syscall numbers, dispatch handlers, and userland wrappers |
