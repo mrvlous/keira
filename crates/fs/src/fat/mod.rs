@@ -44,6 +44,8 @@ pub use self::path::{
     accumulate_lfn, filename_to_8_3, find_entry, format_filename, get_lfn_utf8, resolve_path,
     sanitize_path,
 };
-pub use self::table::{clear_cache, flush_dirty_sectors, read_sector, write_sector};
+pub use self::table::{
+    clear_cache, flush_dirty_sectors, get_sector_cache_stats, read_sector, write_sector,
+};
 pub use self::types::{DirectoryEntry, Fat16Volume, FoundEntry, LfnAccumulator, LfnEntry};
 pub use self::volume::{cluster_to_sector, init, print_disk_info, CURRENT_DIR_CLUSTER, VOLUME};

@@ -61,5 +61,26 @@ pub unsafe fn print_disk_info() {
         vga::set_color(vga::Color::Yellow, vga::Color::Black);
         vga::print_str("Filesystem:     Not a valid FAT16 partition\n");
     }
+
+    let (hits, misses, evictions, active) = super::super::table::get_sector_cache_stats();
+    let total_access = hits + misses;
+    let hit_rate = if total_access > 0 {
+        (hits * 100) / total_access
+    } else {
+        0
+    };
+    vga::set_color(vga::Color::White, vga::Color::Black);
+    vga::print_str("LRU Cache:      ");
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+    vga::print_u64(active as u64);
+    vga::print_str("/16 slots (Hits: ");
+    vga::print_u64(hits);
+    vga::print_str(", Misses: ");
+    vga::print_u64(misses);
+    vga::print_str(", Evictions: ");
+    vga::print_u64(evictions);
+    vga::print_str(", Hit Ratio: ");
+    vga::print_u64(hit_rate);
+    vga::print_str("%)\n");
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 }

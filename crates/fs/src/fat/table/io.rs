@@ -9,7 +9,9 @@
 
 //! Cached sector I/O reader and write-through cache engine for FAT16.
 
-use super::cache::{CacheEntry, CACHE_CLOCK, SECTOR_CACHE};
+use super::cache::{
+    CacheEntry, CACHE_CLOCK, CACHE_EVICTIONS, CACHE_HITS, CACHE_MISSES, SECTOR_CACHE,
+};
 use keira_io::storage::block::get_mounted_device;
 
 /// Reads a 512-byte sector from the currently mounted block device, utilizing the LRU cache.
@@ -18,15 +20,17 @@ use keira_io::storage::block::get_mounted_device;
 ///
 /// Accesses the global mutable sector cache and invokes block driver I/O.
 pub unsafe fn read_sector(sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'static str> {
-    for i in 0..16 {
-        if SECTOR_CACHE[i].valid && SECTOR_CACHE[i].sector == sector {
-            SECTOR_CACHE[i].last_used = CACHE_CLOCK;
+    for entry in SECTOR_CACHE.iter_mut() {
+        if entry.valid && entry.sector == sector {
+            entry.last_used = CACHE_CLOCK;
             CACHE_CLOCK += 1;
-            buffer.copy_from_slice(&SECTOR_CACHE[i].data);
+            CACHE_HITS += 1;
+            buffer.copy_from_slice(&entry.data);
             return Ok(());
         }
     }
 
+    CACHE_MISSES += 1;
     let mut dev_data = [0u8; 512];
     if let Some(dev) = get_mounted_device() {
         dev.read_sector(sector, &mut dev_data)?;
@@ -37,15 +41,19 @@ pub unsafe fn read_sector(sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'s
     let mut best_index = 0;
     let mut min_lru = u64::MAX;
 
-    for i in 0..16 {
-        if !SECTOR_CACHE[i].valid {
+    for (i, entry) in SECTOR_CACHE.iter().enumerate() {
+        if !entry.valid {
             best_index = i;
             break;
         }
-        if SECTOR_CACHE[i].last_used < min_lru {
-            min_lru = SECTOR_CACHE[i].last_used;
+        if entry.last_used < min_lru {
+            min_lru = entry.last_used;
             best_index = i;
         }
+    }
+
+    if SECTOR_CACHE[best_index].valid {
+        CACHE_EVICTIONS += 1;
     }
 
     SECTOR_CACHE[best_index] = CacheEntry {
@@ -66,10 +74,10 @@ pub unsafe fn read_sector(sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'s
 ///
 /// Accesses the global mutable sector cache and invokes block driver I/O.
 pub unsafe fn write_sector(sector: u32, buffer: &[u8; 512]) -> Result<(), &'static str> {
-    for i in 0..16 {
-        if SECTOR_CACHE[i].valid && SECTOR_CACHE[i].sector == sector {
-            SECTOR_CACHE[i].data.copy_from_slice(buffer);
-            SECTOR_CACHE[i].last_used = CACHE_CLOCK;
+    for entry in SECTOR_CACHE.iter_mut() {
+        if entry.valid && entry.sector == sector {
+            entry.data.copy_from_slice(buffer);
+            entry.last_used = CACHE_CLOCK;
             CACHE_CLOCK += 1;
         }
     }
@@ -91,10 +99,10 @@ pub unsafe fn write_sector(sector: u32, buffer: &[u8; 512]) -> Result<(), &'stat
 pub unsafe fn flush_dirty_sectors() -> Result<usize, &'static str> {
     let mut count = 0usize;
     if let Some(dev) = get_mounted_device() {
-        for i in 0..16 {
-            if SECTOR_CACHE[i].valid {
-                let sec = SECTOR_CACHE[i].sector;
-                let data = SECTOR_CACHE[i].data;
+        for entry in SECTOR_CACHE.iter() {
+            if entry.valid {
+                let sec = entry.sector;
+                let data = entry.data;
                 dev.write_sector(sec, &data)?;
                 count += 1;
             }

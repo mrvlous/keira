@@ -12,5 +12,5 @@
 pub mod cache;
 pub mod io;
 
-pub use self::cache::{clear_cache, CacheEntry, CACHE_CLOCK, SECTOR_CACHE};
+pub use self::cache::{clear_cache, get_sector_cache_stats, CacheEntry, CACHE_CLOCK, SECTOR_CACHE};
 pub use self::io::{flush_dirty_sectors, read_sector, write_sector};

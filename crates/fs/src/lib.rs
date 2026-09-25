@@ -40,7 +40,7 @@ pub use fat::file::{
 };
 pub use fat::path::{filename_to_8_3, find_entry, format_filename, resolve_path, sanitize_path};
 pub use fat::table::{
-    clear_cache, flush_dirty_sectors, read_sector as fat_read_sector,
+    clear_cache, flush_dirty_sectors, get_sector_cache_stats, read_sector as fat_read_sector,
     write_sector as fat_write_sector,
 };
 pub use fat::types::{DirectoryEntry, Fat16Volume, FoundEntry, LfnAccumulator, LfnEntry};

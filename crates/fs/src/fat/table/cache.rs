@@ -33,13 +33,26 @@ pub static mut SECTOR_CACHE: [CacheEntry; 16] = [CacheEntry {
 /// Monotonic access clock for LRU eviction calculation.
 pub static mut CACHE_CLOCK: u64 = 0;
 
+/// Global cumulative cache telemetry counters.
+pub static mut CACHE_HITS: u64 = 0;
+pub static mut CACHE_MISSES: u64 = 0;
+pub static mut CACHE_EVICTIONS: u64 = 0;
+
+/// Retrieves global sector cache telemetry metrics: `(hits, misses, evictions, active_slots)`.
+pub fn get_sector_cache_stats() -> (u64, u64, u64, usize) {
+    unsafe {
+        let active = SECTOR_CACHE.iter().filter(|e| e.valid).count();
+        (CACHE_HITS, CACHE_MISSES, CACHE_EVICTIONS, active)
+    }
+}
+
 /// Invalidates all entries currently held in the sector cache.
 ///
 /// # Safety
 ///
 /// Modifies the global mutable sector cache table.
 pub unsafe fn clear_cache() {
-    for i in 0..16 {
-        SECTOR_CACHE[i].valid = false;
+    for entry in SECTOR_CACHE.iter_mut() {
+        entry.valid = false;
     }
 }
