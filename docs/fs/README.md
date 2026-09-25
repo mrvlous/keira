@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Keira Kernel Virtual Filesystem (VFS) & Storage Formats
+# Keira Virtual Filesystem & Storage Subsystems
 
-The `fs` subsystem provides unified file abstraction, partition drivers (FAT12/16/32, EXT4), USTAR RAM disk reading, character/block device nodes (`/system/dev/`), LRU sector caching, advisory file locks, and LVM/RAID.
+The `fs` domain coordinates storage devices, partition drivers, virtual file systems, pseudo-filesystems, and file locking.
 
 ---
 
@@ -10,25 +10,23 @@ The `fs` subsystem provides unified file abstraction, partition drivers (FAT12/1
 
 ```mermaid
 graph TD
-    VFS["VFS Interface<br/>(open, read, write, close, list)"] --> FAT["fat.md<br/>FAT12/16/32 Driver"]
-    VFS --> EXT4["ext4.md<br/>EXT4 Driver"]
-    VFS --> Initrd["initrd.md<br/>USTAR Boot RAM Disk"]
-    VFS --> Dev["dev.md<br/>/system/dev/ Device Nodes"]
-    FAT --> Cache["cache.md<br/>16-Slot LRU Write-Through Cache"]
-    Cache --> BlockDev["Block Device Layer<br/>(IDE, AHCI, NVMe, RAM Disk)"]
+    App["Application / Syscall Layer"] --> VFS["vfs/<br/>Virtual Filesystem Mount Table"]
+    VFS --> FAT["fat/<br/>FAT12/16/32 Driver"]
+    VFS --> EXT4["ext4/<br/>EXT4 Inode & Extent Reader"]
+    VFS --> Proc["proc/<br/>Process & Telemetry Pseudo-FS"]
+    VFS --> Dev["dev/<br/>Character & Block Device Nodes"]
+    VFS --> Storage["storage/<br/>Initrd, Sector Cache & LVM/RAID"]
 ```
 
 ---
 
-## Filesystem Module Index
+## Submodule Index
 
-| Document | Component | Description |
+| Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`fat.md`](fat.md) | FAT File Systems | FAT12, FAT16, and FAT32 file read/write operations and cluster chaining |
-| [`ext4.md`](ext4.md) | EXT4 File System | Read-only EXT4 superblock parsing, block group descriptors, and inode extents |
-| [`initrd.md`](initrd.md) | USTAR Boot RAM Disk | In-memory archive reader mounted at boot for system binaries and libraries |
-| [`dev.md`](dev.md) | `/system/dev/` Device Nodes | Virtual device filesystem (`null`, `zero`, `random`, `urandom`, `tty`, `ptmx`, `console`, `sda`, `sda1`) |
-| [`proc.md`](proc.md) | `/system/proc/` Pseudo-Filesystem | In-memory kernel runtime telemetry, uptime, meminfo, cpuinfo, and process status |
-| [`cache.md`](cache.md) | 16-Slot Sector Cache | Least-Recently-Used (LRU) write-through cache engine with thread-safe synchronization |
-| [`lock.md`](lock.md) | Advisory File Locks | Multi-reader shared and single-writer exclusive file lock tracking |
-| [`lvm_raid.md`](lvm_raid.md) | LVM & Software RAID | Logical Volume Management volume groups and RAID 0/1/5 striping/mirroring |
+| [`vfs/`](vfs/README.md) | Virtual Filesystem | Mount table, path resolution, file operations, permissions |
+| [`fat/`](fat/README.md) | FAT Filesystem | FAT12/16/32 volume mounting, cluster chains, file read/write |
+| [`ext4/`](ext4/README.md) | EXT4 Reader | Superblock verification, inode resolution, extent trees |
+| [`proc/`](proc/README.md) | ProcFS | Process metrics, system uptime, memory telemetry |
+| [`dev/`](dev/README.md) | DevFS | Device nodes (`/dev/null`, `/dev/zero`, `/dev/console`, etc.) |
+| [`storage/`](storage/README.md) | Storage Support | USTAR initrd reader, LRU sector cache, LVM/RAID, flock |
