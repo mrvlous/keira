@@ -24,10 +24,12 @@ pub struct IrqState {
 }
 
 #[cfg(not(target_os = "none"))]
-use core::sync::atomic::{AtomicBool, Ordering};
+extern crate std;
 
 #[cfg(not(target_os = "none"))]
-static SIMULATED_IF: AtomicBool = AtomicBool::new(true);
+std::thread_local! {
+    static SIMULATED_IF: core::cell::Cell<bool> = const { core::cell::Cell::new(true) };
+}
 
 /// Queries whether hardware interrupts are currently enabled on the local CPU core.
 ///
@@ -49,7 +51,7 @@ pub fn interrupts_enabled() -> bool {
     }
     #[cfg(not(target_os = "none"))]
     {
-        SIMULATED_IF.load(Ordering::SeqCst)
+        SIMULATED_IF.with(|c| c.get())
     }
 }
 
@@ -70,7 +72,7 @@ pub fn irq_save() -> IrqState {
     }
     #[cfg(not(target_os = "none"))]
     {
-        SIMULATED_IF.store(false, Ordering::SeqCst);
+        SIMULATED_IF.with(|c| c.set(false));
     }
 
     IrqState { was_enabled }
@@ -89,7 +91,7 @@ pub fn irq_restore(state: IrqState) {
         }
         #[cfg(not(target_os = "none"))]
         {
-            SIMULATED_IF.store(true, Ordering::SeqCst);
+            SIMULATED_IF.with(|c| c.set(true));
         }
     }
 }
