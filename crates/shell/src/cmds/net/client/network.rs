@@ -37,6 +37,7 @@ fn print_mac(mac: &[u8; 6]) {
     }
 }
 
+/// Execute the 'network' command to query interface status, run DHCP configuration, ping remote hosts, or inspect ARP/DNS tables.
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
@@ -66,13 +67,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
 
         if args.has_flag('a', "arp") {
-            vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("ARP Cache & Neighbor Table:\n");
-            vga::print_str("IP ADDRESS       HW TYPE     HW ADDRESS         INTERFACE\n");
-            vga::print_str("---------------  ----------  -----------------  ---------\n");
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            vga::print_str("10.0.2.2         10/100/1G   52:54:00:12:34:56  eth0\n");
-            vga::print_str("10.0.2.3         10/100/1G   52:54:00:12:34:57  eth0\n");
+            keira_net::arp::print_arp_cache();
             return;
         }
 

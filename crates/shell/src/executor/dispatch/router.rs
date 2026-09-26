@@ -38,6 +38,7 @@ pub fn execute_command_inner(cmd: &str) {
         "devices" => crate::cmds::devices::run(&mut parts),
         "network" => crate::cmds::network::run(&mut parts),
         "download" => crate::cmds::download::run(&mut parts),
+        "fetch" => crate::cmds::fetch::run(&mut parts),
         "initrd" => crate::cmds::initrd::run(&mut parts),
         "wipe" => crate::cmds::wipe::run(&mut parts),
         "reset" | "reboot" => crate::cmds::reset::run(&mut parts),

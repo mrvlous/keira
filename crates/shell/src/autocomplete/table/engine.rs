@@ -31,6 +31,7 @@ pub const COMMANDS_LIST: &[&str] = &[
     "epoll",
     "eventfd",
     "ext4",
+    "fetch",
     "fg",
     "fileinfo",
     "firewall",

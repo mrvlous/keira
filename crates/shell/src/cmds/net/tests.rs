@@ -17,6 +17,10 @@ fn test_net_commands_help_invocation() {
     args.next();
     download::run(&mut args);
 
+    let mut args = "fetch --help".split_whitespace();
+    args.next();
+    fetch::run(&mut args);
+
     let mut args = "https --help".split_whitespace();
     args.next();
     https::run(&mut args);

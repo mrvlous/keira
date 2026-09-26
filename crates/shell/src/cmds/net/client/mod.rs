@@ -10,5 +10,8 @@
 //! Network clients, TLS/HTTPS, and interface management commands.
 
 pub mod download;
+pub mod fetch;
 pub mod https;
 pub mod network;
+pub mod progress;
+pub mod url;

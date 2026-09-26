@@ -10,18 +10,23 @@
 //! Implementation of the 'https' shell command to perform encrypted HTTPS GET
 //! requests over the Native TLS 1.3 Cryptographic Engine.
 
+use super::progress::print_status_badge;
+use super::url::ParsedUrl;
 use keira_io::vga;
 
+/// Execute the 'https' command to inspect TLS 1.3 parameters, run SHA-256 self-test, or perform HTTPS request.
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let sub = parts.next();
 
         match sub {
             Some("-h") | Some("--help") => {
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Usage: https <url|info|sha256>\n\n");
                 vga::print_str("Description:\n  Perform encrypted HTTPS GET request over Native TLS 1.3 Engine (AES-128-GCM, X25519 ECDH, HKDF-SHA256).\n\n");
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
                 vga::print_str("Subcommands:\n  info    Query Native TLS 1.3 cryptographic engine parameters and status\n  sha256  Execute FIPS 180-4 SHA-256 digest self-test\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             Some("info") | None => {
                 vga::set_color(vga::Color::White, vga::Color::Black);
@@ -55,50 +60,46 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             }
             Some(url) => {
-                // Strip https:// prefix if present
-                let hostname = if url.starts_with("https://") {
-                    &url[8..]
-                } else {
-                    url
+                let parsed = match ParsedUrl::parse(url) {
+                    Ok(p) => p,
+                    Err(err) => {
+                        print_status_badge("Error", vga::Color::LightRed);
+                        vga::print_str("URL parse error: ");
+                        vga::print_str(err);
+                        vga::print_str("\n");
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                        return;
+                    }
                 };
-
-                // Strip trailing / if present
-                let hostname = hostname.trim_end_matches('/');
 
                 keira_net::driver::e1000::init();
 
-                vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("TLS 1.3 Handshake: ");
-                vga::print_str(hostname);
-                vga::print_str(":443\n");
-                vga::set_color(vga::Color::White, vga::Color::Black);
+                print_status_badge("Connecting", vga::Color::LightGreen);
+                vga::print_str("https://");
+                vga::print_str(parsed.host);
+                if parsed.port != 443 {
+                    vga::print_str(":");
+                    vga::print_u64(parsed.port as u64);
+                }
+                vga::print_str(" (TLS 1.3 AES-128-GCM, X25519 ECDH)...\n");
 
-                vga::print_str("  [1/4] Client Hello      -> Sent (X25519 key share)\n");
-                vga::print_str("  [2/4] Server Hello      <- Received\n");
-                vga::print_str("  [3/4] Key Derivation    [OK] HKDF-SHA256 Complete\n");
-                vga::print_str("  [4/4] Finished          [OK] Handshake Complete\n\n");
-
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                vga::print_str("  Cipher : TLS_AES_128_GCM_SHA256\n");
-                vga::print_str("  Status : ENCRYPTED (TLS 1.3 Session Ready)\n\n");
-
-                let (host, path) = match hostname.find('/') {
-                    Some(idx) => (&hostname[..idx], &hostname[idx..]),
-                    None => (hostname, "/"),
-                };
-
-                match keira_net::tls::fetch_https(host, path) {
+                match keira_net::tls::fetch_https(parsed.host, parsed.path) {
                     Ok((resp_buf, bytes)) => {
-                        vga::set_color(vga::Color::White, vga::Color::Black);
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                         if let Ok(s) = core::str::from_utf8(&resp_buf[..bytes]) {
                             vga::print_str(s);
+                            if !s.ends_with('\n') {
+                                vga::print_str("\n");
+                            }
                         }
-                        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                        vga::print_str("\n[HTTPS Complete: Response stream received]\n");
+                        print_status_badge("Finished", vga::Color::LightGreen);
+                        vga::print_str("TLS 1.3 encrypted transfer completed (");
+                        vga::print_u64(bytes as u64);
+                        vga::print_str(" bytes)\n");
                     }
                     Err(err) => {
-                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                        vga::print_str("HTTPS Error: ");
+                        print_status_badge("Error", vga::Color::LightRed);
+                        vga::print_str("TLS 1.3 request failed: ");
                         vga::print_str(err);
                         vga::print_str("\n");
                     }

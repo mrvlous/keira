@@ -16,6 +16,6 @@ pub mod ipc;
 #[cfg(test)]
 mod tests;
 
-pub use client::{download, https, network};
+pub use client::{download, fetch, https, network};
 pub use filter::firewall;
 pub use ipc::mqueue;

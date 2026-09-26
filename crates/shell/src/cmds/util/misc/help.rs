@@ -46,8 +46,8 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Network & Security:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  network   download  https     firewall  bpf       seccomp   mac\n");
-        vga::print_str("  tpm\n\n");
+        vga::print_str("  network   download  fetch     https     firewall  bpf       seccomp\n");
+        vga::print_str("  mac       tpm\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("General Utilities:\n");
