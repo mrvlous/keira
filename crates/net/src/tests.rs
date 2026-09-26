@@ -64,7 +64,7 @@ mod test {
 
     #[test]
     fn test_user_agent_format() {
-        assert!(HTTP_USER_AGENT.starts_with("KeiraKernel/"));
-        assert!(HTTP_USER_AGENT.contains("KeiraNet/"));
+        assert!(HTTP_USER_AGENT.contains("KeiraKernel/"));
+        assert!(HTTP_USER_AGENT.contains("x86_64"));
     }
 }

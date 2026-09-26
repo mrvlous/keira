@@ -76,17 +76,7 @@ pub use tls::native::{
 };
 
 #[cfg(target_arch = "x86_64")]
-pub const HTTP_USER_AGENT: &str = concat!(
-    "KeiraKernel/",
-    env!("CARGO_PKG_VERSION"),
-    " (Keira-Kernel; Bare-Metal; x86_64) KeiraNet/",
-    env!("CARGO_PKG_VERSION")
-);
+pub const HTTP_USER_AGENT: &str = "Mozilla/5.0 (compatible; KeiraKernel/0.4.0; x86_64)";
 
 #[cfg(not(target_arch = "x86_64"))]
-pub const HTTP_USER_AGENT: &str = concat!(
-    "KeiraKernel/",
-    env!("CARGO_PKG_VERSION"),
-    " (Keira-Kernel; Bare-Metal; generic) KeiraNet/",
-    env!("CARGO_PKG_VERSION")
-);
+pub const HTTP_USER_AGENT: &str = "Mozilla/5.0 (compatible; KeiraKernel/0.4.0; i686)";

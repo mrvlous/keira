@@ -146,17 +146,6 @@ where
                 Ok((payload, cl))
             }
         }
-        Err(e) => {
-            if target_ip != [10, 0, 2, 2] {
-                crate::tcp::stream::fetch_stream_download(
-                    [10, 0, 2, 2],
-                    443,
-                    &enc_buf[..enc_len],
-                    on_progress,
-                )
-            } else {
-                Err(e)
-            }
-        }
+        Err(e) => Err(e),
     }
 }

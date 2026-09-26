@@ -78,25 +78,11 @@ where
     req_buf[req_len..req_len + ua_bytes.len()].copy_from_slice(ua_bytes);
     req_len += ua_bytes.len();
 
-    let req_end = b"\r\nConnection: close\r\n\r\n";
+    let req_end = b"\r\nAccept: */*\r\nConnection: close\r\n\r\n";
     req_buf[req_len..req_len + req_end.len()].copy_from_slice(req_end);
     req_len += req_end.len();
 
-    match fetch_stream_download(target_ip, target_port, &req_buf[..req_len], on_progress) {
-        Ok(res) => Ok(res),
-        Err(err) => {
-            if target_ip != [10, 0, 2, 2] {
-                fetch_stream_download(
-                    [10, 0, 2, 2],
-                    target_port,
-                    &req_buf[..req_len],
-                    |_cur, _total| {},
-                )
-            } else {
-                Err(err)
-            }
-        }
-    }
+    fetch_stream_download(target_ip, target_port, &req_buf[..req_len], on_progress)
 }
 
 /// Fetch an HTTP resource over the network stack (Ethernet -> IPv4 -> TCP:80 -> HTTP GET).

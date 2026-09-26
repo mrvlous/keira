@@ -25,6 +25,12 @@ pub unsafe fn lookup_mac(ip: &[u8; 4]) -> Result<[u8; 6], &'static str> {
         }
     }
 
+    // Default Gateway routing: If destination IP is outside local subnet 10.0.2.0/24,
+    // traffic must be routed to the gateway router (10.0.2.2).
+    if ip[0] != 10 || ip[1] != 0 || ip[2] != 2 {
+        return lookup_mac(&[10, 0, 2, 2]);
+    }
+
     if ip == &[10, 0, 2, 2] || ip == &[10, 0, 2, 15] {
         let mac = [0x52, 0x54, 0x00, 0x12, 0x35, 0x02];
         update_arp_cache(ip, &mac);

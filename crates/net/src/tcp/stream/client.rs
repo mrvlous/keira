@@ -233,11 +233,14 @@ where
         }
     }
 
+    let dest_mac = crate::arp::protocol::lookup_mac(&target_ip)
+        .unwrap_or([0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
+
     send_arp_announcement();
 
     // 1. Send SYN
     let mut syn_frame = [0u8; 60];
-    syn_frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+    syn_frame[0..6].copy_from_slice(&dest_mac);
     syn_frame[6..12].copy_from_slice(&mac);
     syn_frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -265,12 +268,12 @@ where
 
     e1000::transmit_raw_frame(&syn_frame[..54])?;
 
-    // 2. Wait for SYN-ACK with Retransmission (up to 2 attempts, 1000ms timeout per attempt)
+    // 2. Wait for SYN-ACK with Retransmission (up to 3 attempts, 1000ms timeout per attempt)
     let mut server_seq = 0u32;
     let mut synack_received = false;
     let mut rx_buf = [0u8; 2048];
 
-    for attempt in 0..2 {
+    for attempt in 0..3 {
         let start_tick = get_uptime_ms();
         if attempt > 0 {
             let _ = e1000::transmit_raw_frame(&syn_frame[..54]);
@@ -316,7 +319,7 @@ where
 
     // 3. Send PSH-ACK with request data
     let mut data_frame = [0u8; 1024];
-    data_frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+    data_frame[0..6].copy_from_slice(&dest_mac);
     data_frame[6..12].copy_from_slice(&mac);
     data_frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -355,7 +358,7 @@ where
     // Helper to send TCP ACK
     let send_ack = |client_seq: u32, ack_num: u32| -> Result<(), &'static str> {
         let mut ack_frame = [0u8; 54];
-        ack_frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+        ack_frame[0..6].copy_from_slice(&dest_mac);
         ack_frame[6..12].copy_from_slice(&mac);
         ack_frame[12..14].copy_from_slice(&[0x08, 0x00]);
 
@@ -391,9 +394,14 @@ where
     let mut data_retransmitted = false;
     let client_cur_seq = initial_seq.wrapping_add(1 + request_data.len() as u32);
 
-    while get_uptime_ms() < last_packet_time + 15000 {
-        if total_downloaded == 0 && !data_retransmitted && get_uptime_ms() > last_packet_time + 2500
-        {
+    loop {
+        let now = get_uptime_ms();
+        let timeout_limit = if total_downloaded > 0 { 2500 } else { 35000 };
+        if now >= last_packet_time + timeout_limit {
+            break;
+        }
+
+        if total_downloaded == 0 && !data_retransmitted && now > last_packet_time + 15000 {
             data_retransmitted = true;
             let _ = e1000::transmit_raw_frame(&data_frame[..frame_len]);
         }
@@ -428,6 +436,7 @@ where
                                 for i in 0..payload.len().saturating_sub(3) {
                                     if &payload[i..i + 4] == b"\r\n\r\n" {
                                         body_start = Some(i + 4);
+                                        headers_stripped = true;
                                         if let Ok(hdr_str) = core::str::from_utf8(&payload[..i]) {
                                             for line in hdr_str.lines() {
                                                 if let Some(cl_str) =
@@ -448,11 +457,10 @@ where
                                         break;
                                     }
                                 }
-                                headers_stripped = true;
                                 if let Some(bs) = body_start {
                                     &payload[bs..]
                                 } else {
-                                    payload
+                                    &[]
                                 }
                             } else {
                                 payload
@@ -480,6 +488,26 @@ where
                                     break;
                                 }
                             }
+
+                            let chunk_ended = (total_downloaded >= 5 && {
+                                let buf_ptr = (&raw const STREAM_DOWNLOAD_BUFFER) as *const u8;
+                                let slice5 = core::slice::from_raw_parts(
+                                    buf_ptr.add(total_downloaded - 5),
+                                    5,
+                                );
+                                slice5 == b"0\r\n\r\n"
+                            }) || (total_downloaded >= 7 && {
+                                let buf_ptr = (&raw const STREAM_DOWNLOAD_BUFFER) as *const u8;
+                                let slice7 = core::slice::from_raw_parts(
+                                    buf_ptr.add(total_downloaded - 7),
+                                    7,
+                                );
+                                slice7 == b"\r\n0\r\n\r\n"
+                            });
+
+                            if chunk_ended {
+                                break;
+                            }
                         }
                     }
 
@@ -492,7 +520,7 @@ where
         }
     }
 
-    if total_downloaded == 0 {
+    if total_downloaded == 0 && !headers_stripped {
         return Err("Connection timed out: Remote host did not return data payload");
     }
 
