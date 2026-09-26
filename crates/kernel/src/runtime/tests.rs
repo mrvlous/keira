@@ -11,5 +11,5 @@
 
 #[test]
 fn test_runtime_version_format() {
-    assert_eq!(env!("CARGO_PKG_VERSION"), "0.4.0");
+    assert_eq!(env!("CARGO_PKG_VERSION"), "0.5.0");
 }

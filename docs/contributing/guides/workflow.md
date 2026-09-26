@@ -10,7 +10,7 @@ This document outlines the branch management, contribution workflow, automated q
 
 ```mermaid
 gitGraph
-    commit id: "v0.4.0"
+    commit id: "v0.5.0"
     branch feat/ext4-extent
     checkout feat/ext4-extent
     commit id: "feat(fs): add extent tree traversal"

@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
            total_calls + num_opened + churn_iterations + signal_bursts);
     printf("Execution Duration: %ld ms | Kernel Status: ROCK SOLID / ZERO PANIC\n",
            (long)elapsed_ms);
-    puts("Keira Kernel v0.4.0 Production Stability Criteria: 100% MET [OK]");
+    puts("Keira Kernel v0.5.0 Production Stability Criteria: 100% MET [OK]");
 
     return 0;
 }

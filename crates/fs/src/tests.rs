@@ -35,7 +35,7 @@ fn test_read_proc_version_and_cpuinfo() {
     let mut buf = [0u8; 512];
     let n = read_proc_file("version", &mut buf).expect("read version failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 version");
-    assert!(s.contains("Keira Kernel version 0.4.0"));
+    assert!(s.contains("Keira Kernel version 0.5.0"));
 
     let n = read_proc_file("cpuinfo", &mut buf).expect("read cpuinfo failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 cpuinfo");
