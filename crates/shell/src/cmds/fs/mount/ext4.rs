@@ -186,7 +186,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("[TEST] Executing Native Linux EXT4 Driver Self-Test...\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            let sb = get_ext4_superblock().expect("EXT4 Superblock should be mounted");
+            let sb = match get_ext4_superblock() {
+                Some(s) => s,
+                None => {
+                    vga::print_str("  1. EXT4 Superblock should be mounted - FAIL\n");
+                    return;
+                }
+            };
             vga::print_str("  1. Verified superblock magic (0xEF53) - OK\n");
 
             let bg_count = sb.block_groups_count();
@@ -194,21 +200,36 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_u64(bg_count as u64);
             vga::print_str(" BGs) - OK\n");
 
-            let root = read_inode(EXT4_ROOT_INO).expect("Root inode #2 should be valid");
+            let root = match read_inode(EXT4_ROOT_INO) {
+                Ok(r) => r,
+                Err(_) => {
+                    vga::print_str("  3. Root inode #2 should be valid - FAIL\n");
+                    return;
+                }
+            };
             assert!(root.is_dir());
             vga::print_str("  3. Validated root inode #2 mode (0o755 directory) - OK\n");
 
-            let ext = root
-                .first_extent()
-                .expect("Root inode must contain extent leaf");
+            let ext = match root.first_extent() {
+                Some(e) => e,
+                None => {
+                    vga::print_str("  4. Root inode must contain extent leaf - FAIL\n");
+                    return;
+                }
+            };
             assert_eq!(ext.ee_block, 0);
             vga::print_str("  4. Traversed extent tree (Physical LBA: ");
             vga::print_u64(ext.physical_block());
             vga::print_str(") - OK\n");
 
             let mut test_buf = [0u8; 64];
-            let read_bytes = read_file_content("/boot.cfg", &mut test_buf)
-                .expect("File read over extents should succeed");
+            let read_bytes = match read_file_content("/boot.cfg", &mut test_buf) {
+                Ok(b) => b,
+                Err(_) => {
+                    vga::print_str("  5. File read over extents should succeed - FAIL\n");
+                    return;
+                }
+            };
             assert!(read_bytes > 0);
             vga::print_str("  5. Read regular file /boot.cfg over extents (");
             vga::print_u64(read_bytes as u64);

@@ -231,22 +231,46 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str(") - OK\n");
 
             // 2. VM Creation
-            let test_vm_id = create_vm().expect("Test VM creation failed");
+            let test_vm_id = match create_vm() {
+                Ok(id) => id,
+                Err(_) => {
+                    vga::print_str("  2. Test VM creation failed\n");
+                    return;
+                }
+            };
             assert!(test_vm_id >= 1);
             vga::print_str("  2. Allocated virtual machine #");
             vga::print_u64(test_vm_id);
             vga::print_str(" context - OK\n");
 
             // 3. vCPU register validation
-            let vm = get_vm_snapshot(test_vm_id).expect("Snapshot lookup failed");
-            let vcpu0 = vm.vcpus[0].expect("vCPU 0 must exist");
+            let vm = match get_vm_snapshot(test_vm_id) {
+                Some(v) => v,
+                None => {
+                    vga::print_str("  3. Snapshot lookup failed\n");
+                    return;
+                }
+            };
+            let vcpu0 = match vm.vcpus[0] {
+                Some(vc) => vc,
+                None => {
+                    vga::print_str("  3. vCPU 0 must exist\n");
+                    return;
+                }
+            };
             assert_eq!(vcpu0.regs.rip, 0x0000_FFF0);
             vga::print_str("  3. Verified reset register baseline (RIP: ");
             vga::print_hex(vcpu0.regs.rip);
             vga::print_str(") - OK\n");
 
             // 4. vCPU step execution & VM-exit
-            let exit_val = run_vcpu(test_vm_id, 0).expect("vCPU step execution failed");
+            let exit_val = match run_vcpu(test_vm_id, 0) {
+                Ok(val) => val,
+                Err(_) => {
+                    vga::print_str("  4. vCPU step execution failed\n");
+                    return;
+                }
+            };
             assert!(exit_val >= 1 && exit_val <= 7);
             vga::print_str("  4. Executed vCPU instruction pipeline (Exit Code ");
             vga::print_u64(exit_val);

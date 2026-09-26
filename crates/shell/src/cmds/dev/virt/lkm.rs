@@ -183,8 +183,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
             // 1. Symbol resolution
-            let sym_addr =
-                resolve_symbol("vga_print_str").expect("Core symbol vga_print_str must resolve");
+            let sym_addr = match resolve_symbol("vga_print_str") {
+                Some(addr) => addr,
+                None => {
+                    vga::print_str("  1. Failed to resolve static kallsyms symbol\n");
+                    return;
+                }
+            };
             assert_eq!(sym_addr, 0xFFFF_8000_0010_1000);
             vga::print_str("  1. Verified static kallsyms resolution (vga_print_str -> ");
             vga::print_hex(sym_addr);
@@ -192,11 +197,18 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
             // 2. Dynamic symbol export
             let dyn_res = register_symbol("test_hook_handler", 0xFFFF_8000_0088_0000, true);
-            assert!(
-                dyn_res.is_ok() || dyn_res.err().unwrap().as_str() == "Symbol already exported"
-            );
-            let resolved = resolve_symbol("test_hook_handler")
-                .expect("Dynamic symbol must resolve after export");
+            let dyn_ok = match &dyn_res {
+                Ok(_) => true,
+                Err(e) => e.as_str() == "Symbol already exported",
+            };
+            assert!(dyn_ok);
+            let resolved = match resolve_symbol("test_hook_handler") {
+                Some(addr) => addr,
+                None => {
+                    vga::print_str("  2. Failed to resolve dynamic symbol after export\n");
+                    return;
+                }
+            };
             assert_eq!(resolved, 0xFFFF_8000_0088_0000);
             vga::print_str("  2. Registered and resolved dynamic module symbol - OK\n");
 
@@ -214,9 +226,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             // 4. Verification in snapshot
             let mod_opt = get_module(mod_test);
             assert!(mod_opt.is_some());
-            let m = mod_opt.unwrap();
-            assert_eq!(m.name_str(), mod_test);
-            assert_eq!(m.size, 8192);
+            if let Some(m) = mod_opt {
+                assert_eq!(m.name_str(), mod_test);
+                assert_eq!(m.size, 8192);
+            }
             vga::print_str("  4. Query and descriptor verification from module table - OK\n");
 
             // 5. Unload module

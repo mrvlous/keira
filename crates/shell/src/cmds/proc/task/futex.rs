@@ -47,8 +47,13 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         return;
     }
 
+    let cmd = match subcmd {
+        Some(c) => c,
+        None => return,
+    };
+
     unsafe {
-        match subcmd.unwrap() {
+        match cmd {
             "status" => {
                 let (waits, wakes, requeues, active) = get_futex_stats();
                 vga::set_color(vga::Color::White, vga::Color::Black);
