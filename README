@@ -8,11 +8,11 @@ Ring 0 built from scratch in safe Rust, Assembly, and C, supporting both modern
 Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers, and
 provides a preemptive multitasking scheduler, multi-core Symmetric
-Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, POSIX
+Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 81 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
-initrd, Ring 3 userland isolation with 42 verified ABI security test vectors,
+initrd, Ring 3 userland isolation with 45+ verified ABI security test vectors,
 bare-metal io_uring asynchronous I/O engine, High-Precision Event Timer
-(HPET) monotonic clocks, and an in-kernel C compiler (kcc.elf).
+(HPET) monotonic clocks, an interactive 76-command diagnostic shell, and an in-kernel C compiler (kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
@@ -24,10 +24,11 @@ of computer systems:
 * Multi-Core SMP: 16-bit real-mode AP bootstrap trampoline (0x8000), Local APIC INIT-SIPI-SIPI wake sequence, ACPI MADT hardware discovery, per-CPU stacks, and race-free swapgs syscall re-entrancy.
 * Memory Architecture: Frame bitmapped allocator, 4-level paging, and heap.
 * Multitasking: Preemptive timer-tick context switching and POSIX signals.
-* Bare-Metal Networking: e1000/RTL8139, ARP, IPv4, UDP, DHCP, DNS, TCP, TLS.
+* Bare-Metal Networking: e1000/RTL8139, ARP, IPv4, UDP, DHCP, DNS, TCP, TLS 1.3 socket engine, and Netfilter firewall.
 * Storage & Filesystems: ATA, AHCI, NVMe, FAT16, block LRU cache, and VFS.
 * Asynchronous I/O: Bare-metal io_uring submission/completion queue engine.
-* Kernel Control Plane: Interactive Ring 0 diagnostic shell, hardware telemetry, and VFS management.
+* Security Enclaves: TPM 2.0 TIS MMIO, PCR banks, Seccomp BPF, MAC, and in-kernel eBPF virtual machine.
+* Kernel Control Plane: Interactive Ring 0 diagnostic shell with 76 built-in commands, hardware telemetry, and VFS management.
 
 Read the detailed engineering journal: docs/journey/README.md
 
