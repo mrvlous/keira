@@ -20,27 +20,26 @@ graph TD
 
 ---
 
-## 2. Mount Point Structure (`crates/fs/src/vfs/mount/`)
+## 2. Path Routing & Filesystem Dispatch (`crates/fs/src/vfs/path/router.rs`)
+
+Keira routes unified virtual paths to their corresponding filesystem drivers via `route_path`:
 
 ```rust
-pub struct MountEntry {
-    pub mount_point: String,
-    pub fs: Arc<dyn FilesystemDriver + Send + Sync>,
-    pub flags: MountFlags,
-}
+use crate::vfs::types::FilesystemType;
 
-pub struct MountTable {
-    mounts: Vec<MountEntry>,
-}
-
-impl MountTable {
-    /// Resolves an absolute path to the longest matching mount entry and relative path.
-    pub fn resolve(&self, path: &str) -> Option<(&MountEntry, &str)> {
-        self.mounts
-            .iter()
-            .filter(|m| path.starts_with(&m.mount_point))
-            .max_by_key(|m| m.mount_point.len())
-            .map(|m| (m, &path[m.mount_point.len()..]))
+/// Routes an absolute or relative path to its target filesystem type and relative sub-path.
+pub fn route_path(path: &str) -> (&str, FilesystemType) {
+    let resolved = resolve_alias_path(path);
+    if let Some(rest) = resolved.strip_prefix("/system/proc/") {
+        (rest, FilesystemType::Proc)
+    } else if let Some(rest) = resolved.strip_prefix("/proc/") {
+        (rest, FilesystemType::Proc)
+    } else if let Some(rest) = resolved.strip_prefix("/system/dev/") {
+        (rest, FilesystemType::Dev)
+    } else if let Some(rest) = resolved.strip_prefix("/initrd/") {
+        (rest, FilesystemType::Initrd)
+    } else {
+        (resolved, FilesystemType::Fat)
     }
 }
 ```
