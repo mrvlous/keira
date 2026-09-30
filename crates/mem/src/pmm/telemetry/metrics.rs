@@ -42,11 +42,7 @@ pub fn free_memory() -> u64 {
     let _guard = PmmGuard::lock();
     let total = unsafe { TOTAL_USABLE_RAM };
     let used = unsafe { USED_FRAMES_COUNT * PAGE_SIZE };
-    if total > used {
-        total - used
-    } else {
-        0
-    }
+    total.saturating_sub(used)
 }
 
 /// Queries a tuple snapshot of memory counters: `(total_usable_bytes, used_bytes, free_bytes)`.

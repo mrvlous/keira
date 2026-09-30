@@ -14,7 +14,7 @@ use super::super::frame::bitmap::FREE_LIST_HEAD;
 use super::super::frame::bitmap::{ALLOCATION_BITMAP, TOTAL_USABLE_RAM, USED_FRAMES_COUNT};
 #[cfg(not(test))]
 use super::super::frame::types::MAX_TRACKED_FRAMES;
-use super::super::frame::types::{BITMAP_WORDS, PAGE_SIZE};
+use super::super::frame::types::PAGE_SIZE;
 #[cfg(not(test))]
 use super::super::region::descriptor::is_valid_ram_range;
 use super::super::sync::PmmGuard;
@@ -23,8 +23,8 @@ use super::super::sync::PmmGuard;
 pub fn verify_pmm_invariants_locked() -> Result<(), &'static str> {
     unsafe {
         let mut bitmap_allocated_count: u64 = 0;
-        for i in 0..BITMAP_WORDS {
-            bitmap_allocated_count += ALLOCATION_BITMAP[i].count_ones() as u64;
+        for word in ALLOCATION_BITMAP.iter() {
+            bitmap_allocated_count += word.count_ones() as u64;
         }
 
         if bitmap_allocated_count != USED_FRAMES_COUNT {

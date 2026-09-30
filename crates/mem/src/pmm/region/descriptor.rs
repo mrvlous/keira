@@ -34,7 +34,7 @@ pub(crate) static mut MAX_PHYS_ADDR: u64 = 0;
 /// Ensures the requested span does not bridge across reserved memory holes or unmapped address ranges.
 /// Any range below 1 MiB or exceeding 4 GiB is rejected.
 pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
-    if size == 0 || (start % PAGE_SIZE) != 0 {
+    if size == 0 || !start.is_multiple_of(PAGE_SIZE) {
         return false;
     }
     let end = match start.checked_add(size) {
@@ -46,8 +46,7 @@ pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
     }
     unsafe {
         if REGION_COUNT > 0 {
-            for i in 0..REGION_COUNT {
-                let region = REGIONS[i];
+            for region in REGIONS.iter().take(REGION_COUNT) {
                 if start >= region.start && end <= region.end {
                     return true;
                 }

@@ -270,7 +270,7 @@ fn test_region_crossing_4gib_boundary_capped_or_rejected() {
 
     let ok = free_contiguous_frames(0xE000_0000, (0x2000_0000 / PAGE_SIZE) as usize);
     assert!(ok);
-    assert_eq!(get_freed_frame_count(), (0x2000_0000 / PAGE_SIZE) as u64);
+    assert_eq!(get_freed_frame_count(), 0x2000_0000 / PAGE_SIZE);
 
     assert!(!free_frame(0x1_0000_0000));
     assert!(!free_contiguous_frames(0x1_0000_0000, 512));

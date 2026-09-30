@@ -84,10 +84,7 @@ pub fn alloc_contiguous_frames(count: usize) -> Option<u64> {
     let _guard = PmmGuard::lock();
 
     unsafe {
-        let needed_bytes = match (count as u64).checked_mul(PAGE_SIZE) {
-            Some(b) => b,
-            None => return None,
-        };
+        let needed_bytes = (count as u64).checked_mul(PAGE_SIZE)?;
 
         while CURRENT_REGION_IDX < REGION_COUNT {
             let region = &mut REGIONS[CURRENT_REGION_IDX];
@@ -170,7 +167,7 @@ pub fn alloc_order(order: u8) -> Option<u64> {
 
 /// Checks whether a physical frame is currently marked as allocated in the PMM bitmap.
 pub fn is_frame_allocated(frame: u64) -> bool {
-    if frame >= MAX_PHYS_ADDR_LIMIT || (frame % PAGE_SIZE) != 0 {
+    if frame >= MAX_PHYS_ADDR_LIMIT || !frame.is_multiple_of(PAGE_SIZE) {
         return false;
     }
     let frame_idx = (frame / PAGE_SIZE) as usize;
@@ -229,8 +226,8 @@ pub fn reset_pmm_stats() {
         CURRENT_REGION_IDX = 0;
         TOTAL_USABLE_RAM = 0;
         MAX_PHYS_ADDR = 0;
-        for i in 0..BITMAP_WORDS {
-            ALLOCATION_BITMAP[i] = 0;
+        for slot in ALLOCATION_BITMAP.iter_mut() {
+            *slot = 0;
         }
     }
 }
@@ -282,8 +279,8 @@ pub fn set_test_ram_region_empty(start: u64, end: u64) {
             TOTAL_USABLE_RAM = size;
             MAX_PHYS_ADDR = capped_end;
             USED_FRAMES_COUNT = 0;
-            for i in 0..BITMAP_WORDS {
-                ALLOCATION_BITMAP[i] = 0;
+            for slot in ALLOCATION_BITMAP.iter_mut() {
+                *slot = 0;
             }
         } else {
             REGION_COUNT = 0;
@@ -298,10 +295,9 @@ pub fn set_test_ram_region_empty(start: u64, end: u64) {
 ///
 /// Returns `true` on successful deallocation, or `false` on double-free or invalid addresses.
 pub fn free_frame(frame: u64) -> bool {
-    if (frame % PAGE_SIZE) != 0
+    if !frame.is_multiple_of(PAGE_SIZE)
         || frame == 0
-        || frame < KERNEL_BASE_1MB
-        || frame >= MAX_PHYS_ADDR_LIMIT
+        || !(KERNEL_BASE_1MB..MAX_PHYS_ADDR_LIMIT).contains(&frame)
     {
         return false;
     }
@@ -316,9 +312,7 @@ pub fn free_frame(frame: u64) -> bool {
     unsafe {
         mark_frame_free(frame);
         FREED_FRAME_COUNT += 1;
-        if USED_FRAMES_COUNT > 0 {
-            USED_FRAMES_COUNT -= 1;
-        }
+        USED_FRAMES_COUNT = USED_FRAMES_COUNT.saturating_sub(1);
 
         #[cfg(not(test))]
         {
@@ -335,9 +329,8 @@ pub fn free_frame(frame: u64) -> bool {
 /// if any frame was already free, out of bounds, or invalid.
 pub fn free_contiguous_frames(start_frame: u64, count: usize) -> bool {
     if count == 0
-        || (start_frame % PAGE_SIZE) != 0
-        || start_frame < KERNEL_BASE_1MB
-        || start_frame >= MAX_PHYS_ADDR_LIMIT
+        || !start_frame.is_multiple_of(PAGE_SIZE)
+        || !(KERNEL_BASE_1MB..MAX_PHYS_ADDR_LIMIT).contains(&start_frame)
     {
         return false;
     }
