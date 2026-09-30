@@ -183,11 +183,9 @@ pub unsafe fn mq_receive(
     let mut highest_prio: u32 = 0;
 
     for (idx, slot) in q.messages.iter().enumerate() {
-        if slot.in_use {
-            if best_idx.is_none() || slot.prio > highest_prio {
-                highest_prio = slot.prio;
-                best_idx = Some(idx);
-            }
+        if slot.in_use && (best_idx.is_none() || slot.prio > highest_prio) {
+            highest_prio = slot.prio;
+            best_idx = Some(idx);
         }
     }
 
@@ -266,13 +264,14 @@ pub unsafe fn find_queue_mut(
     Err("Specified message queue does not exist")
 }
 
+#[allow(clippy::result_unit_err)]
 pub fn parse_u32(s: &str) -> Result<u32, ()> {
     if s.is_empty() {
         return Err(());
     }
     let mut val: u32 = 0;
     for b in s.bytes() {
-        if b < b'0' || b > b'9' {
+        if !b.is_ascii_digit() {
             return Err(());
         }
         val = val.checked_mul(10).ok_or(())?;

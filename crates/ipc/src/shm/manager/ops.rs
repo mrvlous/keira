@@ -27,8 +27,7 @@ pub unsafe fn sys_shm_sem(cmd: u32, arg1: u64, _arg2: u64) -> Result<u64, &'stat
         SHM_CMD_INFO => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active POSIX Shared Memory Segments:\n");
-            for i in 0..SHM_TABLE.len() {
-                let seg = &SHM_TABLE[i];
+            for seg in &SHM_TABLE {
                 if !seg.in_use {
                     continue;
                 }
@@ -50,8 +49,7 @@ pub unsafe fn sys_shm_sem(cmd: u32, arg1: u64, _arg2: u64) -> Result<u64, &'stat
 
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Active POSIX Counting Semaphores:\n");
-            for i in 0..SEM_TABLE.len() {
-                let sem = &SEM_TABLE[i];
+            for sem in &SEM_TABLE {
                 if !sem.in_use {
                     continue;
                 }

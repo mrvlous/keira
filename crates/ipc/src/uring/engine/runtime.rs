@@ -67,10 +67,7 @@ pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str
             }
         }
 
-        let slot_idx = match chosen_slot {
-            Some(idx) => idx,
-            None => 0,
-        };
+        let slot_idx = chosen_slot.unwrap_or_default();
 
         let ring = &mut RINGS[slot_idx];
         ring.reset(entries, 0);
@@ -208,7 +205,7 @@ pub fn process_single_sqe(sqe: &SubmissionQueueEntry) -> CompletionQueueEntry {
                             return cqe;
                         }
 
-                        let path_len = (f_desc.path_len as usize).min(64);
+                        let path_len = f_desc.path_len.min(64);
                         if let Ok(path_str) = core::str::from_utf8(&f_desc.path[..path_len]) {
                             let dest = core::slice::from_raw_parts_mut(buf_ptr, len);
                             let actual_offset = if off != 0 { off } else { f_desc.offset };
@@ -277,7 +274,7 @@ pub fn process_single_sqe(sqe: &SubmissionQueueEntry) -> CompletionQueueEntry {
                             return cqe;
                         }
 
-                        let path_len = (f_desc.path_len as usize).min(64);
+                        let path_len = f_desc.path_len.min(64);
                         if let Ok(path_str) = core::str::from_utf8(&f_desc.path[..path_len]) {
                             let src = core::slice::from_raw_parts(buf_ptr, len);
                             let actual_offset = if off != 0 { off } else { f_desc.offset };

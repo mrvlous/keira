@@ -65,54 +65,52 @@ pub fn epoll_ctl_internal(
     event: EpollEvent,
 ) -> Result<u64, &'static str> {
     unsafe {
-        for slot in EPOLL_TABLE.iter_mut() {
-            if let Some(ref mut inst) = slot {
-                if inst.epfd == epfd && inst.active {
-                    match op {
-                        EPOLL_CTL_ADD => {
-                            for item in inst.items.iter() {
-                                if item.in_use && item.fd == fd {
-                                    return Err("Descriptor already registered");
-                                }
+        for inst in EPOLL_TABLE.iter_mut().flatten() {
+            if inst.epfd == epfd && inst.active {
+                match op {
+                    EPOLL_CTL_ADD => {
+                        for item in inst.items.iter() {
+                            if item.in_use && item.fd == fd {
+                                return Err("Descriptor already registered");
                             }
-                            for item in inst.items.iter_mut() {
-                                if !item.in_use {
-                                    *item = EpollItem {
-                                        fd,
-                                        event,
-                                        ready_events: event.events & (EPOLLIN | EPOLLOUT),
-                                        in_use: true,
-                                    };
-                                    inst.item_count += 1;
-                                    return Ok(0);
-                                }
-                            }
-                            return Err("Epoll item capacity exceeded");
                         }
-                        EPOLL_CTL_MOD => {
-                            for item in inst.items.iter_mut() {
-                                if item.in_use && item.fd == fd {
-                                    item.event = event;
-                                    item.ready_events = event.events & (EPOLLIN | EPOLLOUT);
-                                    return Ok(0);
-                                }
+                        for item in inst.items.iter_mut() {
+                            if !item.in_use {
+                                *item = EpollItem {
+                                    fd,
+                                    event,
+                                    ready_events: event.events & (EPOLLIN | EPOLLOUT),
+                                    in_use: true,
+                                };
+                                inst.item_count += 1;
+                                return Ok(0);
                             }
-                            return Err("Descriptor not registered");
                         }
-                        EPOLL_CTL_DEL => {
-                            for item in inst.items.iter_mut() {
-                                if item.in_use && item.fd == fd {
-                                    *item = EpollItem::default();
-                                    if inst.item_count > 0 {
-                                        inst.item_count -= 1;
-                                    }
-                                    return Ok(0);
-                                }
-                            }
-                            return Err("Descriptor not registered");
-                        }
-                        _ => return Err("Invalid epoll_ctl op"),
+                        return Err("Epoll item capacity exceeded");
                     }
+                    EPOLL_CTL_MOD => {
+                        for item in inst.items.iter_mut() {
+                            if item.in_use && item.fd == fd {
+                                item.event = event;
+                                item.ready_events = event.events & (EPOLLIN | EPOLLOUT);
+                                return Ok(0);
+                            }
+                        }
+                        return Err("Descriptor not registered");
+                    }
+                    EPOLL_CTL_DEL => {
+                        for item in inst.items.iter_mut() {
+                            if item.in_use && item.fd == fd {
+                                *item = EpollItem::default();
+                                if inst.item_count > 0 {
+                                    inst.item_count -= 1;
+                                }
+                                return Ok(0);
+                            }
+                        }
+                        return Err("Descriptor not registered");
+                    }
+                    _ => return Err("Invalid epoll_ctl op"),
                 }
             }
         }
@@ -121,6 +119,9 @@ pub fn epoll_ctl_internal(
 }
 
 /// Query current I/O readiness for a registered file descriptor.
+///
+/// # Safety
+/// Reads task descriptor table and raw socket/pipe/character device buffers directly.
 pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
     let mut ready = 0u32;
     if fd < 0 {
@@ -172,39 +173,37 @@ pub fn sys_epoll_wait(
     if maxevents <= 0 {
         return Err("Invalid maxevents");
     }
-    if events_out_ptr != 0 && events_out_ptr % 8 != 0 {
+    if events_out_ptr != 0 && !events_out_ptr.is_multiple_of(8) {
         return Err("Unaligned events_out_ptr");
     }
 
     unsafe {
-        for slot in EPOLL_TABLE.iter_mut() {
-            if let Some(ref mut inst) = slot {
-                if inst.epfd == epfd && inst.active {
-                    inst.total_polls += 1;
-                    let mut count: u32 = 0;
+        for inst in EPOLL_TABLE.iter_mut().flatten() {
+            if inst.epfd == epfd && inst.active {
+                inst.total_polls += 1;
+                let mut count: u32 = 0;
 
-                    for item in inst.items.iter_mut() {
-                        if item.in_use {
-                            let ready_now = check_fd_readiness(item.fd, item.event.events);
-                            if ready_now != 0 {
-                                item.ready_events = ready_now;
-                                if events_out_ptr != 0 && (count as i32) < maxevents {
-                                    let out_slot =
-                                        (events_out_ptr as *mut EpollEvent).add(count as usize);
-                                    *out_slot = EpollEvent {
-                                        events: ready_now,
-                                        data: item.event.data,
-                                    };
-                                }
-                                count += 1;
-                                if count as i32 >= maxevents {
-                                    break;
-                                }
+                for item in inst.items.iter_mut() {
+                    if item.in_use {
+                        let ready_now = check_fd_readiness(item.fd, item.event.events);
+                        if ready_now != 0 {
+                            item.ready_events = ready_now;
+                            if events_out_ptr != 0 && (count as i32) < maxevents {
+                                let out_slot =
+                                    (events_out_ptr as *mut EpollEvent).add(count as usize);
+                                *out_slot = EpollEvent {
+                                    events: ready_now,
+                                    data: item.event.data,
+                                };
+                            }
+                            count += 1;
+                            if count as i32 >= maxevents {
+                                break;
                             }
                         }
                     }
-                    return Ok(count as u64);
                 }
+                return Ok(count as u64);
             }
         }
     }
@@ -216,12 +215,10 @@ pub fn get_epoll_stats() -> (usize, usize) {
     let mut total_instances = 0;
     let mut total_items = 0;
     unsafe {
-        for slot in EPOLL_TABLE.iter() {
-            if let Some(ref inst) = slot {
-                if inst.active {
-                    total_instances += 1;
-                    total_items += inst.item_count;
-                }
+        for inst in EPOLL_TABLE.iter().flatten() {
+            if inst.active {
+                total_instances += 1;
+                total_items += inst.item_count;
             }
         }
     }
