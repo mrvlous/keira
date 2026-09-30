@@ -22,9 +22,9 @@ pub fn read_version(buf: &mut [u8]) -> Result<usize, &'static str> {
     const ARCH: &str = "unknown";
 
     let mut writer = BufWriter::new(buf);
-    let _ = write!(
+    let _ = writeln!(
         writer,
-        "Keira Kernel version 0.5.0 ({}) #1 SMP 2026 gcc (Freestanding) rustc\n",
+        "Keira Kernel version 0.5.0 ({}) #1 SMP 2026 gcc (Freestanding) rustc",
         ARCH
     );
     Ok(writer.len())

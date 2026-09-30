@@ -28,8 +28,7 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
         LVM_CMD_INFO => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("LVM Volume Group Topology:\n");
-            for i in 0..VOL_GROUPS.len() {
-                let vg = &VOL_GROUPS[i];
+            for vg in VOL_GROUPS.iter() {
                 if !vg.active {
                     continue;
                 }
@@ -100,8 +99,7 @@ pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'st
         LVM_CMD_RAID_STATUS => {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Software RAID State Table:\n");
-            for i in 0..RAID_ARRAYS.len() {
-                let raid = &RAID_ARRAYS[i];
+            for raid in RAID_ARRAYS.iter() {
                 if !raid.active {
                     continue;
                 }

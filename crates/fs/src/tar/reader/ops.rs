@@ -40,17 +40,15 @@ pub fn exists(path: &str) -> bool {
             }
         }
         let name = unsafe {
-            match core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len)) {
-                Ok(s) => s,
-                Err(_) => "",
-            }
+            core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len))
+                .unwrap_or_default()
         };
 
         if name == search_name || name.strip_prefix("./") == Some(search_name) {
             return true;
         }
 
-        let blocks = (size + 511) / 512;
+        let blocks = size.div_ceil(512);
         addr += 512 + (blocks * 512);
     }
 
@@ -85,17 +83,15 @@ pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
             }
         }
         let name = unsafe {
-            match core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len)) {
-                Ok(s) => s,
-                Err(_) => "",
-            }
+            core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len))
+                .unwrap_or_default()
         };
 
         if name == search_name || name.strip_prefix("./") == Some(search_name) {
             return Ok(size as usize);
         }
 
-        let blocks = (size + 511) / 512;
+        let blocks = size.div_ceil(512);
         addr += 512 + (blocks * 512);
     }
 
@@ -130,10 +126,8 @@ pub fn read_file_content(path: &str, buf: &mut [u8]) -> Result<usize, &'static s
             }
         }
         let name = unsafe {
-            match core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len)) {
-                Ok(s) => s,
-                Err(_) => "",
-            }
+            core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len))
+                .unwrap_or_default()
         };
 
         if name == search_name || name.strip_prefix("./") == Some(search_name) {
@@ -145,7 +139,7 @@ pub fn read_file_content(path: &str, buf: &mut [u8]) -> Result<usize, &'static s
             return Ok(read_len);
         }
 
-        let blocks = (size + 511) / 512;
+        let blocks = size.div_ceil(512);
         addr += 512 + (blocks * 512);
     }
 
@@ -180,10 +174,8 @@ pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize
             }
         }
         let name = unsafe {
-            match core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len)) {
-                Ok(s) => s,
-                Err(_) => "",
-            }
+            core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len))
+                .unwrap_or_default()
         };
 
         if name == search_name || name.strip_prefix("./") == Some(search_name) {
@@ -199,7 +191,7 @@ pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize
             return Ok(read_len);
         }
 
-        let blocks = (size + 511) / 512;
+        let blocks = size.div_ceil(512);
         addr += 512 + (blocks * 512);
     }
 

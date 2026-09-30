@@ -46,10 +46,8 @@ pub fn list_files() {
             }
         }
         let name = unsafe {
-            match core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len)) {
-                Ok(s) => s,
-                Err(_) => "unknown",
-            }
+            core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len))
+                .unwrap_or("unknown")
         };
         let typeflag = unsafe { *((addr + 156) as *const u8) };
 
@@ -67,7 +65,7 @@ pub fn list_files() {
             vga::print_str("\n");
         }
 
-        let blocks = (size + 511) / 512;
+        let blocks = size.div_ceil(512);
         addr += 512 + (blocks * 512);
     }
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -104,10 +102,8 @@ pub fn cat_file(path: &str) {
             }
         }
         let name = unsafe {
-            match core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len)) {
-                Ok(s) => s,
-                Err(_) => "",
-            }
+            core::str::from_utf8(core::slice::from_raw_parts(name_ptr, name_len))
+                .unwrap_or_default()
         };
 
         if name == search_name || name.strip_prefix("./") == Some(search_name) {
@@ -126,7 +122,7 @@ pub fn cat_file(path: &str) {
             return;
         }
 
-        let blocks = (size + 511) / 512;
+        let blocks = size.div_ceil(512);
         addr += 512 + (blocks * 512);
     }
 

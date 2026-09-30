@@ -30,10 +30,7 @@ pub fn read_cpuinfo(buf: &mut [u8]) -> Result<usize, &'static str> {
     vendor[0..4].copy_from_slice(&cpuid.ebx.to_le_bytes());
     vendor[4..8].copy_from_slice(&cpuid.edx.to_le_bytes());
     vendor[8..12].copy_from_slice(&cpuid.ecx.to_le_bytes());
-    let vendor_str = match core::str::from_utf8(&vendor) {
-        Ok(s) => s,
-        Err(_) => "UnknownCPU",
-    };
+    let vendor_str = core::str::from_utf8(&vendor).unwrap_or("UnknownCPU");
 
     let mut writer = BufWriter::new(buf);
     let _ = write!(

@@ -25,8 +25,7 @@ pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static st
         return Err("File lock path is too long");
     }
 
-    for i in 0..MAX_FILE_LOCKS {
-        let lock = &FILE_LOCKS[i];
+    for lock in FILE_LOCKS.iter() {
         if lock.is_locked
             && lock.path_len == path_bytes.len()
             && &lock.path[..lock.path_len] == path_bytes
@@ -39,8 +38,7 @@ pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static st
         }
     }
 
-    for i in 0..MAX_FILE_LOCKS {
-        let lock = &mut FILE_LOCKS[i];
+    for lock in FILE_LOCKS.iter_mut() {
         if !lock.is_locked {
             lock.is_locked = true;
             lock.path[..path_bytes.len()].copy_from_slice(path_bytes);
@@ -60,8 +58,7 @@ pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static st
 /// Modifies the global mutable lock table. Caller must ensure re-entrancy safety.
 pub unsafe fn release_lock(path: &str, task_id: usize) {
     let path_bytes = path.as_bytes();
-    for i in 0..MAX_FILE_LOCKS {
-        let lock = &mut FILE_LOCKS[i];
+    for lock in FILE_LOCKS.iter_mut() {
         if lock.is_locked
             && lock.holder_task_id == task_id
             && lock.path_len == path_bytes.len()
@@ -79,8 +76,7 @@ pub unsafe fn release_lock(path: &str, task_id: usize) {
 ///
 /// Modifies the global mutable lock table. Caller must ensure re-entrancy safety.
 pub unsafe fn release_all_locks_for_task(task_id: usize) {
-    for i in 0..MAX_FILE_LOCKS {
-        let lock = &mut FILE_LOCKS[i];
+    for lock in FILE_LOCKS.iter_mut() {
         if lock.is_locked && lock.holder_task_id == task_id {
             lock.is_locked = false;
             lock.path_len = 0;
