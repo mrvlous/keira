@@ -83,7 +83,7 @@ fn test_hpet_invalid_period_rejection() {
     unsafe {
         HPET_INITIALIZED = false;
         MOCK_HPET_MEM = [0u8; 1024];
-        let invalid_gcap = (0u64 << 32) | (0x8086u64 << 16) | 1u64;
+        let invalid_gcap = (0x8086u64 << 16) | 1u64;
         write_reg64(HPET_REG_GCAP_ID, invalid_gcap);
     }
 

@@ -115,7 +115,7 @@ pub fn get_core_info(index: usize) -> Option<CpuCore> {
 pub fn send_ipi(target_apic_id: u8, vector: u8) {
     unsafe {
         let icr_high = (target_apic_id as u32) << 24;
-        let icr_low = (vector as u32) | (0 << 8) | (0 << 11);
+        let icr_low = vector as u32;
         apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
         apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
     }

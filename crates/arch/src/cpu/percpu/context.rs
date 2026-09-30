@@ -143,6 +143,10 @@ pub unsafe fn load_percpu_msrs(core_id: usize) {
         );
         crate::cpu::control::msr::wrmsr(crate::cpu::control::msr::IA32_KERNEL_GS_BASE_MSR, 0);
     }
+    #[cfg(not(all(target_arch = "x86_64", target_os = "none")))]
+    {
+        let _ = core_id;
+    }
 }
 
 /// Initializes Per-CPU data structure, stack top, and MSR registers for the current core.

@@ -177,29 +177,29 @@ pub fn find_rsdp_in_slice(slice: &[u8], base_addr: u64) -> Option<u64> {
     }
     let mut offset = 0;
     while offset + 20 <= slice.len() {
-        if &slice[offset..offset + 8] == RSDP_SIGNATURE {
-            if validate_checksum(&slice[offset..offset + 20]) {
-                let revision = slice[offset + 15];
-                if revision >= 2 {
-                    if offset + 36 <= slice.len() {
-                        let len_bytes = [
-                            slice[offset + 20],
-                            slice[offset + 21],
-                            slice[offset + 22],
-                            slice[offset + 23],
-                        ];
-                        let len = u32::from_le_bytes(len_bytes) as usize;
-                        if len >= 36 && offset + len <= slice.len() {
-                            if validate_checksum(&slice[offset..offset + len]) {
-                                return Some(base_addr + offset as u64);
-                            }
-                        } else if validate_checksum(&slice[offset..offset + 36]) {
+        if &slice[offset..offset + 8] == RSDP_SIGNATURE
+            && validate_checksum(&slice[offset..offset + 20])
+        {
+            let revision = slice[offset + 15];
+            if revision >= 2 {
+                if offset + 36 <= slice.len() {
+                    let len_bytes = [
+                        slice[offset + 20],
+                        slice[offset + 21],
+                        slice[offset + 22],
+                        slice[offset + 23],
+                    ];
+                    let len = u32::from_le_bytes(len_bytes) as usize;
+                    if len >= 36 && offset + len <= slice.len() {
+                        if validate_checksum(&slice[offset..offset + len]) {
                             return Some(base_addr + offset as u64);
                         }
+                    } else if validate_checksum(&slice[offset..offset + 36]) {
+                        return Some(base_addr + offset as u64);
                     }
-                } else {
-                    return Some(base_addr + offset as u64);
                 }
+            } else {
+                return Some(base_addr + offset as u64);
             }
         }
         offset += 16;
@@ -305,20 +305,18 @@ pub fn parse_madt_from_slice(slice: &[u8], topology: &mut AcpiTopology) -> bool 
                     }
                 }
             }
-            5 => {
-                if record_slice.len() >= 12 {
-                    let addr_bytes = [
-                        record_slice[4],
-                        record_slice[5],
-                        record_slice[6],
-                        record_slice[7],
-                        record_slice[8],
-                        record_slice[9],
-                        record_slice[10],
-                        record_slice[11],
-                    ];
-                    topology.lapic_address = u64::from_le_bytes(addr_bytes);
-                }
+            5 if record_slice.len() >= 12 => {
+                let addr_bytes = [
+                    record_slice[4],
+                    record_slice[5],
+                    record_slice[6],
+                    record_slice[7],
+                    record_slice[8],
+                    record_slice[9],
+                    record_slice[10],
+                    record_slice[11],
+                ];
+                topology.lapic_address = u64::from_le_bytes(addr_bytes);
             }
             _ => {}
         }
@@ -335,7 +333,7 @@ pub fn find_rsdp() -> Option<u64> {
     unsafe {
         let ebda_seg = core::ptr::read_volatile(0x40E as *const u16);
         let ebda_addr = (ebda_seg as u64) << 4;
-        if ebda_addr >= 0x80000 && ebda_addr < 0xA0000 {
+        if (0x80000..0xA0000).contains(&ebda_addr) {
             let ebda_slice = core::slice::from_raw_parts(ebda_addr as *const u8, 1024);
             if let Some(rsdp) = find_rsdp_in_slice(ebda_slice, ebda_addr) {
                 return Some(rsdp);
@@ -381,7 +379,7 @@ pub fn init_from_rsdp(rsdp_phys: u64) -> bool {
             let sdt_hdr = core::slice::from_raw_parts(xsdt_ptr, 36);
             let total_len =
                 u32::from_le_bytes([sdt_hdr[4], sdt_hdr[5], sdt_hdr[6], sdt_hdr[7]]) as usize;
-            if total_len >= 36 && total_len <= 4096 {
+            if (36..=4096).contains(&total_len) {
                 let full_xsdt = core::slice::from_raw_parts(xsdt_ptr, total_len);
                 if validate_checksum(full_xsdt) {
                     let mut entry_off = 36;
@@ -412,7 +410,7 @@ pub fn init_from_rsdp(rsdp_phys: u64) -> bool {
             let sdt_hdr = core::slice::from_raw_parts(rsdt_ptr, 36);
             let total_len =
                 u32::from_le_bytes([sdt_hdr[4], sdt_hdr[5], sdt_hdr[6], sdt_hdr[7]]) as usize;
-            if total_len >= 36 && total_len <= 4096 {
+            if (36..=4096).contains(&total_len) {
                 let full_rsdt = core::slice::from_raw_parts(rsdt_ptr, total_len);
                 if validate_checksum(full_rsdt) {
                     let mut entry_off = 36;
@@ -444,7 +442,7 @@ unsafe fn parse_table_by_address(table_phys: u64) {
     let table_ptr = table_phys as *const u8;
     let sdt_hdr = core::slice::from_raw_parts(table_ptr, 36);
     let total_len = u32::from_le_bytes([sdt_hdr[4], sdt_hdr[5], sdt_hdr[6], sdt_hdr[7]]) as usize;
-    if total_len < 36 || total_len > 16384 {
+    if !(36..=16384).contains(&total_len) {
         return;
     }
     let full_table = core::slice::from_raw_parts(table_ptr, total_len);
