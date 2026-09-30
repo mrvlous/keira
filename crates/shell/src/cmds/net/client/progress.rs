@@ -67,30 +67,31 @@ impl ProgressRenderer {
     /// Writes directly to VGA buffer.
     pub unsafe fn update(&mut self, received: usize, total_opt: Option<usize>) {
         if let Some(total) = total_opt {
-            if total > 0 {
-                let percent = (received * 100) / total;
-                print_status_badge("Downloading", vga::Color::LightGreen);
-                vga::print_str("[");
-                let filled = (percent * self.bar_width) / 100;
-                for _ in 0..filled {
-                    vga::print_str("=");
-                }
-                if filled < self.bar_width {
-                    vga::print_str(">");
-                    for _ in (filled + 1)..self.bar_width {
-                        vga::print_str(" ");
-                    }
-                }
-                vga::print_str("] ");
-                vga::print_u64(percent as u64);
-                vga::print_str("% (");
-                print_byte_size(received);
-                vga::print_str(" / ");
-                print_byte_size(total);
-                vga::print_str(")\r");
-                self.last_percent = percent;
-                return;
+            let percent = received
+                .saturating_mul(100)
+                .checked_div(total)
+                .unwrap_or(100);
+            print_status_badge("Downloading", vga::Color::LightGreen);
+            vga::print_str("[");
+            let filled = percent.saturating_mul(self.bar_width) / 100;
+            for _ in 0..filled {
+                vga::print_str("=");
             }
+            if filled < self.bar_width {
+                vga::print_str(">");
+                for _ in (filled + 1)..self.bar_width {
+                    vga::print_str(" ");
+                }
+            }
+            vga::print_str("] ");
+            vga::print_u64(percent as u64);
+            vga::print_str("% (");
+            print_byte_size(received);
+            vga::print_str(" / ");
+            print_byte_size(total);
+            vga::print_str(")\r");
+            self.last_percent = percent;
+            return;
         }
 
         print_status_badge("Downloading", vga::Color::LightGreen);

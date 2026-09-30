@@ -23,35 +23,33 @@ pub fn list_vms() {
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
         let (vms, _count) = get_all_vms();
-        for slot in vms.iter() {
-            if let Some(vm) = slot {
-                // VM ID
-                vga::print_str("  #");
-                vga::print_u64(vm.id);
-                vga::print_str("    ");
+        for vm in vms.iter().flatten() {
+            // VM ID
+            vga::print_str("  #");
+            vga::print_u64(vm.id);
+            vga::print_str("    ");
 
-                // Status
-                if vm.is_active {
-                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                    vga::print_str("Active    ");
-                } else {
-                    vga::set_color(vga::Color::Yellow, vga::Color::Black);
-                    vga::print_str("Suspended ");
-                }
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-
-                // Memory
-                vga::print_u64(vm.memory_size_mb as u64);
-                vga::print_str(" MB          ");
-
-                // vCPUs
-                vga::print_u64(vm.vcpu_count as u64);
-                vga::print_str("       ");
-
-                // Total Exits
-                vga::print_u64(vm.total_exits);
-                vga::print_str("\n");
+            // Status
+            if vm.is_active {
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("Active    ");
+            } else {
+                vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                vga::print_str("Suspended ");
             }
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+            // Memory
+            vga::print_u64(vm.memory_size_mb as u64);
+            vga::print_str(" MB          ");
+
+            // vCPUs
+            vga::print_u64(vm.vcpu_count as u64);
+            vga::print_str("       ");
+
+            // Total Exits
+            vga::print_u64(vm.total_exits);
+            vga::print_str("\n");
         }
     }
 }
@@ -271,7 +269,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     return;
                 }
             };
-            assert!(exit_val >= 1 && exit_val <= 7);
+            assert!((1..=7).contains(&exit_val));
             vga::print_str("  4. Executed vCPU instruction pipeline (Exit Code ");
             vga::print_u64(exit_val);
             vga::print_str(") - OK\n");

@@ -271,7 +271,7 @@ fn parse_u32(s: &str) -> Result<u32, ()> {
     }
     let mut val: u32 = 0;
     for b in s.bytes() {
-        if b < b'0' || b > b'9' {
+        if !b.is_ascii_digit() {
             return Err(());
         }
         val = val.checked_mul(10).ok_or(())?;

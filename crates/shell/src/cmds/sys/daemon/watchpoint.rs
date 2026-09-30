@@ -204,7 +204,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             );
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-            for slot in 0..4 {
+            for (slot, watchpoint_opt) in WATCHPOINTS.iter().enumerate() {
                 vga::print_str("DR");
                 vga::print_u64(slot as u64);
                 vga::print_str("   DR");
@@ -221,7 +221,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_hex(addr as u64);
                 vga::print_str("  ");
 
-                if let Some(entry) = WATCHPOINTS[slot] {
+                if let Some(entry) = *watchpoint_opt {
                     match entry.condition {
                         WatchpointCondition::Execution => vga::print_str("Execution (x)   "),
                         WatchpointCondition::DataWrite => vga::print_str("Data Write (w)  "),

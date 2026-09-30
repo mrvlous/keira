@@ -49,40 +49,38 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
             let instances = get_epoll_instances();
             let mut found = false;
-            for slot in instances.iter() {
-                if let Some(ref inst) = slot {
-                    if inst.active {
-                        found = true;
-                        vga::print_str("  EPFD #");
-                        vga::print_u64(inst.epfd as u64);
-                        vga::print_str(" (Monitored FDs: ");
-                        vga::print_u64(inst.item_count as u64);
-                        vga::print_str(", Total Polls: ");
-                        vga::print_u64(inst.total_polls);
-                        vga::print_str(")\n");
+            for inst in instances.iter().flatten() {
+                if inst.active {
+                    found = true;
+                    vga::print_str("  EPFD #");
+                    vga::print_u64(inst.epfd as u64);
+                    vga::print_str(" (Monitored FDs: ");
+                    vga::print_u64(inst.item_count as u64);
+                    vga::print_str(", Total Polls: ");
+                    vga::print_u64(inst.total_polls);
+                    vga::print_str(")\n");
 
-                        for item in inst.items.iter() {
-                            if item.in_use {
-                                vga::print_str("    -> FD #");
-                                vga::print_u64(item.fd as u64);
-                                vga::print_str(" [Events: 0x");
-                                vga::print_hex(item.event.events as u64);
-                                if (item.event.events & EPOLLIN) != 0 {
-                                    vga::print_str(" IN");
-                                }
-                                if (item.event.events & EPOLLOUT) != 0 {
-                                    vga::print_str(" OUT");
-                                }
-                                if (item.event.events & EPOLLERR) != 0 {
-                                    vga::print_str(" ERR");
-                                }
-                                if (item.event.events & EPOLLHUP) != 0 {
-                                    vga::print_str(" HUP");
-                                }
-                                vga::print_str("] Data: 0x");
-                                vga::print_hex(item.event.data);
-                                vga::print_str("\n");
+                    for item in inst.items.iter() {
+                        if item.in_use {
+                            vga::print_str("    -> FD #");
+                            vga::print_u64(item.fd as u64);
+                            vga::print_str(" [Events: 0x");
+                            vga::print_hex(item.event.events as u64);
+                            if (item.event.events & EPOLLIN) != 0 {
+                                vga::print_str(" IN");
                             }
+                            if (item.event.events & EPOLLOUT) != 0 {
+                                vga::print_str(" OUT");
+                            }
+                            if (item.event.events & EPOLLERR) != 0 {
+                                vga::print_str(" ERR");
+                            }
+                            if (item.event.events & EPOLLHUP) != 0 {
+                                vga::print_str(" HUP");
+                            }
+                            vga::print_str("] Data: 0x");
+                            vga::print_hex(item.event.data);
+                            vga::print_str("\n");
                         }
                     }
                 }
@@ -191,8 +189,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                     vga::print_str("\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-                    for i in 0..(ready as usize).min(events_buf.len()) {
-                        let ev = &events_buf[i];
+                    let ready_count = (ready as usize).min(events_buf.len());
+                    for (i, ev) in events_buf.iter().enumerate().take(ready_count) {
                         vga::print_str("  Event [");
                         vga::print_u64(i as u64);
                         vga::print_str("]: Mask 0x");

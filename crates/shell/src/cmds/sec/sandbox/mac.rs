@@ -188,51 +188,49 @@ fn print_audit_log() {
 
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     let mut count = 0;
-    for ev_opt in log.iter() {
-        if let Some(ev) = ev_opt {
-            count += 1;
-            vga::print_str("  ");
-            vga::print_u64(ev.pid);
-            vga::print_str("    ");
+    for ev in log.iter().flatten() {
+        count += 1;
+        vga::print_str("  ");
+        vga::print_u64(ev.pid);
+        vga::print_str("    ");
 
-            let d_str = ev.domain.as_str();
-            vga::print_str(d_str);
-            for _ in 0..(9usize.saturating_sub(d_str.len())) {
-                vga::print_str(" ");
-            }
-
-            let mut req_buf = [b'-'; 4];
-            if (ev.requested_mask & MAC_READ) != 0 {
-                req_buf[0] = b'r';
-            }
-            if (ev.requested_mask & MAC_WRITE) != 0 {
-                req_buf[1] = b'w';
-            }
-            if (ev.requested_mask & MAC_EXEC) != 0 {
-                req_buf[2] = b'x';
-            }
-            if (ev.requested_mask & MAC_APPEND) != 0 {
-                req_buf[3] = b'a';
-            }
-            if let Ok(s) = core::str::from_utf8(&req_buf) {
-                vga::print_str(s);
-            }
+        let d_str = ev.domain.as_str();
+        vga::print_str(d_str);
+        for _ in 0..(9usize.saturating_sub(d_str.len())) {
             vga::print_str(" ");
-
-            if ev.allowed {
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                vga::print_str("ALLOW    ");
-            } else {
-                vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("DENY     ");
-            }
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-
-            if let Ok(path) = core::str::from_utf8(&ev.path[..ev.path_len]) {
-                vga::print_str(path);
-            }
-            vga::print_str("\n");
         }
+
+        let mut req_buf = [b'-'; 4];
+        if (ev.requested_mask & MAC_READ) != 0 {
+            req_buf[0] = b'r';
+        }
+        if (ev.requested_mask & MAC_WRITE) != 0 {
+            req_buf[1] = b'w';
+        }
+        if (ev.requested_mask & MAC_EXEC) != 0 {
+            req_buf[2] = b'x';
+        }
+        if (ev.requested_mask & MAC_APPEND) != 0 {
+            req_buf[3] = b'a';
+        }
+        if let Ok(s) = core::str::from_utf8(&req_buf) {
+            vga::print_str(s);
+        }
+        vga::print_str(" ");
+
+        if ev.allowed {
+            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+            vga::print_str("ALLOW    ");
+        } else {
+            vga::set_color(vga::Color::LightRed, vga::Color::Black);
+            vga::print_str("DENY     ");
+        }
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+        if let Ok(path) = core::str::from_utf8(&ev.path[..ev.path_len]) {
+            vga::print_str(path);
+        }
+        vga::print_str("\n");
     }
 
     if count == 0 {

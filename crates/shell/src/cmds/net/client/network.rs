@@ -27,12 +27,10 @@ fn print_hex_byte(b: u8) {
 }
 
 fn print_mac(mac: &[u8; 6]) {
-    for i in 0..6 {
-        print_hex_byte(mac[i]);
+    for (i, &b) in mac.iter().enumerate() {
+        print_hex_byte(b);
         if i < 5 {
-            {
-                vga::print_str(":");
-            }
+            vga::print_str(":");
         }
     }
 }

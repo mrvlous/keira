@@ -161,7 +161,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("  PCI Devices       : ");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_u64(pci_count as u64);
+        vga::print_u64(pci_count);
         vga::print_str(" detected\n");
     }
 }

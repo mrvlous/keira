@@ -274,30 +274,28 @@ fn print_event_log() {
 
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     let mut count = 0;
-    for ev_opt in log.iter() {
-        if let Some(ev) = ev_opt {
-            count += 1;
-            vga::print_str("  [");
-            if ev.pcr_index < 10 {
-                vga::print_str("0");
-            }
-            vga::print_u64(ev.pcr_index as u64);
-            vga::print_str("]  0x");
-            print_hex_u32(ev.event_type);
-            vga::print_str("  ");
-
-            if let Ok(desc) = core::str::from_utf8(&ev.desc[..ev.desc_len]) {
-                vga::print_str(desc);
-                for _ in 0..(21usize.saturating_sub(desc.len())) {
-                    vga::print_str(" ");
-                }
-            } else {
-                vga::print_str("EVENT_UNKNOWN        ");
-            }
-
-            print_hex_bytes(&ev.digest[..8]);
-            vga::print_str("...\n");
+    for ev in log.iter().flatten() {
+        count += 1;
+        vga::print_str("  [");
+        if ev.pcr_index < 10 {
+            vga::print_str("0");
         }
+        vga::print_u64(ev.pcr_index as u64);
+        vga::print_str("]  0x");
+        print_hex_u32(ev.event_type);
+        vga::print_str("  ");
+
+        if let Ok(desc) = core::str::from_utf8(&ev.desc[..ev.desc_len]) {
+            vga::print_str(desc);
+            for _ in 0..(21usize.saturating_sub(desc.len())) {
+                vga::print_str(" ");
+            }
+        } else {
+            vga::print_str("EVENT_UNKNOWN        ");
+        }
+
+        print_hex_bytes(&ev.digest[..8]);
+        vga::print_str("...\n");
     }
 
     if count == 0 {
@@ -386,9 +384,9 @@ fn print_hex_bytes(bytes: &[u8]) {
 fn print_hex_u32(val: u32) {
     let hex_chars = b"0123456789ABCDEF";
     let mut buf = [0u8; 8];
-    for i in 0..8 {
+    for (i, item) in buf.iter_mut().enumerate() {
         let shift = (7 - i) * 4;
-        buf[i] = hex_chars[((val >> shift) & 0x0F) as usize];
+        *item = hex_chars[((val >> shift) & 0x0F) as usize];
     }
     if let Ok(s) = core::str::from_utf8(&buf) {
         vga::print_str(s);
@@ -398,9 +396,9 @@ fn print_hex_u32(val: u32) {
 fn print_hex_u64(val: u64) {
     let hex_chars = b"0123456789ABCDEF";
     let mut buf = [0u8; 16];
-    for i in 0..16 {
+    for (i, item) in buf.iter_mut().enumerate() {
         let shift = (15 - i) * 4;
-        buf[i] = hex_chars[((val >> shift) & 0x0F) as usize];
+        *item = hex_chars[((val >> shift) & 0x0F) as usize];
     }
     if let Ok(s) = core::str::from_utf8(&buf) {
         vga::print_str(s);

@@ -36,6 +36,9 @@ const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
 use keira_task::stack::*;
 
 /// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
+///
+/// # Safety
+/// Loads binary into userland pages, alters task break, sets up stack, and drops privilege to Ring 3.
 pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
     #[cfg(target_arch = "x86")]
     {
@@ -260,7 +263,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     let mut args_buf: [&str; 16] = [""; 16];
     let mut arg_count = 0;
 
-    while let Some(part) = parts.next() {
+    for part in parts.by_ref() {
         if arg_count == 0 && (part == "-h" || part == "--help") {
             vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n\n");
             vga::print_str("Description:\n  Load and execute a freestanding user mode ELF binary program in Ring 3 user space with CLI arguments.\n\n");

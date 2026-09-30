@@ -138,7 +138,7 @@ pub fn run(parts: &mut SplitWhitespace) {
         if src_str.contains(hdr1) || src_str.contains(hdr2) {
             unsafe {
                 if let Ok(lib_len) = keira_fs::vfs::read_file(lib_path, &mut LIB_BUF) {
-                    if staged_len + lib_len + 1 <= 32768 {
+                    if staged_len + lib_len < 32768 {
                         STAGED_BUF[staged_len..staged_len + lib_len]
                             .copy_from_slice(&LIB_BUF[..lib_len]);
                         staged_len += lib_len;

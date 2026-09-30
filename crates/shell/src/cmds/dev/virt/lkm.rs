@@ -23,43 +23,41 @@ pub fn list_modules() {
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
         let (snapshot, _count) = get_modules_snapshot();
-        for slot in snapshot.iter() {
-            if let Some(m) = slot {
-                // Name column (padded to 22 chars)
-                let name = m.name_str();
-                vga::print_str(name);
-                for _ in 0..(22usize.saturating_sub(name.len())) {
-                    vga::print_str(" ");
-                }
-
-                // Size column (padded to 8 chars)
-                vga::print_u64(m.size as u64);
-                let size_len = if m.size >= 100_000 {
-                    6
-                } else if m.size >= 10_000 {
-                    5
-                } else {
-                    4
-                };
-                for _ in 0..(8usize.saturating_sub(size_len)) {
-                    vga::print_str(" ");
-                }
-
-                // Ref count
-                vga::print_str("       ");
-                vga::print_u64(m.ref_count as u64);
-                vga::print_str("  ");
-
-                // State
-                vga::print_str(m.state.as_str());
-                for _ in 0..(10usize.saturating_sub(m.state.as_str().len())) {
-                    vga::print_str(" ");
-                }
-
-                // Load Address
-                vga::print_hex(m.load_address);
-                vga::print_str("\n");
+        for m in snapshot.iter().flatten() {
+            // Name column (padded to 22 chars)
+            let name = m.name_str();
+            vga::print_str(name);
+            for _ in 0..(22usize.saturating_sub(name.len())) {
+                vga::print_str(" ");
             }
+
+            // Size column (padded to 8 chars)
+            vga::print_u64(m.size as u64);
+            let size_len = if m.size >= 100_000 {
+                6
+            } else if m.size >= 10_000 {
+                5
+            } else {
+                4
+            };
+            for _ in 0..(8usize.saturating_sub(size_len)) {
+                vga::print_str(" ");
+            }
+
+            // Ref count
+            vga::print_str("       ");
+            vga::print_u64(m.ref_count as u64);
+            vga::print_str("  ");
+
+            // State
+            vga::print_str(m.state.as_str());
+            for _ in 0..(10usize.saturating_sub(m.state.as_str().len())) {
+                vga::print_str(" ");
+            }
+
+            // Load Address
+            vga::print_hex(m.load_address);
+            vga::print_str("\n");
         }
     }
 }

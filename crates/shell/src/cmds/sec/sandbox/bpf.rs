@@ -316,9 +316,9 @@ fn run_test_program() {
 fn print_hex_u32(val: u32) {
     let hex_chars = b"0123456789ABCDEF";
     let mut buf = [0u8; 8];
-    for i in 0..8 {
+    for (i, item) in buf.iter_mut().enumerate() {
         let shift = (7 - i) * 4;
-        buf[i] = hex_chars[((val >> shift) & 0x0F) as usize];
+        *item = hex_chars[((val >> shift) & 0x0F) as usize];
     }
     if let Ok(s) = core::str::from_utf8(&buf) {
         vga::print_str(s);
