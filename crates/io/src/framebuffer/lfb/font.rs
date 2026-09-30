@@ -123,8 +123,7 @@ pub unsafe fn draw_char(x: u32, y: u32, c: char, fg: u32, bg: u32) {
     let font_idx = ascii - 32;
     let glyph = FONT_8X16[font_idx];
 
-    for row in 0..16 {
-        let bitmask = glyph[row];
+    for (row, &bitmask) in glyph.iter().enumerate() {
         for col in 0..8 {
             if (bitmask & (1 << (7 - col))) != 0 {
                 draw_pixel(x + col, y + (row as u32), fg);

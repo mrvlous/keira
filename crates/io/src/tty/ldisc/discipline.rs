@@ -72,14 +72,13 @@ pub fn push_char(c: u8) {
 
         if (lflag & ICANON) != 0 {
             if c == 0x08 || c == 0x7F || c == ACTIVE_TERMIOS.c_cc[VERASE] {
-                if LINE_LEN > 0 {
-                    LINE_LEN -= 1;
-                }
+                LINE_LEN = LINE_LEN.saturating_sub(1);
             } else if c == b'\r' || c == b'\n' {
                 if LINE_LEN < LINE_BUF_SIZE {
                     LINE_BUF[LINE_LEN] = b'\n';
                     LINE_LEN += 1;
                 }
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..LINE_LEN {
                     let b = LINE_BUF[i];
                     let next_tail = (COOKED_TAIL + 1) % COOKED_BUF_SIZE;

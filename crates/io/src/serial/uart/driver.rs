@@ -27,7 +27,7 @@ pub fn init() {
         outb(COM1 + 3, 0x80);
 
         // 3. Set divisor to 1 (low byte 0x01, high byte 0x00) -> 115200 baud
-        outb(COM1 + 0, 0x01);
+        outb(COM1, 0x01);
         outb(COM1 + 1, 0x00);
 
         // 4. 8 bits, no parity, 1 stop bit (8N1)

@@ -23,7 +23,7 @@ pub const CRTC_DATA_PORT: u16 = 0x3D5;
 ///
 /// Performs direct I/O port writes to the VGA CRT controller.
 pub unsafe fn vga_set_hardware_cursor(col: u16, row: u16) {
-    let pos = (row * 80 + col) as u16;
+    let pos = row * 80 + col;
     outb(CRTC_INDEX_PORT, 0x0F);
     outb(CRTC_DATA_PORT, (pos & 0xFF) as u8);
     outb(CRTC_INDEX_PORT, 0x0E);

@@ -100,9 +100,9 @@ pub extern "C" fn keyboard_handler() {
                 if c != 0 {
                     push_input_char(c);
                     let input_ch = if CTRL_PRESSED.load(Ordering::Relaxed) {
-                        if (b'a'..=b'z').contains(&c) {
+                        if c.is_ascii_lowercase() {
                             c - b'a' + 1
-                        } else if (b'A'..=b'Z').contains(&c) {
+                        } else if c.is_ascii_uppercase() {
                             c - b'A' + 1
                         } else {
                             c

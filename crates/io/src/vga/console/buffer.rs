@@ -210,7 +210,7 @@ pub fn handle_timer_tick() {
             return;
         }
         TIMER_TICKS = TIMER_TICKS.wrapping_add(1);
-        if TIMER_TICKS % 500 == 0 && !VGA_BUSY {
+        if TIMER_TICKS.is_multiple_of(500) && !VGA_BUSY {
             CURSOR_BLINK_STATE = !CURSOR_BLINK_STATE;
             hide_mouse_graphics();
             draw_cursor(CURSOR_BLINK_STATE);
@@ -333,8 +333,7 @@ pub unsafe fn draw_char(c: u8, char_col: u32, char_row: u32, fg: u32, bg: u32) {
         return;
     }
 
-    for y in 0..16 {
-        let row_byte = glyph[y];
+    for (y, &row_byte) in glyph.iter().enumerate() {
         let py = start_y + y as u32;
         for x in 0..8 {
             let px = start_x + x as u32;
