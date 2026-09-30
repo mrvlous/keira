@@ -63,8 +63,7 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
 
     let domain_bytes = domain.as_bytes();
 
-    for i in 0..16 {
-        let entry = &mut DNS_CACHE[i];
+    for entry in DNS_CACHE.iter_mut() {
         if entry.valid
             && entry.domain_len == domain_bytes.len()
             && &entry.domain[..entry.domain_len] == domain_bytes
@@ -190,8 +189,8 @@ pub unsafe fn resolve_domain(domain: &str) -> Result<[u8; 4], &'static str> {
     };
 
     let mut target_slot = 0;
-    for i in 0..16 {
-        if !DNS_CACHE[i].valid {
+    for (i, entry) in DNS_CACHE.iter().enumerate() {
+        if !entry.valid {
             target_slot = i;
             break;
         }

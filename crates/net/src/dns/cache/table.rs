@@ -47,8 +47,7 @@ pub unsafe fn print_dns_cache() {
     vga::set_color(vga::Color::White, vga::Color::Black);
 
     let mut active = 0;
-    for i in 0..16 {
-        let entry = &DNS_CACHE[i];
+    for (i, entry) in DNS_CACHE.iter().enumerate() {
         if entry.valid {
             active += 1;
             vga::print_str("  [Slot ");

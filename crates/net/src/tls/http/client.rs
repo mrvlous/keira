@@ -13,6 +13,10 @@ use crate::driver::e1000::E1000_FOUND;
 use crate::tls::handshake::tls_connect;
 
 /// Fetch an HTTPS resource over native TLS 1.3 encapsulated network stack.
+///
+/// # Safety
+///
+/// Directly accesses mutable hardware network state and static session buffers.
 pub unsafe fn fetch_https(
     hostname: &str,
     target_path: &str,
@@ -83,6 +87,10 @@ pub unsafe fn fetch_https(
 }
 
 /// Fetch an HTTPS resource over native TLS 1.3 streaming state machine with progress callback.
+///
+/// # Safety
+///
+/// Directly accesses mutable hardware network state, static session buffers, and global socket memory.
 pub unsafe fn fetch_https_stream<F>(
     hostname: &str,
     target_path: &str,

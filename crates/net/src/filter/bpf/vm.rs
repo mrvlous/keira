@@ -181,8 +181,8 @@ pub fn bpf_run_filter(insns: &[BpfInstruction], packet: &[u8]) -> u32 {
                     BPF_SUB => reg_a = reg_a.wrapping_sub(v),
                     BPF_MUL => reg_a = reg_a.wrapping_mul(v),
                     BPF_DIV => {
-                        if v != 0 {
-                            reg_a /= v;
+                        if let Some(res) = reg_a.checked_div(v) {
+                            reg_a = res;
                         }
                     }
                     BPF_OR => reg_a |= v,

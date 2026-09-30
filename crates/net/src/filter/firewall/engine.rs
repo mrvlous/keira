@@ -391,8 +391,7 @@ pub unsafe fn print_firewall_status() {
     vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Active Firewall Chain Rules:\n");
     let mut rule_count = 0;
-    for i in 0..RULE_TABLE.len() {
-        let rule = &RULE_TABLE[i];
+    for (i, rule) in RULE_TABLE.iter().enumerate() {
         if !rule.in_use {
             continue;
         }
