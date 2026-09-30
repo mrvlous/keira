@@ -117,8 +117,7 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         return false;
     }
 
-    let is_stack_fault = cr2 >= USER_STACK_BOTTOM
-        && cr2 < USER_STACK_TOP
+    let is_stack_fault = (USER_STACK_BOTTOM..USER_STACK_TOP).contains(&cr2)
         && (cr2 >= rsp.saturating_sub(256) || rsp >= USER_STACK_BOTTOM);
 
     if is_stack_fault {

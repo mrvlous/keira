@@ -44,7 +44,7 @@ pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> 
     #[cfg(test)]
     {
         let _ = (pml4_phys, virtual_addr);
-        return None;
+        None
     }
     #[cfg(not(test))]
     {
@@ -111,7 +111,7 @@ pub unsafe fn get_pte_mut_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<*
     #[cfg(test)]
     {
         let _ = (pml4_phys, virtual_addr);
-        return None;
+        None
     }
     #[cfg(not(test))]
     {
@@ -181,7 +181,7 @@ pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option
     #[cfg(test)]
     {
         let _ = (pml4_phys, virtual_addr);
-        return None;
+        None
     }
     #[cfg(not(test))]
     {

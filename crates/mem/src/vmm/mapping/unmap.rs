@@ -22,7 +22,7 @@ use keira_arch::cpu::invlpg;
 ///
 /// Clears page table entries in active hardware page tables and flushes the TLB.
 pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
-    if (virtual_addr % pmm::PAGE_SIZE) != 0 {
+    if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Virtual address is not page-aligned");
     }
 
@@ -45,7 +45,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
         return Err("Page not mapped (PD missing)");
     }
     if (pdpt_entry & PAGE_HUGE) != 0 {
-        if (virtual_addr % 0x4000_0000) == 0 {
+        if virtual_addr.is_multiple_of(0x4000_0000) {
             *pdpt.add(pdpt_idx) = 0;
             invlpg(virtual_addr as usize);
             return Ok(());
@@ -59,7 +59,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
         return Err("Page not mapped (PT missing)");
     }
     if (pd_entry & PAGE_HUGE) != 0 {
-        if (virtual_addr % 0x20_0000) == 0 {
+        if virtual_addr.is_multiple_of(0x20_0000) {
             *pd.add(pd_idx) = 0;
             invlpg(virtual_addr as usize);
             return Ok(());
@@ -85,7 +85,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
 ///
 /// Clears huge page directory entries and flushes the TLB.
 pub unsafe fn unmap_huge_2m_page(virtual_addr: u64) -> Result<(), &'static str> {
-    if (virtual_addr % 0x20_0000) != 0 {
+    if !virtual_addr.is_multiple_of(0x20_0000) {
         return Err("Virtual address is not 2MB aligned");
     }
 
@@ -126,7 +126,7 @@ pub unsafe fn unmap_huge_2m_page(virtual_addr: u64) -> Result<(), &'static str> 
 pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if let Some(entry) = get_pte_in_pml4(active_pml4(), virtual_addr) {
         if (entry & PAGE_HUGE) != 0 {
-            let is_1gb = (virtual_addr % 0x4000_0000) == 0;
+            let is_1gb = virtual_addr.is_multiple_of(0x4000_0000);
             let frame = if is_1gb {
                 entry & PTE_ADDR_MASK_1G
             } else {

@@ -23,9 +23,9 @@ pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
     if pml4_phys == 0 {
         return;
     }
-    for i in 0..MAX_VMAS {
-        if VMA_TABLE[i].is_active && VMA_TABLE[i].pml4_phys == pml4_phys {
-            VMA_TABLE[i].is_active = false;
+    for vma in VMA_TABLE.iter_mut() {
+        if vma.is_active && vma.pml4_phys == pml4_phys {
+            vma.is_active = false;
         }
     }
 }
@@ -39,10 +39,9 @@ pub unsafe fn find_active_vma(pml4_phys: u64, addr: u64) -> Option<Vma> {
     if pml4_phys == 0 {
         return None;
     }
-    for i in 0..MAX_VMAS {
-        let vma = VMA_TABLE[i];
-        if vma.is_active && vma.pml4_phys == pml4_phys && addr >= vma.start && addr < vma.end {
-            return Some(vma);
+    for vma in VMA_TABLE.iter() {
+        if vma.is_active && vma.pml4_phys == pml4_phys && (vma.start..vma.end).contains(&addr) {
+            return Some(*vma);
         }
     }
     None
@@ -56,23 +55,18 @@ pub unsafe fn find_active_vma(pml4_phys: u64, addr: u64) -> Option<Vma> {
 pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u64> {
     let mut candidate = MMAP_START;
     loop {
-        let end = match candidate.checked_add(aligned_len) {
-            Some(e) => e,
-            None => return None,
-        };
+        let end = candidate.checked_add(aligned_len)?;
         if end > MMAP_END {
             return None;
         }
 
         let mut collision = false;
-        for i in 0..MAX_VMAS {
-            let vma = VMA_TABLE[i];
-            if vma.is_active && vma.pml4_phys == cur_pml4 {
-                if candidate < vma.end && end > vma.start {
-                    candidate = vma.end;
-                    collision = true;
-                    break;
-                }
+        for vma in VMA_TABLE.iter() {
+            if vma.is_active && vma.pml4_phys == cur_pml4 && candidate < vma.end && end > vma.start
+            {
+                candidate = vma.end;
+                collision = true;
+                break;
             }
         }
 

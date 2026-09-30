@@ -17,7 +17,7 @@ use crate::pmm;
 
 #[inline]
 fn is_valid_page_table_frame(phys: u64) -> bool {
-    if (phys % pmm::PAGE_SIZE) != 0 || phys == 0 {
+    if !phys.is_multiple_of(pmm::PAGE_SIZE) || phys == 0 {
         return false;
     }
     #[cfg(test)]
@@ -26,8 +26,7 @@ fn is_valid_page_table_frame(phys: u64) -> bool {
     }
     #[cfg(not(test))]
     {
-        phys >= pmm::KERNEL_BASE_1MB
-            && phys < pmm::MAX_PHYS_ADDR_LIMIT
+        (pmm::KERNEL_BASE_1MB..pmm::MAX_PHYS_ADDR_LIMIT).contains(&phys)
             && pmm::is_valid_ram_range(phys, pmm::PAGE_SIZE)
     }
 }
@@ -63,7 +62,7 @@ pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
                     if (pdpt_entry & PAGE_HUGE) != 0 {
                         let frame = pdpt_entry & PTE_ADDR_MASK_1G;
                         if frame >= pmm::KERNEL_BASE_1MB
-                            && (frame % 0x4000_0000) == 0
+                            && frame.is_multiple_of(0x4000_0000)
                             && pmm::is_valid_ram_range(frame, 0x4000_0000)
                         {
                             pmm::free_contiguous_frames(frame, 512 * 512);

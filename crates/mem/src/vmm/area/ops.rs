@@ -61,10 +61,10 @@ pub unsafe fn sys_mmap_file(
     let cur_pml4 = active_pml4();
 
     let start_vaddr = if (flags & MAP_FIXED) != 0 {
-        if hint_addr < MMAP_START || hint_addr >= MMAP_END {
+        if !(MMAP_START..MMAP_END).contains(&hint_addr) {
             return Err("MAP_FIXED address outside user mmap region");
         }
-        if hint_addr % pmm::PAGE_SIZE != 0 {
+        if !hint_addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err("MAP_FIXED address is not page-aligned");
         }
         let fixed_end = match hint_addr.checked_add(aligned_len) {
@@ -76,8 +76,7 @@ pub unsafe fn sys_mmap_file(
         }
 
         // 1. Check for collision with existing active VMAs in the same address space
-        for i in 0..MAX_VMAS {
-            let vma = VMA_TABLE[i];
+        for vma in VMA_TABLE.iter() {
             if vma.is_active
                 && vma.pml4_phys == cur_pml4
                 && !(fixed_end <= vma.start || hint_addr >= vma.end)
@@ -106,8 +105,8 @@ pub unsafe fn sys_mmap_file(
 
     // Find and reserve free VMA slot before touching physical memory or page tables
     let mut vma_slot = None;
-    for i in 0..MAX_VMAS {
-        if !VMA_TABLE[i].is_active {
+    for (i, vma) in VMA_TABLE.iter().enumerate() {
+        if !vma.is_active {
             vma_slot = Some(i);
             break;
         }
@@ -232,11 +231,11 @@ pub unsafe fn sys_mmap(
 /// Unmaps pages from hardware page tables, flushes translation lookaside buffers (TLBs),
 /// and reclaims underlying physical memory frames into the allocator free list.
 pub unsafe fn sys_munmap_ext(addr: u64, length: u64) -> Result<u64, (&'static str, u64)> {
-    if length == 0 || addr % pmm::PAGE_SIZE != 0 {
+    if length == 0 || !addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err(("Invalid address alignment or zero length for munmap", 0));
     }
 
-    if addr < MMAP_START || addr >= MMAP_END {
+    if !(MMAP_START..MMAP_END).contains(&addr) {
         return Err(("Address outside user mmap region", 0));
     }
 
@@ -258,8 +257,7 @@ pub unsafe fn sys_munmap_ext(addr: u64, length: u64) -> Result<u64, (&'static st
 
     // Verify range resides inside an active VMA belonging to current address space
     let mut matching_vma = None;
-    for i in 0..MAX_VMAS {
-        let vma = VMA_TABLE[i];
+    for (i, vma) in VMA_TABLE.iter().enumerate() {
         if vma.is_active && vma.pml4_phys == cur_pml4 && addr >= vma.start && target_end <= vma.end
         {
             matching_vma = Some(i);
@@ -277,8 +275,8 @@ pub unsafe fn sys_munmap_ext(addr: u64, length: u64) -> Result<u64, (&'static st
     let is_middle_split = addr > orig_vma.start && target_end < orig_vma.end;
     let split_slot = if is_middle_split {
         let mut free_slot = None;
-        for i in 0..MAX_VMAS {
-            if !VMA_TABLE[i].is_active {
+        for (i, vma) in VMA_TABLE.iter().enumerate() {
+            if !vma.is_active {
                 free_slot = Some(i);
                 break;
             }
@@ -373,7 +371,7 @@ pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
 ///
 /// Traverses and mutates active leaf page table entry permission bits (User, Writable, No-Execute).
 pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'static str> {
-    if length == 0 || addr % pmm::PAGE_SIZE != 0 {
+    if length == 0 || !addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Invalid address alignment or zero length for mprotect");
     }
 
@@ -386,7 +384,7 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
         return Err("W^X violation: simultaneous PROT_WRITE and PROT_EXEC prohibited");
     }
 
-    if addr < MMAP_START || addr >= MMAP_END {
+    if !(MMAP_START..MMAP_END).contains(&addr) {
         return Err("Address outside user mmap region");
     }
 
@@ -408,8 +406,7 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
 
     // Verify range resides inside an active VMA belonging to current address space
     let mut matching_vma = None;
-    for i in 0..MAX_VMAS {
-        let vma = VMA_TABLE[i];
+    for (i, vma) in VMA_TABLE.iter().enumerate() {
         if vma.is_active && vma.pml4_phys == cur_pml4 && addr >= vma.start && target_end <= vma.end
         {
             matching_vma = Some(i);
@@ -440,8 +437,8 @@ pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'st
     let mut found_slots = [0usize; 2];
     let mut found_count = 0;
     if required_slots > 0 {
-        for i in 0..MAX_VMAS {
-            if !VMA_TABLE[i].is_active {
+        for (i, vma) in VMA_TABLE.iter().enumerate() {
+            if !vma.is_active {
                 found_slots[found_count] = i;
                 found_count += 1;
                 if found_count == required_slots {
@@ -561,7 +558,7 @@ pub unsafe fn sys_msync(addr: u64, length: u64, _flags: u32) -> Result<(), &'sta
     if length == 0 {
         return Err("Invalid msync length (0)");
     }
-    if addr % pmm::PAGE_SIZE != 0 {
+    if !addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Address is not page-aligned (EINVAL)");
     }
 

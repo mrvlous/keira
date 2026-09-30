@@ -39,7 +39,8 @@ pub unsafe fn map_page_in_pml4(
     physical_addr: u64,
     flags: u64,
 ) -> Result<(), &'static str> {
-    if (virtual_addr % pmm::PAGE_SIZE) != 0 || (physical_addr % pmm::PAGE_SIZE) != 0 {
+    if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) || !physical_addr.is_multiple_of(pmm::PAGE_SIZE)
+    {
         return Err("Virtual or Physical address is not page-aligned");
     }
 
@@ -134,10 +135,10 @@ pub unsafe fn map_huge_2m_page(
     physical_addr: u64,
     flags: u64,
 ) -> Result<(), &'static str> {
-    if (virtual_addr % 0x20_0000) != 0 {
+    if !virtual_addr.is_multiple_of(0x20_0000) {
         return Err("Virtual address is not 2MB aligned");
     }
-    if (physical_addr % 0x20_0000) != 0 {
+    if !physical_addr.is_multiple_of(0x20_0000) {
         return Err("Physical address is not 2MB aligned");
     }
 

@@ -14,9 +14,9 @@ use super::super::table::{
 };
 #[cfg(not(test))]
 use super::super::table::{PAGE_HUGE, PTE_ADDR_MASK};
-use super::descriptor::{MAX_VMAS, PROT_EXEC, PROT_WRITE};
 #[cfg(not(test))]
 use super::descriptor::{MMAP_END, MMAP_START};
+use super::descriptor::{PROT_EXEC, PROT_WRITE};
 use super::table::VMA_TABLE;
 use crate::pmm;
 
@@ -34,8 +34,7 @@ pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static s
         return Ok(());
     }
 
-    for i in 0..MAX_VMAS {
-        let vma = VMA_TABLE[i];
+    for vma in VMA_TABLE.iter() {
         if vma.is_active && vma.pml4_phys == pml4_phys {
             let mut vaddr = vma.start;
             while vaddr < vma.end {
@@ -86,8 +85,7 @@ pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static s
                     let page_end = page_start + 0x4000_0000;
                     if page_start < MMAP_END && page_end > MMAP_START {
                         let mut in_vma = false;
-                        for i in 0..MAX_VMAS {
-                            let v = VMA_TABLE[i];
+                        for v in VMA_TABLE.iter() {
                             if v.is_active
                                 && v.pml4_phys == pml4_phys
                                 && page_start < v.end
@@ -119,8 +117,7 @@ pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static s
                         let page_end = page_start + 0x20_0000;
                         if page_start < MMAP_END && page_end > MMAP_START {
                             let mut in_vma = false;
-                            for i in 0..MAX_VMAS {
-                                let v = VMA_TABLE[i];
+                            for v in VMA_TABLE.iter() {
                                 if v.is_active
                                     && v.pml4_phys == pml4_phys
                                     && page_start < v.end
@@ -150,8 +147,7 @@ pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static s
                             let page_end = page_start + pmm::PAGE_SIZE;
                             if page_start < MMAP_END && page_end > MMAP_START {
                                 let mut in_vma = false;
-                                for i in 0..MAX_VMAS {
-                                    let v = VMA_TABLE[i];
+                                for v in VMA_TABLE.iter() {
                                     if v.is_active
                                         && v.pml4_phys == pml4_phys
                                         && page_start < v.end

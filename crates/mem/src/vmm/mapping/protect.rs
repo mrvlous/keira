@@ -22,7 +22,7 @@ use keira_arch::cpu::invlpg;
 ///
 /// Directly modifies hardware page table permissions and invalidates the processor TLB.
 pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'static str> {
-    if (virtual_addr % pmm::PAGE_SIZE) != 0 {
+    if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
         return Err("Virtual address is not page-aligned");
     }
 
@@ -45,7 +45,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
         return Err("Page not mapped (PD missing)");
     }
     if (pdpt_entry & PAGE_HUGE) != 0 {
-        if (virtual_addr % 0x4000_0000) == 0 {
+        if virtual_addr.is_multiple_of(0x4000_0000) {
             let phys_frame = pdpt_entry & PTE_ADDR_MASK_1G;
             *pdpt.add(pdpt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
             invlpg(virtual_addr as usize);
@@ -60,7 +60,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
         return Err("Page not mapped (PT missing)");
     }
     if (pd_entry & PAGE_HUGE) != 0 {
-        if (virtual_addr % 0x20_0000) == 0 {
+        if virtual_addr.is_multiple_of(0x20_0000) {
             let phys_frame = pd_entry & PTE_ADDR_MASK_2M;
             *pd.add(pd_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
             invlpg(virtual_addr as usize);
