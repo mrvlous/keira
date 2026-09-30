@@ -15,7 +15,7 @@ use keira_mem::pmm;
 
 /// Allocates physical frames for the system RAM disk, formats a FAT16 filesystem, and registers the device.
 pub fn create_ramdisk(size_kb: usize) -> Result<(), &'static str> {
-    let frames_needed = (size_kb * 1024 + 4095) / 4096;
+    let frames_needed = (size_kb * 1024).div_ceil(4096);
     if frames_needed == 0 || frames_needed > MAX_RAMDISK_FRAMES {
         return Err("Ramdisk: Invalid size or exceeds MAX_RAMDISK_FRAMES");
     }
@@ -68,7 +68,7 @@ fn format_fat16(device: &dyn BlockDevice) -> Result<(), &'static str> {
     let reserved_sectors: u16 = 4;
     let num_fats: u8 = 2;
     let root_entries: u16 = 512;
-    let root_dir_sectors = ((root_entries * 32) + 511) / 512;
+    let root_dir_sectors = (root_entries * 32).div_ceil(512);
 
     let data_sectors = total_sectors
         .saturating_sub(reserved_sectors as u32)
@@ -76,7 +76,7 @@ fn format_fat16(device: &dyn BlockDevice) -> Result<(), &'static str> {
     let total_clusters = data_sectors / (sectors_per_cluster as u32);
 
     let bytes_per_fat = total_clusters * 2;
-    let sectors_per_fat = ((bytes_per_fat + 511) / 512) as u16;
+    let sectors_per_fat = bytes_per_fat.div_ceil(512) as u16;
 
     let mut boot_sec = [0u8; 512];
     boot_sec[0] = 0xEB;
