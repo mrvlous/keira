@@ -36,8 +36,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
 
         let mut slot_idx = 0;
         let mut found = false;
-        for i in 1..MAX_TASKS {
-            if TASKS[i].is_none() {
+        for (i, slot) in TASKS.iter().enumerate().take(MAX_TASKS).skip(1) {
+            if slot.is_none() {
                 slot_idx = i;
                 found = true;
                 break;
@@ -46,8 +46,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
 
         if !found {
             reap_orphaned_zombies_locked();
-            for i in 1..MAX_TASKS {
-                if TASKS[i].is_none() {
+            for (i, slot) in TASKS.iter().enumerate().take(MAX_TASKS).skip(1) {
+                if slot.is_none() {
                     slot_idx = i;
                     found = true;
                     break;

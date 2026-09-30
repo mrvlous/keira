@@ -32,8 +32,10 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
         let handler = get_signal_handler(pid, sig);
         if handler != 0 {
             if task.saved_sigcontext.is_none() {
-                let mut saved_ctx = InterruptContext::default();
-                saved_ctx.rip = task.rsp;
+                let saved_ctx = InterruptContext {
+                    rip: task.rsp,
+                    ..Default::default()
+                };
                 task.saved_sigcontext = Some(saved_ctx);
             }
             return Ok(());
@@ -44,7 +46,7 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
         }
 
         match sig {
-            1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 => {
+            1..=15 => {
                 task.state = TaskState::Zombie(-(sig as i32));
                 Ok(())
             }

@@ -23,46 +23,44 @@ pub unsafe fn list_tasks() {
     vga::print_str("PID    TASK NAME             STATE       TICKS       SWITCHES\n");
     vga::print_str("-----  --------------------  ----------  ----------  ----------\n");
 
-    for i in 0..MAX_TASKS {
-        if let Some(ref task) = TASKS[i] {
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            print_padded_u64(task.id as u64, 7);
+    for task in TASKS.iter().take(MAX_TASKS).flatten() {
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        print_padded_u64(task.id as u64, 7);
 
-            vga::print_str(task.name);
-            for _ in 0..(22usize.saturating_sub(task.name.len())) {
-                vga::print_str(" ");
-            }
-
-            match task.state {
-                TaskState::Created => {
-                    vga::set_color(vga::Color::Yellow, vga::Color::Black);
-                    vga::print_str("CREATED     ");
-                }
-                TaskState::Running => {
-                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                    vga::print_str("RUNNING     ");
-                }
-                TaskState::Ready => {
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                    vga::print_str("READY       ");
-                }
-                TaskState::Blocked => {
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                    vga::print_str("BLOCKED     ");
-                }
-                TaskState::Exited(c) | TaskState::Zombie(c) => {
-                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                    vga::print_str("ZOMBIE(");
-                    vga::print_u64(c as u64);
-                    vga::print_str(")   ");
-                }
-            }
-
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            print_padded_u64(task.cpu_ticks, 12);
-            print_padded_u64(task.switches, 10);
-            vga::print_str("\n");
+        vga::print_str(task.name);
+        for _ in 0..(22usize.saturating_sub(task.name.len())) {
+            vga::print_str(" ");
         }
+
+        match task.state {
+            TaskState::Created => {
+                vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                vga::print_str("CREATED     ");
+            }
+            TaskState::Running => {
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("RUNNING     ");
+            }
+            TaskState::Ready => {
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::print_str("READY       ");
+            }
+            TaskState::Blocked => {
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::print_str("BLOCKED     ");
+            }
+            TaskState::Exited(c) | TaskState::Zombie(c) => {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("ZOMBIE(");
+                vga::print_u64(c as u64);
+                vga::print_str(")   ");
+            }
+        }
+
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        print_padded_u64(task.cpu_ticks, 12);
+        print_padded_u64(task.switches, 10);
+        vga::print_str("\n");
     }
 
     let (switches, ticks, active) = crate::scheduler::core::scheduler_get_stats();

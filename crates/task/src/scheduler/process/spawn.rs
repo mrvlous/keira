@@ -23,8 +23,8 @@ use crate::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 /// Caller must ensure that `entry_point` is a valid kernel function pointer.
 pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'static str> {
     let mut slot = None;
-    for i in 0..MAX_TASKS {
-        if TASKS[i].is_none() {
+    for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
+        if item.is_none() {
             slot = Some(i);
             break;
         }
@@ -32,8 +32,8 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
 
     if slot.is_none() {
         reap_orphaned_zombies();
-        for i in 0..MAX_TASKS {
-            if TASKS[i].is_none() {
+        for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
+            if item.is_none() {
                 slot = Some(i);
                 break;
             }
@@ -129,8 +129,8 @@ pub unsafe fn spawn_user(
     pml4_phys: u64,
 ) -> Result<usize, &'static str> {
     let mut slot = None;
-    for i in 0..MAX_TASKS {
-        if TASKS[i].is_none() {
+    for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
+        if item.is_none() {
             slot = Some(i);
             break;
         }
@@ -138,8 +138,8 @@ pub unsafe fn spawn_user(
 
     if slot.is_none() {
         reap_orphaned_zombies();
-        for i in 0..MAX_TASKS {
-            if TASKS[i].is_none() {
+        for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
+            if item.is_none() {
                 slot = Some(i);
                 break;
             }

@@ -35,32 +35,32 @@ pub unsafe fn sys_waitpid(
 
             // 1. Check if child already exited (Zombie)
             let mut reaped = None;
-            for i in 1..MAX_TASKS {
-                if let Some(ref child) = TASKS[i] {
-                    if child.parent_id == parent_idx {
-                        if target_pid == -1 || child.id == target_pid as usize {
-                            if let TaskState::Zombie(code) = child.state {
-                                let id = child.id;
-                                let encoded_status = if code >= 0 {
-                                    (code & 0xff) << 8
-                                } else {
-                                    (-code) & 0x7f
-                                };
-                                release_all_locks_for_task(id);
-                                if let Some(hook) = TASK_CLEANUP_HOOK {
-                                    hook(id);
-                                }
-                                if child.stack_addr != 0 {
-                                    vmm::free_user_pages(child.pml4_phys, child.program_break);
-                                    pmm::free_frame(child.stack_addr);
-                                } else if child.pml4_phys != 0 {
-                                    vmm::cleanup_vmas_for_pml4(child.pml4_phys);
-                                }
-                                TASKS[i] = None;
-                                reset_signal_handlers(id);
-                                reaped = Some((id, encoded_status));
-                                break;
+            for child_slot in TASKS.iter_mut().take(MAX_TASKS).skip(1) {
+                if let Some(ref child) = child_slot {
+                    if child.parent_id == parent_idx
+                        && (target_pid == -1 || child.id == target_pid as usize)
+                    {
+                        if let TaskState::Zombie(code) = child.state {
+                            let id = child.id;
+                            let encoded_status = if code >= 0 {
+                                (code & 0xff) << 8
+                            } else {
+                                (-code) & 0x7f
+                            };
+                            release_all_locks_for_task(id);
+                            if let Some(hook) = TASK_CLEANUP_HOOK {
+                                hook(id);
                             }
+                            if child.stack_addr != 0 {
+                                vmm::free_user_pages(child.pml4_phys, child.program_break);
+                                pmm::free_frame(child.stack_addr);
+                            } else if child.pml4_phys != 0 {
+                                vmm::cleanup_vmas_for_pml4(child.pml4_phys);
+                            }
+                            *child_slot = None;
+                            reset_signal_handlers(id);
+                            reaped = Some((id, encoded_status));
+                            break;
                         }
                     }
                 }
@@ -71,14 +71,12 @@ pub unsafe fn sys_waitpid(
             } else {
                 // 2. Check if any matching child is still alive
                 let mut living = false;
-                for i in 1..MAX_TASKS {
-                    if let Some(ref child) = TASKS[i] {
-                        if child.parent_id == parent_idx
-                            && (target_pid == -1 || child.id == target_pid as usize)
-                        {
-                            living = true;
-                            break;
-                        }
+                for child in TASKS.iter().take(MAX_TASKS).skip(1).flatten() {
+                    if child.parent_id == parent_idx
+                        && (target_pid == -1 || child.id == target_pid as usize)
+                    {
+                        living = true;
+                        break;
                     }
                 }
                 (None, 0, living)

@@ -47,11 +47,9 @@ pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
 /// # Safety
 /// The caller must ensure synchronized access to `JOB_TABLE` and `JOB_COUNT`.
 pub unsafe fn get_foreground_job_pid() -> Option<u32> {
-    for i in 0..JOB_COUNT {
-        if let Some(ref job) = JOB_TABLE[i] {
-            if job.is_foreground && job.state == JobState::Running {
-                return Some(job.pid);
-            }
+    for job in JOB_TABLE.iter().take(JOB_COUNT).flatten() {
+        if job.is_foreground && job.state == JobState::Running {
+            return Some(job.pid);
         }
     }
     None
@@ -62,8 +60,8 @@ pub unsafe fn get_foreground_job_pid() -> Option<u32> {
 /// # Safety
 /// The caller must ensure synchronized access to `JOB_TABLE` and `JOB_COUNT`.
 pub unsafe fn remove_job_by_pid(pid: u32) {
-    for i in 0..JOB_COUNT {
-        if let Some(ref job) = JOB_TABLE[i] {
+    for (i, job_slot) in JOB_TABLE.iter_mut().enumerate().take(JOB_COUNT) {
+        if let Some(ref job) = job_slot {
             if job.pid == pid {
                 JOB_TABLE[i] = None;
                 for j in i..(JOB_COUNT.saturating_sub(1)) {

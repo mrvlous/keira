@@ -24,22 +24,20 @@ pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
         vga::print_u64(pid as u64);
         vga::print_str(" (Syscall 22)\n");
 
-        for i in 0..JOB_COUNT {
-            if let Some(ref mut job) = JOB_TABLE[i] {
-                if job.pid == pid {
-                    match sig {
-                        SIGKILL | SIGTERM | SIGINT | SIGQUIT | SIGABRT | SIGSEGV | SIGILL
-                        | SIGBUS | SIGFPE | SIGPIPE | SIGHUP | SIGUSR1 | SIGUSR2 | SIGALRM => {
-                            job.state = JobState::Terminated;
-                        }
-                        SIGSTOP => {
-                            job.state = JobState::Stopped;
-                        }
-                        SIGCONT => {
-                            job.state = JobState::Running;
-                        }
-                        _ => {}
+        for job in JOB_TABLE.iter_mut().take(JOB_COUNT).flatten() {
+            if job.pid == pid {
+                match sig {
+                    SIGKILL | SIGTERM | SIGINT | SIGQUIT | SIGABRT | SIGSEGV | SIGILL | SIGBUS
+                    | SIGFPE | SIGPIPE | SIGHUP | SIGUSR1 | SIGUSR2 | SIGALRM => {
+                        job.state = JobState::Terminated;
                     }
+                    SIGSTOP => {
+                        job.state = JobState::Stopped;
+                    }
+                    SIGCONT => {
+                        job.state = JobState::Running;
+                    }
+                    _ => {}
                 }
             }
         }

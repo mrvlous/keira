@@ -57,9 +57,11 @@ fn test_task_credentials_and_sigcontext() {
 
         // Sigcontext save and take lifecycle
         assert!(take_saved_sigcontext().is_none());
-        let mut ctx = InterruptContext::default();
-        ctx.rip = 0x40001000;
-        ctx.rax = 42;
+        let ctx = InterruptContext {
+            rip: 0x40001000,
+            rax: 42,
+            ..Default::default()
+        };
         set_saved_sigcontext(ctx);
         let restored = take_saved_sigcontext().expect("Saved context should exist");
         let rip = restored.rip;
@@ -105,7 +107,7 @@ fn test_orphan_reparenting_and_reap() {
         init();
         let cur_idx = ::core::ptr::read_volatile(&raw const CURRENT_TASK_IDX);
         assert_eq!(cur_idx, 0);
-        assert!((*(&raw const TASKS))[0].is_some());
+        assert!(TASKS[0].is_some());
 
         // Create a dummy zombie child orphaned to PID 0
         let dummy_task = Task {

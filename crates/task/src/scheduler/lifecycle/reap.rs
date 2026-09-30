@@ -23,11 +23,11 @@ use crate::types::TaskState;
 /// Caller must ensure that `SCHEDULER_LOCK` is acquired before calling this function.
 pub unsafe fn reap_orphaned_zombies_locked() {
     let curr = CURRENT_TASK_IDX;
-    for i in 1..MAX_TASKS {
+    for (i, child_slot) in TASKS.iter_mut().enumerate().take(MAX_TASKS).skip(1) {
         if i == curr {
             continue;
         }
-        if let Some(ref child) = TASKS[i] {
+        if let Some(ref child) = child_slot {
             if child.is_orphan || child.parent_id == 0 {
                 if let TaskState::Zombie(_) = child.state {
                     let reaped_id = child.id;
@@ -41,7 +41,7 @@ pub unsafe fn reap_orphaned_zombies_locked() {
                     } else if child.pml4_phys != 0 {
                         vmm::cleanup_vmas_for_pml4(child.pml4_phys);
                     }
-                    TASKS[i] = None;
+                    *child_slot = None;
                 }
             }
         }

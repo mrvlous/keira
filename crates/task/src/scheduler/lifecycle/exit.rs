@@ -60,12 +60,10 @@ pub unsafe fn exit_current(exit_code: i32) {
             }
 
             // Reparent any child tasks to PID 0 (kernel_shell / Init)
-            for i in 1..MAX_TASKS {
-                if let Some(ref mut child) = TASKS[i] {
-                    if child.parent_id == idx {
-                        child.parent_id = 0;
-                        child.is_orphan = true;
-                    }
+            for child in TASKS.iter_mut().take(MAX_TASKS).skip(1).flatten() {
+                if child.parent_id == idx {
+                    child.parent_id = 0;
+                    child.is_orphan = true;
                 }
             }
 
@@ -102,12 +100,10 @@ pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str> {
     if pid == 0 {
         return Err("Cannot stop the kernel shell (Task 0)");
     }
-    for i in 1..MAX_TASKS {
-        if let Some(ref mut task) = TASKS[i] {
-            if task.id == pid {
-                task.state = TaskState::Zombie(-9);
-                return Ok(());
-            }
+    for task in TASKS.iter_mut().take(MAX_TASKS).skip(1).flatten() {
+        if task.id == pid {
+            task.state = TaskState::Zombie(-9);
+            return Ok(());
         }
     }
     Err("Task PID not found")
