@@ -14,6 +14,7 @@
 //! bus master buffers (DMA), and anonymous page slot swapping (Swap).
 
 #![cfg_attr(not(test), no_std)]
+#![allow(static_mut_refs)]
 
 #[cfg(test)]
 extern crate std;

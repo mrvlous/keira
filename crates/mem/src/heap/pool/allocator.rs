@@ -87,11 +87,7 @@ pub extern "C" fn heap_init(start: *mut u8, size: usize) {
 
     let start_addr = (start as usize + HEAP_ALIGN_MASK) & !HEAP_ALIGN_MASK;
     let aligned_start = start_addr as *mut u8;
-    let usable_size = if (start as usize + size) > start_addr {
-        (start as usize + size) - start_addr
-    } else {
-        0
-    };
+    let usable_size = (start as usize + size).saturating_sub(start_addr);
     let end = unsafe { aligned_start.add(usable_size) };
 
     HEAP_START.store(aligned_start, Ordering::SeqCst);

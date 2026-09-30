@@ -22,11 +22,7 @@ pub(crate) static PEAK_USED: AtomicUsize = AtomicUsize::new(0);
 pub extern "C" fn heap_get_total() -> usize {
     let start = HEAP_START.load(Ordering::SeqCst) as usize;
     let end = HEAP_END.load(Ordering::SeqCst) as usize;
-    if end > start {
-        end - start
-    } else {
-        0
-    }
+    end.saturating_sub(start)
 }
 
 /// Retrieves currently allocated active bytes in kernel heap.
@@ -66,11 +62,7 @@ pub extern "C" fn heap_get_peak() -> usize {
 pub extern "C" fn heap_get_arena_used() -> usize {
     let start = HEAP_START.load(Ordering::SeqCst) as usize;
     let next = HEAP_NEXT.load(Ordering::SeqCst) as usize;
-    if next > start {
-        next - start
-    } else {
-        0
-    }
+    next.saturating_sub(start)
 }
 
 /// Computes current kernel heap memory metrics: `(total, used, free, peak, active_allocs, fragmentation_pct)`.
@@ -115,7 +107,7 @@ pub fn heap_stress_test() -> Result<(), &'static str> {
             return Err("kmalloc returned null pointer during stress test");
         }
 
-        if (ptr as usize) % 16 != 0 {
+        if !(ptr as usize).is_multiple_of(16) {
             for p in ptrs.iter_mut() {
                 if !p.is_null() {
                     kfree(*p);

@@ -125,11 +125,11 @@ pub fn alloc_swap_slot() -> Option<usize> {
             return None;
         }
 
-        for word_idx in 0..SWAP_BITMAP_WORDS {
-            let word = SWAP_BITMAP[word_idx];
+        for (word_idx, word_ref) in SWAP_BITMAP.iter_mut().enumerate() {
+            let word = *word_ref;
             if word != u64::MAX {
                 let bit_idx = (!word).trailing_zeros() as usize;
-                SWAP_BITMAP[word_idx] |= 1u64 << bit_idx;
+                *word_ref |= 1u64 << bit_idx;
                 SWAP_USED_PAGES += 1;
                 SWAP_OUT_COUNT += 1;
                 return Some(word_idx * 64 + bit_idx);
@@ -158,9 +158,7 @@ pub fn free_swap_slot(slot: usize) -> Result<(), &'static str> {
         }
 
         SWAP_BITMAP[word_idx] &= !mask;
-        if SWAP_USED_PAGES > 0 {
-            SWAP_USED_PAGES -= 1;
-        }
+        SWAP_USED_PAGES = SWAP_USED_PAGES.saturating_sub(1);
         SWAP_IN_COUNT += 1;
         Ok(())
     }
