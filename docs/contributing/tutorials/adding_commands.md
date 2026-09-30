@@ -12,7 +12,7 @@ Commands in Keira execute directly in kernel context within the shell subsystem 
 
 ```mermaid
 graph TD
-    Input["Terminal Input: 'sysinfo --all'"] --> Parser["crates/shell/src/terminal/input/reader.rs"]
+    Input["Terminal Input: 'sysinfo --all'"] --> Parser["crates/shell/src/terminal/input/keyboard.rs"]
     Parser --> Dispatch["crates/shell/src/executor/dispatch/router.rs"]
     Dispatch --> CliArgs["crates/shell/src/args/parser/cli.rs"]
     CliArgs --> Handler["crates/shell/src/cmds/<category>/sysinfo.rs"]
@@ -109,18 +109,18 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 2. **Add to Dispatch Router**:
    In `crates/shell/src/executor/dispatch/router.rs`, add the match arm:
    ```rust
-   "banner" => super::super::cmds::util::banner::run(&mut parts),
+   "banner" => crate::cmds::util::banner::run(&mut parts),
    ```
 
-3. **Register in Command Table**:
-   In `crates/shell/src/cmds/table/registry.rs`, add command metadata for shell `help` and tab autocomplete:
+3. **Register in Autocomplete Table & Help**:
+   In `crates/shell/src/autocomplete/table/engine.rs`, append `"banner"` to `COMMANDS_LIST`:
    ```rust
-   CommandMeta {
-       name: "banner",
-       category: Category::Util,
-       summary: "Prints formatted banner messages to console",
-   },
+   pub const COMMANDS_LIST: &[&str] = &[
+       // ...
+       "banner",
+   ];
    ```
+   Optionally, add `"banner"` to the appropriate category in `crates/shell/src/cmds/util/misc/help.rs`.
 
 ---
 
