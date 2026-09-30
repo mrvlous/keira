@@ -139,12 +139,14 @@ pub fn ensure_inode_table_initialized() {
         let mut temp_block = [0u8; 4096];
 
         // 1. Root directory Inode #2
-        let mut root = Ext4Inode::default();
-        root.i_mode = EXT4_S_IFDIR | 0o755;
-        root.i_size_lo = 4096;
-        root.i_links_count = 3;
-        root.i_blocks_lo = 8;
-        root.i_flags = EXT4_EXTENTS_FL;
+        let mut root = Ext4Inode {
+            i_mode: EXT4_S_IFDIR | 0o755,
+            i_size_lo: 4096,
+            i_links_count: 3,
+            i_blocks_lo: 8,
+            i_flags: EXT4_EXTENTS_FL,
+            ..Default::default()
+        };
         root.i_block[0] = 0x0A;
         root.i_block[1] = 0xF3;
         root.i_block[2] = 0x01; // 1 entry
@@ -153,16 +155,18 @@ pub fn ensure_inode_table_initialized() {
         root.i_block[16] = 0x01; // len 1
         root.i_block[20] = 0x00; // LBA lo 1024
         root.i_block[21] = 0x04;
-        let off2 = (2 - 1) * 256;
+        let off2 = 256;
         write_inode_to_bytes(&root, &mut temp_block[off2..off2 + 256]);
 
         // 2. System directory Inode #11
-        let mut sys = Ext4Inode::default();
-        sys.i_mode = EXT4_S_IFDIR | 0o755;
-        sys.i_size_lo = 4096;
-        sys.i_links_count = 2;
-        sys.i_blocks_lo = 8;
-        sys.i_flags = EXT4_EXTENTS_FL;
+        let mut sys = Ext4Inode {
+            i_mode: EXT4_S_IFDIR | 0o755,
+            i_size_lo: 4096,
+            i_links_count: 2,
+            i_blocks_lo: 8,
+            i_flags: EXT4_EXTENTS_FL,
+            ..Default::default()
+        };
         sys.i_block[0] = 0x0A;
         sys.i_block[1] = 0xF3;
         sys.i_block[2] = 0x01;
@@ -175,12 +179,14 @@ pub fn ensure_inode_table_initialized() {
         write_inode_to_bytes(&sys, &mut temp_block[off11..off11 + 256]);
 
         // 3. Kernel ELF Inode #12
-        let mut elf = Ext4Inode::default();
-        elf.i_mode = EXT4_S_IFREG | 0o755;
-        elf.i_size_lo = 262144; // 256 KB
-        elf.i_links_count = 1;
-        elf.i_blocks_lo = 512;
-        elf.i_flags = EXT4_EXTENTS_FL;
+        let mut elf = Ext4Inode {
+            i_mode: EXT4_S_IFREG | 0o755,
+            i_size_lo: 262144, // 256 KB
+            i_links_count: 1,
+            i_blocks_lo: 512,
+            i_flags: EXT4_EXTENTS_FL,
+            ..Default::default()
+        };
         elf.i_block[0] = 0x0A;
         elf.i_block[1] = 0xF3;
         elf.i_block[2] = 0x01;
@@ -193,12 +199,14 @@ pub fn ensure_inode_table_initialized() {
         write_inode_to_bytes(&elf, &mut temp_block[off12..off12 + 256]);
 
         // 4. Boot config Inode #14
-        let mut boot_cfg = Ext4Inode::default();
-        boot_cfg.i_mode = EXT4_S_IFREG | 0o644;
-        boot_cfg.i_size_lo = 128;
-        boot_cfg.i_links_count = 1;
-        boot_cfg.i_blocks_lo = 2;
-        boot_cfg.i_flags = EXT4_EXTENTS_FL;
+        let mut boot_cfg = Ext4Inode {
+            i_mode: EXT4_S_IFREG | 0o644,
+            i_size_lo: 128,
+            i_links_count: 1,
+            i_blocks_lo: 2,
+            i_flags: EXT4_EXTENTS_FL,
+            ..Default::default()
+        };
         boot_cfg.i_block[0] = 0x0A;
         boot_cfg.i_block[1] = 0xF3;
         boot_cfg.i_block[2] = 0x01;
@@ -211,12 +219,14 @@ pub fn ensure_inode_table_initialized() {
         write_inode_to_bytes(&boot_cfg, &mut temp_block[off14..off14 + 256]);
 
         // 5. Version text Inode #15
-        let mut ver_txt = Ext4Inode::default();
-        ver_txt.i_mode = EXT4_S_IFREG | 0o644;
-        ver_txt.i_size_lo = 64;
-        ver_txt.i_links_count = 1;
-        ver_txt.i_blocks_lo = 2;
-        ver_txt.i_flags = EXT4_EXTENTS_FL;
+        let mut ver_txt = Ext4Inode {
+            i_mode: EXT4_S_IFREG | 0o644,
+            i_size_lo: 64,
+            i_links_count: 1,
+            i_blocks_lo: 2,
+            i_flags: EXT4_EXTENTS_FL,
+            ..Default::default()
+        };
         ver_txt.i_block[0] = 0x0A;
         ver_txt.i_block[1] = 0xF3;
         ver_txt.i_block[2] = 0x01;
@@ -249,9 +259,11 @@ pub fn read_inode(inode_num: u32) -> Result<Ext4Inode, &'static str> {
         if offset + 256 <= INODE_TABLE_BLOCK.len() {
             parse_inode_from_bytes(&INODE_TABLE_BLOCK[offset..offset + 256])
         } else {
-            let mut generic = Ext4Inode::default();
-            generic.i_mode = EXT4_S_IFREG | 0o644;
-            generic.i_size_lo = 1024;
+            let generic = Ext4Inode {
+                i_mode: EXT4_S_IFREG | 0o644,
+                i_size_lo: 1024,
+                ..Default::default()
+            };
             Ok(generic)
         }
     }

@@ -114,7 +114,7 @@ impl Ext4Superblock {
         if self.blocks_per_group == 0 {
             return 1;
         }
-        (self.blocks_count_lo + self.blocks_per_group - 1) / self.blocks_per_group
+        self.blocks_count_lo.div_ceil(self.blocks_per_group)
     }
 
     /// Total filesystem capacity in Megabytes.
