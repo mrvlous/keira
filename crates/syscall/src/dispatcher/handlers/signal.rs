@@ -45,7 +45,7 @@ pub fn handle_sigaction(arg1: u64, arg2: u64, arg3: u64) -> u64 {
         }
 
         if old_handler_ptr != 0 {
-            if old_handler_ptr % 8 != 0 {
+            if !old_handler_ptr.is_multiple_of(8) {
                 return errno_to_ret(EINVAL);
             }
             if let Err(e) = validate_user_ptr(old_handler_ptr, 8, true) {
@@ -62,10 +62,10 @@ pub fn handle_sigaction(arg1: u64, arg2: u64, arg3: u64) -> u64 {
 
         match keira_task::signal::sys_sigaction(CURRENT_TASK_IDX, sig, handler, target_old_ptr) {
             Ok(_) => {
-                if old_handler_ptr != 0 {
-                    if copy_to_user(old_handler_ptr, &old_handler_val.to_ne_bytes()).is_err() {
-                        return errno_to_ret(EFAULT);
-                    }
+                if old_handler_ptr != 0
+                    && copy_to_user(old_handler_ptr, &old_handler_val.to_ne_bytes()).is_err()
+                {
+                    return errno_to_ret(EFAULT);
                 }
                 0
             }

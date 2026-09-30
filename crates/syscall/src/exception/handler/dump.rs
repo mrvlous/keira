@@ -38,6 +38,7 @@ impl<'a> core::fmt::Write for DumpWriter<'a> {
 }
 
 /// Generates a structured core dump payload and saves it into the root VFS at `/data/log/core_<PID>.dmp`.
+#[allow(clippy::too_many_arguments)]
 pub fn write_core_dump(
     pid: usize,
     task_name: &str,

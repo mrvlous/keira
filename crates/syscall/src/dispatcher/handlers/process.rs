@@ -329,7 +329,7 @@ pub fn handle_setuid(arg1: u64) -> u64 {
 pub fn handle_waitpid(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     unsafe {
         if arg2 != 0 {
-            if arg2 % 4 != 0 {
+            if !arg2.is_multiple_of(4) {
                 return errno_to_ret(EFAULT);
             }
             if let Err(e) = validate_user_ptr(arg2, 4, true) {

@@ -40,6 +40,9 @@ unsafe fn abort_user_mode() -> ! {
 }
 
 /// Central CPU exception dispatcher invoked by low-level assembly ISR handlers.
+///
+/// # Safety
+/// Dereferences the raw `frame_ptr` pushed onto the CPU interrupt stack frame.
 #[no_mangle]
 pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFrame) {
     TOTAL_CPU_EXCEPTIONS.fetch_add(1, Ordering::Relaxed);
@@ -113,7 +116,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         #[cfg(test)]
         let cr2 = 0u64;
 
-        if cr2 >= 0x1000 && cr2 <= crate::user_copy::USER_MAX_ADDR {
+        if (0x1000..=crate::user_copy::USER_MAX_ADDR).contains(&cr2) {
             if keira_mem::vmm::handle_page_fault(cr2, error_code, rsp) {
                 return;
             }
@@ -148,7 +151,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
         let sig = exception_vector_to_signal(vector);
 
         let handler = keira_task::signal::get_signal_handler(CURRENT_TASK_IDX, sig);
-        if handler >= 0x10000 && handler < 0x0000_8000_0000_0000 {
+        if (0x10000..0x0000_8000_0000_0000).contains(&handler) {
             let already_in_handler = if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
                 t.saved_sigcontext.is_some()
             } else {
@@ -156,17 +159,19 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
             };
 
             if !already_in_handler {
-                let mut ctx = keira_task::types::InterruptContext::default();
-                ctx.rip = rip;
-                ctx.rsp = rsp;
-                ctx.rbp = rbp;
-                ctx.rflags = rflags;
-                ctx.rax = rax;
-                ctx.rbx = rbx;
-                ctx.rcx = rcx;
-                ctx.rdx = rdx;
-                ctx.rsi = rsi;
-                ctx.rdi = rdi;
+                let ctx = keira_task::types::InterruptContext {
+                    rip,
+                    rsp,
+                    rbp,
+                    rflags,
+                    rax,
+                    rbx,
+                    rcx,
+                    rdx,
+                    rsi,
+                    rdi,
+                    ..Default::default()
+                };
                 keira_task::scheduler::set_saved_sigcontext(ctx);
 
                 let mut_frame = frame_ptr as *mut ExceptionStackFrame;

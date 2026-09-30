@@ -116,7 +116,7 @@ pub fn handle_timer_create(arg1: u64, arg2: u64) -> u64 {
     let clock_id = arg1;
     let timer_id_ptr = arg2;
     if timer_id_ptr != 0 {
-        if timer_id_ptr % 8 != 0 {
+        if !timer_id_ptr.is_multiple_of(8) {
             return errno_to_ret(EINVAL);
         }
         if let Err(e) = unsafe { validate_user_ptr(timer_id_ptr, 8, true) } {
@@ -132,10 +132,10 @@ pub fn handle_timer_create(arg1: u64, arg2: u64) -> u64 {
     let res = unsafe { keira_arch::timers::sys_timer_create(clock_id, target_ptr) };
     match res {
         Ok(_) => {
-            if timer_id_ptr != 0 {
-                if unsafe { copy_to_user(timer_id_ptr, &kernel_timer_id.to_ne_bytes()) }.is_err() {
-                    return errno_to_ret(EFAULT);
-                }
+            if timer_id_ptr != 0
+                && unsafe { copy_to_user(timer_id_ptr, &kernel_timer_id.to_ne_bytes()) }.is_err()
+            {
+                return errno_to_ret(EFAULT);
             }
             0
         }
@@ -186,7 +186,7 @@ pub fn handle_clock_gettime(arg1: u64, arg2: u64) -> u64 {
         return errno_to_ret(EFAULT);
     }
     let align = core::mem::align_of::<keira_arch::timers::Timespec>() as u64;
-    if tp_ptr % align != 0 {
+    if !tp_ptr.is_multiple_of(align) {
         return errno_to_ret(EINVAL);
     }
     let size = core::mem::size_of::<keira_arch::timers::Timespec>();
@@ -221,7 +221,7 @@ pub fn handle_nanosleep(arg1: u64) -> u64 {
         return errno_to_ret(EFAULT);
     }
     let align = core::mem::align_of::<keira_arch::timers::Timespec>() as u64;
-    if arg1 % align != 0 {
+    if !arg1.is_multiple_of(align) {
         return errno_to_ret(EINVAL);
     }
     let size = core::mem::size_of::<keira_arch::timers::Timespec>();

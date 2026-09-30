@@ -59,6 +59,10 @@ pub fn print_decimal_serial(val: u64) {
 }
 
 /// Emits kernel panic diagnostic messages to both VGA and Serial, then halts execution.
+///
+/// # Safety
+/// Dereferences the raw `frame_ptr` exception frame pointer and halts CPU execution indefinitely.
+#[allow(clippy::too_many_arguments)]
 pub unsafe fn panic_exception_dump(
     vector: u64,
     error_code: u64,

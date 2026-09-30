@@ -357,7 +357,7 @@ pub fn handle_close(arg1: u64) -> u64 {
                     if !other_open {
                         if let Ok(path_str) = core::str::from_utf8(path_slice) {
                             let task_id = CURRENT_TASK_IDX;
-                            let _ = keira_fs::lock::release_lock(path_str, task_id);
+                            keira_fs::lock::release_lock(path_str, task_id);
                         }
                     }
                 }
@@ -530,7 +530,7 @@ pub fn handle_ioctl(arg2: u64, arg3: u64) -> u64 {
             }
             0
         }
-        0x5402 | 0x5403 | 0x5404 => {
+        0x5402..=0x5404 => {
             let mut term = keira_io::tty::Termios {
                 c_iflag: 0,
                 c_oflag: 0,
@@ -612,7 +612,7 @@ pub fn handle_dup2(arg1: u64, arg2: u64) -> u64 {
                     if !other_open {
                         if let Ok(path_str) = core::str::from_utf8(path_slice) {
                             let task_id = CURRENT_TASK_IDX;
-                            let _ = keira_fs::lock::release_lock(path_str, task_id);
+                            keira_fs::lock::release_lock(path_str, task_id);
                         }
                     }
                 }

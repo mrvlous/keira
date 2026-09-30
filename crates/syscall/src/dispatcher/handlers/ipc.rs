@@ -132,7 +132,7 @@ pub fn handle_epoll_ctl(arg1: u64, arg2: u64, arg3: u64) -> u64 {
         if let Err(e) = unsafe { validate_user_ptr(event_ptr, size as u64, false) } {
             return errno_to_ret(e);
         }
-        if event_ptr % 8 != 0 {
+        if !event_ptr.is_multiple_of(8) {
             return errno_to_ret(EINVAL);
         }
     }
@@ -152,7 +152,7 @@ pub fn handle_epoll_wait(arg1: u64, arg2: u64, arg3: u64) -> u64 {
         if let Err(e) = unsafe { validate_user_ptr(events_out_ptr, size as u64, true) } {
             return errno_to_ret(e);
         }
-        if events_out_ptr % 8 != 0 {
+        if !events_out_ptr.is_multiple_of(8) {
             return errno_to_ret(EINVAL);
         }
     }
