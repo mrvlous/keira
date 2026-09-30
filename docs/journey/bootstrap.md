@@ -11,9 +11,9 @@ Milestone 1 marks the foundational achievement of the Keira learning journey: tr
 ```mermaid
 graph TD
     BIOS["Firmware (BIOS / UEFI)"] --> GRUB["Multiboot2 Bootloader (GRUB)"]
-    GRUB --> Handshake["Multiboot2 Header Handshake<br/>(arch/x86/*/boot/multiboot2_header.asm)"]
+    GRUB --> Handshake["Multiboot2 Header Handshake<br/>(arch/x86/common/boot/multiboot2_header.asm)"]
     Handshake --> Entry32["32-Bit Protected Mode Entry<br/>(arch/x86/x86_64/boot/entry32.asm)"]
-    Entry32 --> Paging["Early Page Table Setup (4-Level Identity)<br/>(arch/x86/x86_64/boot/paging.asm)"]
+    Entry32 --> Paging["Early Page Table Setup (4-Level Identity)<br/>(arch/x86/x86_64/kernel/paging.asm)"]
     Paging --> LongMode["Enable IA-32e EFER.LME & CR0.PG"]
     LongMode --> Entry64["64-Bit Long Mode Entry<br/>(arch/x86/x86_64/boot/entry64.asm)"]
     Entry64 --> KernelMain["Rust Kernel Entrypoint (crates/kernel/src/lib.rs)<br/>kernel_main(multiboot_info_ptr)"]

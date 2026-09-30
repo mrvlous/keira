@@ -10,7 +10,7 @@ The early bringup sequence transitions the CPU from early assembly bootstrap to 
 
 ```mermaid
 graph TD
-    BootASM["arch/x86/boot/boot.asm"] --> EarlySerial["UART 16550 Serial Init (0x3F8)"]
+    BootASM["arch/x86/common/boot/multiboot2_header.asm & boot/entry.asm"] --> EarlySerial["UART 16550 Serial Init (0x3F8)"]
     EarlySerial --> EarlyVGA["VGA 80x25 Console Init"]
     EarlyVGA --> PMMBoot["PMM Bootstrap (Multiboot Memory Tag Parse)"]
     PMMBoot --> VMMInit["VMM Page Directory & Kernel Remap"]
