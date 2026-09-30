@@ -21,23 +21,36 @@ stateDiagram-v2
 
 ---
 
-## 2. Task Control Block (TCB / TaskDescriptor)
+## 2. Task Control Block (TCB / Task)
 
-Every thread or process is tracked by `TaskDescriptor` in `crates/task/src/context/`:
+Every thread or process is tracked by `Task` in `crates/task/src/types/task/descriptor.rs`:
 
 ```rust
-pub struct TaskDescriptor {
-    pub pid: usize,
-    pub ppid: usize,
+pub struct Task {
+    pub id: usize,
+    pub name: &'static str,
+    pub rsp: u64,
+    pub stack_addr: u64,
     pub state: TaskState,
-    pub priority: u8,
-    pub time_slice_remaining: usize,
-    pub cr3: usize,                     // Virtual address space page table
-    pub kernel_stack_top: usize,        // RSP0 loaded into TSS on privilege change
-    pub saved_context: CpuRegisters,    // Callee-saved registers during switch
-    pub fd_table: Arc<Mutex<FdTable>>,  // File descriptor array
-    pub pending_signals: u32,           // Signal bitmask
-    pub signal_handlers: SignalTable,   // Registered sigaction handlers
+    pub fds: [FileDescriptor; MAX_FDS],
+    pub program_break: u64,
+    pub program_break_start: u64,
+    pub cwd: [u8; 128],
+    pub cwd_len: usize,
+    pub parent_id: usize,
+    pub pml4_phys: u64,
+    pub exit_code: i32,
+    pub is_user: bool,
+    pub uid: u32,
+    pub gid: u32,
+    pub euid: u32,
+    pub egid: u32,
+    pub saved_sigcontext: Option<InterruptContext>,
+    pub signal_mask: u32,
+    pub pending_signals: u32,
+    pub is_orphan: bool,
+    pub cpu_ticks: u64,
+    pub switches: u64,
 }
 ```
 
