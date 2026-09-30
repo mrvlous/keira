@@ -17,7 +17,7 @@ graph TD
     IPv4 --> ARP["ARP Layer (Ethernet Address Resolution Protocol Cache)"]
     ARP & IPv4 --> Eth["Ethernet II Framing (Source/Destination MAC Headers)"]
     Eth --> DMA["Circular DMA Descriptor Rings (RX / TX)"]
-    DMA --> e1000["Intel 82540EM Gigabit Ethernet NIC (crates/io/src/net/e1000.rs)"]
+    DMA --> e1000["Intel 82540EM Gigabit Ethernet NIC (crates/net/src/driver/e1000/device.rs)"]
 ```
 
 ---

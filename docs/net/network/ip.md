@@ -58,4 +58,4 @@ pub fn compute_checksum(data: &[u8]) -> u16 {
 Based on the `Protocol` byte:
 * `1`: **ICMP** -> Sent to `crates/net/src/icmp/echo/`.
 * `6`: **TCP** -> Sent to `crates/net/src/tcp/state/`.
-* `17`: **UDP** -> Sent to `crates/net/src/udp/datagram/`.
+* `17`: **UDP** -> Sent to `crates/net/src/udp/packet/`.
