@@ -342,19 +342,17 @@ pub fn sys_kvm_create_vm() -> Result<u64, &'static str> {
 pub fn run_vcpu(vm_id: u64, vcpu_id: u32) -> Result<u64, &'static str> {
     let mut table = VM_TABLE.lock();
 
-    for slot in table.iter_mut() {
-        if let Some(vm) = slot {
-            if vm.id == vm_id && vm.is_active {
-                if (vcpu_id as usize) < MAX_VCPUS_PER_VM {
-                    if let Some(vcpu) = &mut vm.vcpus[vcpu_id as usize] {
-                        let exit = vcpu.step();
-                        vm.total_exits = vm.total_exits.saturating_add(1);
-                        return Ok(exit as u64);
-                    }
-                    return Err("Specified vCPU is not provisioned");
+    for vm in table.iter_mut().flatten() {
+        if vm.id == vm_id && vm.is_active {
+            if (vcpu_id as usize) < MAX_VCPUS_PER_VM {
+                if let Some(vcpu) = &mut vm.vcpus[vcpu_id as usize] {
+                    let exit = vcpu.step();
+                    vm.total_exits = vm.total_exits.saturating_add(1);
+                    return Ok(exit as u64);
                 }
-                return Err("vCPU ID exceeds maximum allowed limit");
+                return Err("Specified vCPU is not provisioned");
             }
+            return Err("vCPU ID exceeds maximum allowed limit");
         }
     }
 
@@ -385,11 +383,9 @@ pub fn destroy_vm(vm_id: u64) -> Result<(), &'static str> {
 /// Retrieve a snapshot copy of a specific VM descriptor.
 pub fn get_vm_snapshot(vm_id: u64) -> Option<VirtualMachine> {
     let table = VM_TABLE.lock();
-    for slot in table.iter() {
-        if let Some(vm) = slot {
-            if vm.id == vm_id {
-                return Some(*vm);
-            }
+    for vm in table.iter().flatten() {
+        if vm.id == vm_id {
+            return Some(*vm);
         }
     }
     None
@@ -413,10 +409,8 @@ pub fn get_kvm_stats() -> (bool, bool, usize, u64) {
     let hw = probe_hardware_virt();
     let (vms, count) = get_all_vms();
     let mut total_exits = 0;
-    for slot in vms.iter() {
-        if let Some(vm) = slot {
-            total_exits += vm.total_exits;
-        }
+    for vm in vms.iter().flatten() {
+        total_exits += vm.total_exits;
     }
     (hw.has_intel_vmx, hw.has_amd_svm, count, total_exits)
 }

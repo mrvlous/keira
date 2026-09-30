@@ -28,7 +28,7 @@ fn test_kvm_lifecycle() {
     assert_eq!(vm.vcpu_count, 1);
 
     let exit_code = run_vcpu(vm_id, 0).expect("vCPU 0 execution should succeed");
-    assert!(exit_code >= 1 && exit_code <= 7);
+    assert!((1..=7).contains(&exit_code));
 
     let updated_vm = get_vm_snapshot(vm_id).expect("VM should be updated");
     assert_eq!(updated_vm.total_exits, 1);
