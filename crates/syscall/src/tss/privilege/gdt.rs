@@ -33,6 +33,9 @@ unsafe fn reload_gdt() {}
 unsafe fn load_tss() {}
 
 /// Populates the GDT TSS descriptor entry and flushes processor segment registers.
+///
+/// # Safety
+/// Modifies low-level Global Descriptor Table descriptor entries and executes segment reload instructions.
 pub unsafe fn configure_gdt_tss() {
     let tss_addr = &raw const TSS as usize;
     let tss_size = core::mem::size_of::<TaskStateSegment>() - 1;

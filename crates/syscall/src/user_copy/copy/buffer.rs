@@ -12,6 +12,9 @@
 use crate::user_copy::validate::validate_user_ptr;
 
 /// Safely copies data from a kernel buffer to a user space virtual address.
+///
+/// # Safety
+/// Caller must ensure that `dest_user_ptr` points to valid user memory during the transfer.
 pub unsafe fn copy_to_user(dest_user_ptr: u64, src: &[u8]) -> Result<(), i64> {
     if src.is_empty() {
         return Ok(());
@@ -23,6 +26,9 @@ pub unsafe fn copy_to_user(dest_user_ptr: u64, src: &[u8]) -> Result<(), i64> {
 }
 
 /// Safely copies data from a user space virtual address into a kernel buffer.
+///
+/// # Safety
+/// Caller must ensure that `src_user_ptr` points to valid user memory during the transfer.
 pub unsafe fn copy_from_user(dest: &mut [u8], src_user_ptr: u64) -> Result<(), i64> {
     if dest.is_empty() {
         return Ok(());

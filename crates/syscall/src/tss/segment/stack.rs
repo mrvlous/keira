@@ -65,6 +65,9 @@ pub static mut BOOT_KERNEL_STACK_TOP: usize = 0;
 
 /// Dynamically updates the TSS RSP0/ESP0 stack pointer and Per-CPU kernel stack
 /// loaded when transitioning from Ring 3 to Ring 0.
+///
+/// # Safety
+/// Caller must ensure `sp0` points to a valid, mapped, and aligned kernel stack memory region.
 #[no_mangle]
 pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
     #[cfg(target_arch = "x86_64")]
@@ -79,6 +82,9 @@ pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
 }
 
 /// Retrieves the initial privilege stack top allocated at bootstrap.
+///
+/// # Safety
+/// Accesses global bootstrap kernel stack state.
 #[no_mangle]
 pub unsafe extern "C" fn get_boot_kernel_stack() -> usize {
     BOOT_KERNEL_STACK_TOP

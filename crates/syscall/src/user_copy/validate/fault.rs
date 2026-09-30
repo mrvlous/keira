@@ -13,6 +13,9 @@
 use keira_mem::{pmm, vmm};
 
 /// Attempts to fault-in an unmapped user page via VMA descriptors or heap expansion.
+///
+/// # Safety
+/// Directly manipulates active page tables, allocates physical frames, and invalidates TLB.
 #[cfg(all(target_arch = "x86_64", not(test)))]
 pub unsafe fn try_fault_user_page(vaddr: u64, require_writable: bool) -> bool {
     let pml4 = vmm::active_pml4();
@@ -45,6 +48,10 @@ pub unsafe fn try_fault_user_page(vaddr: u64, require_writable: bool) -> bool {
     vmm::handle_page_fault(vaddr, error_code, vaddr)
 }
 
+/// Fallback dummy fault handler for 32-bit and test targets.
+///
+/// # Safety
+/// Always returns false without modifying memory.
 #[cfg(any(target_arch = "x86", test))]
 pub unsafe fn try_fault_user_page(_vaddr: u64, _require_writable: bool) -> bool {
     false

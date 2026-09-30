@@ -19,7 +19,7 @@ pub fn errno_to_ret(err: i64) -> u64 {
 #[inline]
 pub fn ret_to_errno(ret: u64) -> Option<i64> {
     let signed = ret as i64;
-    if signed < 0 && signed >= -4095 {
+    if (-4095..0).contains(&signed) {
         Some(-signed)
     } else {
         None

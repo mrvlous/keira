@@ -19,6 +19,9 @@ use crate::user_copy::validate::bounds::check_user_bounds;
 use crate::user_copy::validate::fault::try_fault_user_page;
 
 /// Validates that a user memory buffer is completely contained within valid user virtual address space.
+///
+/// # Safety
+/// Traverses and checks user virtual page mappings directly.
 pub unsafe fn validate_user_ptr(ptr: u64, len: u64, require_writable: bool) -> Result<(), i64> {
     if len == 0 {
         return Ok(());

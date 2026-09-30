@@ -18,6 +18,9 @@ extern "C" {
 unsafe fn init_syscall_msrs() {}
 
 /// Configures syscall/sysret MSRs (STAR, LSTAR, FMASK) and per-cpu stacks.
+///
+/// # Safety
+/// Writes model-specific registers (MSRs) and per-CPU kernel stack pointers directly.
 pub unsafe fn configure_syscall_msrs(stack_top: usize) {
     #[cfg(target_arch = "x86_64")]
     {

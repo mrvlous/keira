@@ -19,11 +19,17 @@ use keira_mem::{pmm, vmm};
 use crate::user_copy::validate::fault::try_fault_user_page;
 
 /// Safely reads a null-terminated string from user space memory into a kernel buffer.
+///
+/// # Safety
+/// Caller must ensure `ptr` points to readable user space memory.
 pub unsafe fn read_user_string(ptr: *const u8, buf: &mut [u8]) -> Result<usize, i64> {
     read_user_string_bounded(ptr, buf, buf.len())
 }
 
 /// Safely reads a null-terminated string up to `max_bytes` from user space memory into a kernel buffer.
+///
+/// # Safety
+/// Caller must ensure `ptr` points to readable user space memory.
 pub unsafe fn read_user_string_bounded(
     ptr: *const u8,
     buf: &mut [u8],
@@ -48,7 +54,7 @@ pub unsafe fn read_user_string_bounded(
             None => return Err(EFAULT),
         };
 
-        if addr < USER_MIN_ADDR || addr > USER_MAX_ADDR {
+        if !(USER_MIN_ADDR..=USER_MAX_ADDR).contains(&addr) {
             return Err(EFAULT);
         }
 
