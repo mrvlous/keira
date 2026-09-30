@@ -25,6 +25,9 @@ use crate::state::session::{
 };
 
 /// Set a screen buffer cell (bounds-checked against static buffer limits).
+///
+/// # Safety
+/// Writes directly to static mutable terminal screen cells.
 pub unsafe fn set_cell(row: usize, col: usize, ch: u8, fg: vga::Color, bg: vga::Color) {
     if row < SCREEN_BUF_ROWS && col < SCREEN_BUF_COLS {
         EDITOR_SCREEN_CHARS[row][col] = ch;
@@ -34,6 +37,9 @@ pub unsafe fn set_cell(row: usize, col: usize, ch: u8, fg: vga::Color, bg: vga::
 }
 
 /// Redraw the complete fullscreen GNU nano view, dynamically sized to the active display.
+///
+/// # Safety
+/// Directly inspects and modifies global editor text buffers and VGA display cells.
 pub unsafe fn editor_redraw() {
     let cols = screen_cols();
     let rows = screen_rows();
@@ -169,14 +175,8 @@ pub unsafe fn editor_redraw() {
                 gutter[3] = b'|';
                 gutter[4] = b' ';
 
-                for g_col in 0..GUTTER_WIDTH.min(cols) {
-                    set_cell(
-                        row,
-                        g_col,
-                        gutter[g_col],
-                        vga::Color::DarkGrey,
-                        vga::Color::Black,
-                    );
+                for (g_col, &ch) in gutter.iter().enumerate().take(GUTTER_WIDTH.min(cols)) {
+                    set_cell(row, g_col, ch, vga::Color::DarkGrey, vga::Color::Black);
                 }
 
                 let len = core::cmp::min(LINE_LENS[actual_y] as usize, c_cols);

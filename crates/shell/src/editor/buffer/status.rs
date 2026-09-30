@@ -47,10 +47,13 @@ pub fn append_bytes(buf: &mut [u8], len: &mut usize, data: &[u8]) {
 }
 
 /// Returns the 0-based index of the last active line in the document.
+///
+/// # Safety
+/// Reads static mutable line length array `LINE_LENS`.
 pub unsafe fn get_file_last_line() -> usize {
     let mut last = 0;
-    for y in 0..128 {
-        if LINE_LENS[y] > 0 {
+    for (y, &len) in LINE_LENS.iter().enumerate() {
+        if len > 0 {
             last = y;
         }
     }
@@ -62,11 +65,17 @@ pub unsafe fn get_file_last_line() -> usize {
 }
 
 /// Returns total line count of the document (at least 1).
+///
+/// # Safety
+/// Inspects global editor line structures.
 pub unsafe fn get_total_lines() -> usize {
     get_file_last_line() + 1
 }
 
 /// Sets status message indicating lines read from persistent storage.
+///
+/// # Safety
+/// Modifies global static editor status message buffers.
 pub unsafe fn set_status_msg_read(lines: usize) {
     let mut buf = [0u8; 256];
     let mut len = 0;
@@ -82,6 +91,9 @@ pub unsafe fn set_status_msg_read(lines: usize) {
 }
 
 /// Sets status message indicating lines saved to persistent storage.
+///
+/// # Safety
+/// Modifies global static editor status message buffers.
 pub unsafe fn set_status_msg_wrote(lines: usize) {
     let mut buf = [0u8; 256];
     let mut len = 0;
@@ -105,14 +117,17 @@ pub unsafe fn set_status_msg_wrote(lines: usize) {
 }
 
 /// Sets status bar telemetry describing cursor position, column, and total character count.
+///
+/// # Safety
+/// Accesses static mutable editor cursor and text metadata.
 pub unsafe fn set_status_cur_pos() {
     let cur_line = (EDIT_CUR_Y + 1) as usize;
     let total_lines = get_total_lines();
     let mut total_chars = 0;
     let mut char_pos = 0;
 
-    for y in 0..total_lines {
-        let llen = LINE_LENS[y] as usize;
+    for (y, &llen_u16) in LINE_LENS.iter().enumerate().take(total_lines) {
+        let llen = llen_u16 as usize;
         if y < (EDIT_CUR_Y as usize) {
             char_pos += llen + 1;
         } else if y == (EDIT_CUR_Y as usize) {
@@ -120,19 +135,16 @@ pub unsafe fn set_status_cur_pos() {
         }
         total_chars += llen + 1;
     }
-    if total_chars > 0 {
-        total_chars -= 1;
-    }
+    total_chars = total_chars.saturating_sub(1);
 
     let cur_col = (EDIT_CUR_X + 1) as usize;
     let line_len = (LINE_LENS[EDIT_CUR_Y as usize] as usize + 1).max(1);
-    let line_pct = (cur_line * 100) / total_lines.max(1);
-    let col_pct = (cur_col * 100) / line_len;
-    let char_pct = if total_chars > 0 {
-        (char_pos * 100) / total_chars
-    } else {
-        100
-    };
+    let line_pct = cur_line.saturating_mul(100) / total_lines.max(1);
+    let col_pct = cur_col.saturating_mul(100) / line_len;
+    let char_pct = char_pos
+        .saturating_mul(100)
+        .checked_div(total_chars)
+        .unwrap_or(100);
 
     let mut buf = [0u8; 256];
     let mut len = 0;

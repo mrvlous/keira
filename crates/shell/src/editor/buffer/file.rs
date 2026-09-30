@@ -22,15 +22,18 @@ use crate::state::session::{
 };
 
 /// Save current in-memory buffer to persistent FAT16 storage.
+///
+/// # Safety
+/// Reads static mutable editor buffers and executes VFS file operations.
 pub unsafe fn editor_save_file() -> Result<usize, &'static str> {
     let mut flat_len = 0;
     let last_y = get_file_last_line();
 
     for y in 0..=last_y {
         let row_len = (LINE_LENS[y] as usize).min(GRID_LINE_WIDTH);
-        for x in 0..row_len {
+        for &ch in EDITOR_GRID[y].iter().take(row_len) {
             if flat_len < FILE_BUF_SIZE {
-                EDITOR_FILE_BUF[flat_len] = EDITOR_GRID[y][x];
+                EDITOR_FILE_BUF[flat_len] = ch;
                 flat_len += 1;
             }
         }
@@ -51,6 +54,9 @@ pub unsafe fn editor_save_file() -> Result<usize, &'static str> {
 }
 
 /// Start the nano editor session for a given file.
+///
+/// # Safety
+/// Initializes static mutable editor grid, file buffers, and session flags.
 pub unsafe fn editor_start(filename: &str) -> Result<(), &'static str> {
     EDIT_FILENAME = [0; 64];
     EDIT_FILENAME_LEN = core::cmp::min(filename.len(), 64);

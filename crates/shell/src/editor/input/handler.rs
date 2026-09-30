@@ -32,6 +32,9 @@ pub const KEY_F3: u8 = 0x84;
 pub const KEY_F10: u8 = 0x85;
 
 /// Dispatch and execute keypress event inside the interactive text editor.
+///
+/// # Safety
+/// Directly manipulates global editor state, modal flags, and terminal buffers.
 pub unsafe fn editor_handle_keypress(c: u8) {
     let c_rows = canvas_rows() as u16;
     let _c_cols = content_cols();

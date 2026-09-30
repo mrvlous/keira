@@ -14,6 +14,9 @@ use crate::editor::render::view::editor_redraw;
 use crate::state::session::{EDIT_CUR_X, EDIT_CUR_Y, EDIT_SCROLL_Y, LINE_LENS};
 
 /// Move cursor up within document bounds and update view scroll offset.
+///
+/// # Safety
+/// Modifies static mutable editor cursor and scroll offsets, redrawing the screen.
 pub unsafe fn cursor_up() {
     if EDIT_CUR_Y > 0 {
         EDIT_CUR_Y -= 1;
@@ -29,6 +32,9 @@ pub unsafe fn cursor_up() {
 }
 
 /// Move cursor down strictly bounded to last line of document.
+///
+/// # Safety
+/// Modifies static mutable editor cursor coordinates and updates view scroll offsets.
 pub unsafe fn cursor_down(last_line: u16) {
     let c_rows = canvas_rows() as u16;
     if EDIT_CUR_Y < last_line {
@@ -45,6 +51,9 @@ pub unsafe fn cursor_down(last_line: u16) {
 }
 
 /// Move cursor left; wrap to previous line tail if at column 0.
+///
+/// # Safety
+/// Directly updates static mutable cursor coordinates and initiates editor redraw.
 pub unsafe fn cursor_left() {
     if EDIT_CUR_X > 0 {
         EDIT_CUR_X -= 1;
@@ -60,6 +69,9 @@ pub unsafe fn cursor_left() {
 }
 
 /// Move cursor right; wrap to next line head only if not at EOF.
+///
+/// # Safety
+/// Updates static mutable cursor positions across line boundaries.
 pub unsafe fn cursor_right(last_line: u16) {
     let c_cols = content_cols();
     let c_rows = canvas_rows() as u16;

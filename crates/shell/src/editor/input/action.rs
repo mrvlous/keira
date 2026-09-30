@@ -21,6 +21,9 @@ use crate::state::session::{
 };
 
 /// Insert a printable character at current cursor position.
+///
+/// # Safety
+/// Directly manipulates global editor text grid and cursor positions.
 pub unsafe fn insert_char(c: u8) {
     let c_cols = content_cols();
     let cur_y = EDIT_CUR_Y as usize;
@@ -40,6 +43,9 @@ pub unsafe fn insert_char(c: u8) {
 }
 
 /// Insert a newline, splitting the current line at cursor into two lines.
+///
+/// # Safety
+/// Directly modifies global line grids, length metadata, and scroll offsets.
 pub unsafe fn insert_newline() {
     let c_rows = canvas_rows() as u16;
     let cur_y = EDIT_CUR_Y as usize;
@@ -60,9 +66,7 @@ pub unsafe fn insert_newline() {
         }
         LINE_LENS[cur_y + 1] = new_len as u16;
 
-        for x in cur_x..GRID_LINE_WIDTH {
-            EDITOR_GRID[cur_y][x] = b' ';
-        }
+        EDITOR_GRID[cur_y][cur_x..GRID_LINE_WIDTH].fill(b' ');
         LINE_LENS[cur_y] = cur_x as u16;
 
         EDIT_CUR_Y += 1;
@@ -78,6 +82,9 @@ pub unsafe fn insert_newline() {
 }
 
 /// Delete character before cursor or merge current line with previous line.
+///
+/// # Safety
+/// Directly modifies editor text cells, shifts buffer lines, and redraws terminal.
 pub unsafe fn delete_backspace() {
     let c_cols = content_cols();
     let cur_y = EDIT_CUR_Y as usize;
@@ -127,6 +134,9 @@ pub unsafe fn delete_backspace() {
 }
 
 /// Cut the active line into the clipboard buffer.
+///
+/// # Safety
+/// Accesses and copies static mutable editor cut buffer and shifts row lines.
 pub unsafe fn cut_line() {
     let y = EDIT_CUR_Y as usize;
     let len = LINE_LENS[y] as usize;
@@ -155,6 +165,9 @@ pub unsafe fn cut_line() {
 }
 
 /// Paste the line from clipboard buffer into the active line position.
+///
+/// # Safety
+/// Reads static mutable editor clipboard buffer and shifts active editor grid lines.
 pub unsafe fn paste_line() {
     if EDITOR_HAS_CUT {
         let y = EDIT_CUR_Y as usize;
