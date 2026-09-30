@@ -10,10 +10,10 @@ Milestone 2 addresses the fundamental challenge of physical silicon and virtual 
 
 ```mermaid
 graph TD
-    Hardware["Physical DRAM Hardware (e.g. 256 MiB)"] --> PMM["Physical Memory Manager (PMM)<br/><i>crates/mem/src/pmm/bitmap/</i>"]
+    Hardware["Physical DRAM Hardware (e.g. 256 MiB)"] --> PMM["Physical Memory Manager (PMM)<br/><i>crates/mem/src/pmm/frame/bitmap.rs</i>"]
     PMM --> FrameBitmap["Atomic 4 KiB Frame Allocation Bitmap"]
     PMM --> BuddyAlloc["Multi-Order Contiguous Buddy Allocator"]
-    FrameBitmap --> VMM["Virtual Memory Manager (VMM)<br/><i>crates/mem/src/vmm/paging/</i>"]
+    FrameBitmap --> VMM["Virtual Memory Manager (VMM)<br/><i>crates/mem/src/vmm/mapping/</i>"]
     VMM --> PageTables["4-Level Hierarchical Paging (PML4 -> PDPT -> PD -> PT)"]
     PageTables --> KernelHeap["Segregated Free-List Kernel Heap<br/><i>crates/mem/src/heap/</i>"]
     PageTables --> UserVMM["Isolated Ring 3 Address Spaces (W^X Enforced)"]
