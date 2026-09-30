@@ -39,7 +39,7 @@ fn test_elf_flags_and_constants() {
 
 #[test]
 fn test_user_canonical_boundaries() {
-    assert!(USER_MIN_VADDR < USER_MAX_VADDR);
+    const { assert!(USER_MIN_VADDR < USER_MAX_VADDR) };
 }
 
 #[test]

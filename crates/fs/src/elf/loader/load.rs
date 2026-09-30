@@ -83,7 +83,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     };
 
     // 2. Entry Point Range Validation
-    if entry < USER_MIN_VADDR || entry > USER_MAX_VADDR {
+    if !(USER_MIN_VADDR..=USER_MAX_VADDR).contains(&entry) {
         return Err("ELF entry point resides outside canonical user space boundaries");
     }
 
@@ -209,8 +209,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
             }
 
             // Check for page-aligned collision with existing segments to strictly prevent W^X permission aliasing
-            for j in 0..segment_count {
-                let existing = segments[j];
+            for existing in segments.iter().take(segment_count) {
                 if !(aligned_end <= existing.aligned_start || aligned_start >= existing.aligned_end)
                 {
                     return Err(
@@ -321,10 +320,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
                 let frame_ptr = frame as *mut u8;
                 core::ptr::write_bytes(frame_ptr, 0, pmm::PAGE_SIZE as usize);
 
-                let current_seg_offset = match seg.mapped_bytes.checked_sub(pmm::PAGE_SIZE) {
-                    Some(off) => off,
-                    None => 0,
-                };
+                let current_seg_offset: u64 = seg.mapped_bytes.saturating_sub(pmm::PAGE_SIZE);
 
                 let mut page_offset_in_data = 0u64;
                 let mut data_len_to_copy = pmm::PAGE_SIZE;
