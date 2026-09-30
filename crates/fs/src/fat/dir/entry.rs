@@ -123,12 +123,12 @@ pub unsafe fn create_directory_entry_with_name(
                     let char_start = (seq_num as usize - 1) * 13;
 
                     let mut lfn_chars = [0xFFFFu16; 13];
-                    for c in 0..13 {
+                    for (c, lfn_char) in lfn_chars.iter_mut().enumerate() {
                         let src_idx = char_start + c;
                         if src_idx < name_utf8.len() {
-                            lfn_chars[c] = name_utf8[src_idx] as u16;
+                            *lfn_char = name_utf8[src_idx] as u16;
                         } else if src_idx == name_utf8.len() {
-                            lfn_chars[c] = 0x0000;
+                            *lfn_char = 0x0000;
                         }
                     }
 

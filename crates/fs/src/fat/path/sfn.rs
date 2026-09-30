@@ -18,8 +18,8 @@ pub fn format_filename(name: &[u8; 11], dest: &mut [u8; 12]) -> usize {
         base_end -= 1;
     }
 
-    for i in 0..base_end {
-        dest[len] = name[i].to_ascii_lowercase();
+    for b in name.iter().take(base_end) {
+        dest[len] = b.to_ascii_lowercase();
         len += 1;
     }
 
