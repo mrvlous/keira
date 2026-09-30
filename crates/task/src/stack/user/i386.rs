@@ -81,8 +81,8 @@ pub unsafe fn setup_user_stack_32(
     let argv_table_ptr = page_ptr.add(argv_table_offset) as *mut u32;
 
     let mut w_idx = 0;
-    for i in 0..argc {
-        *argv_table_ptr.add(w_idx) = arg_vaddrs[i];
+    for &addr in arg_vaddrs.iter().take(argc) {
+        *argv_table_ptr.add(w_idx) = addr;
         w_idx += 1;
     }
     *argv_table_ptr.add(w_idx) = 0;

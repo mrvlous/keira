@@ -77,7 +77,7 @@ pub unsafe fn setup_user_stack_64(
 
     // Total words: argc(1) + argv pointers(argc) + argv_null(1) + envp_null(1) + auxv_words
     let total_words = 1 + argc + 1 + 1 + auxv_words;
-    if total_words % 2 != 0 {
+    if !total_words.is_multiple_of(2) {
         offset = offset.saturating_sub(8);
     }
     offset = offset.saturating_sub(total_words * 8);
@@ -90,8 +90,8 @@ pub unsafe fn setup_user_stack_64(
     w_idx += 1;
 
     // 2. argv[0..argc]
-    for i in 0..argc {
-        *stack_u64.add(w_idx) = arg_vaddrs[i];
+    for &addr in arg_vaddrs.iter().take(argc) {
+        *stack_u64.add(w_idx) = addr;
         w_idx += 1;
     }
 

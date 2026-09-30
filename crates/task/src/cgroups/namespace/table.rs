@@ -155,7 +155,7 @@ pub(crate) fn parse_u32(s: &str) -> Result<u32, ()> {
     }
     let mut val: u32 = 0;
     for b in s.bytes() {
-        if !(b'0'..=b'9').contains(&b) {
+        if !b.is_ascii_digit() {
             return Err(());
         }
         val = val.checked_mul(10).ok_or(())?;
