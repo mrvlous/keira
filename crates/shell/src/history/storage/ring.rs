@@ -12,6 +12,9 @@
 use crate::state::session::*;
 
 /// Push the current input buffer into command history.
+///
+/// # Safety
+/// Directly manipulates static mutable history ring buffers and counters.
 pub unsafe fn history_push() {
     if BUFFER_LEN == 0 {
         return;

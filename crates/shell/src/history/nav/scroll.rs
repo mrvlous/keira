@@ -14,6 +14,9 @@ use keira_io::vga;
 use crate::state::session::*;
 
 /// Replace current input buffer with history entry and redraw on console.
+///
+/// # Safety
+/// Modifies static mutable terminal input buffer and VGA console cursor positions.
 pub unsafe fn history_load(idx: usize) {
     vga::set_cursor_pos(PROMPT_ROW, PROMPT_COL);
     vga::clear_line_from(PROMPT_COL);

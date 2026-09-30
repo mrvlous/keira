@@ -95,6 +95,9 @@ pub const STANDARD_PATHS: &[&str] = &[
 ];
 
 /// Resolves tab completion against commands or files and updates the VGA console.
+///
+/// # Safety
+/// Accesses and modifies global static input buffer state and writes directly to VGA hardware.
 pub unsafe fn handle_autocomplete() {
     let (prefix_start, word) = find_last_word(&INPUT_BUFFER[..BUFFER_LEN]);
     if word.is_empty() {

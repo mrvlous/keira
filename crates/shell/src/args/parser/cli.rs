@@ -34,14 +34,15 @@ impl<'a> CliArgs<'a> {
     pub fn has_flag(&self, short: char, long: &str) -> bool {
         for i in 0..self.token_count {
             let tok = self.tokens[i];
-            if tok.starts_with("--") {
-                if &tok[2..] == long {
+            if let Some(rest) = tok.strip_prefix("--") {
+                if rest == long {
                     return true;
                 }
-            } else if tok.starts_with('-') && tok.len() > 1 {
-                if tok[1..].chars().any(|ch| ch == short) {
-                    return true;
-                }
+            } else if tok.starts_with('-')
+                && tok.len() > 1
+                && tok[1..].chars().any(|ch| ch == short)
+            {
+                return true;
             }
         }
         false
@@ -53,8 +54,7 @@ impl<'a> CliArgs<'a> {
             let tok = self.tokens[i];
 
             // Form: --long=value
-            if tok.starts_with("--") {
-                let rest = &tok[2..];
+            if let Some(rest) = tok.strip_prefix("--") {
                 if let Some(eq_idx) = rest.find('=') {
                     if &rest[..eq_idx] == long {
                         return Some(&rest[eq_idx + 1..]);
@@ -74,12 +74,10 @@ impl<'a> CliArgs<'a> {
                     if prefix.chars().any(|ch| ch == short) {
                         return Some(&rest[eq_idx + 1..]);
                     }
-                } else if rest.len() == 1 && rest.chars().next() == Some(short) {
-                    if i + 1 < self.token_count {
-                        let next_tok = self.tokens[i + 1];
-                        if !next_tok.starts_with('-') {
-                            return Some(next_tok);
-                        }
+                } else if rest.len() == 1 && rest.starts_with(short) && i + 1 < self.token_count {
+                    let next_tok = self.tokens[i + 1];
+                    if !next_tok.starts_with('-') {
+                        return Some(next_tok);
                     }
                 }
             }

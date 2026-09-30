@@ -47,6 +47,9 @@ pub fn parse_output_redirection(cmd: &str) -> (&str, Option<&str>, bool) {
 }
 
 /// Execute command with redirected output captured and persisted to VFS.
+///
+/// # Safety
+/// Modifies global static redirection flags and buffers in `keira_io::vga`.
 pub unsafe fn execute_with_redirection(
     actual_cmd: &str,
     target_file: Option<&str>,
