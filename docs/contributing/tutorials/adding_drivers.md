@@ -29,7 +29,7 @@ PCI devices report standard configuration headers. Identify your hardware:
 * **Device ID**: 16-bit hardware identifier.
 * **Base Address Registers (BARs)**: Indicate port I/O ranges or physical MMIO addresses.
 
-In `crates/io/src/bus/pci/scan.rs`:
+In `crates/io/src/bus/pci/scanner.rs`:
 ```rust
 for dev in pci::scan_bus() {
     if dev.vendor_id == 0x8086 && dev.device_id == 0x100E {
@@ -46,27 +46,28 @@ for dev in pci::scan_bus() {
 Device registers are mapped into kernel virtual address space:
 
 ```rust
-use keira_mem::vmm::paging::map_mmio_range;
-use keira_mem::dma::alloc_contiguous_dma;
+use keira_mem::dma::alloc_dma_buffer;
+use keira_mem::vmm::mapping::map_page;
 
 pub struct MyDriver {
-    mmio_base: usize,
-    dma_buffer: usize,
-    dma_phys: usize,
+    mmio_base: u64,
+    dma_buffer: u64,
+    dma_phys: u64,
 }
 
 impl MyDriver {
-    pub fn new(bar0_phys: usize, bar0_size: usize) -> Result<Self, &'static str> {
-        // 1. Map physical MMIO pages with Cache-Disable flags
-        let mmio_virt = map_mmio_range(bar0_phys, bar0_size)?;
+    pub fn new(bar0_phys: u64) -> Result<Self, &'static str> {
+        // 1. Map physical MMIO frame with Cache-Disable flags
+        let mmio_virt = bar0_phys;
+        map_page(mmio_virt, bar0_phys, true)?;
 
-        // 2. Allocate physically contiguous 32-bit DMA ring buffers
-        let (dma_virt, dma_phys) = alloc_contiguous_dma(8192)?;
+        // 2. Allocate physically contiguous 32-bit DMA ring buffer
+        let dma = alloc_dma_buffer(8192)?;
 
         Ok(Self {
             mmio_base: mmio_virt,
-            dma_buffer: dma_virt,
-            dma_phys,
+            dma_buffer: dma.vaddr,
+            dma_phys: dma.paddr,
         })
     }
 }
