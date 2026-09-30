@@ -14,11 +14,11 @@ Keira provides dual-architecture system call trapping:
 
 ```mermaid
 graph TD
-    App["Ring 3 Userland Application"] --> LibC["userland/lib/syscall/syscall3()"]
+    App["Ring 3 Userland Application"] --> LibC["userland/include/sys/syscall.h"]
     LibC --> Trap["x86 Trap (syscall / int 0x80)"]
     Trap --> LowLevelASM["arch/x86/*/kernel/syscall.asm (Switch to Kernel Stack)"]
-    LowLevelASM --> Router["crates/syscall/src/dispatcher/router/router.rs"]
-    Router --> BoundsCheck["crates/syscall/src/user_copy/validate/bounds.rs"]
+    LowLevelASM --> Router["crates/syscall/src/dispatcher/router/entry.rs"]
+    Router --> BoundsCheck["crates/syscall/src/user_copy/validate/checker.rs"]
     BoundsCheck --> Handler["crates/syscall/src/dispatcher/handlers/<subsystem>.rs"]
     Handler --> KernelSubsystem["Kernel Subsystem (VFS, Task, Net, etc.)"]
     KernelSubsystem --> Ret["Return Result / Errno to %rax / %eax"]
@@ -28,17 +28,17 @@ graph TD
 
 ## 2. Step 1: Assign Syscall Vector Number
 
-In `crates/syscall/src/table/numbers/constants.rs`, add a new unique constant:
+In `crates/syscall/src/table/numbers/system.rs`, add a new unique constant:
 
 ```rust
-pub const SYS_GETUPTIME: usize = 120;
+pub const SYS_GETUPTIME: u64 = 86;
 ```
 
 ---
 
 ## 3. Step 2: Implement Kernel Handler
 
-Create or update the handler in `crates/syscall/src/dispatcher/handlers/time.rs`:
+Create or update the handler in `crates/syscall/src/dispatcher/handlers/system.rs`:
 
 ```rust
 // SPDX-License-Identifier: GPL-2.0-only
@@ -50,12 +50,12 @@ Create or update the handler in `crates/syscall/src/dispatcher/handlers/time.rs`
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-use crate::user_copy::validate::bounds::validate_user_ptr;
-use crate::user_copy::copy::to_user::copy_to_user;
-use crate::user_copy::errno::codes::*;
-use keira_kernel::time::uptime;
+use crate::user_copy::validate::checker::validate_user_ptr;
+use crate::user_copy::copy::buffer::copy_to_user;
+use crate::user_copy::errno::defs::*;
+use keira_arch::timers::get_uptime_ms;
 
-/// Handler for SYS_GETUPTIME (syscall 120).
+/// Handler for SYS_GETUPTIME (syscall 86).
 /// Writes monotonic system uptime in milliseconds to user buffer.
 pub fn sys_getuptime(user_buf_ptr: usize, len: usize) -> isize {
     // 1. Defensive parameter verification
@@ -68,7 +68,7 @@ pub fn sys_getuptime(user_buf_ptr: usize, len: usize) -> isize {
         return -EFAULT;
     }
 
-    let current_uptime_ms = uptime::get_monotonic_ms();
+    let current_uptime_ms = unsafe { get_uptime_ms() };
 
     // 3. Copy safely to user memory
     match copy_to_user(user_buf_ptr, &current_uptime_ms.to_ne_bytes()) {
@@ -82,11 +82,11 @@ pub fn sys_getuptime(user_buf_ptr: usize, len: usize) -> isize {
 
 ## 4. Step 3: Wire into Dispatcher Router
 
-Add the match arm to `crates/syscall/src/dispatcher/router/router.rs`:
+Add the match arm to `crates/syscall/src/dispatcher/router/entry.rs`:
 
 ```rust
 SYS_GETUPTIME => {
-    handlers::time::sys_getuptime(arg1 as usize, arg2 as usize)
+    handlers::system::sys_getuptime(arg1 as usize, arg2 as usize) as u64
 }
 ```
 
@@ -96,12 +96,12 @@ SYS_GETUPTIME => {
 
 1. **Add to C Header (`userland/include/sys/syscall.h`)**:
    ```c
-   #define SYS_getuptime 120
+   #define SYS_getuptime 86
 
    int getuptime(uint64_t *uptime_ms);
    ```
 
-2. **Add Libc Wrapper (`userland/lib/time/uptime.c`)**:
+2. **Add Libc Wrapper (`userland/lib/syscall/time/time.c`)**:
    ```c
    /* SPDX-License-Identifier: GPL-2.0-only */
    #include <sys/syscall.h>
