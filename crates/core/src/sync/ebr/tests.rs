@@ -13,6 +13,19 @@ use super::*;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 static RECLAIM_COUNTER: AtomicUsize = AtomicUsize::new(0);
+static TEST_LOCK: crate::sync::SpinLock = crate::sync::SpinLock::new();
+
+struct TestGuard;
+impl Drop for TestGuard {
+    fn drop(&mut self) {
+        TEST_LOCK.unlock();
+    }
+}
+
+fn lock_test() -> TestGuard {
+    TEST_LOCK.lock();
+    TestGuard
+}
 
 fn mock_reclaim(_val: usize) {
     RECLAIM_COUNTER.fetch_add(1, Ordering::SeqCst);
@@ -20,6 +33,7 @@ fn mock_reclaim(_val: usize) {
 
 #[test]
 fn test_ebr_pin_unpin_lifecycle() {
+    let _lock = lock_test();
     let initial_epoch = current_epoch();
     {
         let guard = pin_participant(0);
@@ -31,6 +45,7 @@ fn test_ebr_pin_unpin_lifecycle() {
 
 #[test]
 fn test_ebr_epoch_advancement_prevented_by_pinned_lagging_reader() {
+    let _lock = lock_test();
     let start_epoch = current_epoch();
     let guard = pin_participant(1);
     assert_eq!(guard.epoch(), start_epoch);
@@ -55,6 +70,7 @@ fn test_ebr_epoch_advancement_prevented_by_pinned_lagging_reader() {
 
 #[test]
 fn test_ebr_garbage_bag_lifecycle() {
+    let _lock = lock_test();
     let mut bag = GarbageBag::new();
     RECLAIM_COUNTER.store(0, Ordering::SeqCst);
 
