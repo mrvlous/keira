@@ -19,6 +19,7 @@ graph TD
     M7 --> M8["8. Modular Network Fetch Engine<br/><i>Chunked Streaming, Progress Bars, Netfilter Firewall</i>"]
     M8 --> M9["9. Dual Architecture & v0.5.0 Hardening<br/><i>x86_64 & i686 Parity, 81 Syscalls, Syzkaller-Lite Fuzzing</i>"]
     M9 --> M10["10. Raw Kernel Primitives<br/><i>Type-Safe EBR, Frame Refcounting, Copy-on-Write Fork</i>"]
+    M10 --> M11["11. Work-Stealing Scheduling<br/><i>Per-CPU Runqueues, Chase-Lev Deques, Lock-Free Stealing</i>"]
 ```
 
 ---
@@ -37,6 +38,7 @@ graph TD
 | **Milestone 8** | [`network_engine.md`](network_engine.md) | `v0.4.0` | Modular network fetch engine, chunked streaming, progress bars, and Netfilter firewall |
 | **Milestone 9** | [`hardening_v050.md`](hardening_v050.md) | `v0.5.0` | Dual-architecture x86_64/i686 parity, 81 syscall vectors, and Syzkaller-Lite fuzzing defense |
 | **Milestone 10** | [`raw_kernel_v060.md`](raw_kernel_v060.md) | `v0.6.0` | Type-Safe Epoch-Based Reclamation (EBR), physical frame reference counting, and Copy-on-Write (COW) |
+| **Milestone 11** | [`work_stealing_v060.md`](work_stealing_v060.md) | `v0.6.0` | Per-CPU lock-free work-stealing scheduler, Chase-Lev deques, EBR pinning, and decentralized task balancer |
 
 ---
 
