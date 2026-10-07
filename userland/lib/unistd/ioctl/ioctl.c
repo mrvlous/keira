@@ -17,6 +17,7 @@
 int ioctl(int fd, unsigned long request, ...) {
     va_list ap;
     va_start(ap, request);
+    // NOLINTNEXTLINE(clang-analyzer-optin.core.UnconditionalVAArg)
     void *argp = va_arg(ap, void *);
     va_end(ap);
 

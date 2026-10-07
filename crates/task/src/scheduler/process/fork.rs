@@ -64,8 +64,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             let stack_frame = pmm::alloc_frame().ok_or("Out of memory for child stack")?;
             let stack_top = stack_frame + pmm::PAGE_SIZE;
 
-            // Clone parent address space with full deep-copy of user pages
-            let pml4_phys = match vmm::clone_user_address_space(parent.pml4_phys) {
+            // Clone parent address space with Copy-on-Write (COW) memory sharing
+            let pml4_phys = match vmm::clone_user_address_space_cow(parent.pml4_phys) {
                 Ok(p) => p,
                 Err(e) => {
                     pmm::free_frame(stack_frame);
