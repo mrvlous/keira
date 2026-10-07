@@ -18,6 +18,7 @@ graph TD
     M6 --> M7["7. Security Enclaves & eBPF<br/><i>TPM 2.0 MMIO, eBPF VM, Seccomp, MAC, io_uring</i>"]
     M7 --> M8["8. Modular Network Fetch Engine<br/><i>Chunked Streaming, Progress Bars, Netfilter Firewall</i>"]
     M8 --> M9["9. Dual Architecture & v0.5.0 Hardening<br/><i>x86_64 & i686 Parity, 81 Syscalls, Syzkaller-Lite Fuzzing</i>"]
+    M9 --> M10["10. Raw Kernel Primitives<br/><i>Type-Safe EBR, Frame Refcounting, Copy-on-Write Fork</i>"]
 ```
 
 ---
@@ -35,6 +36,7 @@ graph TD
 | **Milestone 7** | [`security_ebpf.md`](security_ebpf.md) | `v0.4.0` | TPM 2.0 enclave PCR measurements, in-kernel eBPF virtual machine, and asynchronous io_uring |
 | **Milestone 8** | [`network_engine.md`](network_engine.md) | `v0.4.0` | Modular network fetch engine, chunked streaming, progress bars, and Netfilter firewall |
 | **Milestone 9** | [`hardening_v050.md`](hardening_v050.md) | `v0.5.0` | Dual-architecture x86_64/i686 parity, 81 syscall vectors, and Syzkaller-Lite fuzzing defense |
+| **Milestone 10** | [`raw_kernel_v060.md`](raw_kernel_v060.md) | `v0.6.0` | Type-Safe Epoch-Based Reclamation (EBR), physical frame reference counting, and Copy-on-Write (COW) |
 
 ---
 

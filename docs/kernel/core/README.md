@@ -15,3 +15,4 @@ This module documents the low-level hardware structures required for system oper
 | [`acpi_madt.md`](acpi_madt.md) | ACPI & MADT | Firmware table parsing, Local/IO-APIC core discovery |
 | [`apic_timers.md`](apic_timers.md) | APIC Timers | Local APIC interval timer, IPI delivery, preemption ticks |
 | [`hpet.md`](hpet.md) | HPET Timer | High-Precision Event Timer sub-nanosecond monotonic clock |
+| [`ebr_sync.md`](ebr_sync.md) | EBR Sync | Type-Safe Epoch-Based Reclamation lock-free synchronization |

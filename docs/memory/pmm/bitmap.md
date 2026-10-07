@@ -72,3 +72,13 @@ For high-performance hardware drivers (DMA ring buffers, AHCI PRDT, NVMe submiss
 * `alloc_contiguous_frames(count: usize) -> Option<u64>`: Searches the bitmap for a contiguous span of `count` unallocated page frames within valid RAM ranges and zero-clears all bytes.
 * `alloc_order(order: u8) -> Option<u64>`: Allocates $2^{\text{order}}$ contiguous physical frames (Order 0 = 4 KiB, Order 9 = 2 MiB, Order 10 = 4 MiB).
 * `free_contiguous_frames(start: u64, count: usize) -> bool`: Reclaims a contiguous block of allocated frames back to the available physical pool with bounds validation.
+
+---
+
+## 5. Physical Frame Reference Counting
+
+For Copy-on-Write (COW) address space replication, physical frames support reference counting (`crates/mem/src/pmm/frame/refcount.rs`):
+
+* `retain_frame(paddr: u64) -> u32`: Increments the reference count of an allocated physical frame when shared across processes.
+* `release_frame(paddr: u64) -> bool`: Decrements the reference count. If the reference count drops to zero, automatically frees the frame back into the PMM pool.
+* `frame_refcount(paddr: u64) -> u32`: Queries the current active reference count for any physical frame.

@@ -22,3 +22,16 @@ The VMM telemetry engine (`crates/mem/src/vmm/fault/handler.rs`) tracks hardware
 * `vmm_get_fault_stats()`: Computes `(total_faults, cow_faults, stack_growths, demand_pages, violations, tlb_flushes)`.
 * Tracks Copy-on-Write (COW) duplications, stack expansions, demand paging allocations, protection faults (SIGSEGV), and TLB page invalidations via `invlpg`.
 * Accessible in userspace via the `memory -p` or `memory --paging` shell command.
+
+---
+
+## Copy-on-Write (COW) Fault Resolution
+
+1. On a write fault to a present page where `PAGE_COW` (bit 9) is set:
+2. If `pmm::frame_refcount(old_frame) <= 1`, sole ownership is restored: simply clear `PAGE_COW`, set `PAGE_WRITABLE`, and flush TLB via `invlpg`.
+3. If `pmm::frame_refcount(old_frame) > 1`:
+   - Allocate a new physical frame from PMM.
+   - Copy 4096 bytes from the faulting page to the new frame.
+   - Update the PTE with the new physical frame, set `PAGE_WRITABLE`, and clear `PAGE_COW`.
+   - Call `pmm::release_frame(old_frame)` to decrement old frame reference count.
+   - Flush TLB via `invlpg` and resume execution.
