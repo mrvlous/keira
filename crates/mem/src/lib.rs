@@ -35,12 +35,13 @@ pub use heap::{
 #[cfg(test)]
 pub use pmm::TEST_MUTEX;
 pub use pmm::{
-    alloc_contiguous_frames, alloc_frame, alloc_order, free_contiguous_frames, free_frame,
-    free_memory, get_freed_frame_count, get_stats, init as pmm_init, is_frame_allocated,
-    is_valid_ram_range, mark_frame_allocated, mark_frame_free, max_physical_address,
-    reset_pmm_stats, set_test_ram_region, set_test_ram_region_empty, total_memory,
-    total_usable_memory, used_memory, verify_pmm_invariants, verify_pmm_invariants_locked,
-    KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
+    alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount, free_contiguous_frames,
+    free_frame, free_memory, get_freed_frame_count, get_stats, init as pmm_init,
+    is_frame_allocated, is_valid_ram_range, mark_frame_allocated, mark_frame_free,
+    max_physical_address, release_frame, reset_pmm_stats, reset_refcounts, retain_frame,
+    set_test_ram_region, set_test_ram_region_empty, total_memory, total_usable_memory, used_memory,
+    verify_pmm_invariants, verify_pmm_invariants_locked, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT,
+    MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use slab::{
     kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
@@ -51,15 +52,16 @@ pub use swap::{
     sys_swapoff, sys_swapon, SwapStats,
 };
 pub use vmm::{
-    active_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, find_free_mmap_range,
-    free_and_unmap_page, free_user_pages, get_file_read_hook, get_file_sync_hook, get_kaslr_offset,
-    get_phys_addr, get_phys_addr_in_pml4, get_pte_in_pml4, is_page_mapped_in_pml4, madvise_pages,
-    map_huge_2m_page, map_page, mmap_anonymous, mprotect_pages, munmap_pages,
-    register_file_backing_hooks, switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect,
-    sys_msync, sys_munmap, sys_munmap_ext, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
+    active_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, clone_user_address_space,
+    clone_user_address_space_cow, find_free_mmap_range, free_and_unmap_page, free_user_pages,
+    get_file_read_hook, get_file_sync_hook, get_kaslr_offset, get_phys_addr, get_phys_addr_in_pml4,
+    get_pte_in_pml4, is_page_mapped_in_pml4, madvise_pages, map_huge_2m_page, map_page,
+    mmap_anonymous, mprotect_pages, munmap_pages, register_file_backing_hooks,
+    switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect, sys_msync, sys_munmap,
+    sys_munmap_ext, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
     validate_virt_addr_range, verify_vma_pte_invariants, vmm_get_fault_stats, FileReadHook,
-    FileSyncHook, GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED, PAGE_DIRTY,
-    PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
+    FileSyncHook, GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED, PAGE_COW,
+    PAGE_DIRTY, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
     PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR, USER_MIN_VADDR,
 };
 

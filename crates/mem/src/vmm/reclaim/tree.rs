@@ -121,7 +121,7 @@ unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
             if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
                 let frame = entry & PTE_ADDR_MASK;
                 if frame >= pmm::KERNEL_BASE_1MB && pmm::is_valid_ram_range(frame, pmm::PAGE_SIZE) {
-                    pmm::free_frame(frame);
+                    pmm::release_frame(frame);
                 }
             }
         }

@@ -21,10 +21,11 @@ pub mod sync;
 pub mod telemetry;
 
 pub use frame::{
-    alloc_contiguous_frames, alloc_frame, alloc_order, free_contiguous_frames, free_frame,
-    get_freed_frame_count, is_frame_allocated, mark_frame_allocated, mark_frame_free,
-    reset_pmm_stats, set_test_ram_region, set_test_ram_region_empty, ALLOCATION_BITMAP,
-    BITMAP_WORDS, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, MAX_TRACKED_FRAMES, PAGE_SIZE,
+    alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount, free_contiguous_frames,
+    free_frame, get_freed_frame_count, is_frame_allocated, mark_frame_allocated, mark_frame_free,
+    release_frame, reset_pmm_stats, reset_refcounts, retain_frame, set_test_ram_region,
+    set_test_ram_region_empty, ALLOCATION_BITMAP, BITMAP_WORDS, KERNEL_BASE_1MB,
+    MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE,
     PAGE_SIZE_4K,
 };
 pub use region::{init, is_valid_ram_range, UsableRegion};

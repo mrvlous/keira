@@ -92,7 +92,14 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         if let Some(pte_ptr) = get_pte_mut_in_pml4(pml4, fault_page) {
             let pte = *pte_ptr;
             if (pte & PAGE_COW) != 0 {
-                if let Some(new_frame) = pmm::alloc_frame() {
+                let old_frame = pte & PTE_ADDR_MASK;
+                if pmm::frame_refcount(old_frame) <= 1 {
+                    *pte_ptr = (pte & !PAGE_COW) | PAGE_WRITABLE;
+                    COW_FAULTS.fetch_add(1, Ordering::Relaxed);
+                    TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
+                    invlpg(fault_page as usize);
+                    return true;
+                } else if let Some(new_frame) = pmm::alloc_frame() {
                     let src_ptr = fault_page as *const u8;
                     let dst_ptr = new_frame as *mut u8;
                     core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, pmm::PAGE_SIZE as usize);
@@ -100,6 +107,8 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
                     *pte_ptr = (new_frame & PTE_ADDR_MASK)
                         | (pte & !(PTE_ADDR_MASK | PAGE_COW))
                         | PAGE_WRITABLE;
+
+                    pmm::release_frame(old_frame);
 
                     COW_FAULTS.fetch_add(1, Ordering::Relaxed);
                     TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);

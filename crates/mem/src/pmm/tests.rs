@@ -501,3 +501,40 @@ fn test_alloc_contiguous_and_order_frames() {
     // Huge order (>10) returns None
     assert_eq!(alloc_order(11), None);
 }
+
+#[test]
+fn test_cow_frame_refcount_lifecycle() {
+    let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    reset_pmm_stats();
+    reset_refcounts();
+    set_test_ram_region_empty(0x20_0000, 0x120_0000);
+
+    let frame = alloc_frame().expect("Frame allocation should succeed");
+    assert!(is_frame_allocated(frame));
+
+    // Initial allocated state: implicit refcount 1
+    assert_eq!(frame_refcount(frame), 1);
+
+    // Retain frame (first COW share -> refcount 2)
+    assert_eq!(retain_frame(frame), 2);
+    assert_eq!(frame_refcount(frame), 2);
+
+    // Retain frame again (second COW share -> refcount 3)
+    assert_eq!(retain_frame(frame), 3);
+    assert_eq!(frame_refcount(frame), 3);
+
+    // Release 1st reference (count drops from 3 to 2, frame NOT freed)
+    assert!(!release_frame(frame));
+    assert_eq!(frame_refcount(frame), 2);
+    assert!(is_frame_allocated(frame));
+
+    // Release 2nd reference (count drops from 2 to 1, table slot cleared, frame NOT freed)
+    assert!(!release_frame(frame));
+    assert_eq!(frame_refcount(frame), 1);
+    assert!(is_frame_allocated(frame));
+
+    // Release final reference (count was 1 -> frame freed)
+    assert!(release_frame(frame));
+    assert_eq!(frame_refcount(frame), 0);
+    assert!(!is_frame_allocated(frame));
+}

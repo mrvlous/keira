@@ -12,10 +12,11 @@
 use super::super::mapping::map_page_in_pml4;
 use super::super::reclaim::free_user_pages;
 use super::super::table::{
-    active_pml4, switch_address_space, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
-    PAGE_WRITABLE, PTE_ADDR_MASK,
+    active_pml4, switch_address_space, PAGE_COW, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT,
+    PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
+use keira_arch::cpu::invlpg;
 
 /// Clones the boot PML4 table, sharing the kernel identity mapping (PDPT[0]) and MMIO (PDPT[3]).
 ///
@@ -171,6 +172,129 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
                         pt_entry & (PAGE_USER | PAGE_WRITABLE | PAGE_NO_EXECUTE | PAGE_PRESENT),
                     ) {
                         pmm::free_frame(child_frame);
+                        switch_address_space(current_pml4);
+                        free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
+                        pmm::free_frame(child_pml4_phys);
+                        return Err(e);
+                    }
+                }
+            }
+        }
+    }
+
+    switch_address_space(current_pml4);
+    Ok(child_pml4_phys)
+}
+
+/// Clones an entire parent process address space using Copy-on-Write (COW).
+///
+/// Modifies parent writable page entries to read-only with `PAGE_COW` set,
+/// increments physical frame reference count, maps child with `PAGE_COW`, and flushes TLB.
+///
+/// # Safety
+/// Modifies live page tables and processor address spaces.
+pub unsafe fn clone_user_address_space_cow(parent_pml4_phys: u64) -> Result<u64, &'static str> {
+    let child_pml4_phys = clone_kernel_pml4()?;
+
+    let current_pml4 = active_pml4();
+    switch_address_space(parent_pml4_phys);
+
+    let parent_pml4 = parent_pml4_phys as *mut u64;
+
+    for pml4_idx in 0..256 {
+        let pml4_entry = *parent_pml4.add(pml4_idx);
+        if (pml4_entry & PAGE_PRESENT) == 0 {
+            continue;
+        }
+
+        if pml4_idx > 0 && (pml4_entry & PAGE_USER) == 0 {
+            continue;
+        }
+
+        let pdpt_phys = pml4_entry & PTE_ADDR_MASK;
+        if !pmm::is_valid_ram_range(pdpt_phys, pmm::PAGE_SIZE) {
+            continue;
+        }
+        let pdpt = pdpt_phys as *mut u64;
+
+        for pdpt_idx in 0..512 {
+            if pml4_idx == 0 && (pdpt_idx == 0 || pdpt_idx == 3) {
+                continue;
+            }
+
+            let pdpt_entry = *pdpt.add(pdpt_idx);
+            if (pdpt_entry & PAGE_PRESENT) == 0 || (pdpt_entry & PAGE_USER) == 0 {
+                continue;
+            }
+
+            if (pdpt_entry & PAGE_HUGE) != 0 {
+                continue;
+            }
+
+            let pd_phys = pdpt_entry & PTE_ADDR_MASK;
+            if !pmm::is_valid_ram_range(pd_phys, pmm::PAGE_SIZE) {
+                continue;
+            }
+            let pd = pd_phys as *mut u64;
+
+            for pd_idx in 0..512 {
+                let pd_entry = *pd.add(pd_idx);
+                if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_USER) == 0 {
+                    continue;
+                }
+
+                if (pd_entry & PAGE_HUGE) != 0 {
+                    continue;
+                }
+
+                let pt_phys = pd_entry & PTE_ADDR_MASK;
+                if !pmm::is_valid_ram_range(pt_phys, pmm::PAGE_SIZE) {
+                    continue;
+                }
+                let pt = pt_phys as *mut u64;
+
+                for pt_idx in 0..512 {
+                    let pt_entry = *pt.add(pt_idx);
+                    if (pt_entry & PAGE_PRESENT) == 0 || (pt_entry & PAGE_USER) == 0 {
+                        continue;
+                    }
+
+                    let mut vaddr = 0u64;
+                    vaddr |= (pml4_idx as u64) << 39;
+                    vaddr |= (pdpt_idx as u64) << 30;
+                    vaddr |= (pd_idx as u64) << 21;
+                    vaddr |= (pt_idx as u64) << 12;
+
+                    let phys_frame = pt_entry & PTE_ADDR_MASK;
+                    if !pmm::is_valid_ram_range(phys_frame, pmm::PAGE_SIZE) {
+                        continue;
+                    }
+
+                    let (child_flags, parent_flags) = if (pt_entry & PAGE_WRITABLE) != 0
+                        || (pt_entry & PAGE_COW) != 0
+                    {
+                        let base_flags =
+                            (pt_entry & (PAGE_USER | PAGE_NO_EXECUTE | PAGE_PRESENT)) | PAGE_COW;
+                        (base_flags, (pt_entry & !PAGE_WRITABLE) | PAGE_COW)
+                    } else {
+                        (
+                            pt_entry & (PAGE_USER | PAGE_NO_EXECUTE | PAGE_PRESENT),
+                            pt_entry,
+                        )
+                    };
+
+                    // Update parent PTE and flush TLB
+                    *pt.add(pt_idx) = parent_flags;
+                    invlpg(vaddr as usize);
+
+                    // Retain physical frame reference
+                    pmm::retain_frame(phys_frame);
+
+                    // Map frame into child PML4
+                    if let Err(e) =
+                        map_page_in_pml4(child_pml4_phys, vaddr, phys_frame, child_flags)
+                    {
+                        pmm::release_frame(phys_frame);
                         switch_address_space(current_pml4);
                         free_user_pages(child_pml4_phys, 0x0000_7FFF_FFFF_FFFF);
                         pmm::free_frame(child_pml4_phys);

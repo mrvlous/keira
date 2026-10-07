@@ -11,4 +11,6 @@
 
 pub mod address_space;
 
-pub use address_space::{clone_kernel_pml4, clone_user_address_space};
+pub use address_space::{
+    clone_kernel_pml4, clone_user_address_space, clone_user_address_space_cow,
+};
