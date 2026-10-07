@@ -54,6 +54,7 @@ pub unsafe fn exit_current(exit_code: i32) {
             };
 
             release_all_locks_for_task(idx);
+            crate::scheduler::work_stealing::mark_task_dequeued(idx);
 
             if let Some(hook) = TASK_CLEANUP_HOOK {
                 hook(idx);
@@ -72,6 +73,10 @@ pub unsafe fn exit_current(exit_code: i32) {
                 if let Some(ref mut parent) = TASKS[pid] {
                     if parent.state == TaskState::Blocked {
                         parent.state = TaskState::Ready;
+                        if pid != 0 {
+                            let core_id = keira_arch::cpu::get_current_core_id();
+                            crate::scheduler::work_stealing::push_local(core_id, pid);
+                        }
                     }
                 }
             }
@@ -103,6 +108,7 @@ pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str> {
     for task in TASKS.iter_mut().take(MAX_TASKS).skip(1).flatten() {
         if task.id == pid {
             task.state = TaskState::Zombie(-9);
+            crate::scheduler::work_stealing::mark_task_dequeued(pid);
             return Ok(());
         }
     }

@@ -104,6 +104,7 @@ pub unsafe fn sys_waitpid(
             let _guard = SCHEDULER_LOCK.lock();
             if let Some(ref mut parent) = TASKS[parent_idx] {
                 parent.state = TaskState::Blocked;
+                crate::scheduler::work_stealing::mark_task_dequeued(parent_idx);
             }
         }
 

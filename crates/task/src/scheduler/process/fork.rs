@@ -142,6 +142,8 @@ pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
             };
 
             TASKS[slot_idx] = Some(child_task);
+            let core_id = keira_arch::cpu::get_current_core_id();
+            crate::scheduler::work_stealing::push_local(core_id, slot_idx);
             Ok(slot_idx)
         } else {
             Err("Scheduler Error: Parent task invalid")

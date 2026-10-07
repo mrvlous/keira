@@ -16,6 +16,7 @@ pub mod identity;
 pub mod lifecycle;
 pub mod process;
 pub mod signal;
+pub mod work_stealing;
 
 #[cfg(test)]
 mod tests;
@@ -41,4 +42,8 @@ pub use process::{fork_current_task, spawn, spawn_user};
 pub use signal::{
     get_current_pending_signals, get_current_signal_mask, send_signal, set_saved_sigcontext,
     sys_sigprocmask, take_saved_sigcontext, SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK,
+};
+pub use work_stealing::{
+    enqueue_task, is_task_queued, is_task_ready, mark_task_dequeued, pick_next_task, pop_local,
+    push_local, runqueue_len, steal_from, ChaseLevDeque, CPU_RUNQUEUES, MAX_CPU_CORES, TASK_QUEUED,
 };
