@@ -40,6 +40,9 @@ pub use module::{
     MAX_MODULE_NAME,
 };
 pub use sync::atomic::{memory_barrier_compiler, memory_barrier_hardware, spin_loop_hint};
+pub use sync::ebr::{
+    current_epoch, pin, pin_participant, try_advance_epoch, EpochGuard, GarbageBag,
+};
 pub use sync::irq::{interrupts_enabled, irq_restore, irq_save, IrqState};
 pub use sync::irq_mutex::{IrqMutex, IrqMutexGuard};
 pub use sync::irq_spinlock::{current_core_id, IrqSpinLock, IrqSpinLockGuard};

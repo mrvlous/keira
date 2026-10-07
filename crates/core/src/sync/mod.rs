@@ -13,6 +13,7 @@
 //! masking, spinlocks, scoped mutexes, and deadlock-prevention lock hierarchy ordering.
 
 pub mod atomic;
+pub mod ebr;
 pub mod irq;
 pub mod mutex;
 pub mod ordering;
@@ -22,6 +23,7 @@ pub mod spinlock;
 mod tests;
 
 pub use atomic::{memory_barrier_compiler, memory_barrier_hardware, spin_loop_hint};
+pub use ebr::{current_epoch, pin, pin_participant, try_advance_epoch, EpochGuard, GarbageBag};
 pub use irq::{interrupts_enabled, irq_restore, irq_save, IrqState};
 pub use mutex::{IrqMutex, IrqMutexGuard, SpinMutex, SpinMutexGuard};
 pub use ordering::{check_lock_order, record_lock_acquire, record_lock_release, LockRank};
