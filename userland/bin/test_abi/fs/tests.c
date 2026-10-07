@@ -300,6 +300,9 @@ int run_test_abi_fs(void) {
     const char *flock_dup_path = "/temp/flock_dup.txt";
     const char *flock_sync_path = "/temp/flock_sync.txt";
 
+    unlink(flock_sync_path);
+    unlink(flock_dup_path);
+
     int f_init_sync = open(flock_sync_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (f_init_sync < 0) {
         puts("  [FAIL] Failed to initialize flock sync state file");
@@ -367,7 +370,7 @@ int run_test_abi_fs(void) {
                 memset(p_sbuf, 0, sizeof(p_sbuf));
                 read(f_poll, p_sbuf, sizeof(p_sbuf) - 1);
                 close(f_poll);
-                if (strcmp(p_sbuf, "STAGE1") == 0) {
+                if (strncmp(p_sbuf, "STAGE1", 6) == 0) {
                     stage1_seen = 1;
                     break;
                 }
