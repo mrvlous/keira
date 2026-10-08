@@ -395,32 +395,31 @@ $(TEST_THREADS_ELF): $(USER_CRT_OBJ) $(TEST_THREADS_OBJS) $(USER_LIBC_A) $(USER_
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT)
-	$(Q)mkdir -p $(FS_ROOT)/system/bin
-	$(Q)mkdir -p $(FS_ROOT)/system/dev
-	$(Q)mkdir -p $(FS_ROOT)/system/include/sys
-	$(Q)mkdir -p $(FS_ROOT)/system/lib
-	$(Q)mkdir -p $(FS_ROOT)/apps/bin
-	$(Q)mkdir -p $(FS_ROOT)/config/boot
-	$(Q)mkdir -p $(FS_ROOT)/config/sys
-	$(Q)mkdir -p $(FS_ROOT)/temp
-	$(Q)mkdir -p $(FS_ROOT)/data/log
-	$(Q)cp $(USER_ELF) $(FS_ROOT)/system/bin/kcc.elf
-	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/system/bin/sysinfo.elf
-	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/system/bin/test_abi.elf
-	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/system/bin/fuzz_abi.elf
-	$(Q)cp $(TEST_THREADS_ELF) $(FS_ROOT)/system/bin/test_threads.elf
-	$(Q)cp $(TEST_THREADS_ELF) $(FS_ROOT)/apps/bin/test_threads.elf
-	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/system/lib/libc.a
-	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/system/include/
-	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/system/include/common.h
-	$(Q)cp -r $(USER_DIR)/lib/* $(FS_ROOT)/system/lib/
-	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/config/boot/grub.cfg
-	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/config/sys/kernel.cfg
-	$(Q)printf "keira\n" > $(FS_ROOT)/config/sys/hostname.cfg
-	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/data/main.c
-	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/data/log/boot.log
-	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/data/log/system.log
-	$(Q)touch $(FS_ROOT)/temp/.keep
+	$(Q)mkdir -p $(FS_ROOT)/bin
+	$(Q)mkdir -p $(FS_ROOT)/dev
+	$(Q)mkdir -p $(FS_ROOT)/proc
+	$(Q)mkdir -p $(FS_ROOT)/sys
+	$(Q)mkdir -p $(FS_ROOT)/etc
+	$(Q)mkdir -p $(FS_ROOT)/include/sys
+	$(Q)mkdir -p $(FS_ROOT)/lib
+	$(Q)mkdir -p $(FS_ROOT)/tmp
+	$(Q)mkdir -p $(FS_ROOT)/var/log
+	$(Q)cp $(USER_ELF) $(FS_ROOT)/bin/kcc.elf
+	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/bin/sysinfo.elf
+	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/bin/test_abi.elf
+	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/bin/fuzz_abi.elf
+	$(Q)cp $(TEST_THREADS_ELF) $(FS_ROOT)/bin/test_threads.elf
+	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
+	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
+	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/include/common.h
+	$(Q)cp -r $(USER_DIR)/lib/* $(FS_ROOT)/lib/
+	$(Q)printf "console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3\n" > $(FS_ROOT)/etc/grub.cfg
+	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/etc/kernel.cfg
+	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
+	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/tmp/main.c
+	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/var/log/boot.log
+	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/var/log/system.log
+	$(Q)touch $(FS_ROOT)/tmp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Canonical root filesystem ready ($(ARCH))"
 
@@ -432,7 +431,7 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/system ::/system/bin ::/system/dev ::/system/include ::/system/include/sys ::/system/lib ::/apps ::/apps/bin ::/config ::/config/boot ::/config/sys ::/temp ::/data ::/data/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/tmp ::/var ::/var/log 2>/dev/null || true
 	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
 	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
 	done
