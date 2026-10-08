@@ -13,21 +13,18 @@ use super::*;
 
 #[test]
 fn test_procfs_and_devfs_existence() {
-    assert!(exists("/system/dev/null"));
-    assert!(exists("/system/dev/zero"));
-    assert!(exists("/system/dev/random"));
-    assert!(exists("/system/dev/urandom"));
-    assert!(exists("/system/dev/tty"));
     assert!(exists("/dev/null"));
     assert!(exists("/dev/zero"));
+    assert!(exists("/dev/random"));
+    assert!(exists("/dev/urandom"));
+    assert!(exists("/dev/tty"));
 
-    assert!(exists("/system/proc/uptime"));
-    assert!(exists("/system/proc/meminfo"));
-    assert!(exists("/system/proc/cpuinfo"));
-    assert!(exists("/system/proc/version"));
-    assert!(exists("/system/proc/loadavg"));
-    assert!(exists("/system/proc/self/status"));
     assert!(exists("/proc/uptime"));
+    assert!(exists("/proc/meminfo"));
+    assert!(exists("/proc/cpuinfo"));
+    assert!(exists("/proc/version"));
+    assert!(exists("/proc/loadavg"));
+    assert!(exists("/proc/self/status"));
 }
 
 #[test]

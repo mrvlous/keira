@@ -13,20 +13,21 @@ use super::*;
 
 #[test]
 fn test_resolve_alias_path() {
-    assert_eq!(resolve_alias_path("/dev/null"), "/system/dev/null");
-    assert_eq!(resolve_alias_path("/dev/zero"), "/system/dev/zero");
-    assert_eq!(resolve_alias_path("/dev/random"), "/system/dev/random");
-    assert_eq!(resolve_alias_path("/dev/urandom"), "/system/dev/urandom");
-    assert_eq!(resolve_alias_path("/dev/tty"), "/system/dev/tty");
-    assert_eq!(resolve_alias_path("/dev/ptmx"), "/system/dev/ptmx");
-    assert_eq!(resolve_alias_path("/dev"), "/system/dev");
-    assert_eq!(resolve_alias_path("/proc"), "/system/proc");
-    assert_eq!(resolve_alias_path("/system/bin/init"), "/system/bin/init");
+    assert_eq!(resolve_alias_path("/dev/null"), "/dev/null");
+    assert_eq!(resolve_alias_path("/dev/zero"), "/dev/zero");
+    assert_eq!(resolve_alias_path("/dev/random"), "/dev/random");
+    assert_eq!(resolve_alias_path("/dev/urandom"), "/dev/urandom");
+    assert_eq!(resolve_alias_path("/dev/tty"), "/dev/tty");
+    assert_eq!(resolve_alias_path("/dev/ptmx"), "/dev/ptmx");
+    assert_eq!(resolve_alias_path("/dev"), "/dev");
+    assert_eq!(resolve_alias_path("/proc"), "/proc");
+    assert_eq!(resolve_alias_path("/proc/uptime"), "/proc/uptime");
+    assert_eq!(resolve_alias_path("/bin/init"), "/bin/init");
 }
 
 #[test]
 fn test_route_path() {
-    let (p, fs) = route_path("/system/proc/uptime");
+    let (p, fs) = route_path("/proc/uptime");
     assert_eq!(p, "uptime");
     assert_eq!(fs, FilesystemType::Proc);
 
@@ -34,7 +35,7 @@ fn test_route_path() {
     assert_eq!(p, "meminfo");
     assert_eq!(fs, FilesystemType::Proc);
 
-    let (p, fs) = route_path("/system/dev/null");
+    let (p, fs) = route_path("/dev/null");
     assert_eq!(p, "null");
     assert_eq!(fs, FilesystemType::Dev);
 
@@ -42,11 +43,11 @@ fn test_route_path() {
     assert_eq!(p, "zero");
     assert_eq!(fs, FilesystemType::Dev);
 
-    let (p, fs) = route_path("/initrd/system/kernel.elf");
-    assert_eq!(p, "system/kernel.elf");
+    let (p, fs) = route_path("/initrd/kernel.elf");
+    assert_eq!(p, "kernel.elf");
     assert_eq!(fs, FilesystemType::Initrd);
 
-    let (p, fs) = route_path("/data/test.txt");
-    assert_eq!(p, "/data/test.txt");
+    let (p, fs) = route_path("/tmp/test.txt");
+    assert_eq!(p, "/tmp/test.txt");
     assert_eq!(fs, FilesystemType::Fat);
 }

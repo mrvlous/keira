@@ -15,17 +15,13 @@ use crate::vfs::types::FilesystemType;
 /// Routes an absolute or relative path to its target filesystem type and relative sub-path.
 pub fn route_path(path: &str) -> (&str, FilesystemType) {
     let resolved = resolve_alias_path(path);
-    if let Some(rest) = resolved.strip_prefix("/system/proc/") {
-        (rest, FilesystemType::Proc)
-    } else if resolved == "/system/proc" {
-        ("", FilesystemType::Proc)
-    } else if let Some(rest) = resolved.strip_prefix("/proc/") {
+    if let Some(rest) = resolved.strip_prefix("/proc/") {
         (rest, FilesystemType::Proc)
     } else if resolved == "/proc" {
         ("", FilesystemType::Proc)
-    } else if let Some(rest) = resolved.strip_prefix("/system/dev/") {
+    } else if let Some(rest) = resolved.strip_prefix("/dev/") {
         (rest, FilesystemType::Dev)
-    } else if resolved == "/system/dev" {
+    } else if resolved == "/dev" {
         ("", FilesystemType::Dev)
     } else if let Some(rest) = resolved.strip_prefix("/initrd/") {
         (rest, FilesystemType::Initrd)
