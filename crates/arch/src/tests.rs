@@ -90,3 +90,23 @@ fn test_tlb_shootdown_handler_execution() {
     // Invoke handler directly to simulate Vector 0xFD delivery
     interrupts::smp::tlb_shootdown_handler();
 }
+
+#[test]
+fn test_resched_ipi_delivery_and_stats() {
+    let (initial_sent, initial_rcvd) = interrupts::smp::get_resched_ipi_stats();
+
+    interrupts::smp::smp_send_reschedule(0);
+    interrupts::smp::smp_send_reschedule_all_excluding_self();
+
+    let (sent, rcvd) = interrupts::smp::get_resched_ipi_stats();
+    assert_eq!(sent, initial_sent);
+    assert_eq!(rcvd, initial_rcvd);
+}
+
+#[test]
+fn test_resched_ipi_handler_execution() {
+    let (_, rcvd_before) = interrupts::smp::get_resched_ipi_stats();
+    interrupts::smp::reschedule_ipi_handler();
+    let (_, rcvd_after) = interrupts::smp::get_resched_ipi_stats();
+    assert_eq!(rcvd_after, rcvd_before + 1);
+}

@@ -79,6 +79,7 @@ global isr32
 global isr33
 global isr44
 global isr_tlb_shootdown
+global isr_reschedule
 
 extern isr_handler
 extern keyboard_handler
@@ -87,6 +88,7 @@ extern pit_handler
 extern schedule_tick
 extern exception_dispatcher
 extern tlb_shootdown_handler
+extern reschedule_ipi_handler
 
 ; Exception Stub Generator Macros
 %macro exception_no_err 1
@@ -226,4 +228,25 @@ isr_tlb_shootdown:
     jz .tlb_exit_kernel
     swapgs
 .tlb_exit_kernel:
+    iretq
+
+; ISR 254 (0xFE): SMP Cross-Core Reschedule IPI - Preemptive Task Switch
+isr_reschedule:
+    test byte [rsp + 8], 3
+    jz .resched_entry_kernel
+    swapgs
+.resched_entry_kernel:
+    pushaq
+    call reschedule_ipi_handler ; Acknowledge Local APIC EOI and increment telemetry
+
+    ; Invoke scheduler: schedule_tick(current_rsp: *mut u8) -> *mut u8
+    mov rdi, rsp
+    call schedule_tick
+    mov rsp, rax                ; Context switch: switch stack pointer to target task
+
+    popaq
+    test byte [rsp + 8], 3
+    jz .resched_exit_kernel
+    swapgs
+.resched_exit_kernel:
     iretq

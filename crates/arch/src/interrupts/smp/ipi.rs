@@ -23,12 +23,18 @@ pub const AP_TRAMPOLINE_PHYS: usize = 0x8000;
 /// Interrupt vector assigned to SMP cross-core TLB shootdown (0xFD / 253).
 pub const VECTOR_TLB_SHOOTDOWN: u8 = 0xFD;
 
+/// Interrupt vector assigned to SMP cross-core rescheduling preemption (0xFE / 254).
+pub const VECTOR_RESCHEDULE: u8 = 0xFE;
+
 static TLB_TARGET_ADDR: AtomicUsize = AtomicUsize::new(0);
 static TLB_ACK_COUNTER: AtomicUsize = AtomicUsize::new(0);
 static TLB_SHOOTDOWN_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::None);
 
 static TLB_SHOOTDOWN_COUNT: AtomicUsize = AtomicUsize::new(0);
 static TLB_IPI_SENT_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+static RESCHED_IPI_SENT_COUNT: AtomicUsize = AtomicUsize::new(0);
+static RESCHED_IPI_RCVD_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(target_os = "none")]
 extern "C" {
@@ -274,6 +280,51 @@ pub fn get_tlb_shootdown_stats() -> (u64, u64) {
     (
         TLB_SHOOTDOWN_COUNT.load(Ordering::Relaxed) as u64,
         TLB_IPI_SENT_COUNT.load(Ordering::Relaxed) as u64,
+    )
+}
+
+/// Send Reschedule IPI (Vector 0xFE) to a specific target CPU core.
+pub fn smp_send_reschedule(target_cpu_id: usize) {
+    let online_cores = unsafe { SMP_CORES_COUNT };
+    if online_cores <= 1 || target_cpu_id >= MAX_CORES {
+        return;
+    }
+
+    if let Some(core) = get_core_info(target_cpu_id) {
+        if core.status == CoreStatus::Online {
+            RESCHED_IPI_SENT_COUNT.fetch_add(1, Ordering::Relaxed);
+            send_ipi(core.apic_id, VECTOR_RESCHEDULE);
+        }
+    }
+}
+
+/// Send Reschedule IPI broadcast (Vector 0xFE) to all remote active CPU cores excluding self.
+pub fn smp_send_reschedule_all_excluding_self() {
+    let online_cores = unsafe { SMP_CORES_COUNT };
+    if online_cores <= 1 {
+        return;
+    }
+    let remote = online_cores.saturating_sub(1);
+    if remote > 0 {
+        RESCHED_IPI_SENT_COUNT.fetch_add(remote, Ordering::Relaxed);
+        send_ipi_all_excluding_self(VECTOR_RESCHEDULE);
+    }
+}
+
+/// Handler invoked by `isr_reschedule` when Vector 0xFE is trapped.
+#[no_mangle]
+pub extern "C" fn reschedule_ipi_handler() {
+    RESCHED_IPI_RCVD_COUNT.fetch_add(1, Ordering::Relaxed);
+    unsafe {
+        apic::eoi();
+    }
+}
+
+/// Retrieves Reschedule IPI metrics: (total sent, total received).
+pub fn get_resched_ipi_stats() -> (u64, u64) {
+    (
+        RESCHED_IPI_SENT_COUNT.load(Ordering::Relaxed) as u64,
+        RESCHED_IPI_RCVD_COUNT.load(Ordering::Relaxed) as u64,
     )
 }
 

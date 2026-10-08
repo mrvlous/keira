@@ -15,6 +15,9 @@
 /// IDT interrupt vector reserved for SMP cross-core TLB shootdown (Vector 253 / 0xFD).
 pub const VECTOR_TLB_SHOOTDOWN: usize = 0xFD;
 
+/// IDT interrupt vector reserved for SMP cross-core rescheduling preemption (Vector 254 / 0xFE).
+pub const VECTOR_RESCHEDULE: usize = 0xFE;
+
 #[cfg(target_arch = "x86_64")]
 #[repr(C, packed)]
 #[derive(Copy, Clone, Default)]
@@ -84,6 +87,7 @@ extern "C" {
     fn isr33();
     fn isr44();
     fn isr_tlb_shootdown();
+    fn isr_reschedule();
 
     #[cfg(target_arch = "x86")]
     fn isr128();
@@ -214,6 +218,15 @@ pub fn init() {
         set_gate(
             VECTOR_TLB_SHOOTDOWN,
             isr_tlb_shootdown as *const () as usize,
+            0x08,
+            0x8E,
+            0,
+        );
+
+        // SMP Cross-Core Reschedule IPI gate
+        set_gate(
+            VECTOR_RESCHEDULE,
+            isr_reschedule as *const () as usize,
             0x08,
             0x8E,
             0,

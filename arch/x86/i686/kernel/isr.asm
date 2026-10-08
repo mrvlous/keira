@@ -36,6 +36,7 @@ global isr32
 global isr33
 global isr44
 global isr_tlb_shootdown
+global isr_reschedule
 
 extern isr_handler
 extern keyboard_handler
@@ -44,6 +45,7 @@ extern pit_handler
 extern schedule_tick
 extern exception_dispatcher
 extern tlb_shootdown_handler
+extern reschedule_ipi_handler
 
 ; Exception Generator Macros
 ; exception_no_err:
@@ -151,5 +153,20 @@ isr44:
 isr_tlb_shootdown:
     pushad
     call tlb_shootdown_handler
+    popad
+    iretd
+
+; ISR 254 (0xFE): SMP Cross-Core Reschedule IPI - Preemptive Task Switch
+isr_reschedule:
+    pushad
+    call reschedule_ipi_handler ; Send EOI to Local APIC and update telemetry
+
+    mov eax, esp
+    push dword 0                ; Argument 2: core_id = 0
+    push eax                    ; Argument 1: current ESP
+    call schedule_tick          ; schedule_tick(current_esp: *mut u8, core_id: usize) -> *mut u8
+    add esp, 8
+    mov esp, eax                ; Switch execution stack to target task
+
     popad
     iretd
