@@ -2,7 +2,7 @@
 
 # Tutorial: Creating a Native Built-in Shell Command
 
-This tutorial provides a complete walkthrough for implementing, parsing flags, styling output, registering, and testing a new built-in command in `keira-shell`.
+This tutorial provides a complete walkthrough for implementing, parsing flags, styling output, registering and testing a new built-in command in `keira-shell`.
 
 ---
 
@@ -132,6 +132,6 @@ make run
 ```
 At the shell prompt:
 ```bash
-keira:/system# banner --help
-keira:/system# banner -u "welcome to keira"
+keira:/bin# banner --help
+keira:/bin# banner -u "welcome to keira"
 ```
