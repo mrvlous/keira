@@ -98,7 +98,7 @@ High-throughput I/O pipelines eliminate syscall context-switch overhead using du
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# tpm status
+keira:/# tpm status
 TPM 2.0 Hardware Security Controller:
   Hardware Interface: MMIO TIS @ 0xFED40000
   Vendor / Device ID: 0x8086:0x0000 (Intel PTT / QEMU TIS)
@@ -116,11 +116,11 @@ Platform Configuration Registers (PCR Bank):
   PCR[07]: 18fa...54c2 (Secure Boot Policy)
   PCR[10]: e3b0...ba4e (IMA / Executed Binary)
 
-keira:/bin# tpm extend 0 "SECURE_BOOT_VERIFIED"
+keira:/# tpm extend 0 "SECURE_BOOT_VERIFIED"
 [OK] TPM2_PCR_Extend successful on PCR[0].
      New Digest: 8c12...49e0
 
-keira:/bin# bpf status
+keira:/# bpf status
 Extended Berkeley Packet Filter (eBPF) Subsystem:
   VM Engine State   : Active (In-Kernel Bytecode Interpreter)
   In-Kernel Verifier: Enforced (CFG Bounded-Cycle Safety Check)
@@ -129,13 +129,13 @@ Extended Berkeley Packet Filter (eBPF) Subsystem:
   Total Executions  : 0
   Syscall Interface : Syscall 78 (SYS_BPF)
 
-keira:/bin# bpf progs
+keira:/# bpf progs
 Loaded eBPF Kernel Programs:
   ID  TYPE           NAME            INSNS  RUNS   DROPS  PASSES
   --  -------------  --------------  -----  -----  -----  ------
   0   SocketFilter   http_filter     6      0      0      0
 
-keira:/bin# seccomp strict
+keira:/# seccomp strict
 [OK] Seccomp Strict Sandbox enabled.
      Only read (7, 15), write (1, 8, 16), exit (2), sigreturn (65) and seccomp (52) allowed.
 ```
