@@ -23,6 +23,7 @@ graph TD
     M11 --> M12["12. Hierarchical Magazine Slab Allocator<br/><i>Per-CPU Depots, Zero-Lock Caching, Bonwick Magazines</i>"]
     M12 --> M13["13. SMP IPI & TLB Shootdown<br/><i>Local APIC ICR Delivery, Multi-Core Rendezvous, Invalidation</i>"]
     M13 --> M14["14. SMP Reschedule IPI<br/><i>Vector 0xFE, Cross-Core Preemption, Low-Latency Dispatch</i>"]
+    M14 --> M15["15. Userland Multi-Threading & v0.6.0 Release<br/><i>clone Syscall, CLONE_VM, Thread Groups, POSIX Pthreads</i>"]
 ```
 
 ---
@@ -45,6 +46,7 @@ graph TD
 | **Milestone 12** | [`magazine_slab_v060.md`](magazine_slab_v060.md) | `v0.6.0` | Hierarchical per-CPU magazine slab allocator, Jeff Bonwick object caching, and zero-lock fast paths |
 | **Milestone 13** | [`smp_tlb_shootdown_v060.md`](smp_tlb_shootdown_v060.md) | `v0.6.0` | Local APIC Inter-Processor Interrupt (IPI) framework, multi-core rendezvous, and cross-core TLB shootdown |
 | **Milestone 14** | [`smp_reschedule_v060.md`](smp_reschedule_v060.md) | `v0.6.0` | SMP Reschedule IPI framework, Vector 0xFE preemption stubs, and low-latency cross-core dispatch |
+| **Milestone 15** | [`multithreading_v060.md`](multithreading_v060.md) | `v0.6.0` | Userland multi-threading, clone syscall with CLONE_VM/CLONE_THREAD, and freestanding POSIX pthreads |
 
 ---
 
