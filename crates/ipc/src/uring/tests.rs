@@ -44,6 +44,8 @@ mod test {
         let cqe = ring.cqes[(ring.cq_head.load(Ordering::Relaxed) & ring.cq_mask) as usize];
         assert_eq!(cqe.user_data, 0x7777);
         assert_eq!(cqe.res, 0);
+
+        let _ = close_ring(ring_id);
     }
 
     #[test]
@@ -75,5 +77,7 @@ mod test {
         let cqe = ring.cqes[(ring.cq_head.load(Ordering::Relaxed) & ring.cq_mask) as usize];
         assert_eq!(cqe.user_data, 0x9999);
         assert_eq!(cqe.res, -95);
+
+        let _ = close_ring(ring_id);
     }
 }

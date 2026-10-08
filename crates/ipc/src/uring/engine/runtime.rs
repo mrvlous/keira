@@ -52,6 +52,21 @@ pub static mut CQ_ENTRIES: [CompletionQueueEntry; 32] = [CompletionQueueEntry {
     flags: 0,
 }; 32];
 
+static ALLOC_LOCK: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+fn lock_alloc() {
+    while ALLOC_LOCK
+        .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
+        .is_err()
+    {
+        core::hint::spin_loop();
+    }
+}
+
+fn unlock_alloc() {
+    ALLOC_LOCK.store(false, Ordering::Release);
+}
+
 /// Setup io_uring submission & completion ring buffers with optional parameter pointer.
 pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str> {
     if entries == 0 || entries > (MAX_RING_ENTRIES as u32 * 2) {
@@ -59,15 +74,21 @@ pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str
     }
 
     unsafe {
+        lock_alloc();
         let mut chosen_slot = None;
         for (idx, r) in RINGS.iter_mut().enumerate() {
             if !r.in_use {
+                r.in_use = true;
                 chosen_slot = Some(idx);
                 break;
             }
         }
+        unlock_alloc();
 
-        let slot_idx = chosen_slot.unwrap_or_default();
+        let slot_idx = match chosen_slot {
+            Some(idx) => idx,
+            None => return Err("Out of io_uring slots"),
+        };
 
         let ring = &mut RINGS[slot_idx];
         ring.reset(entries, 0);
@@ -134,6 +155,24 @@ pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str
 /// Backward-compatible setup_ring call (creates ring 0).
 pub fn setup_ring(entries: u32) -> Result<u64, &'static str> {
     setup_ring_ext(entries, 0)
+}
+
+/// Close and release an active io_uring ring channel.
+pub fn close_ring(ring_id: u32) -> Result<(), &'static str> {
+    let slot = ring_id as usize;
+    if slot >= MAX_IO_URING_INSTANCES {
+        return Err("Invalid ring descriptor");
+    }
+    unsafe {
+        lock_alloc();
+        if !RINGS[slot].in_use {
+            unlock_alloc();
+            return Err("Ring not initialized");
+        }
+        RINGS[slot].in_use = false;
+        unlock_alloc();
+        Ok(())
+    }
 }
 
 /// Process a single submission queue entry.

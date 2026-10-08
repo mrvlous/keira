@@ -13,7 +13,7 @@ pub mod runtime;
 pub mod types;
 
 pub use runtime::{
-    enter_ring, enter_ring_ext, get_ring, get_ring_mut, process_single_sqe, setup_ring,
+    close_ring, enter_ring, enter_ring_ext, get_ring, get_ring_mut, process_single_sqe, setup_ring,
     setup_ring_ext, CQ_ENTRIES, RINGS, SQ_ENTRIES,
 };
 pub use types::{
