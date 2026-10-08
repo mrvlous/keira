@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
     data_idx = 0;
     init_symbols();
 
-    const char *source_path = "/data/main.c";
-    const char *output_path = "/apps/bin/app.elf";
+    const char *source_path = "/tmp/main.c";
+    const char *output_path = "/bin/app.elf";
 
     int arg_i = 1;
     while (arg_i < argc && argv && argv[arg_i]) {
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
             print_str("Usage: kcc [options] <source.c>\n");
             print_str("Options:\n");
             print_str("  -o <path>     Specify output ELF binary (default: "
-                      "/apps/bin/app.elf)\n");
+                      "/bin/app.elf)\n");
             print_str("  -v, --version Display compiler version\n");
             print_str("  -h, --help    Display this help message\n");
             sys_exit(0);
@@ -56,14 +56,14 @@ int main(int argc, char **argv) {
 
     FILE *in_fp = fopen(source_path, "r");
     if (!in_fp && argc < 2) {
-        source_path = "/temp/main.c";
+        source_path = "/tmp/main.c";
         in_fp = fopen(source_path, "r");
     }
     if (!in_fp) {
         print_str("Error: Could not open source file: ");
         print_str(source_path);
         print_str("\n");
-        print_str("Usage: run /system/bin/kcc.elf <source.c> [-o output.elf]\n");
+        print_str("Usage: run /bin/kcc.elf <source.c> [-o output.elf]\n");
         sys_exit(1);
         return 1;
     }

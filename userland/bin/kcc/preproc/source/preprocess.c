@@ -277,14 +277,14 @@ int preprocess_source(const char *input, char *output, int max_out, const char *
                 }
 
                 if (in_fd < 0) {
-                    k_strcpy(full_path, "/system/include/");
-                    k_strcpy(full_path + 16, target);
+                    k_strcpy(full_path, "/include/");
+                    k_strcpy(full_path + 9, target);
                     in_fd = sys_open(full_path, 0, 0);
                 }
 
                 if (in_fd < 0) {
-                    k_strcpy(full_path, "/system/include/sys/");
-                    k_strcpy(full_path + 20, target);
+                    k_strcpy(full_path, "/include/sys/");
+                    k_strcpy(full_path + 13, target);
                     in_fd = sys_open(full_path, 0, 0);
                 }
 
