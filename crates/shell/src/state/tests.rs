@@ -36,7 +36,7 @@ pub mod test {
             assert_eq!(&buf[..get_res], b"/custom/bin");
 
             // Reset back
-            let _ = set_env_var("PATH", "/system/bin");
+            let _ = set_env_var("PATH", "/bin");
         }
     }
 }

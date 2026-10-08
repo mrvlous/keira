@@ -22,9 +22,9 @@ fn test_expand_env_vars_literal() {
 
 #[test]
 fn test_parse_input_redirection() {
-    let (cmd, file) = parse_input_redirection("view < /data/notes.txt");
+    let (cmd, file) = parse_input_redirection("view < /tmp/notes.txt");
     assert_eq!(cmd, "view");
-    assert_eq!(file, Some("/data/notes.txt"));
+    assert_eq!(file, Some("/tmp/notes.txt"));
 
     let (cmd2, file2) = parse_input_redirection("view");
     assert_eq!(cmd2, "view");
@@ -33,14 +33,14 @@ fn test_parse_input_redirection() {
 
 #[test]
 fn test_parse_output_redirection() {
-    let (cmd, file, append) = parse_output_redirection("help > /data/help.txt");
+    let (cmd, file, append) = parse_output_redirection("help > /tmp/help.txt");
     assert_eq!(cmd, "help");
-    assert_eq!(file, Some("/data/help.txt"));
+    assert_eq!(file, Some("/tmp/help.txt"));
     assert!(!append);
 
-    let (cmd2, file2, append2) = parse_output_redirection("help >> /data/log.txt");
+    let (cmd2, file2, append2) = parse_output_redirection("help >> /tmp/log.txt");
     assert_eq!(cmd2, "help");
-    assert_eq!(file2, Some("/data/log.txt"));
+    assert_eq!(file2, Some("/tmp/log.txt"));
     assert!(append2);
 }
 

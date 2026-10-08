@@ -16,8 +16,8 @@ pub fn run_boot_script() {
     unsafe {
         crate::cmds::hostname::load_hostname();
 
-        if keira_fs::fat::change_directory("/system").is_ok() {
-            let initial_path = "system";
+        if keira_fs::fat::change_directory("/bin").is_ok() {
+            let initial_path = "bin";
             SHELL_PATH[..initial_path.len()].copy_from_slice(initial_path.as_bytes());
             SHELL_PATH_LEN = initial_path.len();
         }

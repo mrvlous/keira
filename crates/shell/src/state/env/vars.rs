@@ -10,13 +10,13 @@
 //! Shell environment variables storage and lookup table.
 
 pub static mut ENV_PATH: [u8; 64] = [
-    b'/', b's', b'y', b's', b't', b'e', b'm', b'/', b'b', b'i', b'n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    b'/', b'b', b'i', b'n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0,
 ];
-pub static mut ENV_PATH_LEN: usize = 11;
-pub static mut ENV_SHELL: [u8; 32] = *b"/system/bin/keira               ";
-pub static mut ENV_SHELL_LEN: usize = 17;
+pub static mut ENV_PATH_LEN: usize = 4;
+pub static mut ENV_SHELL: [u8; 32] = *b"/bin/keira                      ";
+pub static mut ENV_SHELL_LEN: usize = 10;
 
 /// Retrieves the string value of an environment variable.
 ///

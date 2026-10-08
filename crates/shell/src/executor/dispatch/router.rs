@@ -19,10 +19,8 @@ pub fn execute_command_inner(cmd: &str) {
         None => return,
     };
 
-    // PATH resolution: strip /system/bin/ prefix if present
-    let command = raw_command
-        .strip_prefix("/system/bin/")
-        .unwrap_or(raw_command);
+    // PATH resolution: strip /bin/ prefix if present
+    let command = raw_command.strip_prefix("/bin/").unwrap_or(raw_command);
 
     match command {
         "hostname" => crate::cmds::hostname::run(&mut parts),
@@ -104,7 +102,7 @@ pub fn execute_command_inner(cmd: &str) {
                 let mut path_buf = [0u8; 64];
                 let cmd_bytes = command.as_bytes();
 
-                let prefix_sys = b"/system/bin/";
+                let prefix_sys = b"/bin/";
                 let mut path_sys_ok = false;
                 if prefix_sys.len() + cmd_bytes.len() < 64 {
                     path_buf[..prefix_sys.len()].copy_from_slice(prefix_sys);
@@ -128,7 +126,7 @@ pub fn execute_command_inner(cmd: &str) {
 
             if found_in_path {
                 vga::set_color(vga::Color::Yellow, vga::Color::Black);
-                vga::print_str("Binary found in /system/bin. Use 'run /system/bin/");
+                vga::print_str("Binary found in /bin. Use 'run /bin/");
                 vga::print_str(command);
                 vga::print_str("' to execute.\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
