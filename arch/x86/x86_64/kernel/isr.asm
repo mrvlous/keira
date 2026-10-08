@@ -78,6 +78,7 @@ bits 64
 global isr32
 global isr33
 global isr44
+global isr_tlb_shootdown
 
 extern isr_handler
 extern keyboard_handler
@@ -85,6 +86,7 @@ extern mouse_handler
 extern pit_handler
 extern schedule_tick
 extern exception_dispatcher
+extern tlb_shootdown_handler
 
 ; Exception Stub Generator Macros
 %macro exception_no_err 1
@@ -209,4 +211,19 @@ isr44:
     jz .mouse_exit_kernel
     swapgs
 .mouse_exit_kernel:
+    iretq
+
+; ISR 253 (0xFD): SMP Cross-Core TLB Shootdown IPI
+isr_tlb_shootdown:
+    test byte [rsp + 8], 3
+    jz .tlb_entry_kernel
+    swapgs
+.tlb_entry_kernel:
+    pushaq
+    call tlb_shootdown_handler
+    popaq
+    test byte [rsp + 8], 3
+    jz .tlb_exit_kernel
+    swapgs
+.tlb_exit_kernel:
     iretq

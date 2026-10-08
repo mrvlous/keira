@@ -112,3 +112,16 @@ pub unsafe fn enable_lapic() {
     // Task Priority Register (TPR): 0 (accept all interrupt priorities)
     write_reg(LAPIC_TPR_REG, 0);
 }
+
+/// Waits until the APIC Interrupt Command Register (ICR) is ready to accept a new command.
+///
+/// # Safety
+///
+/// Reads MMIO registers of the Local APIC.
+#[inline(always)]
+pub unsafe fn wait_icr_idle() {
+    #[cfg(target_os = "none")]
+    while (read_reg(LAPIC_ICR_LOW_REG) & (1 << 12)) != 0 {
+        core::hint::spin_loop();
+    }
+}

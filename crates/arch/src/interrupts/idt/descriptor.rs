@@ -12,6 +12,9 @@
 //! Configures hardware interrupt gates, trap gates, exception entry vectors,
 //! and loads the CPU `IDTR` register across 32-bit and 64-bit protected/long modes.
 
+/// IDT interrupt vector reserved for SMP cross-core TLB shootdown (Vector 253 / 0xFD).
+pub const VECTOR_TLB_SHOOTDOWN: usize = 0xFD;
+
 #[cfg(target_arch = "x86_64")]
 #[repr(C, packed)]
 #[derive(Copy, Clone, Default)]
@@ -80,6 +83,7 @@ extern "C" {
     fn isr32();
     fn isr33();
     fn isr44();
+    fn isr_tlb_shootdown();
 
     #[cfg(target_arch = "x86")]
     fn isr128();
@@ -205,6 +209,15 @@ pub fn init() {
         set_gate(32, isr32 as *const () as usize, 0x08, 0x8E, 0);
         set_gate(33, isr33 as *const () as usize, 0x08, 0x8E, 0);
         set_gate(44, isr44 as *const () as usize, 0x08, 0x8E, 0);
+
+        // SMP Cross-Core TLB Shootdown IPI gate
+        set_gate(
+            VECTOR_TLB_SHOOTDOWN,
+            isr_tlb_shootdown as *const () as usize,
+            0x08,
+            0x8E,
+            0,
+        );
 
         #[cfg(target_arch = "x86")]
         set_gate(128, isr128 as *const () as usize, 0x08, 0xEE, 0);

@@ -35,6 +35,7 @@ bits 32
 global isr32
 global isr33
 global isr44
+global isr_tlb_shootdown
 
 extern isr_handler
 extern keyboard_handler
@@ -42,6 +43,7 @@ extern mouse_handler
 extern pit_handler
 extern schedule_tick
 extern exception_dispatcher
+extern tlb_shootdown_handler
 
 ; Exception Generator Macros
 ; exception_no_err:
@@ -142,5 +144,12 @@ isr33:
 isr44:
     pushad
     call mouse_handler
+    popad
+    iretd
+
+; ISR 253 (0xFD): SMP Cross-Core TLB Shootdown IPI
+isr_tlb_shootdown:
+    pushad
+    call tlb_shootdown_handler
     popad
     iretd

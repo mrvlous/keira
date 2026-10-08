@@ -60,3 +60,33 @@ fn test_smp_boot_barrier_synchronization() {
     smp_barrier_reset(1);
     assert_eq!(smp_barrier_count(), 1);
 }
+
+#[test]
+fn test_ipi_delivery_dispatch() {
+    interrupts::smp::send_ipi(1, 0xFD);
+    interrupts::smp::send_init_ipi(1);
+    interrupts::smp::send_startup_ipi(1, 0x08);
+    interrupts::smp::send_ipi_all_excluding_self(0xFD);
+}
+
+#[test]
+fn test_tlb_shootdown_uniprocessor_and_stats() {
+    let (initial_shootdowns, initial_ipis) = interrupts::smp::get_tlb_shootdown_stats();
+
+    // Specific virtual page invalidation
+    interrupts::smp::tlb_shootdown(0x400000);
+    let (shootdowns1, _) = interrupts::smp::get_tlb_shootdown_stats();
+    assert_eq!(shootdowns1, initial_shootdowns + 1);
+
+    // Complete TLB flush (CR3 reload)
+    interrupts::smp::tlb_shootdown(0);
+    let (shootdowns2, ipis2) = interrupts::smp::get_tlb_shootdown_stats();
+    assert_eq!(shootdowns2, initial_shootdowns + 2);
+    assert_eq!(ipis2, initial_ipis);
+}
+
+#[test]
+fn test_tlb_shootdown_handler_execution() {
+    // Invoke handler directly to simulate Vector 0xFD delivery
+    interrupts::smp::tlb_shootdown_handler();
+}

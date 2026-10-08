@@ -10,6 +10,7 @@
 //! Symmetric Multiprocessing (SMP), Inter-Processor Interrupts (IPI), and cross-core TLB shootdown.
 
 use core::sync::atomic::{AtomicUsize, Ordering};
+use keira_core::sync::{IrqSpinLock, LockRank};
 
 use crate::cpu::invlpg;
 use crate::interrupts::apic;
@@ -18,6 +19,16 @@ use crate::power::acpi;
 
 pub const MAX_CORES: usize = 16;
 pub const AP_TRAMPOLINE_PHYS: usize = 0x8000;
+
+/// Interrupt vector assigned to SMP cross-core TLB shootdown (0xFD / 253).
+pub const VECTOR_TLB_SHOOTDOWN: u8 = 0xFD;
+
+static TLB_TARGET_ADDR: AtomicUsize = AtomicUsize::new(0);
+static TLB_ACK_COUNTER: AtomicUsize = AtomicUsize::new(0);
+static TLB_SHOOTDOWN_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::None);
+
+static TLB_SHOOTDOWN_COUNT: AtomicUsize = AtomicUsize::new(0);
+static TLB_IPI_SENT_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(target_os = "none")]
 extern "C" {
@@ -113,37 +124,157 @@ pub fn get_core_info(index: usize) -> Option<CpuCore> {
 
 /// Send Inter-Processor Interrupt (IPI) to a specific target Local APIC.
 pub fn send_ipi(target_apic_id: u8, vector: u8) {
+    #[cfg(target_os = "none")]
     unsafe {
+        apic::wait_icr_idle();
         let icr_high = (target_apic_id as u32) << 24;
-        let icr_low = vector as u32;
+        let icr_low = (1 << 14) | (vector as u32);
         apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
         apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
+    }
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = (target_apic_id, vector);
     }
 }
 
 /// Send INIT Inter-Processor Interrupt (IPI) to reset an Application Processor (AP).
 pub fn send_init_ipi(target_apic_id: u8) {
+    #[cfg(target_os = "none")]
     unsafe {
+        apic::wait_icr_idle();
         let icr_high = (target_apic_id as u32) << 24;
         let icr_low = 0x0000_4500;
         apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
         apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
     }
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = target_apic_id;
+    }
 }
 
 /// Send Startup Inter-Processor Interrupt (SIPI) to begin AP execution at `vector * 0x1000`.
 pub fn send_startup_ipi(target_apic_id: u8, vector: u8) {
+    #[cfg(target_os = "none")]
     unsafe {
+        apic::wait_icr_idle();
         let icr_high = (target_apic_id as u32) << 24;
         let icr_low = 0x0000_4600 | (vector as u32);
         apic::write_reg(apic::LAPIC_ICR_HIGH_REG, icr_high);
         apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
     }
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = (target_apic_id, vector);
+    }
 }
 
-/// Execute cross-core TLB Shootdown to invalidate page address across all CPU cores.
+/// Broadcast an Inter-Processor Interrupt (IPI) to all other CPU cores excluding the current core.
+pub fn send_ipi_all_excluding_self(vector: u8) {
+    #[cfg(target_os = "none")]
+    unsafe {
+        apic::wait_icr_idle();
+        // Destination Shorthand: 11b (bits 18..19 = 3 << 18)
+        // Delivery Mode: Fixed (000b)
+        // Level: Assert (1 << 14)
+        // Vector: bits 0..7
+        let icr_low = (3 << 18) | (1 << 14) | (vector as u32);
+        apic::write_reg(apic::LAPIC_ICR_LOW_REG, icr_low);
+    }
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = vector;
+    }
+}
+
+/// Flushes the complete processor TLB by reloading control register CR3.
+#[inline(always)]
+pub fn reload_cr3() {
+    #[cfg(all(target_os = "none", target_arch = "x86_64"))]
+    unsafe {
+        let cr3: u64;
+        core::arch::asm!("mov {}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("mov cr3, {}", in(reg) cr3, options(nomem, nostack, preserves_flags));
+    }
+    #[cfg(all(target_os = "none", target_arch = "x86"))]
+    unsafe {
+        let cr3: u32;
+        core::arch::asm!("mov {:e}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
+        core::arch::asm!("mov cr3, {:e}", in(reg) cr3, options(nomem, nostack, preserves_flags));
+    }
+}
+
+/// Execute cross-core synchronous TLB Shootdown to invalidate page address across all CPU cores.
+///
+/// If `vaddr == 0`, flushes the entire TLB via CR3 reload on all cores.
 pub fn tlb_shootdown(vaddr: u64) {
-    invlpg(vaddr as usize);
+    TLB_SHOOTDOWN_COUNT.fetch_add(1, Ordering::Relaxed);
+    let online_cores = unsafe { SMP_CORES_COUNT };
+
+    if online_cores <= 1 {
+        // Fast path for uniprocessor mode: local invalidation only
+        if vaddr != 0 {
+            invlpg(vaddr as usize);
+        } else {
+            reload_cr3();
+        }
+        return;
+    }
+
+    // SMP Synchronous Multi-Core Rendezvous
+    let _guard = TLB_SHOOTDOWN_LOCK.lock();
+    TLB_TARGET_ADDR.store(vaddr as usize, Ordering::Release);
+    TLB_ACK_COUNTER.store(0, Ordering::Release);
+
+    let remote_cores = online_cores.saturating_sub(1);
+    if remote_cores > 0 {
+        TLB_IPI_SENT_COUNT.fetch_add(remote_cores, Ordering::Relaxed);
+        send_ipi_all_excluding_self(VECTOR_TLB_SHOOTDOWN);
+    }
+
+    // Invalidate local CPU core's TLB
+    if vaddr != 0 {
+        invlpg(vaddr as usize);
+    } else {
+        reload_cr3();
+    }
+
+    // Spin-wait until all remote active cores acknowledge completion
+    let mut spins = 0usize;
+    while TLB_ACK_COUNTER.load(Ordering::Acquire) < remote_cores {
+        core::hint::spin_loop();
+        spins += 1;
+        if spins > 10_000_000 {
+            // Failsafe exit to avoid deadlock if a remote processor halted unexpectedly
+            break;
+        }
+    }
+}
+
+/// Handler invoked by `isr_tlb_shootdown` when Vector 0xFD is trapped.
+#[no_mangle]
+pub extern "C" fn tlb_shootdown_handler() {
+    let target = TLB_TARGET_ADDR.load(Ordering::Acquire);
+    if target != 0 {
+        invlpg(target);
+    } else {
+        reload_cr3();
+    }
+
+    unsafe {
+        apic::eoi();
+    }
+
+    TLB_ACK_COUNTER.fetch_add(1, Ordering::Release);
+}
+
+/// Retrieves TLB shootdown metrics: (total shootdowns initiated, total remote IPIs sent).
+pub fn get_tlb_shootdown_stats() -> (u64, u64) {
+    (
+        TLB_SHOOTDOWN_COUNT.load(Ordering::Relaxed) as u64,
+        TLB_IPI_SENT_COUNT.load(Ordering::Relaxed) as u64,
+    )
 }
 
 /// Application Processor (AP) kernel main entry point and idle worker loop.

@@ -12,5 +12,5 @@
 pub mod descriptor;
 pub mod handlers;
 
-pub use descriptor::{init, load_current_idt, set_gate, IdtEntry, IdtPtr};
+pub use descriptor::{init, load_current_idt, set_gate, IdtEntry, IdtPtr, VECTOR_TLB_SHOOTDOWN};
 pub use handlers::{irq_get_counter, irq_get_total, isr_handler, IRQ_HIT_COUNTERS};
