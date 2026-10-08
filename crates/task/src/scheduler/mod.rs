@@ -38,7 +38,11 @@ pub use lifecycle::{
     exit_current, reap_orphaned_zombies, reap_orphaned_zombies_locked, stop_task, sys_waitpid,
     wait_for_task,
 };
-pub use process::{fork_current_task, spawn, spawn_user};
+pub use process::{
+    clone_current_task, fork_current_task, spawn, spawn_user, CLONE_CHILD_CLEARTID,
+    CLONE_CHILD_SETTID, CLONE_FILES, CLONE_FS, CLONE_PARENT_SETTID, CLONE_SETTLS, CLONE_SIGHAND,
+    CLONE_THREAD, CLONE_VM,
+};
 pub use signal::{
     get_current_pending_signals, get_current_signal_mask, send_signal, set_saved_sigcontext,
     sys_sigprocmask, take_saved_sigcontext, SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK,
