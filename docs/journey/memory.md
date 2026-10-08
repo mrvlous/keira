@@ -83,7 +83,7 @@ When an invalid virtual address is accessed, the CPU triggers **Exception 14 (#P
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# memory
+keira:/# memory
 Memory Statistics & Frame Allocator:
 REGION         TOTAL         USED         FREE
 ------         -----         ----         ----
