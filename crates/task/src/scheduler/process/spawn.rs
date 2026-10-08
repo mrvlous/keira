@@ -103,6 +103,10 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         signal_mask: 0,
         pending_signals: 0,
         is_orphan: false,
+        tgid: slot_idx,
+        is_thread: false,
+        clear_child_tid: 0,
+        tls: 0,
         cpu_ticks: 0,
         switches: 0,
     };
@@ -210,6 +214,10 @@ pub unsafe fn spawn_user(
         signal_mask: 0,
         pending_signals: 0,
         is_orphan: false,
+        tgid: slot_idx,
+        is_thread: false,
+        clear_child_tid: 0,
+        tls: 0,
         cpu_ticks: 0,
         switches: 0,
     };

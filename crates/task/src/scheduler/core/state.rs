@@ -73,6 +73,10 @@ pub unsafe fn init() {
         signal_mask: 0,
         pending_signals: 0,
         is_orphan: false,
+        tgid: 0,
+        is_thread: false,
+        clear_child_tid: 0,
+        tls: 0,
         cpu_ticks: 0,
         switches: 1,
     };

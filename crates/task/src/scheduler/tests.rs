@@ -133,6 +133,10 @@ fn test_orphan_reparenting_and_reap() {
             signal_mask: 0,
             pending_signals: 0,
             is_orphan: true,
+            tgid: 1,
+            is_thread: false,
+            clear_child_tid: 0,
+            tls: 0,
             cpu_ticks: 0,
             switches: 0,
         };
@@ -155,4 +159,29 @@ fn test_scheduler_telemetry_counters() {
     let _ = switches;
     let _ = ticks;
     assert!(active >= 1, "At least task 0 must be active in scheduler");
+}
+
+#[test]
+fn test_clone_constants_and_thread_semantics() {
+    use crate::scheduler::process::clone::*;
+    assert_eq!(CLONE_VM, 0x0000_0100);
+    assert_eq!(CLONE_FS, 0x0000_0200);
+    assert_eq!(CLONE_FILES, 0x0000_0400);
+    assert_eq!(CLONE_SIGHAND, 0x0000_0800);
+    assert_eq!(CLONE_THREAD, 0x0001_0000);
+    assert_eq!(CLONE_SETTLS, 0x0008_0000);
+    assert_eq!(CLONE_PARENT_SETTID, 0x0010_0000);
+    assert_eq!(CLONE_CHILD_CLEARTID, 0x0020_0000);
+    assert_eq!(CLONE_CHILD_SETTID, 0x0100_0000);
+
+    let _lock = TestLock::acquire();
+    unsafe {
+        init();
+        if let Some(ref t) = TASKS[0] {
+            assert_eq!(t.tgid, 0);
+            assert!(!t.is_thread);
+            assert_eq!(t.clear_child_tid, 0);
+            assert_eq!(t.tls, 0);
+        }
+    }
 }
