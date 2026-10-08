@@ -21,6 +21,7 @@ graph TD
     M9 --> M10["10. Raw Kernel Primitives<br/><i>Type-Safe EBR, Frame Refcounting, Copy-on-Write Fork</i>"]
     M10 --> M11["11. Work-Stealing Scheduling<br/><i>Per-CPU Runqueues, Chase-Lev Deques, Lock-Free Stealing</i>"]
     M11 --> M12["12. Hierarchical Magazine Slab Allocator<br/><i>Per-CPU Depots, Zero-Lock Caching, Bonwick Magazines</i>"]
+    M12 --> M13["13. SMP IPI & TLB Shootdown<br/><i>Local APIC ICR Delivery, Multi-Core Rendezvous, Invalidation</i>"]
 ```
 
 ---
@@ -41,6 +42,7 @@ graph TD
 | **Milestone 10** | [`raw_kernel_v060.md`](raw_kernel_v060.md) | `v0.6.0` | Type-Safe Epoch-Based Reclamation (EBR), physical frame reference counting, and Copy-on-Write (COW) |
 | **Milestone 11** | [`work_stealing_v060.md`](work_stealing_v060.md) | `v0.6.0` | Per-CPU lock-free work-stealing scheduler, Chase-Lev deques, EBR pinning, and decentralized task balancer |
 | **Milestone 12** | [`magazine_slab_v060.md`](magazine_slab_v060.md) | `v0.6.0` | Hierarchical per-CPU magazine slab allocator, Jeff Bonwick object caching, and zero-lock fast paths |
+| **Milestone 13** | [`smp_tlb_shootdown_v060.md`](smp_tlb_shootdown_v060.md) | `v0.6.0` | Local APIC Inter-Processor Interrupt (IPI) framework, multi-core rendezvous, and cross-core TLB shootdown |
 
 ---
 
