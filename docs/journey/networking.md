@@ -62,15 +62,15 @@ Keira eliminates reliance on external userland libraries (such as OpenSSL) by em
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# network
+keira:/# network
 INTERFACE  MAC ADDRESS        STATUS       IP ADDRESS        PACKETS (TX/RX)
 ---------  -----------        ------       ----------        ---------------
 eth0       52:54:00:12:34:56  UP (e1000)   10.0.2.15 (NAT)   0/0
 
-keira:/bin# fetch http://icanhazip.com/
+keira:/# fetch http://icanhazip.com/
 103.160.68.245
 
-keira:/bin# fetch -I http://httpbin.org/get
+keira:/# fetch -I http://httpbin.org/get
 HTTP/1.1 200 OK
 Host: httpbin.org
 Protocol: HTTP/1.1
