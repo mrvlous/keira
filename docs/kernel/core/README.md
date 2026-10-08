@@ -17,3 +17,4 @@ This module documents the low-level hardware structures required for system oper
 | [`hpet.md`](hpet.md) | HPET Timer | High-Precision Event Timer sub-nanosecond monotonic clock |
 | [`ebr_sync.md`](ebr_sync.md) | EBR Sync | Type-Safe Epoch-Based Reclamation lock-free synchronization |
 | [`smp_ipi.md`](smp_ipi.md) | SMP IPI & TLB | Local APIC ICR delivery, cross-core TLB shootdown rendezvous |
+| [`smp_reschedule.md`](smp_reschedule.md) | SMP Reschedule | Cross-core preemption IPI Vector 0xFE, low-latency dispatch |
