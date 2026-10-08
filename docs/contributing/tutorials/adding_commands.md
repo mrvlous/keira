@@ -132,6 +132,6 @@ make run
 ```
 At the shell prompt:
 ```bash
-keira:/bin# banner --help
-keira:/bin# banner -u "welcome to keira"
+keira:/# banner --help
+keira:/# banner -u "welcome to keira"
 ```
