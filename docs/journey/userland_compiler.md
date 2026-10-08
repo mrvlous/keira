@@ -62,7 +62,7 @@ Keira includes a native C compiler capable of running directly on bare metal wit
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# view /tmp/main.c
+keira:/# view /tmp/main.c
 /* Keira Comprehensive KCC Sample Program */
 
 int compute(int x, int y) {
@@ -82,7 +82,7 @@ void main(void) {
     printf("KCC compilation & execution complete!\n");
 }
 
-keira:/bin# kcc /tmp/main.c -o /bin/app.elf
+keira:/# kcc /tmp/main.c -o /bin/app.elf
 Compiling: /tmp/main.c -> /bin/app.elf
 Loading ELF binary: /bin/kcc.elf
 KCC (Keira C Compiler) Native Toolchain
@@ -95,7 +95,7 @@ Program exited normally.
 [OK] Executable ready at /bin/app.elf
 Hint: Execute with 'run /bin/app.elf'
 
-keira:/bin# run /bin/app.elf
+keira:/# run /bin/app.elf
 Loading ELF binary: /bin/app.elf
 Keira KCC Compiler Execution
 KCC compilation & execution complete!
