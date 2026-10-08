@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for shell state, spinlock safety, and environment variables.
+//! Unit tests for shell state, spinlock safety and environment variables.
 
 #[cfg(test)]
 pub mod test {
