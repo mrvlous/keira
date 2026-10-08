@@ -84,6 +84,14 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
                     }
                 }
 
+                #[cfg(target_arch = "x86_64")]
+                if task.tls != 0 {
+                    keira_arch::cpu::control::msr::wrmsr(
+                        keira_arch::cpu::control::msr::IA32_FS_BASE_MSR,
+                        task.tls,
+                    );
+                }
+
                 return task.rsp;
             }
         }

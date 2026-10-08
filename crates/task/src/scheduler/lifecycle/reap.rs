@@ -35,10 +35,17 @@ pub unsafe fn reap_orphaned_zombies_locked() {
                     if let Some(hook) = TASK_CLEANUP_HOOK {
                         hook(reaped_id);
                     }
+                    let is_last_pml4_user = !TASKS
+                        .iter()
+                        .take(MAX_TASKS)
+                        .flatten()
+                        .any(|t| t.id != reaped_id && t.pml4_phys == child.pml4_phys);
                     if child.stack_addr != 0 {
-                        vmm::free_user_pages(child.pml4_phys, child.program_break);
+                        if is_last_pml4_user {
+                            vmm::free_user_pages(child.pml4_phys, child.program_break);
+                        }
                         pmm::free_frame(child.stack_addr);
-                    } else if child.pml4_phys != 0 {
+                    } else if child.pml4_phys != 0 && is_last_pml4_user {
                         vmm::cleanup_vmas_for_pml4(child.pml4_phys);
                     }
                     *child_slot = None;

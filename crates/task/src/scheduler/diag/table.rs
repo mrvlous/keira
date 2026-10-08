@@ -20,12 +20,13 @@ use crate::types::TaskState;
 /// Caller must ensure that video output buffer access is synchronized.
 pub unsafe fn list_tasks() {
     vga::set_color(vga::Color::White, vga::Color::Black);
-    vga::print_str("PID    TASK NAME             STATE       TICKS       SWITCHES\n");
-    vga::print_str("-----  --------------------  ----------  ----------  ----------\n");
+    vga::print_str("PID    TGID   TASK NAME             STATE       TICKS       SWITCHES\n");
+    vga::print_str("-----  -----  --------------------  ----------  ----------  ----------\n");
 
     for task in TASKS.iter().take(MAX_TASKS).flatten() {
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         print_padded_u64(task.id as u64, 7);
+        print_padded_u64(task.tgid as u64, 7);
 
         vga::print_str(task.name);
         for _ in 0..(22usize.saturating_sub(task.name.len())) {
