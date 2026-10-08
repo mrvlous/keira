@@ -14,7 +14,7 @@ use super::super::table::{
     PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M,
 };
 use crate::pmm;
-use keira_arch::cpu::invlpg;
+use keira_arch::interrupts::smp::tlb_shootdown;
 
 /// Unmaps a virtual page from the active address space and invalidates the TLB.
 ///
@@ -47,7 +47,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if (pdpt_entry & PAGE_HUGE) != 0 {
         if virtual_addr.is_multiple_of(0x4000_0000) {
             *pdpt.add(pdpt_idx) = 0;
-            invlpg(virtual_addr as usize);
+            tlb_shootdown(virtual_addr);
             return Ok(());
         }
         return Err("Cannot unmap sub-page of 1GB huge page without splitting");
@@ -61,7 +61,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     if (pd_entry & PAGE_HUGE) != 0 {
         if virtual_addr.is_multiple_of(0x20_0000) {
             *pd.add(pd_idx) = 0;
-            invlpg(virtual_addr as usize);
+            tlb_shootdown(virtual_addr);
             return Ok(());
         }
         return Err("Cannot unmap sub-page of 2MB huge page without splitting");
@@ -74,7 +74,7 @@ pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
     }
 
     *pt.add(pt_idx) = 0;
-    invlpg(virtual_addr as usize);
+    tlb_shootdown(virtual_addr);
 
     Ok(())
 }
@@ -114,7 +114,7 @@ pub unsafe fn unmap_huge_2m_page(virtual_addr: u64) -> Result<(), &'static str> 
     }
 
     *pd.add(pd_idx) = 0;
-    invlpg(virtual_addr as usize);
+    tlb_shootdown(virtual_addr);
     Ok(())
 }
 

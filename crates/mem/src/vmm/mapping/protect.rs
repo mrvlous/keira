@@ -14,7 +14,7 @@ use super::super::table::{
     PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M,
 };
 use crate::pmm;
-use keira_arch::cpu::invlpg;
+use keira_arch::interrupts::smp::tlb_shootdown;
 
 /// Modifies access flags for an active page and flushes the TLB.
 ///
@@ -48,7 +48,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
         if virtual_addr.is_multiple_of(0x4000_0000) {
             let phys_frame = pdpt_entry & PTE_ADDR_MASK_1G;
             *pdpt.add(pdpt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
-            invlpg(virtual_addr as usize);
+            tlb_shootdown(virtual_addr);
             return Ok(());
         }
         return Err("Cannot mprotect sub-page of 1GB huge page without splitting");
@@ -63,7 +63,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
         if virtual_addr.is_multiple_of(0x20_0000) {
             let phys_frame = pd_entry & PTE_ADDR_MASK_2M;
             *pd.add(pd_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER | PAGE_HUGE;
-            invlpg(virtual_addr as usize);
+            tlb_shootdown(virtual_addr);
             return Ok(());
         }
         return Err("Cannot mprotect sub-page of 2MB huge page without splitting");
@@ -78,7 +78,7 @@ pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'s
     let phys_frame = pt_entry & PTE_ADDR_MASK;
     *pt.add(pt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER;
 
-    invlpg(virtual_addr as usize);
+    tlb_shootdown(virtual_addr);
     Ok(())
 }
 

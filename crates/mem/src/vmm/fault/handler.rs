@@ -19,6 +19,7 @@ use super::super::table::{
 };
 use crate::pmm;
 use keira_arch::cpu::invlpg;
+use keira_arch::interrupts::smp::tlb_shootdown;
 
 #[cfg(target_arch = "x86")]
 pub const USER_STACK_TOP: u64 = 0x07FFF000;
@@ -97,7 +98,7 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
                     *pte_ptr = (pte & !PAGE_COW) | PAGE_WRITABLE;
                     COW_FAULTS.fetch_add(1, Ordering::Relaxed);
                     TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
-                    invlpg(fault_page as usize);
+                    tlb_shootdown(fault_page);
                     return true;
                 } else if let Some(new_frame) = pmm::alloc_frame() {
                     let src_ptr = fault_page as *const u8;
@@ -112,7 +113,7 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
 
                     COW_FAULTS.fetch_add(1, Ordering::Relaxed);
                     TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
-                    invlpg(fault_page as usize);
+                    tlb_shootdown(fault_page);
                     return true;
                 }
             }
