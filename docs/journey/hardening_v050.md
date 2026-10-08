@@ -80,7 +80,7 @@ Keira adheres to a pure freestanding software contract:
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# run /bin/test_abi.elf
+keira:/# run /bin/test_abi.elf
 Loading ELF binary: /bin/test_abi.elf
 Keira Ring 3 Syscall Security & ABI Verification Harness
 [TEST] Testing Process Lifecycle & Credentials... [OK]
@@ -93,7 +93,7 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.
 
-keira:/bin# run /bin/fuzz_abi.elf
+keira:/# run /bin/fuzz_abi.elf
 Loading ELF binary: /bin/fuzz_abi.elf
 Keira Kernel Ring 3 Automated Syscall Fuzzing & Chaos Test Suite
 Syzkaller-Lite Engine: 10,000+ Mutated Vectors & Boundary Stress
@@ -108,7 +108,7 @@ Execution Duration: 1420 ms | Kernel Status: ROCK SOLID / ZERO PANIC
 Keira Kernel v0.5.0 Production Stability Criteria: 100% MET [OK]
 Program exited normally.
 
-keira:/bin# system
+keira:/# system
 Keira Monolithic Kernel v0.5.0
 Target Architecture : x86_64-unknown-none (64-Bit Long Mode)
 SMP Cores Active    : 4 Cores Online (APIC Preemption @ 1000 Hz)
