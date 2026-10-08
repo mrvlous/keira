@@ -12,13 +12,15 @@
 use crate::args::CliArgs;
 use keira_io::vga;
 
+use keira_mem::{FD_CACHE, INODE_CACHE, TASK_CACHE, VMA_CACHE};
+
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     let args = CliArgs::parse(parts);
 
     if args.has_flag('h', "help") {
         {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p]\n\n");
+            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-l]\n\n");
             vga::print_str(
                 "Description:\n  Display physical frame allocator, kernel heap, and paging statistics.\n\n",
             );
@@ -29,14 +31,21 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("  -s, --summary  Display compact one-line memory summary\n");
             vga::print_str("  -t, --test     Run bare-metal allocator stress test\n");
             vga::print_str("  -p, --paging   Display virtual memory and page fault telemetry\n");
+            vga::print_str("  -l, --slab     Display magazine slab object cache telemetry\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
         return;
     }
 
+    if args.has_flag('l', "slab") {
+        display_slab_cache_telemetry();
+        return;
+    }
+
     if args.has_flag('p', "paging") {
         let (total, cow, stack, demand, viol, tlb) = keira_mem::vmm_get_fault_stats();
+        let (shootdowns, ipis) = keira_arch::interrupts::smp::get_tlb_shootdown_stats();
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Virtual Memory & Paging Telemetry:\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -58,6 +67,11 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str("  TLB Invalidations  : ");
         vga::print_u64(tlb);
         vga::print_str(" flushes (invlpg)\n");
+        vga::print_str("  TLB SMP Shootdowns : ");
+        vga::print_u64(shootdowns);
+        vga::print_str(" broadcasts (");
+        vga::print_u64(ipis);
+        vga::print_str(" IPIs)\n");
         return;
     }
 
@@ -180,6 +194,51 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str("  Fragmentation     : ");
         vga::print_u64(fragmentation_pct as u64);
         vga::print_str(" %\n");
+    }
+}
+
+fn display_slab_cache_telemetry() {
+    vga::set_color(vga::Color::White, vga::Color::Black);
+    vga::print_str("Magazine Slab Object Cache Telemetry:\n");
+    vga::print_str("CACHE NAME        SIZE   ACTIVE   CACHED   ALLOC_HIT  FREE_HIT\n");
+    vga::print_str("----------------  -----  -------  -------  ---------  --------\n");
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+    let caches = [&TASK_CACHE, &INODE_CACHE, &FD_CACHE, &VMA_CACHE];
+
+    for cache in caches.iter() {
+        print_fixed_str(cache.name(), 18);
+        print_fixed_u64(cache.obj_size() as u64, 7);
+        print_fixed_u64(cache.allocated_count() as u64, 9);
+        let cached = (cache.total_cpu_cached() + cache.total_depot_cached()) as u64;
+        print_fixed_u64(cached, 9);
+        print_fixed_u64(cache.total_alloc_hits() as u64, 11);
+        print_fixed_u64(cache.total_free_hits() as u64, 10);
+        vga::print_str("\n");
+    }
+}
+
+fn print_fixed_str(s: &str, width: usize) {
+    vga::print_str(s);
+    for _ in 0..width.saturating_sub(s.len()) {
+        vga::print_str(" ");
+    }
+}
+
+fn print_fixed_u64(val: u64, width: usize) {
+    let mut len = 0;
+    let mut temp = val;
+    if temp == 0 {
+        len = 1;
+    } else {
+        while temp > 0 {
+            len += 1;
+            temp /= 10;
+        }
+    }
+    vga::print_u64(val);
+    for _ in 0..width.saturating_sub(len) {
+        vga::print_str(" ");
     }
 }
 
