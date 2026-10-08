@@ -82,7 +82,7 @@ Waking secondary Application Processors (APs) from hardware reset requires navig
 The milestone is validated directly via the Keira shell:
 
 ```text
-keira:/bin# system
+keira:/# system
 System Specifications & Kernel Information
   Kernel Version : Keira Kernel v0.6.0
   Architecture   : x86_64 Long Mode (Freestanding)
@@ -91,7 +91,7 @@ System Specifications & Kernel Information
   Heap Memory    : 0 KB / 1024 KB
   PCI Devices    : 5 detected
 
-keira:/bin# cpu
+keira:/# cpu
 Processor & Architecture Telemetry:
   Vendor String : AuthenticAMD
   Architecture  : x86_64 Long Mode (64-bit)
@@ -102,7 +102,7 @@ Processor & Architecture Telemetry:
   Interrupts    : 0 IRQ events
   Core Temp     : 42 deg C (DTS)
 
-keira:/bin# smp
+keira:/# smp
 Symmetric Multiprocessing (SMP) Hardware Topology:
   Total Online Cores : 2
 
