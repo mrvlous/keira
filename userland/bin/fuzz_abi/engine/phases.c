@@ -144,7 +144,7 @@ int run_phase2_fd_exhaustion(int *out_opened) {
 
     int open_fds[64];
     int num_opened = 0;
-    const char *test_path = "/config/sys/hostname.cfg";
+    const char *test_path = "/etc/hostname";
 
     /* Open descriptors until table capacity is reached */
     for (int i = 0; i < 64; i++) {

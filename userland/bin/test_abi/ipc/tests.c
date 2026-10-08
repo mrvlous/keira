@@ -83,9 +83,9 @@ int run_test_abi_ipc(void) {
 
     /* 22. TTY Line Discipline & Termios Mode Switching */
     puts("  [TEST] TTY line discipline and termios mode switching...");
-    int tty_term_fd = open("/system/dev/tty", O_RDWR, 0);
+    int tty_term_fd = open("/dev/tty", O_RDWR, 0);
     if (tty_term_fd < 0) {
-        puts("  [FAIL] open(/system/dev/tty) for termios failed");
+        puts("  [FAIL] open(/dev/tty) for termios failed");
         return 1;
     }
     struct termios orig_term;
@@ -126,73 +126,73 @@ int run_test_abi_ipc(void) {
     puts("  [TEST] ProcFS dynamic telemetry and DevFS isolation...");
     char proc_buf[256];
     memset(proc_buf, 0, sizeof(proc_buf));
-    int up_fd = open("/system/proc/uptime", O_RDONLY, 0);
+    int up_fd = open("/proc/uptime", O_RDONLY, 0);
     if (up_fd < 0 || read(up_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
-        puts("  [FAIL] Failed to read /system/proc/uptime");
+        puts("  [FAIL] Failed to read /proc/uptime");
         if (up_fd >= 0)
             close(up_fd);
         return 1;
     }
     close(up_fd);
     if (strchr(proc_buf, '.') == NULL) {
-        puts("  [FAIL] /system/proc/uptime content malformed");
+        puts("  [FAIL] /proc/uptime content malformed");
         return 1;
     }
 
     memset(proc_buf, 0, sizeof(proc_buf));
-    int mem_fd = open("/system/proc/meminfo", O_RDONLY, 0);
+    int mem_fd = open("/proc/meminfo", O_RDONLY, 0);
     if (mem_fd < 0 || read(mem_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
-        puts("  [FAIL] Failed to read /system/proc/meminfo");
+        puts("  [FAIL] Failed to read /proc/meminfo");
         if (mem_fd >= 0)
             close(mem_fd);
         return 1;
     }
     close(mem_fd);
     if (strstr(proc_buf, "MemTotal:") == NULL) {
-        puts("  [FAIL] /system/proc/meminfo missing MemTotal token");
+        puts("  [FAIL] /proc/meminfo missing MemTotal token");
         return 1;
     }
 
     memset(proc_buf, 0, sizeof(proc_buf));
-    int cpu_fd = open("/system/proc/cpuinfo", O_RDONLY, 0);
+    int cpu_fd = open("/proc/cpuinfo", O_RDONLY, 0);
     if (cpu_fd < 0 || read(cpu_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
-        puts("  [FAIL] Failed to read /system/proc/cpuinfo");
+        puts("  [FAIL] Failed to read /proc/cpuinfo");
         if (cpu_fd >= 0)
             close(cpu_fd);
         return 1;
     }
     close(cpu_fd);
     if (strstr(proc_buf, "vendor_id") == NULL) {
-        puts("  [FAIL] /system/proc/cpuinfo missing vendor_id token");
+        puts("  [FAIL] /proc/cpuinfo missing vendor_id token");
         return 1;
     }
 
     memset(proc_buf, 0, sizeof(proc_buf));
-    int stat_fd = open("/system/proc/self/status", O_RDONLY, 0);
+    int stat_fd = open("/proc/self/status", O_RDONLY, 0);
     if (stat_fd < 0 || read(stat_fd, proc_buf, sizeof(proc_buf) - 1) <= 0) {
-        puts("  [FAIL] Failed to read /system/proc/self/status");
+        puts("  [FAIL] Failed to read /proc/self/status");
         if (stat_fd >= 0)
             close(stat_fd);
         return 1;
     }
     close(stat_fd);
     if (strstr(proc_buf, "State:") == NULL) {
-        puts("  [FAIL] /system/proc/self/status missing State token");
+        puts("  [FAIL] /proc/self/status missing State token");
         return 1;
     }
 
-    int dev_null = open("/system/dev/null", O_RDONLY, 0);
+    int dev_null = open("/dev/null", O_RDONLY, 0);
     if (dev_null < 0 || read(dev_null, proc_buf, 10) != 0) {
-        puts("  [FAIL] Dynamic /system/dev/null read failed");
+        puts("  [FAIL] Dynamic /dev/null read failed");
         if (dev_null >= 0)
             close(dev_null);
         return 1;
     }
     close(dev_null);
 
-    int dev_zero = open("/system/dev/zero", O_RDONLY, 0);
+    int dev_zero = open("/dev/zero", O_RDONLY, 0);
     if (dev_zero < 0 || read(dev_zero, proc_buf, 8) != 8 || proc_buf[0] != 0) {
-        puts("  [FAIL] Dynamic /system/dev/zero read failed");
+        puts("  [FAIL] Dynamic /dev/zero read failed");
         if (dev_zero >= 0)
             close(dev_zero);
         return 1;

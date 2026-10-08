@@ -181,7 +181,7 @@ int run_test_abi_stress(void) {
     /* 39. Lock Contention & Non-Blocking Deadlock Immunity */
     puts("  [TEST] Lock contention & non-blocking deadlock immunity...");
 #if defined(__x86_64__)
-    const char *contention_file = "/temp/contention_lock.txt";
+    const char *contention_file = "/tmp/contention_lock.txt";
     int fd_lock = open(contention_file, O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (fd_lock < 0) {
         puts("  [FAIL] Failed to create contention lock test file");

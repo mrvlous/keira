@@ -143,10 +143,10 @@ int run_test_abi_mem(void) {
     /* 26. File-Backed Memory Mapping, Demand Paging, and msync Synchronization */
     puts("  [TEST] File-backed mmap, demand paging, and msync synchronization...");
 #if defined(__x86_64__)
-    const char *test_path = "/config/sys/mmap_abi.txt";
+    const char *test_path = "/tmp/mmap_abi.txt";
     int f_init = open(test_path, O_CREAT | O_RDWR | O_TRUNC, 0644);
     if (f_init < 0) {
-        puts("  [FAIL] Failed to create /config/sys/mmap_abi.txt for mmap test");
+        puts("  [FAIL] Failed to create /tmp/mmap_abi.txt for mmap test");
         return 1;
     }
     const char *init_payload = "INIT_PAYLOAD_KEIRA_MMAP_PERSISTENCE_TEST";

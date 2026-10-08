@@ -24,7 +24,7 @@ int display_system_info(void) {
     printf("System Uptime         : %d seconds\n", (int)uptime);
 
     /* Read kernel hostname from VFS */
-    int fd = sys_open("/config/sys/hostname.cfg", 0, 0);
+    int fd = sys_open("/etc/hostname", 0, 0);
     if (fd >= 0) {
         char host_buf[64];
         memset(host_buf, 0, sizeof(host_buf));

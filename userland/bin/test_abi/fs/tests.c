@@ -30,7 +30,7 @@ int run_test_abi_fs(void) {
         puts("  [FAIL] getcwd() failed on initial directory");
         return 1;
     }
-    if (chdir("/config") == 0) {
+    if (chdir("/etc") == 0) {
         memset(cwd_buf, 0, sizeof(cwd_buf));
         if (getcwd(cwd_buf, sizeof(cwd_buf)) != NULL) {
             printf("  [INFO] Changed working directory to: %s\n", cwd_buf);
@@ -40,7 +40,7 @@ int run_test_abi_fs(void) {
 
     /* 6. VFS File Seeking (lseek) */
     puts("  [TEST] VFS file seeking (lseek)...");
-    int fd = open("/config/sys/hostname.cfg", O_RDONLY, 0);
+    int fd = open("/etc/hostname", O_RDONLY, 0);
     if (fd >= 0) {
         off_t pos = lseek(fd, 0, SEEK_CUR);
         if (pos != 0) {
@@ -52,7 +52,7 @@ int run_test_abi_fs(void) {
 
     /* 10. Buffered Stream I/O Operations */
     puts("  [TEST] Buffered standard I/O stream operations...");
-    FILE *fp = fopen("/config/sys/hostname.cfg", "r");
+    FILE *fp = fopen("/etc/hostname", "r");
     if (fp) {
         char line_buf[64];
         memset(line_buf, 0, sizeof(line_buf));
@@ -69,7 +69,7 @@ int run_test_abi_fs(void) {
         fclose(fp);
         puts("  [OK]   Buffered standard I/O operational");
     } else {
-        puts("  [FAIL] fopen() failed on /config/sys/hostname.cfg");
+        puts("  [FAIL] fopen() failed on /etc/hostname");
         return 1;
     }
 
@@ -92,37 +92,37 @@ int run_test_abi_fs(void) {
         return 1;
     }
 
-    /* 21. Character Device /system/dev/tty Stream */
-    puts("  [TEST] Character device /system/dev/tty stream read/write...");
-    int tty_fd = open("/system/dev/tty", O_RDWR, 0);
+    /* 21. Character Device /dev/tty Stream */
+    puts("  [TEST] Character device /dev/tty stream read/write...");
+    int tty_fd = open("/dev/tty", O_RDWR, 0);
     if (tty_fd < 0) {
-        puts("  [FAIL] open(/system/dev/tty) failed");
+        puts("  [FAIL] open(/dev/tty) failed");
         return 1;
     }
     const char *tty_msg = " [TTY_ECHO_OK]\n";
     ssize_t written = write(tty_fd, tty_msg, strlen(tty_msg));
     if (written != (ssize_t)strlen(tty_msg)) {
-        puts("  [FAIL] write to /system/dev/tty failed");
+        puts("  [FAIL] write to /dev/tty failed");
         close(tty_fd);
         return 1;
     }
     char tty_in[16];
     ssize_t tty_read = read(tty_fd, tty_in, sizeof(tty_in));
     if (tty_read < 0) {
-        puts("  [FAIL] read from /system/dev/tty returned error");
+        puts("  [FAIL] read from /dev/tty returned error");
         close(tty_fd);
         return 1;
     }
     close(tty_fd);
-    puts("  [INFO] /system/dev/tty write and non-blocking read queue drain "
+    puts("  [INFO] /dev/tty write and non-blocking read queue drain "
          "verified");
-    puts("  [OK]   Character device /system/dev/tty stream operational");
+    puts("  [OK]   Character device /dev/tty stream operational");
 
     /* 34. File Descriptor & Write Lock Auto-Reclaim Upon Process Exit */
     puts("  [TEST] File descriptor and write lock auto-reclaim upon process "
          "exit...");
 #if defined(__x86_64__)
-    const char *flock_path = "/temp/flock_reclaim.txt";
+    const char *flock_path = "/tmp/flock_reclaim.txt";
     pid_t lock_child = fork();
     if (lock_child < 0) {
         puts("  [FAIL] Fork failed for flock auto-reclaim test");
@@ -173,7 +173,7 @@ int run_test_abi_fs(void) {
         return 1;
     }
 
-    const char *sync_path = "/temp/sync_test.txt";
+    const char *sync_path = "/tmp/sync_test.txt";
     int fd_sync = open(sync_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (fd_sync < 0) {
         puts("  [FAIL] Failed to create sync test file");
@@ -221,7 +221,7 @@ int run_test_abi_fs(void) {
 
     /* 36. Descriptor Duplication & Slot Targeting (dup and dup2) */
     puts("  [TEST] POSIX descriptor duplication and targeting (dup & dup2)...");
-    const char *dup_path = "/temp/dup_test.txt";
+    const char *dup_path = "/tmp/dup_test.txt";
     int fd_orig = open(dup_path, O_CREAT | O_RDWR | O_TRUNC, 0644);
     if (fd_orig < 0) {
         puts("  [FAIL] Failed to open dup test file");
@@ -297,8 +297,8 @@ int run_test_abi_fs(void) {
     puts("  [TEST] Descriptor advisory lock coherency across duplicated "
          "handles...");
 #if defined(__x86_64__)
-    const char *flock_dup_path = "/temp/flock_dup.txt";
-    const char *flock_sync_path = "/temp/flock_sync.txt";
+    const char *flock_dup_path = "/tmp/flock_dup.txt";
+    const char *flock_sync_path = "/tmp/flock_sync.txt";
 
     unlink(flock_sync_path);
     unlink(flock_dup_path);

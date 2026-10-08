@@ -200,7 +200,7 @@ int run_test_abi_signal(void) {
 #if defined(__x86_64__)
     if (pf_child > 0) {
         char core_path[64];
-        snprintf(core_path, sizeof(core_path), "/data/log/core_%d.dmp", (int)pf_child);
+        snprintf(core_path, sizeof(core_path), "/var/log/core_%d.dmp", (int)pf_child);
         int core_fd = open(core_path, O_RDONLY, 0);
         if (core_fd < 0) {
             printf("  [FAIL] Failed to open core dump artifact: %s\n", core_path);
