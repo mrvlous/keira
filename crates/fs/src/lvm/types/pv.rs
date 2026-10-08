@@ -12,7 +12,7 @@
 /// Physical Volume descriptor representing an underlying block storage disk.
 #[derive(Copy, Clone, Debug)]
 pub struct PhysicalVolume {
-    /// Canonical device node name (e.g. `/system/dev/sda`).
+    /// Canonical device node name (e.g. `/dev/sda`).
     pub name: [u8; 16],
     /// Total capacity in Megabytes.
     pub size_mb: u32,

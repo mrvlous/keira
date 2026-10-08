@@ -49,7 +49,7 @@ fn test_lfn_checksum() {
 
 #[test]
 fn test_sanitize_path() {
-    assert_eq!(sanitize_path("/system/bin/"), "system/bin");
-    assert_eq!(sanitize_path("///data/docs///"), "data/docs");
-    assert_eq!(sanitize_path("   data/test.txt   "), "data/test.txt");
+    assert_eq!(sanitize_path("/bin/sh/"), "bin/sh");
+    assert_eq!(sanitize_path("///var/docs///"), "var/docs");
+    assert_eq!(sanitize_path("   tmp/test.txt   "), "tmp/test.txt");
 }

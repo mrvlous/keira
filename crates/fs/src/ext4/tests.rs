@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for Linux EXT4 superblock, inode, and directory parsing.
+//! Unit tests for Linux EXT4 superblock, inode and directory parsing.
 
 use super::*;
 
@@ -19,7 +19,7 @@ fn test_ext4_superblock_defaults_and_calc() {
     assert_eq!(sb.total_capacity_mb(), 1024);
     assert!(sb.has_extents());
     assert!(sb.has_filetype());
-    assert_eq!(sb.volume_name_str(), "KEIRA_EXT4_SYS");
+    assert_eq!(sb.volume_name_str(), "KEIRA_EXT4_ROOT");
 }
 
 #[test]

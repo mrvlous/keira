@@ -45,7 +45,7 @@ pub fn init() -> Result<(), &'static str> {
         }
 
         MOUNTED_EXT4 = Some(Ext4MountState {
-            device_id: 1, // Partition /system/dev/sda2
+            device_id: 1, // Partition /dev/sda2
             superblock: sb,
             mounted: true,
             total_reads,

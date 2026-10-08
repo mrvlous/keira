@@ -62,11 +62,11 @@ impl Default for Ext4Superblock {
         ]);
 
         let mut vol_name = [0u8; 16];
-        let name = b"KEIRA_EXT4_SYS\0";
+        let name = b"KEIRA_EXT4_ROOT\0";
         vol_name[..name.len()].copy_from_slice(name);
 
         let mut last_mnt = [0u8; 64];
-        let path = b"/system\0";
+        let path = b"/\0";
         last_mnt[..path.len()].copy_from_slice(path);
 
         Self {
