@@ -732,7 +732,7 @@ fn test_file_backed_mmap_and_msync() {
             0x1000,
             PROT_READ | PROT_WRITE,
             MAP_SHARED,
-            Some("/data/test.bin"),
+            Some("/tmp/test.bin"),
             0,
             0x1000,
         )
@@ -740,7 +740,7 @@ fn test_file_backed_mmap_and_msync() {
 
         let vma = find_active_vma(TEST_PML4, vaddr).expect("VMA should exist");
         assert!(vma.file_backed);
-        assert_eq!(vma.file_path_str(), Some("/data/test.bin"));
+        assert_eq!(vma.file_path_str(), Some("/tmp/test.bin"));
         assert_eq!(vma.file_offset, 0);
         assert_eq!(vma.file_size, 0x1000);
 

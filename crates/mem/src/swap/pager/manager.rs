@@ -71,9 +71,9 @@ pub unsafe fn sys_swapon(path_ptr: *const u8, swapflags: i32) -> Result<u64, &'s
         while len < 64 && *path_ptr.add(len) != 0 {
             len += 1;
         }
-        core::str::from_utf8(core::slice::from_raw_parts(path_ptr, len)).unwrap_or("/data/swapfile")
+        core::str::from_utf8(core::slice::from_raw_parts(path_ptr, len)).unwrap_or("/swapfile")
     } else {
-        "/data/swapfile"
+        "/swapfile"
     };
 
     swapon(path, swapflags).map(|_| 0)
