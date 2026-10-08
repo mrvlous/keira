@@ -2,4 +2,4 @@
 
 # DevFS Device Nodes
 
-Provides standard UNIX character and block device nodes under `/system/dev/`.
+Provides standard UNIX character and block device nodes under `/dev/`.

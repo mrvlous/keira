@@ -4,5 +4,5 @@
 
 Processes are grouped into cgroups with inherited constraints:
 * Root group (`/`)
-* System daemons (`/system`)
+* System services (`/sys`)
 * User tasks (`/user`)

@@ -2,4 +2,4 @@
 
 # Global Queue Registry & Permissions
 
-Namespaced message queues accessible via `/system/mqueue/<name>`.
+Namespaced message queues accessible via `/dev/mqueue/<name>`.

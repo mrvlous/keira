@@ -17,5 +17,5 @@ The `arch` submodule defines the lowest-level Ring 3 runtime bootstrap stubs and
 
 | Document | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`crt0.md`](crt0.md) | CRT0 Entry Stub | Process entry point (`_start`), argument unwinding, and `main()` invocation |
-| [`linker.md`](linker.md) | ELF Linker Scripts | Memory layout, section alignment, text/data/bss segments, and entry symbols |
+| [`crt0.md`](crt0.md) | CRT0 Entry Stub | Process entry point (`_start`), argument unwinding and `main()` invocation |
+| [`linker.md`](linker.md) | ELF Linker Scripts | Memory layout, section alignment, text/data/bss segments and entry symbols |

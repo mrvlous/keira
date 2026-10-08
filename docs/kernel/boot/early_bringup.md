@@ -15,9 +15,9 @@ graph TD
     EarlyVGA --> PMMBoot["PMM Bootstrap (Multiboot Memory Tag Parse)"]
     PMMBoot --> VMMInit["VMM Page Directory & Kernel Remap"]
     VMMInit --> RustMain["kernel_main() Entry in crates/kernel/"]
-    RustMain --> CoreSubsystems["GDT, IDT, APIC, HPET Bringup"]
-    CoreSubsystems --> DriversInit["PCI, Storage, Network Drivers"]
-    DriversInit --> VFSInit["VFS Mount (/, /system, /data)"]
+    RustMain --> CoreSubsystems["GDT, IDT, APIC and HPET Bringup"]
+    CoreSubsystems --> DriversInit["PCI, Storage and Network Drivers"]
+    DriversInit --> VFSInit["VFS Mount (/, /dev, /proc)"]
     VFSInit --> ShellTask["Spawn Shell / Init Process (PID 1)"]
 ```
 

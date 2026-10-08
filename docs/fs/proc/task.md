@@ -2,4 +2,4 @@
 
 # Task Metric Nodes
 
-Exposes per-process directories (`/system/proc/<pid>/`) with task status and memory usage.
+Exposes per-process directories (`/proc/<pid>/`) with task status and memory usage.

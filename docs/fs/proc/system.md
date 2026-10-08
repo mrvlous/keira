@@ -2,6 +2,6 @@
 
 # System Telemetry Nodes
 
-* `/system/proc/uptime`: Seconds since kernel boot.
-* `/system/proc/meminfo`: RAM total, used, free, and heap statistics.
-* `/system/proc/cpuinfo`: CPU model, core topology, feature flags.
+* `/proc/uptime`: Seconds since kernel boot.
+* `/proc/meminfo`: RAM total, used, free and heap statistics.
+* `/proc/cpuinfo`: CPU model, core topology and feature flags.

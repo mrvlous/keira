@@ -2,4 +2,4 @@
 
 # ProcFS Pseudo-Filesystem
 
-Dynamic virtual filesystem exposing real-time kernel telemetry (`/system/proc/`).
+Dynamic virtual filesystem exposing real-time kernel telemetry (`/proc/`).
