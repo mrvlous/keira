@@ -10,7 +10,7 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 
 ## The Learning Journey
 
-* **[The Keira Learning Journey](journey/README.md)**: The engineering journal, design philosophy, and step-by-step milestones (from CPU bootstrap and bare-metal networking to userland C compilers, security enclaves, and v0.5.0 hardening).
+* **[The Keira Learning Journey](journey/README.md)**: The engineering journal, design philosophy, and step-by-step milestones (from CPU bootstrap and bare-metal networking to userland C compilers, security enclaves, and v0.6.0 multi-threading release).
 
 ---
 
@@ -18,7 +18,7 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 
 | Domain Module | Path | Description |
 | :--- | :--- | :--- |
-| **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 9 |
+| **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 15 |
 | **Kernel Core** | [`kernel/`](kernel/README.md) | Multiboot2, SMP bootstrap trampolines, GDT, TSS, IDT, Local/IO-APIC, HPET, ACPI, and panic |
 | **Memory** | [`memory/`](memory/README.md) | Physical frame allocator (PMM), 4-level paging (VMM), heap, DMA, and swap |
 | **Task & Scheduling** | [`task/`](task/README.md) | Preemptive scheduler, context switching, task descriptors, cgroups, and signals |

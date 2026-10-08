@@ -76,7 +76,7 @@ The milestone is validated directly via the Keira shell:
 ```text
 keira:/system# system
 System Specifications & Kernel Information
-  Kernel Version : Keira Kernel v0.5.0
+  Kernel Version : Keira Kernel v0.6.0
   Architecture   : x86_64 Long Mode (Freestanding)
   CPU Vendor     : AuthenticAMD
   System Uptime  : 0h 0m 2s 888ms
