@@ -88,13 +88,13 @@ Network security is enforced at the packet boundary via an in-kernel Netfilter i
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# fetch http://icanhazip.com/
+keira:/# fetch http://icanhazip.com/
   Connecting http://icanhazip.com/
  Downloading 15 B
     Finished in 0.04s (375 B/s)
 93.184.216.34
 
-keira:/bin# fetch -I http://httpbin.org/get
+keira:/# fetch -I http://httpbin.org/get
   Connecting http://httpbin.org/get
 HTTP/1.1 200 OK
 Date: Tue, 29 Sep 2026 07:14:02 GMT
@@ -104,7 +104,7 @@ Connection: close
 Server: gunicorn/19.9.0
 Access-Control-Allow-Origin: *
 
-keira:/bin# firewall status
+keira:/# firewall status
 Stateful IPv4 Netfilter Firewall Status:
 Engine State: ENABLED (Active Packet Inspection & Filtering)
   Packets Inspected : 142
@@ -116,9 +116,9 @@ Active Firewall Chain Rules:
   [Rule 3] Chain INPUT | Proto: ICMP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:0 => ACCEPT (Matches: 4)
   [Rule 4] Chain INPUT | Proto: TCP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:23 => DROP (Matches: 0)
 
-keira:/bin# firewall disable
+keira:/# firewall disable
 [FIREWALL] Disabled stateful Netfilter engine (Bypass mode) [OK]
 
-keira:/bin# firewall enable
+keira:/# firewall enable
 [FIREWALL] Enabled stateful Netfilter engine [OK]
 ```
