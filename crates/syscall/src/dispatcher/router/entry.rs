@@ -85,7 +85,7 @@ fn syscall_dispatcher_inner(
         38 => handle_io_uring_setup(arg1, arg2),
         39 => handle_io_uring_enter(arg1, arg2, arg3, arg4),
         40 => handle_futex(arg1, arg2, arg3),
-        41 => handle_clone_thread(),
+        41 => handle_clone_thread(arg1, arg2, arg3, arg4, arg5),
         42 => handle_kvm_create_vm(),
         43 => handle_kvm_run_vcpu(arg1, arg2),
         44 => handle_syslog(arg2, arg3),

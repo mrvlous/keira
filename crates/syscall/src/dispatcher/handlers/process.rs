@@ -49,6 +49,15 @@ pub fn handle_exit(arg1: u64) -> u64 {
     let exit_code = arg1 as i32;
     if current_idx != 0 {
         unsafe {
+            if let Some(ref mut task) = keira_task::scheduler::TASKS[current_idx] {
+                if task.clear_child_tid != 0 {
+                    let ctid = task.clear_child_tid;
+                    task.clear_child_tid = 0;
+                    let zero: u32 = 0;
+                    let _ = copy_to_user(ctid, &zero.to_ne_bytes());
+                    let _ = keira_ipc::futex::futex_wake(ctid as usize, 1, 0xFFFF_FFFF);
+                }
+            }
             keira_task::scheduler::exit_current(exit_code);
         }
         0
@@ -275,10 +284,33 @@ pub fn handle_fork() -> u64 {
     }
 }
 
-/// Syscall 41: Clone thread.
-pub fn handle_clone_thread() -> u64 {
+/// Syscall 41: Clone thread or process with shared address space and POSIX clone flags.
+pub fn handle_clone_thread(arg1: u64, arg2: u64, arg3: u64, arg4: u64, arg5: u64) -> u64 {
+    let flags = arg1;
+    let child_stack = arg2;
+    let ptid = arg3;
+    let ctid = arg4;
+    let newtls = arg5;
+
+    if ptid != 0 {
+        if !ptid.is_multiple_of(4) {
+            return errno_to_ret(EFAULT);
+        }
+        if let Err(e) = unsafe { validate_user_ptr(ptid, 4, true) } {
+            return errno_to_ret(e);
+        }
+    }
+    if ctid != 0 {
+        if !ctid.is_multiple_of(4) {
+            return errno_to_ret(EFAULT);
+        }
+        if let Err(e) = unsafe { validate_user_ptr(ctid, 4, true) } {
+            return errno_to_ret(e);
+        }
+    }
+
     unsafe {
-        match fork_current_task() {
+        match keira_task::clone_current_task(flags, child_stack, ptid, ctid, newtls) {
             Ok(child_pid) => child_pid as u64,
             Err(_) => errno_to_ret(ENOMEM),
         }
