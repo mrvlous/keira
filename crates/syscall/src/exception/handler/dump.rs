@@ -37,7 +37,7 @@ impl<'a> core::fmt::Write for DumpWriter<'a> {
     }
 }
 
-/// Generates a structured core dump payload and saves it into the root VFS at `/data/log/core_<PID>.dmp`.
+/// Generates a structured core dump payload and saves it into the root VFS at `/var/log/core_<PID>.dmp`.
 #[allow(clippy::too_many_arguments)]
 pub fn write_core_dump(
     pid: usize,
@@ -84,7 +84,7 @@ pub fn write_core_dump(
 
     let mut path_buf = [0u8; 32];
     let mut p_writer = DumpWriter::new(&mut path_buf);
-    let _ = core::write!(p_writer, "/data/log/core_{}.dmp", pid);
+    let _ = core::write!(p_writer, "/var/log/core_{}.dmp", pid);
     if let Ok(path_str) = core::str::from_utf8(p_writer.as_bytes()) {
         let _ = keira_fs::vfs::create_file(path_str);
         let _ = keira_fs::vfs::write_file(path_str, writer.as_bytes());

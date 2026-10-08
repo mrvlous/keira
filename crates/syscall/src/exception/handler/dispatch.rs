@@ -264,7 +264,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
             print_hex(cr2);
             vga::print_str("\n");
         }
-        vga::print_str("Core dump written to: /data/log/core_");
+        vga::print_str("Core dump written to: /var/log/core_");
         vga::print_u64(CURRENT_TASK_IDX as u64);
         vga::print_str(".dmp\n");
 

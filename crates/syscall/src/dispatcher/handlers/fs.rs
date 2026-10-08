@@ -9,7 +9,7 @@
 
 //! File system and descriptor I/O system call handlers.
 
-use keira_fs::vfs::{create_file, exists, read_file, resolve_alias_path, write_file};
+use keira_fs::vfs::{create_file, exists, read_file, write_file};
 use keira_io::{serial, vga};
 use keira_mem::pmm;
 use keira_task::scheduler::{CURRENT_TASK_IDX, TASKS};
@@ -150,8 +150,7 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                     Err(_) => return errno_to_ret(EBADF),
                 };
 
-                let resolved_path = resolve_alias_path(path_str);
-                if let Some(node_name) = resolved_path.strip_prefix("/system/dev/") {
+                if let Some(node_name) = path_str.strip_prefix("/dev/") {
                     let mut kernel_buf = [0u8; 512];
                     let to_read = (len as usize).min(kernel_buf.len());
                     if let Ok(bytes) =
@@ -280,8 +279,7 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                     Err(_) => return errno_to_ret(EBADF),
                 };
 
-                let resolved_path = resolve_alias_path(path_str);
-                if let Some(node_name) = resolved_path.strip_prefix("/system/dev/") {
+                if let Some(node_name) = path_str.strip_prefix("/dev/") {
                     let mut kernel_buf = [0u8; 512];
                     let to_write = (len as usize).min(kernel_buf.len());
                     if copy_from_user(&mut kernel_buf[..to_write], buf_ptr).is_ok() {
