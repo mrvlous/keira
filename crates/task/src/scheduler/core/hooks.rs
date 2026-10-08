@@ -24,7 +24,7 @@ pub fn register_task_cleanup_hook(hook: TaskResourceCleanupHook) {
     }
 }
 
-/// Dynamic task status provider for /system/proc/[pid]/status.
+/// Dynamic task status provider for /proc/[pid]/status.
 pub fn task_status_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
     unsafe {
         if pid >= MAX_TASKS {
@@ -90,7 +90,7 @@ pub fn task_status_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
     }
 }
 
-/// Dynamic task cmdline provider for /system/proc/[pid]/cmdline.
+/// Dynamic task cmdline provider for /proc/[pid]/cmdline.
 pub fn task_cmdline_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
     unsafe {
         if pid >= MAX_TASKS {

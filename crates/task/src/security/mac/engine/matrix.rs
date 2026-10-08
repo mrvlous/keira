@@ -36,52 +36,52 @@ pub fn init_rules() {
             MAC_READ | MAC_WRITE | MAC_EXEC | MAC_APPEND,
         );
 
-        // Rule 1: System services have full access to /system/
+        // Rule 1: System services have full access to /bin/
         add_rule_internal(
             1,
             MacDomain::System,
-            "/system/",
+            "/bin/",
             MAC_READ | MAC_WRITE | MAC_EXEC | MAC_APPEND,
         );
 
-        // Rule 2: System domain has read/write to /config/
+        // Rule 2: System domain has read/write to /etc/
         add_rule_internal(
             2,
             MacDomain::System,
-            "/config/",
+            "/etc/",
             MAC_READ | MAC_WRITE | MAC_APPEND,
         );
 
-        // Rule 3: User domain has full access to /data/
+        // Rule 3: User domain has read/write to /tmp/
         add_rule_internal(
             3,
             MacDomain::User,
-            "/data/",
+            "/tmp/",
             MAC_READ | MAC_WRITE | MAC_EXEC | MAC_APPEND,
         );
 
-        // Rule 4: User domain has read/execute on /system/bin/
-        add_rule_internal(4, MacDomain::User, "/system/bin/", MAC_READ | MAC_EXEC);
+        // Rule 4: User domain has read/execute on /bin/
+        add_rule_internal(4, MacDomain::User, "/bin/", MAC_READ | MAC_EXEC);
 
-        // Rule 5: User domain has read-only access to /config/
-        add_rule_internal(5, MacDomain::User, "/config/", MAC_READ);
+        // Rule 5: User domain has read-only access to /etc/
+        add_rule_internal(5, MacDomain::User, "/etc/", MAC_READ);
 
-        // Rule 6: User domain has read/write to /temp/
+        // Rule 6: User domain has read/write to /var/
         add_rule_internal(
             6,
             MacDomain::User,
-            "/temp/",
+            "/var/",
             MAC_READ | MAC_WRITE | MAC_APPEND,
         );
 
-        // Rule 7: Guest domain has read/execute on /system/bin/
-        add_rule_internal(7, MacDomain::Guest, "/system/bin/", MAC_READ | MAC_EXEC);
+        // Rule 7: Guest domain has read/execute on /bin/
+        add_rule_internal(7, MacDomain::Guest, "/bin/", MAC_READ | MAC_EXEC);
 
-        // Rule 8: Guest domain has read/write on /temp/
-        add_rule_internal(8, MacDomain::Guest, "/temp/", MAC_READ | MAC_WRITE);
+        // Rule 8: Guest domain has read/write on /tmp/
+        add_rule_internal(8, MacDomain::Guest, "/tmp/", MAC_READ | MAC_WRITE);
 
-        // Rule 9: Guest domain strictly denied from /config/
-        add_rule_internal(9, MacDomain::Guest, "/config/", 0);
+        // Rule 9: Guest domain strictly denied from /etc/
+        add_rule_internal(9, MacDomain::Guest, "/etc/", 0);
 
         MAC_RULES_INITIALIZED = true;
     }

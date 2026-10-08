@@ -23,7 +23,7 @@ fn test_auxv_constants() {
 fn test_user_stack_64_layout() {
     let mut page = [0u8; 4096];
     let top_vaddr = 0x7FFFFFE00000 - 4096;
-    let args = ["/system/bin/test_abi.elf", "arg1", "arg2"];
+    let args = ["/bin/test_abi.elf", "arg1", "arg2"];
     let rsp = unsafe { setup_user_stack_64(page.as_mut_ptr(), top_vaddr, &args, 0x400000) };
     assert!(rsp > top_vaddr);
     assert!(rsp < top_vaddr + 4096);

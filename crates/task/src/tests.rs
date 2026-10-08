@@ -65,19 +65,19 @@ fn test_mac_type_enforcement() {
     // Permissive mode: access allowed even if violates rule
     set_mac_mode(MacMode::Permissive);
     assert_eq!(get_mac_mode(), MacMode::Permissive);
-    assert!(check_path_access(2, "/config/sys/passwd", MAC_WRITE));
+    assert!(check_path_access(2, "/etc/passwd", MAC_WRITE));
 
-    // Enforcing mode: User (PID 2) cannot write to /config/
+    // Enforcing mode: User (PID 2) cannot write to /etc/
     set_mac_mode(MacMode::Enforcing);
     assert_eq!(get_mac_mode(), MacMode::Enforcing);
 
-    // User reading /system/bin/ is allowed
-    assert!(check_path_access(2, "/system/bin/ls", MAC_READ));
-    // User writing to /config/sys/passwd is forbidden
-    assert!(!check_path_access(2, "/config/sys/passwd", MAC_WRITE));
+    // User reading /bin/ is allowed
+    assert!(check_path_access(2, "/bin/ls", MAC_READ));
+    // User writing to /etc/passwd is forbidden
+    assert!(!check_path_access(2, "/etc/passwd", MAC_WRITE));
 
-    // System (PID 1) can write to /config/
-    assert!(check_path_access(1, "/config/sys/passwd", MAC_WRITE));
+    // System (PID 1) can write to /etc/
+    assert!(check_path_access(1, "/etc/passwd", MAC_WRITE));
 
     let (checks, violations) = get_mac_stats();
     assert!(checks > 0);
@@ -90,7 +90,7 @@ fn test_mac_type_enforcement() {
 fn test_user_stack_and_auxv_setup() {
     let mut page = [0u8; 4096];
     let top_vaddr = 0x7FFFFFE00000 - 4096;
-    let args = ["/system/bin/test_abi.elf", "arg1", "arg2"];
+    let args = ["/bin/test_abi.elf", "arg1", "arg2"];
     let rsp = unsafe { setup_user_stack_64(page.as_mut_ptr(), top_vaddr, &args, 0x400000) };
     assert!(rsp > top_vaddr);
     assert!(rsp < top_vaddr + 4096);
