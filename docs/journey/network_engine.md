@@ -2,7 +2,7 @@
 
 # Journey Milestone 8: Modular Network Fetch Engine & Netfilter Firewall
 
-Milestone 8 elevates Keira's bare-metal networking subsystem from raw socket primitives into a modular network client suite and a stateful in-kernel packet filtering firewall. It introduces chunked HTTP/1.1 and TLS 1.3 streaming, 12-character progress tracking, and a stateful IPv4 Netfilter engine.
+Milestone 8 elevates Keira's bare-metal networking subsystem from raw socket primitives into a modular network client suite and a stateful in-kernel packet filtering firewall. It introduces chunked HTTP/1.1 and TLS 1.3 streaming, 12-character progress tracking and a stateful IPv4 Netfilter engine.
 
 ---
 
@@ -38,9 +38,9 @@ graph TD
 ### A. Modular Network Client Suite
 Network utilities in `crates/shell/src/cmds/net/` are decoupled into specialized commands with unified arguments:
 1. **`fetch`**: Streams HTTP/HTTPS responses directly to the terminal stdout or captures HTTP headers (`-I`, `--head`), supporting file output redirection (`-o`, `--output`).
-2. **`download`**: Downloads remote artifacts directly to disk or ramdisk locations (`/data/`, `/apps/bin/`) with real-time transfer metrics.
-3. **`network`**: Manages network interface configurations, displaying MAC address, assigned IPv4 address, gateway, subnet mask, and link status.
-4. **`https`**: Diagnoses TLS 1.3 handshakes, cipher negotiation, and remote certificate validation.
+2. **`download`**: Downloads remote artifacts directly to disk or ramdisk locations (`/tmp/`, `/bin/`) with real-time transfer metrics.
+3. **`network`**: Manages network interface configurations, displaying MAC address, assigned IPv4 address, gateway, subnet mask and link status.
+4. **`https`**: Diagnoses TLS 1.3 handshakes, cipher negotiation and remote certificate validation.
 
 ### B. Chunked Streaming & Progressive Buffer Management
 Bare-metal network clients must operate within finite kernel memory without allocating massive heap buffers:
@@ -79,7 +79,7 @@ Network security is enforced at the packet boundary via an in-kernel Netfilter i
    ```
 2. **Stateful Connection Tracking (`conntrack`)**: Tracks active TCP 4-tuples (`Source IP`, `Source Port`, `Dest IP`, `Dest Port`) and state flags (`SYN_SENT`, `ESTABLISHED`, `FIN_WAIT`). Incoming packets belonging to verified established sessions bypass evaluation overhead.
 3. **Default Security Baseline**:
-   - `ACCEPT` inbound HTTP (`TCP:80`), HTTPS (`TCP:443`), and ICMP echo requests.
+   - `ACCEPT` inbound HTTP (`TCP:80`), HTTPS (`TCP:443`) and ICMP echo requests.
    - `DROP` insecure legacy vectors (e.g. `TCP:23` Telnet).
 4. **System Call Vector**: Managed from Ring 3 via `SYS_NETFILTER` (`Syscall 76`) and inspected via the `firewall` command.
 
@@ -88,13 +88,13 @@ Network security is enforced at the packet boundary via an in-kernel Netfilter i
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/system# fetch http://icanhazip.com/
+keira:/bin# fetch http://icanhazip.com/
   Connecting http://icanhazip.com/
  Downloading 15 B
     Finished in 0.04s (375 B/s)
 93.184.216.34
 
-keira:/system# fetch -I http://httpbin.org/get
+keira:/bin# fetch -I http://httpbin.org/get
   Connecting http://httpbin.org/get
 HTTP/1.1 200 OK
 Date: Tue, 29 Sep 2026 07:14:02 GMT
@@ -104,7 +104,7 @@ Connection: close
 Server: gunicorn/19.9.0
 Access-Control-Allow-Origin: *
 
-keira:/system# firewall status
+keira:/bin# firewall status
 Stateful IPv4 Netfilter Firewall Status:
 Engine State: ENABLED (Active Packet Inspection & Filtering)
   Packets Inspected : 142
@@ -116,9 +116,9 @@ Active Firewall Chain Rules:
   [Rule 3] Chain INPUT | Proto: ICMP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:0 => ACCEPT (Matches: 4)
   [Rule 4] Chain INPUT | Proto: TCP | Src: 0.0.0.0/0 -> Dst: 0.0.0.0/0:23 => DROP (Matches: 0)
 
-keira:/system# firewall disable
+keira:/bin# firewall disable
 [FIREWALL] Disabled stateful Netfilter engine (Bypass mode) [OK]
 
-keira:/system# firewall enable
+keira:/bin# firewall enable
 [FIREWALL] Enabled stateful Netfilter engine [OK]
 ```

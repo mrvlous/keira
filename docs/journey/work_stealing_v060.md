@@ -70,9 +70,9 @@ graph TD
 ## 3. Subsystem Verification & Certification
 
 The work-stealing scheduler architecture was comprehensively certified through live bare-metal and QEMU execution harnesses:
-1. **Ring 3 Syscall Security & ABI Harness (`test_abi.elf`)**: 100% pass across all 42 security tests, including 20 rapid fork/reap churn iterations, copy-on-write memory mutation, advisory file lock coherency across duplicated handles, anonymous IPC pipes, BSD socket streaming, and fault containment (#UD, #DE, #PF).
+1. **Ring 3 Syscall Security & ABI Harness (`test_abi.elf`)**: 100% pass across all 42 security tests, including 20 rapid fork/reap churn iterations, copy-on-write memory mutation, advisory file lock coherency across duplicated handles, anonymous IPC pipes, BSD socket streaming and fault containment (#UD, #DE, #PF).
 2. **Ring 3 Syscall Fuzzing Suite (`fuzz_abi.elf`)**: Successfully withstood 10,000 randomized boundary injections and chaotic signal storms with zero kernel panics.
-3. **Native C Compiler Toolchain (`kcc.elf` & `kcc` shell command)**: Native compilation of `/data/main.c` into native ELF executables and clean execution.
+3. **Native C Compiler Toolchain (`kcc.elf` & `kcc` shell command)**: Native compilation of `/tmp/main.c` into native ELF executables and clean execution.
 4. **Live Shell Dual-Architecture Parity**: 100% clean execution across all 50 shell commands on both `x86_64` and `i686` with zero errors.
 5. **Network Multi-API Verification**: Validated live HTTP client operations (`fetch` and `download`) across multiple remote endpoints with complete data integrity.
-6. **Code Quality**: Zero warnings, zero errors across `cargo test --workspace`, `cargo clippy --workspace --all-targets`, `cargo fmt --check`, `make check`, `make format`, and `make lint`.
+6. **Code Quality**: Zero warnings, zero errors across `cargo test --workspace`, `cargo clippy --workspace --all-targets`, `cargo fmt --check`, `make check`, `make format` and `make lint`.

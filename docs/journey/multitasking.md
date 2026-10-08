@@ -2,7 +2,7 @@
 
 # Journey Milestone 3: Preemptive Multitasking & Task Scheduling
 
-Milestone 3 transitions Keira from a single-threaded runtime into a fully preemptive, multi-tasking operating environment with POSIX process semantics, resource quotas, and thread synchronization primitives.
+Milestone 3 transitions Keira from a single-threaded runtime into a fully preemptive, multi-tasking operating environment with POSIX process semantics, resource quotas and thread synchronization primitives.
 
 ---
 
@@ -45,7 +45,7 @@ pub struct ProcessControlBlock {
 
 ### A. Hardware Context Switching Assembly
 When the timer tick fires or a process voluntarily yields via `SYS_YIELD`:
-1. The hardware pushes `SS`, `RSP`, `RFLAGS`, `CS`, and `RIP` onto the privileged kernel stack.
+1. The hardware pushes `SS`, `RSP`, `RFLAGS`, `CS` and `RIP` onto the privileged kernel stack.
 2. The ISR pushes remaining general-purpose registers (`RAX..R15`).
 3. The scheduler updates the current PCB's stack pointer and selects the next eligible task from the ready queue.
 4. If switching across distinct processes, control register `CR3` is reloaded to activate the target's address space.
@@ -69,7 +69,7 @@ Thread synchronization avoids expensive kernel-space locking via in-kernel futex
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/system# tasks
+keira:/bin# tasks
 PID   TASK NAME          STATE      TICKS      SWITCHES
 ---   ---------          -----      -----      --------
 0     kernel_shell       RUNNING    1875       1
@@ -79,7 +79,7 @@ Scheduler Telemetry:
   Total Context Switches: 0
   Total Scheduler Ticks : 1876
 
-keira:/system# cgroups status
+keira:/bin# cgroups status
 Resource Control Groups (cgroups) Subsystem Status:
   Subsystem Engine : Active (Memory Controller & Proportional CPU Shares)
   Active Groups    : 3 / 8 slices configured
@@ -87,7 +87,7 @@ Resource Control Groups (cgroups) Subsystem Status:
   Total Max Memory : 112 MB configured ceiling
   PID Namespaces   : Isolated Container Namespaces Mapped
 
-keira:/system# futex status
+keira:/bin# futex status
 Fast Userspace Mutex (Futex) Subsystem Status:
   Subsystem Engine : Active (In-Kernel Wait Queues & Hash Table)
   Active Waiters   : 1 / 16 slots in use
@@ -96,7 +96,7 @@ Fast Userspace Mutex (Futex) Subsystem Status:
   Total Requeues   : 0 ops
   Syscall Vectors  : Syscall 32 (futex) / Syscall 40
 
-keira:/system# jobs
+keira:/bin# jobs
 [Job ID]  PID   State       Command
 --------  ---   -----       -------
  (No active background process jobs currently running)

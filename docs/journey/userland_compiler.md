@@ -10,12 +10,12 @@ Milestone 6 realizes the ultimate objective of an operating system kernel: achie
 
 ```mermaid
 graph TD
-    Source["C Source Program (/data/main.c)"] --> KCC["Native KCC C Compiler (crates/shell/src/cmds/proc/tools/kcc.rs)"]
+    Source["C Source Program (/tmp/main.c)"] --> KCC["Native KCC C Compiler (crates/shell/src/cmds/proc/tools/kcc.rs)"]
     KCC --> Lexer["Lexical Tokenizer & Preprocessor"]
     Lexer --> Parser["Recursive Descent AST Parser"]
     Parser --> CodeGen["x86_64 Native Machine Code Generator"]
     CodeGen --> ELFEmitter["Freestanding ELF32/ELF64 Executable Emitter"]
-    ELFEmitter --> Disk["Save Binary (/apps/bin/app.elf)"]
+    ELFEmitter --> Disk["Save Binary (/bin/app.elf)"]
     Disk --> Loader["Kernel ELF Loader & Memory Mapper<br/><i>crates/syscall/src/dispatcher/handlers/</i>"]
     Loader --> Ring3["Switch to Ring 3 User Privilege via IRETQ / IRETD"]
     Ring3 --> Libc["Freestanding libc.a Runtime (_start -> main)"]
@@ -28,7 +28,7 @@ graph TD
 
 ### A. Ring 3 Privilege Separation & Memory Defense
 Transitioning from Ring 0 to unprivileged Ring 3 execution enforces strict isolation:
-1. **User Address Space**: Maps code (`RX`), read-only data (`R`), and user stack/heap (`RW`) with the `User/Supervisor` flag (`U/S = 1`) enabled in page table entries.
+1. **User Address Space**: Maps code (`RX`), read-only data (`R`) and user stack/heap (`RW`) with the `User/Supervisor` flag (`U/S = 1`) enabled in page table entries.
 2. **`W^X` Memory Protection**: No page is permitted to possess both `Writable` and `Executable` permissions simultaneously, eliminating arbitrary code injection vulnerabilities.
 3. **The `IRETQ` Jump**: The kernel constructs an artificial interrupt frame on the kernel stack:
    ```text
@@ -49,20 +49,20 @@ System call transitions bypass legacy software interrupt overhead using modern C
 ### C. Freestanding C SDK (`libc.a`)
 User applications link against a custom freestanding C runtime:
 - **Standard Headers**: `<stdint.h>`, `<stddef.h>`, `<stdbool.h>`, `<string.h>`, `<stdio.h>`, `<stdlib.h>`, `<unistd.h>`, `<sys/syscall.h>`.
-- **Startup CRT**: `_start` extracts arguments and environment variables from the user stack, initializes file descriptors, invokes `main(argc, argv)`, and routes the integer return code directly to `exit(res)`.
+- **Startup CRT**: `_start` extracts arguments and environment variables from the user stack, initializes file descriptors, invokes `main(argc, argv)` and routes the integer return code directly to `exit(res)`.
 
 ### D. In-Kernel KCC C Compiler
 Keira includes a native C compiler capable of running directly on bare metal without host tooling:
-- Compiles C source files directly from the VFS: `kcc /data/main.c -o /apps/bin/app.elf`.
-- Produces valid, standard ELF binaries containing `.text`, `.rodata`, `.data`, and `.bss` sections.
-- Emitted binaries execute with complete Ring 3 isolation via `run /apps/bin/app.elf`.
+- Compiles C source files directly from the VFS: `kcc /tmp/main.c -o /bin/app.elf`.
+- Produces valid, standard ELF binaries containing `.text`, `.rodata`, `.data` and `.bss` sections.
+- Emitted binaries execute with complete Ring 3 isolation via `run /bin/app.elf`.
 
 ---
 
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/system# view /data/main.c
+keira:/bin# view /tmp/main.c
 /* Keira Comprehensive KCC Sample Program */
 
 int compute(int x, int y) {
@@ -82,21 +82,21 @@ void main(void) {
     printf("KCC compilation & execution complete!\n");
 }
 
-keira:/system# kcc /data/main.c -o /apps/bin/app.elf
-Compiling: /data/main.c -> /apps/bin/app.elf
-Loading ELF binary: /system/bin/kcc.elf
+keira:/bin# kcc /tmp/main.c -o /bin/app.elf
+Compiling: /tmp/main.c -> /bin/app.elf
+Loading ELF binary: /bin/kcc.elf
 KCC (Keira C Compiler) Native Toolchain
-[INFO] Compiling source: /data/main.c -> /apps/bin/app.elf
+[INFO] Compiling source: /tmp/main.c -> /bin/app.elf
 [DONE] Compilation Successful!
   Code size: 402 bytes, Data size: 69 bytes
   Functions compiled: 2
-  Executable written to /apps/bin/app.elf
+  Executable written to /bin/app.elf
 Program exited normally.
-[OK] Executable ready at /apps/bin/app.elf
-Hint: Execute with 'run /apps/bin/app.elf'
+[OK] Executable ready at /bin/app.elf
+Hint: Execute with 'run /bin/app.elf'
 
-keira:/system# run /apps/bin/app.elf
-Loading ELF binary: /apps/bin/app.elf
+keira:/bin# run /bin/app.elf
+Loading ELF binary: /bin/app.elf
 Keira KCC Compiler Execution
 KCC compilation & execution complete!
 Program exited normally.

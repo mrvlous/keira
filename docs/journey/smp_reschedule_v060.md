@@ -116,9 +116,9 @@ Core 1   0x01       AP      Online (Active)
 
 ## 4. Verification & Dual-Architecture Certification
 
-1. **Unit Test Suite**: 22 tests in `keira-arch` passing with 100% success, verifying unicast reschedule IPI dispatch, broadcast dispatch, handler telemetry, and IDT gate mapping.
+1. **Unit Test Suite**: 22 tests in `keira-arch` passing with 100% success, verifying unicast reschedule IPI dispatch, broadcast dispatch, handler telemetry and IDT gate mapping.
 2. **Full Workspace Test Battery**: All crates pass `cargo test --workspace` (78 memory tests, 52 shell tests, 26 task tests, 24 syscall tests).
 3. **Automated Dual-Architecture Verification**:
-   - `x86_64` Long Mode QEMU execution: 51/51 shell commands, 4 Ring 3 userland binaries (`sysinfo.elf`, `test_abi.elf`, `fuzz_abi.elf`, `kcc.elf`), and C compiler compilation verified with zero errors.
+   - `x86_64` Long Mode QEMU execution: 51/51 shell commands, 4 Ring 3 userland binaries (`sysinfo.elf`, `test_abi.elf`, `fuzz_abi.elf`, `kcc.elf`) and C compiler compilation verified with zero errors.
    - `i686` Protected Mode QEMU execution: 51/51 shell commands verified with zero errors.
-4. **Network Integration Certification**: Live remote API fetching (`fetch http://ip-api.com/json`, `fetch -I http://httpbin.org/get`, `fetch http://icanhazip.com/`, `download http://icanhazip.com/ -o /data/myip.txt`) verified with 100% pass rate.
+4. **Network Integration Certification**: Live remote API fetching (`fetch http://ip-api.com/json`, `fetch -I http://httpbin.org/get`, `fetch http://icanhazip.com/`, `download http://icanhazip.com/ -o /tmp/myip.txt`) verified with 100% pass rate.

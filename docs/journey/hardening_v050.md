@@ -1,29 +1,29 @@
 <!-- SPDX-License-Identifier: GPL-2.0-only -->
 
-# Journey Milestone 9: Dual Architecture Parity & v0.5.0 Hardening
+# Hardening, ABI Verification & Production Stability (v0.5.0)
 
-Milestone 9 culminates the Keira learning journey with the official `v0.5.0` production release. It solidifies symmetrical dual-architecture parity between 64-bit Long Mode (`x86_64`) and 32-bit Protected Mode (`i686`), formalizes the complete 81 system call ABI catalogue, deploys an automated Syzkaller-Lite fuzzing test harness, and enforces a zero-stub freestanding software contract across all 12 kernel crates.
+Documents the comprehensive stabilization, dual-architecture symmetry and Ring 3 fault-containment framework introduced in Keira `v0.5.0`.
 
 ---
 
-## 1. Dual-Architecture & Hardening Architecture
+## 1. Architectural Architecture & Dual-Target Pipeline
 
 ```mermaid
 graph TD
-    subgraph Symmetrical Architecture Targets
-        X64["x86_64 Long Mode Target<br/><i>4-Level Paging, LSTAR Fast Syscalls, 64-bit ABI</i>"]
+    subgraph Symmetrical Hardware Targets
+        X64["x86_64 Long Mode Target<br/><i>4-Level Paging, IA32_LSTAR Fast Syscall, 64-bit ABI</i>"]
         I686["i686 Protected Mode Target<br/><i>2-Level Paging, int 0x80 Gate, 32-bit ABI</i>"]
     end
 
     subgraph Unified Kernel Subsystems
         Core["Unified Kernel Core (crates/kernel/)"]
         SyscallTable["81 Syscall Dispatcher Table (crates/syscall/)<br/><i>SYS_PUTC (#1) to SYS_DUP2 (#85)</i>"]
-        VFS["Canonical 5-Directory VFS Hierarchy<br/><i>/system, /apps, /config, /data, /temp</i>"]
+        VFS["Standard UNIX FHS Hierarchy<br/><i>/bin, /dev, /proc, /sys, /etc, /include, /lib, /tmp, /var</i>"]
     end
 
     subgraph Rigorous Verification & Chaos Testing
-        TestABI["Ring 3 ABI Verification Suite (/apps/bin/test_abi.elf)<br/><i>Process, Memory, FS, IPC, Signal Containment</i>"]
-        FuzzABI["Syzkaller-Lite Chaos Fuzzing Engine (/apps/bin/fuzz_abi.elf)<br/><i>10,000+ Mutated Vectors across 5 Stress Phases</i>"]
+        TestABI["Ring 3 ABI Verification Suite (/bin/test_abi.elf)<br/><i>Process, Memory, FS, IPC, Signal Containment</i>"]
+        FuzzABI["Syzkaller-Lite Chaos Fuzzing Engine (/bin/fuzz_abi.elf)<br/><i>10,000+ Mutated Vectors across 5 Stress Phases</i>"]
     end
 
     X64 --> Core
@@ -41,11 +41,11 @@ graph TD
 ### A. Symmetrical Dual-Architecture Parity
 Keira provides full, uncompromised feature parity across modern 64-bit and legacy 32-bit x86 hardware targets:
 1. **Low-Level Assembly Symmetry**:
-   - Both architectures maintain identical bootstrap and interrupt scaffolding: `ap_trampoline.asm`, `entry.asm`/`entry32.asm`, `gdt.asm`, `idt.asm`, `isr.asm`, `syscall.asm`, and `linker.ld`.
-   - `x86_64` utilizes 4-level radix tree paging (`PML4`), recursive page directory mapping at index `510`, and hardware fast syscalls via `IA32_LSTAR`.
+   - Both architectures maintain identical bootstrap and interrupt scaffolding: `ap_trampoline.asm`, `entry.asm`/`entry32.asm`, `gdt.asm`, `idt.asm`, `isr.asm`, `syscall.asm` and `linker.ld`.
+   - `x86_64` utilizes 4-level radix tree paging (`PML4`), recursive page directory mapping at index `510` and hardware fast syscalls via `IA32_LSTAR`.
    - `i686` uses standard 32-bit page directories and software interrupt vectoring via `int 0x80`.
-2. **Architecture-Agnostic Core Crates**: Memory allocators, task schedulers, VFS drivers, and network protocols compile cleanly for both targets using target-conditional compilation (`#[cfg(target_arch = "...")]`), sharing identical abstractions and data invariants.
-3. **Userland CRT Compatibility**: Dual startup assembly files (`userland/arch/x86/i686/crt0.asm` and `userland/arch/x86/x86_64/crt0.asm`) parse stack-passed arguments (`argc`, `argv`), align the stack frame, initialize standard descriptors, and invoke userland application entrypoints seamlessly.
+2. **Architecture-Agnostic Core Crates**: Memory allocators, task schedulers, VFS drivers and network protocols compile cleanly for both targets using target-conditional compilation (`#[cfg(target_arch = "...")]`), sharing identical abstractions and data invariants.
+3. **Userland CRT Compatibility**: Dual startup assembly files (`userland/arch/x86/i686/crt0.asm` and `userland/arch/x86/x86_64/crt0.asm`) parse stack-passed arguments (`argc`, `argv`), align the stack frame, initialize standard descriptors and invoke userland application entrypoints seamlessly.
 
 ### B. Complete 81 System Call Vectors Catalog
 The kernel exposes a comprehensive, strictly validated system call interface categorized across core functional domains:
@@ -61,9 +61,9 @@ All userland pointers are bounds-checked against user address spaces via `copy_f
 
 ### C. Syzkaller-Lite Automated Fuzzing & Stress Engine
 To guarantee zero-panic production stability, the userland harness `fuzz_abi.elf` subjects the kernel to extreme stress across five distinct chaos phases:
-1. **Phase 1: Syscall Fuzzing**: Generates thousands of randomized and pseudo-mutated syscall invocations passing corrupt pointers, negative buffer lengths, out-of-bounds syscall numbers, and cyclic references.
-2. **Phase 2: Descriptor Exhaustion**: Opens hundreds of file descriptors concurrently, performs rapid read/write iterations, attempts double-closes, and accesses unauthorized negative descriptors.
-3. **Phase 3: Memory Boundary Churn**: Executes alternating bursts of `sbrk` expansion, `mmap` allocations, unaligned `munmap` releases, and access violation faults.
+1. **Phase 1: Syscall Fuzzing**: Generates thousands of randomized and pseudo-mutated syscall invocations passing corrupt pointers, negative buffer lengths, out-of-bounds syscall numbers and cyclic references.
+2. **Phase 2: Descriptor Exhaustion**: Opens hundreds of file descriptors concurrently, performs rapid read/write iterations, attempts double-closes and accesses unauthorized negative descriptors.
+3. **Phase 3: Memory Boundary Churn**: Executes alternating bursts of `sbrk` expansion, `mmap` allocations, unaligned `munmap` releases and access violation faults.
 4. **Phase 4: Process Churn**: Spawns concurrent worker threads and child processes executing rapid execution and exit sequences to stress task scheduler queues and zombie process reclamation.
 5. **Phase 5: Signal Storm**: Delivers high-frequency bursts of signals (`SIGINT`, `SIGTERM`, `SIGUSR1`) during active syscall execution, verifying signal handler stack frame restoration and non-blocking reentrancy.
 
@@ -72,7 +72,7 @@ Across more than 10,000 mutated calls and stress injections, Keira maintains 100
 ### D. Freestanding Zero-Stub Contract
 Keira adheres to a pure freestanding software contract:
 1. **Elimination of Distro Stubs**: The kernel does not ship dummy or unfunctional distribution mock files (e.g. no fake `/etc/os-release`, no unparsed desktop shells).
-2. **Canonical VFS Namespace**: The entire runtime filesystem strictly complies with the 5-directory specification (`/system`, `/apps`, `/config`, `/data`, `/temp`).
+2. **Canonical VFS Namespace**: The entire runtime filesystem strictly complies with standard UNIX FHS specification (`/bin`, `/dev`, `/proc`, `/sys`, `/etc`, `/include`, `/lib`, `/tmp`, `/var/log`).
 3. **Pure Freestanding Toolchain**: 100% of unit tests pass natively across all 12 crates (`make test-unit`), certifying Keira `v0.5.0` as an autonomous, self-contained monolithic operating system.
 
 ---
@@ -80,8 +80,8 @@ Keira adheres to a pure freestanding software contract:
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/system# run /apps/bin/test_abi.elf
-Loading ELF binary: /apps/bin/test_abi.elf
+keira:/bin# run /bin/test_abi.elf
+Loading ELF binary: /bin/test_abi.elf
 Keira Ring 3 Syscall Security & ABI Verification Harness
 [TEST] Testing Process Lifecycle & Credentials... [OK]
 [TEST] Testing Memory Boundaries, VMM & COW...   [OK]
@@ -93,8 +93,8 @@ Keira Ring 3 Syscall Security & ABI Verification Harness
 [DONE] All Ring 3 Syscall Security & Fault Injection tests PASSED.
 Program exited normally.
 
-keira:/system# run /apps/bin/fuzz_abi.elf
-Loading ELF binary: /apps/bin/fuzz_abi.elf
+keira:/bin# run /bin/fuzz_abi.elf
+Loading ELF binary: /bin/fuzz_abi.elf
 Keira Kernel Ring 3 Automated Syscall Fuzzing & Chaos Test Suite
 Syzkaller-Lite Engine: 10,000+ Mutated Vectors & Boundary Stress
 [PHASE 1] Mutated Syscall Boundary Injections... [DONE]
@@ -108,12 +108,12 @@ Execution Duration: 1420 ms | Kernel Status: ROCK SOLID / ZERO PANIC
 Keira Kernel v0.5.0 Production Stability Criteria: 100% MET [OK]
 Program exited normally.
 
-keira:/system# system
+keira:/bin# system
 Keira Monolithic Kernel v0.5.0
 Target Architecture : x86_64-unknown-none (64-Bit Long Mode)
 SMP Cores Active    : 4 Cores Online (APIC Preemption @ 1000 Hz)
 Memory Total / Free : 512 MiB / 486 MiB
-Active VFS Mounts   : 5 Canonical Directories (/system, /apps, /config, /data, /temp)
+Active VFS Mounts   : Standard UNIX FHS (/bin, /dev, /proc, /sys, /etc, /include, /lib, /tmp, /var/log)
 Security Enclaves   : TPM 2.0 TIS (Active), eBPF VM (Active), Seccomp (Enabled)
 System Status       : UP & RUNNING [OK]
 ```

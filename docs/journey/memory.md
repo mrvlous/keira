@@ -67,7 +67,7 @@ All page table entries rigorously validate architecture control bits:
 
 ### C. Segregated Free-List Heap Allocator
 Dynamic kernel allocations (`Box`, `Vec`, `String` equivalents) are served by a deterministic, segregated free-list heap allocator:
-- **Fixed Size Classes**: 16 B, 32 B, 64 B, 128 B, 256 B, 512 B, 1024 B, 2048 B, and 4096 B.
+- **Fixed Size Classes**: 16 B, 32 B, 64 B, 128 B, 256 B, 512 B, 1024 B, 2048 B and 4096 B.
 - **Canary Bounds**: Every heap allocation is flanked by an 8-byte guard canary `0xDEAD_BEEF_CAFE_BABE` checked on `dealloc` to catch buffer overflows.
 - **Zero Fragmentation**: Requests exceeding 4 KiB bypass the free-list pools and are served directly by contiguous physical frame allocations.
 
@@ -76,14 +76,14 @@ When physical memory pressure rises, inactive pages are swapped to the dedicated
 When an invalid virtual address is accessed, the CPU triggers **Exception 14 (#PF)**:
 1. The hardware places the faulting address into control register `CR2`.
 2. The page fault handler extracts the error code (`P=0` for not present, `W=1` for write violation, `U=1` for userland violation).
-3. If the page is marked swapped, the kernel allocates a new physical frame, reads the sector from disk, restores the PTE, and re-executes the instruction transparently.
+3. If the page is marked swapped, the kernel allocates a new physical frame, reads the sector from disk, restores the PTE and re-executes the instruction transparently.
 
 ---
 
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/system# memory
+keira:/bin# memory
 Memory Statistics & Frame Allocator:
 REGION         TOTAL         USED         FREE
 ------         -----         ----         ----

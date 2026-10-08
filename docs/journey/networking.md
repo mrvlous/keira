@@ -53,7 +53,7 @@ Reliable stream transport is implemented via a fully compliant TCP finite state 
 ### C. Native In-Kernel TLS 1.3 Socket Engine (RFC 8446)
 Keira eliminates reliance on external userland libraries (such as OpenSSL) by embedding a pure `#![no_std]` TLS 1.3 client engine:
 1. **ClientHello**: Advertises supported cipher suite `TLS_AES_128_GCM_SHA256` and Curve25519 key share (`named_group = x25519`).
-2. **ServerHello & Handshake Keys**: Parses the server's public key, computes the shared Diffie-Hellman secret via `Curve25519`, and derives handshake encryption keys using `HKDF-Extract` and `HKDF-Expand-Label`.
+2. **ServerHello & Handshake Keys**: Parses the server's public key, computes the shared Diffie-Hellman secret via `Curve25519` and derives handshake encryption keys using `HKDF-Extract` and `HKDF-Expand-Label`.
 3. **Encrypted Extensions & Certificate Verification**: Decrypts the server's handshake stream using `AES-128-GCM` authenticated encryption.
 4. **Traffic Secret Derivation**: Derives client/server application traffic keys for bidirectional, end-to-end encrypted HTTP streaming over port 443.
 
@@ -62,15 +62,15 @@ Keira eliminates reliance on external userland libraries (such as OpenSSL) by em
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/system# network
+keira:/bin# network
 INTERFACE  MAC ADDRESS        STATUS       IP ADDRESS        PACKETS (TX/RX)
 ---------  -----------        ------       ----------        ---------------
 eth0       52:54:00:12:34:56  UP (e1000)   10.0.2.15 (NAT)   0/0
 
-keira:/system# fetch http://icanhazip.com/
+keira:/bin# fetch http://icanhazip.com/
 103.160.68.245
 
-keira:/system# fetch -I http://httpbin.org/get
+keira:/bin# fetch -I http://httpbin.org/get
 HTTP/1.1 200 OK
 Host: httpbin.org
 Protocol: HTTP/1.1

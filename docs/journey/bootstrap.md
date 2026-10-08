@@ -11,12 +11,20 @@ Milestone 1 marks the foundational achievement of the Keira learning journey: tr
 ```mermaid
 graph TD
     BIOS["Firmware (BIOS / UEFI)"] --> GRUB["Multiboot2 Bootloader (GRUB)"]
-    GRUB --> Handshake["Multiboot2 Header Handshake<br/>(arch/x86/common/boot/multiboot2_header.asm)"]
-    Handshake --> Entry32["32-Bit Protected Mode Entry<br/>(arch/x86/x86_64/boot/entry32.asm)"]
-    Entry32 --> Paging["Early Page Table Setup (4-Level Identity)<br/>(arch/x86/x86_64/kernel/paging.asm)"]
-    Paging --> LongMode["Enable IA-32e EFER.LME & CR0.PG"]
-    LongMode --> Entry64["64-Bit Long Mode Entry<br/>(arch/x86/x86_64/boot/entry64.asm)"]
-    Entry64 --> KernelMain["Rust Kernel Entrypoint (crates/kernel/src/lib.rs)<br/>kernel_main(multiboot_info_ptr)"]
+    Handshake["Multiboot2 Header Handshake<br/>(arch/x86/common/boot/multiboot2_header.asm)"]
+    Entry32["32-Bit Protected Mode Entry<br/>(arch/x86/x86_64/boot/entry32.asm)"]
+    Paging["Early Page Table Setup (4-Level Identity)<br/>(arch/x86/x86_64/kernel/paging.asm)"]
+    LongMode["Enable IA-32e EFER.LME & CR0.PG"]
+    Entry64["64-Bit Long Mode Entry<br/>(arch/x86/x86_64/boot/entry64.asm)"]
+    KernelMain["Rust Kernel Entrypoint (crates/kernel/src/lib.rs)<br/>kernel_main(multiboot_info_ptr)"]
+
+    BIOS --> GRUB
+    GRUB --> Handshake
+    Handshake --> Entry32
+    Entry32 --> Paging
+    Paging --> LongMode
+    LongMode --> Entry64
+    Entry64 --> KernelMain
 ```
 
 ---
@@ -34,8 +42,8 @@ jne .no_multiboot2
 
 The kernel then parses the contiguous chain of Multiboot2 tags:
 - **Type 4 (Basic Memory Info)**: Lower and upper physical memory limits.
-- **Type 6 (Memory Map)**: Complete list of usable RAM regions, ACPI reclaimable zones, and reserved memory ranges.
-- **Type 8 (Framebuffer)**: Linear framebuffer physical address, resolution (1280x800), color depth, and pitch.
+- **Type 6 (Memory Map)**: Complete list of usable RAM regions, ACPI reclaimable zones and reserved memory ranges.
+- **Type 8 (Framebuffer)**: Linear framebuffer physical address, resolution (1280x800), color depth and pitch.
 - **Type 3 (Module)**: Physical bounds of the bundled USTAR `initrd.tar` archive.
 
 ### B. Dual-Architecture Symmetrical Entry
@@ -49,10 +57,10 @@ To maintain strict dual-target parity, Keira provides tailored boot paths:
    - Executes directly in protected mode without 64-bit transition overhead.
    - Configures a standard 2-level paging directory and table layout.
 
-### C. GDT, TSS, and IDT Vectoring
-- **Global Descriptor Table (GDT)**: Flat segmentation model defining Kernel Code (`0x08`), Kernel Data (`0x10`), User Code (`0x18` or `0x1B` Ring 3), User Data (`0x20` or `0x23` Ring 3), and Task State Segment (`0x28`).
+### C. GDT, TSS and IDT Vectoring
+- **Global Descriptor Table (GDT)**: Flat segmentation model defining Kernel Code (`0x08`), Kernel Data (`0x10`), User Code (`0x18` or `0x1B` Ring 3), User Data (`0x20` or `0x23` Ring 3) and Task State Segment (`0x28`).
 - **Task State Segment (TSS)**: Configured with dedicated Interrupt Stack Tables (`IST1` for double fault, `IST2` for NMI) and the privileged Ring 0 stack pointer (`RSP0`) for safe privilege transitions.
-- **Interrupt Descriptor Table (IDT)**: Complete 256-gate table mapping CPU exceptions (`0..31`), legacy IRQs (`32..47`), Local APIC timer (`0x20`), and software system call vectors.
+- **Interrupt Descriptor Table (IDT)**: Complete 256-gate table mapping CPU exceptions (`0..31`), legacy IRQs (`32..47`), Local APIC timer (`0x20`) and software system call vectors.
 
 ### D. Symmetric Multiprocessing (SMP) Bringup
 Waking secondary Application Processors (APs) from hardware reset requires navigating real-mode silicon constraints:
@@ -65,7 +73,7 @@ Waking secondary Application Processors (APs) from hardware reset requires navig
    ```text
    ICR Low = 0x000C4608 (SIPI, Vector 0x08)
    ```
-4. Secondary cores wake in real mode, enable protected mode, load the shared GDT, enable paging, and jump into the synchronized Rust AP entrypoint using an atomic spin-barrier.
+4. Secondary cores wake in real mode, enable protected mode, load the shared GDT, enable paging and jump into the synchronized Rust AP entrypoint using an atomic spin-barrier.
 
 ---
 
@@ -74,7 +82,7 @@ Waking secondary Application Processors (APs) from hardware reset requires navig
 The milestone is validated directly via the Keira shell:
 
 ```text
-keira:/system# system
+keira:/bin# system
 System Specifications & Kernel Information
   Kernel Version : Keira Kernel v0.6.0
   Architecture   : x86_64 Long Mode (Freestanding)
@@ -83,7 +91,7 @@ System Specifications & Kernel Information
   Heap Memory    : 0 KB / 1024 KB
   PCI Devices    : 5 detected
 
-keira:/system# cpu
+keira:/bin# cpu
 Processor & Architecture Telemetry:
   Vendor String : AuthenticAMD
   Architecture  : x86_64 Long Mode (64-bit)
@@ -94,7 +102,7 @@ Processor & Architecture Telemetry:
   Interrupts    : 0 IRQ events
   Core Temp     : 42 deg C (DTS)
 
-keira:/system# smp
+keira:/bin# smp
 Symmetric Multiprocessing (SMP) Hardware Topology:
   Total Online Cores : 2
 
