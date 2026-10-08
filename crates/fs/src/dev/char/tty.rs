@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Character device forwarding for `/system/dev/tty` and `/system/dev/ptmx`.
+//! Character device forwarding for `/dev/tty` and `/dev/ptmx`.
 
 use keira_io::vga;
 

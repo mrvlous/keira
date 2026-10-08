@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Special virtual device nodes (`/system/dev/*`).
+//! Special virtual device nodes (`/dev/*`).
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
 //! - `char/`: Character device node drivers and dispatcher.

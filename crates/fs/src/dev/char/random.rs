@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Pseudo character devices `/system/dev/random` and `/system/dev/urandom` providing entropy.
+//! Pseudo character devices `/dev/random` and `/dev/urandom` providing entropy.
 
 /// Fills destination buffer with pseudo-random entropy derived from CPU Time-Stamp Counter (TSC).
 pub fn read(buf: &mut [u8]) -> Result<usize, &'static str> {
