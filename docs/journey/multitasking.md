@@ -69,7 +69,7 @@ Thread synchronization avoids expensive kernel-space locking via in-kernel futex
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# tasks
+keira:/# tasks
 PID   TASK NAME          STATE      TICKS      SWITCHES
 ---   ---------          -----      -----      --------
 0     kernel_shell       RUNNING    1875       1
@@ -79,7 +79,7 @@ Scheduler Telemetry:
   Total Context Switches: 0
   Total Scheduler Ticks : 1876
 
-keira:/bin# cgroups status
+keira:/# cgroups status
 Resource Control Groups (cgroups) Subsystem Status:
   Subsystem Engine : Active (Memory Controller & Proportional CPU Shares)
   Active Groups    : 3 / 8 slices configured
@@ -87,7 +87,7 @@ Resource Control Groups (cgroups) Subsystem Status:
   Total Max Memory : 112 MB configured ceiling
   PID Namespaces   : Isolated Container Namespaces Mapped
 
-keira:/bin# futex status
+keira:/# futex status
 Fast Userspace Mutex (Futex) Subsystem Status:
   Subsystem Engine : Active (In-Kernel Wait Queues & Hash Table)
   Active Waiters   : 1 / 16 slots in use
@@ -96,7 +96,7 @@ Fast Userspace Mutex (Futex) Subsystem Status:
   Total Requeues   : 0 ops
   Syscall Vectors  : Syscall 32 (futex) / Syscall 40
 
-keira:/bin# jobs
+keira:/# jobs
 [Job ID]  PID   State       Command
 --------  ---   -----       -------
  (No active background process jobs currently running)
