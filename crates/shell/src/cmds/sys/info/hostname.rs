@@ -7,14 +7,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! View or set the system hostname. Hostname is persisted to `/config/sys/hostname.cfg` on FAT16 disk.
+//! View or set the system hostname. Hostname is persisted to `/etc/hostname` on FAT16 disk.
 
 use crate::state::*;
 use keira_io::vga;
 
-const HOSTNAME_PATH: &str = "/config/sys/hostname.cfg";
+const HOSTNAME_PATH: &str = "/etc/hostname";
 
-/// Load hostname from `/config/sys/hostname.cfg` into global state on boot.
+/// Load hostname from `/etc/hostname` into global state on boot.
 pub fn load_hostname() {
     unsafe {
         let mut buf = [0u8; 32];
@@ -44,7 +44,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         match new_name {
             Some("-h") | Some("--help") => {
                 vga::print_str("Usage: hostname [new_name]\n\n");
-                vga::print_str("Description:\n  Query or update the system hostname. Hostname is persisted to /config/sys/hostname.cfg on FAT16 disk.\n\n");
+                vga::print_str("Description:\n  Query or update the system hostname. Hostname is persisted to /etc/hostname on FAT16 disk.\n\n");
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
                 vga::print_str("Examples:\n  hostname\n  hostname keira-box\n");
             }
@@ -69,8 +69,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 HOSTNAME[..name_bytes.len()].copy_from_slice(name_bytes);
                 HOSTNAME_LEN = name_bytes.len();
 
-                let _ = keira_fs::fat::create_dir("/config");
-                let _ = keira_fs::fat::create_dir("/config/sys");
+                let _ = keira_fs::fat::create_dir("/etc");
                 let _ = keira_fs::fat::create_file(HOSTNAME_PATH);
                 let mut write_buf = [0u8; 33];
                 write_buf[..name_bytes.len()].copy_from_slice(name_bytes);

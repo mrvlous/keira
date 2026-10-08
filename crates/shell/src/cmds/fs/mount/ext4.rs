@@ -42,7 +42,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         }
         Some("info") => {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("EXT4 Superblock & Feature Flags (Partition /system/dev/sda2):\n");
+            vga::print_str("EXT4 Superblock & Feature Flags (Partition /dev/sda2):\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
             if let Some(sb) = get_ext4_superblock() {
@@ -247,7 +247,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
             let (_mounted, inodes, _blocks, total_mb, free_mb) = get_ext4_stats();
-            vga::print_str("  Status      : Mounted (/system/dev/sda2)\n");
+            vga::print_str("  Status      : Mounted (/dev/sda2)\n");
             vga::print_str("  Storage     : ");
             vga::print_u64(total_mb);
             vga::print_str(" MB Total (");

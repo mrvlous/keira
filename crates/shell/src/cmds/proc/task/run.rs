@@ -209,7 +209,7 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
             }
         }
 
-        let prefixes = ["/system/bin/", "/apps/bin/", "/"];
+        let prefixes = ["/bin/", "/"];
         let suffixes = ["", ".elf"];
 
         if !found {
@@ -268,7 +268,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n\n");
             vga::print_str("Description:\n  Load and execute a freestanding user mode ELF binary program in Ring 3 user space with CLI arguments.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-            vga::print_str("Examples:\n  run hello.elf\n  run /apps/bin/calc.elf\n  run kcc /data/main.c -o /apps/bin/app.elf\n");
+            vga::print_str("Examples:\n  run hello.elf\n  run /bin/calc.elf\n  run kcc /tmp/main.c -o /bin/app.elf\n");
             return;
         }
         if arg_count < 16 {

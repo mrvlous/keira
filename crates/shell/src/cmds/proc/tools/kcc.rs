@@ -22,7 +22,7 @@ static mut ELF_BUF: [u8; 32768] = [0u8; 32768];
 /// Execute the 'kcc' C compiler command from the interactive shell.
 pub fn run(parts: &mut SplitWhitespace) {
     let mut source_file: Option<&str> = None;
-    let mut output_file: &str = "/apps/bin/app.elf";
+    let mut output_file: &str = "/bin/app.elf";
 
     while let Some(arg) = parts.next() {
         match arg {
@@ -32,14 +32,16 @@ pub fn run(parts: &mut SplitWhitespace) {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::print_str("Description:\n  Compile C source code into a freestanding Ring 3 ELF executable binary.\n\n");
                 vga::print_str("Options:\n");
-                vga::print_str("  -o, --output <file>  Specify output binary path (default: /apps/bin/app.elf)\n");
+                vga::print_str(
+                    "  -o, --output <file>  Specify output binary path (default: /bin/app.elf)\n",
+                );
                 vga::print_str(
                     "  -v, --version        Display compiler version and target architecture\n",
                 );
                 vga::print_str("  -h, --help           Display this help manual\n\n");
                 vga::print_str("Examples:\n");
-                vga::print_str("  kcc /data/main.c -o /apps/bin/app.elf\n");
-                vga::print_str("  kcc /data/main.c\n");
+                vga::print_str("  kcc /tmp/main.c -o /bin/app.elf\n");
+                vga::print_str("  kcc /tmp/main.c\n");
                 return;
             }
             "-v" | "--version" => {
@@ -120,18 +122,18 @@ pub fn run(parts: &mut SplitWhitespace) {
 
     let src_str = unsafe { core::str::from_utf8(&RAW_BUF[..read_len]).unwrap_or("") };
     let libs = [
-        ("<math.h>", "\"math.h\"", "/system/lib/math.c"),
-        ("<string.h>", "\"string.h\"", "/system/lib/string.c"),
-        ("<stdlib.h>", "\"stdlib.h\"", "/system/lib/stdlib.c"),
-        ("<unistd.h>", "\"unistd.h\"", "/system/lib/unistd.c"),
-        ("<assert.h>", "\"assert.h\"", "/system/lib/assert.c"),
-        ("<dirent.h>", "\"dirent.h\"", "/system/lib/dirent.c"),
-        ("<sys/stat.h>", "\"stat.h\"", "/system/lib/stat.c"),
-        ("<signal.h>", "\"signal.h\"", "/system/lib/signal.c"),
-        ("<time.h>", "\"time.h\"", "/system/lib/time.c"),
-        ("<setjmp.h>", "\"setjmp.h\"", "/system/lib/setjmp.c"),
-        ("<ctype.h>", "\"ctype.h\"", "/system/lib/ctype.c"),
-        ("<errno.h>", "\"errno.h\"", "/system/lib/errno.c"),
+        ("<math.h>", "\"math.h\"", "/lib/math.c"),
+        ("<string.h>", "\"string.h\"", "/lib/string.c"),
+        ("<stdlib.h>", "\"stdlib.h\"", "/lib/stdlib.c"),
+        ("<unistd.h>", "\"unistd.h\"", "/lib/unistd.c"),
+        ("<assert.h>", "\"assert.h\"", "/lib/assert.c"),
+        ("<dirent.h>", "\"dirent.h\"", "/lib/dirent.c"),
+        ("<sys/stat.h>", "\"stat.h\"", "/lib/stat.c"),
+        ("<signal.h>", "\"signal.h\"", "/lib/signal.c"),
+        ("<time.h>", "\"time.h\"", "/lib/time.c"),
+        ("<setjmp.h>", "\"setjmp.h\"", "/lib/setjmp.c"),
+        ("<ctype.h>", "\"ctype.h\"", "/lib/ctype.c"),
+        ("<errno.h>", "\"errno.h\"", "/lib/errno.c"),
     ];
 
     for &(hdr1, hdr2, lib_path) in &libs {
@@ -157,11 +159,11 @@ pub fn run(parts: &mut SplitWhitespace) {
         }
     }
 
-    // 3. Stage source code to /data/main.c for KCC compiler engine
+    // 3. Stage source code to /tmp/main.c for KCC compiler engine
     let stage_res = unsafe {
-        let _ = keira_fs::fat::remove_entry("/data/main.c");
-        let _ = keira_fs::fat::create_file("/data/main.c");
-        keira_fs::fat::write_file_content("/data/main.c", &STAGED_BUF[..staged_len])
+        let _ = keira_fs::fat::remove_entry("/tmp/main.c");
+        let _ = keira_fs::fat::create_file("/tmp/main.c");
+        keira_fs::fat::write_file_content("/tmp/main.c", &STAGED_BUF[..staged_len])
     };
 
     if let Err(e) = stage_res {
@@ -183,20 +185,20 @@ pub fn run(parts: &mut SplitWhitespace) {
 
     // 4. Delete old app.elf and run compiler in Ring 3
     unsafe {
-        let _ = keira_fs::fat::remove_entry("/apps/bin/app.elf");
+        let _ = keira_fs::fat::remove_entry("/bin/app.elf");
     }
 
-    if !crate::cmds::proc::run::run_direct("/system/bin/kcc.elf") {
+    if !crate::cmds::proc::run::run_direct("/bin/kcc.elf") {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
-        vga::print_str("kcc: error: compiler binary /system/bin/kcc.elf not found\n");
+        vga::print_str("kcc: error: compiler binary /bin/kcc.elf not found\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }
 
-    // 5. If a custom output path was requested, copy from /apps/bin/app.elf to target
-    if output_file != "/apps/bin/app.elf" {
+    // 5. If a custom output path was requested, copy from /bin/app.elf to target
+    if output_file != "/bin/app.elf" {
         unsafe {
-            match keira_fs::fat::read_file_content("/apps/bin/app.elf", &mut ELF_BUF) {
+            match keira_fs::fat::read_file_content("/bin/app.elf", &mut ELF_BUF) {
                 Ok(elf_len) => {
                     let _ = keira_fs::fat::remove_entry(output_file);
                     let _ = keira_fs::fat::create_file(output_file);
@@ -221,7 +223,7 @@ pub fn run(parts: &mut SplitWhitespace) {
                 }
             }
         }
-    } else if !keira_fs::vfs::exists("/apps/bin/app.elf") {
+    } else if !keira_fs::vfs::exists("/bin/app.elf") {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("kcc: compilation failed to generate binary\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);

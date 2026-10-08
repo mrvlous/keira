@@ -37,7 +37,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Examples:\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str("  edit /apps/main.c\n");
+        vga::print_str("  edit /tmp/main.c\n");
         vga::print_str("  nano script.sh\n");
         return;
     }

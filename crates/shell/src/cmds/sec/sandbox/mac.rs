@@ -245,28 +245,28 @@ fn run_mac_tests() {
     let prev_mode = get_mode();
     set_mode(MacMode::Enforcing);
 
-    // Test 1: User reading /system/bin/ls
+    // Test 1: User reading /bin/ls
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [1/4] User (PID 2) READ on /system/bin/ls ... ");
-    let t1 = check_path_access(2, "/system/bin/ls", MAC_READ);
+    vga::print_str("  [1/4] User (PID 2) READ on /bin/ls ... ");
+    let t1 = check_path_access(2, "/bin/ls", MAC_READ);
     print_decision(t1, true);
 
-    // Test 2: User writing to /config/sys/kernel.cfg
+    // Test 2: User writing to /etc/kernel.cfg
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [2/4] User (PID 2) WRITE on /config/sys/kernel.cfg ... ");
-    let t2 = check_path_access(2, "/config/sys/kernel.cfg", MAC_WRITE);
+    vga::print_str("  [2/4] User (PID 2) WRITE on /etc/kernel.cfg ... ");
+    let t2 = check_path_access(2, "/etc/kernel.cfg", MAC_WRITE);
     print_decision(t2, false);
 
-    // Test 3: System (PID 1) WRITE on /config/sys/kernel.cfg
+    // Test 3: System (PID 1) WRITE on /etc/kernel.cfg
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [3/4] System (PID 1) WRITE on /config/sys/kernel.cfg ... ");
-    let t3 = check_path_access(1, "/config/sys/kernel.cfg", MAC_WRITE);
+    vga::print_str("  [3/4] System (PID 1) WRITE on /etc/kernel.cfg ... ");
+    let t3 = check_path_access(1, "/etc/kernel.cfg", MAC_WRITE);
     print_decision(t3, true);
 
-    // Test 4: User EXEC on /data/script.sh
+    // Test 4: User EXEC on /tmp/script.sh
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("  [4/4] User (PID 2) EXEC on /data/script.sh ... ");
-    let t4 = check_path_access(2, "/data/script.sh", MAC_EXEC);
+    vga::print_str("  [4/4] User (PID 2) EXEC on /tmp/script.sh ... ");
+    let t4 = check_path_access(2, "/tmp/script.sh", MAC_EXEC);
     print_decision(t4, true);
 
     set_mode(prev_mode);

@@ -24,7 +24,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str(
             "  status         Display active swap metrics, slot usage, and device path (default)\n",
         );
-        vga::print_str("  on [dev]       Activate swap space on target partition or file (default: /data/swapfile)\n");
+        vga::print_str("  on [dev]       Activate swap space on target partition or file (default: /swapfile)\n");
         vga::print_str("  off            Deactivate and flush active swap space\n");
         vga::print_str(
             "  test           Execute swap slot allocation and release verification cycle\n",
@@ -38,7 +38,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
     match sub {
         "on" | "enable" => {
-            let target_dev = args.positional(1).unwrap_or("/data/swapfile");
+            let target_dev = args.positional(1).unwrap_or("/swapfile");
             match swapon(target_dev, 0) {
                 Ok(_) => {
                     vga::set_color(vga::Color::White, vga::Color::Black);
@@ -83,7 +83,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
 
             let was_active = swap_stats().active;
             if !was_active {
-                let _ = swapon("/data/swapfile", 0);
+                let _ = swapon("/swapfile", 0);
             }
 
             let slot1 = alloc_swap_slot();

@@ -94,7 +94,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str("  fetch http://10.0.2.2/api/status\n");
         vga::print_str("  fetch -I https://example.com\n");
         vga::print_str("  fetch -v http://10.0.2.2:8080/index.html\n");
-        vga::print_str("  fetch -o /data/payload.bin http://10.0.2.2/data.bin\n");
+        vga::print_str("  fetch -o /tmp/payload.bin http://10.0.2.2/data.bin\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }

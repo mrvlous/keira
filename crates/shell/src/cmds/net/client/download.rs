@@ -28,8 +28,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_str("Options:\n");
         vga::print_str("  -h, --help    Show this help message and exit\n\n");
         vga::print_str("Examples:\n");
-        vga::print_str("  download https://example.com/app.elf /apps/app.elf\n");
-        vga::print_str("  download http://10.0.2.2/data.bin /data/data.bin\n");
+        vga::print_str("  download https://example.com/app.elf /bin/app.elf\n");
+        vga::print_str("  download http://10.0.2.2/data.bin /tmp/data.bin\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }
