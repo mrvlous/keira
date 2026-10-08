@@ -60,12 +60,12 @@ Disk access latency is mitigated by an in-kernel **Least Recently Used (LRU) Sec
 ## 3. Real-Time Telemetry & Shell Verification
 
 ```text
-keira:/bin# drives
+keira:/# drives
 NAME       TYPE       SIZE (KB)   STATUS
 ----       ----       ---------   ------
 ahci0      SATA Disk 10240        [Mounted]
 
-keira:/bin# disk
+keira:/# disk
 Active Drive (ahci0) Size: 10 MB (20480 sectors)
 Filesystem:    FAT16
 Cluster Size:  2048 bytes (4 sectors)
@@ -73,12 +73,12 @@ Reserved Secs: 4
 Root Directory: 512 entries (start sector: 132)
 LRU Cache:     5/16 slots (Hits: 1, Misses: 5, Evictions: 0, Hit Ratio: 16%)
 
-keira:/bin# list /etc
+keira:/# list /etc
 Directory of IDE disk:
   [file] grub.cfg
   [file] hostname
   [file] kernel.cfg
 
-keira:/bin# view /etc/grub.cfg
+keira:/# view /etc/grub.cfg
 console=tty0 serial=ttyS0,115200 root=/dev/sda1 quiet loglevel=3
 ```
