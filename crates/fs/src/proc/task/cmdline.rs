@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic `/system/proc/[pid]/cmdline` process command-line arguments node.
+//! Dynamic `/proc/[pid]/cmdline` process command-line arguments node.
 
 use super::hooks::TASK_CMDLINE_HOOK;
 

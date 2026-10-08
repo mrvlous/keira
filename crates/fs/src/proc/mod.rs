@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic ProcFS pseudo-filesystem provider (`/system/proc/*`).
+//! Dynamic ProcFS pseudo-filesystem provider (`/proc/*`).
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
 //! - `writer/`: Fixed-slice formatting buffer implementing `core::fmt::Write`.

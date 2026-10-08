@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic `/system/proc/meminfo` node reporting physical, heap, and swap memory metrics.
+//! Dynamic `/proc/meminfo` node reporting physical, heap and swap memory metrics.
 
 use crate::proc::writer::BufWriter;
 use core::fmt::Write;

@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic `/system/proc/[pid]/status` process state inspection node.
+//! Dynamic `/proc/[pid]/status` process state inspection node.
 
 use super::hooks::TASK_STATUS_HOOK;
 

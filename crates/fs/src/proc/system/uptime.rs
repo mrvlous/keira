@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic `/system/proc/uptime` node generating system uptime statistics.
+//! Dynamic `/proc/uptime` node generating system uptime statistics.
 
 use crate::proc::writer::BufWriter;
 use core::fmt::Write;

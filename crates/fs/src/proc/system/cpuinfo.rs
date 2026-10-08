@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Dynamic `/system/proc/cpuinfo` node reporting CPU architecture and vendor information.
+//! Dynamic `/proc/cpuinfo` node reporting CPU architecture and vendor information.
 
 use crate::proc::writer::BufWriter;
 use core::fmt::Write;
