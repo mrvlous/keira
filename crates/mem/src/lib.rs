@@ -44,8 +44,9 @@ pub use pmm::{
     MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use slab::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
+    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, CpuDepot, GlobalDepot, KmemCache,
+    Magazine, DEPOT_CAPACITY, FD_CACHE, INODE_CACHE, MAGAZINE_CAPACITY, MAX_CPU_CORES, TASK_CACHE,
+    VMA_CACHE,
 };
 pub use swap::{
     alloc_swap_slot, free_swap_slot, is_active as swap_is_active, swap_stats, swapoff, swapon,
