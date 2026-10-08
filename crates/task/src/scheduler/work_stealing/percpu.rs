@@ -44,6 +44,10 @@ pub fn enqueue_task(core_id: usize, task_idx: usize) -> bool {
 
     let target_core = core_id % MAX_CPU_CORES;
     if CPU_RUNQUEUES[target_core].push(task_idx).is_ok() {
+        let current_core = keira_arch::cpu::get_current_core_id();
+        if target_core != current_core {
+            keira_arch::interrupts::smp::smp_send_reschedule(target_core);
+        }
         true
     } else {
         TASK_QUEUED[task_idx].store(false, Ordering::Release);
