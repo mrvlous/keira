@@ -23,6 +23,7 @@ pub unsafe fn enter_userspace() {
     vga::print_boot_log("Loading Task State Segment (TSS) cpu context structure", 0);
     vga::print_boot_log("Enabling CPU ring 3 user-mode syscall interface MSRs", 0);
     vga::print_boot_log("Initializing Mandatory Access Control (MAC) Security", 0);
+    vga::print_boot_log("Executing canonical userspace init process (PID 1)", 0);
     vga::print_boot_log("Spawning interactive terminal shell environment", 0);
     vga::print_boot_log("Keira Kernel initialized successfully. System ready", 0);
 }
