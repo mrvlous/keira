@@ -15,8 +15,12 @@ use crate::ip::ipv4::ip_checksum;
 /// Send an ICMP Ping packet over the network interface with valid IP & ICMP checksums.
 ///
 /// # Safety
-/// Transmits raw Ethernet frame through e1000 driver and updates packet counters.
-pub unsafe fn send_ping(_target_ip: &str) -> Result<u64, &'static str> {
+/// Transmits raw Ethernet frame through e1000 driver or reflects locally via loopback.
+pub unsafe fn send_ping(target_ip: &str) -> Result<u64, &'static str> {
+    if crate::driver::loopback::is_loopback_str(target_ip) {
+        return crate::driver::loopback::send_loopback_ping();
+    }
+
     if !E1000_FOUND {
         return Err("Network interface offline");
     }
