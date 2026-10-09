@@ -49,3 +49,82 @@ fn test_dev_null_and_zero_io() {
     let written = unsafe { dev::char::write_dev_node("null", &[1, 2, 3, 4]) }.expect("write null");
     assert_eq!(written, 4);
 }
+
+#[test]
+fn test_page_cache_subsystem_lifecycle() {
+    unsafe {
+        cache::clear_page_cache();
+    }
+
+    // Phase 1: Basic insert and read hit/miss
+    let sample_data = b"Hello Keira Unified Page Cache 4096 bytes test";
+    let slot = unsafe { cache::insert_page(0, 101, 0, sample_data, false) };
+    assert!(slot < cache::PAGE_CACHE_CAPACITY);
+
+    let mut out_buf = [0u8; 64];
+    let read_len = unsafe { cache::read_page(0, 101, 0, 0, &mut out_buf) };
+    assert_eq!(read_len, Some(sample_data.len()));
+    assert_eq!(&out_buf[..sample_data.len()], sample_data);
+
+    let miss_read = unsafe { cache::read_page(0, 101, 1, 0, &mut out_buf) };
+    assert_eq!(miss_read, None);
+
+    let (hits, misses, evictions, writebacks, active) = cache::get_page_cache_stats();
+    assert!(hits >= 1);
+    assert!(misses >= 1);
+    assert_eq!(evictions, 0);
+    assert_eq!(writebacks, 0);
+    assert_eq!(active, 1);
+
+    // Phase 2: Dirty writeback and invalidation
+    let write_payload = b"Dirty page cache payload for writeback verification";
+    let res = unsafe { cache::write_page(0, 202, 0, 0, write_payload) };
+    assert_eq!(res, Ok(write_payload.len()));
+
+    let mut flushed_entries = 0;
+    let flushed = unsafe {
+        cache::flush_dirty_pages(|dev, inode, page_idx, data| {
+            assert_eq!(dev, 0);
+            assert_eq!(inode, 202);
+            assert_eq!(page_idx, 0);
+            assert_eq!(data, write_payload);
+            flushed_entries += 1;
+            Ok(())
+        })
+    };
+    assert_eq!(flushed, 1);
+    assert_eq!(flushed_entries, 1);
+
+    unsafe {
+        cache::invalidate_inode(0, 202);
+    }
+    let mut check_buf = [0u8; 32];
+    assert_eq!(
+        unsafe { cache::read_page(0, 202, 0, 0, &mut check_buf) },
+        None
+    );
+
+    // Phase 3: LRU capacity saturation and eviction
+    unsafe {
+        cache::clear_page_cache();
+    }
+    for i in 0..cache::PAGE_CACHE_CAPACITY {
+        let payload = [i as u8; 16];
+        unsafe {
+            cache::insert_page(0, 300 + i as u32, 0, &payload, false);
+        }
+    }
+
+    let (_, _, evictions_before, _, active_before) = cache::get_page_cache_stats();
+    assert_eq!(active_before, cache::PAGE_CACHE_CAPACITY);
+    assert_eq!(evictions_before, 0);
+
+    let new_payload = [0xFFu8; 16];
+    unsafe {
+        cache::insert_page(0, 999, 0, &new_payload, false);
+    }
+
+    let (_, _, evictions_after, _, active_after) = cache::get_page_cache_stats();
+    assert_eq!(active_after, cache::PAGE_CACHE_CAPACITY);
+    assert_eq!(evictions_after, 1);
+}
