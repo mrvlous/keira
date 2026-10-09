@@ -12,6 +12,7 @@
 #![no_std]
 #![allow(static_mut_refs)]
 
+pub mod cache;
 pub mod dev;
 pub mod elf;
 pub mod ext4;
@@ -22,6 +23,10 @@ pub mod proc;
 pub mod tar;
 pub mod vfs;
 
+pub use cache::{
+    clear_page_cache, find_page_index, flush_dirty_pages, get_page_cache_stats, insert_page,
+    invalidate_inode, read_page, write_page, PageCacheEntry, PAGE_CACHE_CAPACITY, PAGE_SIZE,
+};
 pub use dev::char::{read_dev_node, write_dev_node};
 pub use elf::loader::{execute_user_mode, load_elf};
 pub use elf::types::{ElfHeader, ProgramHeader, PT_LOAD};
