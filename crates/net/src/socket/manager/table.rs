@@ -80,6 +80,9 @@ pub unsafe fn connect_socket(
                 slot.remote_ip = ip;
                 slot.remote_port = port;
                 slot.local_port = get_next_src_port();
+                if crate::driver::loopback::is_loopback_addr(&ip) {
+                    slot.local_ip = crate::driver::loopback::LOOPBACK_IP;
+                }
             }
             slot.state = TcpState::Established;
             slot.is_connected = true;
@@ -109,6 +112,37 @@ pub unsafe fn send_socket(sockfd: u64, buf: *const u8, len: usize) -> Result<usi
                 let dst = slot.tx_buf.as_mut_ptr().add(slot.tx_len);
                 core::ptr::copy_nonoverlapping(buf, dst, to_write);
                 slot.tx_len += to_write;
+
+                if crate::driver::loopback::is_loopback_addr(&slot.remote_ip) {
+                    let slice = core::slice::from_raw_parts(buf, to_write);
+                    let _ = crate::driver::loopback::transmit_loopback_packet(slice);
+
+                    let target_port = slot.remote_port;
+                    let sender_id = slot.id;
+                    let mut delivered = false;
+                    for peer in SOCKET_TABLE.iter_mut() {
+                        if peer.in_use && peer.id != sender_id && peer.local_port == target_port {
+                            let rx_avail = SOCKET_BUF_SIZE - peer.rx_len;
+                            let copy_sz = core::cmp::min(to_write, rx_avail);
+                            if copy_sz > 0 {
+                                let rx_dst = peer.rx_buf.as_mut_ptr().add(peer.rx_len);
+                                core::ptr::copy_nonoverlapping(buf, rx_dst, copy_sz);
+                                peer.rx_len += copy_sz;
+                            }
+                            delivered = true;
+                            break;
+                        }
+                    }
+                    if !delivered && slot.remote_port == slot.local_port {
+                        let rx_avail = SOCKET_BUF_SIZE - slot.rx_len;
+                        let copy_sz = core::cmp::min(to_write, rx_avail);
+                        if copy_sz > 0 {
+                            let rx_dst = slot.rx_buf.as_mut_ptr().add(slot.rx_len);
+                            core::ptr::copy_nonoverlapping(buf, rx_dst, copy_sz);
+                            slot.rx_len += copy_sz;
+                        }
+                    }
+                }
             }
             return Ok(to_write);
         }
