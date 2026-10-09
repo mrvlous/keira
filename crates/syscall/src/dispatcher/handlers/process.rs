@@ -153,6 +153,58 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
             argc = 1;
         }
 
+        let mut target_binary = filename_str;
+        let mut interp_buf = [0u8; 128];
+        let mut shebang_arg_slices: [&str; 18] = [""; 18];
+        let mut is_shebang = false;
+
+        let mut shebang_hdr = [0u8; 128];
+        if let Ok(hdr_len) = keira_fs::vfs::read_file_offset(filename_str, 0, &mut shebang_hdr) {
+            if hdr_len >= 2 && shebang_hdr[0] == b'#' && shebang_hdr[1] == b'!' {
+                if let Some((interpreter, opt_arg)) =
+                    keira_fs::elf::parse_shebang(&shebang_hdr[..hdr_len])
+                {
+                    let resolved = if keira_fs::vfs::exists(interpreter) {
+                        interpreter
+                    } else if interpreter == "/bin/sh" && keira_fs::vfs::exists("/bin/sh.elf") {
+                        "/bin/sh.elf"
+                    } else {
+                        interpreter
+                    };
+                    let rbytes = resolved.as_bytes();
+                    if rbytes.len() <= interp_buf.len() {
+                        interp_buf[..rbytes.len()].copy_from_slice(rbytes);
+                        if let Ok(s) = core::str::from_utf8(&interp_buf[..rbytes.len()]) {
+                            target_binary = s;
+                            let mut scount = 0;
+                            shebang_arg_slices[scount] = s;
+                            scount += 1;
+                            if let Some(arg) = opt_arg {
+                                shebang_arg_slices[scount] = arg;
+                                scount += 1;
+                            }
+                            shebang_arg_slices[scount] = filename_str;
+                            scount += 1;
+                            for &arg in arg_slices.iter().take(argc).skip(1) {
+                                if scount < 16 {
+                                    shebang_arg_slices[scount] = arg;
+                                    scount += 1;
+                                }
+                            }
+                            argc = scount;
+                            is_shebang = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        let exec_args = if is_shebang {
+            &shebang_arg_slices[..argc]
+        } else {
+            &arg_slices[..argc]
+        };
+
         unsafe {
             let child_pml4 = match vmm::clone_kernel_pml4() {
                 Ok(p) => p,
@@ -161,15 +213,18 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
             let parent_pml4 = vmm::active_pml4();
             vmm::switch_address_space(child_pml4);
 
-            let entry_point = match load_elf(filename_str) {
+            let entry_point = match load_elf(target_binary) {
                 Ok(ep) => {
                     let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
-                    let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename_str);
+                    let _ = keira_crypto::tpm::measure_binary(elf_bytes, target_binary);
                     ep
                 }
                 Err(_) => {
                     vmm::switch_address_space(parent_pml4);
+                    #[cfg(target_arch = "x86_64")]
                     vmm::free_user_pages(child_pml4, 0x600000000000);
+                    #[cfg(target_arch = "x86")]
+                    vmm::free_user_pages(child_pml4, 0x0200_0000);
                     return errno_to_ret(ENOENT);
                 }
             };
@@ -197,19 +252,11 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
 
             let ptr = top_stack_page as *mut u8;
             #[cfg(target_arch = "x86_64")]
-            let initial_user_rsp = keira_task::stack::setup_user_stack_64(
-                ptr,
-                top_stack_page,
-                &arg_slices[..argc],
-                entry_point,
-            );
+            let initial_user_rsp =
+                keira_task::stack::setup_user_stack_64(ptr, top_stack_page, exec_args, entry_point);
             #[cfg(target_arch = "x86")]
-            let initial_user_rsp = keira_task::stack::setup_user_stack_32(
-                ptr,
-                top_stack_page,
-                &arg_slices[..argc],
-                entry_point,
-            );
+            let initial_user_rsp =
+                keira_task::stack::setup_user_stack_32(ptr, top_stack_page, exec_args, entry_point);
 
             vmm::switch_address_space(parent_pml4);
 

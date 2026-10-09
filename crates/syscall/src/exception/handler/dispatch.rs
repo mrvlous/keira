@@ -159,6 +159,7 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
             };
 
             if !already_in_handler {
+                #[cfg(target_arch = "x86_64")]
                 let ctx = keira_task::types::InterruptContext {
                     rip,
                     rsp,
@@ -170,6 +171,20 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
                     rdx,
                     rsi,
                     rdi,
+                    ..Default::default()
+                };
+                #[cfg(target_arch = "x86")]
+                let ctx = keira_task::types::InterruptContext {
+                    rip: rip as u32,
+                    rsp: rsp as u32,
+                    rbp: rbp as u32,
+                    rflags: rflags as u32,
+                    rax: rax as u32,
+                    rbx: rbx as u32,
+                    rcx: rcx as u32,
+                    rdx: rdx as u32,
+                    rsi: rsi as u32,
+                    rdi: rdi as u32,
                     ..Default::default()
                 };
                 keira_task::scheduler::set_saved_sigcontext(ctx);
