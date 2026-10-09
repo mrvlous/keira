@@ -40,6 +40,42 @@ use keira_task::stack::*;
 /// # Safety
 /// Loads binary into userland pages, alters task break, sets up stack and drops privilege to Ring 3.
 pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
+    let mut shebang_hdr = [0u8; 128];
+    if let Ok(hdr_len) = keira_fs::vfs::read_file_offset(filename, 0, &mut shebang_hdr) {
+        if hdr_len >= 2 && shebang_hdr[0] == b'#' && shebang_hdr[1] == b'!' {
+            if let Some((interpreter, opt_arg)) =
+                keira_fs::elf::parse_shebang(&shebang_hdr[..hdr_len])
+            {
+                let resolved_interp = if keira_fs::vfs::exists(interpreter) {
+                    interpreter
+                } else if interpreter == "/bin/sh" && keira_fs::vfs::exists("/bin/sh.elf") {
+                    "/bin/sh.elf"
+                } else {
+                    interpreter
+                };
+
+                let mut new_args: [&str; 16] = [""; 16];
+                let mut count = 0;
+                new_args[count] = resolved_interp;
+                count += 1;
+                if let Some(arg) = opt_arg {
+                    new_args[count] = arg;
+                    count += 1;
+                }
+                new_args[count] = filename;
+                count += 1;
+                for &arg in &args[1..] {
+                    if count < 16 && !arg.is_empty() {
+                        new_args[count] = arg;
+                        count += 1;
+                    }
+                }
+
+                return run_user_program(resolved_interp, &new_args[..count]);
+            }
+        }
+    }
+
     #[cfg(target_arch = "x86")]
     {
         let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
@@ -200,17 +236,25 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
             found = true;
         }
 
-        if !found && !arg.ends_with(".elf") {
+        if !found && !arg.ends_with(".elf") && !arg.ends_with(".sh") {
             if let Some(p) = write_path("", arg, ".elf") {
                 if keira_fs::vfs::exists(p) {
                     resolved_str = p;
                     found = true;
                 }
             }
+            if !found {
+                if let Some(p) = write_path("", arg, ".sh") {
+                    if keira_fs::vfs::exists(p) {
+                        resolved_str = p;
+                        found = true;
+                    }
+                }
+            }
         }
 
         let prefixes = ["/bin/", "/"];
-        let suffixes = ["", ".elf"];
+        let suffixes = ["", ".elf", ".sh"];
 
         if !found {
             'outer: for &pref in &prefixes {
@@ -230,7 +274,11 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
             return false;
         }
 
-        vga::print_str("Loading ELF binary: ");
+        if resolved_str.ends_with(".sh") {
+            vga::print_str("Executing script: ");
+        } else {
+            vga::print_str("Loading ELF binary: ");
+        }
         vga::print_str(resolved_str);
         vga::print_str("\n");
 

@@ -23,11 +23,12 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     for part in parts.by_ref() {
         if arg_count == 1 && (part == "-h" || part == "--help") {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Usage: sh [-c command] [-h|--help]\n\n");
+            vga::print_str("Usage: sh [-c command] [-h|--help] [script_file [args...]]\n\n");
             vga::print_str("Description:\n  Launch or execute commands inside the canonical Ring 3 userspace shell.\n\n");
             vga::print_str("Options:\n");
             vga::print_str("  -c <cmd>       Execute command string non-interactively and exit\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");
+            vga::print_str("  script_file    Read and execute commands from script file\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             return;
         }
