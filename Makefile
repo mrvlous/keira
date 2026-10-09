@@ -441,6 +441,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init
 	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh.elf
 	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh
+	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
+	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
 	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/include/common.h
