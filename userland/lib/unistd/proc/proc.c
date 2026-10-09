@@ -68,7 +68,7 @@ int execve(const char *pathname, char *const argv[], char *const envp[]) {
         errno = (int)-ret;
         return -1;
     }
-    return 0;
+    return (int)ret;
 }
 
 pid_t waitpid(pid_t pid, int *wstatus, int options) {

@@ -36,6 +36,11 @@ static int tokenize_line(char *line, char **argv, int max_args) {
             break;
         }
 
+        if (*p == '#') {
+            *p = '\0';
+            break;
+        }
+
         if (*p == '"' || *p == '\'') {
             char quote = *p++;
             argv[argc++] = p;
@@ -146,6 +151,10 @@ static int resolve_binary_path(const char *cmd, char *out_path, size_t out_size)
         if (access(out_path, F_OK) == 0) {
             return 0;
         }
+        snprintf(out_path, out_size, "%s.sh", cmd);
+        if (access(out_path, F_OK) == 0) {
+            return 0;
+        }
         return -1;
     }
 
@@ -155,6 +164,11 @@ static int resolve_binary_path(const char *cmd, char *out_path, size_t out_size)
     }
 
     snprintf(out_path, out_size, "/bin/%s.elf", cmd);
+    if (access(out_path, F_OK) == 0) {
+        return 0;
+    }
+
+    snprintf(out_path, out_size, "/bin/%s.sh", cmd);
     if (access(out_path, F_OK) == 0) {
         return 0;
     }
@@ -197,17 +211,11 @@ static int execute_command(int argc, char **argv) {
         return 127;
     }
 
-    pid_t pid = fork();
+    argv[0] = resolved_path;
+    pid_t pid = execve(resolved_path, argv, environ);
     if (pid < 0) {
-        printf("sh: fork failed\n");
-        return 1;
-    }
-
-    if (pid == 0) {
-        argv[0] = resolved_path;
-        execve(resolved_path, argv, environ);
-        printf("sh: execve %s failed\n", resolved_path);
-        exit(127);
+        printf("sh: %s: execution failed\n", resolved_path);
+        return 127;
     }
 
     int status = 0;
@@ -215,7 +223,7 @@ static int execute_command(int argc, char **argv) {
     if (WIFEXITED(status)) {
         return WEXITSTATUS(status);
     }
-    return 1;
+    return 0;
 }
 
 static int run_command_string(char *cmd_str) {
@@ -228,8 +236,49 @@ static int run_command_string(char *cmd_str) {
     return 0;
 }
 
+static int run_script_file(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        printf("sh: %s: No such file or directory\n", filename);
+        return 127;
+    }
+
+    char line_buf[SH_MAX_LINE];
+    int status = 0;
+    while (fgets(line_buf, sizeof(line_buf), fp)) {
+        size_t len = strlen(line_buf);
+        while (len > 0 && (line_buf[len - 1] == '\n' || line_buf[len - 1] == '\r')) {
+            line_buf[--len] = '\0';
+        }
+        if (len == 0) {
+            continue;
+        }
+        status = run_command_string(line_buf);
+    }
+
+    fclose(fp);
+    return status;
+}
+
 int main(int argc, char **argv) {
-    if (argc >= 3 && strcmp(argv[1], "-c") == 0) {
+    if (argc >= 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+        puts("Usage: sh [-c command] [-h|--help] [script_file [args...]]");
+        puts("");
+        puts("Description:");
+        puts("  Keira Canonical Standalone Userspace Shell (Ring 3).");
+        puts("");
+        puts("Options:");
+        puts("  -c <cmd>       Execute command string non-interactively and exit");
+        puts("  -h, --help     Show this help message and exit");
+        puts("  script_file    Read and execute commands from script file");
+        return 0;
+    }
+
+    if (argc >= 2 && strcmp(argv[1], "-c") == 0) {
+        if (argc < 3) {
+            printf("sh: -c: option requires an argument\n");
+            return 2;
+        }
         char cmd_buf[SH_MAX_LINE];
         cmd_buf[0] = '\0';
         size_t current_len = 0;
@@ -246,6 +295,10 @@ int main(int argc, char **argv) {
             }
         }
         return run_command_string(cmd_buf);
+    }
+
+    if (argc >= 2 && argv[1][0] != '-') {
+        return run_script_file(argv[1]);
     }
 
     puts("Keira Standalone Userspace Shell (sh v0.7.0)");
