@@ -2,7 +2,7 @@
 
 # Keira Built-in Command Reference Manual
 
-Keira Shell provides 77 native built-in commands partitioned into 5 functional categories.
+Keira Shell provides 78 native built-in commands partitioned into 5 functional categories.
 
 ---
 
@@ -10,7 +10,7 @@ Keira Shell provides 77 native built-in commands partitioned into 5 functional c
 
 | Category | Path | Scope | Command Count |
 | :--- | :--- | :--- | :--- |
-| **System & Hardware** | [`sys.md`](sys.md) & [`dev.md`](dev.md) | CPU telemetry, APIC, time, PCI bus, display, reboot, poweroff, TPM | 25 commands |
+| **System & Hardware** | [`sys.md`](sys.md) & [`dev.md`](dev.md) | CPU telemetry, APIC, time, PCI bus, display, reboot, poweroff, TPM | 26 commands |
 | **Storage & Filesystem** | [`fs.md`](fs.md) | VFS navigation, file creation, editing, disk geometry, LVM, RAID | 21 commands |
 | **Process & IPC** | [`proc.md`](proc.md) | Tasks, scheduler controls, signals, cgroups, epoll, in-kernel compiler | 14 commands |
 | **Network & Security** | [`net.md`](net.md) & [`sec.md`](sec.md) | Packet filtering, TLS 1.3 client, BPF, seccomp, MAC, firewall | 13 commands |
