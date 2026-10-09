@@ -37,3 +37,18 @@ fn test_net_commands_help_invocation() {
     args.next();
     mqueue::run(&mut args);
 }
+
+#[test]
+fn test_network_command_default_and_stats() {
+    let mut args = "network".split_whitespace();
+    args.next();
+    network::run(&mut args);
+
+    let mut args = "network -s".split_whitespace();
+    args.next();
+    network::run(&mut args);
+
+    let mut args = "network ping 127.0.0.1".split_whitespace();
+    args.next();
+    network::run(&mut args);
+}
