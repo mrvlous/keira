@@ -122,4 +122,8 @@ fn test_sys_sh() {
     let mut args = "sh -c pwd".split_whitespace();
     args.next();
     sh::run(&mut args);
+
+    let mut args = "sh /etc/init.sh".split_whitespace();
+    args.next();
+    sh::run(&mut args);
 }
