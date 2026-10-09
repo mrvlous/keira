@@ -52,24 +52,40 @@ keira:/# sh -c pwd
 keira:/# sh -c sysinfo.elf
 [SYSINFO] Keira System Telemetry & Hardware Report
 ...
+
+# Executing shell scripts:
+keira:/# sh /etc/init.sh
+[KFS] Initializing userland system environment...
+/
+[SYSINFO] Keira System Telemetry & Hardware Report
+...
+[KFS] System initialization sequence completed.
 ```
 
-### Direct `$PATH` Execution
+### Direct `$PATH` & Shebang Script Execution
 
-Users can invoke `sh` or `sh.elf` directly from the supervisor prompt without typing `run`:
+Users can invoke `sh` or `sh.elf` directly from the supervisor prompt without typing `run` and execute `.sh` scripts directly via shebang:
 
 ```bash
 # Direct binary execution:
 keira:/# sh.elf -c help
-Keira Userspace Shell (sh)
-Built-in commands:
-  cd [dir]       - Change current working directory
-  pwd            - Print current working directory
-  echo [args]    - Print arguments to standard output
-  export [k=v]   - Set or list environment variables
-  clear          - Clear terminal screen
-  help           - Display this help message
-  exit [code]    - Exit shell
+Keira Standalone Userspace Shell (sh v0.7.0)
+Built-in Commands:
+  cd [dir]       Change current working directory
+  pwd            Print working directory
+  echo [args]    Display text or environment variables
+  export [K=V]   Set environment variable
+  clear          Clear console screen
+  help           Display this reference manual
+  exit [code]    Exit userspace shell
+
+# Direct shebang script execution:
+keira:/# demo.sh
+Executing script: /bin/demo.sh
+[DEMO] Shebang execution active via /bin/sh
+[DEMO] Current directory:
+/
+[DEMO] Demonstration completed successfully.
 ```
 
 ---
@@ -81,3 +97,4 @@ Built-in commands:
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding `libc.a` (`<stdio.h>`, `<stdlib.h>`, `<string.h>`, `<unistd.h>`, `<sys/wait.h>`)
 - **System Calls**: `sys_open`, `sys_close`, `sys_read`, `sys_write`, `sys_fork`, `sys_execve`, `sys_waitpid`, `sys_chdir`, `sys_getcwd` and `sys_exit`
+- **Script Engine**: Supports `#!/bin/sh` shebang headers, `#` comment filtering and line-by-line sequential command dispatch
