@@ -17,7 +17,6 @@ use keira_io::vga;
 static mut RAW_BUF: [u8; 32768] = [0u8; 32768];
 static mut STAGED_BUF: [u8; 32768] = [0u8; 32768];
 static mut LIB_BUF: [u8; 8192] = [0u8; 8192];
-static mut ELF_BUF: [u8; 32768] = [0u8; 32768];
 
 /// Execute the 'kcc' C compiler command from the interactive shell.
 pub fn run(parts: &mut SplitWhitespace) {
@@ -159,20 +158,26 @@ pub fn run(parts: &mut SplitWhitespace) {
         }
     }
 
-    // 3. Stage source code to /tmp/main.c for KCC compiler engine
-    let stage_res = unsafe {
-        let _ = keira_fs::fat::remove_entry("/tmp/main.c");
-        let _ = keira_fs::fat::create_file("/tmp/main.c");
-        keira_fs::fat::write_file_content("/tmp/main.c", &STAGED_BUF[..staged_len])
-    };
+    // 3. Stage source code to /tmp/main.c if needed
+    if src != "/tmp/main.c" || staged_len > read_len {
+        let stage_res = unsafe {
+            let _ = keira_fs::fat::remove_entry("/tmp/main.c");
+            let _ = keira_fs::fat::create_file("/tmp/main.c");
+            keira_fs::fat::write_file_content("/tmp/main.c", &STAGED_BUF[..staged_len])
+        };
 
-    if let Err(e) = stage_res {
-        vga::set_color(vga::Color::LightRed, vga::Color::Black);
-        vga::print_str("kcc: error staging compilation buffer: ");
-        vga::print_str(e);
-        vga::print_str("\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        return;
+        if let Err(e) = stage_res {
+            vga::set_color(vga::Color::LightRed, vga::Color::Black);
+            vga::print_str("kcc: error staging compilation buffer: ");
+            vga::print_str(e);
+            vga::print_str("\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            return;
+        }
+
+        unsafe {
+            keira_fs::fat::clear_cache();
+        }
     }
 
     vga::set_color(vga::Color::White, vga::Color::Black);
@@ -183,47 +188,20 @@ pub fn run(parts: &mut SplitWhitespace) {
     vga::print_str("\n");
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-    // 4. Delete old app.elf and run compiler in Ring 3
-    unsafe {
-        let _ = keira_fs::fat::remove_entry("/bin/app.elf");
-    }
-
-    if !crate::cmds::proc::run::run_direct("/bin/kcc.elf") {
+    // 4. Run compiler in Ring 3
+    let kcc_args = ["kcc", "/tmp/main.c", "-o", output_file];
+    if !crate::cmds::proc::run::run_direct_with_args("/bin/kcc.elf", &kcc_args) {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("kcc: error: compiler binary /bin/kcc.elf not found\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }
 
-    // 5. If a custom output path was requested, copy from /bin/app.elf to target
-    if output_file != "/bin/app.elf" {
-        unsafe {
-            match keira_fs::fat::read_file_content("/bin/app.elf", &mut ELF_BUF) {
-                Ok(elf_len) => {
-                    let _ = keira_fs::fat::remove_entry(output_file);
-                    let _ = keira_fs::fat::create_file(output_file);
-                    if let Err(e) =
-                        keira_fs::fat::write_file_content(output_file, &ELF_BUF[..elf_len])
-                    {
-                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                        vga::print_str("kcc: failed writing output binary: ");
-                        vga::print_str(e);
-                        vga::print_str("\n");
-                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                        return;
-                    }
-                }
-                Err(e) => {
-                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                    vga::print_str("kcc: compilation failed to generate binary: ");
-                    vga::print_str(e);
-                    vga::print_str("\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                    return;
-                }
-            }
-        }
-    } else if !keira_fs::vfs::exists("/bin/app.elf") {
+    unsafe {
+        keira_fs::fat::clear_cache();
+    }
+
+    if !keira_fs::vfs::exists(output_file) {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("kcc: compilation failed to generate binary\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
