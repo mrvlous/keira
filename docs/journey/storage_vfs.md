@@ -72,6 +72,7 @@ Cluster Size:  2048 bytes (4 sectors)
 Reserved Secs: 4
 Root Directory: 512 entries (start sector: 132)
 LRU Cache:     5/16 slots (Hits: 1, Misses: 5, Evictions: 0, Hit Ratio: 16%)
+Page Cache:    3/32 pages (Hits: 8, Misses: 3, Evictions: 0, Writebacks: 0, Hit Ratio: 72%)
 
 keira:/# list /etc
 Directory of IDE disk:
