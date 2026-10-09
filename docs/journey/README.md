@@ -28,6 +28,7 @@ graph TD
     M16 --> M17["17. Unified Page Cache & Buffer Management<br/><i>4 KiB Page Cache, Dirty Tracking, VFS/PMM Integration</i>"]
     M17 --> M18["18. Linux-Grade Loopback lo Interface & Sockets<br/><i>127.0.0.1/8, In-Memory Zero-Copy Reflection, 65536 MTU</i>"]
     M18 --> M19["19. Pure Kernel Architecture & Canonical Userspace Init<br/><i>OS String Purge, PID 1 Ring 3 Init, keira-kernel.org</i>"]
+    M19 --> M20["20. Standalone Userspace Shell & Direct PATH Execution<br/><i>Ring 3 /bin/sh.elf, $PATH Resolution, Linux Parity</i>"]
 ```
 
 ---
@@ -55,6 +56,7 @@ graph TD
 | **Milestone 17** | [`page_cache_v070.md`](page_cache_v070.md) | `v0.7.0` | 4 KiB unified page cache, dynamic buffer management, dirty page writeback and telemetry |
 | **Milestone 18** | [`loopback_v070.md`](loopback_v070.md) | `v0.7.0` | Linux-grade loopback (`lo`) adapter, 127.0.0.1/8 local IPC reflection and zero-NIC socket routing |
 | **Milestone 19** | [`pure_kernel_v070.md`](pure_kernel_v070.md) | `v0.7.0` | Pure freestanding Ring 0 kernel architecture, complete OS purge, canonical userspace init (PID 1) and supervisor handover |
+| **Milestone 20** | [`sh_userspace_v070.md`](sh_userspace_v070.md) | `v0.7.0` | Standalone Ring 3 POSIX shell (`/bin/sh.elf`), direct supervisor `$PATH` execution, multi-token `-c` string parsing and userspace parity |
 
 ---
 
