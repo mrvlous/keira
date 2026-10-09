@@ -14,6 +14,19 @@ use keira_shell as shell;
 
 /// Launch interactive terminal session and enter the primary kernel event loop.
 pub fn enter_main_loop() -> ! {
+    // Attempt to launch canonical userspace init (PID 1) in Ring 3 if present
+    unsafe {
+        if keira_fs::exists("/bin/init.elf") || keira_fs::exists("/bin/init") {
+            let init_path = if keira_fs::exists("/bin/init.elf") {
+                "/bin/init.elf"
+            } else {
+                "/bin/init"
+            };
+
+            let _ = shell::run_user_program(init_path, &[init_path]);
+        }
+    }
+
     vga::init();
 
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
