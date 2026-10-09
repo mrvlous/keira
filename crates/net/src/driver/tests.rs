@@ -49,7 +49,7 @@ fn test_loopback_constants_and_address_predicates() {
     assert!(is_loopback_str("127.0.1.1"));
     assert!(is_loopback_str("localhost"));
     assert!(!is_loopback_str("8.8.8.8"));
-    assert!(!is_loopback_str("keira-os.org"));
+    assert!(!is_loopback_str("keira-kernel.org"));
 }
 
 #[test]
