@@ -144,7 +144,11 @@ INIT_ELF        := $(BIN_DIR)/init.elf
 INIT_SRCS       := $(shell find $(USER_DIR)/bin/init -type f -name "*.c" 2>/dev/null)
 INIT_OBJS       := $(patsubst $(USER_DIR)/bin/init/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/init/%.o,$(INIT_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF)
+SH_ELF          := $(BIN_DIR)/sh.elf
+SH_SRCS         := $(shell find $(USER_DIR)/bin/sh -type f -name "*.c" 2>/dev/null)
+SH_OBJS         := $(patsubst $(USER_DIR)/bin/sh/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/sh/%.o,$(SH_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -194,7 +198,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 .DEFAULT_GOAL   := all
 
 # Toolchain preflight dependency guards
-preflight: ## Validate presence of all essential build, packaging, and filesystem utilities
+preflight: ## Validate presence of all essential build, packaging and filesystem utilities
 	@MISSING=""; \
 	for tool in $(ASM) $(CC) $(LD) $(CARGO) rustc $(GRUB_MKRESCUE) xorriso mkfs.fat mmd mcopy tar dd; do \
 	    if ! command -v $$tool >/dev/null 2>&1; then \
@@ -277,7 +281,7 @@ preflight-lint: ## Validate presence of static analysis utilities
 	fi
 
 # Primary build targets
-all: preflight $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image, and FAT16 disk image for current ARCH
+all: preflight $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image and FAT16 disk image for current ARCH
 
 full: preflight ## Build kernel and ISO images for all supported architectures (x86_64 & i686)
 	@$(LOG_INFO) "Building Keira for all architectures (x86_64 & i686)..."
@@ -405,6 +409,16 @@ $(INIT_ELF): $(USER_CRT_OBJ) $(INIT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) |
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(INIT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(INIT_ELF)
 	@$(LOG_DONE) "$(INIT_ELF) ready"
 
+# Userland canonical standalone shell (sh.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/sh/%.o: $(USER_DIR)/bin/sh/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(SH_ELF): $(USER_CRT_OBJ) $(SH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: sh ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SH_ELF)
+	@$(LOG_DONE) "$(SH_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -425,6 +439,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(TEST_THREADS_ELF) $(FS_ROOT)/bin/test_threads.elf
 	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init.elf
 	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init
+	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh.elf
+	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
 	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/include/common.h
@@ -502,7 +518,7 @@ test-all: preflight-qemu ## Run automated headless smoke tests on all architectu
 	$(Q)$(MAKE) ARCH=i686 test
 	@$(LOG_DONE) "All architecture tests completed successfully"
 
-# Code hygiene, formatting, and linting
+# Code hygiene, formatting and linting
 clean: ## Remove build directory and compiled artifacts
 	@$(LOG_INFO) "Cleaning build artifacts..."
 	$(Q)rm -rf $(BUILD_ROOT)
