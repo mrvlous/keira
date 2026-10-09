@@ -29,6 +29,7 @@ graph TD
     M17 --> M18["18. Linux-Grade Loopback lo Interface & Sockets<br/><i>127.0.0.1/8, In-Memory Zero-Copy Reflection, 65536 MTU</i>"]
     M18 --> M19["19. Pure Kernel Architecture & Canonical Userspace Init<br/><i>OS String Purge, PID 1 Ring 3 Init, keira-kernel.org</i>"]
     M19 --> M20["20. Standalone Userspace Shell & Direct PATH Execution<br/><i>Ring 3 /bin/sh.elf, $PATH Resolution, Linux Parity</i>"]
+    M20 --> M21["21. Canonical Shell Script Execution & Kernel Shebang Support<br/><i>Shebang (#!), /bin/sh Runner, Direct .sh Invocation, /etc/init.sh</i>"]
 ```
 
 ---
@@ -57,6 +58,7 @@ graph TD
 | **Milestone 18** | [`loopback_v070.md`](loopback_v070.md) | `v0.7.0` | Linux-grade loopback (`lo`) adapter, 127.0.0.1/8 local IPC reflection and zero-NIC socket routing |
 | **Milestone 19** | [`pure_kernel_v070.md`](pure_kernel_v070.md) | `v0.7.0` | Pure freestanding Ring 0 kernel architecture, complete OS purge, canonical userspace init (PID 1) and supervisor handover |
 | **Milestone 20** | [`sh_userspace_v070.md`](sh_userspace_v070.md) | `v0.7.0` | Standalone Ring 3 POSIX shell (`/bin/sh.elf`), direct supervisor `$PATH` execution, multi-token `-c` string parsing and userspace parity |
+| **Milestone 21** | [`script_shebang_v070.md`](script_shebang_v070.md) | `v0.7.0` | Canonical shell script execution, kernel shebang (`#!`) interpreter recognition, userspace script runner and `/etc/init.sh` system bootstrap |
 
 ---
 
