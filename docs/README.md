@@ -10,7 +10,7 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 
 ## The Learning Journey
 
-* **[The Keira Learning Journey](journey/README.md)**: The engineering journal, design philosophy, and step-by-step milestones (from CPU bootstrap and bare-metal networking to userland C compilers, security enclaves, and v0.6.0 multi-threading release).
+* **[The Keira Learning Journey](journey/README.md)**: The engineering journal, design philosophy and step-by-step milestones (from CPU bootstrap and bare-metal networking to userland C compilers, security enclaves and v0.7.0 standalone userspace shell).
 
 ---
 
@@ -18,7 +18,7 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 
 | Domain Module | Path | Description |
 | :--- | :--- | :--- |
-| **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 19 |
+| **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 20 |
 | **Kernel Core** | [`kernel/`](kernel/README.md) | Multiboot2, SMP bootstrap trampolines, GDT, TSS, IDT, Local/IO-APIC, HPET, ACPI and panic |
 | **Memory** | [`memory/`](memory/README.md) | Physical frame allocator (PMM), 4-level paging (VMM), heap, DMA and swap |
 | **Task & Scheduling** | [`task/`](task/README.md) | Preemptive scheduler, context switching, task descriptors, cgroups and signals |
@@ -28,6 +28,6 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, PCI/USB and TTYs |
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3 and firewall |
 | **Cryptography** | [`crypto/`](crypto/README.md) | SHA-256, AES-128-GCM, Curve25519, TPM 2.0 enclave, Seccomp BPF and MAC |
-| **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete, history and 77 built-in commands |
+| **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete, history and 78 built-in commands |
 | **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, in-kernel KCC compiler, dynamic ELF loader and multi-user |
 | **Contributor Guide** | [`contributing/`](contributing/README.md) | Environment setup, build targets, coding style, testing and debugging |
