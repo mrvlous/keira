@@ -140,7 +140,11 @@ TEST_THREADS_ELF := $(BIN_DIR)/test_threads.elf
 TEST_THREADS_SRCS := $(shell find $(USER_DIR)/bin/test_threads -type f -name "*.c" 2>/dev/null)
 TEST_THREADS_OBJS := $(patsubst $(USER_DIR)/bin/test_threads/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/test_threads/%.o,$(TEST_THREADS_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF)
+INIT_ELF        := $(BIN_DIR)/init.elf
+INIT_SRCS       := $(shell find $(USER_DIR)/bin/init -type f -name "*.c" 2>/dev/null)
+INIT_OBJS       := $(patsubst $(USER_DIR)/bin/init/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/init/%.o,$(INIT_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -391,6 +395,16 @@ $(TEST_THREADS_ELF): $(USER_CRT_OBJ) $(TEST_THREADS_OBJS) $(USER_LIBC_A) $(USER_
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TEST_THREADS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TEST_THREADS_ELF)
 	@$(LOG_DONE) "$(TEST_THREADS_ELF) ready"
 
+# Userland canonical init system (init.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/init/%.o: $(USER_DIR)/bin/init/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(INIT_ELF): $(USER_CRT_OBJ) $(INIT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: init ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(INIT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(INIT_ELF)
+	@$(LOG_DONE) "$(INIT_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -409,6 +423,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/bin/test_abi.elf
 	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/bin/fuzz_abi.elf
 	$(Q)cp $(TEST_THREADS_ELF) $(FS_ROOT)/bin/test_threads.elf
+	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init.elf
+	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
 	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/include/common.h
