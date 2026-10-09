@@ -112,3 +112,14 @@ fn test_sys_init() {
     args.next();
     init::run(&mut args);
 }
+
+#[test]
+fn test_sys_sh() {
+    let mut args = "sh --help".split_whitespace();
+    args.next();
+    sh::run(&mut args);
+
+    let mut args = "sh -c pwd".split_whitespace();
+    args.next();
+    sh::run(&mut args);
+}

@@ -106,6 +106,7 @@ fn test_all_shell_commands_dispatch() {
         "raid --help",
         "firewall --help",
         "kcc --help",
+        "sh --help",
     ];
 
     for cmd in help_commands {
@@ -166,6 +167,7 @@ fn test_all_shell_commands_default_invocation() {
         "kcc",
         "power",
         "sync",
+        "sh",
     ];
 
     for cmd in default_commands {
