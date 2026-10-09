@@ -82,7 +82,7 @@ fn format_fat16(device: &dyn BlockDevice) -> Result<(), &'static str> {
     boot_sec[0] = 0xEB;
     boot_sec[1] = 0x3C;
     boot_sec[2] = 0x90;
-    boot_sec[3..11].copy_from_slice(b"KEIRAOS ");
+    boot_sec[3..11].copy_from_slice(b"KEIRAKRN");
     boot_sec[11] = 0x00;
     boot_sec[12] = 0x02;
     boot_sec[13] = sectors_per_cluster;
