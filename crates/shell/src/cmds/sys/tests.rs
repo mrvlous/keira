@@ -101,3 +101,14 @@ fn test_sys_unwind() {
     args.next();
     unwind::run(&mut args);
 }
+
+#[test]
+fn test_sys_init() {
+    let mut args = "init --help".split_whitespace();
+    args.next();
+    init::run(&mut args);
+
+    let mut args = "init".split_whitespace();
+    args.next();
+    init::run(&mut args);
+}
