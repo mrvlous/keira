@@ -38,7 +38,7 @@ use keira_task::stack::*;
 /// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
 ///
 /// # Safety
-/// Loads binary into userland pages, alters task break, sets up stack, and drops privilege to Ring 3.
+/// Loads binary into userland pages, alters task break, sets up stack and drops privilege to Ring 3.
 pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
     #[cfg(target_arch = "x86")]
     {
@@ -257,6 +257,22 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
 pub fn run_direct(arg: &str) -> bool {
     let args = [arg];
     run_direct_with_args(arg, &args)
+}
+
+/// Execute a binary directly with argument tokens passed from the shell command line.
+pub fn run_direct_with_parts(command: &str, parts: &mut core::str::SplitWhitespace) -> bool {
+    let mut args_buf: [&str; 16] = [""; 16];
+    args_buf[0] = command;
+    let mut arg_count = 1;
+
+    for part in parts {
+        if arg_count < 16 {
+            args_buf[arg_count] = part;
+            arg_count += 1;
+        }
+    }
+
+    run_direct_with_args(command, &args_buf[..arg_count])
 }
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {

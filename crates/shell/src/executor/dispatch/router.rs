@@ -94,8 +94,9 @@ pub fn execute_command_inner(cmd: &str) {
         "raid" => crate::cmds::raid::run(&mut parts),
         "firewall" => crate::cmds::firewall::run(&mut parts),
         "kcc" => crate::cmds::proc::kcc::run(&mut parts),
+        "sh" => crate::cmds::sh::run(&mut parts),
         _ => {
-            if crate::cmds::run::run_direct(command) {
+            if crate::cmds::run::run_direct_with_parts(command, &mut parts) {
                 return;
             }
 
