@@ -19,7 +19,7 @@ The `sys` command suite provides inspection, telemetry, power management and har
 | `power` | `power [status\|shutdown]` | Query ACPI S0-S5 states, motherboard MADT topology or soft-off power down | `-h, --help` |
 | `reset` | `reset` | Reboot kernel and motherboard via PS/2 controller pulse | `-h, --help` |
 | `runtime` | `runtime` | Display kernel uptime and total timer interrupts processed | `-h, --help` |
-| `sh` | `sh [-c command]` | Launch or execute command in canonical Ring 3 userspace shell | `-c <cmd>`: Execute string non-interactively and exit<br>`-h, --help`: Usage info |
+| `sh` | `sh [-c command] [script_file]` | Launch interactive shell, execute command string or run shell script file | `-c <cmd>`: Execute string non-interactively and exit<br>`-h, --help`: Usage info |
 | `smp` | `smp` | Inspect multi-core APIC topology and secondary processor status | `-h, --help` |
 | `swap` | `swap` | Query disk-backed virtual memory paging partition status | `-h, --help` |
 | `syslog` | `syslog` | Read kernel circular ring buffer diagnostic log (`dmesg`) | `-h, --help` |
