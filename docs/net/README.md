@@ -19,7 +19,7 @@ graph TD
     UDP --> IP
     IP --> Filter["filter/firewall.md<br/>Stateful Firewall & eBPF"]
     Filter --> Link["link/ethernet.md<br/>Ethernet II & ARP"]
-    Link --> Drivers["driver/e1000.md<br/>e1000 & RTL8139 NICs"]
+    Link --> Drivers["driver/e1000.md<br/>e1000, RTL8139, VirtIO & Loopback lo"]
 ```
 
 ---
@@ -29,9 +29,9 @@ graph TD
 | Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
 | [`link/`](link/README.md) | Data Link Layer | Ethernet II framing and ARP cache resolution |
-| [`network/`](network/README.md) | Network Layer | IPv4 packet handling, routing, and ICMP echo |
+| [`network/`](network/README.md) | Network Layer | IPv4 packet handling, routing and ICMP echo |
 | [`transport/`](transport/README.md) | Transport Layer | UDP datagrams and stateful TCP connection engine |
-| [`app/`](app/README.md) | Application Layer | DHCP network auto-config, DNS resolver, and native TLS 1.3 |
-| [`socket/`](socket/README.md) | Socket Layer | BSD socket descriptor table, handle abstraction |
-| [`driver/`](driver/README.md) | Network Drivers | Intel e1000, Realtek RTL8139, and VirtIO-Net drivers |
+| [`app/`](app/README.md) | Application Layer | DHCP network auto-config, DNS resolver and native TLS 1.3 |
+| [`socket/`](socket/README.md) | Socket Layer | BSD socket descriptor table, handle abstraction and loopback reflection |
+| [`driver/`](driver/README.md) | Network Drivers | Intel e1000, Realtek RTL8139, VirtIO-Net and virtual Loopback (`lo`) |
 | [`filter/`](filter/README.md) | Packet Filtering | Stateful packet inspection firewall and in-kernel eBPF |
