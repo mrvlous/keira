@@ -10,6 +10,7 @@
 //! Network interface device drivers (Intel e1000, Realtek RTL8139, VirtIO-Net).
 
 pub mod e1000;
+pub mod loopback;
 pub mod rtl8139;
 pub mod virtio;
 
@@ -21,6 +22,11 @@ mod tests;
 pub use e1000::{
     init as e1000_init, receive_raw_frame, transmit_raw_frame, E1000RxDesc, E1000TxDesc,
     E1000_FOUND, E1000_IO_BASE, E1000_MAC, E1000_MEM_BASE, PACKETS_RECEIVED, PACKETS_SENT,
+};
+pub use loopback::{
+    get_loopback_stats, is_loopback_addr, is_loopback_str, reset_loopback_stats,
+    send_loopback_ping, transmit_loopback_packet, LOOPBACK_BYTES, LOOPBACK_IP, LOOPBACK_MAC,
+    LOOPBACK_MTU, LOOPBACK_NAME, LOOPBACK_NETMASK, LOOPBACK_RX_PACKETS, LOOPBACK_TX_PACKETS,
 };
 pub use rtl8139::{Rtl8139Device, RTL8139_DEVICE_ID, RTL8139_VENDOR_ID};
 pub use virtio::{VirtioNetDevice, VIRTIO_NET_DEVICE_ID, VIRTIO_NET_VENDOR_ID};

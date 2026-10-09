@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Network stack (Ethernet, ARP, IPv4, ICMP, UDP, DHCP, DNS, TCP, Sockets, TLS 1.3, Netfilter, eBPF).
+//! Network stack (Ethernet, ARP, IPv4, ICMP, UDP, DHCP, DNS, TCP, Sockets, TLS 1.3, Netfilter, eBPF and Loopback).
 
 #![no_std]
 #![allow(static_mut_refs)]
@@ -39,6 +39,11 @@ pub use dns::resolver::{
 pub use driver::e1000::{
     self, init as e1000_init, receive_raw_frame, transmit_raw_frame, E1000RxDesc, E1000TxDesc,
     E1000_FOUND, E1000_IO_BASE, E1000_MAC, E1000_MEM_BASE, PACKETS_RECEIVED, PACKETS_SENT,
+};
+pub use driver::loopback::{
+    get_loopback_stats, is_loopback_addr, is_loopback_str, reset_loopback_stats,
+    send_loopback_ping, transmit_loopback_packet, LOOPBACK_BYTES, LOOPBACK_IP, LOOPBACK_MAC,
+    LOOPBACK_MTU, LOOPBACK_NAME, LOOPBACK_NETMASK, LOOPBACK_RX_PACKETS, LOOPBACK_TX_PACKETS,
 };
 pub use driver::rtl8139::{self as rtl8139, Rtl8139Device, RTL8139_DEVICE_ID, RTL8139_VENDOR_ID};
 pub use driver::virtio_net::{
