@@ -66,6 +66,7 @@ keira:/# network
 INTERFACE  MAC ADDRESS        STATUS       IP ADDRESS        PACKETS (TX/RX)
 ---------  -----------        ------       ----------        ---------------
 eth0       52:54:00:12:34:56  UP (e1000)   10.0.2.15 (NAT)   0/0
+lo         00:00:00:00:00:00  UP (loop)    127.0.0.1/8       0/0
 
 keira:/# fetch http://icanhazip.com/
 103.160.68.245

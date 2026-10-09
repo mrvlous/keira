@@ -26,6 +26,7 @@ graph TD
     M14 --> M15["15. Userland Multi-Threading & v0.6.0 Release<br/><i>clone Syscall, CLONE_VM, Thread Groups, POSIX Pthreads</i>"]
     M15 --> M16["16. Canonical UNIX FHS & Root Control Plane<br/><i>FHS Namespace, Root Prompt keira:/#, Pure Ring 0</i>"]
     M16 --> M17["17. Unified Page Cache & Buffer Management<br/><i>4 KiB Page Cache, Dirty Tracking, VFS/PMM Integration</i>"]
+    M17 --> M18["18. Linux-Grade Loopback lo Interface & Sockets<br/><i>127.0.0.1/8, In-Memory Zero-Copy Reflection, 65536 MTU</i>"]
 ```
 
 ---
@@ -51,6 +52,7 @@ graph TD
 | **Milestone 15** | [`multithreading_v060.md`](multithreading_v060.md) | `v0.6.0` | Userland multi-threading, clone syscall with CLONE_VM/CLONE_THREAD and freestanding POSIX pthreads |
 | **Milestone 16** | [`canonical_fhs_v070.md`](canonical_fhs_v070.md) | `v0.7.0` | Canonical UNIX FHS namespace, removal of legacy prefixes and root prompt `keira:/# ` |
 | **Milestone 17** | [`page_cache_v070.md`](page_cache_v070.md) | `v0.7.0` | 4 KiB unified page cache, dynamic buffer management, dirty page writeback and telemetry |
+| **Milestone 18** | [`loopback_v070.md`](loopback_v070.md) | `v0.7.0` | Linux-grade loopback (`lo`) adapter, 127.0.0.1/8 local IPC reflection and zero-NIC socket routing |
 
 ---
 
