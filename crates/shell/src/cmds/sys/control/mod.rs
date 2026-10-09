@@ -7,8 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System power management, machine reboot, cache sync, and runtime telemetry commands.
+//! System power management, machine reboot, cache sync, init and runtime telemetry commands.
 
+pub mod init;
 pub mod power;
 pub mod reset;
 pub mod runtime;

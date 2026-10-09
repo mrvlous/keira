@@ -43,6 +43,7 @@ pub const COMMANDS_LIST: &[&str] = &[
     "history",
     "hostname",
     "https",
+    "init",
     "initrd",
     "jobs",
     "kcc",
