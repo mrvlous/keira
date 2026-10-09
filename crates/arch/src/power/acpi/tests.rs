@@ -51,7 +51,7 @@ fn test_parse_madt_synthetic_table() {
     madt_bytes[8] = 1; // Revision
     madt_bytes[9] = 0; // Checksum placeholder
     madt_bytes[10..16].copy_from_slice(b"KEIRA ");
-    madt_bytes[16..24].copy_from_slice(b"KEIRAOS ");
+    madt_bytes[16..24].copy_from_slice(b"KEIRAKRN");
     // Local APIC address = 0xFEE00000
     madt_bytes[36..40].copy_from_slice(&(0xFEE0_0000u32.to_le_bytes()));
     madt_bytes[40..44].copy_from_slice(&(1u32.to_le_bytes())); // PCAT_COMPAT
