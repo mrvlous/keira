@@ -78,5 +78,25 @@ pub unsafe fn print_disk_info() {
     vga::print_str(", Hit Ratio: ");
     vga::print_u64(hit_rate);
     vga::print_str("%)\n");
+
+    let (p_hits, p_misses, p_evictions, p_writebacks, p_active) =
+        crate::cache::get_page_cache_stats();
+    let p_total = p_hits + p_misses;
+    let p_hit_rate = (p_hits * 100).checked_div(p_total).unwrap_or(0);
+    vga::set_color(vga::Color::White, vga::Color::Black);
+    vga::print_str("Page Cache:     ");
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+    vga::print_u64(p_active as u64);
+    vga::print_str("/32 pages (Hits: ");
+    vga::print_u64(p_hits);
+    vga::print_str(", Misses: ");
+    vga::print_u64(p_misses);
+    vga::print_str(", Evictions: ");
+    vga::print_u64(p_evictions);
+    vga::print_str(", Writebacks: ");
+    vga::print_u64(p_writebacks);
+    vga::print_str(", Hit Ratio: ");
+    vga::print_u64(p_hit_rate);
+    vga::print_str("%)\n");
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 }
