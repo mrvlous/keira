@@ -145,6 +145,13 @@ pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &
     entry.file_size = content.len() as u32;
     write_sector(found_sector, &sector_data)?;
 
+    if old_first_cluster != 0 {
+        crate::cache::invalidate_inode(0, old_first_cluster as u32);
+    }
+    if first_cluster != 0 {
+        crate::cache::invalidate_inode(0, first_cluster as u32);
+    }
+
     Ok(())
 }
 
