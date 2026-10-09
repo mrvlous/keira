@@ -154,14 +154,16 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             Some("ping") => {
                 let target = args.second_positional().unwrap_or("8.8.8.8");
 
-                e1000::init();
-                if !e1000::E1000_FOUND {
-                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                    vga::print_str(
-                        "Ping Error: Network interface eth0 is offline (No e1000 NIC detected).\n",
-                    );
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                    return;
+                if !keira_net::is_loopback_str(target) {
+                    e1000::init();
+                    if !e1000::E1000_FOUND {
+                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                        vga::print_str(
+                            "Ping Error: Network interface eth0 is offline (No e1000 NIC detected).\n",
+                        );
+                        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                        return;
+                    }
                 }
                 vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("PING ");
@@ -224,12 +226,36 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
                 vga::print_u64(e1000::PACKETS_RECEIVED);
                 vga::print_str("\n");
 
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::print_str("lo         00:00:00:00:00:00  ");
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("UP (loop)   ");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::print_str("127.0.0.1/8     ");
+                let (lo_tx, lo_rx, lo_bytes) = keira_net::get_loopback_stats();
+                vga::print_u64(lo_tx);
+                vga::print_str("/");
+                vga::print_u64(lo_rx);
+                vga::print_str("\n");
+
                 if args.has_flag('s', "stats") {
                     vga::print_str("\nInterface eth0 Extended Statistics:\n");
                     vga::print_str("  Driver           : Intel 82540EM Gigabit Ethernet (e1000)\n");
                     vga::print_str("  MTU              : 1500 bytes\n");
                     vga::print_str("  Link Speed       : 1000 Mbps Full Duplex\n");
                     vga::print_str("  Ring Buffer Size : 8 TX Descriptors, 32 RX Descriptors\n");
+
+                    vga::print_str("\nInterface lo Extended Statistics:\n");
+                    vga::print_str("  Driver           : Virtual Loopback (lo)\n");
+                    vga::print_str("  MTU              : 65536 bytes\n");
+                    vga::print_str("  Link Speed       : In-Memory Virtual Bus\n");
+                    vga::print_str("  TX/RX Packets    : ");
+                    vga::print_u64(lo_tx);
+                    vga::print_str(" TX / ");
+                    vga::print_u64(lo_rx);
+                    vga::print_str(" RX (");
+                    vga::print_u64(lo_bytes);
+                    vga::print_str(" bytes)\n");
                 }
 
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
