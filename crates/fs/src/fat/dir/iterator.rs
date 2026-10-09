@@ -88,11 +88,7 @@ where
         let entries = sector_data.as_ptr() as *const DirectoryEntry;
         for i in 0..16 {
             let entry = &*entries.add(i);
-            if entry.name[0] == 0x00 {
-                lfn_accum.reset();
-                return Ok(false);
-            }
-            if entry.name[0] == 0xE5 {
+            if entry.name[0] == 0x00 || entry.name[0] == 0xE5 {
                 lfn_accum.reset();
                 continue;
             }
