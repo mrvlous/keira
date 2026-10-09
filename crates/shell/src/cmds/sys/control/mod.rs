@@ -13,4 +13,5 @@ pub mod init;
 pub mod power;
 pub mod reset;
 pub mod runtime;
+pub mod sh;
 pub mod sync;

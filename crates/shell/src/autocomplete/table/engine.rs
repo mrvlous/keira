@@ -67,6 +67,7 @@ pub const COMMANDS_LIST: &[&str] = &[
     "runtime",
     "search",
     "seccomp",
+    "sh",
     "smp",
     "stop",
     "swap",

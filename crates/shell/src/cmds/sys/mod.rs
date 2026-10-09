@@ -16,6 +16,6 @@ pub mod info;
 #[cfg(test)]
 mod tests;
 
-pub use control::{init, power, reset, runtime, sync};
+pub use control::{init, power, reset, runtime, sh, sync};
 pub use daemon::{syslog, watchpoint};
 pub use info::{cpu, hostname, memory, smp, system, time, unwind};
