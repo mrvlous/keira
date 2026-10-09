@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Interactive system shell, text editor, tab auto-completion, and native commands.
+//! Interactive system shell, text editor, tab auto-completion and native commands.
 
 #![no_std]
 #![allow(static_mut_refs)]
@@ -26,6 +26,7 @@ mod tests;
 
 pub use args::{CliArgs, MAX_ARG_TOKENS};
 pub use autocomplete::handle_autocomplete;
+pub use cmds::proc::task::run::run_user_program;
 pub use editor::{editor_handle_keypress, editor_redraw, editor_save_file, editor_start};
 pub use executor::{
     execute_command, execute_command_inner, execute_pipeline, execute_with_redirection,
