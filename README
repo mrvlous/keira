@@ -10,9 +10,9 @@ resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
 Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 81 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
-initrd, Ring 3 userland isolation with 45+ verified ABI security test vectors,
+initrd, canonical userspace init (PID 1, init.elf), Ring 3 userland isolation with 45+ verified ABI security test vectors,
 bare-metal io_uring asynchronous I/O engine, High-Precision Event Timer
-(HPET) monotonic clocks, an interactive 76-command diagnostic shell and an in-kernel C compiler (kcc.elf).
+(HPET) monotonic clocks, an interactive 77-command diagnostic shell and an in-kernel C compiler (kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
@@ -28,7 +28,8 @@ of computer systems:
 * Storage & Filesystems: ATA, AHCI, NVMe, FAT16, block LRU cache and VFS.
 * Asynchronous I/O: Bare-metal io_uring submission/completion queue engine.
 * Security Enclaves: TPM 2.0 TIS MMIO, PCR banks, Seccomp BPF, MAC and in-kernel eBPF virtual machine.
-* Kernel Control Plane: Interactive Ring 0 diagnostic shell with 76 built-in commands, hardware telemetry and VFS management.
+* Pure Kernel Architecture: Canonical Ring 3 userspace init (PID 1) and clean abstraction for future distributions.
+* Kernel Control Plane: Interactive Ring 0 diagnostic shell with 77 built-in commands, hardware telemetry and VFS management.
 
 Read the detailed engineering journal: docs/journey/README.md
 
