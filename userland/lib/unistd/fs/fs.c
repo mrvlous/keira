@@ -9,9 +9,24 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stddef.h>
 #include <syscall.h>
 #include <unistd.h>
+
+int access(const char *pathname, int mode) {
+    (void)mode;
+    if (!pathname) {
+        errno = EINVAL;
+        return -1;
+    }
+    int fd = open(pathname, O_RDONLY, 0);
+    if (fd < 0) {
+        return -1;
+    }
+    close(fd);
+    return 0;
+}
 
 int unlink(const char *pathname) {
     (void)pathname;
