@@ -32,8 +32,14 @@ pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
         let handler = get_signal_handler(pid, sig);
         if handler != 0 {
             if task.saved_sigcontext.is_none() {
+                #[cfg(target_arch = "x86_64")]
                 let saved_ctx = InterruptContext {
                     rip: task.rsp,
+                    ..Default::default()
+                };
+                #[cfg(target_arch = "x86")]
+                let saved_ctx = InterruptContext {
+                    rip: task.rsp as u32,
                     ..Default::default()
                 };
                 task.saved_sigcontext = Some(saved_ctx);

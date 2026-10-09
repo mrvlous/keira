@@ -48,27 +48,48 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
     let context_ptr =
         (stack_top - core::mem::size_of::<InterruptContext>() as u64) as *mut InterruptContext;
 
-    (*context_ptr).r15 = 0;
-    (*context_ptr).r14 = 0;
-    (*context_ptr).r13 = 0;
-    (*context_ptr).r12 = 0;
-    (*context_ptr).r11 = 0;
-    (*context_ptr).r10 = 0;
-    (*context_ptr).r9 = 0;
-    (*context_ptr).r8 = 0;
-    (*context_ptr).rdi = 0;
-    (*context_ptr).rsi = 0;
-    (*context_ptr).rbp = 0;
-    (*context_ptr).rbx = 0;
-    (*context_ptr).rdx = 0;
-    (*context_ptr).rcx = 0;
-    (*context_ptr).rax = 0;
+    #[cfg(target_arch = "x86_64")]
+    {
+        (*context_ptr).r15 = 0;
+        (*context_ptr).r14 = 0;
+        (*context_ptr).r13 = 0;
+        (*context_ptr).r12 = 0;
+        (*context_ptr).r11 = 0;
+        (*context_ptr).r10 = 0;
+        (*context_ptr).r9 = 0;
+        (*context_ptr).r8 = 0;
+        (*context_ptr).rdi = 0;
+        (*context_ptr).rsi = 0;
+        (*context_ptr).rbp = 0;
+        (*context_ptr).rbx = 0;
+        (*context_ptr).rdx = 0;
+        (*context_ptr).rcx = 0;
+        (*context_ptr).rax = 0;
 
-    (*context_ptr).rip = entry_point as usize as u64;
-    (*context_ptr).cs = 0x08;
-    (*context_ptr).rflags = 0x202;
-    (*context_ptr).rsp = stack_top;
-    (*context_ptr).ss = 0x10;
+        (*context_ptr).rip = entry_point as usize as u64;
+        (*context_ptr).cs = 0x08;
+        (*context_ptr).rflags = 0x202;
+        (*context_ptr).rsp = stack_top;
+        (*context_ptr).ss = 0x10;
+    }
+
+    #[cfg(target_arch = "x86")]
+    {
+        (*context_ptr).rdi = 0;
+        (*context_ptr).rsi = 0;
+        (*context_ptr).rbp = 0;
+        (*context_ptr).esp_padding = 0;
+        (*context_ptr).rbx = 0;
+        (*context_ptr).rdx = 0;
+        (*context_ptr).rcx = 0;
+        (*context_ptr).rax = 0;
+
+        (*context_ptr).rip = entry_point as usize as u32;
+        (*context_ptr).cs = 0x08;
+        (*context_ptr).rflags = 0x202;
+        (*context_ptr).rsp = stack_top as u32;
+        (*context_ptr).ss = 0x10;
+    }
 
     let mut child_cwd = [0u8; 128];
     child_cwd[0] = b'/';
@@ -160,27 +181,48 @@ pub unsafe fn spawn_user(
     let context_ptr =
         (stack_top - core::mem::size_of::<InterruptContext>() as u64) as *mut InterruptContext;
 
-    (*context_ptr).r15 = 0;
-    (*context_ptr).r14 = 0;
-    (*context_ptr).r13 = 0;
-    (*context_ptr).r12 = 0;
-    (*context_ptr).r11 = 0;
-    (*context_ptr).r10 = 0;
-    (*context_ptr).r9 = 0;
-    (*context_ptr).r8 = 0;
-    (*context_ptr).rdi = 0;
-    (*context_ptr).rsi = 0;
-    (*context_ptr).rbp = 0;
-    (*context_ptr).rbx = 0;
-    (*context_ptr).rdx = 0;
-    (*context_ptr).rcx = 0;
-    (*context_ptr).rax = 0;
+    #[cfg(target_arch = "x86_64")]
+    {
+        (*context_ptr).r15 = 0;
+        (*context_ptr).r14 = 0;
+        (*context_ptr).r13 = 0;
+        (*context_ptr).r12 = 0;
+        (*context_ptr).r11 = 0;
+        (*context_ptr).r10 = 0;
+        (*context_ptr).r9 = 0;
+        (*context_ptr).r8 = 0;
+        (*context_ptr).rdi = 0;
+        (*context_ptr).rsi = 0;
+        (*context_ptr).rbp = 0;
+        (*context_ptr).rbx = 0;
+        (*context_ptr).rdx = 0;
+        (*context_ptr).rcx = 0;
+        (*context_ptr).rax = 0;
 
-    (*context_ptr).rip = entry_point;
-    (*context_ptr).cs = 0x2B;
-    (*context_ptr).rflags = 0x202;
-    (*context_ptr).rsp = user_rsp;
-    (*context_ptr).ss = 0x23;
+        (*context_ptr).rip = entry_point;
+        (*context_ptr).cs = 0x2B;
+        (*context_ptr).rflags = 0x202;
+        (*context_ptr).rsp = user_rsp;
+        (*context_ptr).ss = 0x23;
+    }
+
+    #[cfg(target_arch = "x86")]
+    {
+        (*context_ptr).rdi = 0;
+        (*context_ptr).rsi = 0;
+        (*context_ptr).rbp = 0;
+        (*context_ptr).esp_padding = 0;
+        (*context_ptr).rbx = 0;
+        (*context_ptr).rdx = 0;
+        (*context_ptr).rcx = 0;
+        (*context_ptr).rax = 0;
+
+        (*context_ptr).rip = entry_point as u32;
+        (*context_ptr).cs = 0x1B;
+        (*context_ptr).rflags = 0x202;
+        (*context_ptr).rsp = user_rsp as u32;
+        (*context_ptr).ss = 0x23;
+    }
 
     let mut child_cwd = [0u8; 128];
     child_cwd[0] = b'/';
@@ -191,6 +233,11 @@ pub unsafe fn spawn_user(
         parent_cwd_len = parent.cwd_len;
     }
 
+    #[cfg(target_arch = "x86_64")]
+    let default_brk = 0x600000000000;
+    #[cfg(target_arch = "x86")]
+    let default_brk = 0x0200_0000;
+
     let new_task = Task {
         id: slot_idx,
         name,
@@ -198,8 +245,8 @@ pub unsafe fn spawn_user(
         stack_addr: stack_frame,
         state: TaskState::Ready,
         fds: [FileDescriptor::new(); MAX_FDS],
-        program_break: 0x600000000000,
-        program_break_start: 0x600000000000,
+        program_break: default_brk,
+        program_break_start: default_brk,
         cwd: child_cwd,
         cwd_len: parent_cwd_len,
         parent_id,

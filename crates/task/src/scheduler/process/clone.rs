@@ -112,42 +112,77 @@ pub unsafe fn clone_current_task(
 
             let percpu = keira_arch::cpu::get_current_percpu();
 
-            (*child_context_ptr).r15 = percpu.user_r15;
-            (*child_context_ptr).r14 = percpu.user_r14;
-            (*child_context_ptr).r13 = percpu.user_r13;
-            (*child_context_ptr).r12 = percpu.user_r12;
-            (*child_context_ptr).r11 = 0;
-            (*child_context_ptr).r10 = 0;
-            (*child_context_ptr).r9 = 0;
-            (*child_context_ptr).r8 = 0;
-            (*child_context_ptr).rdi = 0;
-            (*child_context_ptr).rsi = 0;
-            (*child_context_ptr).rbp = percpu.user_rbp;
-            (*child_context_ptr).rbx = percpu.user_rbx;
-            (*child_context_ptr).rdx = 0;
-            (*child_context_ptr).rcx = 0;
-            (*child_context_ptr).rax = 0;
-
-            let child_rip = if percpu.user_rip >= 0x10000 && percpu.user_rip < 0x0000_8000_0000_0000
+            #[cfg(target_arch = "x86_64")]
             {
-                percpu.user_rip
-            } else {
-                0x0000_0000_4000_0000
-            };
+                (*child_context_ptr).r15 = percpu.user_r15;
+                (*child_context_ptr).r14 = percpu.user_r14;
+                (*child_context_ptr).r13 = percpu.user_r13;
+                (*child_context_ptr).r12 = percpu.user_r12;
+                (*child_context_ptr).r11 = 0;
+                (*child_context_ptr).r10 = 0;
+                (*child_context_ptr).r9 = 0;
+                (*child_context_ptr).r8 = 0;
+                (*child_context_ptr).rdi = 0;
+                (*child_context_ptr).rsi = 0;
+                (*child_context_ptr).rbp = percpu.user_rbp;
+                (*child_context_ptr).rbx = percpu.user_rbx;
+                (*child_context_ptr).rdx = 0;
+                (*child_context_ptr).rcx = 0;
+                (*child_context_ptr).rax = 0;
 
-            let child_rsp = if child_stack != 0 {
-                child_stack
-            } else if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0x0000_8000_0000_0000 {
-                percpu.user_rsp
-            } else {
-                0x0000_7FFF_FFFF_F000
-            };
+                let child_rip =
+                    if percpu.user_rip >= 0x10000 && percpu.user_rip < 0x0000_8000_0000_0000 {
+                        percpu.user_rip
+                    } else {
+                        0x0000_0000_4000_0000
+                    };
 
-            (*child_context_ptr).rip = child_rip;
-            (*child_context_ptr).cs = 0x2B;
-            (*child_context_ptr).rflags = (percpu.user_rflags | 0x202) & !0x100;
-            (*child_context_ptr).rsp = child_rsp;
-            (*child_context_ptr).ss = 0x23;
+                let child_rsp = if child_stack != 0 {
+                    child_stack
+                } else if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0x0000_8000_0000_0000 {
+                    percpu.user_rsp
+                } else {
+                    0x0000_7FFF_FFFF_F000
+                };
+
+                (*child_context_ptr).rip = child_rip;
+                (*child_context_ptr).cs = 0x2B;
+                (*child_context_ptr).rflags = (percpu.user_rflags | 0x202) & !0x100;
+                (*child_context_ptr).rsp = child_rsp;
+                (*child_context_ptr).ss = 0x23;
+            }
+
+            #[cfg(target_arch = "x86")]
+            {
+                (*child_context_ptr).rdi = 0;
+                (*child_context_ptr).rsi = 0;
+                (*child_context_ptr).rbp = percpu.user_rbp as u32;
+                (*child_context_ptr).esp_padding = 0;
+                (*child_context_ptr).rbx = percpu.user_rbx as u32;
+                (*child_context_ptr).rdx = 0;
+                (*child_context_ptr).rcx = 0;
+                (*child_context_ptr).rax = 0;
+
+                let child_rip = if percpu.user_rip >= 0x10000 && percpu.user_rip < 0xC000_0000 {
+                    percpu.user_rip as u32
+                } else {
+                    0x0100_0000
+                };
+
+                let child_rsp = if child_stack != 0 {
+                    child_stack as u32
+                } else if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0xC000_0000 {
+                    percpu.user_rsp as u32
+                } else {
+                    0x07FF_E000
+                };
+
+                (*child_context_ptr).rip = child_rip;
+                (*child_context_ptr).cs = 0x1B;
+                (*child_context_ptr).rflags = ((percpu.user_rflags as u32) | 0x202) & !0x100;
+                (*child_context_ptr).rsp = child_rsp;
+                (*child_context_ptr).ss = 0x23;
+            }
 
             let is_thread = (flags & CLONE_THREAD) != 0;
             let tgid = if is_thread { parent.tgid } else { slot_idx };

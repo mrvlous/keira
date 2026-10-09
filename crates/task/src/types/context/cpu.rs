@@ -10,6 +10,7 @@
 //! Pushed CPU execution registers during interrupt or syscall transitions.
 
 /// Pushed CPU register context during interrupt or system call transitions.
+#[cfg(target_arch = "x86_64")]
 #[repr(C, packed)]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct InterruptContext {
@@ -33,4 +34,24 @@ pub struct InterruptContext {
     pub rflags: u64,
     pub rsp: u64,
     pub ss: u64,
+}
+
+/// Pushed CPU register context during interrupt or system call transitions on 32-bit x86.
+#[cfg(target_arch = "x86")]
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct InterruptContext {
+    pub rdi: u32,
+    pub rsi: u32,
+    pub rbp: u32,
+    pub esp_padding: u32,
+    pub rbx: u32,
+    pub rdx: u32,
+    pub rcx: u32,
+    pub rax: u32,
+    pub rip: u32,
+    pub cs: u32,
+    pub rflags: u32,
+    pub rsp: u32,
+    pub ss: u32,
 }
