@@ -226,6 +226,16 @@ pub unsafe fn read_file_offset(
         return Ok(0);
     }
 
+    let inode = entry.first_cluster_lo as u32;
+    let page_index = (offset / 4096) as u32;
+    let page_offset = (offset % 4096) as usize;
+
+    if let Some(cached_bytes) = crate::cache::read_page(0, inode, page_index, page_offset, buffer) {
+        if cached_bytes > 0 {
+            return Ok(cached_bytes);
+        }
+    }
+
     let mut intra_cluster_offset = (offset % cluster_size) as usize;
     let mut cluster_data = [0u8; 512];
     let mut bytes_read = 0;
@@ -256,6 +266,10 @@ pub unsafe fn read_file_offset(
         }
 
         current_cluster = fat_next_cluster(current_cluster, vol)?;
+    }
+
+    if bytes_read > 0 && page_offset == 0 {
+        crate::cache::insert_page(0, inode, page_index, &buffer[..bytes_read], false);
     }
 
     Ok(bytes_read)
