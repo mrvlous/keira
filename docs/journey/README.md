@@ -24,6 +24,8 @@ graph TD
     M12 --> M13["13. SMP IPI & TLB Shootdown<br/><i>Local APIC ICR Delivery, Multi-Core Rendezvous, Invalidation</i>"]
     M13 --> M14["14. SMP Reschedule IPI<br/><i>Vector 0xFE, Cross-Core Preemption, Low-Latency Dispatch</i>"]
     M14 --> M15["15. Userland Multi-Threading & v0.6.0 Release<br/><i>clone Syscall, CLONE_VM, Thread Groups, POSIX Pthreads</i>"]
+    M15 --> M16["16. Canonical UNIX FHS & Root Control Plane<br/><i>FHS Namespace, Root Prompt keira:/#, Pure Ring 0</i>"]
+    M16 --> M17["17. Unified Page Cache & Buffer Management<br/><i>4 KiB Page Cache, Dirty Tracking, VFS/PMM Integration</i>"]
 ```
 
 ---
@@ -32,21 +34,23 @@ graph TD
 
 | Milestone | Chapter Document | Target Version | Primary Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Milestone 1** | [`bootstrap.md`](bootstrap.md) | `v0.1.0` | Multiboot2 handshake, GDT, TSS, IDT, APIC, and 16-bit real-mode AP trampolines |
-| **Milestone 2** | [`memory.md`](memory.md) | `v0.1.0` | Physical frame allocator, 4-level paging, segregated free-list heap, and swap |
-| **Milestone 3** | [`multitasking.md`](multitasking.md) | `v0.2.0` | Preemptive timer scheduling, PCB context switching, cgroups, and POSIX signals |
-| **Milestone 4** | [`storage_vfs.md`](storage_vfs.md) | `v0.2.0` | VFS architecture, AHCI SATA, NVMe, FAT16/32, EXT4 extents, and sector LRU cache |
-| **Milestone 5** | [`networking.md`](networking.md) | `v0.3.0` | Intel e1000 DMA rings, ARP cache, IPv4, TCP state machine, and TLS 1.3 socket engine |
-| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | `v0.3.0` | Ring 3 userland isolation, freestanding libc.a runtime, and native in-kernel KCC C compiler |
-| **Milestone 7** | [`security_ebpf.md`](security_ebpf.md) | `v0.4.0` | TPM 2.0 enclave PCR measurements, in-kernel eBPF virtual machine, and asynchronous io_uring |
-| **Milestone 8** | [`network_engine.md`](network_engine.md) | `v0.4.0` | Modular network fetch engine, chunked streaming, progress bars, and Netfilter firewall |
-| **Milestone 9** | [`hardening_v050.md`](hardening_v050.md) | `v0.5.0` | Dual-architecture x86_64/i686 parity, 81 syscall vectors, and Syzkaller-Lite fuzzing defense |
-| **Milestone 10** | [`raw_kernel_v060.md`](raw_kernel_v060.md) | `v0.6.0` | Type-Safe Epoch-Based Reclamation (EBR), physical frame reference counting, and Copy-on-Write (COW) |
-| **Milestone 11** | [`work_stealing_v060.md`](work_stealing_v060.md) | `v0.6.0` | Per-CPU lock-free work-stealing scheduler, Chase-Lev deques, EBR pinning, and decentralized task balancer |
-| **Milestone 12** | [`magazine_slab_v060.md`](magazine_slab_v060.md) | `v0.6.0` | Hierarchical per-CPU magazine slab allocator, Jeff Bonwick object caching, and zero-lock fast paths |
-| **Milestone 13** | [`smp_tlb_shootdown_v060.md`](smp_tlb_shootdown_v060.md) | `v0.6.0` | Local APIC Inter-Processor Interrupt (IPI) framework, multi-core rendezvous, and cross-core TLB shootdown |
-| **Milestone 14** | [`smp_reschedule_v060.md`](smp_reschedule_v060.md) | `v0.6.0` | SMP Reschedule IPI framework, Vector 0xFE preemption stubs, and low-latency cross-core dispatch |
-| **Milestone 15** | [`multithreading_v060.md`](multithreading_v060.md) | `v0.6.0` | Userland multi-threading, clone syscall with CLONE_VM/CLONE_THREAD, and freestanding POSIX pthreads |
+| **Milestone 1** | [`bootstrap.md`](bootstrap.md) | `v0.1.0` | Multiboot2 handshake, GDT, TSS, IDT, APIC and 16-bit real-mode AP trampolines |
+| **Milestone 2** | [`memory.md`](memory.md) | `v0.1.0` | Physical frame allocator, 4-level paging, segregated free-list heap and swap |
+| **Milestone 3** | [`multitasking.md`](multitasking.md) | `v0.2.0` | Preemptive timer scheduling, PCB context switching, cgroups and POSIX signals |
+| **Milestone 4** | [`storage_vfs.md`](storage_vfs.md) | `v0.2.0` | VFS architecture, AHCI SATA, NVMe, FAT16/32, EXT4 extents and sector LRU cache |
+| **Milestone 5** | [`networking.md`](networking.md) | `v0.3.0` | Intel e1000 DMA rings, ARP cache, IPv4, TCP state machine and TLS 1.3 socket engine |
+| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | `v0.3.0` | Ring 3 userland isolation, freestanding libc.a runtime and native in-kernel KCC C compiler |
+| **Milestone 7** | [`security_ebpf.md`](security_ebpf.md) | `v0.4.0` | TPM 2.0 enclave PCR measurements, in-kernel eBPF virtual machine and asynchronous io_uring |
+| **Milestone 8** | [`network_engine.md`](network_engine.md) | `v0.4.0` | Modular network fetch engine, chunked streaming, progress bars and Netfilter firewall |
+| **Milestone 9** | [`hardening_v050.md`](hardening_v050.md) | `v0.5.0` | Dual-architecture x86_64/i686 parity, 81 syscall vectors and Syzkaller-Lite fuzzing defense |
+| **Milestone 10** | [`raw_kernel_v060.md`](raw_kernel_v060.md) | `v0.6.0` | Type-Safe Epoch-Based Reclamation (EBR), physical frame reference counting and Copy-on-Write (COW) |
+| **Milestone 11** | [`work_stealing_v060.md`](work_stealing_v060.md) | `v0.6.0` | Per-CPU lock-free work-stealing scheduler, Chase-Lev deques, EBR pinning and decentralized task balancer |
+| **Milestone 12** | [`magazine_slab_v060.md`](magazine_slab_v060.md) | `v0.6.0` | Hierarchical per-CPU magazine slab allocator, Jeff Bonwick object caching and zero-lock fast paths |
+| **Milestone 13** | [`smp_tlb_shootdown_v060.md`](smp_tlb_shootdown_v060.md) | `v0.6.0` | Local APIC Inter-Processor Interrupt (IPI) framework, multi-core rendezvous and cross-core TLB shootdown |
+| **Milestone 14** | [`smp_reschedule_v060.md`](smp_reschedule_v060.md) | `v0.6.0` | SMP Reschedule IPI framework, Vector 0xFE preemption stubs and low-latency cross-core dispatch |
+| **Milestone 15** | [`multithreading_v060.md`](multithreading_v060.md) | `v0.6.0` | Userland multi-threading, clone syscall with CLONE_VM/CLONE_THREAD and freestanding POSIX pthreads |
+| **Milestone 16** | [`canonical_fhs_v070.md`](canonical_fhs_v070.md) | `v0.7.0` | Canonical UNIX FHS namespace, removal of legacy prefixes and root prompt `keira:/# ` |
+| **Milestone 17** | [`page_cache_v070.md`](page_cache_v070.md) | `v0.7.0` | 4 KiB unified page cache, dynamic buffer management, dirty page writeback and telemetry |
 
 ---
 
@@ -54,7 +58,7 @@ graph TD
 
 Throughout all milestones, Keira enforces five fundamental invariants:
 
-1. **Pure Freestanding Architecture (`#![no_std]`)**: Zero host operating system libraries, zero foreign runtime bloat, and pure memory management from first principles.
+1. **Pure Freestanding Architecture (`#![no_std]`)**: Zero host operating system libraries, zero foreign runtime bloat and pure memory management from first principles.
 2. **Defensive Kernel Programming**: Complete absence of `unwrap()` and `panic!` calls in kernel-space runtime paths, relying on explicit `Result<T, &'static str>` or custom error enums.
 3. **Symmetrical Dual-Architecture Support**: Native support for modern 64-bit Long Mode (`x86_64`) and legacy 32-bit Protected Mode (`i686`) across all core subsystems.
 4. **Hardware Verification First**: Every feature is rigorously verified against real and simulated silicon via automated multi-architecture QEMU test harnesses.
