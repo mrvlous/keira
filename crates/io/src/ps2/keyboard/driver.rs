@@ -160,3 +160,13 @@ pub unsafe fn input_queue_len() -> usize {
         KBD_QUEUE_SIZE - (KBD_TAIL - KBD_HEAD)
     }
 }
+
+/// Flushes and empties all pending keystrokes in the keyboard device input queue.
+///
+/// # Safety
+///
+/// Mutates global keyboard ring buffer indices.
+pub unsafe fn flush_input_queue() {
+    KBD_HEAD = 0;
+    KBD_TAIL = 0;
+}
