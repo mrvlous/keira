@@ -2,7 +2,7 @@
 
 # Keira Interactive Shell & Command Subsystem
 
-The `shell` domain provides the kernel control plane interface, modal text editor and 78 built-in commands.
+The `shell` domain provides the kernel control plane interface, modal text editor and 70 built-in commands.
 
 ---
 
@@ -13,7 +13,7 @@ graph TD
     Shell["Interactive Shell"] --> Terminal["terminal/<br/>Prompt, Keyboard & Console Palette"]
     Shell --> Executor["executor/<br/>Command Dispatch & CliArgs"]
     Shell --> Editor["editor/<br/>kvi Modal Text Editor"]
-    Shell --> Cmds["commands/<br/>78 Built-in Commands"]
+    Shell --> Cmds["commands/<br/>70 Built-in Commands"]
 ```
 
 ---
@@ -25,4 +25,4 @@ graph TD
 | [`terminal/`](terminal/README.md) | Terminal UI | Prompt rendering, keyboard input, monochrome palette |
 | [`executor/`](executor/README.md) | Command Execution | Argument parsing, pipe routing, execution dispatch |
 | [`editor/`](editor/README.md) | Text Editor | `kvi` modal vim-like text editor with syntax highlighting |
-| [`commands/`](commands/README.md) | Built-in Commands | Reference manuals for all 78 built-in shell commands |
+| [`commands/`](commands/README.md) | Built-in Commands | Reference manuals for all 70 built-in shell commands |
