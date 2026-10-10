@@ -7,11 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Network clients, TLS/HTTPS, and interface management commands.
+//! Network interface status and diagnostic inspection commands.
 
-pub mod download;
-pub mod fetch;
-pub mod https;
 pub mod network;
-pub mod progress;
-pub mod url;
