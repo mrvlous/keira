@@ -114,3 +114,12 @@ pub fn read_tty(buf: &mut [u8]) -> usize {
         count
     }
 }
+
+/// Flushes all pending characters from the cooked terminal input queue and line editing buffer.
+pub fn flush_tty() {
+    unsafe {
+        COOKED_HEAD = 0;
+        COOKED_TAIL = 0;
+        LINE_LEN = 0;
+    }
+}
