@@ -32,6 +32,7 @@ graph TD
     M20 --> M21["21. Canonical Shell Script Execution & Kernel Shebang Support<br/><i>Shebang (#!), /bin/sh Runner, Direct .sh Invocation, /etc/init.sh</i>"]
     M21 --> M22["22. Pure Kernel Slimming & Ring 3 Shell Maturity<br/><i>Pipelines, I/O Redirection, /bin/cat, /bin/ls, UNIX Parity</i>"]
     M22 --> M23["23. Pure Kernel Slimming Fase 2 & Userspace Network Client<br/><i>In-Kernel kcc Removal, /bin/fetch.elf, Supervisor Hardware Diagnostic Monitor</i>"]
+    M23 --> M24["24. Pure Kernel Demarcation & Complete Userspace Coreutils<br/><i>/bin/ps, /bin/kill, /bin/hostname, /bin/clear, /bin/dmesg, /bin/df, BSD/Linux Model</i>"]
 ```
 
 ---
@@ -63,6 +64,7 @@ graph TD
 | **Milestone 21** | [`script_shebang_v070.md`](script_shebang_v070.md) | `v0.7.0` | Canonical shell script execution, kernel shebang (`#!`) interpreter recognition, userspace script runner and `/etc/init.sh` system bootstrap |
 | **Milestone 22** | [`unix_parity_v070.md`](unix_parity_v070.md) | `v0.7.0` | Pure kernel slimming, Ring 3 shell maturity (redirection, pipes, chaining), /bin/cat.elf, /bin/ls.elf and UNIX parity |
 | **Milestone 23** | [`kernel_slimming_v070.md`](kernel_slimming_v070.md) | `v0.7.0` | In-kernel compiler elimination, freestanding Ring 3 `/bin/fetch.elf`, supervisor diagnostic monitor and TTY/FAT fixes |
+| **Milestone 24** | [`pure_coreutils_v070.md`](pure_coreutils_v070.md) | `v0.7.0` | Pure kernel demarcation, complete userspace coreutils (/bin/ps, /bin/kill, /bin/hostname, /bin/clear, /bin/dmesg, /bin/df) and emergency debugger slimming |
 
 ---
 
