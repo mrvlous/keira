@@ -14,7 +14,8 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`sh.elf`](sh.md) | `userland/bin/sh/` | Canonical Ring 3 POSIX userspace shell executable |
 | [`cat.elf`](cat.md) | `userland/bin/cat/` | Freestanding core file concatenator and stream display utility |
 | [`ls.elf`](ls.md) | `userland/bin/ls/` | Freestanding core directory enumeration and listing utility |
-| [`kcc.elf`](kcc.md) | `userland/bin/kcc/` | Native in-kernel C compiler executable |
+| [`fetch.elf`](fetch.md) | `userland/bin/fetch/` | Freestanding HTTP client utility for web resource retrieval |
+| [`kcc.elf`](kcc.md) | `userland/bin/kcc/` | Freestanding native Ring 3 C compiler executable |
 | [`sysinfo.elf`](sysinfo.md) | `userland/bin/sysinfo/` | System telemetry, CPU, memory, uptime and hardware inspection utility |
 | [`test_abi.elf`](test_abi.md) | `userland/bin/test_abi/` | Kernel ABI and system call compliance test suite |
 | [`fuzz_abi.elf`](fuzz_abi.md) | `userland/bin/fuzz_abi/` | Differential and boundary fuzz testing utility for kernel system call vectors |
