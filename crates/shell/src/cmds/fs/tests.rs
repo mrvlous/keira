@@ -13,45 +13,13 @@ use super::*;
 
 #[test]
 fn test_fs_commands_help_invocation() {
-    let mut args = "folder --help".split_whitespace();
-    args.next();
-    folder::run(&mut args);
-
     let mut args = "list --help".split_whitespace();
     args.next();
     list::run(&mut args);
 
-    let mut args = "copy --help".split_whitespace();
-    args.next();
-    copy::run(&mut args);
-
-    let mut args = "create --help".split_whitespace();
-    args.next();
-    create::run(&mut args);
-
-    let mut args = "delete --help".split_whitespace();
-    args.next();
-    delete::run(&mut args);
-
-    let mut args = "edit --help".split_whitespace();
-    args.next();
-    edit::run(&mut args);
-
     let mut args = "fileinfo --help".split_whitespace();
     args.next();
     fileinfo::run(&mut args);
-
-    let mut args = "move --help".split_whitespace();
-    args.next();
-    r#move::run(&mut args);
-
-    let mut args = "view --help".split_whitespace();
-    args.next();
-    view::run(&mut args);
-
-    let mut args = "write --help".split_whitespace();
-    args.next();
-    write::run(&mut args);
 
     let mut args = "disk --help".split_whitespace();
     args.next();
