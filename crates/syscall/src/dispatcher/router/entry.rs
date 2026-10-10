@@ -130,6 +130,8 @@ fn syscall_dispatcher_inner(
         83 => handle_msync(arg1, arg2, arg3),
         84 => handle_dup(arg1),
         85 => handle_dup2(arg1, arg2),
+        86 => handle_getdents(arg1, arg2, arg3),
+        87 => handle_unlink(arg1),
         _ => errno_to_ret(ENOSYS),
     }
 }

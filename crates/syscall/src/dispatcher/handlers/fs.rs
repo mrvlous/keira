@@ -17,7 +17,7 @@ use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    EAGAIN, EBADF, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSPC, ESRCH,
+    EAGAIN, EBADF, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSPC, ENOTDIR, ESRCH,
 };
 
 /// Syscall 6: Open file or device node with POSIX flags.
@@ -194,6 +194,19 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 t.fds[fd].offset += to_copy as u64;
                 pmm::free_frame(frame);
                 return to_copy as u64;
+            } else if fd == 0 {
+                let mut kernel_buf = [0u8; 128];
+                let to_read = (len as usize).min(kernel_buf.len());
+                if let Ok(bytes) = keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read]) {
+                    if bytes > 0 {
+                        if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                            return bytes as u64;
+                        }
+                        return errno_to_ret(EFAULT);
+                    }
+                    return 0;
+                }
+                return errno_to_ret(EIO);
             }
         }
     }
@@ -213,35 +226,6 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     }
     if let Err(e) = unsafe { validate_user_ptr(buf_ptr, len, false) } {
         return errno_to_ret(e);
-    }
-
-    if fd == 1 || fd == 2 {
-        let mut chunk = [0u8; 128];
-        let mut written = 0usize;
-        while written < len as usize {
-            let to_read = (len as usize - written).min(chunk.len());
-            if unsafe { copy_from_user(&mut chunk[..to_read], buf_ptr + written as u64) }.is_err() {
-                return if written > 0 {
-                    written as u64
-                } else {
-                    errno_to_ret(EFAULT)
-                };
-            }
-            if let Ok(s) = core::str::from_utf8(&chunk[..to_read]) {
-                vga::print_str(s);
-                serial::print_str(s);
-            } else {
-                for &b in &chunk[..to_read] {
-                    let single = [b];
-                    if let Ok(s) = core::str::from_utf8(&single) {
-                        vga::print_str(s);
-                        serial::print_str(s);
-                    }
-                }
-            }
-            written += to_read;
-        }
-        return written as u64;
     }
 
     unsafe {
@@ -329,6 +313,36 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
             }
         }
     }
+
+    if fd == 1 || fd == 2 {
+        let mut chunk = [0u8; 128];
+        let mut written = 0usize;
+        while written < len as usize {
+            let to_read = (len as usize - written).min(chunk.len());
+            if unsafe { copy_from_user(&mut chunk[..to_read], buf_ptr + written as u64) }.is_err() {
+                return if written > 0 {
+                    written as u64
+                } else {
+                    errno_to_ret(EFAULT)
+                };
+            }
+            if let Ok(s) = core::str::from_utf8(&chunk[..to_read]) {
+                vga::print_str(s);
+                serial::print_str(s);
+            } else {
+                for &b in &chunk[..to_read] {
+                    let single = [b];
+                    if let Ok(s) = core::str::from_utf8(&single) {
+                        vga::print_str(s);
+                        serial::print_str(s);
+                    }
+                }
+            }
+            written += to_read;
+        }
+        return written as u64;
+    }
+
     errno_to_ret(EBADF)
 }
 
@@ -621,5 +635,126 @@ pub fn handle_dup2(arg1: u64, arg2: u64) -> u64 {
         } else {
             errno_to_ret(EBADF)
         }
+    }
+}
+
+/// Directory entry descriptor populated by `SYS_GETDENTS` (Vector 86).
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Dirent {
+    pub d_ino: u64,
+    pub d_off: i64,
+    pub d_reclen: u16,
+    pub d_type: u8,
+    pub d_name: [u8; 256],
+    pub _pad: [u8; 5],
+}
+
+/// Syscall 86: Read directory entries into user dirent buffer.
+pub fn handle_getdents(arg1: u64, arg2: u64, arg3: u64) -> u64 {
+    let fd = arg1 as usize;
+    let buf_ptr = arg2;
+    let count = arg3 as usize;
+
+    if fd >= MAX_FDS {
+        return errno_to_ret(EBADF);
+    }
+    if count < core::mem::size_of::<Dirent>() {
+        return errno_to_ret(EINVAL);
+    }
+    if let Err(e) =
+        unsafe { validate_user_ptr(buf_ptr, core::mem::size_of::<Dirent>() as u64, true) }
+    {
+        return errno_to_ret(e);
+    }
+
+    unsafe {
+        let task = &mut TASKS[CURRENT_TASK_IDX];
+        if let Some(t) = task {
+            if !t.fds[fd].is_open {
+                return errno_to_ret(EBADF);
+            }
+
+            let path_str = match core::str::from_utf8(&t.fds[fd].path[..t.fds[fd].path_len]) {
+                Ok(s) => s,
+                Err(_) => return errno_to_ret(EBADF),
+            };
+
+            let target_cluster = match keira_fs::fat::get_dir_cluster(path_str) {
+                Ok(cluster) => cluster,
+                Err(_) => return errno_to_ret(ENOTDIR),
+            };
+
+            let target_idx = t.fds[fd].offset as usize;
+            let mut curr_idx = 0usize;
+            let mut found_entry: Option<Dirent> = None;
+
+            let _ = keira_fs::fat::for_each_directory_entry(target_cluster, |parsed| {
+                if curr_idx == target_idx {
+                    let mut d = Dirent {
+                        d_ino: (parsed.sector as u64) * 16 + (parsed.index as u64) + 1,
+                        d_off: (curr_idx + 1) as i64,
+                        d_reclen: core::mem::size_of::<Dirent>() as u16,
+                        d_type: if (parsed.entry.attr & 0x10) != 0 {
+                            4
+                        } else {
+                            8
+                        },
+                        d_name: [0u8; 256],
+                        _pad: [0u8; 5],
+                    };
+                    let len = parsed.name_len.min(255);
+                    d.d_name[..len].copy_from_slice(&parsed.name[..len]);
+                    found_entry = Some(d);
+                    return Ok(false);
+                }
+                curr_idx += 1;
+                Ok(true)
+            });
+
+            if let Some(entry) = found_entry {
+                let entry_bytes = core::slice::from_raw_parts(
+                    &entry as *const Dirent as *const u8,
+                    core::mem::size_of::<Dirent>(),
+                );
+                if copy_to_user(buf_ptr, entry_bytes).is_err() {
+                    return errno_to_ret(EFAULT);
+                }
+                t.fds[fd].offset += 1;
+                return core::mem::size_of::<Dirent>() as u64;
+            }
+
+            0
+        } else {
+            errno_to_ret(EBADF)
+        }
+    }
+}
+
+/// Syscall 87: Unlink / remove file from virtual filesystem.
+pub fn handle_unlink(arg1: u64) -> u64 {
+    let path_ptr = arg1 as *const u8;
+    let mut path_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let path_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        path_str,
+        keira_task::security::MAC_WRITE,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    match keira_fs::vfs::remove_entry(path_str) {
+        Ok(_) => 0,
+        Err(_) => errno_to_ret(ENOENT),
     }
 }
