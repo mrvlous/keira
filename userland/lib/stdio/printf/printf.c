@@ -29,6 +29,22 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
             continue;
         }
 
+        int left_align = 0;
+        int zero_pad = 0;
+        while (*format == '-' || *format == '0') {
+            if (*format == '-')
+                left_align = 1;
+            else if (*format == '0')
+                zero_pad = 1;
+            format++;
+        }
+
+        int width = 0;
+        while (*format >= '0' && *format <= '9') {
+            width = width * 10 + (*format - '0');
+            format++;
+        }
+
         int is_long = 0;
         int is_long_long = 0;
         while (*format == 'l' || *format == 'z' || *format == 'h') {
@@ -47,8 +63,23 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
             const char *s = va_arg(ap, const char *);
             if (!s)
                 s = "(null)";
+            size_t slen = 0;
+            const char *tmp = s;
+            while (*tmp++)
+                slen++;
+
+            if (!left_align && width > (int)slen) {
+                for (int p = 0; p < width - (int)slen && idx + 1 < size; p++) {
+                    str[idx++] = ' ';
+                }
+            }
             while (*s && idx + 1 < size) {
                 str[idx++] = *s++;
+            }
+            if (left_align && width > (int)slen) {
+                for (int p = 0; p < width - (int)slen && idx + 1 < size; p++) {
+                    str[idx++] = ' ';
+                }
             }
             format++;
         } else if (*format == 'd' || *format == 'i') {
@@ -72,8 +103,20 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
                 if (neg)
                     num_buf[nidx++] = '-';
             }
+            int pad_len = (width > nidx) ? (width - nidx) : 0;
+            if (!left_align && pad_len > 0) {
+                char pad_ch = zero_pad ? '0' : ' ';
+                for (int p = 0; p < pad_len && idx + 1 < size; p++) {
+                    str[idx++] = pad_ch;
+                }
+            }
             while (nidx > 0 && idx + 1 < size) {
                 str[idx++] = num_buf[--nidx];
+            }
+            if (left_align && pad_len > 0) {
+                for (int p = 0; p < pad_len && idx + 1 < size; p++) {
+                    str[idx++] = ' ';
+                }
             }
             format++;
         } else if (*format == 'u') {
@@ -90,8 +133,20 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
                     val /= 10;
                 }
             }
+            int pad_len = (width > nidx) ? (width - nidx) : 0;
+            if (!left_align && pad_len > 0) {
+                char pad_ch = zero_pad ? '0' : ' ';
+                for (int p = 0; p < pad_len && idx + 1 < size; p++) {
+                    str[idx++] = pad_ch;
+                }
+            }
             while (nidx > 0 && idx + 1 < size) {
                 str[idx++] = num_buf[--nidx];
+            }
+            if (left_align && pad_len > 0) {
+                for (int p = 0; p < pad_len && idx + 1 < size; p++) {
+                    str[idx++] = ' ';
+                }
             }
             format++;
         } else if (*format == 'x' || *format == 'X' || *format == 'p') {
@@ -109,8 +164,20 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
                     val >>= 4;
                 }
             }
+            int pad_len = (width > nidx) ? (width - nidx) : 0;
+            if (!left_align && pad_len > 0) {
+                char pad_ch = zero_pad ? '0' : ' ';
+                for (int p = 0; p < pad_len && idx + 1 < size; p++) {
+                    str[idx++] = pad_ch;
+                }
+            }
             while (nidx > 0 && idx + 1 < size) {
                 str[idx++] = num_buf[--nidx];
+            }
+            if (left_align && pad_len > 0) {
+                for (int p = 0; p < pad_len && idx + 1 < size; p++) {
+                    str[idx++] = ' ';
+                }
             }
             format++;
         } else if (*format == 'c') {
