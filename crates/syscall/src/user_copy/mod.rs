@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Centralized safe user space memory validation, range checking, and copying primitives.
+//! Centralized safe user space memory validation, range checking and copying primitives.
 
 pub mod copy;
 pub mod errno;
@@ -20,7 +20,7 @@ mod tests;
 pub use copy::{copy_from_user, copy_to_user, copy_val_from_user, copy_val_to_user};
 pub use errno::{
     errno_to_ret, ret_to_errno, EACCES, EAGAIN, EBADF, ECHILD, EEXIST, EFAULT, EFBIG, EINTR,
-    EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSPC, ENOSYS, EPERM, ESRCH,
+    EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSPC, ENOSYS, ENOTDIR, EPERM, ESRCH,
 };
 pub use string::{read_user_string, read_user_string_bounded};
 pub use validate::{validate_user_ptr, USER_MAX_ADDR, USER_MIN_ADDR};

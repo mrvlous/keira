@@ -25,4 +25,5 @@ pub const EINVAL: i64 = 22;
 pub const EMFILE: i64 = 24;
 pub const EFBIG: i64 = 27;
 pub const ENOSPC: i64 = 28;
+pub const ENOTDIR: i64 = 20;
 pub const ENOSYS: i64 = 38;
