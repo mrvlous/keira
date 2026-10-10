@@ -8,6 +8,7 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -129,15 +130,19 @@ static int builtin_export(int argc, char **argv) {
 static int builtin_help(void) {
     puts("Keira Standalone Userspace Shell (sh v0.7.0)");
     puts("Built-in Commands:");
-    puts("  cd [dir]       Change current working directory");
+    puts("  cd, go [dir]   Change current working directory");
     puts("  pwd            Print working directory");
     puts("  echo [args]    Display text or environment variables");
     puts("  export [K=V]   Set environment variable");
     puts("  clear          Clear console screen");
     puts("  help           Display this reference manual");
     puts("  exit [code]    Exit userspace shell");
+    puts("Shell Features:");
+    puts("  I/O Redir:     > file, >> file, < file");
+    puts("  Pipelines:     cmd1 | cmd2");
+    puts("  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2");
     puts("Direct Execution:");
-    puts("  Binaries in /bin (e.g. sysinfo, test_threads, kcc) execute via $PATH");
+    puts("  Binaries in /bin (e.g. cat, ls, sysinfo, kcc) execute via $PATH");
     return 0;
 }
 
@@ -176,64 +181,300 @@ static int resolve_binary_path(const char *cmd, char *out_path, size_t out_size)
     return -1;
 }
 
-static int execute_command(int argc, char **argv) {
+static int execute_single_command(int argc, char **argv) {
     if (argc == 0 || !argv[0]) {
         return 0;
     }
 
-    if (strcmp(argv[0], "cd") == 0) {
-        return builtin_cd(argc, argv);
+    char *out_file = NULL;
+    int out_append = 0;
+    char *in_file = NULL;
+    char *clean_argv[SH_MAX_ARGS];
+    int clean_argc = 0;
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], ">") == 0) {
+            if (i + 1 < argc) {
+                out_file = argv[++i];
+                out_append = 0;
+            }
+        } else if (strcmp(argv[i], ">>") == 0) {
+            if (i + 1 < argc) {
+                out_file = argv[++i];
+                out_append = 1;
+            }
+        } else if (strcmp(argv[i], "<") == 0) {
+            if (i + 1 < argc) {
+                in_file = argv[++i];
+            }
+        } else if (strncmp(argv[i], ">>", 2) == 0 && argv[i][2] != '\0') {
+            out_file = argv[i] + 2;
+            out_append = 1;
+        } else if (argv[i][0] == '>' && argv[i][1] != '\0') {
+            out_file = argv[i] + 1;
+            out_append = 0;
+        } else if (argv[i][0] == '<' && argv[i][1] != '\0') {
+            in_file = argv[i] + 1;
+        } else {
+            if (clean_argc < SH_MAX_ARGS - 1) {
+                clean_argv[clean_argc++] = argv[i];
+            }
+        }
     }
-    if (strcmp(argv[0], "pwd") == 0) {
-        return builtin_pwd();
-    }
-    if (strcmp(argv[0], "echo") == 0) {
-        return builtin_echo(argc, argv);
-    }
-    if (strcmp(argv[0], "export") == 0) {
-        return builtin_export(argc, argv);
-    }
-    if (strcmp(argv[0], "clear") == 0) {
-        printf("\x1b[2J\x1b[H");
+    clean_argv[clean_argc] = NULL;
+
+    if (clean_argc == 0) {
         return 0;
     }
-    if (strcmp(argv[0], "help") == 0) {
-        return builtin_help();
+
+    int redir_stdout = 0;
+    int redir_stdin = 0;
+
+    if (out_file) {
+        int flags = O_WRONLY | O_CREAT | (out_append ? O_APPEND : O_TRUNC);
+        int fd_out = open(out_file, flags, 0644);
+        if (fd_out < 0) {
+            printf("sh: cannot create %s\n", out_file);
+            return 1;
+        }
+        dup2(fd_out, STDOUT_FILENO);
+        close(fd_out);
+        redir_stdout = 1;
     }
-    if (strcmp(argv[0], "exit") == 0) {
-        int code = (argc > 1) ? atoi(argv[1]) : 0;
+
+    if (in_file) {
+        int fd_in = open(in_file, O_RDONLY, 0);
+        if (fd_in < 0) {
+            printf("sh: %s: No such file or directory\n", in_file);
+            if (redir_stdout) {
+                close(STDOUT_FILENO);
+            }
+            return 1;
+        }
+        dup2(fd_in, STDIN_FILENO);
+        close(fd_in);
+        redir_stdin = 1;
+    }
+
+    int ret_status = 0;
+
+    if (strcmp(clean_argv[0], "cd") == 0 || strcmp(clean_argv[0], "go") == 0) {
+        ret_status = builtin_cd(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "pwd") == 0) {
+        ret_status = builtin_pwd();
+    } else if (strcmp(clean_argv[0], "echo") == 0) {
+        ret_status = builtin_echo(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "export") == 0) {
+        ret_status = builtin_export(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "clear") == 0) {
+        printf("\x1b[2J\x1b[H");
+        ret_status = 0;
+    } else if (strcmp(clean_argv[0], "help") == 0) {
+        ret_status = builtin_help();
+    } else if (strcmp(clean_argv[0], "exit") == 0) {
+        int code = (clean_argc > 1) ? atoi(clean_argv[1]) : 0;
         exit(code);
+    } else {
+        char resolved_path[256];
+        if (resolve_binary_path(clean_argv[0], resolved_path, sizeof(resolved_path)) != 0) {
+            printf("sh: %s: command not found\n", clean_argv[0]);
+            ret_status = 127;
+        } else {
+            clean_argv[0] = resolved_path;
+            pid_t pid = execve(resolved_path, clean_argv, environ);
+            if (pid < 0) {
+                printf("sh: %s: execution failed\n", resolved_path);
+                ret_status = 127;
+            } else {
+                int status = 0;
+                waitpid(pid, &status, 0);
+                if (WIFEXITED(status)) {
+                    ret_status = WEXITSTATUS(status);
+                } else {
+                    ret_status = 0;
+                }
+            }
+        }
     }
 
-    char resolved_path[256];
-    if (resolve_binary_path(argv[0], resolved_path, sizeof(resolved_path)) != 0) {
-        printf("sh: %s: command not found\n", argv[0]);
-        return 127;
+    fflush(stdout);
+    fflush(stderr);
+
+    if (redir_stdout) {
+        close(STDOUT_FILENO);
+    }
+    if (redir_stdin) {
+        close(STDIN_FILENO);
     }
 
-    argv[0] = resolved_path;
-    pid_t pid = execve(resolved_path, argv, environ);
-    if (pid < 0) {
-        printf("sh: %s: execution failed\n", resolved_path);
-        return 127;
+    return ret_status;
+}
+
+static int execute_pipeline(char *cmd_line) {
+    char *pipes[16];
+    int num_pipes = 0;
+    char *p = cmd_line;
+    char *start = p;
+    char in_quote = '\0';
+
+    while (*p) {
+        if ((*p == '"' || *p == '\'') && in_quote == '\0') {
+            in_quote = *p;
+        } else if (*p == in_quote) {
+            in_quote = '\0';
+        } else if (*p == '|' && in_quote == '\0') {
+            *p = '\0';
+            pipes[num_pipes++] = start;
+            start = p + 1;
+            if (num_pipes >= 15) {
+                break;
+            }
+        }
+        p++;
     }
+    pipes[num_pipes++] = start;
+
+    if (num_pipes == 1) {
+        char *argv[SH_MAX_ARGS];
+        int argc = tokenize_line(pipes[0], argv, SH_MAX_ARGS);
+        return execute_single_command(argc, argv);
+    }
+
+    int pipe_status = 0;
+
+    for (int i = 0; i < num_pipes; i++) {
+        char subcmd_buf[SH_MAX_LINE];
+        if (i == 0) {
+            snprintf(subcmd_buf, sizeof(subcmd_buf), "%s > /tmp/.sh_p0", pipes[0]);
+            char *argv[SH_MAX_ARGS];
+            int argc = tokenize_line(subcmd_buf, argv, SH_MAX_ARGS);
+            pipe_status = execute_single_command(argc, argv);
+        } else if (i == num_pipes - 1) {
+            snprintf(subcmd_buf, sizeof(subcmd_buf), "%s < /tmp/.sh_p%d", pipes[i], i - 1);
+            char *argv[SH_MAX_ARGS];
+            int argc = tokenize_line(subcmd_buf, argv, SH_MAX_ARGS);
+            pipe_status = execute_single_command(argc, argv);
+        } else {
+            snprintf(subcmd_buf, sizeof(subcmd_buf), "%s < /tmp/.sh_p%d > /tmp/.sh_p%d", pipes[i],
+                     i - 1, i);
+            char *argv[SH_MAX_ARGS];
+            int argc = tokenize_line(subcmd_buf, argv, SH_MAX_ARGS);
+            pipe_status = execute_single_command(argc, argv);
+        }
+    }
+
+    for (int j = 0; j < num_pipes - 1; j++) {
+        char fname[64];
+        snprintf(fname, sizeof(fname), "/tmp/.sh_p%d", j);
+        unlink(fname);
+    }
+    return pipe_status;
+}
+
+typedef enum { OP_NONE = 0, OP_AND, OP_OR } ChainOp;
+
+typedef struct {
+    char *cmd;
+    ChainOp op;
+} ChainNode;
+
+static int execute_chained_statement(char *statement) {
+    ChainNode nodes[16];
+    int node_count = 0;
+
+    char *p = statement;
+    char *cmd_start = p;
+    char in_quote = '\0';
+    ChainOp next_op = OP_NONE;
+
+    while (*p) {
+        if ((*p == '"' || *p == '\'') && in_quote == '\0') {
+            in_quote = *p;
+        } else if (*p == in_quote) {
+            in_quote = '\0';
+        } else if (in_quote == '\0') {
+            if (*p == '&' && *(p + 1) == '&') {
+                *p = '\0';
+                nodes[node_count].cmd = cmd_start;
+                nodes[node_count].op = next_op;
+                node_count++;
+                next_op = OP_AND;
+                p++;
+                cmd_start = p + 1;
+            } else if (*p == '|' && *(p + 1) == '|') {
+                *p = '\0';
+                nodes[node_count].cmd = cmd_start;
+                nodes[node_count].op = next_op;
+                node_count++;
+                next_op = OP_OR;
+                p++;
+                cmd_start = p + 1;
+            }
+        }
+        p++;
+    }
+
+    nodes[node_count].cmd = cmd_start;
+    nodes[node_count].op = next_op;
+    node_count++;
 
     int status = 0;
-    waitpid(pid, &status, 0);
-    if (WIFEXITED(status)) {
-        return WEXITSTATUS(status);
+    for (int i = 0; i < node_count; i++) {
+        if (i > 0) {
+            if (nodes[i].op == OP_AND && status != 0) {
+                continue;
+            }
+            if (nodes[i].op == OP_OR && status == 0) {
+                continue;
+            }
+        }
+
+        while (*nodes[i].cmd && is_space(*nodes[i].cmd)) {
+            nodes[i].cmd++;
+        }
+        if (*nodes[i].cmd == '\0') {
+            continue;
+        }
+
+        status = execute_pipeline(nodes[i].cmd);
+        last_exit_status = status;
     }
-    return 0;
+
+    return status;
 }
 
 static int run_command_string(char *cmd_str) {
-    char *argv[SH_MAX_ARGS];
-    int argc = tokenize_line(cmd_str, argv, SH_MAX_ARGS);
-    if (argc > 0) {
-        last_exit_status = execute_command(argc, argv);
-        return last_exit_status;
+    char *p = cmd_str;
+    char *stmt_start = p;
+    char in_quote = '\0';
+    int status = 0;
+
+    while (*p) {
+        if ((*p == '"' || *p == '\'') && in_quote == '\0') {
+            in_quote = *p;
+        } else if (*p == in_quote) {
+            in_quote = '\0';
+        } else if (*p == ';' && in_quote == '\0') {
+            *p = '\0';
+            while (*stmt_start && is_space(*stmt_start)) {
+                stmt_start++;
+            }
+            if (*stmt_start) {
+                status = execute_chained_statement(stmt_start);
+            }
+            stmt_start = p + 1;
+        }
+        p++;
     }
-    return 0;
+
+    while (*stmt_start && is_space(*stmt_start)) {
+        stmt_start++;
+    }
+    if (*stmt_start) {
+        status = execute_chained_statement(stmt_start);
+    }
+
+    return status;
 }
 
 static int run_script_file(const char *filename) {
