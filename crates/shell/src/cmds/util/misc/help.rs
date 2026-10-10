@@ -37,23 +37,22 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::print_str("Storage & Filesystem (VFS):\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str("  drives    use       disk      ramdisk   initrd    sync      ext4\n");
-        vga::print_str("  list      cd / go   fileinfo  swap      lvm       raid\n\n");
+        vga::print_str("  cd / go   swap      lvm       raid\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Process, Scheduling & IPC:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  tasks     run       stop      kill      jobs      fg        bg\n");
-        vga::print_str("  cgroups   futex     eventfd   epoll     mqueue    timer     kcc\n\n");
+        vga::print_str("  tasks     run       stop      kill      init\n");
+        vga::print_str("  cgroups   futex     eventfd   epoll     mqueue    timer\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Network & Security:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  network   download  fetch     https     firewall  bpf       seccomp\n");
-        vga::print_str("  mac       tpm\n\n");
+        vga::print_str("  network   firewall  bpf       seccomp   mac       tpm\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("General & Shell Management:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  sh        help      history   wipe      search\n");
+        vga::print_str("  sh        help      history   wipe\n");
     }
 }
