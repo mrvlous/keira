@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    const char *log_files[] = {"/var/log/system.log", "/var/log/boot.log"};
+    const char *log_files[] = {"/var/log/boot.log", "/var/log/system.log"};
     int printed = 0;
 
     for (size_t f = 0; f < sizeof(log_files) / sizeof(log_files[0]); f++) {
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     }
 
     if (!printed) {
-        puts("[dmesg] No active kernel log records available.");
+        fprintf(stderr, "dmesg: no active kernel log records available\n");
     }
 
     return 0;

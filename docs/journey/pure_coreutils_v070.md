@@ -206,7 +206,7 @@ The supervisor console retains precisely **15 emergency kernel debugger commands
 | `userland/bin/kill` | Dual Arch | **PASS** | Dispatches POSIX signals to user and kernel tasks |
 | `userland/bin/hostname`| Dual Arch | **PASS** | Queries and updates `/etc/hostname` |
 | `userland/bin/clear` | Dual Arch | **PASS** | Resets screen and cursor via ANSI escape sequence |
-| `userland/bin/dmesg` | Dual Arch | **PASS** | Streams `/var/log/system.log` to stdout |
+| `userland/bin/dmesg` | Dual Arch | **PASS** | Streams `/var/log/boot.log` and `/var/log/system.log` to stdout |
 | `userland/bin/df` | Dual Arch | **PASS** | Reports VFS mount points and filesystem usage |
 | `userland/bin/fetch` | Dual Arch | **PASS** | Fetches live HTTP REST endpoints with HTTP 200 OK |
 | `userland/bin/kcc` | Dual Arch | **PASS** | Compiles C source files to executable ELF binaries |
