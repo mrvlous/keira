@@ -21,23 +21,23 @@ Keira is designed as a freestanding monolithic kernel. Under this architecture, 
 While automatically executed at boot time as PID 1, `init.elf` can also be inspected and re-executed dynamically:
 
 ```bash
-# Execute via the built-in shell init wrapper:
-keira:/# init --help
-Usage: init [run|status]
-Controls or executes canonical userspace init (PID 1).
+# Display help and usage reference:
+keira:/# /bin/init.elf -h
+Usage: init [OPTIONS]
 
-keira:/# init
-[INIT] Launching canonical userspace init from /bin/init.elf...
-[init] Starting Keira Canonical Userspace Init (PID 1)...
-[init] System initialization sequence completed successfully.
-[init] Transferring control to supervisor console.
-[INIT] Userspace init completed successfully.
+Description:
+  Canonical userspace init system (PID 1).
 
-# Execute directly via the ELF runner:
-keira:/# run /bin/init.elf
-Loading ELF binary: /bin/init.elf
-[init] Starting Keira Canonical Userspace Init (PID 1)...
-[init] System initialization sequence completed successfully.
-[init] Transferring control to supervisor console.
-Program exited normally.
+Options:
+  -v, --verbose  Display detailed initialization status
+  -h, --help     Display this help reference and exit
+
+# Silent execution (standard boot default):
+keira:/# /bin/init.elf
+
+# Verbose execution with diagnostics:
+keira:/# /bin/init.elf -v
+[INIT] Keira Canonical Userspace Init (PID 1) started in Ring 3
+[INIT] Pure freestanding kernel environment certified
+[INIT] System initialization complete. Entering supervisor control plane
 ```

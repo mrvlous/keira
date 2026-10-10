@@ -37,8 +37,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    puts("[init] Starting Keira Canonical Userspace Init (PID 1)...");
-    puts("[init] System initialization sequence completed successfully.");
-    puts("[init] Transferring control to supervisor console.");
     return 0;
 }

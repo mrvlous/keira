@@ -78,19 +78,23 @@ for init_path in init_candidates {
 
 ## 4. Shell Control Plane Integration
 
-The shell provides an explicit `init` control command for inspecting or re-running userspace init:
+The shell provides direct invocation of `/bin/init.elf` for inspecting userspace initialization:
 
 ```text
-keira:/# init --help
-Usage: init [run|status]
-Controls or executes canonical userspace init (PID 1).
+keira:/# /bin/init.elf -h
+Usage: init [OPTIONS]
 
-keira:/# init
-[INIT] Launching canonical userspace init from /bin/init.elf...
-[init] Starting Keira Canonical Userspace Init (PID 1)...
-[init] System initialization sequence completed successfully.
-[init] Transferring control to supervisor console.
-[INIT] Userspace init completed successfully.
+Description:
+  Canonical userspace init system (PID 1).
+
+Options:
+  -v, --verbose  Display detailed initialization status
+  -h, --help     Display this help reference and exit
+
+keira:/# /bin/init.elf -v
+[INIT] Keira Canonical Userspace Init (PID 1) started in Ring 3
+[INIT] Pure freestanding kernel environment certified
+[INIT] System initialization complete. Entering supervisor control plane
 ```
 
 ---
