@@ -2,7 +2,7 @@
 
 # Journey Milestone 15: Userland Multi-Threading & v0.6.0 Release
 
-Milestone 15 crowns the Keira Kernel `v0.6.0` production release. It introduces the full userland multi-threading architecture through the `clone` system call (`SYS_CLONE_THREAD`), support for shared virtual address spaces (`CLONE_VM`), thread groups (`CLONE_THREAD`), Thread Local Storage (`CLONE_SETTLS`), user TID lifecycle management (`CLONE_PARENT_SETTID` and `CLONE_CHILD_CLEARTID`), and an autonomous freestanding POSIX Threads (`pthread`) library.
+Milestone 15 crowns the Keira Kernel `v0.6.0` production release. It introduces the full userland multi-threading architecture through the `clone` system call (`SYS_CLONE_THREAD`), support for shared virtual address spaces (`CLONE_VM`), thread groups (`CLONE_THREAD`), Thread Local Storage (`CLONE_SETTLS`), user TID lifecycle management (`CLONE_PARENT_SETTID` and `CLONE_CHILD_CLEARTID`) and an autonomous freestanding POSIX Threads (`pthread`) library.
 
 ---
 
@@ -132,7 +132,7 @@ When `pthread_join(thread, &retval)` is invoked:
 1. The joining thread queries the thread's completion status.
 2. If active, the caller sleeps on the child's `clear_child_tid` memory address via `FUTEX_WAIT`.
 3. When the child thread terminates via `handle_exit`, the kernel clears the user pointer (`*clear_child_tid = 0`) and triggers `futex_wake(clear_child_tid, 1)`.
-4. The caller awakens, retrieves the returned exit pointer, and reclaims allocated stack frames.
+4. The caller awakens, retrieves the returned exit pointer and reclaims allocated stack frames.
 
 ---
 
@@ -170,4 +170,4 @@ With Milestone 15 complete, Keira Kernel `v0.6.0` delivers:
 - **Lock-Free Work-Stealing**: Per-CPU Chase-Lev deques and SMP load balancing (Milestone 11).
 - **Hierarchical Magazine Slab Allocator**: Bonwick magazine caching and depot exchange (Milestone 12).
 - **SMP Inter-Processor Interrupts**: Cross-core TLB shootdown rendezvous (Milestone 13) and Vector 0xFE preemption IPIs (Milestone 14).
-- **Userland Multi-Threading**: Full `clone` syscall with `CLONE_VM`, thread group coordination, and freestanding POSIX Pthreads (Milestone 15).
+- **Userland Multi-Threading**: Full `clone` syscall with `CLONE_VM`, thread group coordination and freestanding POSIX Pthreads (Milestone 15).

@@ -9,9 +9,9 @@ The C runtime initialization stub provides the entry point for all userland ELF 
 ## Process Startup Protocol
 
 When the kernel loader (`crates/fs/src/elf/loader/`) parses an ELF binary and creates a new Ring 3 task:
-1. The kernel pushes `argc`, `argv`, `envp`, and the `auxv` vector onto the userland stack.
+1. The kernel pushes `argc`, `argv`, `envp` and the `auxv` vector onto the userland stack.
 2. The instruction pointer is set to the ELF entry address (`_start`).
-3. `crt0.asm` retrieves arguments from the stack, initializes the global `environ` pointer, extracts `AT_RANDOM` to seed `__stack_chk_guard`, aligns the stack to a 16-byte boundary, and calls `main(argc, argv, envp)`.
+3. `crt0.asm` retrieves arguments from the stack, initializes the global `environ` pointer, extracts `AT_RANDOM` to seed `__stack_chk_guard`, aligns the stack to a 16-byte boundary and calls `main(argc, argv, envp)`.
 4. Upon return from `main()`, `crt0.asm` invokes `exit(retval)` via the `SYS_exit` system call.
 
 ---

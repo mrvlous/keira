@@ -2,7 +2,7 @@
 
 # Tutorial: Adding System Calls
 
-This guide provides a comprehensive, end-to-end tutorial for defining, implementing, securing, and testing a new system call across both `x86_64` (Long Mode) and `i686` (Protected Mode) architectures.
+This guide provides a comprehensive, end-to-end tutorial for defining, implementing, securing and testing a new system call across both `x86_64` (Long Mode) and `i686` (Protected Mode) architectures.
 
 ---
 

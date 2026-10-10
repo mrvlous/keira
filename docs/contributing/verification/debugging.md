@@ -2,7 +2,7 @@
 
 # Debugging & Diagnostics Guide
 
-This document details techniques for debugging Keira Kernel using GDB, QEMU serial traces, stack unwinding, and hardware breakpoint inspection.
+This document details techniques for debugging Keira Kernel using GDB, QEMU serial traces, stack unwinding and hardware breakpoint inspection.
 
 ---
 

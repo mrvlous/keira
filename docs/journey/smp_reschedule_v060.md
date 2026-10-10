@@ -49,7 +49,7 @@ sequenceDiagram
    - Calls `reschedule_ipi_handler` to acknowledge the Local APIC interrupt via End-Of-Interrupt (`EOI`) and record telemetry.
    - Invokes `schedule_tick(current_rsp)` to evaluate local runqueues and decentralized work-stealing deques.
    - Updates `rsp = rax` if a newly selected task is chosen.
-   - Restores registers via `popaq`, issues conditional `swapgs`, and resumes execution via `iretq`.
+   - Restores registers via `popaq`, issues conditional `swapgs` and resumes execution via `iretq`.
 2. **32-bit Protected Mode Entry (`arch/x86/i686/kernel/isr.asm`)**:
    - Preserves 32-bit general-purpose registers via `pushad`.
    - Invokes `reschedule_ipi_handler`.

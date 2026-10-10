@@ -2,7 +2,7 @@
 
 # Unsafe Rust Guidelines & Safety Invariants
 
-Because Keira is a freestanding operating system kernel interacting directly with hardware registers, MMU page tables, and CPU contexts, `unsafe` Rust is necessary in specific low-level components. This document establishes rigorous guidelines for declaring and auditing `unsafe` code.
+Because Keira is a freestanding operating system kernel interacting directly with hardware registers, MMU page tables and CPU contexts, `unsafe` Rust is necessary in specific low-level components. This document establishes rigorous guidelines for declaring and auditing `unsafe` code.
 
 ---
 
@@ -35,7 +35,7 @@ pub unsafe fn inb(port: u16) -> u8 {
 ## 2. Unsafe Review Checklist
 
 During code review, verify:
-* **Pointer Validity**: Raw pointers must be checked for non-nullness, proper alignment, and valid page mapping before dereferencing.
+* **Pointer Validity**: Raw pointers must be checked for non-nullness, proper alignment and valid page mapping before dereferencing.
 * **Aliasing Rules**: Never create multiple mutable references (`&mut T`) to the same memory location, even in kernel space.
 * **Interrupt Safety**: Critical hardware sections that manipulate shared memory structures must disable interrupts (`cli`) or hold appropriate spinlocks.
 * **Ring 3 Isolation**: Never trust userland pointers. User addresses must always pass through `validate_user_ptr()` before access.

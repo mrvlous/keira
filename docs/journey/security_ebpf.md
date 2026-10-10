@@ -63,7 +63,7 @@ Hardware security guarantees are rooted in the Trusted Platform Module (TPM 2.0)
 
 ### B. In-Kernel eBPF Virtual Machine & Static Verifier
 To allow safe, programmable packet inspection and kernel telemetry without modifying kernel source code, Keira provides an in-kernel extended Berkeley Packet Filter (eBPF) runtime:
-1. **Virtual Machine Architecture**: A register-based interpreter with 10 64-bit virtual registers (`reg_a`, `reg_x`), a 16-slot 32-bit scratchpad memory array, and a hard execution cycle limit of 256 instructions per invocation.
+1. **Virtual Machine Architecture**: A register-based interpreter with 10 64-bit virtual registers (`reg_a`, `reg_x`), a 16-slot 32-bit scratchpad memory array and a hard execution cycle limit of 256 instructions per invocation.
 2. **DAG Acyclic Static Verifier (`bpf_verify`)**: Untrusted bytecode is validated before execution:
    - Program size is bounded to a maximum of 32 instructions.
    - Bounded execution graph: All jump targets (`BPF_JA`, `BPF_JEQ`, `BPF_JGT`, `BPF_JGE`, `BPF_JSET`) must jump strictly forward within program boundaries, mathematically precluding loops and recursion.

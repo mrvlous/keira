@@ -70,7 +70,7 @@ graph TD
    - **Fast Path**: Pop from local CPU's active magazine ($O(1)$, zero locks).
    - **Medium Path**: Exchange empty backup magazine with Central Global Depot for a full magazine.
    - **Slow Path**: Carve a batch of 32 pre-aligned objects from the kernel heap into the magazine under EBR protection.
-2. **Full Cache Reaping (`reap`)**: Empties all per-CPU magazines, central depot stacks, and free lists back to the kernel heap during low-memory pressure or shutdown.
+2. **Full Cache Reaping (`reap`)**: Empties all per-CPU magazines, central depot stacks and free lists back to the kernel heap during low-memory pressure or shutdown.
 3. **Specialized Kernel Caches**:
    - `TASK_CACHE`: 512-byte descriptors for `task_struct` and scheduler contexts.
    - `INODE_CACHE`: 256-byte descriptors for VFS filesystem nodes.
@@ -96,7 +96,7 @@ The cache manager tracks fine-grained runtime telemetry:
 
 ## 4. Verification & Dual-Architecture Certification
 
-1. **Unit Test Suite**: 78 tests passing with 100% coverage in `keira-mem`, validating magazine primitives, depot exchanges, cross-CPU absorption, batch allocations, and C ABI safety.
+1. **Unit Test Suite**: 78 tests passing with 100% coverage in `keira-mem`, validating magazine primitives, depot exchanges, cross-CPU absorption, batch allocations and C ABI safety.
 2. **Dual-Architecture Build**: `x86_64` and `i686` kernels compile with zero warnings and zero errors.
 3. **QEMU Multi-CPU Verification**:
    - `sysinfo.elf`: System metrics and descriptor verification.

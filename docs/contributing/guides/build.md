@@ -2,7 +2,7 @@
 
 # Build System & Compilation Pipeline
 
-Keira Kernel employs a unified, multi-stage compilation pipeline orchestrated by a non-recursive `Makefile`, building pure `#![no_std]` Rust kernel crates, low-level x86 assembly, userland C runtime libraries, and generating bootable ISOs and disk images.
+Keira Kernel employs a unified, multi-stage compilation pipeline orchestrated by a non-recursive `Makefile`, building pure `#![no_std]` Rust kernel crates, low-level x86 assembly, userland C runtime libraries and generating bootable ISOs and disk images.
 
 ---
 
@@ -71,25 +71,25 @@ Because Keira runs directly on bare metal without an underlying operating system
 
 ## Comprehensive Make Targets Inventory
 
-The `Makefile` defines a complete developer interface for compilation, emulation, code formatting, static analysis, and verification:
+The `Makefile` defines a complete developer interface for compilation, emulation, code formatting, static analysis and verification:
 
 | Make Target | Description | Preflight Guard |
 | :--- | :--- | :--- |
-| `make all` | Builds assembly, kernel binary, userland binaries, initrd, and bootable ISO for active `ARCH`. | `preflight` |
-| `make full` | Symmetrically builds complete kernel releases, disk images, and ISOs for both `x86_64` and `i686`. | `preflight` |
+| `make all` | Builds assembly, kernel binary, userland binaries, initrd and bootable ISO for active `ARCH`. | `preflight` |
+| `make full` | Symmetrically builds complete kernel releases, disk images and ISOs for both `x86_64` and `i686`. | `preflight` |
 | `make preflight` | Validates presence of core build utilities (`nasm`, `gcc`, `ld`, `cargo`, `rustc`, `grub-mkrescue`, `xorriso`, `mkfs.fat`, `mmd`, `mcopy`, `tar`, `dd`). Halts with copy-paste host commands on failure. | None |
 | `make preflight-qemu` | Validates presence of QEMU hypervisor binaries for current target architecture. | None |
 | `make preflight-format` | Validates formatting tools (`cargo fmt`, `clang-format`). | None |
 | `make preflight-lint` | Validates static analysis tools (`clang-tidy`). | None |
-| `make check` | Diagnostic checklist of all 15 build, emulation, formatting, and linting tools with copy-paste installation commands on missing items. | None |
-| `make run` | Boots active architecture in QEMU with AHCI SATA, IDE, HDA sound, multi-core SMP (`-smp 2`), and serial redirection. | `preflight-qemu` |
+| `make check` | Diagnostic checklist of all 15 build, emulation, formatting and linting tools with copy-paste installation commands on missing items. | None |
+| `make run` | Boots active architecture in QEMU with AHCI SATA, IDE, HDA sound, multi-core SMP (`-smp 2`) and serial redirection. | `preflight-qemu` |
 | `make run-32` | Boots pure 32-bit `i686` kernel in QEMU. | `preflight-qemu` |
 | `make run SMP=4` | Boots active architecture in QEMU with 4-core Symmetric Multiprocessing enabled. | `preflight-qemu` |
 | `make test` | Executes automated headless QEMU smoke test for current architecture. | `preflight-qemu` |
 | `make test-all` | Executes headless automated test harness across both `x86_64` and `i686` architectures sequentially. | `preflight-qemu` |
 | `make format` | Formats all Rust crates (`cargo fmt`) and all userland C code (`clang-format`). | `preflight-format` |
 | `make lint` | Runs `clang-tidy` across all userland C sources. | `preflight-lint` |
-| `make clean` | Removes all build output directories (`build/`), compiled objects, disk images, and cargo build artifacts. | None |
+| `make clean` | Removes all build output directories (`build/`), compiled objects, disk images and cargo build artifacts. | None |
 
 ---
 

@@ -2,7 +2,7 @@
 
 # Tutorial: Developing Hardware Device Drivers
 
-This tutorial guides developers through writing, initializing, and registering hardware device drivers in Keira Kernel, covering PCI bus discovery, Memory-Mapped I/O (MMIO), DMA allocation, and interrupt routing.
+This tutorial guides developers through writing, initializing and registering hardware device drivers in Keira Kernel, covering PCI bus discovery, Memory-Mapped I/O (MMIO), DMA allocation and interrupt routing.
 
 ---
 

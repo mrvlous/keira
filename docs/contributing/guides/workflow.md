@@ -2,7 +2,7 @@
 
 # Git Workflow & Collaboration Guidelines
 
-This document outlines the branch management, contribution workflow, automated quality checks, and commit structuring rules for Keira Kernel.
+This document outlines the branch management, contribution workflow, automated quality checks and commit structuring rules for Keira Kernel.
 
 ---
 
@@ -54,5 +54,5 @@ make test-all
 
 Keira adheres to a strict **atomic commit invariant**:
 * Do **NOT** combine unrelated changes across different subsystems into a single commit.
-* Separate documentation updates, kernel core fixes, driver changes, and userland code into distinct commits.
+* Separate documentation updates, kernel core fixes, driver changes and userland code into distinct commits.
 * Ensure every commit compiles independently so `git bisect` remains effective for regression testing.

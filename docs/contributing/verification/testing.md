@@ -2,7 +2,7 @@
 
 # Automated Testing & Verification Suite
 
-Keira employs a multi-tiered testing strategy encompassing unit tests, automated QEMU smoke tests, Ring 3 ABI verification, and differential system call fuzzing.
+Keira employs a multi-tiered testing strategy encompassing unit tests, automated QEMU smoke tests, Ring 3 ABI verification and differential system call fuzzing.
 
 ---
 
@@ -19,7 +19,7 @@ graph TD
 
 ## 2. Automated QEMU Test Harness
 
-Execute headless tests verifying kernel boot, shell initialization, command execution, and clean shutdown:
+Execute headless tests verifying kernel boot, shell initialization, command execution and clean shutdown:
 
 ```bash
 # Run test suite for current architecture
@@ -43,7 +43,7 @@ The `test_abi.elf` binary exercises system calls from user mode:
 * `fork()`, `execve()`, `waitpid()` process lifecycle validation.
 * POSIX file I/O operations (`open`, `read`, `write`, `lseek`, `close`).
 * Virtual memory boundary allocation (`mmap`, `munmap`).
-* Signal delivery, masking, and default disposition.
+* Signal delivery, masking and default disposition.
 
 ---
 
@@ -51,4 +51,4 @@ The `test_abi.elf` binary exercises system calls from user mode:
 
 The `fuzz_abi.elf` binary runs continuous stress tests against syscall entry points:
 * Verifies `validate_user_ptr` catches invalid kernel addresses (`0xC0000000+`).
-* Verifies zero-length buffers, negative counts, and misaligned pointers return `-EFAULT` or `-EINVAL` without panicking the kernel.
+* Verifies zero-length buffers, negative counts and misaligned pointers return `-EFAULT` or `-EINVAL` without panicking the kernel.

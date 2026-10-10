@@ -2,7 +2,7 @@
 
 # KCC Recursive Descent Parser (`userland/bin/kcc/parser/`)
 
-Transforms token streams into an Abstract Syntax Tree (AST) representing functions, control structures, and expressions.
+Transforms token streams into an Abstract Syntax Tree (AST) representing functions, control structures and expressions.
 
 ---
 

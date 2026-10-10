@@ -2,7 +2,7 @@
 
 # Development Environment Setup
 
-This guide details how to install and configure all required build tools, toolchains, and emulation environments across major Linux distributions.
+This guide details how to install and configure all required build tools, toolchains and emulation environments across major Linux distributions.
 
 ---
 
@@ -10,8 +10,8 @@ This guide details how to install and configure all required build tools, toolch
 
 * **Operating System**: Linux (x86_64 host recommended)
 * **Memory**: 4 GB RAM minimum (8 GB recommended for parallel cargo builds)
-* **Disk Space**: 10 GB free space for build artifacts, ISOs, and toolchains
-* **Dependencies**: 15 core build, packaging, formatting, and emulation utilities
+* **Disk Space**: 10 GB free space for build artifacts, ISOs and toolchains
+* **Dependencies**: 15 core build, packaging, formatting and emulation utilities
 
 ---
 
