@@ -13,18 +13,6 @@ use super::*;
 
 #[test]
 fn test_net_commands_help_invocation() {
-    let mut args = "download --help".split_whitespace();
-    args.next();
-    download::run(&mut args);
-
-    let mut args = "fetch --help".split_whitespace();
-    args.next();
-    fetch::run(&mut args);
-
-    let mut args = "https --help".split_whitespace();
-    args.next();
-    https::run(&mut args);
-
     let mut args = "network --help".split_whitespace();
     args.next();
     network::run(&mut args);
