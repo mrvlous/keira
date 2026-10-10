@@ -15,44 +15,26 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     {
         let bg = vga::Color::Black;
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("Keira Kernel Diagnostic & Supervisor Control Plane\n");
+        vga::print_str("Keira Kernel Diagnostic & Emergency Debugger\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str(
             "Use '<command> --help' to view options and detailed usage for any command.\n",
         );
-        vga::print_str(
-            "Use 'sh' for Ring 3 POSIX shell or run user binaries directly (/bin/*).\n\n",
-        );
+        vga::print_str("Standard UNIX utilities reside in /bin and run in Ring 3 userspace.\n\n");
 
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("System & Hardware:\n");
+        vga::print_str("Hardware & System Diagnostics:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  system    cpu       smp       memory    devices   time      runtime\n");
-        vga::print_str(
-            "  power     reset     hostname  syslog    drivers   lkm       watchpoint\n",
-        );
-        vga::print_str("  unwind    perf      kvm       framebuffer usb\n\n");
+        vga::print_str("  system      cpu         smp         memory      devices     drivers\n\n");
 
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("Storage & Filesystem (VFS):\n");
+        vga::print_str("Emergency Control & Recovery:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  drives    use       disk      ramdisk   initrd    sync      ext4\n");
-        vga::print_str("  cd / go   swap      lvm       raid\n\n");
+        vga::print_str("  disk        sync        syslog      unwind      watchpoint\n\n");
 
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("Process, Scheduling & IPC:\n");
+        vga::print_str("Execution & Power Management:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  tasks     run       stop      kill      init\n");
-        vga::print_str("  cgroups   futex     eventfd   epoll     mqueue    timer\n\n");
-
-        vga::set_color(vga::Color::White, bg);
-        vga::print_str("Network & Security:\n");
-        vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  network   firewall  bpf       seccomp   mac       tpm\n\n");
-
-        vga::set_color(vga::Color::White, bg);
-        vga::print_str("General & Shell Management:\n");
-        vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  sh        help      history   wipe\n");
+        vga::print_str("  run         reset       power       help\n");
     }
 }

@@ -23,60 +23,21 @@ pub fn execute_command_inner(cmd: &str) {
     let command = raw_command.strip_prefix("/bin/").unwrap_or(raw_command);
 
     match command {
-        "hostname" => crate::cmds::hostname::run(&mut parts),
-        "drives" => crate::cmds::drives::run(&mut parts),
-        "use" => crate::cmds::r#use::run(&mut parts),
-        "ramdisk" => crate::cmds::ramdisk::run(&mut parts),
         "system" => crate::cmds::sys::system::run(&mut parts),
         "cpu" => crate::cmds::cpu::run(&mut parts),
         "smp" => crate::cmds::smp::run(&mut parts),
-        "runtime" => crate::cmds::runtime::run(&mut parts),
-        "time" => crate::cmds::time::run(&mut parts),
         "memory" => crate::cmds::memory::run(&mut parts),
         "devices" => crate::cmds::devices::run(&mut parts),
-        "network" => crate::cmds::network::run(&mut parts),
-        "init" => crate::cmds::init::run(&mut parts),
-        "initrd" => crate::cmds::initrd::run(&mut parts),
-        "wipe" => crate::cmds::wipe::run(&mut parts),
-        "reset" | "reboot" => crate::cmds::reset::run(&mut parts),
-        "run" => crate::cmds::run::run(&mut parts),
-        "tasks" => crate::cmds::tasks::run(&mut parts),
-        "stop" => crate::cmds::stop::run(&mut parts),
+        "drivers" => crate::cmds::drivers::run(&mut parts),
         "disk" => crate::cmds::disk::run(&mut parts),
         "sync" => crate::cmds::sync::run(&mut parts),
-
-        "go" | "cd" => crate::cmds::go::run(&mut parts),
-        "help" => crate::cmds::help::run(&mut parts),
-        "history" => crate::cmds::history::run(&mut parts),
-        "framebuffer" => crate::cmds::framebuffer::run(&mut parts),
-        "usb" => crate::cmds::usb::run(&mut parts),
-
-        "drivers" => crate::cmds::drivers::run(&mut parts),
-        "lkm" | "lsmod" => crate::cmds::lkm::run(&mut parts),
+        "syslog" => crate::cmds::syslog::run(&mut parts),
         "unwind" => crate::cmds::unwind::run(&mut parts),
         "watchpoint" => crate::cmds::watchpoint::run(&mut parts),
+        "run" => crate::cmds::run::run(&mut parts),
+        "reset" | "reboot" => crate::cmds::reset::run(&mut parts),
         "power" | "poweroff" | "shutdown" => crate::cmds::power::run(&mut parts),
-        "perf" => crate::cmds::perf::run(&mut parts),
-        "timer" => crate::cmds::timer::run(&mut parts),
-        "syslog" | "dmesg" => crate::cmds::syslog::run(&mut parts),
-        "kvm" => crate::cmds::kvm::run(&mut parts),
-        "nvme" => crate::cmds::nvme::run(&mut parts),
-        "ext4" => crate::cmds::ext4::run(&mut parts),
-        "cgroups" => crate::cmds::cgroups::run(&mut parts),
-        "futex" => crate::cmds::futex::run(&mut parts),
-        "bpf" => crate::cmds::bpf::run(&mut parts),
-        "tpm" => crate::cmds::tpm::run(&mut parts),
-        "swap" => crate::cmds::swap::run(&mut driver_swap(&mut parts)),
-        "seccomp" => crate::cmds::seccomp::run(&mut parts),
-        "epoll" => crate::cmds::epoll::run(&mut parts),
-        "eventfd" | "signalfd" => crate::cmds::eventfd::run(&mut parts),
-        "mac" | "selinux" => crate::cmds::mac::run(&mut parts),
-        "mqueue" => crate::cmds::mqueue::run(&mut parts),
-        "kill" => crate::cmds::kill::run(&mut parts),
-        "lvm" => crate::cmds::lvm::run(&mut parts),
-        "raid" => crate::cmds::raid::run(&mut parts),
-        "firewall" => crate::cmds::firewall::run(&mut parts),
-        "sh" => crate::cmds::sh::run(&mut parts),
+        "help" => crate::cmds::help::run(&mut parts),
         _ => {
             if crate::cmds::run::run_direct_with_parts(command, &mut parts) {
                 return;
@@ -123,9 +84,4 @@ pub fn execute_command_inner(cmd: &str) {
             }
         }
     }
-}
-
-#[inline]
-fn driver_swap<'a>(parts: &mut core::str::SplitWhitespace<'a>) -> core::str::SplitWhitespace<'a> {
-    parts.clone()
 }
