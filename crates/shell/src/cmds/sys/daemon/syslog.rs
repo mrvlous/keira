@@ -7,28 +7,45 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! View kernel circular syslog dmesg log buffer using sys_syslog (Syscall 44).
+//! View kernel and system event log records.
 
-use keira_core::klog::sys_syslog_read;
+use crate::args::CliArgs;
 use keira_io::vga;
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
-    if let Some("-h") | Some("--help") = parts.next() {
-        {
-            vga::print_str("Usage: syslog [dmesg]\n\n");
-            vga::print_str("Description:\n  View circular kernel syslog dmesg diagnostic log buffer (Syscall 44).\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-        }
+    let args = CliArgs::parse(parts);
+
+    if args.has_flag('h', "help") {
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Usage: syslog [OPTIONS]\n\n");
+        vga::print_str("Description:\n  Display system and kernel event log records.\n\n");
+        vga::print_str("Options:\n");
+        vga::print_str("  -b, --boot  Display system boot record instead of runtime syslog\n");
+        vga::print_str("  -h, --help  Show this help message and exit\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }
 
-    {
-        vga::set_color(vga::Color::White, vga::Color::Black);
-        vga::print_str("Kernel Diagnostic Syslog Buffer (dmesg - Syscall 44)\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-        vga::print_str("Querying kernel syslog ring buffer...\n");
-        let mut buf = [0u8; 128];
-        let _ = sys_syslog_read(buf.as_mut_ptr(), 128);
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+    let path = if args.has_flag('b', "boot") {
+        "/var/log/boot.log"
+    } else {
+        "/var/log/system.log"
+    };
+
+    let mut buf = [0u8; 1024];
+    match keira_fs::vfs::read_file(path, &mut buf) {
+        Ok(len) if len > 0 => {
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            if let Ok(s) = core::str::from_utf8(&buf[..len]) {
+                vga::print_str(s);
+                if !s.ends_with('\n') {
+                    vga::print_str("\n");
+                }
+            }
+        }
+        _ => {
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("syslog: no active log records available\n");
+        }
     }
 }

@@ -16,7 +16,7 @@ The `sys` command suite provides emergency telemetry, power management and hardw
 | `reset` | `reset` | Reboot kernel and motherboard via PS/2 controller pulse (alias: `reboot`) | `-h, --help` |
 | `smp` | `smp` | Inspect multi-core APIC topology and secondary processor status | `-h, --help` |
 | `sync` | `sync` | Flush dirty filesystem cache sectors to physical disk | `-h, --help` |
-| `syslog` | `syslog` | Read kernel circular ring buffer diagnostic log (`dmesg`) | `-h, --help` |
+| `syslog` | `syslog [-b]` | Read system event and kernel log records | `-b, --boot`: Display boot record<br>`-h, --help`: Usage info |
 | `system` | `system` | Print kernel version, architecture, compiler target and build info | `-h, --help` |
 | `unwind` | `unwind` | Display stack frame trace and symbol unwind diagnostic test | `-h, --help` |
 | `watchpoint` | `watchpoint` | Inspect hardware debug registers (DR0-DR3) and watchpoint traps | `-h, --help` |
