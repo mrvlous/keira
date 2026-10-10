@@ -16,10 +16,10 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         let arg = match parts.next() {
             Some("-h") | Some("--help") => {
-                vga::print_str("Usage: go [path]\n\n");
-                vga::print_str("Description:\n  Change current working directory on the active FAT16 volume. Supports relative (., ..), absolute paths, and tilde (~).\n\n");
+                vga::print_str("Usage: go [path] (alias: cd [path])\n\n");
+                vga::print_str("Description:\n  Change current working directory on the active FAT16 volume. Supports relative (., ..), absolute paths and tilde (~).\n\n");
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-                vga::print_str("Examples:\n  go ~\n  go /tmp\n  go ..\n");
+                vga::print_str("Examples:\n  cd /tmp\n  go /bin\n  go ~\n");
                 return;
             }
             Some(s) => s,
