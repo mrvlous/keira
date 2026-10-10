@@ -7,23 +7,24 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Trigger kernel stack frame unwinder backtrace (Syscall 37).
+//! Trigger kernel stack frame unwinder backtrace.
 
 use keira_io::vga;
 
 #[inline(never)]
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = parts.next() {
-        {
-            vga::print_str("Usage: unwind\n\n");
-            vga::print_str(
-                "Description:\n  Trigger kernel stack frame unwinder backtrace (Syscall 37).\n",
-            );
-        }
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Usage: unwind [-h]\n\n");
+        vga::print_str("Description:\n  Trigger kernel stack frame unwinder backtrace.\n\n");
+        vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }
 
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Kernel Unwinder & CPU Exception Telemetry:\n");
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     vga::print_str("  Total Trapped Exceptions: ");
     vga::print_u64(keira_syscall::get_cpu_exception_count());
     vga::print_str("\n");
