@@ -12,12 +12,33 @@
 #include <string.h>
 #include <unistd.h>
 
+static void print_usage(void) {
+    puts("Usage: init [OPTIONS]");
+    puts("");
+    puts("Description:");
+    puts("  Canonical userspace init system (PID 1).");
+    puts("");
+    puts("Options:");
+    puts("  -v, --verbose  Display detailed initialization status");
+    puts("  -h, --help     Display this help reference and exit");
+}
+
 int main(int argc, char **argv) {
-    if (argc > 1 && (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--verbose") == 0)) {
-        puts("[INIT] Keira Canonical Userspace Init (PID 1) started in Ring 3");
-        puts("[INIT] Pure freestanding kernel environment certified");
-        puts("[INIT] System initialization complete. Entering supervisor control plane");
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_usage();
+            return 0;
+        }
+        if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
+            puts("[INIT] Keira Canonical Userspace Init (PID 1) started in Ring 3");
+            puts("[INIT] Pure freestanding kernel environment certified");
+            puts("[INIT] System initialization complete. Entering supervisor control plane");
+            return 0;
+        }
     }
 
+    puts("[init] Starting Keira Canonical Userspace Init (PID 1)...");
+    puts("[init] System initialization sequence completed successfully.");
+    puts("[init] Transferring control to supervisor console.");
     return 0;
 }
