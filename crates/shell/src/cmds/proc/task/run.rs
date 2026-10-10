@@ -206,8 +206,39 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
     }
 }
 
-/// Resolve an ELF binary path and execute it with CLI arguments, returning true if found.
+/// Backward compatible run_direct helper.
+pub fn run_direct(arg: &str) -> bool {
+    let args = [arg];
+    run_direct_with_args_mode(arg, &args, false)
+}
+
+/// Execute a binary directly with argument tokens passed from the shell command line.
+pub fn run_direct_with_parts(command: &str, parts: &mut core::str::SplitWhitespace) -> bool {
+    let mut args_buf: [&str; 16] = [""; 16];
+    args_buf[0] = command;
+    let mut arg_count = 1;
+
+    for part in parts {
+        if arg_count < 16 {
+            args_buf[arg_count] = part;
+            arg_count += 1;
+        }
+    }
+
+    run_direct_with_args_mode(command, &args_buf[..arg_count], false)
+}
+
+/// Backward compatible run_direct_with_args helper (defaults to quiet mode).
 pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
+    run_direct_with_args_mode(arg, args, false)
+}
+
+/// Resolve an ELF binary path and execute it with CLI arguments and configurable verbosity.
+pub fn run_direct_with_args_mode(arg: &str, args: &[&str], verbose: bool) -> bool {
+    run_direct_with_args_inner(arg, args, verbose)
+}
+
+fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
     unsafe {
         let mut path_buf = [0u8; 128];
         let mut resolved_str = "";
@@ -280,19 +311,27 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
             return false;
         }
 
-        if resolved_str.ends_with(".sh") {
-            vga::print_str("Executing script: ");
-        } else {
-            vga::print_str("Loading ELF binary: ");
+        let is_clear_cmd = arg == "clear"
+            || resolved_str.ends_with("/clear")
+            || resolved_str.ends_with("/clear.elf");
+
+        if verbose && !is_clear_cmd {
+            if resolved_str.ends_with(".sh") {
+                vga::print_str("Executing script: ");
+            } else {
+                vga::print_str("Loading ELF binary: ");
+            }
+            vga::print_str(resolved_str);
+            vga::print_str("\n");
         }
-        vga::print_str(resolved_str);
-        vga::print_str("\n");
 
         match run_user_program(resolved_str, args) {
             Ok(_) => {
-                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                vga::print_str("Program exited normally.\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                if verbose && !is_clear_cmd {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("Program exited normally.\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
             }
             Err(e) => {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
@@ -305,28 +344,6 @@ pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
 
         true
     }
-}
-
-/// Backward compatible run_direct helper.
-pub fn run_direct(arg: &str) -> bool {
-    let args = [arg];
-    run_direct_with_args(arg, &args)
-}
-
-/// Execute a binary directly with argument tokens passed from the shell command line.
-pub fn run_direct_with_parts(command: &str, parts: &mut core::str::SplitWhitespace) -> bool {
-    let mut args_buf: [&str; 16] = [""; 16];
-    args_buf[0] = command;
-    let mut arg_count = 1;
-
-    for part in parts {
-        if arg_count < 16 {
-            args_buf[arg_count] = part;
-            arg_count += 1;
-        }
-    }
-
-    run_direct_with_args(command, &args_buf[..arg_count])
 }
 
 pub fn run(parts: &mut core::str::SplitWhitespace) {
@@ -353,7 +370,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     let prog_arg = args_buf[0];
-    if !run_direct_with_args(prog_arg, &args_buf[..arg_count]) {
+    if !run_direct_with_args_mode(prog_arg, &args_buf[..arg_count], true) {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("Error executing program: file not found\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
