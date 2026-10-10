@@ -7,15 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Filesystem and storage management shell commands.
+//! Filesystem and storage mount shell commands.
 
-pub mod dir;
-pub mod file;
 pub mod mount;
 
 #[cfg(test)]
 mod tests;
 
-pub use dir::list;
-pub use file::fileinfo;
 pub use mount::{disk, drives, ext4, initrd, r#use, ramdisk};

@@ -13,14 +13,6 @@ use super::*;
 
 #[test]
 fn test_fs_commands_help_invocation() {
-    let mut args = "list --help".split_whitespace();
-    args.next();
-    list::run(&mut args);
-
-    let mut args = "fileinfo --help".split_whitespace();
-    args.next();
-    fileinfo::run(&mut args);
-
     let mut args = "disk --help".split_whitespace();
     args.next();
     disk::run(&mut args);
