@@ -14,4 +14,4 @@ pub mod mount;
 #[cfg(test)]
 mod tests;
 
-pub use mount::{disk, drives, ext4, initrd, r#use, ramdisk};
+pub use mount::disk;

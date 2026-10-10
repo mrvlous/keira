@@ -15,7 +15,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         if let Some("-h") | Some("--help") = parts.next() {
             vga::print_str("Usage: disk\n\n");
-            vga::print_str("Description:\n  Display primary storage drive geometry, sector layout, and active FAT filesystem details.\n\n");
+            vga::print_str("Description:\n  Display primary storage drive geometry, sector layout and active FAT filesystem details.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
             return;
         }

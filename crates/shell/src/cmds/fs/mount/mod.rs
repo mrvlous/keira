@@ -7,11 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Storage device mounting, partition drives, ext4, and ramdisk commands.
+//! Storage device low-level diagnostic and raw disk geometry commands.
 
 pub mod disk;
-pub mod drives;
-pub mod ext4;
-pub mod initrd;
-pub mod ramdisk;
-pub mod r#use;

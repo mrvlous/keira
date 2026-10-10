@@ -16,24 +16,4 @@ fn test_fs_commands_help_invocation() {
     let mut args = "disk --help".split_whitespace();
     args.next();
     disk::run(&mut args);
-
-    let mut args = "drives --help".split_whitespace();
-    args.next();
-    drives::run(&mut args);
-
-    let mut args = "ext4 --help".split_whitespace();
-    args.next();
-    ext4::run(&mut args);
-
-    let mut args = "initrd --help".split_whitespace();
-    args.next();
-    initrd::run(&mut args);
-
-    let mut args = "ramdisk --help".split_whitespace();
-    args.next();
-    ramdisk::run(&mut args);
-
-    let mut args = "use --help".split_whitespace();
-    args.next();
-    r#use::run(&mut args);
 }

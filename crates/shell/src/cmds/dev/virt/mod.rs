@@ -7,9 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Driver runtime, module loader, epoll, and virtualization commands.
+//! Driver runtime and hardware registry commands.
 
 pub mod drivers;
-pub mod epoll;
-pub mod kvm;
-pub mod lkm;

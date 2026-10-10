@@ -7,15 +7,13 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Hardware devices, peripheral drivers, and volume management shell commands.
+//! Hardware devices and peripheral driver shell commands.
 
 pub mod hardware;
-pub mod storage;
 pub mod virt;
 
 #[cfg(test)]
 mod tests;
 
-pub use hardware::{devices, framebuffer, usb};
-pub use storage::{lvm, nvme, raid, swap};
-pub use virt::{drivers, epoll, kvm, lkm};
+pub use hardware::devices;
+pub use virt::drivers;

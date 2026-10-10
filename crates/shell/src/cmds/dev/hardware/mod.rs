@@ -10,5 +10,3 @@
 //! Hardware peripheral device commands.
 
 pub mod devices;
-pub mod framebuffer;
-pub mod usb;
