@@ -7,13 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! File manipulation, creation, viewing, and editing commands.
+//! Filesystem node information inspection command.
 
-pub mod copy;
-pub mod create;
-pub mod delete;
-pub mod edit;
 pub mod fileinfo;
-pub mod r#move;
-pub mod view;
-pub mod write;

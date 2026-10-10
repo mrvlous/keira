@@ -16,6 +16,6 @@ pub mod mount;
 #[cfg(test)]
 mod tests;
 
-pub use dir::{folder, list};
-pub use file::{copy, create, delete, edit, fileinfo, r#move, view, write};
+pub use dir::list;
+pub use file::fileinfo;
 pub use mount::{disk, drives, ext4, initrd, r#use, ramdisk};
