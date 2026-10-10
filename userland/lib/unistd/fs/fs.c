@@ -29,7 +29,15 @@ int access(const char *pathname, int mode) {
 }
 
 int unlink(const char *pathname) {
-    (void)pathname;
+    if (!pathname) {
+        errno = EINVAL;
+        return -1;
+    }
+    int ret = sys_unlink(pathname);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
     return 0;
 }
 

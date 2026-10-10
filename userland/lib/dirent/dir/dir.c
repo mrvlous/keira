@@ -10,43 +10,58 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
-
-static DIR static_dir;
+#include <syscall.h>
+#include <unistd.h>
 
 DIR *opendir(const char *name) {
     if (!name) {
         errno = EFAULT;
         return NULL;
     }
-    static_dir.fd = 3;
-    static_dir.index = 0;
-    memset(&static_dir.current, 0, sizeof(struct dirent));
-    return &static_dir;
+
+    int fd = open(name, O_RDONLY, 0);
+    if (fd < 0) {
+        return NULL;
+    }
+
+    DIR *dirp = (DIR *)malloc(sizeof(DIR));
+    if (!dirp) {
+        close(fd);
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    dirp->fd = fd;
+    dirp->index = 0;
+    memset(&dirp->current, 0, sizeof(struct dirent));
+    return dirp;
 }
 
 struct dirent *readdir(DIR *dirp) {
-    if (!dirp) {
+    if (!dirp || dirp->fd < 0) {
         errno = EBADF;
         return NULL;
     }
-    if (dirp->index == 0) {
-        dirp->current.d_ino = 1;
-        dirp->current.d_type = DT_DIR;
-        strcpy(dirp->current.d_name, ".");
-        dirp->index++;
-        return &dirp->current;
-    } else if (dirp->index == 1) {
-        dirp->current.d_ino = 2;
-        dirp->current.d_type = DT_DIR;
-        strcpy(dirp->current.d_name, "..");
+
+    int ret = sys_getdents(dirp->fd, &dirp->current, sizeof(struct dirent));
+    if (ret > 0) {
         dirp->index++;
         return &dirp->current;
     }
+
     return NULL;
 }
 
 int closedir(DIR *dirp) {
-    (void)dirp;
-    return 0;
+    if (!dirp || dirp->fd < 0) {
+        errno = EBADF;
+        return -1;
+    }
+
+    int ret = close(dirp->fd);
+    free(dirp);
+    return ret;
 }

@@ -61,3 +61,11 @@ int sys_dup(int oldfd) {
 int sys_dup2(int oldfd, int newfd) {
     return (int)syscall2(SYS_DUP2, (uint64_t)oldfd, (uint64_t)newfd);
 }
+
+int sys_getdents(int fd, void *dirp, size_t count) {
+    return (int)syscall3(SYS_GETDENTS, (uint64_t)fd, (uint64_t)(uintptr_t)dirp, (uint64_t)count);
+}
+
+int sys_unlink(const char *pathname) {
+    return (int)syscall1(SYS_UNLINK, (uint64_t)(uintptr_t)pathname);
+}
