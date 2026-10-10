@@ -13,19 +13,7 @@ use super::*;
 
 #[test]
 fn test_util_commands_help_invocation() {
-    let mut args = "go --help".split_whitespace();
-    args.next();
-    go::run(&mut args);
-
     let mut args = "help --help".split_whitespace();
     args.next();
     help::run(&mut args);
-
-    let mut args = "history --help".split_whitespace();
-    args.next();
-    history::run(&mut args);
-
-    let mut args = "wipe --help".split_whitespace();
-    args.next();
-    wipe::run(&mut args);
 }

@@ -8,7 +8,7 @@
 // the Free Software Foundation; version 2 of the License.
 
 //! Implementation of the 'system' shell command to display kernel specifications,
-//! CPU architecture information, memory utilization, and system uptime.
+//! CPU architecture information, memory utilization and system uptime.
 
 use crate::args::CliArgs;
 use crate::executor::*;
@@ -21,9 +21,9 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: system [-v] [-u] [-s]\n\n");
-            vga::print_str("Description:\n  Display kernel specifications, CPU architecture, and system telemetry.\n\n");
+            vga::print_str("Description:\n  Display kernel specifications, CPU architecture and system telemetry.\n\n");
             vga::print_str("Options:\n");
-            vga::print_str("  -v, --version  Display kernel version, build target, and license\n");
+            vga::print_str("  -v, --version  Display kernel version, build target and license\n");
             vga::print_str("  -u, --uptime   Display system uptime duration\n");
             vga::print_str("  -s, --summary  Display compact one-line system status\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");

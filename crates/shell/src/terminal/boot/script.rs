@@ -9,12 +9,37 @@
 
 //! Early shell startup initialization and boot script execution.
 
-use crate::state::session::{SHELL_PATH, SHELL_PATH_LEN};
+use crate::state::session::{HOSTNAME, HOSTNAME_LEN, SHELL_PATH, SHELL_PATH_LEN};
+
+const HOSTNAME_PATH: &str = "/etc/hostname";
+
+/// Load hostname from `/etc/hostname` into global state on boot.
+pub fn load_hostname() {
+    unsafe {
+        let mut buf = [0u8; 32];
+        if let Ok(len) = keira_fs::fat::read_file_content(HOSTNAME_PATH, &mut buf) {
+            let mut actual_len = len;
+            while actual_len > 0
+                && (buf[actual_len - 1] == b'\n'
+                    || buf[actual_len - 1] == b'\r'
+                    || buf[actual_len - 1] == b' ')
+            {
+                actual_len -= 1;
+            }
+
+            if actual_len > 0 && actual_len <= 32 {
+                HOSTNAME = [b' '; 32];
+                HOSTNAME[..actual_len].copy_from_slice(&buf[..actual_len]);
+                HOSTNAME_LEN = actual_len;
+            }
+        }
+    }
+}
 
 /// Execute initial environment setup and configure default working directory.
 pub fn run_boot_script() {
     unsafe {
-        crate::cmds::hostname::load_hostname();
+        load_hostname();
 
         let _ = keira_fs::fat::change_directory("/");
         SHELL_PATH = [0u8; 80];

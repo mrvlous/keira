@@ -7,13 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! General shell utilities, navigation, scripts, and help manuals.
+//! Emergency diagnostic and help utilities.
 
 pub mod misc;
-pub mod nav;
 
 #[cfg(test)]
 mod tests;
 
-pub use misc::{help, history, wipe};
-pub use nav::go;
+pub use misc::help;

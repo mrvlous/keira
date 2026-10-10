@@ -7,12 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System hardware telemetry, CPU topology, memory metrics, and clock commands.
+//! System hardware telemetry, CPU topology, memory metrics and stack unwinding commands.
 
 pub mod cpu;
-pub mod hostname;
 pub mod memory;
 pub mod smp;
 pub mod system;
-pub mod time;
 pub mod unwind;

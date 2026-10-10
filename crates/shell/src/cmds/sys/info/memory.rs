@@ -22,7 +22,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-l]\n\n");
             vga::print_str(
-                "Description:\n  Display physical frame allocator, kernel heap, and paging statistics.\n\n",
+                "Description:\n  Display physical frame allocator, kernel heap and paging statistics.\n\n",
             );
             vga::print_str("Options:\n");
             vga::print_str("  -m, --mega     Format all memory values in Megabytes (MB)\n");

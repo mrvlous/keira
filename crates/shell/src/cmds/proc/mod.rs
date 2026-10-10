@@ -7,15 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Process scheduling, job control, and task execution shell commands.
+//! Process and task execution shell commands.
 
-pub mod job;
 pub mod task;
-pub mod tools;
 
 #[cfg(test)]
 mod tests;
 
-pub use job::{kill, stop};
-pub use task::{cgroups, futex, run, tasks, timer};
-pub use tools::{eventfd, perf};
+pub use task::run;

@@ -26,13 +26,6 @@ fn test_sys_reset() {
 }
 
 #[test]
-fn test_sys_runtime() {
-    let mut args = "runtime --help".split_whitespace();
-    args.next();
-    runtime::run(&mut args);
-}
-
-#[test]
 fn test_sys_sync() {
     let mut args = "sync --help".split_whitespace();
     args.next();
@@ -61,13 +54,6 @@ fn test_sys_cpu() {
 }
 
 #[test]
-fn test_sys_hostname() {
-    let mut args = "hostname --help".split_whitespace();
-    args.next();
-    hostname::run(&mut args);
-}
-
-#[test]
 fn test_sys_memory() {
     let mut args = "memory --help".split_whitespace();
     args.next();
@@ -89,41 +75,8 @@ fn test_sys_system() {
 }
 
 #[test]
-fn test_sys_time() {
-    let mut args = "time --help".split_whitespace();
-    args.next();
-    time::run(&mut args);
-}
-
-#[test]
 fn test_sys_unwind() {
     let mut args = "unwind --help".split_whitespace();
     args.next();
     unwind::run(&mut args);
-}
-
-#[test]
-fn test_sys_init() {
-    let mut args = "init --help".split_whitespace();
-    args.next();
-    init::run(&mut args);
-
-    let mut args = "init".split_whitespace();
-    args.next();
-    init::run(&mut args);
-}
-
-#[test]
-fn test_sys_sh() {
-    let mut args = "sh --help".split_whitespace();
-    args.next();
-    sh::run(&mut args);
-
-    let mut args = "sh -c pwd".split_whitespace();
-    args.next();
-    sh::run(&mut args);
-
-    let mut args = "sh /etc/init.sh".split_whitespace();
-    args.next();
-    sh::run(&mut args);
 }

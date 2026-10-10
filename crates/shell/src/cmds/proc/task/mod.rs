@@ -7,10 +7,6 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Task management, control groups, futexes, and execution commands.
+//! Task and ELF direct execution supervisor command.
 
-pub mod cgroups;
-pub mod futex;
 pub mod run;
-pub mod tasks;
-pub mod timer;

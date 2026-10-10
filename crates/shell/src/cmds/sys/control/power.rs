@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Query ACPI Power Management, hardware topology, and NMI hardware watchdog status.
+//! Query ACPI Power Management, hardware topology and NMI hardware watchdog status.
 
 use keira_io::vga;
 
