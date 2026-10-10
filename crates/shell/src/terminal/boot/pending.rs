@@ -30,8 +30,17 @@ pub fn process_pending() {
         history_push();
         HISTORY_INDEX = -1;
 
-        let buffer_slice = &INPUT_BUFFER[..BUFFER_LEN];
-        if let Ok(cmd_str) = core::str::from_utf8(buffer_slice) {
+        let mut local_cmd_buf = [0u8; 512];
+        let copy_len = BUFFER_LEN.min(local_cmd_buf.len());
+        local_cmd_buf[..copy_len].copy_from_slice(&INPUT_BUFFER[..copy_len]);
+
+        BUFFER_LEN = 0;
+        COMMAND_READY = false;
+
+        keira_io::tty::flush_tty();
+        keira_io::ps2::flush_input_queue();
+
+        if let Ok(cmd_str) = core::str::from_utf8(&local_cmd_buf[..copy_len]) {
             let trimmed = cmd_str.trim();
             if !trimmed.is_empty() {
                 execute_command(trimmed);
@@ -40,8 +49,8 @@ pub fn process_pending() {
             vga::print_str("Error: invalid input encoding\n");
         }
 
-        BUFFER_LEN = 0;
-        COMMAND_READY = false;
+        keira_io::tty::flush_tty();
+        keira_io::ps2::flush_input_queue();
 
         let in_ed = &raw const IN_EDITOR_MODE;
         if !*in_ed {
