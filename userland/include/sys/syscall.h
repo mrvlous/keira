@@ -145,5 +145,6 @@ int sys_dup(int oldfd);
 int sys_dup2(int oldfd, int newfd);
 int sys_getdents(int fd, void *dirp, size_t count);
 int sys_unlink(const char *pathname);
+ssize_t sys_http_get(const char *url, void *buf, size_t count);
 
 #endif /* _SYS_SYSCALL_H */
