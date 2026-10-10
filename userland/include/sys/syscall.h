@@ -98,6 +98,8 @@
 #define SYS_MSYNC 83
 #define SYS_DUP 84
 #define SYS_DUP2 85
+#define SYS_GETDENTS 86
+#define SYS_UNLINK 87
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -141,5 +143,7 @@ int sys_sync(void);
 int sys_fsync(int fd);
 int sys_dup(int oldfd);
 int sys_dup2(int oldfd, int newfd);
+int sys_getdents(int fd, void *dirp, size_t count);
+int sys_unlink(const char *pathname);
 
 #endif /* _SYS_SYSCALL_H */

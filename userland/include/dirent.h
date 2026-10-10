@@ -29,6 +29,7 @@ struct dirent {
     uint16_t d_reclen;
     uint8_t d_type;
     char d_name[256];
+    char _pad[5];
 };
 
 typedef struct {
