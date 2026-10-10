@@ -17,10 +17,6 @@ fn test_util_commands_help_invocation() {
     args.next();
     go::run(&mut args);
 
-    let mut args = "search --help".split_whitespace();
-    args.next();
-    search::run(&mut args);
-
     let mut args = "help --help".split_whitespace();
     args.next();
     help::run(&mut args);

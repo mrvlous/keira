@@ -16,4 +16,4 @@ pub mod nav;
 mod tests;
 
 pub use misc::{help, history, wipe};
-pub use nav::{go, search};
+pub use nav::go;
