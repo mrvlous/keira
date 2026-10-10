@@ -11,9 +11,7 @@
 
 pub mod dev;
 pub mod fs;
-pub mod net;
 pub mod proc;
-pub mod sec;
 pub mod sys;
 pub mod util;
 
@@ -22,8 +20,6 @@ mod tests;
 
 pub use dev::*;
 pub use fs::*;
-pub use net::*;
 pub use proc::*;
-pub use sec::*;
 pub use sys::*;
 pub use util::*;
