@@ -93,6 +93,9 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         let ptr = top_stack_page as *mut u8;
         let initial_user_rsp = setup_user_stack_32(ptr, top_stack_page, args, entry_point);
 
+        keira_io::tty::flush_tty();
+        keira_io::ps2::flush_input_queue();
+
         let _job_id = keira_task::signal::add_job(1, filename, true);
         jump_to_user(entry_point, initial_user_rsp);
         keira_task::signal::remove_job_by_pid(1);
@@ -183,6 +186,9 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
             task.program_break_start = USER_DEFAULT_BRK;
             task.pml4_phys = child_pml4;
         }
+
+        keira_io::tty::flush_tty();
+        keira_io::ps2::flush_input_queue();
 
         let _job_id = keira_task::signal::add_job(1, filename, true);
         jump_to_user(entry_point, initial_user_rsp);
