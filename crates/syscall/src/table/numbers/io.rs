@@ -22,3 +22,5 @@ pub const SYS_FCNTL: u64 = 72;
 pub const SYS_IOCTL: u64 = 73;
 pub const SYS_DUP: u64 = 84;
 pub const SYS_DUP2: u64 = 85;
+pub const SYS_GETDENTS: u64 = 86;
+pub const SYS_UNLINK: u64 = 87;

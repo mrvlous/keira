@@ -23,6 +23,8 @@ pub mod test {
         assert_eq!(SYS_MMAP, 20);
         assert_eq!(SYS_FORK, 30);
         assert_eq!(SYS_DUP2, 85);
+        assert_eq!(SYS_GETDENTS, 86);
+        assert_eq!(SYS_UNLINK, 87);
     }
 
     #[test]
@@ -33,6 +35,8 @@ pub mod test {
         assert_eq!(syscall_name(SYS_MMAP), "sys_mmap");
         assert_eq!(syscall_name(SYS_FORK), "sys_fork");
         assert_eq!(syscall_name(SYS_DUP2), "sys_dup2");
+        assert_eq!(syscall_name(SYS_GETDENTS), "sys_getdents");
+        assert_eq!(syscall_name(SYS_UNLINK), "sys_unlink");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 

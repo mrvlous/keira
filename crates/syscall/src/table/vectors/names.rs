@@ -94,6 +94,8 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_MSYNC => "sys_msync",
         SYS_DUP => "sys_dup",
         SYS_DUP2 => "sys_dup2",
+        SYS_GETDENTS => "sys_getdents",
+        SYS_UNLINK => "sys_unlink",
         _ => "sys_unknown",
     }
 }
