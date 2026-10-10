@@ -39,30 +39,48 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
         Err(_) => return errno_to_ret(EINVAL),
     };
 
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, target_len) = if path_str == "." || path_str == "./" {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let cwd_len = t.cwd_len.min(127);
+                resolved_path_buf[..cwd_len].copy_from_slice(&t.cwd[..cwd_len]);
+                (
+                    core::str::from_utf8(&resolved_path_buf[..cwd_len]).unwrap_or("/"),
+                    cwd_len,
+                )
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
     let task_id = unsafe { CURRENT_TASK_IDX };
     let mac_mask = if write_mode {
         keira_task::security::MAC_WRITE
     } else {
         keira_task::security::MAC_READ
     };
-    if !keira_task::security::check_path_access(task_id as u64, path_str, mac_mask) {
+    if !keira_task::security::check_path_access(task_id as u64, target_path, mac_mask) {
         return errno_to_ret(EACCES);
     }
 
-    if write_mode && unsafe { keira_fs::lock::acquire_lock(path_str, task_id) }.is_err() {
+    if write_mode && unsafe { keira_fs::lock::acquire_lock(target_path, task_id) }.is_err() {
         return errno_to_ret(EACCES);
     }
 
-    let exists_val = exists(path_str);
+    let exists_val = exists(target_path);
     if !exists_val {
         if !write_mode && !is_creat {
             return errno_to_ret(ENOENT);
         }
-        if create_file(path_str).is_err() {
+        if create_file(target_path).is_err() {
             return errno_to_ret(EACCES);
         }
     } else if is_trunc {
-        let _ = write_file(path_str, &[]);
+        let _ = write_file(target_path, &[]);
     }
 
     unsafe {
@@ -78,13 +96,13 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
             if let Some(fd) = fd_slot {
                 t.fds[fd].is_open = true;
                 t.fds[fd].offset = if is_append {
-                    keira_fs::vfs::get_file_size(path_str).unwrap_or(0) as u64
+                    keira_fs::vfs::get_file_size(target_path).unwrap_or(0) as u64
                 } else {
                     0
                 };
                 t.fds[fd].write_mode = write_mode;
-                t.fds[fd].path_len = len;
-                t.fds[fd].path[..len].copy_from_slice(&path_buf[..len]);
+                t.fds[fd].path_len = target_len;
+                t.fds[fd].path[..target_len].copy_from_slice(target_path.as_bytes());
                 return fd as u64;
             }
         }
