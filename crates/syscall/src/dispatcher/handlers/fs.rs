@@ -231,6 +231,43 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     errno_to_ret(EBADF)
 }
 
+/// Emits userland console output to COM1 serial while filtering screen-clearing escape sequences.
+///
+/// This preserves host terminal scrollback and QEMU logs when Ring 3 utilities run `clear`.
+fn serial_print_filtered(s: &str) {
+    if s.contains("\x1b[2J") || s.contains("\x1b[3J") || s.contains("\x1b[H") {
+        let mut in_esc = false;
+        let mut in_csi = false;
+        for b in s.bytes() {
+            if !in_esc && b == 0x1b {
+                in_esc = true;
+                continue;
+            }
+            if in_esc {
+                if b == b'[' {
+                    in_csi = true;
+                    in_esc = false;
+                    continue;
+                }
+                in_esc = false;
+                continue;
+            }
+            if in_csi {
+                if (0x40..=0x7E).contains(&b) {
+                    in_csi = false;
+                }
+                continue;
+            }
+            let byte_slice = [b];
+            if let Ok(ch) = core::str::from_utf8(&byte_slice) {
+                serial::print_str(ch);
+            }
+        }
+    } else {
+        serial::print_str(s);
+    }
+}
+
 /// Syscall 8: Write to file descriptor from user buffer.
 pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     let fd = arg1 as usize;
@@ -346,13 +383,15 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
             }
             if let Ok(s) = core::str::from_utf8(&chunk[..to_read]) {
                 vga::print_str(s);
-                serial::print_str(s);
+                serial_print_filtered(s);
             } else {
                 for &b in &chunk[..to_read] {
                     let single = [b];
                     if let Ok(s) = core::str::from_utf8(&single) {
                         vga::print_str(s);
-                        serial::print_str(s);
+                        if b != 0x1b {
+                            serial::print_str(s);
+                        }
                     }
                 }
             }
