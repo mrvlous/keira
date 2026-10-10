@@ -2,7 +2,10 @@
 
 # Network & Transport Commands
 
-The `net` command suite provides network interface inspection, socket telemetry, and transport protocol utilities.
+The `net` command suite provides network interface inspection, socket telemetry and transport protocol utilities.
+
+> [!NOTE]
+> **Pure Kernel Demarcation**: High-level HTTP and web resource retrieval is handled strictly in Ring 3 userspace via the freestanding binary [`/bin/fetch.elf`](../../userland/binaries/fetch.md). The Ring 0 supervisor console provides low-level link diagnostics (`network`) and packet filtering (`firewall`).
 
 ---
 
@@ -10,8 +13,5 @@ The `net` command suite provides network interface inspection, socket telemetry,
 
 | Command | Syntax | Description | Flags / Options |
 | :--- | :--- | :--- | :--- |
-| `network` | `network [subcommand]` | Query network interface cards, MAC, IP configuration, sockets, and ARP routing | `dhcp`: Trigger DHCP lease request<br>`ping <ip>`: Send ICMP echo requests<br>`resolve <domain>`: Query DNS A-record via UDP 53<br>`dns-cache`: Display DNS cache table<br>`-s, --stats`: Display extended TX/RX packet counters<br>`-a, --arp`: Display ARP neighbor resolution table<br>`-c, --cache`: Display 16-slot DNS cache table<br>`-h, --help`: Show help info |
-| `download` | `download <url> <dst>` | Stream network file via HTTP/HTTPS directly into storage | `-h, --help`: Show help info |
-| `fetch` | `fetch [options] <url>` | Stream and inspect HTTP/HTTPS responses directly to console or inspect headers | `-I, --head`: Display response metadata only<br>`-v, --verbose`: Display diagnostic transport metadata<br>`-o, --output <file>`: Save payload directly to storage<br>`-h, --help`: Show help info |
-| `https` | `https <domain>` | Establish secure TLS 1.3 encrypted handshake and query page | `info`: Query TLS engine parameters<br>`sha256`: Execute FIPS 180-4 SHA-256 self-test<br>`-h, --help`: Show help info |
+| `network` | `network [subcommand]` | Query network interface cards, MAC, IP configuration, sockets and ARP routing (alias: `net`) | `dhcp`: Trigger DHCP lease request<br>`ping <ip>`: Send ICMP echo requests<br>`resolve <domain>`: Query DNS A-record via UDP 53<br>`dns-cache`: Display DNS cache table<br>`-s, --stats`: Display extended TX/RX packet counters<br>`-a, --arp`: Display ARP neighbor resolution table<br>`-c, --cache`: Display 16-slot DNS cache table<br>`-h, --help`: Show help info |
 | `firewall` | `firewall` | Inspect and configure stateful IPv4 packet filtering rules | `-h, --help`: Show help info |
