@@ -26,9 +26,11 @@ fn print_hex_u16(val: u16) {
 pub fn run(parts: &mut core::str::SplitWhitespace) {
     unsafe {
         if let Some("-h") | Some("--help") = parts.next() {
-            vga::print_str("Usage: devices\n\n");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Usage: devices [-h]\n\n");
             vga::print_str("Description:\n  Scan PCI bus slots and enumerate detected hardware devices, vendor IDs, device IDs and class types.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
             return;
         }
 
