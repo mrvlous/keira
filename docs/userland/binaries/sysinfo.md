@@ -2,7 +2,7 @@
 
 # `sysinfo.elf` System Telemetry Utility
 
-Displays hardware, operating system, and runtime statistics retrieved via system calls and ProcFS.
+Displays hardware, operating system and runtime statistics retrieved via system calls and ProcFS.
 
 ---
 
