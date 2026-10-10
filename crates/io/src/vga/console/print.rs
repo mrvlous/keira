@@ -162,8 +162,103 @@ pub fn clear_line_from(col: u16) {
     }
 }
 
+static mut ANSI_STATE: u8 = 0;
+static mut ANSI_PARAM_0: u16 = 0;
+static mut ANSI_PARAM_1: u16 = 0;
+static mut ANSI_HAS_PARAM: bool = false;
+static mut ANSI_PARAM_IDX: u8 = 0;
+
+fn handle_ansi_byte(c: u8) -> bool {
+    unsafe {
+        match ANSI_STATE {
+            0 => {
+                if c == 0x1B {
+                    ANSI_STATE = 1;
+                    ANSI_PARAM_0 = 0;
+                    ANSI_PARAM_1 = 0;
+                    ANSI_HAS_PARAM = false;
+                    ANSI_PARAM_IDX = 0;
+                    true
+                } else {
+                    false
+                }
+            }
+            1 => {
+                if c == b'[' {
+                    ANSI_STATE = 2;
+                } else if c == b'c' {
+                    ANSI_STATE = 0;
+                    init();
+                } else {
+                    ANSI_STATE = 0;
+                }
+                true
+            }
+            2 => {
+                if c.is_ascii_digit() {
+                    ANSI_HAS_PARAM = true;
+                    if ANSI_PARAM_IDX == 0 {
+                        ANSI_PARAM_0 = ANSI_PARAM_0
+                            .saturating_mul(10)
+                            .saturating_add((c - b'0') as u16);
+                    } else {
+                        ANSI_PARAM_1 = ANSI_PARAM_1
+                            .saturating_mul(10)
+                            .saturating_add((c - b'0') as u16);
+                    }
+                } else if c == b';' {
+                    ANSI_PARAM_IDX = 1;
+                } else if c == b'?' {
+                    // DEC private mode prefix
+                } else if (0x40..=0x7E).contains(&c) {
+                    ANSI_STATE = 0;
+                    match c {
+                        b'J' => {
+                            init();
+                        }
+                        b'H' | b'f' => {
+                            let row = if ANSI_HAS_PARAM && ANSI_PARAM_0 > 0 {
+                                ANSI_PARAM_0 - 1
+                            } else {
+                                0
+                            };
+                            let col = if ANSI_PARAM_IDX > 0 && ANSI_PARAM_1 > 0 {
+                                ANSI_PARAM_1 - 1
+                            } else {
+                                0
+                            };
+                            set_cursor_pos(row, col);
+                        }
+                        b'K' => {
+                            if ANSI_PARAM_0 == 2 {
+                                clear_line_from(0);
+                            } else {
+                                clear_line_from(get_cursor_col());
+                            }
+                        }
+                        b'm' if !ANSI_HAS_PARAM || ANSI_PARAM_0 == 0 => {
+                            set_color(Color::LightGrey, Color::Black);
+                        }
+                        _ => {}
+                    }
+                } else {
+                    ANSI_STATE = 0;
+                }
+                true
+            }
+            _ => {
+                ANSI_STATE = 0;
+                false
+            }
+        }
+    }
+}
+
 /// Emits a single ASCII character to console.
 pub fn putchar(c: u8) {
+    if handle_ansi_byte(c) {
+        return;
+    }
     unsafe {
         VGA_BUSY = true;
         CURSOR_BLINK_STATE = true;

@@ -44,3 +44,25 @@ fn test_text_mode_cursor_bounds() {
     assert_eq!(super::print::get_cursor_row(), 0);
     assert_eq!(super::print::get_cursor_col(), 0);
 }
+
+#[test]
+fn test_ansi_clear_and_cursor_home() {
+    super::print::set_cursor_pos(12, 34);
+    assert_eq!(super::print::get_cursor_row(), 12);
+    assert_eq!(super::print::get_cursor_col(), 34);
+
+    // Emit ANSI clear screen and cursor home sequences
+    super::print::print_str("\x1b[2J\x1b[H");
+
+    assert_eq!(super::print::get_cursor_row(), 0);
+    assert_eq!(super::print::get_cursor_col(), 0);
+
+    // Test CUP with specific coordinates
+    super::print::print_str("\x1b[5;10H");
+    assert_eq!(super::print::get_cursor_row(), 4);
+    assert_eq!(super::print::get_cursor_col(), 9);
+
+    super::print::print_str("\x1b[2J\x1b[H");
+    assert_eq!(super::print::get_cursor_row(), 0);
+    assert_eq!(super::print::get_cursor_col(), 0);
+}
