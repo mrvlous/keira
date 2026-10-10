@@ -156,7 +156,11 @@ LS_ELF          := $(BIN_DIR)/ls.elf
 LS_SRCS         := $(shell find $(USER_DIR)/bin/ls -type f -name "*.c" 2>/dev/null)
 LS_OBJS         := $(patsubst $(USER_DIR)/bin/ls/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ls/%.o,$(LS_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF)
+FETCH_ELF       := $(BIN_DIR)/fetch.elf
+FETCH_SRCS      := $(shell find $(USER_DIR)/bin/fetch -type f -name "*.c" 2>/dev/null)
+FETCH_OBJS      := $(patsubst $(USER_DIR)/bin/fetch/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/fetch/%.o,$(FETCH_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -447,6 +451,16 @@ $(LS_ELF): $(USER_CRT_OBJ) $(LS_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dir
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(LS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(LS_ELF)
 	@$(LOG_DONE) "$(LS_ELF) ready"
 
+# Userland canonical HTTP fetch utility (fetch.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/fetch/%.o: $(USER_DIR)/bin/fetch/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(FETCH_ELF): $(USER_CRT_OBJ) $(FETCH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: fetch ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(FETCH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(FETCH_ELF)
+	@$(LOG_DONE) "$(FETCH_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -473,6 +487,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(CAT_ELF) $(FS_ROOT)/bin/cat
 	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls.elf
 	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls
+	$(Q)cp $(FETCH_ELF) $(FS_ROOT)/bin/fetch.elf
+	$(Q)cp $(FETCH_ELF) $(FS_ROOT)/bin/fetch
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
