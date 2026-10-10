@@ -38,7 +38,7 @@ pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
 
     let path_trimmed = sanitize_path(path);
 
-    if path_trimmed.is_empty() {
+    if path_trimmed.is_empty() || path_trimmed == "." {
         return Ok((current_cluster, ""));
     }
 
@@ -76,7 +76,11 @@ pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
         current_segment = next_segment;
     }
 
-    Ok((current_cluster, current_segment))
+    if current_segment == "." {
+        Ok((current_cluster, ""))
+    } else {
+        Ok((current_cluster, current_segment))
+    }
 }
 
 /// Locates a directory entry matching a target filename in the specified directory cluster.
