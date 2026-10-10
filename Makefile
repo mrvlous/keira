@@ -148,7 +148,15 @@ SH_ELF          := $(BIN_DIR)/sh.elf
 SH_SRCS         := $(shell find $(USER_DIR)/bin/sh -type f -name "*.c" 2>/dev/null)
 SH_OBJS         := $(patsubst $(USER_DIR)/bin/sh/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/sh/%.o,$(SH_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF)
+CAT_ELF         := $(BIN_DIR)/cat.elf
+CAT_SRCS        := $(shell find $(USER_DIR)/bin/cat -type f -name "*.c" 2>/dev/null)
+CAT_OBJS        := $(patsubst $(USER_DIR)/bin/cat/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/cat/%.o,$(CAT_SRCS))
+
+LS_ELF          := $(BIN_DIR)/ls.elf
+LS_SRCS         := $(shell find $(USER_DIR)/bin/ls -type f -name "*.c" 2>/dev/null)
+LS_OBJS         := $(patsubst $(USER_DIR)/bin/ls/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ls/%.o,$(LS_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -419,6 +427,26 @@ $(SH_ELF): $(USER_CRT_OBJ) $(SH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dir
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SH_ELF)
 	@$(LOG_DONE) "$(SH_ELF) ready"
 
+# Userland canonical file concatenation utility (cat.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/cat/%.o: $(USER_DIR)/bin/cat/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(CAT_ELF): $(USER_CRT_OBJ) $(CAT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: cat ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(CAT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(CAT_ELF)
+	@$(LOG_DONE) "$(CAT_ELF) ready"
+
+# Userland canonical directory listing utility (ls.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/ls/%.o: $(USER_DIR)/bin/ls/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(LS_ELF): $(USER_CRT_OBJ) $(LS_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: ls ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(LS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(LS_ELF)
+	@$(LOG_DONE) "$(LS_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -441,6 +469,10 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init
 	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh.elf
 	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh
+	$(Q)cp $(CAT_ELF) $(FS_ROOT)/bin/cat.elf
+	$(Q)cp $(CAT_ELF) $(FS_ROOT)/bin/cat
+	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls.elf
+	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
