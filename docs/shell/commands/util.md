@@ -2,7 +2,7 @@
 
 # General Utility Commands
 
-The `util` command suite provides shell assistance, history navigation and general administrative utilities.
+The `util` command suite provides emergency diagnostics assistance for the supervisor console. Terminal screen clearing is handled via the freestanding Ring 3 utility [`/bin/clear.elf`](../../userland/binaries/clear.md).
 
 ---
 
@@ -10,6 +10,4 @@ The `util` command suite provides shell assistance, history navigation and gener
 
 | Command | Syntax | Description | Flags / Options |
 | :--- | :--- | :--- | :--- |
-| `help` | `help [command]` | Display interactive built-in command index or command usage | `-h, --help` |
-| `history` | `history` | List command history buffer entries | `-h, --help` |
-| `wipe` | `wipe` | Clear VGA console screen buffer (aliases: `clear`, `cls`) | `-h, --help` |
+| `help` | `help` | Display interactive emergency command index or command usage | `-h, --help` |

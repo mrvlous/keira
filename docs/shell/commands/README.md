@@ -2,7 +2,7 @@
 
 # Keira Built-in Command Reference Manual
 
-Keira Shell provides 51 native built-in diagnostic commands (58 with aliases) partitioned into 5 functional categories.
+Keira Shell provides 15 native built-in emergency diagnostic commands partitioned into 5 functional modules. Standard user utilities (`ps`, `kill`, `hostname`, `clear`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) are hosted in Ring 3 userspace (`/bin`).
 
 ---
 
@@ -10,8 +10,8 @@ Keira Shell provides 51 native built-in diagnostic commands (58 with aliases) pa
 
 | Category | Path | Scope | Command Count |
 | :--- | :--- | :--- | :--- |
-| **System & Hardware** | [`sys.md`](sys.md) & [`dev.md`](dev.md) | CPU telemetry, APIC, time, PCI bus, display, reboot, poweroff and TPM | 24 commands |
-| **Storage & Filesystem** | [`fs.md`](fs.md) | VFS navigation, block devices, disk geometry, LVM and RAID | 11 commands |
-| **Process & IPC** | [`proc.md`](proc.md) | Tasks, scheduler controls, signals, cgroups and IPC events | 10 commands |
-| **Network & Security** | [`net.md`](net.md) & [`sec.md`](sec.md) | Packet filtering, link telemetry, BPF, seccomp and MAC | 7 commands |
-| **General Utilities** | [`util.md`](util.md) | Interactive help, history, shell launcher and console wipe | 4 commands |
+| **System Diagnostics & Power** | [`sys.md`](sys.md) | CPU telemetry, APIC, memory, reboot, poweroff, sync, syslog, system, unwind and watchpoint | 10 commands |
+| **Device & Driver Registry** | [`dev.md`](dev.md) | PCI bus enumeration and active kernel driver registry | 2 commands |
+| **Storage & Disk Geometry** | [`fs.md`](fs.md) | Raw block storage devices and partition geometry | 1 command |
+| **Process & Direct Launch** | [`proc.md`](proc.md) | Direct ELF binary execution from storage | 1 command |
+| **Emergency Utilities** | [`util.md`](util.md) | Interactive emergency help index | 1 command |
