@@ -35,8 +35,6 @@ pub fn execute_command_inner(cmd: &str) {
         "memory" => crate::cmds::memory::run(&mut parts),
         "devices" => crate::cmds::devices::run(&mut parts),
         "network" => crate::cmds::network::run(&mut parts),
-        "download" => crate::cmds::download::run(&mut parts),
-        "fetch" => crate::cmds::fetch::run(&mut parts),
         "init" => crate::cmds::init::run(&mut parts),
         "initrd" => crate::cmds::initrd::run(&mut parts),
         "wipe" => crate::cmds::wipe::run(&mut parts),
@@ -47,15 +45,11 @@ pub fn execute_command_inner(cmd: &str) {
         "disk" => crate::cmds::disk::run(&mut parts),
         "sync" => crate::cmds::sync::run(&mut parts),
 
-        "list" => crate::cmds::list::run(&mut parts),
         "go" | "cd" => crate::cmds::go::run(&mut parts),
-        "fileinfo" => crate::cmds::fileinfo::run(&mut parts),
         "help" => crate::cmds::help::run(&mut parts),
         "history" => crate::cmds::history::run(&mut parts),
-        "search" => crate::cmds::search::run(&mut parts),
         "framebuffer" => crate::cmds::framebuffer::run(&mut parts),
         "usb" => crate::cmds::usb::run(&mut parts),
-        "https" => crate::cmds::https::run(&mut parts),
 
         "drivers" => crate::cmds::drivers::run(&mut parts),
         "lkm" | "lsmod" => crate::cmds::lkm::run(&mut parts),
@@ -79,13 +73,9 @@ pub fn execute_command_inner(cmd: &str) {
         "mac" | "selinux" => crate::cmds::mac::run(&mut parts),
         "mqueue" => crate::cmds::mqueue::run(&mut parts),
         "kill" => crate::cmds::kill::run(&mut parts),
-        "jobs" => crate::cmds::jobs::run(&mut parts),
-        "fg" => crate::cmds::fg::run(&mut parts),
-        "bg" => crate::cmds::bg::run(&mut parts),
         "lvm" => crate::cmds::lvm::run(&mut parts),
         "raid" => crate::cmds::raid::run(&mut parts),
         "firewall" => crate::cmds::firewall::run(&mut parts),
-        "kcc" => crate::cmds::proc::kcc::run(&mut parts),
         "sh" => crate::cmds::sh::run(&mut parts),
         _ => {
             if crate::cmds::run::run_direct_with_parts(command, &mut parts) {
