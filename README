@@ -11,10 +11,9 @@ provides a preemptive multitasking scheduler, multi-core Symmetric
 Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 87 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
-with I/O redirection and pipelines, native core utilities (cat.elf, ls.elf, fetch.elf),
-canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation
-with 45+ verified ABI security test vectors, bare-metal io_uring asynchronous I/O engine, High-Precision
-Event Timer (HPET) monotonic clocks, an interactive 51-command diagnostic shell and freestanding native C compiler (kcc.elf).
+with I/O redirection and pipelines, native core utilities (cat.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf),
+canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 45+ verified ABI security test vectors, bare-metal io_uring asynchronous I/O engine, High-Precision
+Event Timer (HPET) monotonic clocks, an interactive 15-command emergency debugger and freestanding native C compiler (kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
@@ -30,8 +29,8 @@ of computer systems:
 * Storage & Filesystems: ATA, AHCI, NVMe, FAT16, block LRU cache and VFS.
 * Asynchronous I/O: Bare-metal io_uring submission/completion queue engine.
 * Security Enclaves: TPM 2.0 TIS MMIO, PCR banks, Seccomp BPF, MAC and in-kernel eBPF virtual machine.
-* Pure Kernel Architecture: Canonical Ring 3 userspace init (PID 1), standalone userspace shell (sh.elf) with redirection and pipelines, native core utilities (cat.elf, ls.elf, fetch.elf), shell script execution (shebang #!) and clean abstraction for future distributions.
-* Kernel Control Plane: Interactive Ring 0 diagnostic shell with 51 diagnostic commands, direct $PATH execution, hardware telemetry and VFS management.
+* Pure Kernel Architecture: Canonical Ring 3 userspace init (PID 1), standalone userspace shell (sh.elf) with redirection and pipelines, complete userspace core utilities (cat.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf), shell script execution (shebang #!) and pure BSD/Linux-model separation.
+* Kernel Control Plane: Interactive Ring 0 emergency debugger with 15 diagnostic commands, direct $PATH execution, hardware telemetry and low-level recovery.
 
 Read the detailed engineering journal: docs/journey/README.md
 
