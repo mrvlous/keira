@@ -148,7 +148,7 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
 /// Spawn a new user-space Ring 3 task.
 ///
 /// # Safety
-/// Caller must ensure that `entry_point`, `user_rsp`, and `pml4_phys` point to valid user memory mappings.
+/// Caller must ensure that `entry_point`, `user_rsp` and `pml4_phys` point to valid user memory mappings.
 pub unsafe fn spawn_user(
     name: &'static str,
     entry_point: u64,
@@ -227,10 +227,12 @@ pub unsafe fn spawn_user(
     let mut child_cwd = [0u8; 128];
     child_cwd[0] = b'/';
     let mut parent_cwd_len = 1usize;
+    let mut child_fds = [FileDescriptor::new(); MAX_FDS];
     let parent_id = CURRENT_TASK_IDX;
     if let Some(ref parent) = TASKS[parent_id] {
         child_cwd[..parent.cwd_len].copy_from_slice(&parent.cwd[..parent.cwd_len]);
         parent_cwd_len = parent.cwd_len;
+        child_fds = parent.fds;
     }
 
     #[cfg(target_arch = "x86_64")]
@@ -244,7 +246,7 @@ pub unsafe fn spawn_user(
         rsp: context_ptr as u64,
         stack_addr: stack_frame,
         state: TaskState::Ready,
-        fds: [FileDescriptor::new(); MAX_FDS],
+        fds: child_fds,
         program_break: default_brk,
         program_break_start: default_brk,
         cwd: child_cwd,
