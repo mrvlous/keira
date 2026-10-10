@@ -31,6 +31,7 @@ graph TD
     M19 --> M20["20. Standalone Userspace Shell & Direct PATH Execution<br/><i>Ring 3 /bin/sh.elf, $PATH Resolution, Linux Parity</i>"]
     M20 --> M21["21. Canonical Shell Script Execution & Kernel Shebang Support<br/><i>Shebang (#!), /bin/sh Runner, Direct .sh Invocation, /etc/init.sh</i>"]
     M21 --> M22["22. Pure Kernel Slimming & Ring 3 Shell Maturity<br/><i>Pipelines, I/O Redirection, /bin/cat, /bin/ls, UNIX Parity</i>"]
+    M22 --> M23["23. Pure Kernel Slimming Fase 2 & Userspace Network Client<br/><i>In-Kernel kcc Removal, /bin/fetch.elf, Supervisor Hardware Diagnostic Monitor</i>"]
 ```
 
 ---
@@ -61,6 +62,7 @@ graph TD
 | **Milestone 20** | [`sh_userspace_v070.md`](sh_userspace_v070.md) | `v0.7.0` | Standalone Ring 3 POSIX shell (`/bin/sh.elf`), direct supervisor `$PATH` execution, multi-token `-c` string parsing and userspace parity |
 | **Milestone 21** | [`script_shebang_v070.md`](script_shebang_v070.md) | `v0.7.0` | Canonical shell script execution, kernel shebang (`#!`) interpreter recognition, userspace script runner and `/etc/init.sh` system bootstrap |
 | **Milestone 22** | [`unix_parity_v070.md`](unix_parity_v070.md) | `v0.7.0` | Pure kernel slimming, Ring 3 shell maturity (redirection, pipes, chaining), /bin/cat.elf, /bin/ls.elf and UNIX parity |
+| **Milestone 23** | [`kernel_slimming_v070.md`](kernel_slimming_v070.md) | `v0.7.0` | In-kernel compiler elimination, freestanding Ring 3 `/bin/fetch.elf`, supervisor diagnostic monitor and TTY/FAT fixes |
 
 ---
 
