@@ -7,8 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System C compiler, performance counters, and event notification commands.
+//! System performance counters and event notification commands.
 
 pub mod eventfd;
-pub mod kcc;
 pub mod perf;
