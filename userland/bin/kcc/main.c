@@ -19,15 +19,8 @@
 #include <syscall.h>
 
 int main(int argc, char **argv) {
-    print_str("KCC (Keira C Compiler) Native Toolchain\n");
-
-    /* Initialize compiler subsystems */
-    code_idx = 0;
-    data_idx = 0;
-    init_symbols();
-
-    const char *source_path = "/tmp/main.c";
-    const char *output_path = "/bin/app.elf";
+    const char *source_path = NULL;
+    const char *output_path = NULL;
 
     int arg_i = 1;
     while (arg_i < argc && argv && argv[arg_i]) {
@@ -36,37 +29,56 @@ int main(int argc, char **argv) {
                 output_path = argv[arg_i + 1];
                 arg_i += 2;
                 continue;
+            } else {
+                print_str("kcc: error: missing filename after '-o'\n");
+                return 1;
             }
         } else if (k_strcmp(argv[arg_i], "-v") == 0 || k_strcmp(argv[arg_i], "--version") == 0) {
-            print_str("Keira C Compiler (KCC) Native v0.6.0\n");
-            sys_exit(0);
+            print_str("kcc (Keira C Compiler) 0.6.0\n");
+            return 0;
         } else if (k_strcmp(argv[arg_i], "-h") == 0 || k_strcmp(argv[arg_i], "--help") == 0) {
-            print_str("Usage: kcc [options] <source.c>\n");
+            print_str("Usage: kcc [options] <source.c>\n\n");
+            print_str("Description:\n");
+            print_str("  Keira native freestanding C compiler toolchain.\n\n");
             print_str("Options:\n");
-            print_str("  -o <path>     Specify output ELF binary (default: "
-                      "/bin/app.elf)\n");
-            print_str("  -v, --version Display compiler version\n");
-            print_str("  -h, --help    Display this help message\n");
-            sys_exit(0);
+            print_str("  -o <path>      Specify output ELF binary (default: /bin/app.elf)\n");
+            print_str("  -v, --version  Display compiler version\n");
+            print_str("  -h, --help     Display this help reference and exit\n");
+            return 0;
         } else if (argv[arg_i][0] != '-') {
             source_path = argv[arg_i];
+        } else {
+            print_str("kcc: unrecognized command-line option '");
+            print_str(argv[arg_i]);
+            print_str("'\n");
+            return 1;
         }
         arg_i++;
     }
 
-    FILE *in_fp = fopen(source_path, "r");
-    if (!in_fp && argc < 2) {
-        source_path = "/tmp/main.c";
-        in_fp = fopen(source_path, "r");
-    }
-    if (!in_fp) {
-        print_str("Error: Could not open source file: ");
-        print_str(source_path);
-        print_str("\n");
-        print_str("Usage: run /bin/kcc.elf <source.c> [-o output.elf]\n");
-        sys_exit(1);
+    if (!source_path) {
+        print_str("kcc: fatal error: no input files\n");
+        print_str("compilation terminated.\n");
         return 1;
     }
+
+    if (!output_path) {
+        output_path = "/bin/app.elf";
+    }
+
+    FILE *in_fp = fopen(source_path, "r");
+    if (!in_fp) {
+        print_str("kcc: error: ");
+        print_str(source_path);
+        print_str(": No such file or directory\n");
+        print_str("compilation terminated.\n");
+        return 1;
+    }
+
+    /* Initialize compiler subsystems */
+    code_idx = 0;
+    data_idx = 0;
+    init_symbols();
 
     print_str("[INFO] Compiling source: ");
     print_str(source_path);

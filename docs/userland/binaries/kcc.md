@@ -6,16 +6,45 @@
 
 ---
 
-## 1. Invocation Modes
+## 1. Invocation Modes & CLI Reference
 
-### A. Native Shell Command
+`kcc` follows standard UNIX C compiler ergonomics. Invoking `kcc` without arguments reports a fatal error instead of executing unintended builds:
+
 ```bash
-kcc /tmp/main.c -o /bin/app.elf
+keira:/# kcc
+kcc: fatal error: no input files
+compilation terminated.
 ```
 
-### B. Freestanding Userland ELF
+### A. Help and Version Reference
 ```bash
-run /bin/kcc.elf /tmp/main.c -o /bin/app.elf
+keira:/# kcc -h
+Usage: kcc [options] <source.c>
+
+Description:
+  Keira native freestanding C compiler toolchain.
+
+Options:
+  -o <path>      Specify output ELF binary (default: /bin/app.elf)
+  -v, --version  Display compiler version
+  -h, --help     Display this help reference and exit
+
+keira:/# kcc -v
+kcc (Keira C Compiler) 0.6.0
+```
+
+### B. Standard Compilation
+```bash
+# Compile C source into executable ELF binary:
+keira:/# kcc /tmp/main.c -o /bin/app.elf
+[INFO] Compiling source: /tmp/main.c -> /bin/app.elf
+[DONE] Compilation Successful!
+  Code size: 402 bytes, Data size: 69 bytes
+  Functions compiled: 2
+  Executable written to /bin/app.elf
+
+# Execute the generated binary:
+keira:/# /bin/app.elf
 ```
 
 ---
