@@ -595,8 +595,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/tmp/main.c
-	$(Q)printf "[System Boot Record]\nKeira Kernel v$(VERSION) initialized successfully.\n" > $(FS_ROOT)/var/log/boot.log
-	$(Q)printf "[System Event Log]\nKernel Ring 0 initialized. Shell ready.\n" > $(FS_ROOT)/var/log/system.log
+	$(Q)printf "[    0.000000] Linux/Keira Kernel v$(VERSION) ($(ARCH)) bootloader handover completed\n[    0.000010] Root filesystem mounted at / (FAT16)\n" > $(FS_ROOT)/var/log/boot.log
+	$(Q)printf "[    0.000000] Linux/Keira Kernel v$(VERSION) ($(ARCH))\n[    0.000010] Kernel Ring 0 initialized, supervisor console ready\n" > $(FS_ROOT)/var/log/system.log
 	$(Q)touch $(FS_ROOT)/tmp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Canonical root filesystem ready ($(ARCH))"
