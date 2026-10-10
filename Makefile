@@ -160,7 +160,31 @@ FETCH_ELF       := $(BIN_DIR)/fetch.elf
 FETCH_SRCS      := $(shell find $(USER_DIR)/bin/fetch -type f -name "*.c" 2>/dev/null)
 FETCH_OBJS      := $(patsubst $(USER_DIR)/bin/fetch/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/fetch/%.o,$(FETCH_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF)
+PS_ELF          := $(BIN_DIR)/ps.elf
+PS_SRCS         := $(shell find $(USER_DIR)/bin/ps -type f -name "*.c" 2>/dev/null)
+PS_OBJS         := $(patsubst $(USER_DIR)/bin/ps/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ps/%.o,$(PS_SRCS))
+
+KILL_ELF        := $(BIN_DIR)/kill.elf
+KILL_SRCS       := $(shell find $(USER_DIR)/bin/kill -type f -name "*.c" 2>/dev/null)
+KILL_OBJS       := $(patsubst $(USER_DIR)/bin/kill/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/kill/%.o,$(KILL_SRCS))
+
+HOSTNAME_ELF    := $(BIN_DIR)/hostname.elf
+HOSTNAME_SRCS   := $(shell find $(USER_DIR)/bin/hostname -type f -name "*.c" 2>/dev/null)
+HOSTNAME_OBJS   := $(patsubst $(USER_DIR)/bin/hostname/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/hostname/%.o,$(HOSTNAME_SRCS))
+
+CLEAR_ELF       := $(BIN_DIR)/clear.elf
+CLEAR_SRCS      := $(shell find $(USER_DIR)/bin/clear -type f -name "*.c" 2>/dev/null)
+CLEAR_OBJS      := $(patsubst $(USER_DIR)/bin/clear/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/clear/%.o,$(CLEAR_SRCS))
+
+DMESG_ELF       := $(BIN_DIR)/dmesg.elf
+DMESG_SRCS      := $(shell find $(USER_DIR)/bin/dmesg -type f -name "*.c" 2>/dev/null)
+DMESG_OBJS      := $(patsubst $(USER_DIR)/bin/dmesg/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/dmesg/%.o,$(DMESG_SRCS))
+
+DF_ELF          := $(BIN_DIR)/df.elf
+DF_SRCS         := $(shell find $(USER_DIR)/bin/df -type f -name "*.c" 2>/dev/null)
+DF_OBJS         := $(patsubst $(USER_DIR)/bin/df/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/df/%.o,$(DF_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -461,6 +485,66 @@ $(FETCH_ELF): $(USER_CRT_OBJ) $(FETCH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT)
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(FETCH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(FETCH_ELF)
 	@$(LOG_DONE) "$(FETCH_ELF) ready"
 
+# Userland process status utility (ps.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/ps/%.o: $(USER_DIR)/bin/ps/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(PS_ELF): $(USER_CRT_OBJ) $(PS_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: ps ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(PS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(PS_ELF)
+	@$(LOG_DONE) "$(PS_ELF) ready"
+
+# Userland process signal utility (kill.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/kill/%.o: $(USER_DIR)/bin/kill/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(KILL_ELF): $(USER_CRT_OBJ) $(KILL_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: kill ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(KILL_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(KILL_ELF)
+	@$(LOG_DONE) "$(KILL_ELF) ready"
+
+# Userland system hostname utility (hostname.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/hostname/%.o: $(USER_DIR)/bin/hostname/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(HOSTNAME_ELF): $(USER_CRT_OBJ) $(HOSTNAME_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: hostname ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(HOSTNAME_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(HOSTNAME_ELF)
+	@$(LOG_DONE) "$(HOSTNAME_ELF) ready"
+
+# Userland terminal clear utility (clear.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/clear/%.o: $(USER_DIR)/bin/clear/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(CLEAR_ELF): $(USER_CRT_OBJ) $(CLEAR_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: clear ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(CLEAR_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(CLEAR_ELF)
+	@$(LOG_DONE) "$(CLEAR_ELF) ready"
+
+# Userland kernel log display utility (dmesg.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/dmesg/%.o: $(USER_DIR)/bin/dmesg/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(DMESG_ELF): $(USER_CRT_OBJ) $(DMESG_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: dmesg ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(DMESG_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(DMESG_ELF)
+	@$(LOG_DONE) "$(DMESG_ELF) ready"
+
+# Userland filesystem disk free utility (df.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/df/%.o: $(USER_DIR)/bin/df/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(DF_ELF): $(USER_CRT_OBJ) $(DF_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: df ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(DF_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(DF_ELF)
+	@$(LOG_DONE) "$(DF_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -489,6 +573,18 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls
 	$(Q)cp $(FETCH_ELF) $(FS_ROOT)/bin/fetch.elf
 	$(Q)cp $(FETCH_ELF) $(FS_ROOT)/bin/fetch
+	$(Q)cp $(PS_ELF) $(FS_ROOT)/bin/ps.elf
+	$(Q)cp $(PS_ELF) $(FS_ROOT)/bin/ps
+	$(Q)cp $(KILL_ELF) $(FS_ROOT)/bin/kill.elf
+	$(Q)cp $(KILL_ELF) $(FS_ROOT)/bin/kill
+	$(Q)cp $(HOSTNAME_ELF) $(FS_ROOT)/bin/hostname.elf
+	$(Q)cp $(HOSTNAME_ELF) $(FS_ROOT)/bin/hostname
+	$(Q)cp $(CLEAR_ELF) $(FS_ROOT)/bin/clear.elf
+	$(Q)cp $(CLEAR_ELF) $(FS_ROOT)/bin/clear
+	$(Q)cp $(DMESG_ELF) $(FS_ROOT)/bin/dmesg.elf
+	$(Q)cp $(DMESG_ELF) $(FS_ROOT)/bin/dmesg
+	$(Q)cp $(DF_ELF) $(FS_ROOT)/bin/df.elf
+	$(Q)cp $(DF_ELF) $(FS_ROOT)/bin/df
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
@@ -554,7 +650,7 @@ qemu-net: preflight-qemu all ## Launch Keira in QEMU with e1000 NIC emulation
 # Automated testing & verification
 test-unit: ## Run cargo host unit tests across all workspace crates
 	@$(LOG_INFO) "Running cargo host unit tests across workspace..."
-	$(Q)$(CARGO) test --workspace
+	$(Q)$(CARGO) test --workspace -- --test-threads=1
 	@$(LOG_DONE) "Host unit tests completed successfully"
 
 test: preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
