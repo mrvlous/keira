@@ -15,10 +15,13 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     {
         let bg = vga::Color::Black;
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("Keira Kernel Built-in Commands\n");
+        vga::print_str("Keira Kernel Diagnostic & Supervisor Control Plane\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str(
-            "Use '<command> --help' to view options and detailed usage for any command.\n\n",
+            "Use '<command> --help' to view options and detailed usage for any command.\n",
+        );
+        vga::print_str(
+            "Use 'sh' for Ring 3 POSIX shell or run user binaries directly (/bin/*).\n\n",
         );
 
         vga::set_color(vga::Color::White, bg);
@@ -31,11 +34,10 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::print_str("  unwind    perf      kvm       framebuffer usb\n\n");
 
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("Storage & Filesystem:\n");
+        vga::print_str("Storage & Filesystem (VFS):\n");
         vga::set_color(vga::Color::LightGrey, bg);
         vga::print_str("  drives    use       disk      ramdisk   initrd    sync      ext4\n");
-        vga::print_str("  list      go        folder    create    delete    copy      move\n");
-        vga::print_str("  view      write     edit      fileinfo  swap      lvm       raid\n\n");
+        vga::print_str("  list      cd / go   fileinfo  swap      lvm       raid\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Process, Scheduling & IPC:\n");
@@ -50,8 +52,8 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::print_str("  mac       tpm\n\n");
 
         vga::set_color(vga::Color::White, bg);
-        vga::print_str("General Utilities:\n");
+        vga::print_str("General & Shell Management:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  help      history   wipe      search\n");
+        vga::print_str("  sh        help      history   wipe      search\n");
     }
 }
