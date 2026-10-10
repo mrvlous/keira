@@ -7,10 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Foreground and background job control commands.
+//! Process signal transmission and stop commands.
 
-pub mod bg;
-pub mod fg;
-pub mod jobs;
 pub mod kill;
 pub mod stop;

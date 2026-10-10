@@ -16,6 +16,6 @@ pub mod tools;
 #[cfg(test)]
 mod tests;
 
-pub use job::{bg, fg, jobs, kill, stop};
+pub use job::{kill, stop};
 pub use task::{cgroups, futex, run, tasks, timer};
-pub use tools::{eventfd, kcc, perf};
+pub use tools::{eventfd, perf};

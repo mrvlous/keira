@@ -13,18 +13,6 @@ use super::*;
 
 #[test]
 fn test_proc_commands_help_invocation() {
-    let mut args = "bg --help".split_whitespace();
-    args.next();
-    bg::run(&mut args);
-
-    let mut args = "fg --help".split_whitespace();
-    args.next();
-    fg::run(&mut args);
-
-    let mut args = "jobs --help".split_whitespace();
-    args.next();
-    jobs::run(&mut args);
-
     let mut args = "kill --help".split_whitespace();
     args.next();
     kill::run(&mut args);
@@ -56,10 +44,6 @@ fn test_proc_commands_help_invocation() {
     let mut args = "eventfd --help".split_whitespace();
     args.next();
     eventfd::run(&mut args);
-
-    let mut args = "kcc --help".split_whitespace();
-    args.next();
-    kcc::run(&mut args);
 
     let mut args = "perf --help".split_whitespace();
     args.next();
