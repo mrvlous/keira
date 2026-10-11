@@ -62,3 +62,27 @@ fn test_sigint_interception() {
 
     assert!(SIGINT_TRIGGERED.load(Ordering::SeqCst));
 }
+
+#[test]
+fn test_crlf_sequence_deduplication() {
+    let mut t = get_termios();
+    t.c_lflag |= ICANON;
+    set_termios(&t);
+
+    let mut sink = [0u8; 64];
+    while read_tty(&mut sink) > 0 {}
+
+    // Push "ok\r\n" - should yield exactly one committed line "ok\n"
+    push_char(b'o');
+    push_char(b'k');
+    push_char(b'\r');
+    push_char(b'\n');
+
+    let n = read_tty(&mut sink);
+    assert_eq!(n, 3);
+    assert_eq!(&sink[..3], b"ok\n");
+
+    // Buffer must be empty (no trailing phantom empty newline from \n)
+    let n2 = read_tty(&mut sink);
+    assert_eq!(n2, 0);
+}

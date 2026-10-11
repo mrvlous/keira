@@ -35,6 +35,7 @@ static mut COOKED_TAIL: usize = 0;
 pub const LINE_BUF_SIZE: usize = 256;
 static mut LINE_BUF: [u8; LINE_BUF_SIZE] = [0; LINE_BUF_SIZE];
 static mut LINE_LEN: usize = 0;
+static mut LAST_CHAR_WAS_CR: bool = false;
 
 /// Hook function invoked when a SIGINT character is intercepted in canonical mode.
 pub static mut SIGINT_HOOK: Option<fn()> = None;
@@ -71,6 +72,12 @@ pub fn push_char(c: u8) {
         }
 
         if (lflag & ICANON) != 0 {
+            if c == b'\n' && LAST_CHAR_WAS_CR {
+                LAST_CHAR_WAS_CR = false;
+                return;
+            }
+            LAST_CHAR_WAS_CR = c == b'\r';
+
             if c == 0x08 || c == 0x7F || c == ACTIVE_TERMIOS.c_cc[VERASE] {
                 LINE_LEN = LINE_LEN.saturating_sub(1);
             } else if c == b'\r' || c == b'\n' {
@@ -121,5 +128,6 @@ pub fn flush_tty() {
         COOKED_HEAD = 0;
         COOKED_TAIL = 0;
         LINE_LEN = 0;
+        LAST_CHAR_WAS_CR = false;
     }
 }
