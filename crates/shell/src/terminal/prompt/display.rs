@@ -24,6 +24,7 @@ pub fn print_prompt() {
         }
 
         vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("ring0@");
         let hlen = core::cmp::min(HOSTNAME_LEN, 32);
         if let Ok(hostname_str) = core::str::from_utf8(&HOSTNAME[..hlen]) {
             vga::print_str(hostname_str);

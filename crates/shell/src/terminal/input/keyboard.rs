@@ -30,24 +30,41 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
             return;
         }
 
-        match c {
-            3 => {
-                if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
+        if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
+            match c {
+                3 => {
                     vga::print_str("^C\n");
                     let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGINT);
-                    return;
                 }
+                26 => {
+                    vga::print_str("^Z\n");
+                    let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
+                }
+                8 => {
+                    vga::backspace();
+                }
+                10 | 13 => {
+                    vga::print_str("\n");
+                }
+                _ if (32..127).contains(&c) => {
+                    let s = [c];
+                    if let Ok(c_str) = core::str::from_utf8(&s) {
+                        vga::print_str(c_str);
+                    }
+                }
+                _ => {}
+            }
+            return;
+        }
+
+        match c {
+            3 => {
                 vga::print_str("^C\n");
                 BUFFER_LEN = 0;
                 INPUT_BUFFER = [0u8; BUFFER_SIZE];
                 print_prompt();
             }
-            26 => {
-                if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
-                    vga::print_str("^Z\n");
-                    let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
-                }
-            }
+            26 => {}
             12 => {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 vga::init();

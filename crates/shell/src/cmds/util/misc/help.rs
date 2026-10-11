@@ -35,6 +35,6 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Execution & Power Management:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  run         reset       power       help\n");
+        vga::print_str("  sh          run         reset       power       help\n");
     }
 }

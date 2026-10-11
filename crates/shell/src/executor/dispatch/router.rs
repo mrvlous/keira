@@ -35,6 +35,28 @@ pub fn execute_command_inner(cmd: &str) {
         "unwind" => crate::cmds::unwind::run(&mut parts),
         "watchpoint" => crate::cmds::watchpoint::run(&mut parts),
         "run" => crate::cmds::run::run(&mut parts),
+        "sh" => {
+            let sh_path = if keira_fs::vfs::exists("/bin/sh.elf") {
+                "/bin/sh.elf"
+            } else if keira_fs::vfs::exists("/bin/sh") {
+                "/bin/sh"
+            } else {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("sh: executable not found in /bin\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            };
+
+            unsafe {
+                let _ = crate::cmds::proc::task::run::run_user_program(sh_path, &[sh_path]);
+                vga::set_color(vga::Color::Yellow, vga::Color::Black);
+                vga::print_str("\n[kernel] Userspace session terminated.\n");
+                vga::print_str(
+                    "[kernel] Dropping to supervisor console (Ring 0). Type 'help' or 'sh'.\n\n",
+                );
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
+        }
         "reset" | "reboot" => crate::cmds::reset::run(&mut parts),
         "power" | "poweroff" | "shutdown" => crate::cmds::power::run(&mut parts),
         "help" => crate::cmds::help::run(&mut parts),
