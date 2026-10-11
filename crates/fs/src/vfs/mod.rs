@@ -22,8 +22,8 @@ pub mod types;
 mod tests;
 
 pub use self::ops::{
-    create_dir, create_file, exists, get_file_size, read_file, read_file_offset, remove_entry,
-    write_file, write_file_offset,
+    create_dir, create_file, exists, get_file_size, is_dir, read_file, read_file_offset,
+    remove_entry, write_file, write_file_offset,
 };
 pub use self::path::{resolve_alias_path, route_path};
 pub use self::types::{FileStat, FilesystemType, NodeKind};

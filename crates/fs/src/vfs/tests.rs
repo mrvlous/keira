@@ -51,3 +51,12 @@ fn test_route_path() {
     assert_eq!(p, "/tmp/test.txt");
     assert_eq!(fs, FilesystemType::Fat);
 }
+
+#[test]
+fn test_is_dir_virtual_mounts() {
+    assert!(is_dir("/proc"));
+    assert!(is_dir("/dev"));
+    assert!(is_dir("/initrd"));
+    assert!(!is_dir("/dev/null"));
+    assert!(!is_dir("/dev/zero"));
+}

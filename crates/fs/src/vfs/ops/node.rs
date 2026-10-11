@@ -51,9 +51,9 @@ pub fn create_dir(path: &str) -> Result<(), &'static str> {
 pub fn exists(path: &str) -> bool {
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
-        FilesystemType::Initrd => tar::exists(clean_path),
+        FilesystemType::Initrd => clean_path.is_empty() || tar::exists(clean_path),
         FilesystemType::Proc => crate::proc::exists(clean_path),
-        FilesystemType::Dev => crate::dev::char::exists(clean_path),
+        FilesystemType::Dev => clean_path.is_empty() || crate::dev::char::exists(clean_path),
         FilesystemType::Fat => unsafe {
             let (dir_cluster, name) = match fat::resolve_path(clean_path) {
                 Ok(res) => res,
@@ -63,6 +63,30 @@ pub fn exists(path: &str) -> bool {
                 return true;
             }
             fat::find_entry(name, dir_cluster).is_ok()
+        },
+    }
+}
+
+/// Checks whether a given path is a directory on any registered filesystem driver.
+pub fn is_dir(path: &str) -> bool {
+    let (clean_path, fs_type) = route_path(path);
+    match fs_type {
+        FilesystemType::Initrd => clean_path.is_empty(),
+        FilesystemType::Proc => clean_path.is_empty() || clean_path == "self",
+        FilesystemType::Dev => clean_path.is_empty(),
+        FilesystemType::Fat => unsafe {
+            let (dir_cluster, name) = match fat::resolve_path(clean_path) {
+                Ok(res) => res,
+                Err(_) => return false,
+            };
+            if name.is_empty() {
+                return true;
+            }
+            if let Ok(found) = fat::find_entry(name, dir_cluster) {
+                (found.entry.attr & 0x10) != 0
+            } else {
+                false
+            }
         },
     }
 }
