@@ -13,7 +13,7 @@ Keira establishes a clear architectural boundary between kernel-space supervisor
 1. **Ring 3 Privilege Isolation**: Runs entirely in unprivileged Ring 3 with memory paging and system call vector protections, preventing userspace crashes from compromising kernel stability.
 2. **POSIX Process Control**: Dispatches executable programs using canonical `fork()`, `execve()` and `waitpid()` system calls rather than supervisor-level kernel execution routines.
 3. **$PATH Binary Resolution**: Automatically resolves command names without explicit directory paths by searching `/bin/<cmd>` and `/bin/<cmd>.elf` via the POSIX `access()` system call.
-4. **Interactive & Non-Interactive Modes**: Provides both an interactive REPL (`sh-0.7$ `) and non-interactive command string execution via the `-c` flag.
+4. **Interactive & Non-Interactive Modes**: Provides both an interactive REPL (`keira:<path>$ `) as the primary user shell upon system boot and non-interactive command string execution via the `-c` flag.
 5. **Pipelines & Redirection**: Streams standard input and output between processes and files using kernel pipes (`sys_pipe`) and descriptor duplication (`sys_dup2`).
 
 ---
@@ -82,25 +82,25 @@ The supervisor console provides a first-class `sh` command that launches `/bin/s
 
 ```bash
 # Non-interactive command string execution:
-keira:/# sh -c echo hello_userspace_shell
+ring0@keira:/# sh -c echo hello_userspace_shell
 hello_userspace_shell
 
 # I/O redirection:
-keira:/# sh -c echo m22_success > /tmp/out.txt
-keira:/# cat.elf /tmp/out.txt
+ring0@keira:/# sh -c echo m22_success > /tmp/out.txt
+ring0@keira:/# cat.elf /tmp/out.txt
 m22_success
 
 # Conditional chaining:
-keira:/# sh -c echo chain_one && echo chain_two
+ring0@keira:/# sh -c echo chain_one && echo chain_two
 chain_one
 chain_two
 
 # Pipelines:
-keira:/# sh -c echo streamed_line | cat
+ring0@keira:/# sh -c echo streamed_line | cat
 streamed_line
 
 # Executing shell scripts:
-keira:/# sh /etc/init.sh
+ring0@keira:/# sh /etc/init.sh
 [KFS] Initializing userland system environment...
 /
 [SYSINFO] Keira System Telemetry & Hardware Report
@@ -114,7 +114,7 @@ Users can invoke `sh` or `sh.elf` directly from the supervisor prompt without ty
 
 ```bash
 # Direct binary execution:
-keira:/# sh.elf -c help
+ring0@keira:/# sh.elf -c help
 Keira Standalone Userspace Shell (sh v0.7.0)
 Built-in Commands:
   cd [dir]       Change current working directory (alias: go)
@@ -126,7 +126,7 @@ Built-in Commands:
   exit [code]    Exit userspace shell
 
 # Direct shebang script execution:
-keira:/# demo.sh
+keira:/$ demo.sh
 Executing script: /bin/demo.sh
 [DEMO] Shebang execution active via /bin/sh
 [DEMO] Current directory:

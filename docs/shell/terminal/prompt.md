@@ -2,4 +2,7 @@
 
 # Shell Prompt & History Navigation
 
-Renders `keira:/path# ` prompt and supports Up/Down command history navigation.
+Keira implements a dual shell prompt architecture reflecting privilege separation:
+
+1. **Ring 0 Supervisor Console**: Renders `ring0@<hostname>:<path># ` for emergency diagnostic and hardware recovery commands.
+2. **Ring 3 Userspace Shell (`sh`)**: Renders `<hostname>:<path>$ ` (e.g. `keira:/$ `, `keira:/bin$ `) for unprivileged standard UNIX operations.
