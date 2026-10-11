@@ -48,4 +48,10 @@ pub mod test {
     fn test_cleanup_hook_execution() {
         syscall_task_cleanup_hook(0);
     }
+
+    #[test]
+    fn test_chdir_validation() {
+        let ret = syscall_dispatcher(16, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EFAULT));
+    }
 }

@@ -20,7 +20,7 @@ use keira_task::scheduler::{
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    ECHILD, EFAULT, EINVAL, ENOENT, ENOMEM, EPERM,
+    ECHILD, EFAULT, EINVAL, ENOENT, ENOMEM, ENOTDIR, EPERM,
 };
 
 #[cfg(not(test))]
@@ -300,6 +300,66 @@ pub fn handle_getcwd(arg1: u64, arg2: u64) -> u64 {
     errno_to_ret(EFAULT)
 }
 
+fn normalize_path(cwd: &str, target: &str, out: &mut [u8]) -> Result<usize, i64> {
+    if target.is_empty() {
+        if cwd.len() > out.len() {
+            return Err(EINVAL);
+        }
+        out[..cwd.len()].copy_from_slice(cwd.as_bytes());
+        return Ok(cwd.len());
+    }
+
+    let mut segments: [&str; 32] = [""; 32];
+    let mut seg_count = 0;
+
+    if !target.starts_with('/') {
+        for seg in cwd.split('/') {
+            if !seg.is_empty() && seg != "." {
+                if seg_count < segments.len() {
+                    segments[seg_count] = seg;
+                    seg_count += 1;
+                } else {
+                    return Err(EINVAL);
+                }
+            }
+        }
+    }
+
+    for seg in target.split('/') {
+        if seg.is_empty() || seg == "." {
+            continue;
+        } else if seg == ".." {
+            seg_count = seg_count.saturating_sub(1);
+        } else if seg_count < segments.len() {
+            segments[seg_count] = seg;
+            seg_count += 1;
+        } else {
+            return Err(EINVAL);
+        }
+    }
+
+    if seg_count == 0 {
+        if out.is_empty() {
+            return Err(EINVAL);
+        }
+        out[0] = b'/';
+        return Ok(1);
+    }
+
+    let mut written = 0;
+    for &seg in &segments[..seg_count] {
+        if written + 1 + seg.len() > out.len() {
+            return Err(EINVAL);
+        }
+        out[written] = b'/';
+        written += 1;
+        out[written..written + seg.len()].copy_from_slice(seg.as_bytes());
+        written += seg.len();
+    }
+
+    Ok(written)
+}
+
 /// Syscall 16: Change current working directory.
 pub fn handle_chdir(arg1: u64) -> u64 {
     let path_ptr = arg1 as *const u8;
@@ -309,11 +369,37 @@ pub fn handle_chdir(arg1: u64) -> u64 {
         Err(e) => return errno_to_ret(e),
     };
 
+    let target_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
     unsafe {
         let task = &mut TASKS[CURRENT_TASK_IDX];
         if let Some(t) = task {
-            t.cwd_len = len;
-            t.cwd[..len].copy_from_slice(&path_buf[..len]);
+            let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+
+            let mut resolved_buf = [0u8; 128];
+            let resolved_len = match normalize_path(current_cwd, target_str, &mut resolved_buf) {
+                Ok(l) => l,
+                Err(e) => return errno_to_ret(e),
+            };
+
+            let resolved_str = match core::str::from_utf8(&resolved_buf[..resolved_len]) {
+                Ok(s) => s,
+                Err(_) => return errno_to_ret(EINVAL),
+            };
+
+            if !keira_fs::vfs::exists(resolved_str) {
+                return errno_to_ret(ENOENT);
+            }
+
+            if !keira_fs::vfs::is_dir(resolved_str) {
+                return errno_to_ret(ENOTDIR);
+            }
+
+            t.cwd_len = resolved_len;
+            t.cwd[..resolved_len].copy_from_slice(&resolved_buf[..resolved_len]);
             0
         } else {
             errno_to_ret(EFAULT)
