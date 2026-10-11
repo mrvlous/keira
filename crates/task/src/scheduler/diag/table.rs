@@ -9,7 +9,7 @@
 
 //! Task process table inspection and terminal diagnostics formatting.
 
-use keira_io::{serial, vga};
+use keira_io::vga;
 
 use crate::scheduler::core::{MAX_TASKS, TASKS};
 use crate::types::TaskState;
@@ -91,26 +91,5 @@ unsafe fn print_padded_u64(val: u64, width: usize) {
     }
     for _ in 0..width.saturating_sub(len) {
         vga::print_str(" ");
-    }
-}
-
-pub(crate) unsafe fn print_decimal(mut val: u64) {
-    if val == 0 {
-        serial::print_str("0");
-        return;
-    }
-    let mut buf = [0u8; 20];
-    let mut idx = 0;
-    while val > 0 {
-        buf[idx] = b'0' + (val % 10) as u8;
-        val /= 10;
-        idx += 1;
-    }
-    while idx > 0 {
-        idx -= 1;
-        let s = [buf[idx]];
-        if let Ok(st) = core::str::from_utf8(&s) {
-            serial::print_str(st);
-        }
     }
 }

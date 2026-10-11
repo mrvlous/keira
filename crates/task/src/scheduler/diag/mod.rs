@@ -12,4 +12,3 @@
 pub mod table;
 
 pub use table::list_tasks;
-pub(crate) use table::print_decimal;

@@ -10,7 +10,6 @@
 //! Task termination and exit status lifecycle transition.
 
 use keira_fs::lock::flock::release_all_locks_for_task;
-use keira_io::serial;
 
 use crate::scheduler::core::{
     CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK,
@@ -43,10 +42,6 @@ pub unsafe fn exit_current(exit_code: i32) {
                         task.fds[fd] = FileDescriptor::new();
                     }
                 }
-
-                serial::print_str("Scheduler: Task '");
-                serial::print_str(task.name);
-                serial::print_str("' exited (Zombie)\n");
 
                 task.parent_id
             } else {

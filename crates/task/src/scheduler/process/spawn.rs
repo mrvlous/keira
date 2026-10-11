@@ -9,11 +9,9 @@
 
 //! Task allocation and kernel/user thread spawning.
 
-use keira_io::serial;
 use keira_mem::{pmm, vmm};
 
 use crate::scheduler::core::{CURRENT_TASK_IDX, MAX_TASKS, TASKS};
-use crate::scheduler::diag::print_decimal;
 use crate::scheduler::lifecycle::reap_orphaned_zombies;
 use crate::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 
@@ -135,12 +133,6 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
     TASKS[slot_idx] = Some(new_task);
     let core_id = keira_arch::cpu::get_current_core_id();
     crate::scheduler::work_stealing::push_local(core_id, slot_idx);
-
-    serial::print_str("Scheduler: Spawned task '");
-    serial::print_str(name);
-    serial::print_str("' in slot ");
-    print_decimal(slot_idx as u64);
-    serial::print_str("\n");
 
     Ok(slot_idx)
 }
@@ -274,12 +266,6 @@ pub unsafe fn spawn_user(
     TASKS[slot_idx] = Some(new_task);
     let core_id = keira_arch::cpu::get_current_core_id();
     crate::scheduler::work_stealing::push_local(core_id, slot_idx);
-
-    serial::print_str("Scheduler: Spawned user task '");
-    serial::print_str(name);
-    serial::print_str("' in slot ");
-    print_decimal(slot_idx as u64);
-    serial::print_str("\n");
 
     Ok(slot_idx)
 }
