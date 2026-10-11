@@ -10,7 +10,7 @@
 //! File system and descriptor I/O system call handlers.
 
 use keira_fs::vfs::{create_file, exists, read_file, write_file};
-use keira_io::{serial, vga};
+use keira_io::vga;
 use keira_mem::pmm;
 use keira_task::scheduler::{CURRENT_TASK_IDX, TASKS};
 use keira_task::types::{FileDescriptor, MAX_FDS};
@@ -215,57 +215,40 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
             } else if fd == 0 {
                 let mut kernel_buf = [0u8; 128];
                 let to_read = (len as usize).min(kernel_buf.len());
-                if let Ok(bytes) = keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read]) {
-                    if bytes > 0 {
-                        if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
-                            return bytes as u64;
+                #[cfg(target_os = "none")]
+                loop {
+                    if let Ok(bytes) =
+                        keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
+                    {
+                        if bytes > 0 {
+                            if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                return bytes as u64;
+                            }
+                            return errno_to_ret(EFAULT);
                         }
-                        return errno_to_ret(EFAULT);
+                    } else {
+                        return errno_to_ret(EIO);
+                    }
+                    core::arch::asm!("sti; hlt");
+                }
+                #[cfg(not(target_os = "none"))]
+                {
+                    if let Ok(bytes) =
+                        keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
+                    {
+                        if bytes > 0 {
+                            if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                return bytes as u64;
+                            }
+                            return errno_to_ret(EFAULT);
+                        }
                     }
                     return 0;
                 }
-                return errno_to_ret(EIO);
             }
         }
     }
     errno_to_ret(EBADF)
-}
-
-/// Emits userland console output to COM1 serial while filtering screen-clearing escape sequences.
-///
-/// This preserves host terminal scrollback and QEMU logs when Ring 3 utilities run `clear`.
-fn serial_print_filtered(s: &str) {
-    if s.contains("\x1b[2J") || s.contains("\x1b[3J") || s.contains("\x1b[H") {
-        let mut in_esc = false;
-        let mut in_csi = false;
-        for b in s.bytes() {
-            if !in_esc && b == 0x1b {
-                in_esc = true;
-                continue;
-            }
-            if in_esc {
-                if b == b'[' {
-                    in_csi = true;
-                    in_esc = false;
-                    continue;
-                }
-                in_esc = false;
-                continue;
-            }
-            if in_csi {
-                if (0x40..=0x7E).contains(&b) {
-                    in_csi = false;
-                }
-                continue;
-            }
-            let byte_slice = [b];
-            if let Ok(ch) = core::str::from_utf8(&byte_slice) {
-                serial::print_str(ch);
-            }
-        }
-    } else {
-        serial::print_str(s);
-    }
 }
 
 /// Syscall 8: Write to file descriptor from user buffer.
@@ -383,15 +366,11 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
             }
             if let Ok(s) = core::str::from_utf8(&chunk[..to_read]) {
                 vga::print_str(s);
-                serial_print_filtered(s);
             } else {
                 for &b in &chunk[..to_read] {
                     let single = [b];
                     if let Ok(s) = core::str::from_utf8(&single) {
                         vga::print_str(s);
-                        if b != 0x1b {
-                            serial::print_str(s);
-                        }
                     }
                 }
             }
