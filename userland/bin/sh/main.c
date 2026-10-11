@@ -8,6 +8,7 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,28 @@
 
 #define SH_MAX_LINE 512
 #define SH_MAX_ARGS 64
-#define SH_PROMPT "sh-0.7$ "
+
+static void print_shell_prompt(void) {
+    char hostname[64] = "keira";
+    int fd = open("/etc/hostname", O_RDONLY, 0);
+    if (fd >= 0) {
+        ssize_t n = read(fd, hostname, sizeof(hostname) - 1);
+        if (n > 0) {
+            while (n > 0 &&
+                   (hostname[n - 1] == '\n' || hostname[n - 1] == '\r' || hostname[n - 1] == ' ')) {
+                n--;
+            }
+            hostname[n] = '\0';
+        }
+        close(fd);
+    }
+    char cwd[256] = "/";
+    if (!getcwd(cwd, sizeof(cwd))) {
+        strcpy(cwd, "/");
+    }
+    printf("%s:%s$ ", hostname, cwd);
+    fflush(stdout);
+}
 
 static int last_exit_status = 0;
 
@@ -65,7 +87,11 @@ static int tokenize_line(char *line, char **argv, int max_args) {
 static int builtin_cd(int argc, char **argv) {
     const char *target = (argc > 1) ? argv[1] : "/";
     if (chdir(target) != 0) {
-        printf("sh: cd: %s: No such file or directory\n", target);
+        if (errno == 20) {
+            printf("sh: cd: %s: Not a directory\n", target);
+        } else {
+            printf("sh: cd: %s: No such file or directory\n", target);
+        }
         return 1;
     }
     return 0;
@@ -542,13 +568,9 @@ int main(int argc, char **argv) {
         return run_script_file(argv[1]);
     }
 
-    puts("Keira Standalone Userspace Shell (sh v0.7.0)");
-    puts("Type 'help' for built-in commands or enter executable names.");
-
     char line_buf[SH_MAX_LINE];
     while (1) {
-        printf(SH_PROMPT);
-        fflush(stdout);
+        print_shell_prompt();
 
         if (!fgets(line_buf, sizeof(line_buf), stdin)) {
             putchar('\n');
