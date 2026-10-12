@@ -26,8 +26,7 @@ ssize_t sys_write(int fd, const void *buf, size_t count) {
 
 int sys_open(const char *filename, int flags, int mode) {
     (void)mode;
-    uint64_t write_flag = (flags != 0) ? 1 : 0;
-    return (int)syscall2(SYS_OPEN, (uint64_t)(uintptr_t)filename, write_flag);
+    return (int)syscall2(SYS_OPEN, (uint64_t)(uintptr_t)filename, (uint64_t)flags);
 }
 
 int sys_close(int fd) {
