@@ -12,3 +12,4 @@
 pub mod power;
 pub mod reset;
 pub mod sync;
+pub mod wipe;
