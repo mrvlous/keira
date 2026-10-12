@@ -36,6 +36,7 @@ pub const LINE_BUF_SIZE: usize = 256;
 static mut LINE_BUF: [u8; LINE_BUF_SIZE] = [0; LINE_BUF_SIZE];
 static mut LINE_LEN: usize = 0;
 static mut LAST_CHAR_WAS_CR: bool = false;
+static mut LAST_BACKSPACE_POPPED: bool = false;
 
 /// Hook function invoked when a SIGINT character is intercepted in canonical mode.
 pub static mut SIGINT_HOOK: Option<fn()> = None;
@@ -60,27 +61,38 @@ pub fn set_termios(t: &Termios) {
 }
 
 /// Pushes a raw input character into the TTY line discipline state machine.
-pub fn push_char(c: u8) {
+pub fn push_char(c: u8) -> bool {
     unsafe {
         let lflag = ACTIVE_TERMIOS.c_lflag;
 
         if (lflag & ISIG) != 0 && c == ACTIVE_TERMIOS.c_cc[VINTR] {
+            LINE_LEN = 0;
+            LAST_BACKSPACE_POPPED = false;
             if let Some(hook) = SIGINT_HOOK {
                 hook();
             }
-            return;
+            return false;
         }
 
         if (lflag & ICANON) != 0 {
             if c == b'\n' && LAST_CHAR_WAS_CR {
                 LAST_CHAR_WAS_CR = false;
-                return;
+                LAST_BACKSPACE_POPPED = false;
+                return false;
             }
             LAST_CHAR_WAS_CR = c == b'\r';
 
             if c == 0x08 || c == 0x7F || c == ACTIVE_TERMIOS.c_cc[VERASE] {
-                LINE_LEN = LINE_LEN.saturating_sub(1);
+                if LINE_LEN > 0 {
+                    LINE_LEN -= 1;
+                    LAST_BACKSPACE_POPPED = true;
+                    true
+                } else {
+                    LAST_BACKSPACE_POPPED = false;
+                    false
+                }
             } else if c == b'\r' || c == b'\n' {
+                LAST_BACKSPACE_POPPED = false;
                 if LINE_LEN < LINE_BUF_SIZE {
                     LINE_BUF[LINE_LEN] = b'\n';
                     LINE_LEN += 1;
@@ -95,18 +107,38 @@ pub fn push_char(c: u8) {
                     }
                 }
                 LINE_LEN = 0;
+                true
             } else if LINE_LEN < LINE_BUF_SIZE - 1 {
+                LAST_BACKSPACE_POPPED = false;
                 LINE_BUF[LINE_LEN] = c;
                 LINE_LEN += 1;
+                true
+            } else {
+                LAST_BACKSPACE_POPPED = false;
+                false
             }
         } else {
+            LAST_BACKSPACE_POPPED = false;
             let next_tail = (COOKED_TAIL + 1) % COOKED_BUF_SIZE;
             if next_tail != COOKED_HEAD {
                 COOKED_QUEUE[COOKED_TAIL] = c;
                 COOKED_TAIL = next_tail;
+                true
+            } else {
+                false
             }
         }
     }
+}
+
+/// Returns whether the most recent erase character successfully removed an entry from the line buffer.
+pub fn last_erase_succeeded() -> bool {
+    unsafe { LAST_BACKSPACE_POPPED }
+}
+
+/// Returns the current number of characters held in the uncommitted line buffer.
+pub fn line_len() -> usize {
+    unsafe { LINE_LEN }
 }
 
 /// Reads cooked characters from the canonical line buffer into the target destination slice.
@@ -129,5 +161,6 @@ pub fn flush_tty() {
         COOKED_TAIL = 0;
         LINE_LEN = 0;
         LAST_CHAR_WAS_CR = false;
+        LAST_BACKSPACE_POPPED = false;
     }
 }
