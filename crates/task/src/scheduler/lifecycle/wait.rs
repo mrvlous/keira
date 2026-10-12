@@ -13,7 +13,7 @@ use keira_fs::lock::flock::release_all_locks_for_task;
 use keira_mem::{pmm, vmm};
 
 use crate::scheduler::core::{
-    CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK,
+    CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK, TASK_STACK_PAGES,
 };
 use crate::signal::action::reset_signal_handlers;
 use crate::types::TaskState;
@@ -60,7 +60,7 @@ pub unsafe fn sys_waitpid(
                                 if is_last_pml4_user {
                                     vmm::free_user_pages(child.pml4_phys, child.program_break);
                                 }
-                                pmm::free_frame(child.stack_addr);
+                                pmm::free_contiguous_frames(child.stack_addr, TASK_STACK_PAGES);
                             } else if child.pml4_phys != 0 && is_last_pml4_user {
                                 vmm::cleanup_vmas_for_pml4(child.pml4_phys);
                             }
