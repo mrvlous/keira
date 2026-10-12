@@ -40,8 +40,10 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
                     vga::print_str("^Z\n");
                     let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
                 }
-                8 => {
-                    vga::backspace();
+                8 | 127 => {
+                    if keira_io::tty::last_erase_succeeded() {
+                        vga::backspace();
+                    }
                 }
                 10 | 13 => {
                     vga::print_str("\n");
@@ -77,7 +79,7 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
             9 => {
                 handle_autocomplete();
             }
-            8 => {
+            8 | 127 => {
                 if BUFFER_LEN > 0 {
                     BUFFER_LEN -= 1;
                     INPUT_BUFFER[BUFFER_LEN] = 0;
