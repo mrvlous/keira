@@ -14,10 +14,40 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
 #define SH_MAX_LINE 512
 #define SH_MAX_ARGS 64
+#define SH_HISTORY_MAX 32
+
+static char sh_history[SH_HISTORY_MAX][SH_MAX_LINE];
+static int sh_history_count = 0;
+
+static void sh_history_push(const char *cmd) {
+    if (!cmd || cmd[0] == '\0') {
+        return;
+    }
+    if (sh_history_count > 0) {
+        int last_idx = (sh_history_count - 1) % SH_HISTORY_MAX;
+        if (strcmp(sh_history[last_idx], cmd) == 0) {
+            return;
+        }
+    }
+    int idx = sh_history_count % SH_HISTORY_MAX;
+    strncpy(sh_history[idx], cmd, SH_MAX_LINE - 1);
+    sh_history[idx][SH_MAX_LINE - 1] = '\0';
+    sh_history_count++;
+}
+
+static int builtin_history(void) {
+    int start = (sh_history_count > SH_HISTORY_MAX) ? (sh_history_count - SH_HISTORY_MAX) : 0;
+    for (int i = start; i < sh_history_count; i++) {
+        int idx = i % SH_HISTORY_MAX;
+        printf(" %4d  %s\n", i + 1, sh_history[idx]);
+    }
+    return 0;
+}
 
 static void print_shell_prompt(void) {
     char hostname[64] = "keira";
@@ -161,6 +191,7 @@ static int builtin_help(void) {
     puts("  echo [args]    Display text or environment variables");
     puts("  export [K=V]   Set environment variable");
     puts("  clear          Clear console screen");
+    puts("  history        Display command execution history");
     puts("  help           Display this reference manual");
     puts("  exit [code]    Exit userspace shell");
     puts("Shell Features:");
@@ -299,6 +330,8 @@ static int execute_single_command(int argc, char **argv) {
     } else if (strcmp(clean_argv[0], "clear") == 0) {
         printf("\x1b[2J\x1b[H");
         ret_status = 0;
+    } else if (strcmp(clean_argv[0], "history") == 0) {
+        ret_status = builtin_history();
     } else if (strcmp(clean_argv[0], "help") == 0) {
         ret_status = builtin_help();
     } else if (strcmp(clean_argv[0], "exit") == 0) {
@@ -531,6 +564,150 @@ static int run_script_file(const char *filename) {
     return status;
 }
 
+static int sh_readline(char *buf, size_t max_len) {
+    if (!isatty(STDIN_FILENO)) {
+        if (!fgets(buf, (int)max_len, stdin)) {
+            return -1;
+        }
+        size_t len = strlen(buf);
+        while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) {
+            buf[--len] = '\0';
+        }
+        return (int)len;
+    }
+
+    struct termios orig_term;
+    int has_term = (tcgetattr(STDIN_FILENO, &orig_term) == 0);
+    if (has_term) {
+        struct termios raw_term = orig_term;
+        raw_term.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &raw_term);
+    }
+
+    size_t line_len = 0;
+    buf[0] = '\0';
+    char draft_buf[SH_MAX_LINE];
+    draft_buf[0] = '\0';
+    int hist_index = -1;
+
+    while (1) {
+        char ch = 0;
+        ssize_t n = read(STDIN_FILENO, &ch, 1);
+        if (n <= 0) {
+            if (has_term) {
+                tcsetattr(STDIN_FILENO, TCSANOW, &orig_term);
+            }
+            return -1;
+        }
+
+        if (ch == 0x04) {
+            if (line_len == 0) {
+                if (has_term) {
+                    tcsetattr(STDIN_FILENO, TCSANOW, &orig_term);
+                }
+                return -1;
+            }
+            continue;
+        }
+
+        if (ch == 0x03) {
+            buf[0] = '\0';
+            putchar('\n');
+            fflush(stdout);
+            if (has_term) {
+                tcsetattr(STDIN_FILENO, TCSANOW, &orig_term);
+            }
+            return 0;
+        }
+
+        if (ch == '\r' || ch == '\n') {
+            buf[line_len] = '\0';
+            putchar('\n');
+            fflush(stdout);
+            if (line_len > 0) {
+                sh_history_push(buf);
+            }
+            if (has_term) {
+                tcsetattr(STDIN_FILENO, TCSANOW, &orig_term);
+            }
+            return (int)line_len;
+        }
+
+        if (ch == 0x08 || ch == 0x7F) {
+            if (line_len > 0) {
+                line_len--;
+                buf[line_len] = '\0';
+                printf("\b \b");
+                fflush(stdout);
+            }
+            continue;
+        }
+
+        if ((unsigned char)ch == 0x1B) {
+            char seq[2];
+            if (read(STDIN_FILENO, &seq[0], 1) == 1 && seq[0] == '[') {
+                if (read(STDIN_FILENO, &seq[1], 1) == 1) {
+                    if (seq[1] == 'A') {
+                        if (sh_history_count > 0) {
+                            if (hist_index == -1) {
+                                strncpy(draft_buf, buf, sizeof(draft_buf) - 1);
+                                draft_buf[sizeof(draft_buf) - 1] = '\0';
+                                hist_index = sh_history_count - 1;
+                            } else if (hist_index > 0) {
+                                int oldest = (sh_history_count > SH_HISTORY_MAX)
+                                                 ? (sh_history_count - SH_HISTORY_MAX)
+                                                 : 0;
+                                if (hist_index > oldest) {
+                                    hist_index--;
+                                }
+                            }
+                            int idx = hist_index % SH_HISTORY_MAX;
+                            strncpy(buf, sh_history[idx], max_len - 1);
+                            buf[max_len - 1] = '\0';
+                            line_len = strlen(buf);
+
+                            printf("\r\x1b[2K");
+                            print_shell_prompt();
+                            printf("%s", buf);
+                            fflush(stdout);
+                        }
+                    } else if (seq[1] == 'B') {
+                        if (hist_index != -1) {
+                            if (hist_index < sh_history_count - 1) {
+                                hist_index++;
+                                int idx = hist_index % SH_HISTORY_MAX;
+                                strncpy(buf, sh_history[idx], max_len - 1);
+                                buf[max_len - 1] = '\0';
+                                line_len = strlen(buf);
+                            } else {
+                                hist_index = -1;
+                                strncpy(buf, draft_buf, max_len - 1);
+                                buf[max_len - 1] = '\0';
+                                line_len = strlen(buf);
+                            }
+
+                            printf("\r\x1b[2K");
+                            print_shell_prompt();
+                            printf("%s", buf);
+                            fflush(stdout);
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+
+        if ((unsigned char)ch >= 32 && (unsigned char)ch <= 126) {
+            if (line_len + 1 < max_len) {
+                buf[line_len++] = ch;
+                buf[line_len] = '\0';
+                putchar(ch);
+                fflush(stdout);
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc >= 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
         puts("Usage: sh [-c command] [-h|--help] [script_file [args...]]");
@@ -576,17 +753,12 @@ int main(int argc, char **argv) {
     while (1) {
         print_shell_prompt();
 
-        if (!fgets(line_buf, sizeof(line_buf), stdin)) {
+        int n = sh_readline(line_buf, sizeof(line_buf));
+        if (n < 0) {
             putchar('\n');
             break;
         }
-
-        size_t len = strlen(line_buf);
-        while (len > 0 && (line_buf[len - 1] == '\n' || line_buf[len - 1] == '\r')) {
-            line_buf[--len] = '\0';
-        }
-
-        if (len == 0) {
+        if (n == 0) {
             continue;
         }
 
