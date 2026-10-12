@@ -156,7 +156,7 @@ static int builtin_export(int argc, char **argv) {
 static int builtin_help(void) {
     puts("Keira Standalone Userspace Shell (sh v0.7.0)");
     puts("Built-in Commands:");
-    puts("  cd, go [dir]   Change current working directory");
+    puts("  cd [dir]       Change current working directory");
     puts("  pwd            Print working directory");
     puts("  echo [args]    Display text or environment variables");
     puts("  export [K=V]   Set environment variable");
@@ -167,8 +167,12 @@ static int builtin_help(void) {
     puts("  I/O Redir:     > file, >> file, < file");
     puts("  Pipelines:     cmd1 | cmd2");
     puts("  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2");
+    puts("Core Utilities (/bin):");
+    puts("  File & Dir:    cat, touch, mkdir, rm, ls, df");
+    puts("  System & Proc: sysinfo, hostname, ps, kill, dmesg, clear");
+    puts("  Dev & Network: kcc, fetch");
     puts("Direct Execution:");
-    puts("  Binaries in /bin (e.g. cat, ls, sysinfo, kcc) execute via $PATH");
+    puts("  Binaries in /bin and current directory execute directly via $PATH");
     return 0;
 }
 
@@ -284,7 +288,7 @@ static int execute_single_command(int argc, char **argv) {
 
     int ret_status = 0;
 
-    if (strcmp(clean_argv[0], "cd") == 0 || strcmp(clean_argv[0], "go") == 0) {
+    if (strcmp(clean_argv[0], "cd") == 0) {
         ret_status = builtin_cd(clean_argc, clean_argv);
     } else if (strcmp(clean_argv[0], "pwd") == 0) {
         ret_status = builtin_pwd();
