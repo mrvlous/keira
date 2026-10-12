@@ -60,5 +60,10 @@ char *getcwd(char *buf, size_t size) {
         errno = (int)-ret;
         return NULL;
     }
+    if ((size_t)ret < size) {
+        buf[ret] = '\0';
+    } else {
+        buf[size - 1] = '\0';
+    }
     return buf;
 }
