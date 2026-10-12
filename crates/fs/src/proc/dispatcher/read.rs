@@ -80,3 +80,59 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
         }
     }
 }
+
+use crate::vfs::VirtualDirEntry;
+
+/// Virtual directory entries representing pseudo-files and directories in /proc.
+pub static PROC_ENTRIES: [VirtualDirEntry; 9] = [
+    VirtualDirEntry {
+        name: ".",
+        d_type: 4,
+        ino: 10,
+    },
+    VirtualDirEntry {
+        name: "..",
+        d_type: 4,
+        ino: 10,
+    },
+    VirtualDirEntry {
+        name: "uptime",
+        d_type: 8,
+        ino: 11,
+    },
+    VirtualDirEntry {
+        name: "meminfo",
+        d_type: 8,
+        ino: 12,
+    },
+    VirtualDirEntry {
+        name: "cpuinfo",
+        d_type: 8,
+        ino: 13,
+    },
+    VirtualDirEntry {
+        name: "version",
+        d_type: 8,
+        ino: 14,
+    },
+    VirtualDirEntry {
+        name: "loadavg",
+        d_type: 8,
+        ino: 15,
+    },
+    VirtualDirEntry {
+        name: "cmdline",
+        d_type: 8,
+        ino: 16,
+    },
+    VirtualDirEntry {
+        name: "self",
+        d_type: 4,
+        ino: 17,
+    },
+];
+
+/// Retrieves a virtual ProcFS directory entry by index.
+pub fn get_proc_entry(index: usize) -> Option<VirtualDirEntry> {
+    PROC_ENTRIES.get(index).copied()
+}

@@ -23,7 +23,7 @@ pub mod writer;
 #[cfg(test)]
 mod tests;
 
-pub use self::dispatcher::{exists, read_proc_file};
+pub use self::dispatcher::{exists, get_proc_entry, read_proc_file, PROC_ENTRIES};
 pub use self::task::{
     register_task_hooks, CurrentPidProvider, TaskCmdlineProvider, TaskStatusProvider,
     CURRENT_PID_HOOK, TASK_CMDLINE_HOOK, TASK_STATUS_HOOK,

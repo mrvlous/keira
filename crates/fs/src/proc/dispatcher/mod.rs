@@ -11,4 +11,4 @@
 
 pub mod read;
 
-pub use self::read::{exists, read_proc_file};
+pub use self::read::{exists, get_proc_entry, read_proc_file, PROC_ENTRIES};
