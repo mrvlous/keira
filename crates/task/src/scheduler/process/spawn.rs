@@ -11,7 +11,9 @@
 
 use keira_mem::{pmm, vmm};
 
-use crate::scheduler::core::{CURRENT_TASK_IDX, MAX_TASKS, TASKS};
+use crate::scheduler::core::{
+    CURRENT_TASK_IDX, MAX_TASKS, TASKS, TASK_STACK_PAGES, TASK_STACK_SIZE,
+};
 use crate::scheduler::lifecycle::reap_orphaned_zombies;
 use crate::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 
@@ -40,8 +42,9 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
 
     let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
 
-    let stack_frame = pmm::alloc_frame().ok_or("Scheduler: Out of memory for task stack")?;
-    let stack_top = stack_frame + pmm::PAGE_SIZE;
+    let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
+        .ok_or("Scheduler: Out of memory for task stack")?;
+    let stack_top = stack_frame + TASK_STACK_SIZE;
 
     let context_ptr =
         (stack_top - core::mem::size_of::<InterruptContext>() as u64) as *mut InterruptContext;
@@ -167,8 +170,9 @@ pub unsafe fn spawn_user(
 
     let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
 
-    let stack_frame = pmm::alloc_frame().ok_or("Scheduler: Out of memory for task stack")?;
-    let stack_top = stack_frame + pmm::PAGE_SIZE;
+    let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
+        .ok_or("Scheduler: Out of memory for task stack")?;
+    let stack_top = stack_frame + TASK_STACK_SIZE;
 
     let context_ptr =
         (stack_top - core::mem::size_of::<InterruptContext>() as u64) as *mut InterruptContext;
