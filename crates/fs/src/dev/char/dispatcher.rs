@@ -51,3 +51,59 @@ pub fn exists(node_name: &str) -> bool {
         "null" | "zero" | "random" | "urandom" | "tty" | "ptmx"
     )
 }
+
+use crate::vfs::VirtualDirEntry;
+
+/// Virtual directory entries representing character and block device nodes in /dev.
+pub static DEV_ENTRIES: [VirtualDirEntry; 9] = [
+    VirtualDirEntry {
+        name: ".",
+        d_type: 4,
+        ino: 1,
+    },
+    VirtualDirEntry {
+        name: "..",
+        d_type: 4,
+        ino: 1,
+    },
+    VirtualDirEntry {
+        name: "null",
+        d_type: 2,
+        ino: 2,
+    },
+    VirtualDirEntry {
+        name: "zero",
+        d_type: 2,
+        ino: 3,
+    },
+    VirtualDirEntry {
+        name: "random",
+        d_type: 2,
+        ino: 4,
+    },
+    VirtualDirEntry {
+        name: "urandom",
+        d_type: 2,
+        ino: 5,
+    },
+    VirtualDirEntry {
+        name: "tty",
+        d_type: 2,
+        ino: 6,
+    },
+    VirtualDirEntry {
+        name: "ptmx",
+        d_type: 2,
+        ino: 7,
+    },
+    VirtualDirEntry {
+        name: "sda",
+        d_type: 6,
+        ino: 8,
+    },
+];
+
+/// Retrieves a virtual DevFS directory entry by index.
+pub fn get_dev_entry(index: usize) -> Option<VirtualDirEntry> {
+    DEV_ENTRIES.get(index).copied()
+}

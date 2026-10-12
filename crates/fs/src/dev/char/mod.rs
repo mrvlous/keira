@@ -15,4 +15,4 @@ pub mod random;
 pub mod tty;
 pub mod zero;
 
-pub use self::dispatcher::{exists, read_dev_node, write_dev_node};
+pub use self::dispatcher::{exists, get_dev_entry, read_dev_node, write_dev_node, DEV_ENTRIES};

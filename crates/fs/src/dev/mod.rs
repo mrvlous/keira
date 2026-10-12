@@ -17,4 +17,4 @@ pub mod char;
 #[cfg(test)]
 mod tests;
 
-pub use self::char::{exists, read_dev_node, write_dev_node};
+pub use self::char::{exists, get_dev_entry, read_dev_node, write_dev_node, DEV_ENTRIES};
