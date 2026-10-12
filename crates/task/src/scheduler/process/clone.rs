@@ -13,7 +13,9 @@
 use keira_mem::{pmm, vmm};
 
 #[cfg(not(target_arch = "x86"))]
-use crate::scheduler::core::{CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS};
+use crate::scheduler::core::{
+    CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_STACK_PAGES, TASK_STACK_SIZE,
+};
 #[cfg(not(target_arch = "x86"))]
 use crate::scheduler::lifecycle::reap_orphaned_zombies_locked;
 #[cfg(not(target_arch = "x86"))]
@@ -92,8 +94,9 @@ pub unsafe fn clone_current_task(
 
         let ptr = &raw const TASKS;
         if let Some(ref parent) = (*ptr)[parent_idx] {
-            let stack_frame = pmm::alloc_frame().ok_or("Out of memory for child stack")?;
-            let stack_top = stack_frame + pmm::PAGE_SIZE;
+            let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
+                .ok_or("Out of memory for child stack")?;
+            let stack_top = stack_frame + TASK_STACK_SIZE;
 
             let pml4_phys = if (flags & CLONE_VM) != 0 {
                 parent.pml4_phys
@@ -101,7 +104,7 @@ pub unsafe fn clone_current_task(
                 match vmm::clone_user_address_space_cow(parent.pml4_phys) {
                     Ok(p) => p,
                     Err(e) => {
-                        pmm::free_frame(stack_frame);
+                        pmm::free_contiguous_frames(stack_frame, TASK_STACK_PAGES);
                         return Err(e);
                     }
                 }
