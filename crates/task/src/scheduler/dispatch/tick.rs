@@ -11,11 +11,11 @@
 
 use core::sync::atomic::Ordering;
 use keira_io::vga;
-use keira_mem::{pmm, vmm};
+use keira_mem::vmm;
 
 use crate::scheduler::core::{
     get_boot_kernel_stack, main_kernel_stack, set_kernel_stack, CURRENT_TASK_IDX,
-    SCHEDULER_INITIALIZED, TASKS, TOTAL_CONTEXT_SWITCHES, TOTAL_SCHEDULER_TICKS,
+    SCHEDULER_INITIALIZED, TASKS, TASK_STACK_SIZE, TOTAL_CONTEXT_SWITCHES, TOTAL_SCHEDULER_TICKS,
 };
 use crate::scheduler::work_stealing::{pick_next_task, push_local};
 use crate::types::TaskState;
@@ -70,7 +70,7 @@ pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
 
                 vmm::switch_address_space(task.pml4_phys);
                 if task.stack_addr != 0 {
-                    let kstack = (task.stack_addr + pmm::PAGE_SIZE) as usize;
+                    let kstack = (task.stack_addr + TASK_STACK_SIZE) as usize;
                     set_kernel_stack(kstack);
                 } else {
                     let boot_stack = get_boot_kernel_stack();
