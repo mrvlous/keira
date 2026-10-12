@@ -20,3 +20,5 @@ The `sys` command suite provides emergency telemetry, power management and hardw
 | `system` | `system` | Print kernel version, architecture, compiler target and build info | `-h, --help` |
 | `unwind` | `unwind` | Display stack frame trace and symbol unwind diagnostic test | `-h, --help` |
 | `watchpoint` | `watchpoint` | Inspect hardware debug registers (DR0-DR3) and watchpoint traps | `-h, --help` |
+| `wipe` | `wipe` | Clear and reset the VGA text console display buffer | `-h, --help` |
+
