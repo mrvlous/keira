@@ -293,6 +293,9 @@ pub fn handle_getcwd(arg1: u64, arg2: u64) -> u64 {
         if let Some(t) = task {
             let to_copy = (t.cwd_len).min(len as usize);
             if copy_to_user(buf_ptr, &t.cwd[..to_copy]).is_ok() {
+                if to_copy < len as usize {
+                    let _ = copy_to_user(buf_ptr + to_copy as u64, &[0u8]);
+                }
                 return to_copy as u64;
             }
         }
@@ -300,7 +303,8 @@ pub fn handle_getcwd(arg1: u64, arg2: u64) -> u64 {
     errno_to_ret(EFAULT)
 }
 
-fn normalize_path(cwd: &str, target: &str, out: &mut [u8]) -> Result<usize, i64> {
+/// Normalizes a relative or absolute path against a current working directory base.
+pub fn normalize_path(cwd: &str, target: &str, out: &mut [u8]) -> Result<usize, i64> {
     if target.is_empty() {
         if cwd.len() > out.len() {
             return Err(EINVAL);

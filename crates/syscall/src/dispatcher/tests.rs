@@ -54,4 +54,32 @@ pub mod test {
         let ret = syscall_dispatcher(16, 0, 0, 0, 0, 0, 0);
         assert_eq!(ret, errno_to_ret(EFAULT));
     }
+
+    #[test]
+    fn test_normalize_path_resolution() {
+        let mut buf = [0u8; 64];
+        let len =
+            crate::dispatcher::handlers::process::normalize_path("/", "dev", &mut buf).unwrap();
+        assert_eq!(&buf[..len], b"/dev");
+
+        let len =
+            crate::dispatcher::handlers::process::normalize_path("/dev", ".", &mut buf).unwrap();
+        assert_eq!(&buf[..len], b"/dev");
+
+        let len =
+            crate::dispatcher::handlers::process::normalize_path("/dev", "null", &mut buf).unwrap();
+        assert_eq!(&buf[..len], b"/dev/null");
+
+        let len =
+            crate::dispatcher::handlers::process::normalize_path("/dev", "..", &mut buf).unwrap();
+        assert_eq!(&buf[..len], b"/");
+
+        let len = crate::dispatcher::handlers::process::normalize_path(
+            "/dev",
+            "../etc/hostname",
+            &mut buf,
+        )
+        .unwrap();
+        assert_eq!(&buf[..len], b"/etc/hostname");
+    }
 }
