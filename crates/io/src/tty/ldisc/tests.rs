@@ -86,3 +86,36 @@ fn test_crlf_sequence_deduplication() {
     let n2 = read_tty(&mut sink);
     assert_eq!(n2, 0);
 }
+
+#[test]
+fn test_backspace_on_empty_line_preserves_prompt_boundary() {
+    let mut t = get_termios();
+    t.c_lflag |= ICANON;
+    set_termios(&t);
+
+    super::discipline::flush_tty();
+
+    // Line is initially empty: backspace must return false and record no erase
+    assert!(!push_char(0x08));
+    assert!(!super::discipline::last_erase_succeeded());
+    assert_eq!(super::discipline::line_len(), 0);
+
+    // Also test 0x7F (DEL) on empty line
+    assert!(!push_char(0x7F));
+    assert!(!super::discipline::last_erase_succeeded());
+    assert_eq!(super::discipline::line_len(), 0);
+
+    // Push a character: line_len becomes 1
+    assert!(push_char(b'a'));
+    assert_eq!(super::discipline::line_len(), 1);
+
+    // Backspace: pops 'a', line_len becomes 0, erase succeeds
+    assert!(push_char(0x08));
+    assert!(super::discipline::last_erase_succeeded());
+    assert_eq!(super::discipline::line_len(), 0);
+
+    // Backspace again on now empty line: must fail and prevent prompt deletion
+    assert!(!push_char(0x08));
+    assert!(!super::discipline::last_erase_succeeded());
+    assert_eq!(super::discipline::line_len(), 0);
+}
