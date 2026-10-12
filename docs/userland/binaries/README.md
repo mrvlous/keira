@@ -22,6 +22,9 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`clear.elf`](clear.md) | `userland/bin/clear/` | Freestanding ANSI terminal screen reset and cursor positioning utility |
 | [`dmesg.elf`](dmesg.md) | `userland/bin/dmesg/` | Freestanding kernel ring buffer and system log inspection utility |
 | [`df.elf`](df.md) | `userland/bin/df/` | Freestanding filesystem mount table and disk space usage utility |
+| [`mkdir.elf`](mkdir.md) | `userland/bin/mkdir/` | Freestanding directory node creation utility with recursive parent support |
+| [`touch.elf`](touch.md) | `userland/bin/touch/` | Freestanding file node instantiation and timestamp update utility |
+| [`rm.elf`](rm.md) | `userland/bin/rm/` | Freestanding file unlinking and recursive directory removal utility |
 | [`sysinfo.elf`](sysinfo.md) | `userland/bin/sysinfo/` | System telemetry, CPU, memory, uptime and hardware inspection utility |
 | [`test_abi.elf`](test_abi.md) | `userland/bin/test_abi/` | Kernel ABI and system call compliance test suite |
 | [`fuzz_abi.elf`](fuzz_abi.md) | `userland/bin/fuzz_abi/` | Differential and boundary fuzz testing utility for kernel system call vectors |
