@@ -50,6 +50,8 @@ fn test_commands_list_sorted_and_non_empty() {
     assert!(COMMANDS_LIST.contains(&"help"));
     assert!(COMMANDS_LIST.contains(&"system"));
     assert!(COMMANDS_LIST.contains(&"devices"));
+    assert!(COMMANDS_LIST.contains(&"wipe"));
+    assert!(COMMANDS_LIST.windows(2).all(|w| w[0] < w[1]));
 }
 
 #[test]

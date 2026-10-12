@@ -80,3 +80,13 @@ fn test_sys_unwind() {
     args.next();
     unwind::run(&mut args);
 }
+
+#[test]
+fn test_sys_wipe() {
+    let mut args = "wipe --help".split_whitespace();
+    args.next();
+    wipe::run(&mut args);
+
+    let mut args_empty = "".split_whitespace();
+    wipe::run(&mut args_empty);
+}
