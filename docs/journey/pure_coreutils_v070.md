@@ -184,10 +184,10 @@ The Ring 0 supervisor console commands were audited and aggressively streamlined
 | **Device Virtualization** | `epoll`, `kvm`, `lkm`, `framebuffer`, `usb` | Subsystem state managed via driver interfaces rather than console commands |
 | **System & Shell Control** | `init`, `sh`, `runtime`, `time`, `hostname`, `go` / `cd`, `history` | Userspace init (`/bin/init`), POSIX shell (`/bin/sh`) and `/bin/clear` handle these tasks |
 
-The supervisor console retains precisely **16 emergency kernel debugger commands** partitioned into three operational categories:
+The supervisor console retains precisely **18 emergency kernel debugger commands** partitioned into three operational categories:
 
-1. **Hardware & System Diagnostics (6)**: `system`, `cpu`, `smp`, `memory`, `devices`, `drivers`
-2. **Emergency Control & Recovery (6)**: `disk`, `sync`, `syslog`, `unwind`, `watchpoint`, `wipe`
+1. **Hardware & System Diagnostics (8)**: `system`, `cpu`, `smp`, `memory` (alias: `mem`), `devices` (alias: `pci`), `drivers`, `regs`, `irq`
+2. **Emergency Control & Recovery (6)**: `disk`, `sync`, `syslog` (alias: `dmesg`), `unwind`, `watchpoint`, `wipe`
 3. **Execution & Power Management (4)**: `run`, `reset` (alias: `reboot`), `power` (aliases: `poweroff`, `shutdown`), `help`
 
 ---

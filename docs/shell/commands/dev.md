@@ -10,5 +10,5 @@ The `dev` command suite provides bus enumeration and driver registry inspection.
 
 | Command | Syntax | Description | Flags / Options |
 | :--- | :--- | :--- | :--- |
-| `devices` | `devices` | Enumerate PCI bus hierarchy, vendor IDs and device classes | `-h, --help` |
+| `devices` | `devices` | Enumerate PCI bus hierarchy, vendor IDs and device classes (alias: `pci`) | `-h, --help` |
 | `drivers` | `drivers` | Display active kernel driver registry and hardware interfaces | `-h, --help` |
