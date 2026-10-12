@@ -29,6 +29,7 @@ The userspace shell implements essential built-in commands natively within the b
 | `echo` | `echo [args...]` | Prints arguments to standard output with `$?` and environment variable expansion |
 | `export` | `export [VAR=VAL]` | Sets an environment variable or prints existing environment variables |
 | `clear` | `clear` | Clears terminal screen via standard ANSI escape codes (`\x1b[2J\x1b[H`) |
+| `history` | `history` | Displays command execution history ring buffer |
 | `help` | `help` | Displays built-in command summary and shell usage guidance |
 | `exit` | `exit [code]` | Terminates the shell process with the specified exit status |
 
@@ -71,6 +72,11 @@ Starting with Milestone 22, the userspace shell supports UNIX stream operators, 
   ```bash
   pwd ; sysinfo.elf
   ```
+
+### D. Interactive Line Editing & Command History Navigation
+- **Arrow Navigation**: Pressing **Up Arrow** (`\x1b[A`) scrolls backwards through previous commands stored in the 32-slot history ring buffer. Pressing **Down Arrow** (`\x1b[B`) scrolls forward or restores the uncommitted draft command line.
+- **Raw Mode Line Discipline**: Interactive input uses POSIX `termios` raw mode (`~ICANON` and `~ECHO`) to process keystrokes, inline backspacing, and escape sequences in real time. Canonical terminal mode is automatically restored whenever child processes execute.
+- **Session History Inspection**: The `history` built-in prints all retained history entries indexed sequentially.
 
 ---
 
@@ -122,6 +128,7 @@ Built-in Commands:
   echo [args]    Display text or environment variables
   export [K=V]   Set environment variable
   clear          Clear console screen
+  history        Display command execution history
   help           Display this reference manual
   exit [code]    Exit userspace shell
 Shell Features:
