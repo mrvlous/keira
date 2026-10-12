@@ -40,15 +40,21 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
     };
 
     let mut resolved_path_buf = [0u8; 128];
-    let (target_path, target_len) = if path_str == "." || path_str == "./" {
+    let (target_path, target_len) = if !path_str.starts_with('/') {
         unsafe {
             if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
-                let cwd_len = t.cwd_len.min(127);
-                resolved_path_buf[..cwd_len].copy_from_slice(&t.cwd[..cwd_len]);
-                (
-                    core::str::from_utf8(&resolved_path_buf[..cwd_len]).unwrap_or("/"),
-                    cwd_len,
-                )
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
             } else {
                 ("/", 1)
             }
@@ -716,7 +722,70 @@ pub fn handle_getdents(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 Err(_) => return errno_to_ret(EBADF),
             };
 
-            let target_cluster = match keira_fs::fat::get_dir_cluster(path_str) {
+            let clean_path = path_str.trim_end_matches('/');
+            let normalized_path = if clean_path.is_empty() {
+                "/"
+            } else {
+                clean_path
+            };
+
+            if normalized_path == "/dev" || normalized_path == "dev" {
+                let target_idx = t.fds[fd].offset as usize;
+                if let Some(v_entry) = keira_fs::dev::get_dev_entry(target_idx) {
+                    let mut d = Dirent {
+                        d_ino: v_entry.ino,
+                        d_off: (target_idx + 1) as i64,
+                        d_reclen: core::mem::size_of::<Dirent>() as u16,
+                        d_type: v_entry.d_type,
+                        d_name: [0u8; 256],
+                        _pad: [0u8; 5],
+                    };
+                    let name_bytes = v_entry.name.as_bytes();
+                    let len = name_bytes.len().min(255);
+                    d.d_name[..len].copy_from_slice(&name_bytes[..len]);
+
+                    let entry_bytes = core::slice::from_raw_parts(
+                        &d as *const Dirent as *const u8,
+                        core::mem::size_of::<Dirent>(),
+                    );
+                    if copy_to_user(buf_ptr, entry_bytes).is_err() {
+                        return errno_to_ret(EFAULT);
+                    }
+                    t.fds[fd].offset += 1;
+                    return core::mem::size_of::<Dirent>() as u64;
+                }
+                return 0;
+            }
+
+            if normalized_path == "/proc" || normalized_path == "proc" {
+                let target_idx = t.fds[fd].offset as usize;
+                if let Some(v_entry) = keira_fs::proc::get_proc_entry(target_idx) {
+                    let mut d = Dirent {
+                        d_ino: v_entry.ino,
+                        d_off: (target_idx + 1) as i64,
+                        d_reclen: core::mem::size_of::<Dirent>() as u16,
+                        d_type: v_entry.d_type,
+                        d_name: [0u8; 256],
+                        _pad: [0u8; 5],
+                    };
+                    let name_bytes = v_entry.name.as_bytes();
+                    let len = name_bytes.len().min(255);
+                    d.d_name[..len].copy_from_slice(&name_bytes[..len]);
+
+                    let entry_bytes = core::slice::from_raw_parts(
+                        &d as *const Dirent as *const u8,
+                        core::mem::size_of::<Dirent>(),
+                    );
+                    if copy_to_user(buf_ptr, entry_bytes).is_err() {
+                        return errno_to_ret(EFAULT);
+                    }
+                    t.fds[fd].offset += 1;
+                    return core::mem::size_of::<Dirent>() as u64;
+                }
+                return 0;
+            }
+
+            let target_cluster = match keira_fs::fat::get_dir_cluster(normalized_path) {
                 Ok(cluster) => cluster,
                 Err(_) => return errno_to_ret(ENOTDIR),
             };
@@ -780,16 +849,40 @@ pub fn handle_unlink(arg1: u64) -> u64 {
         Err(_) => return errno_to_ret(EINVAL),
     };
 
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _target_len) = if !path_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
     let task_id = unsafe { CURRENT_TASK_IDX };
     if !keira_task::security::check_path_access(
         task_id as u64,
-        path_str,
+        target_path,
         keira_task::security::MAC_WRITE,
     ) {
         return errno_to_ret(EACCES);
     }
 
-    match keira_fs::vfs::remove_entry(path_str) {
+    match keira_fs::vfs::remove_entry(target_path) {
         Ok(_) => 0,
         Err(_) => errno_to_ret(ENOENT),
     }
