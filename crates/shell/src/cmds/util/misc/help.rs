@@ -30,7 +30,7 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Emergency Control & Recovery:\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        vga::print_str("  disk        sync        syslog      unwind      watchpoint\n\n");
+        vga::print_str("  disk        sync        syslog      unwind      watchpoint  wipe\n\n");
 
         vga::set_color(vga::Color::White, bg);
         vga::print_str("Execution & Power Management:\n");

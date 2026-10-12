@@ -24,12 +24,14 @@ pub const COMMANDS_LIST: &[&str] = &[
     "power",
     "reset",
     "run",
+    "sh",
     "smp",
     "sync",
     "syslog",
     "system",
     "unwind",
     "watchpoint",
+    "wipe",
 ];
 
 pub const STANDARD_PATHS: &[&str] = &[
