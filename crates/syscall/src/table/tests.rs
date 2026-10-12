@@ -25,6 +25,7 @@ pub mod test {
         assert_eq!(SYS_DUP2, 85);
         assert_eq!(SYS_GETDENTS, 86);
         assert_eq!(SYS_UNLINK, 87);
+        assert_eq!(SYS_MKDIR, 88);
     }
 
     #[test]
@@ -37,16 +38,19 @@ pub mod test {
         assert_eq!(syscall_name(SYS_DUP2), "sys_dup2");
         assert_eq!(syscall_name(SYS_GETDENTS), "sys_getdents");
         assert_eq!(syscall_name(SYS_UNLINK), "sys_unlink");
+        assert_eq!(syscall_name(SYS_MKDIR), "sys_mkdir");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
     #[test]
     fn test_syscall_categories() {
         assert!(is_valid_syscall(SYS_OPEN));
+        assert!(is_valid_syscall(SYS_MKDIR));
         assert!(!is_valid_syscall(999));
 
         assert!(is_io_syscall(SYS_OPEN));
         assert!(is_io_syscall(SYS_WRITE));
+        assert!(is_io_syscall(SYS_MKDIR));
         assert!(!is_io_syscall(SYS_MMAP));
 
         assert!(is_memory_syscall(SYS_MMAP));
