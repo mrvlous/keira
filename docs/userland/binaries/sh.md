@@ -24,7 +24,7 @@ The userspace shell implements essential built-in commands natively within the b
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| `cd` / `go` | `cd [dir]` | Changes current working directory (defaults to `/` if omitted) |
+| `cd` | `cd [dir]` | Changes current working directory (defaults to `/` if omitted) |
 | `pwd` | `pwd` | Displays the current working directory path |
 | `echo` | `echo [args...]` | Prints arguments to standard output with `$?` and environment variable expansion |
 | `export` | `export [VAR=VAL]` | Sets an environment variable or prints existing environment variables |
@@ -117,13 +117,23 @@ Users can invoke `sh` or `sh.elf` directly from the supervisor prompt without ty
 ring0@keira:/# sh.elf -c help
 Keira Standalone Userspace Shell (sh v0.7.0)
 Built-in Commands:
-  cd [dir]       Change current working directory (alias: go)
+  cd [dir]       Change current working directory
   pwd            Print working directory
   echo [args]    Display text or environment variables
   export [K=V]   Set environment variable
   clear          Clear console screen
   help           Display this reference manual
   exit [code]    Exit userspace shell
+Shell Features:
+  I/O Redir:     > file, >> file, < file
+  Pipelines:     cmd1 | cmd2
+  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2
+Core Utilities (/bin):
+  File & Dir:    cat, touch, mkdir, rm, ls, df
+  System & Proc: sysinfo, hostname, ps, kill, dmesg, clear
+  Dev & Network: kcc, fetch
+Direct Execution:
+  Binaries in /bin and current directory execute directly via $PATH
 
 # Direct shebang script execution:
 keira:/$ demo.sh
