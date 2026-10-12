@@ -28,6 +28,31 @@ fn test_procfs_and_devfs_existence() {
 }
 
 #[test]
+fn test_virtual_directory_enumeration() {
+    assert_eq!(dev::get_dev_entry(0).map(|e| e.name), Some("."));
+    assert_eq!(dev::get_dev_entry(1).map(|e| e.name), Some(".."));
+    assert_eq!(dev::get_dev_entry(2).map(|e| e.name), Some("null"));
+    assert_eq!(dev::get_dev_entry(3).map(|e| e.name), Some("zero"));
+    assert_eq!(dev::get_dev_entry(4).map(|e| e.name), Some("random"));
+    assert_eq!(dev::get_dev_entry(5).map(|e| e.name), Some("urandom"));
+    assert_eq!(dev::get_dev_entry(6).map(|e| e.name), Some("tty"));
+    assert_eq!(dev::get_dev_entry(7).map(|e| e.name), Some("ptmx"));
+    assert_eq!(dev::get_dev_entry(8).map(|e| e.name), Some("sda"));
+    assert_eq!(dev::get_dev_entry(9), None);
+
+    assert_eq!(proc::get_proc_entry(0).map(|e| e.name), Some("."));
+    assert_eq!(proc::get_proc_entry(1).map(|e| e.name), Some(".."));
+    assert_eq!(proc::get_proc_entry(2).map(|e| e.name), Some("uptime"));
+    assert_eq!(proc::get_proc_entry(3).map(|e| e.name), Some("meminfo"));
+    assert_eq!(proc::get_proc_entry(4).map(|e| e.name), Some("cpuinfo"));
+    assert_eq!(proc::get_proc_entry(5).map(|e| e.name), Some("version"));
+    assert_eq!(proc::get_proc_entry(6).map(|e| e.name), Some("loadavg"));
+    assert_eq!(proc::get_proc_entry(7).map(|e| e.name), Some("cmdline"));
+    assert_eq!(proc::get_proc_entry(8).map(|e| e.name), Some("self"));
+    assert_eq!(proc::get_proc_entry(9), None);
+}
+
+#[test]
 fn test_read_proc_version_and_cpuinfo() {
     let mut buf = [0u8; 512];
     let n = read_proc_file("version", &mut buf).expect("read version failed");

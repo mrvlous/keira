@@ -27,7 +27,7 @@ pub use cache::{
     clear_page_cache, find_page_index, flush_dirty_pages, get_page_cache_stats, insert_page,
     invalidate_inode, read_page, write_page, PageCacheEntry, PAGE_CACHE_CAPACITY, PAGE_SIZE,
 };
-pub use dev::char::{read_dev_node, write_dev_node};
+pub use dev::char::{get_dev_entry, read_dev_node, write_dev_node, DEV_ENTRIES};
 pub use elf::loader::{execute_user_mode, load_elf};
 pub use elf::types::{ElfHeader, ProgramHeader, PT_LOAD};
 pub use ext4::inode::{read_inode, validate_inode_num};
@@ -61,7 +61,7 @@ pub use lvm::volume::{
     VolumeGroup, LVM_CMD_CREATE_LV, LVM_CMD_CREATE_VG, LVM_CMD_INFO, LVM_CMD_RAID_STATUS,
     LVM_CMD_RAID_SYNC,
 };
-pub use proc::{read_proc_file, register_task_hooks};
+pub use proc::{get_proc_entry, read_proc_file, register_task_hooks, PROC_ENTRIES};
 pub use tar::reader::{
     cat_file as tar_cat_file, exists as tar_exists, init as tar_init, list_files as tar_list_files,
     read_file_content as tar_read_file_content,
@@ -71,7 +71,7 @@ pub use vfs::ops::{
     read_file_offset, remove_entry, write_file, write_file_offset,
 };
 pub use vfs::path::{resolve_alias_path, route_path};
-pub use vfs::types::FilesystemType;
+pub use vfs::types::{FilesystemType, VirtualDirEntry};
 
 #[cfg(test)]
 mod tests;
