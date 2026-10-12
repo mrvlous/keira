@@ -184,7 +184,19 @@ DF_ELF          := $(BIN_DIR)/df.elf
 DF_SRCS         := $(shell find $(USER_DIR)/bin/df -type f -name "*.c" 2>/dev/null)
 DF_OBJS         := $(patsubst $(USER_DIR)/bin/df/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/df/%.o,$(DF_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF)
+MKDIR_ELF       := $(BIN_DIR)/mkdir.elf
+MKDIR_SRCS      := $(shell find $(USER_DIR)/bin/mkdir -type f -name "*.c" 2>/dev/null)
+MKDIR_OBJS      := $(patsubst $(USER_DIR)/bin/mkdir/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/mkdir/%.o,$(MKDIR_SRCS))
+
+TOUCH_ELF       := $(BIN_DIR)/touch.elf
+TOUCH_SRCS      := $(shell find $(USER_DIR)/bin/touch -type f -name "*.c" 2>/dev/null)
+TOUCH_OBJS      := $(patsubst $(USER_DIR)/bin/touch/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/touch/%.o,$(TOUCH_SRCS))
+
+RM_ELF          := $(BIN_DIR)/rm.elf
+RM_SRCS         := $(shell find $(USER_DIR)/bin/rm -type f -name "*.c" 2>/dev/null)
+RM_OBJS         := $(patsubst $(USER_DIR)/bin/rm/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/rm/%.o,$(RM_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -545,6 +557,36 @@ $(DF_ELF): $(USER_CRT_OBJ) $(DF_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dir
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(DF_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(DF_ELF)
 	@$(LOG_DONE) "$(DF_ELF) ready"
 
+# Userland directory creation utility (mkdir.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/mkdir/%.o: $(USER_DIR)/bin/mkdir/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(MKDIR_ELF): $(USER_CRT_OBJ) $(MKDIR_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: mkdir ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(MKDIR_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(MKDIR_ELF)
+	@$(LOG_DONE) "$(MKDIR_ELF) ready"
+
+# Userland file timestamp and creation utility (touch.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/touch/%.o: $(USER_DIR)/bin/touch/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(TOUCH_ELF): $(USER_CRT_OBJ) $(TOUCH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: touch ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TOUCH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TOUCH_ELF)
+	@$(LOG_DONE) "$(TOUCH_ELF) ready"
+
+# Userland file and directory removal utility (rm.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/rm/%.o: $(USER_DIR)/bin/rm/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(RM_ELF): $(USER_CRT_OBJ) $(RM_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: rm ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(RM_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(RM_ELF)
+	@$(LOG_DONE) "$(RM_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -585,6 +627,12 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(DMESG_ELF) $(FS_ROOT)/bin/dmesg
 	$(Q)cp $(DF_ELF) $(FS_ROOT)/bin/df.elf
 	$(Q)cp $(DF_ELF) $(FS_ROOT)/bin/df
+	$(Q)cp $(MKDIR_ELF) $(FS_ROOT)/bin/mkdir.elf
+	$(Q)cp $(MKDIR_ELF) $(FS_ROOT)/bin/mkdir
+	$(Q)cp $(TOUCH_ELF) $(FS_ROOT)/bin/touch.elf
+	$(Q)cp $(TOUCH_ELF) $(FS_ROOT)/bin/touch
+	$(Q)cp $(RM_ELF) $(FS_ROOT)/bin/rm.elf
+	$(Q)cp $(RM_ELF) $(FS_ROOT)/bin/rm
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
