@@ -13,4 +13,4 @@ pub mod fs_type;
 pub mod node;
 
 pub use self::fs_type::FilesystemType;
-pub use self::node::{FileStat, NodeKind};
+pub use self::node::{FileStat, NodeKind, VirtualDirEntry};

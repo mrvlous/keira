@@ -26,4 +26,4 @@ pub use self::ops::{
     remove_entry, write_file, write_file_offset,
 };
 pub use self::path::{resolve_alias_path, route_path};
-pub use self::types::{FileStat, FilesystemType, NodeKind};
+pub use self::types::{FileStat, FilesystemType, NodeKind, VirtualDirEntry};

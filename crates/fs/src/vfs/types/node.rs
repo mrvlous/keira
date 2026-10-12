@@ -32,3 +32,14 @@ pub struct FileStat {
     /// Read-only access restriction.
     pub is_readonly: bool,
 }
+
+/// Virtual directory entry representation for pseudo-filesystem enumeration.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VirtualDirEntry {
+    /// Entry file or directory name.
+    pub name: &'static str,
+    /// POSIX dirent type identifier (e.g. DT_DIR, DT_CHR, DT_BLK, DT_REG).
+    pub d_type: u8,
+    /// Synthetic unique inode identifier.
+    pub ino: u64,
+}
