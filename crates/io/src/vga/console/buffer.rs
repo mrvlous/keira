@@ -124,14 +124,11 @@ pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
         } else if byte == 0x08 {
             if TEXT_CURSOR_X > 0 {
                 TEXT_CURSOR_X -= 1;
-            } else if TEXT_CURSOR_Y > 0 {
-                TEXT_CURSOR_Y -= 1;
-                TEXT_CURSOR_X = 79;
-            }
-            #[cfg(target_os = "none")]
-            {
-                let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
-                *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+                #[cfg(target_os = "none")]
+                {
+                    let idx = (TEXT_CURSOR_Y * 80 + TEXT_CURSOR_X) as isize;
+                    *buf.offset(idx) = ((TEXT_COLOR as u16) << 8) | (b' ' as u16);
+                }
             }
         } else {
             #[cfg(target_os = "none")]

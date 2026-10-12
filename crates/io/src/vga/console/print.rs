@@ -123,15 +123,10 @@ pub fn backspace() {
         if fb_active() {
             hide_mouse_graphics();
             draw_cursor(false);
-            if CURSOR_X == 0 {
-                if CURSOR_Y > 0 {
-                    CURSOR_Y -= 1;
-                    CURSOR_X = (FRAMEBUFFER_WIDTH / 8) - 1;
-                }
-            } else {
+            if CURSOR_X > 0 {
                 CURSOR_X -= 1;
+                draw_char(b' ', CURSOR_X, CURSOR_Y, ACTIVE_FG_COLOR, ACTIVE_BG_COLOR);
             }
-            draw_char(b' ', CURSOR_X, CURSOR_Y, ACTIVE_FG_COLOR, ACTIVE_BG_COLOR);
             draw_cursor(true);
             show_mouse_graphics();
         } else {
