@@ -8,11 +8,20 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <errno.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 
 int mkdir(const char *pathname, mode_t mode) {
-    (void)pathname;
-    (void)mode;
+    if (!pathname) {
+        errno = EINVAL;
+        return -1;
+    }
+    int ret = sys_mkdir(pathname, mode);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
     return 0;
 }
 

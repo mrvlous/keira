@@ -47,6 +47,7 @@ extern int errno;
 #define EDOM 33
 #define ERANGE 34
 #define ENOSYS 38
+#define ENOTEMPTY 39
 #define ETIMEDOUT 110
 
 #endif /* _ERRNO_H */

@@ -68,3 +68,7 @@ int sys_getdents(int fd, void *dirp, size_t count) {
 int sys_unlink(const char *pathname) {
     return (int)syscall1(SYS_UNLINK, (uint64_t)(uintptr_t)pathname);
 }
+
+int sys_mkdir(const char *pathname, mode_t mode) {
+    return (int)syscall2(SYS_MKDIR, (uint64_t)(uintptr_t)pathname, (uint64_t)mode);
+}

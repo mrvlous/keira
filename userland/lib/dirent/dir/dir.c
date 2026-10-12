@@ -22,7 +22,7 @@ DIR *opendir(const char *name) {
         return NULL;
     }
 
-    int fd = open(name, O_RDONLY, 0);
+    int fd = open(name, O_RDONLY | O_DIRECTORY, 0);
     if (fd < 0) {
         return NULL;
     }

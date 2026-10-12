@@ -100,6 +100,7 @@
 #define SYS_DUP2 85
 #define SYS_GETDENTS 86
 #define SYS_UNLINK 87
+#define SYS_MKDIR 88
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -145,6 +146,7 @@ int sys_dup(int oldfd);
 int sys_dup2(int oldfd, int newfd);
 int sys_getdents(int fd, void *dirp, size_t count);
 int sys_unlink(const char *pathname);
+int sys_mkdir(const char *pathname, mode_t mode);
 ssize_t sys_http_get(const char *url, void *buf, size_t count);
 
 #endif /* _SYS_SYSCALL_H */

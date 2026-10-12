@@ -41,6 +41,19 @@ int unlink(const char *pathname) {
     return 0;
 }
 
+int rmdir(const char *pathname) {
+    if (!pathname) {
+        errno = EINVAL;
+        return -1;
+    }
+    int ret = sys_unlink(pathname);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return 0;
+}
+
 int chdir(const char *path) {
     int ret = sys_chdir(path);
     if (ret < 0) {
