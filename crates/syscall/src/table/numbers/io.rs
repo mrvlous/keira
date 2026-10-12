@@ -24,3 +24,4 @@ pub const SYS_DUP: u64 = 84;
 pub const SYS_DUP2: u64 = 85;
 pub const SYS_GETDENTS: u64 = 86;
 pub const SYS_UNLINK: u64 = 87;
+pub const SYS_MKDIR: u64 = 88;

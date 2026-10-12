@@ -17,7 +17,8 @@ use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    EAGAIN, EBADF, EFAULT, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSPC, ENOTDIR, ESRCH,
+    EAGAIN, EBADF, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENOENT, ENOMEM, ENOSPC, ENOTDIR,
+    ENOTEMPTY, ESRCH,
 };
 
 /// Syscall 6: Open file or device node with POSIX flags.
@@ -77,16 +78,30 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
         return errno_to_ret(EACCES);
     }
 
+    let is_directory = (flags & 0x0001_0000) != 0;
+
     let exists_val = exists(target_path);
     if !exists_val {
+        if is_directory {
+            return errno_to_ret(ENOENT);
+        }
         if !write_mode && !is_creat {
             return errno_to_ret(ENOENT);
         }
         if create_file(target_path).is_err() {
             return errno_to_ret(EACCES);
         }
-    } else if is_trunc {
-        let _ = write_file(target_path, &[]);
+    } else {
+        let target_is_dir = keira_fs::vfs::is_dir(target_path);
+        if write_mode && target_is_dir {
+            return errno_to_ret(EISDIR);
+        }
+        if is_directory && !target_is_dir {
+            return errno_to_ret(ENOTDIR);
+        }
+        if is_trunc {
+            let _ = write_file(target_path, &[]);
+        }
     }
 
     unsafe {
@@ -884,6 +899,82 @@ pub fn handle_unlink(arg1: u64) -> u64 {
 
     match keira_fs::vfs::remove_entry(target_path) {
         Ok(_) => 0,
-        Err(_) => errno_to_ret(ENOENT),
+        Err(e) => {
+            if e.contains("not empty") {
+                errno_to_ret(ENOTEMPTY)
+            } else if e.contains("read-only") || e.contains("cannot be removed") {
+                errno_to_ret(EACCES)
+            } else {
+                errno_to_ret(ENOENT)
+            }
+        }
+    }
+}
+
+/// Syscall 88: Create a directory node in the virtual filesystem.
+pub fn handle_mkdir(arg1: u64, _arg2: u64) -> u64 {
+    let path_ptr = arg1 as *const u8;
+    let mut path_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let path_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if path_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _target_len) = if !path_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        target_path,
+        keira_task::security::MAC_WRITE,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    if keira_fs::vfs::exists(target_path) {
+        return errno_to_ret(EEXIST);
+    }
+
+    match keira_fs::vfs::create_dir(target_path) {
+        Ok(_) => 0,
+        Err(e) => {
+            if e.contains("already exists") {
+                errno_to_ret(EEXIST)
+            } else if e.contains("read-only") {
+                errno_to_ret(EACCES)
+            } else {
+                errno_to_ret(ENOENT)
+            }
+        }
     }
 }

@@ -96,6 +96,7 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_DUP2 => "sys_dup2",
         SYS_GETDENTS => "sys_getdents",
         SYS_UNLINK => "sys_unlink",
+        SYS_MKDIR => "sys_mkdir",
         _ => "sys_unknown",
     }
 }

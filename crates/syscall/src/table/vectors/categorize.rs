@@ -34,6 +34,7 @@ pub fn is_io_syscall(num: u64) -> bool {
             | SYS_DUP2
             | SYS_GETDENTS
             | SYS_UNLINK
+            | SYS_MKDIR
             | SYS_SPLICE
             | SYS_VMSPLICE
     )
