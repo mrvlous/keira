@@ -271,6 +271,11 @@ pub fn putchar(c: u8) {
                 CURSOR_Y += 1;
             } else if c == b'\r' {
                 CURSOR_X = 0;
+            } else if c == 0x08 {
+                if CURSOR_X > 0 {
+                    CURSOR_X -= 1;
+                    draw_char(b' ', CURSOR_X, CURSOR_Y, ACTIVE_FG_COLOR, ACTIVE_BG_COLOR);
+                }
             } else {
                 draw_char(c, CURSOR_X, CURSOR_Y, ACTIVE_FG_COLOR, ACTIVE_BG_COLOR);
                 CURSOR_X += 1;

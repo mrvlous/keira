@@ -77,13 +77,34 @@ pub extern "C" fn keyboard_handler() {
                 }
             }
 
+            let is_raw_tty = (crate::tty::get_termios().c_lflag & crate::tty::ICANON) == 0;
             if scancode == KEY_UP {
+                if is_raw_tty {
+                    crate::tty::push_char(0x1b);
+                    crate::tty::push_char(b'[');
+                    crate::tty::push_char(b'A');
+                }
                 shell_handle_keypress(0x80);
             } else if scancode == KEY_DOWN {
+                if is_raw_tty {
+                    crate::tty::push_char(0x1b);
+                    crate::tty::push_char(b'[');
+                    crate::tty::push_char(b'B');
+                }
                 shell_handle_keypress(0x81);
             } else if scancode == KEY_LEFT {
+                if is_raw_tty {
+                    crate::tty::push_char(0x1b);
+                    crate::tty::push_char(b'[');
+                    crate::tty::push_char(b'D');
+                }
                 shell_handle_keypress(0x82);
             } else if scancode == KEY_RIGHT {
+                if is_raw_tty {
+                    crate::tty::push_char(0x1b);
+                    crate::tty::push_char(b'[');
+                    crate::tty::push_char(b'C');
+                }
                 shell_handle_keypress(0x83);
             } else if scancode == KEY_F3 {
                 shell_handle_keypress(0x84);

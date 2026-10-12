@@ -31,6 +31,10 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
         }
 
         if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
+            let termios = keira_io::tty::get_termios();
+            let is_canon = (termios.c_lflag & keira_io::tty::ICANON) != 0;
+            let is_echo = (termios.c_lflag & keira_io::tty::ECHO) != 0;
+
             match c {
                 3 => {
                     vga::print_str("^C\n");
@@ -41,17 +45,21 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
                     let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
                 }
                 8 | 127 => {
-                    if keira_io::tty::last_erase_succeeded() {
+                    if is_canon && is_echo && keira_io::tty::last_erase_succeeded() {
                         vga::backspace();
                     }
                 }
                 10 | 13 => {
-                    vga::print_str("\n");
+                    if is_echo {
+                        vga::print_str("\n");
+                    }
                 }
                 _ if (32..127).contains(&c) => {
-                    let s = [c];
-                    if let Ok(c_str) = core::str::from_utf8(&s) {
-                        vga::print_str(c_str);
+                    if is_echo {
+                        let s = [c];
+                        if let Ok(c_str) = core::str::from_utf8(&s) {
+                            vga::print_str(c_str);
+                        }
                     }
                 }
                 _ => {}
