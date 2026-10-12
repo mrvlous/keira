@@ -17,20 +17,22 @@ pub fn route_path(path: &str) -> (&str, FilesystemType) {
     let resolved = resolve_alias_path(path);
     if let Some(rest) = resolved.strip_prefix("/proc/") {
         (rest, FilesystemType::Proc)
-    } else if resolved == "/proc" {
+    } else if resolved == "/proc" || resolved == "proc" {
         ("", FilesystemType::Proc)
+    } else if let Some(rest) = resolved.strip_prefix("proc/") {
+        (rest, FilesystemType::Proc)
     } else if let Some(rest) = resolved.strip_prefix("/dev/") {
         (rest, FilesystemType::Dev)
-    } else if resolved == "/dev" {
+    } else if resolved == "/dev" || resolved == "dev" {
         ("", FilesystemType::Dev)
+    } else if let Some(rest) = resolved.strip_prefix("dev/") {
+        (rest, FilesystemType::Dev)
     } else if let Some(rest) = resolved.strip_prefix("/initrd/") {
         (rest, FilesystemType::Initrd)
-    } else if resolved == "/initrd" {
+    } else if resolved == "/initrd" || resolved == "initrd" {
         ("", FilesystemType::Initrd)
     } else if let Some(rest) = resolved.strip_prefix("initrd/") {
         (rest, FilesystemType::Initrd)
-    } else if resolved == "initrd" {
-        ("", FilesystemType::Initrd)
     } else {
         (resolved, FilesystemType::Fat)
     }
