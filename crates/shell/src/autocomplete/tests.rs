@@ -51,6 +51,11 @@ fn test_commands_list_sorted_and_non_empty() {
     assert!(COMMANDS_LIST.contains(&"system"));
     assert!(COMMANDS_LIST.contains(&"devices"));
     assert!(COMMANDS_LIST.contains(&"wipe"));
+    assert!(COMMANDS_LIST.contains(&"regs"));
+    assert!(COMMANDS_LIST.contains(&"irq"));
+    assert!(COMMANDS_LIST.contains(&"pci"));
+    assert!(COMMANDS_LIST.contains(&"mem"));
+    assert!(COMMANDS_LIST.contains(&"dmesg"));
     assert!(COMMANDS_LIST.windows(2).all(|w| w[0] < w[1]));
 }
 

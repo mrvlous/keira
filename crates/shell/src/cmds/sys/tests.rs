@@ -90,3 +90,23 @@ fn test_sys_wipe() {
     let mut args_empty = "".split_whitespace();
     wipe::run(&mut args_empty);
 }
+
+#[test]
+fn test_sys_regs() {
+    let mut args = "regs --help".split_whitespace();
+    args.next();
+    regs::run(&mut args);
+
+    let mut args_empty = "".split_whitespace();
+    regs::run(&mut args_empty);
+}
+
+#[test]
+fn test_sys_irq() {
+    let mut args = "irq --help".split_whitespace();
+    args.next();
+    irq::run(&mut args);
+
+    let mut args_empty = "".split_whitespace();
+    irq::run(&mut args_empty);
+}
