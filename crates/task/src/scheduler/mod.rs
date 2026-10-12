@@ -25,8 +25,8 @@ pub use core::{
     current_pid_provider, get_boot_kernel_stack, init, main_kernel_stack,
     register_task_cleanup_hook, scheduler_get_stats, set_kernel_stack, task_cmdline_provider,
     task_status_provider, TaskResourceCleanupHook, CURRENT_TASK_IDX, MAX_TASKS,
-    SCHEDULER_INITIALIZED, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK, TOTAL_CONTEXT_SWITCHES,
-    TOTAL_SCHEDULER_TICKS,
+    SCHEDULER_INITIALIZED, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK, TASK_STACK_PAGES,
+    TASK_STACK_SIZE, TOTAL_CONTEXT_SWITCHES, TOTAL_SCHEDULER_TICKS,
 };
 pub use diag::list_tasks;
 pub use dispatch::schedule_tick;

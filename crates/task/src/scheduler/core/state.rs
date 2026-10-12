@@ -23,6 +23,15 @@ extern "C" {
     pub fn get_boot_kernel_stack() -> usize;
 }
 
+/// Number of 4 KiB physical page frames allocated for each task kernel privilege stack (16 KiB on x86_64, 8 KiB on x86).
+#[cfg(target_arch = "x86_64")]
+pub const TASK_STACK_PAGES: usize = 4;
+#[cfg(not(target_arch = "x86_64"))]
+pub const TASK_STACK_PAGES: usize = 2;
+
+/// Total byte size of the dedicated kernel execution stack allocated per task.
+pub const TASK_STACK_SIZE: u64 = (TASK_STACK_PAGES as u64) * keira_mem::pmm::PAGE_SIZE;
+
 pub static SCHEDULER_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::Scheduler);
 pub static mut TASKS: [Option<Task>; MAX_TASKS] = [const { None }; MAX_TASKS];
 pub static mut CURRENT_TASK_IDX: usize = 0;
