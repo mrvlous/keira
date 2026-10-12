@@ -53,7 +53,9 @@ pub fn exists(path: &str) -> bool {
     match fs_type {
         FilesystemType::Initrd => clean_path.is_empty() || tar::exists(clean_path),
         FilesystemType::Proc => crate::proc::exists(clean_path),
-        FilesystemType::Dev => clean_path.is_empty() || crate::dev::char::exists(clean_path),
+        FilesystemType::Dev => {
+            clean_path.is_empty() || crate::dev::char::exists(clean_path) || clean_path == "sda"
+        }
         FilesystemType::Fat => unsafe {
             let (dir_cluster, name) = match fat::resolve_path(clean_path) {
                 Ok(res) => res,
