@@ -27,9 +27,12 @@ sudo apt install -y build-essential nasm gcc-multilib qemu-system-x86 \
 
 ### 2. Arch Linux / Manjaro / CachyOS / EndeavourOS
 ```bash
-sudo pacman -Syu --needed base-devel nasm gcc grub xorriso qemu-system-x86 \
+sudo pacman -Syu --needed base-devel nasm gcc grub xorriso qemu-system-x86 qemu-desktop \
                           dosfstools mtools clang python git
 ```
+
+> [!NOTE]
+> On Arch Linux, `qemu-desktop` provides the graphical display backends (GTK/SDL) so the QEMU window can open when executing `make run`.
 
 ### 3. Fedora / RHEL / CentOS Stream
 ```bash
