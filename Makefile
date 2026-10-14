@@ -278,11 +278,21 @@ preflight-qemu: ## Validate presence of QEMU hypervisor for current target archi
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y qemu-system-x86\n\n"; \
 	    printf "  Arch Linux:\n"; \
-	    printf "    sudo pacman -S --needed qemu-system-x86\n\n"; \
+	    printf "    sudo pacman -S --needed qemu-system-x86 qemu-desktop\n\n"; \
 	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y qemu-system-x86\n\n"; \
 	    exit 1; \
 	else \
+	    if ! $(QEMU) -display help 2>&1 | grep -qE 'gtk|sdl'; then \
+	        printf "\n[WARN] QEMU graphical desktop backend (GTK/SDL) not detected\n"; \
+	        printf "[INFO] Install desktop display packages so QEMU window can open:\n"; \
+	        printf "  Arch Linux:\n"; \
+	        printf "    sudo pacman -S --needed qemu-desktop\n"; \
+	        printf "  Ubuntu / Debian:\n"; \
+	        printf "    sudo apt-get install -y qemu-system-gui\n"; \
+	        printf "  Fedora / RHEL:\n"; \
+	        printf "    sudo dnf install -y qemu-ui-gtk qemu-ui-sdl\n\n"; \
+	    fi; \
 	    if [ "$$MAKECMDGOALS" = "preflight-qemu" ] || [ "$(MAKECMDGOALS)" = "preflight-qemu" ]; then \
 	        $(LOG_DONE) "QEMU hypervisor verified: $(QEMU)"; \
 	    fi; \
@@ -764,7 +774,7 @@ check: ## Verify all required build dependencies are installed
 	    printf "  Ubuntu / Debian:\n"; \
 	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso qemu-system-x86 clang-format clang-tidy dosfstools mtools tar coreutils\n\n"; \
 	    printf "  Arch Linux:\n"; \
-	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso qemu-system-x86 clang dosfstools mtools tar coreutils\n\n"; \
+	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso qemu-system-x86 qemu-desktop clang dosfstools mtools tar coreutils\n\n"; \
 	    printf "  Fedora / RHEL:\n"; \
 	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso qemu-system-x86 clang-tools-extra dosfstools mtools tar coreutils\n\n"; \
 	    printf "  Rust Nightly (required):\n"; \
