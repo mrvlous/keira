@@ -10,7 +10,7 @@
 //! Dispatcher routing read operations to specific ProcFS nodes.
 
 use crate::proc::system::{
-    read_cmdline, read_cpuinfo, read_loadavg, read_meminfo, read_uptime, read_version,
+    read_cmdline, read_cpuinfo, read_loadavg, read_meminfo, read_net_dev, read_uptime, read_version,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{read_task_cmdline, read_task_status};
@@ -20,7 +20,15 @@ pub fn exists(clean_node: &str) -> bool {
     let node = clean_node.trim_start_matches('/');
     if matches!(
         node,
-        "" | "uptime" | "meminfo" | "cpuinfo" | "version" | "loadavg" | "cmdline" | "self"
+        "" | "uptime"
+            | "meminfo"
+            | "cpuinfo"
+            | "version"
+            | "loadavg"
+            | "cmdline"
+            | "self"
+            | "net"
+            | "net/dev"
     ) {
         return true;
     }
@@ -45,13 +53,14 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
     let node = clean_node.trim_start_matches('/');
 
     match node {
-        "" => Ok(0),
+        "" | "net" => Ok(0),
         "uptime" => read_uptime(buf),
         "meminfo" => read_meminfo(buf),
         "cpuinfo" => read_cpuinfo(buf),
         "version" => read_version(buf),
         "loadavg" => read_loadavg(buf),
         "cmdline" => read_cmdline(buf),
+        "net/dev" => read_net_dev(buf),
         _ => {
             let (target_pid, sub) = if node == "self/status" {
                 let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
