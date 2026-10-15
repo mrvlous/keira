@@ -133,6 +133,7 @@ fn syscall_dispatcher_inner(
         86 => handle_getdents(arg1, arg2, arg3),
         87 => handle_unlink(arg1),
         88 => handle_mkdir(arg1, arg2),
+        89 => handle_ping(arg1, arg2),
         _ => errno_to_ret(ENOSYS),
     }
 }

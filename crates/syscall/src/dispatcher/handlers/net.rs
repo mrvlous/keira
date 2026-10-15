@@ -124,3 +124,23 @@ pub fn handle_netfilter(arg1: u64, arg2: u64, arg3: u64) -> u64 {
         keira_net::filter::sys_netfilter(arg1 as u32, arg2, arg3).unwrap_or(errno_to_ret(EINVAL))
     }
 }
+
+/// Syscall 89: Transmit an ICMP ping packet to target IPv4 address and return round-trip latency.
+pub fn handle_ping(arg1: u64, _arg2: u64) -> u64 {
+    let target_ip_ptr = arg1 as *const u8;
+    let mut ip_buf = [0u8; 64];
+    let len = match unsafe { read_user_string(target_ip_ptr, &mut ip_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    if let Ok(target_str) = core::str::from_utf8(&ip_buf[..len]) {
+        unsafe {
+            match keira_net::icmp::send_ping(target_str) {
+                Ok(rtt_ms) => rtt_ms,
+                Err(_) => errno_to_ret(EIO),
+            }
+        }
+    } else {
+        errno_to_ret(EINVAL)
+    }
+}
