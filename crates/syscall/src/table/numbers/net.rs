@@ -17,3 +17,4 @@ pub const SYS_TLS_CONNECT: u64 = 33;
 pub const SYS_ACCEPT: u64 = 43;
 pub const SYS_LISTEN: u64 = 43;
 pub const SYS_NETFILTER: u64 = 76;
+pub const SYS_PING: u64 = 89;
