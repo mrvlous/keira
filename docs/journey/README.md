@@ -33,6 +33,7 @@ graph TD
     M21 --> M22["22. Pure Kernel Slimming & Ring 3 Shell Maturity<br/><i>Pipelines, I/O Redirection, /bin/cat, /bin/ls, UNIX Parity</i>"]
     M22 --> M23["23. Pure Kernel Slimming Fase 2 & Userspace Network Client<br/><i>In-Kernel kcc Removal, /bin/fetch.elf, Supervisor Hardware Diagnostic Monitor</i>"]
     M23 --> M24["24. Pure Kernel Demarcation & Complete Userspace Coreutils<br/><i>/bin/ps, /bin/kill, /bin/hostname, /bin/clear, /bin/dmesg, /bin/df, BSD/Linux Model</i>"]
+    M24 --> M25["25. Network Diagnostic Toolset & ProcFS Telemetry<br/><i>/bin/ping, /bin/ifconfig, /bin/uname, /proc/net/dev, SYS_PING</i>"]
 ```
 
 ---
@@ -65,6 +66,7 @@ graph TD
 | **Milestone 22** | [`unix_parity_v070.md`](unix_parity_v070.md) | `v0.7.0` | Pure kernel slimming, Ring 3 shell maturity (redirection, pipes, chaining), /bin/cat.elf, /bin/ls.elf and UNIX parity |
 | **Milestone 23** | [`kernel_slimming_v070.md`](kernel_slimming_v070.md) | `v0.7.0` | In-kernel compiler elimination, freestanding Ring 3 `/bin/fetch.elf`, supervisor diagnostic monitor and TTY/FAT fixes |
 | **Milestone 24** | [`pure_coreutils_v070.md`](pure_coreutils_v070.md) | `v0.7.0` | Pure kernel demarcation, complete userspace coreutils (/bin/ps, /bin/kill, /bin/hostname, /bin/clear, /bin/dmesg, /bin/df) and emergency debugger slimming |
+| **Milestone 25** | [`network_userland_v070.md`](network_userland_v070.md) | `v0.7.0` | Network diagnostic toolset (/bin/ping, /bin/ifconfig, /bin/uname), /proc/net/dev virtual telemetry and Vector 89 SYS_PING |
 
 ---
 
