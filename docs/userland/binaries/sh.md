@@ -137,8 +137,8 @@ Shell Features:
   Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2
 Core Utilities (/bin):
   File & Dir:    cat, touch, mkdir, rm, ls, df
-  System & Proc: sysinfo, hostname, ps, kill, dmesg, clear
-  Dev & Network: kcc, fetch
+  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear
+  Dev & Network: kcc, fetch, ping, ifconfig
 Direct Execution:
   Binaries in /bin and current directory execute directly via $PATH
 
