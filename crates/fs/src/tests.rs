@@ -24,6 +24,7 @@ fn test_procfs_and_devfs_existence() {
     assert!(exists("/proc/cpuinfo"));
     assert!(exists("/proc/version"));
     assert!(exists("/proc/loadavg"));
+    assert!(exists("/proc/net/dev"));
     assert!(exists("/proc/self/status"));
 }
 
