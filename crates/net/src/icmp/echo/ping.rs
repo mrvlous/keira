@@ -17,9 +17,16 @@ use crate::ip::ipv4::ip_checksum;
 /// # Safety
 /// Transmits raw Ethernet frame through e1000 driver or reflects locally via loopback.
 pub unsafe fn send_ping(target_ip: &str) -> Result<u64, &'static str> {
-    if crate::driver::loopback::is_loopback_str(target_ip) {
+    let target_bytes = if crate::driver::loopback::is_loopback_str(target_ip) {
         return crate::driver::loopback::send_loopback_ping();
-    }
+    } else if let Some(ip) = crate::ip::parse_ipv4_addr(target_ip) {
+        if ip[0] == 127 {
+            return crate::driver::loopback::send_loopback_ping();
+        }
+        ip
+    } else {
+        [10, 0, 2, 2]
+    };
 
     if !E1000_FOUND {
         return Err("Network interface offline");
@@ -39,7 +46,7 @@ pub unsafe fn send_ping(target_ip: &str) -> Result<u64, &'static str> {
     ping_frame[22] = 64;
     ping_frame[23] = 0x01;
     ping_frame[26..30].copy_from_slice(&[10, 0, 2, 15]);
-    ping_frame[30..34].copy_from_slice(&[10, 0, 2, 2]);
+    ping_frame[30..34].copy_from_slice(&target_bytes);
     let ip_csum = ip_checksum(&ping_frame[14..34]);
     ping_frame[24..26].copy_from_slice(&ip_csum.to_be_bytes());
 
