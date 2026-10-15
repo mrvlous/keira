@@ -164,6 +164,7 @@ int run_test_abi_fs(void) {
 
     /* 35. File System & Hardware Storage Cache Synchronization */
     puts("  [TEST] File system and hardware storage cache synchronization...");
+    // NOLINTNEXTLINE(clang-analyzer-unix.StdCLibraryFunctions)
     if (fsync(-1) != -1 || errno != EBADF) {
         printf("  [FAIL] fsync(-1) expected EBADF, got errno=%d\n", errno);
         return 1;
