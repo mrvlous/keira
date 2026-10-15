@@ -26,6 +26,7 @@ pub mod test {
         assert_eq!(SYS_GETDENTS, 86);
         assert_eq!(SYS_UNLINK, 87);
         assert_eq!(SYS_MKDIR, 88);
+        assert_eq!(SYS_PING, 89);
     }
 
     #[test]
@@ -39,6 +40,7 @@ pub mod test {
         assert_eq!(syscall_name(SYS_GETDENTS), "sys_getdents");
         assert_eq!(syscall_name(SYS_UNLINK), "sys_unlink");
         assert_eq!(syscall_name(SYS_MKDIR), "sys_mkdir");
+        assert_eq!(syscall_name(SYS_PING), "sys_ping");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
