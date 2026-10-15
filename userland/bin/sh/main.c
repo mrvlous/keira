@@ -200,8 +200,8 @@ static int builtin_help(void) {
     puts("  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2");
     puts("Core Utilities (/bin):");
     puts("  File & Dir:    cat, touch, mkdir, rm, ls, df");
-    puts("  System & Proc: sysinfo, hostname, ps, kill, dmesg, clear");
-    puts("  Dev & Network: kcc, fetch");
+    puts("  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear");
+    puts("  Dev & Network: kcc, fetch, ping, ifconfig");
     puts("Direct Execution:");
     puts("  Binaries in /bin and current directory execute directly via $PATH");
     return 0;
