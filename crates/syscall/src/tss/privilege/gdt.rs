@@ -24,7 +24,11 @@ extern "C" {
 }
 
 #[cfg(test)]
-static mut TEST_TSS_DESCRIPTOR: [u8; 16] = [0; 16];
+#[repr(align(16))]
+struct TestTssDescriptor([u8; 16]);
+
+#[cfg(test)]
+static mut TEST_TSS_DESCRIPTOR: TestTssDescriptor = TestTssDescriptor([0; 16]);
 
 #[cfg(test)]
 unsafe fn reload_gdt() {}
@@ -41,20 +45,23 @@ pub unsafe fn configure_gdt_tss() {
     let tss_size = core::mem::size_of::<TaskStateSegment>() - 1;
 
     #[cfg(not(test))]
-    let desc = &raw mut tss_descriptor;
+    let desc = (&raw mut tss_descriptor) as *mut u8;
     #[cfg(test)]
-    let desc = &raw mut TEST_TSS_DESCRIPTOR;
+    let desc = core::ptr::addr_of_mut!(TEST_TSS_DESCRIPTOR.0).cast::<u8>();
 
     #[cfg(target_arch = "x86_64")]
     {
-        *(desc.cast::<u16>()) = tss_size as u16;
-        *((desc as u64 + 2) as *mut u16) = (tss_addr & 0xFFFF) as u16;
-        *((desc as u64 + 4) as *mut u8) = ((tss_addr >> 16) & 0xFF) as u8;
-        *((desc as u64 + 5) as *mut u8) = 0x89;
-        *((desc as u64 + 6) as *mut u8) = 0x00;
-        *((desc as u64 + 7) as *mut u8) = ((tss_addr >> 24) & 0xFF) as u8;
-        *((desc as u64 + 8) as *mut u32) = ((tss_addr >> 32) & 0xFFFFFFFF) as u32;
-        *((desc as u64 + 12) as *mut u32) = 0;
+        core::ptr::write_unaligned(desc.cast::<u16>(), tss_size as u16);
+        core::ptr::write_unaligned((desc.add(2)).cast::<u16>(), (tss_addr & 0xFFFF) as u16);
+        core::ptr::write_unaligned(desc.add(4), ((tss_addr >> 16) & 0xFF) as u8);
+        core::ptr::write_unaligned(desc.add(5), 0x89);
+        core::ptr::write_unaligned(desc.add(6), 0x00);
+        core::ptr::write_unaligned(desc.add(7), ((tss_addr >> 24) & 0xFF) as u8);
+        core::ptr::write_unaligned(
+            (desc.add(8)).cast::<u32>(),
+            ((tss_addr >> 32) & 0xFFFFFFFF) as u32,
+        );
+        core::ptr::write_unaligned((desc.add(12)).cast::<u32>(), 0);
 
         reload_gdt();
         load_tss();
@@ -62,12 +69,12 @@ pub unsafe fn configure_gdt_tss() {
 
     #[cfg(target_arch = "x86")]
     {
-        *(desc.cast::<u16>()) = tss_size as u16;
-        *((desc as usize + 2) as *mut u16) = (tss_addr & 0xFFFF) as u16;
-        *((desc as usize + 4) as *mut u8) = ((tss_addr >> 16) & 0xFF) as u8;
-        *((desc as usize + 5) as *mut u8) = 0x89;
-        *((desc as usize + 6) as *mut u8) = 0x00;
-        *((desc as usize + 7) as *mut u8) = ((tss_addr >> 24) & 0xFF) as u8;
+        core::ptr::write_unaligned(desc.cast::<u16>(), tss_size as u16);
+        core::ptr::write_unaligned((desc.add(2)).cast::<u16>(), (tss_addr & 0xFFFF) as u16);
+        core::ptr::write_unaligned(desc.add(4), ((tss_addr >> 16) & 0xFF) as u8);
+        core::ptr::write_unaligned(desc.add(5), 0x89);
+        core::ptr::write_unaligned(desc.add(6), 0x00);
+        core::ptr::write_unaligned(desc.add(7), ((tss_addr >> 24) & 0xFF) as u8);
 
         reload_gdt();
         load_tss();
