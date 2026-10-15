@@ -196,7 +196,19 @@ RM_ELF          := $(BIN_DIR)/rm.elf
 RM_SRCS         := $(shell find $(USER_DIR)/bin/rm -type f -name "*.c" 2>/dev/null)
 RM_OBJS         := $(patsubst $(USER_DIR)/bin/rm/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/rm/%.o,$(RM_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF)
+PING_ELF        := $(BIN_DIR)/ping.elf
+PING_SRCS       := $(shell find $(USER_DIR)/bin/ping -type f -name "*.c" 2>/dev/null)
+PING_OBJS       := $(patsubst $(USER_DIR)/bin/ping/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ping/%.o,$(PING_SRCS))
+
+IFCONFIG_ELF    := $(BIN_DIR)/ifconfig.elf
+IFCONFIG_SRCS   := $(shell find $(USER_DIR)/bin/ifconfig -type f -name "*.c" 2>/dev/null)
+IFCONFIG_OBJS   := $(patsubst $(USER_DIR)/bin/ifconfig/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ifconfig/%.o,$(IFCONFIG_SRCS))
+
+UNAME_ELF       := $(BIN_DIR)/uname.elf
+UNAME_SRCS      := $(shell find $(USER_DIR)/bin/uname -type f -name "*.c" 2>/dev/null)
+UNAME_OBJS      := $(patsubst $(USER_DIR)/bin/uname/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/uname/%.o,$(UNAME_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -597,6 +609,36 @@ $(RM_ELF): $(USER_CRT_OBJ) $(RM_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dir
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(RM_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(RM_ELF)
 	@$(LOG_DONE) "$(RM_ELF) ready"
 
+# Userland network ping utility (ping.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/ping/%.o: $(USER_DIR)/bin/ping/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(PING_ELF): $(USER_CRT_OBJ) $(PING_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: ping ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(PING_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(PING_ELF)
+	@$(LOG_DONE) "$(PING_ELF) ready"
+
+# Userland network interface config utility (ifconfig.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/ifconfig/%.o: $(USER_DIR)/bin/ifconfig/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(IFCONFIG_ELF): $(USER_CRT_OBJ) $(IFCONFIG_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: ifconfig ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(IFCONFIG_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(IFCONFIG_ELF)
+	@$(LOG_DONE) "$(IFCONFIG_ELF) ready"
+
+# Userland system information utility (uname.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/uname/%.o: $(USER_DIR)/bin/uname/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(UNAME_ELF): $(USER_CRT_OBJ) $(UNAME_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: uname ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(UNAME_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(UNAME_ELF)
+	@$(LOG_DONE) "$(UNAME_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -643,6 +685,12 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(TOUCH_ELF) $(FS_ROOT)/bin/touch
 	$(Q)cp $(RM_ELF) $(FS_ROOT)/bin/rm.elf
 	$(Q)cp $(RM_ELF) $(FS_ROOT)/bin/rm
+	$(Q)cp $(PING_ELF) $(FS_ROOT)/bin/ping.elf
+	$(Q)cp $(PING_ELF) $(FS_ROOT)/bin/ping
+	$(Q)cp $(IFCONFIG_ELF) $(FS_ROOT)/bin/ifconfig.elf
+	$(Q)cp $(IFCONFIG_ELF) $(FS_ROOT)/bin/ifconfig
+	$(Q)cp $(UNAME_ELF) $(FS_ROOT)/bin/uname.elf
+	$(Q)cp $(UNAME_ELF) $(FS_ROOT)/bin/uname
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
