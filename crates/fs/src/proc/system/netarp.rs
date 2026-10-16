@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Keira Kernel - Freestanding Kernel from Scratch
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+
+//! Dynamic `/proc/net/arp` node reporting in-kernel ARP neighbor cache.
+
+use crate::proc::writer::BufWriter;
+use core::fmt::Write;
+
+/// Reads formatted ARP neighbor cache table into destination buffer.
+pub fn read_net_arp(buf: &mut [u8]) -> Result<usize, &'static str> {
+    let mut writer = BufWriter::new(buf);
+
+    let _ = writeln!(
+        writer,
+        "IP address       HW type     Flags       HW address            Mask     Device"
+    );
+
+    // Default QEMU virtual network gateway ARP mapping
+    let _ = writeln!(
+        writer,
+        "{:<16} 0x{:<9x} 0x{:<9x} {:<21} {:<8} {:}",
+        "10.0.2.2", 1, 2, "52:54:00:12:34:56", "*", "eth0"
+    );
+
+    Ok(writer.len())
+}
