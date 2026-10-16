@@ -40,6 +40,23 @@ int vsscanf(const char *str, const char *format, va_list ap) {
             continue;
         }
 
+        int width = -1;
+        if (isdigit((unsigned char)*format)) {
+            width = 0;
+            while (isdigit((unsigned char)*format)) {
+                width = width * 10 + (*format - '0');
+                format++;
+            }
+        }
+
+        int is_long = 0;
+        if (*format == 'l') {
+            is_long = 1;
+            format++;
+        } else if (*format == 'h') {
+            format++;
+        }
+
         if (*format == 'd' || *format == 'i') {
             while (isspace((unsigned char)*str))
                 str++;
@@ -49,9 +66,15 @@ int vsscanf(const char *str, const char *format, va_list ap) {
             long val = strtol(str, &endptr, (*format == 'i') ? 0 : 10);
             if (endptr == str)
                 break;
-            int *out = va_arg(ap, int *);
-            if (out)
-                *out = (int)val;
+            if (is_long) {
+                long *out = va_arg(ap, long *);
+                if (out)
+                    *out = val;
+            } else {
+                int *out = va_arg(ap, int *);
+                if (out)
+                    *out = (int)val;
+            }
             str = endptr;
             matched++;
             format++;
@@ -64,9 +87,15 @@ int vsscanf(const char *str, const char *format, va_list ap) {
             unsigned long val = strtoul(str, &endptr, 10);
             if (endptr == str)
                 break;
-            unsigned int *out = va_arg(ap, unsigned int *);
-            if (out)
-                *out = (unsigned int)val;
+            if (is_long) {
+                unsigned long *out = va_arg(ap, unsigned long *);
+                if (out)
+                    *out = val;
+            } else {
+                unsigned int *out = va_arg(ap, unsigned int *);
+                if (out)
+                    *out = (unsigned int)val;
+            }
             str = endptr;
             matched++;
             format++;
@@ -79,9 +108,15 @@ int vsscanf(const char *str, const char *format, va_list ap) {
             unsigned long val = strtoul(str, &endptr, 16);
             if (endptr == str)
                 break;
-            unsigned int *out = va_arg(ap, unsigned int *);
-            if (out)
-                *out = (unsigned int)val;
+            if (is_long) {
+                unsigned long *out = va_arg(ap, unsigned long *);
+                if (out)
+                    *out = val;
+            } else {
+                unsigned int *out = va_arg(ap, unsigned int *);
+                if (out)
+                    *out = (unsigned int)val;
+            }
             str = endptr;
             matched++;
             format++;
@@ -94,7 +129,7 @@ int vsscanf(const char *str, const char *format, va_list ap) {
             if (!out)
                 break;
             int s_idx = 0;
-            while (*str && !isspace((unsigned char)*str)) {
+            while (*str && !isspace((unsigned char)*str) && (width < 0 || s_idx < width)) {
                 out[s_idx++] = *str++;
             }
             out[s_idx] = '\0';
