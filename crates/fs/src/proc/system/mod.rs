@@ -12,13 +12,19 @@
 pub mod cpuinfo;
 pub mod loadavg;
 pub mod meminfo;
+pub mod netarp;
 pub mod netdev;
+pub mod netroute;
+pub mod nettcp;
 pub mod uptime;
 pub mod version;
 
 pub use self::cpuinfo::read_cpuinfo;
 pub use self::loadavg::{read_cmdline, read_loadavg};
 pub use self::meminfo::read_meminfo;
+pub use self::netarp::read_net_arp;
 pub use self::netdev::read_net_dev;
+pub use self::netroute::read_net_route;
+pub use self::nettcp::read_net_tcp;
 pub use self::uptime::read_uptime;
 pub use self::version::read_version;
