@@ -208,7 +208,15 @@ UNAME_ELF       := $(BIN_DIR)/uname.elf
 UNAME_SRCS      := $(shell find $(USER_DIR)/bin/uname -type f -name "*.c" 2>/dev/null)
 UNAME_OBJS      := $(patsubst $(USER_DIR)/bin/uname/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/uname/%.o,$(UNAME_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF)
+ROUTE_ELF       := $(BIN_DIR)/route.elf
+ROUTE_SRCS      := $(shell find $(USER_DIR)/bin/route -type f -name "*.c" 2>/dev/null)
+ROUTE_OBJS      := $(patsubst $(USER_DIR)/bin/route/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/route/%.o,$(ROUTE_SRCS))
+
+ARP_ELF         := $(BIN_DIR)/arp.elf
+ARP_SRCS        := $(shell find $(USER_DIR)/bin/arp -type f -name "*.c" 2>/dev/null)
+ARP_OBJS        := $(patsubst $(USER_DIR)/bin/arp/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/arp/%.o,$(ARP_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -639,6 +647,26 @@ $(UNAME_ELF): $(USER_CRT_OBJ) $(UNAME_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT)
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(UNAME_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(UNAME_ELF)
 	@$(LOG_DONE) "$(UNAME_ELF) ready"
 
+# Userland network routing table utility (route.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/route/%.o: $(USER_DIR)/bin/route/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(ROUTE_ELF): $(USER_CRT_OBJ) $(ROUTE_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: route ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(ROUTE_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(ROUTE_ELF)
+	@$(LOG_DONE) "$(ROUTE_ELF) ready"
+
+# Userland address resolution protocol utility (arp.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/arp/%.o: $(USER_DIR)/bin/arp/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(ARP_ELF): $(USER_CRT_OBJ) $(ARP_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: arp ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(ARP_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(ARP_ELF)
+	@$(LOG_DONE) "$(ARP_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -691,6 +719,10 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(IFCONFIG_ELF) $(FS_ROOT)/bin/ifconfig
 	$(Q)cp $(UNAME_ELF) $(FS_ROOT)/bin/uname.elf
 	$(Q)cp $(UNAME_ELF) $(FS_ROOT)/bin/uname
+	$(Q)cp $(ROUTE_ELF) $(FS_ROOT)/bin/route.elf
+	$(Q)cp $(ROUTE_ELF) $(FS_ROOT)/bin/route
+	$(Q)cp $(ARP_ELF) $(FS_ROOT)/bin/arp.elf
+	$(Q)cp $(ARP_ELF) $(FS_ROOT)/bin/arp
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
