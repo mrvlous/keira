@@ -44,14 +44,14 @@ long strtol(const char *nptr, char **endptr, int base) {
     } else if (*nptr == '+') {
         nptr++;
     }
-    if (base == 0) {
+    if (base == 16 || base == 0) {
         if (*nptr == '0' && (nptr[1] == 'x' || nptr[1] == 'X')) {
             base = 16;
             nptr += 2;
-        } else if (*nptr == '0') {
+        } else if (base == 0 && *nptr == '0') {
             base = 8;
             nptr++;
-        } else {
+        } else if (base == 0) {
             base = 10;
         }
     }
