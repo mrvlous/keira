@@ -59,3 +59,23 @@ Based on the `Protocol` byte:
 * `1`: **ICMP** -> Sent to `crates/net/src/icmp/echo/`.
 * `6`: **TCP** -> Sent to `crates/net/src/tcp/state/`.
 * `17`: **UDP** -> Sent to `crates/net/src/udp/packet/`.
+
+---
+
+## 4. In-Kernel IPv4 Routing Engine (FIB)
+
+The IPv4 subsystem includes a deterministic Forwarding Information Base (`crates/net/src/ip/v4/route.rs`) that resolves egress network interfaces and next-hop gateway addresses for outgoing IP datagrams:
+
+### Route Lookup Semantics
+- **Longest-Prefix Matching**: Subnet masks are evaluated using bitwise prefix lengths (`netmask.leading_ones()`).
+- **Metric Prioritization**: Routes with identical prefix matches are prioritized based on lowest cost metric.
+- **Route Flags**:
+  - `RTF_UP` (`0x0001`): Active routable path.
+  - `RTF_GATEWAY` (`0x0002`): Indirect destination requiring gateway forwarding.
+  - `RTF_HOST` (`0x0004`): Host-specific route (`/32`).
+
+### Default Routing Table Layout
+1. `127.0.0.0/8` -> `lo` (Flags: `U`, Metric: `0`)
+2. `10.0.2.0/24` -> `eth0` (Flags: `U`, Metric: `0`)
+3. `0.0.0.0/0` -> `10.0.2.2` via `eth0` (Flags: `UG`, Metric: `100`)
+
