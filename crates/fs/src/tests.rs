@@ -66,6 +66,35 @@ fn test_read_proc_version_and_cpuinfo() {
 }
 
 #[test]
+fn test_proc_net_nodes() {
+    assert!(proc::exists("net/dev"));
+    assert!(proc::exists("net/route"));
+    assert!(proc::exists("net/arp"));
+    assert!(proc::exists("net/tcp"));
+
+    let mut buf = [0u8; 1024];
+
+    let n = read_proc_file("net/dev", &mut buf).expect("read net/dev failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/dev");
+    assert!(s.contains("lo:"));
+    assert!(s.contains("eth0:"));
+
+    let n = read_proc_file("net/route", &mut buf).expect("read net/route failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/route");
+    assert!(s.contains("Iface\tDestination"));
+    assert!(s.contains("0000007F"));
+
+    let n = read_proc_file("net/arp", &mut buf).expect("read net/arp failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/arp");
+    assert!(s.contains("IP address"));
+    assert!(s.contains("10.0.2.2"));
+
+    let n = read_proc_file("net/tcp", &mut buf).expect("read net/tcp failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/tcp");
+    assert!(s.contains("local_address"));
+}
+
+#[test]
 fn test_dev_null_and_zero_io() {
     let mut buf = [0x55u8; 16];
     let n = unsafe { dev::char::read_dev_node("zero", &mut buf) }.expect("read zero");
