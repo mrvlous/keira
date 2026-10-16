@@ -64,7 +64,9 @@ pub use filter::firewall::{
 };
 pub use icmp::ping::send_ping;
 pub use ip::ipv4::{
-    ip_checksum, parse_ipv4_addr, Ipv4Header, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP,
+    add_route, del_route, get_routes, ip_checksum, lookup_route, parse_ipv4_addr, Ipv4Header,
+    RouteEntry, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, MAX_ROUTES, ROUTING_TABLE, RTF_GATEWAY,
+    RTF_HOST, RTF_UP,
 };
 pub use socket::sock::{
     connect_socket, create_socket, validate_socket_port, TcpSocket, AF_INET, AF_INET6, AF_UNIX,

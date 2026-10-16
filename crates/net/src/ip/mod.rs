@@ -15,4 +15,8 @@ pub mod v4;
 mod tests;
 
 pub use v4 as ipv4;
-pub use v4::{ip_checksum, parse_ipv4_addr, Ipv4Header, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP};
+pub use v4::{
+    add_route, del_route, get_routes, ip_checksum, lookup_route, parse_ipv4_addr, Ipv4Header,
+    RouteEntry, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, MAX_ROUTES, ROUTING_TABLE, RTF_GATEWAY,
+    RTF_HOST, RTF_UP,
+};
