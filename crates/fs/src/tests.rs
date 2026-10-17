@@ -71,6 +71,9 @@ fn test_proc_net_nodes() {
     assert!(proc::exists("net/route"));
     assert!(proc::exists("net/arp"));
     assert!(proc::exists("net/tcp"));
+    assert!(proc::exists("net/udp"));
+    assert!(proc::exists("net/raw"));
+    assert!(proc::exists("net/sockstat"));
 
     let mut buf = [0u8; 1024];
 
@@ -92,6 +95,23 @@ fn test_proc_net_nodes() {
     let n = read_proc_file("net/tcp", &mut buf).expect("read net/tcp failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/tcp");
     assert!(s.contains("local_address"));
+
+    let n = read_proc_file("net/udp", &mut buf).expect("read net/udp failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/udp");
+    assert!(s.contains("local_address"));
+    assert!(s.contains("00000000:0044"));
+
+    let n = read_proc_file("net/raw", &mut buf).expect("read net/raw failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/raw");
+    assert!(s.contains("local_address"));
+    assert!(s.contains("00000000:0001"));
+
+    let n = read_proc_file("net/sockstat", &mut buf).expect("read net/sockstat failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/sockstat");
+    assert!(s.contains("sockets: used"));
+    assert!(s.contains("TCP: inuse"));
+    assert!(s.contains("UDP: inuse"));
+    assert!(s.contains("RAW: inuse"));
 }
 
 #[test]
