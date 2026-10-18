@@ -28,3 +28,7 @@ ssize_t sys_http_get(const char *url, void *buf, size_t count) {
 long sys_ping(const char *target_ip, int timeout_ms) {
     return (long)syscall2(SYS_PING, (uint64_t)(uintptr_t)target_ip, (uint64_t)timeout_ms);
 }
+
+long sys_netfilter(uint32_t cmd, uint64_t arg1, uint64_t arg2) {
+    return (long)syscall3(SYS_NETFILTER, (uint64_t)cmd, arg1, arg2);
+}

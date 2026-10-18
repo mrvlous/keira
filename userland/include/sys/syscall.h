@@ -151,4 +151,12 @@ int sys_mkdir(const char *pathname, mode_t mode);
 long sys_ping(const char *target_ip, int timeout_ms);
 ssize_t sys_http_get(const char *url, void *buf, size_t count);
 
+#define NETFILTER_CMD_STATUS 1
+#define NETFILTER_CMD_ADD_RULE 2
+#define NETFILTER_CMD_DEL_RULE 3
+#define NETFILTER_CMD_FLUSH 4
+#define NETFILTER_CMD_TOGGLE 5
+
+long sys_netfilter(uint32_t cmd, uint64_t arg1, uint64_t arg2);
+
 #endif /* _SYS_SYSCALL_H */
