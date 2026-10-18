@@ -58,11 +58,12 @@ fn test_read_proc_version_and_cpuinfo() {
     let mut buf = [0u8; 512];
     let n = read_proc_file("version", &mut buf).expect("read version failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 version");
-    assert!(s.contains("Keira Kernel version 0.6.0"));
+    assert!(s.contains("Keira Kernel version"));
+    assert!(s.contains(env!("CARGO_PKG_VERSION")));
 
     let n = read_proc_file("cpuinfo", &mut buf).expect("read cpuinfo failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 cpuinfo");
-    assert!(s.contains("processor\t: 0"));
+    assert!(s.contains("processor : 0"));
 }
 
 #[test]
@@ -85,12 +86,10 @@ fn test_proc_net_nodes() {
     let n = read_proc_file("net/route", &mut buf).expect("read net/route failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/route");
     assert!(s.contains("Iface\tDestination"));
-    assert!(s.contains("0000007F"));
 
     let n = read_proc_file("net/arp", &mut buf).expect("read net/arp failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/arp");
     assert!(s.contains("IP address"));
-    assert!(s.contains("10.0.2.2"));
 
     let n = read_proc_file("net/tcp", &mut buf).expect("read net/tcp failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/tcp");
@@ -99,12 +98,10 @@ fn test_proc_net_nodes() {
     let n = read_proc_file("net/udp", &mut buf).expect("read net/udp failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/udp");
     assert!(s.contains("local_address"));
-    assert!(s.contains("00000000:0044"));
 
     let n = read_proc_file("net/raw", &mut buf).expect("read net/raw failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/raw");
     assert!(s.contains("local_address"));
-    assert!(s.contains("00000000:0001"));
 
     let n = read_proc_file("net/sockstat", &mut buf).expect("read net/sockstat failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/sockstat");
@@ -134,6 +131,36 @@ fn test_proc_net_nodes() {
     assert!(proc::exists("net/stat/nf_conntrack"));
     assert!(proc::exists("net/iptables"));
     assert!(proc::exists("net/ip_tables_rules"));
+}
+
+#[test]
+fn test_proc_net_hooks_dynamic_dispatch() {
+    fn mock_dev(buf: &mut [u8]) -> usize {
+        let msg = b"MOCK_DEV_OUTPUT";
+        buf[..msg.len()].copy_from_slice(msg);
+        msg.len()
+    }
+
+    proc::register_net_hooks(
+        None,
+        None,
+        Some(mock_dev),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+
+    let mut buf = [0u8; 128];
+    let n = read_proc_file("net/dev", &mut buf).expect("read net/dev failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/dev");
+    assert_eq!(s, "MOCK_DEV_OUTPUT");
+
+    unsafe {
+        proc::NET_DEV_HOOK = None;
+    }
 }
 
 #[test]

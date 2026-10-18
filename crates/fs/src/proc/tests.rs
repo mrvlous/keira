@@ -19,11 +19,27 @@ fn test_procfs_nodes_exist() {
     assert!(exists("version"));
     assert!(exists("loadavg"));
     assert!(exists("cmdline"));
+    assert!(exists("mounts"));
+    assert!(exists("partitions"));
     assert!(exists("self/status"));
     assert!(exists("self/cmdline"));
+    assert!(exists("self/mounts"));
     assert!(exists("1/status"));
     assert!(exists("1/cmdline"));
     assert!(!exists("nonexistent"));
+}
+
+#[test]
+fn test_read_mounts_and_partitions() {
+    let mut buf = [0u8; 512];
+    let n = read_proc_file("mounts", &mut buf).expect("read mounts failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 mounts");
+    assert!(s.contains("devfs /dev devfs"));
+    assert!(s.contains("procfs /proc procfs"));
+
+    let n = read_proc_file("partitions", &mut buf).expect("read partitions failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 partitions");
+    assert!(s.contains("major minor  #blocks  name"));
 }
 
 #[test]
@@ -31,7 +47,8 @@ fn test_read_version() {
     let mut buf = [0u8; 256];
     let n = read_proc_file("version", &mut buf).expect("read version failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 version");
-    assert!(s.contains("Keira Kernel version 0.6.0"));
+    assert!(s.contains("Keira Kernel version"));
+    assert!(s.contains(env!("CARGO_PKG_VERSION")));
 }
 
 #[test]
@@ -39,7 +56,7 @@ fn test_read_cpuinfo() {
     let mut buf = [0u8; 512];
     let n = read_proc_file("cpuinfo", &mut buf).expect("read cpuinfo failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 cpuinfo");
-    assert!(s.contains("processor\t: 0"));
+    assert!(s.contains("processor : 0"));
 }
 
 #[test]
