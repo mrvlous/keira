@@ -143,12 +143,14 @@ Direct Execution:
   Binaries in /bin and current directory execute directly via $PATH
 
 # Direct shebang script execution:
-keira:/$ demo.sh
-Executing script: /bin/demo.sh
-[DEMO] Shebang execution active via /bin/sh
-[DEMO] Current directory:
+keira:/$ /etc/init.sh
+Executing script: /etc/init.sh
+[KFS] Initializing userland system environment...
 /
-[DEMO] Demonstration completed successfully.
+Keira Kernel Ring 3 System Information:
+  Architecture: x86_64
+  Kernel: Keira Monolithic
+[KFS] System initialization sequence completed.
 ```
 
 ---
