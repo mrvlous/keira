@@ -220,7 +220,11 @@ NETSTAT_ELF     := $(BIN_DIR)/netstat.elf
 NETSTAT_SRCS    := $(shell find $(USER_DIR)/bin/netstat -type f -name "*.c" 2>/dev/null)
 NETSTAT_OBJS    := $(patsubst $(USER_DIR)/bin/netstat/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/netstat/%.o,$(NETSTAT_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF)
+IPTABLES_ELF    := $(BIN_DIR)/iptables.elf
+IPTABLES_SRCS   := $(shell find $(USER_DIR)/bin/iptables -type f -name "*.c" 2>/dev/null)
+IPTABLES_OBJS   := $(patsubst $(USER_DIR)/bin/iptables/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/iptables/%.o,$(IPTABLES_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -681,6 +685,16 @@ $(NETSTAT_ELF): $(USER_CRT_OBJ) $(NETSTAT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCR
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(NETSTAT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(NETSTAT_ELF)
 	@$(LOG_DONE) "$(NETSTAT_ELF) ready"
 
+# Userland Netfilter firewall utility (iptables.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/iptables/%.o: $(USER_DIR)/bin/iptables/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(IPTABLES_ELF): $(USER_CRT_OBJ) $(IPTABLES_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: iptables ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(IPTABLES_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(IPTABLES_ELF)
+	@$(LOG_DONE) "$(IPTABLES_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -739,6 +753,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(ARP_ELF) $(FS_ROOT)/bin/arp
 	$(Q)cp $(NETSTAT_ELF) $(FS_ROOT)/bin/netstat.elf
 	$(Q)cp $(NETSTAT_ELF) $(FS_ROOT)/bin/netstat
+	$(Q)cp $(IPTABLES_ELF) $(FS_ROOT)/bin/iptables.elf
+	$(Q)cp $(IPTABLES_ELF) $(FS_ROOT)/bin/iptables
 	$(Q)cp $(USER_DIR)/bin/demo.sh $(FS_ROOT)/bin/demo.sh
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
