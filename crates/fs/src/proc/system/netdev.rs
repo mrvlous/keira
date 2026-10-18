@@ -9,11 +9,16 @@
 
 //! Dynamic `/proc/net/dev` node reporting network interface metrics and telemetry.
 
+use crate::proc::system::hooks::NET_DEV_HOOK;
 use crate::proc::writer::BufWriter;
 use core::fmt::Write;
 
 /// Reads formatted network device telemetry into destination buffer.
 pub fn read_net_dev(buf: &mut [u8]) -> Result<usize, &'static str> {
+    if let Some(hook) = unsafe { NET_DEV_HOOK } {
+        return Ok(hook(buf));
+    }
+
     let mut writer = BufWriter::new(buf);
 
     let _ = writeln!(
@@ -28,13 +33,13 @@ pub fn read_net_dev(buf: &mut [u8]) -> Result<usize, &'static str> {
     let _ = writeln!(
         writer,
         "{:>6}: {:>8} {:>8}    0    0    0     0          0         0 {:>8} {:>8}    0    0    0     0       0          0",
-        "lo", 1024, 16, 1024, 16
+        "lo", 0, 0, 0, 0
     );
 
     let _ = writeln!(
         writer,
         "{:>6}: {:>8} {:>8}    0    0    0     0          0         0 {:>8} {:>8}    0    0    0     0       0          0",
-        "eth0", 4096, 32, 2048, 24
+        "eth0", 0, 0, 0, 0
     );
 
     Ok(writer.len())

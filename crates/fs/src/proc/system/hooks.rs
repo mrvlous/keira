@@ -18,11 +18,17 @@ pub static mut NET_ROUTE_HOOK: Option<NetTelemetryProvider> = None;
 /// Registered hook for live in-kernel ARP neighbor cache reflection (/proc/net/arp).
 pub static mut NET_ARP_HOOK: Option<NetTelemetryProvider> = None;
 
+/// Registered hook for live in-kernel device metrics reflection (/proc/net/dev).
+pub static mut NET_DEV_HOOK: Option<NetTelemetryProvider> = None;
+
 /// Registered hook for live in-kernel TCP socket table reflection (/proc/net/tcp).
 pub static mut NET_TCP_HOOK: Option<NetTelemetryProvider> = None;
 
 /// Registered hook for live in-kernel UDP socket reflection (/proc/net/udp).
 pub static mut NET_UDP_HOOK: Option<NetTelemetryProvider> = None;
+
+/// Registered hook for live in-kernel RAW socket reflection (/proc/net/raw).
+pub static mut NET_RAW_HOOK: Option<NetTelemetryProvider> = None;
 
 /// Registered hook for live in-kernel Netfilter rules reflection (/proc/net/iptables).
 pub static mut NET_IPTABLES_HOOK: Option<NetTelemetryProvider> = None;
@@ -37,8 +43,10 @@ pub static mut NET_SOCKSTAT_HOOK: Option<NetTelemetryProvider> = None;
 pub fn register_net_hooks(
     route_hook: Option<NetTelemetryProvider>,
     arp_hook: Option<NetTelemetryProvider>,
+    dev_hook: Option<NetTelemetryProvider>,
     tcp_hook: Option<NetTelemetryProvider>,
     udp_hook: Option<NetTelemetryProvider>,
+    raw_hook: Option<NetTelemetryProvider>,
     iptables_hook: Option<NetTelemetryProvider>,
     conntrack_hook: Option<NetTelemetryProvider>,
     sockstat_hook: Option<NetTelemetryProvider>,
@@ -50,11 +58,17 @@ pub fn register_net_hooks(
         if arp_hook.is_some() {
             NET_ARP_HOOK = arp_hook;
         }
+        if dev_hook.is_some() {
+            NET_DEV_HOOK = dev_hook;
+        }
         if tcp_hook.is_some() {
             NET_TCP_HOOK = tcp_hook;
         }
         if udp_hook.is_some() {
             NET_UDP_HOOK = udp_hook;
+        }
+        if raw_hook.is_some() {
+            NET_RAW_HOOK = raw_hook;
         }
         if iptables_hook.is_some() {
             NET_IPTABLES_HOOK = iptables_hook;

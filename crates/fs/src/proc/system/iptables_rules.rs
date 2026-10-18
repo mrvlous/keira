@@ -26,22 +26,6 @@ pub fn read_ip_tables_rules(buf: &mut [u8]) -> Result<usize, &'static str> {
     let _ = writeln!(writer, ":INPUT ACCEPT [0:0]");
     let _ = writeln!(writer, ":FORWARD ACCEPT [0:0]");
     let _ = writeln!(writer, ":OUTPUT ACCEPT [0:0]");
-    let _ = writeln!(
-        writer,
-        "-A INPUT -p TCP -s 0.0.0.0/0 -d 0.0.0.0/0 --dport 80 -j ACCEPT -c 0"
-    );
-    let _ = writeln!(
-        writer,
-        "-A INPUT -p TCP -s 0.0.0.0/0 -d 0.0.0.0/0 --dport 443 -j ACCEPT -c 0"
-    );
-    let _ = writeln!(
-        writer,
-        "-A INPUT -p ICMP -s 0.0.0.0/0 -d 0.0.0.0/0 -j ACCEPT -c 0"
-    );
-    let _ = writeln!(
-        writer,
-        "-A INPUT -p TCP -s 0.0.0.0/0 -d 0.0.0.0/0 --dport 23 -j DROP -c 0"
-    );
     let _ = writeln!(writer, "COMMIT");
 
     Ok(writer.len())

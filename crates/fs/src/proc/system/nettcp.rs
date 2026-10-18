@@ -9,23 +9,21 @@
 
 //! Dynamic `/proc/net/tcp` node reporting active kernel TCP sockets.
 
+use crate::proc::system::hooks::NET_TCP_HOOK;
 use crate::proc::writer::BufWriter;
 use core::fmt::Write;
 
 /// Reads formatted active TCP socket table into destination buffer.
 pub fn read_net_tcp(buf: &mut [u8]) -> Result<usize, &'static str> {
+    if let Some(hook) = unsafe { NET_TCP_HOOK } {
+        return Ok(hook(buf));
+    }
+
     let mut writer = BufWriter::new(buf);
 
     let _ = writeln!(
         writer,
         "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode"
-    );
-
-    // Loopback IPC socket connection (127.0.0.1:8080 <-> 127.0.0.1:80)
-    let _ = writeln!(
-        writer,
-        "{:>4}: {:08X}:{:04X} {:08X}:{:04X} {:02X} {:08X}:{:08X} 00:00000000 00000000     0        0 1",
-        0, 0x0100007F_u32, 0x1F90_u16, 0x0100007F_u32, 0x0050_u16, 0x01_u8, 0, 0
     );
 
     Ok(writer.len())

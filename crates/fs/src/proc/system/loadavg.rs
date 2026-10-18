@@ -24,6 +24,6 @@ pub fn read_loadavg(buf: &mut [u8]) -> Result<usize, &'static str> {
 /// Reads static kernel bootloader command-line arguments into destination buffer.
 pub fn read_cmdline(buf: &mut [u8]) -> Result<usize, &'static str> {
     let mut writer = BufWriter::new(buf);
-    let _ = writeln!(writer, "console=tty0 root=/dev/sda1 quiet");
+    let _ = writeln!(writer, "console=tty0 root=/dev/sda quiet");
     Ok(writer.len())
 }

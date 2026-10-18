@@ -26,12 +26,5 @@ pub fn read_net_arp(buf: &mut [u8]) -> Result<usize, &'static str> {
         "IP address       HW type     Flags       HW address            Mask     Device"
     );
 
-    // Default QEMU virtual network gateway ARP mapping
-    let _ = writeln!(
-        writer,
-        "{:<16} 0x{:<9x} 0x{:<9x} {:<21} {:<8} {:}",
-        "10.0.2.2", 1, 2, "52:54:00:12:34:56", "*", "eth0"
-    );
-
     Ok(writer.len())
 }
