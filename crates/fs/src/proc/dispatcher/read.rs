@@ -10,9 +10,9 @@
 //! Dispatcher routing read operations to specific ProcFS nodes.
 
 use crate::proc::system::{
-    read_cmdline, read_cpuinfo, read_loadavg, read_meminfo, read_net_arp, read_net_dev,
-    read_net_raw, read_net_route, read_net_tcp, read_net_udp, read_sockstat, read_uptime,
-    read_version,
+    read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
+    read_meminfo, read_net_arp, read_net_dev, read_net_raw, read_net_route, read_net_tcp,
+    read_net_udp, read_nf_conntrack_stat, read_sockstat, read_uptime, read_version,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{read_task_cmdline, read_task_status};
@@ -38,6 +38,12 @@ pub fn exists(clean_node: &str) -> bool {
             | "net/raw"
             | "net/sockstat"
             | "sockstat"
+            | "net/ip_tables_names"
+            | "net/stat"
+            | "net/stat/nf_conntrack"
+            | "net/nf_conntrack"
+            | "net/iptables"
+            | "net/ip_tables_rules"
     ) {
         return true;
     }
@@ -62,7 +68,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
     let node = clean_node.trim_start_matches('/');
 
     match node {
-        "" | "net" => Ok(0),
+        "" | "net" | "net/stat" => Ok(0),
         "uptime" => read_uptime(buf),
         "meminfo" => read_meminfo(buf),
         "cpuinfo" => read_cpuinfo(buf),
@@ -76,6 +82,9 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
         "net/udp" => read_net_udp(buf),
         "net/raw" => read_net_raw(buf),
         "net/sockstat" | "sockstat" => read_sockstat(buf),
+        "net/ip_tables_names" => read_ip_tables_names(buf),
+        "net/stat/nf_conntrack" | "net/nf_conntrack" => read_nf_conntrack_stat(buf),
+        "net/iptables" | "net/ip_tables_rules" => read_ip_tables_rules(buf),
         _ => {
             let (target_pid, sub) = if node == "self/status" {
                 let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
