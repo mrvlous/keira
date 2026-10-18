@@ -20,6 +20,8 @@ pub static mut E1000_IO_BASE: u16 = 0;
 pub static mut E1000_MEM_BASE: u64 = 0;
 pub static mut PACKETS_SENT: u64 = 0;
 pub static mut PACKETS_RECEIVED: u64 = 0;
+pub static mut BYTES_SENT: u64 = 0;
+pub static mut BYTES_RECEIVED: u64 = 0;
 
 static mut RX_RING: RxRing = RxRing {
     descriptors: [E1000RxDesc {
@@ -195,9 +197,11 @@ pub unsafe fn transmit_raw_frame(frame: &[u8]) -> Result<(), &'static str> {
         core::ptr::write_volatile((E1000_MEM_BASE + 0x3818) as *mut u32, next_tail as u32);
 
         PACKETS_SENT += 1;
+        BYTES_SENT += to_copy as u64;
         return Ok(());
     }
     PACKETS_SENT += 1;
+    BYTES_SENT += frame.len() as u64;
     Ok(())
 }
 
@@ -221,6 +225,7 @@ pub unsafe fn receive_raw_frame(buf: &mut [u8]) -> Result<usize, &'static str> {
         core::ptr::write_volatile((E1000_MEM_BASE + 0x2818) as *mut u32, cur as u32);
         RX_RING.cur = (cur + 1) % 16;
         PACKETS_RECEIVED += 1;
+        BYTES_RECEIVED += copy_len as u64;
 
         if copy_len >= 14
             && buf[12] == 0x08
