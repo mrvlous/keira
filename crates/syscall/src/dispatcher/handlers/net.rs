@@ -120,9 +120,36 @@ pub fn handle_tls_connect(arg1: u64) -> u64 {
 
 /// Syscall 76: Configure kernel firewall and packet filtering rules.
 pub fn handle_netfilter(arg1: u64, arg2: u64, arg3: u64) -> u64 {
-    unsafe {
-        keira_net::filter::sys_netfilter(arg1 as u32, arg2, arg3).unwrap_or(errno_to_ret(EINVAL))
+    let cmd = arg1 as u32;
+    if cmd == keira_net::filter::NETFILTER_CMD_ADD_RULE && arg2 != 0 {
+        let rule_ptr = arg2 as *const u8;
+        let mut spec_buf = [0u8; 128];
+        let len = match unsafe { read_user_string(rule_ptr, &mut spec_buf) } {
+            Ok(l) => l,
+            Err(e) => return errno_to_ret(e),
+        };
+        if let Ok(spec_str) = core::str::from_utf8(&spec_buf[..len]) {
+            let mut parts = spec_str.split_whitespace();
+            let chain = parts.next().unwrap_or("INPUT");
+            let proto = parts.next().unwrap_or("TCP");
+            let dport = parts
+                .next()
+                .and_then(|s| s.parse::<u16>().ok())
+                .unwrap_or(0);
+            let action = parts.next().unwrap_or("ACCEPT");
+            let src_ip = parts.next().unwrap_or("0.0.0.0/0");
+            let dst_ip = parts.next().unwrap_or("0.0.0.0/0");
+
+            return match keira_net::filter::add_rule(chain, proto, dport, action, src_ip, dst_ip) {
+                Ok(idx) => idx as u64,
+                Err(_) => errno_to_ret(EINVAL),
+            };
+        } else {
+            return errno_to_ret(EINVAL);
+        }
     }
+
+    unsafe { keira_net::filter::sys_netfilter(cmd, arg2, arg3).unwrap_or(errno_to_ret(EINVAL)) }
 }
 
 /// Syscall 89: Transmit an ICMP ping packet to target IPv4 address and return round-trip latency.
