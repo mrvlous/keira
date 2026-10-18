@@ -24,7 +24,10 @@ pub mod writer;
 mod tests;
 
 pub use self::dispatcher::{exists, get_proc_entry, read_proc_file, PROC_ENTRIES};
-pub use self::system::{register_net_hooks, NetTelemetryProvider};
+pub use self::system::{
+    register_net_hooks, NetTelemetryProvider, NET_ARP_HOOK, NET_CONNTRACK_HOOK, NET_DEV_HOOK,
+    NET_IPTABLES_HOOK, NET_RAW_HOOK, NET_ROUTE_HOOK, NET_SOCKSTAT_HOOK, NET_TCP_HOOK, NET_UDP_HOOK,
+};
 pub use self::task::{
     register_task_hooks, CurrentPidProvider, TaskCmdlineProvider, TaskStatusProvider,
     CURRENT_PID_HOOK, TASK_CMDLINE_HOOK, TASK_STATUS_HOOK,

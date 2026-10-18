@@ -11,8 +11,9 @@
 
 use crate::proc::system::{
     read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
-    read_meminfo, read_net_arp, read_net_dev, read_net_raw, read_net_route, read_net_tcp,
-    read_net_udp, read_nf_conntrack_stat, read_sockstat, read_uptime, read_version,
+    read_meminfo, read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route,
+    read_net_tcp, read_net_udp, read_nf_conntrack_stat, read_partitions, read_sockstat,
+    read_uptime, read_version,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{read_task_cmdline, read_task_status};
@@ -28,6 +29,8 @@ pub fn exists(clean_node: &str) -> bool {
             | "version"
             | "loadavg"
             | "cmdline"
+            | "mounts"
+            | "partitions"
             | "self"
             | "net"
             | "net/dev"
@@ -47,11 +50,11 @@ pub fn exists(clean_node: &str) -> bool {
     ) {
         return true;
     }
-    if node == "self/status" || node == "self/cmdline" {
+    if node == "self/status" || node == "self/cmdline" || node == "self/mounts" {
         return true;
     }
     if let Some((pid_str, sub)) = node.split_once('/') {
-        if sub == "status" || sub == "cmdline" {
+        if sub == "status" || sub == "cmdline" || sub == "mounts" {
             if pid_str == "self" {
                 return true;
             }
@@ -75,6 +78,8 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
         "version" => read_version(buf),
         "loadavg" => read_loadavg(buf),
         "cmdline" => read_cmdline(buf),
+        "mounts" | "self/mounts" => read_mounts(buf),
+        "partitions" => read_partitions(buf),
         "net/dev" => read_net_dev(buf),
         "net/route" => read_net_route(buf),
         "net/arp" => read_net_arp(buf),
