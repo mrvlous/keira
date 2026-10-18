@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 superblock definitions, parsing, and filesystem mounting.
+//! Native EXT4 superblock definitions, parsing, and filesystem mounting.
 
 pub mod parser;
 pub mod types;

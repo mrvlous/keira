@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 mount state descriptor and filesystem initialization.
+//! Native EXT4 mount state descriptor and filesystem initialization.
 
 use super::types::Ext4Superblock;
 

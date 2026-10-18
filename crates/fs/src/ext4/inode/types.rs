@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 Inode on-disk structure and file permission constants.
+//! Native EXT4 Inode on-disk structure and file permission constants.
 
 use super::extent::{Ext4Extent, Ext4ExtentHeader, EXT4_EXTENT_HEADER_MAGIC};
 
@@ -19,7 +19,7 @@ pub const EXT4_S_IFLNK: u16 = 0xA000;
 
 pub const EXT4_EXTENTS_FL: u32 = 0x0008_0000;
 
-/// Linux EXT4 on-disk Inode structure (256 bytes standard).
+/// Native EXT4 on-disk Inode structure (256 bytes standard).
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct Ext4Inode {

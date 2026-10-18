@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 superblock structure definitions, magic values, and feature flags.
+//! Native EXT4 superblock structure definitions, magic values, and feature flags.
 
 pub const EXT4_SUPER_MAGIC: u16 = 0xEF53;
 
@@ -23,7 +23,7 @@ pub const EXT4_FEATURE_INCOMPAT_EXTENTS: u32 = 0x0040;
 pub const EXT4_FEATURE_INCOMPAT_64BIT: u32 = 0x0080;
 pub const EXT4_FEATURE_INCOMPAT_FLEX_BG: u32 = 0x0200;
 
-/// Linux EXT4 on-disk Superblock descriptor.
+/// Native EXT4 on-disk Superblock descriptor.
 #[derive(Copy, Clone, Debug)]
 pub struct Ext4Superblock {
     pub inodes_count: u32,

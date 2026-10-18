@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 directory entry parsing, serialization, and name lookup.
+//! Native EXT4 directory entry parsing, serialization, and name lookup.
 
 pub mod entry;
 pub mod lookup;

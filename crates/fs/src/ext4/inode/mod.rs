@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 Inode table validation and extent tree mapping.
+//! Native EXT4 Inode table validation and extent tree mapping.
 
 pub mod extent;
 pub mod lookup;

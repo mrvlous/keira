@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 read-only filesystem driver, superblock validation, and extent tree parser.
+//! Native EXT4 read-only filesystem driver, superblock validation, and extent tree parser.
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
 //! - `superblock/`: Superblock geometry, feature flags, magic verification, and mount state.

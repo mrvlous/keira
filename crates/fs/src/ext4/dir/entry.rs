@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 directory record structures and binary block serialization.
+//! Native EXT4 directory record structures and binary block serialization.
 
 pub const EXT4_FT_UNKNOWN: u8 = 0;
 pub const EXT4_FT_REG_FILE: u8 = 1;

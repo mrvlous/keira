@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux EXT4 extent tree nodes and physical block address mapping.
+//! Native EXT4 extent tree nodes and physical block address mapping.
 
 pub const EXT4_EXTENT_HEADER_MAGIC: u16 = 0xF30A;
 

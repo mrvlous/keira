@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for Linux EXT4 superblock, inode and directory parsing.
+//! Unit tests for Native EXT4 superblock, inode and directory parsing.
 
 use super::*;
 
