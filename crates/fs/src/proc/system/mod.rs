@@ -10,6 +10,9 @@
 //! System-level diagnostic and telemetry ProcFS nodes.
 
 pub mod cpuinfo;
+pub mod hooks;
+pub mod iptables_names;
+pub mod iptables_rules;
 pub mod loadavg;
 pub mod meminfo;
 pub mod netarp;
@@ -18,11 +21,15 @@ pub mod netraw;
 pub mod netroute;
 pub mod nettcp;
 pub mod netudp;
+pub mod nf_conntrack;
 pub mod sockstat;
 pub mod uptime;
 pub mod version;
 
 pub use self::cpuinfo::read_cpuinfo;
+pub use self::hooks::*;
+pub use self::iptables_names::read_ip_tables_names;
+pub use self::iptables_rules::read_ip_tables_rules;
 pub use self::loadavg::{read_cmdline, read_loadavg};
 pub use self::meminfo::read_meminfo;
 pub use self::netarp::read_net_arp;
@@ -31,6 +38,7 @@ pub use self::netraw::read_net_raw;
 pub use self::netroute::read_net_route;
 pub use self::nettcp::read_net_tcp;
 pub use self::netudp::read_net_udp;
+pub use self::nf_conntrack::read_nf_conntrack_stat;
 pub use self::sockstat::read_sockstat;
 pub use self::uptime::read_uptime;
 pub use self::version::read_version;
