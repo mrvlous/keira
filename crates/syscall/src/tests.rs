@@ -75,3 +75,8 @@ fn test_exception_name_and_signals() {
         "SIGSEGV"
     );
 }
+
+#[test]
+fn test_netfilter_syscall_mapping() {
+    assert_eq!(table::syscall_name(SYS_NETFILTER), "sys_netfilter");
+}
