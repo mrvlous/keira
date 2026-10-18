@@ -58,15 +58,16 @@ pub use filter::bpf::{
 };
 pub use filter::firewall::{
     add_rule, bpf_filter_packet, delete_rule, filter_ipv4_frame, filter_packet, flush_rules,
-    print_firewall_status, sys_netfilter, BpfInstruction, ConnTrackEntry, FirewallRule,
-    NETFILTER_CMD_ADD_RULE, NETFILTER_CMD_DEL_RULE, NETFILTER_CMD_FLUSH, NETFILTER_CMD_STATUS,
-    NETFILTER_CMD_TOGGLE, NETFILTER_ENABLED, PACKETS_DROPPED, PACKETS_INSPECTED,
+    format_conntrack_stat, format_iptables_rules, print_firewall_status, sys_netfilter,
+    BpfInstruction, ConnTrackEntry, FirewallRule, NETFILTER_CMD_ADD_RULE, NETFILTER_CMD_DEL_RULE,
+    NETFILTER_CMD_FLUSH, NETFILTER_CMD_STATUS, NETFILTER_CMD_TOGGLE, NETFILTER_ENABLED,
+    PACKETS_DROPPED, PACKETS_INSPECTED,
 };
 pub use icmp::ping::send_ping;
 pub use ip::ipv4::{
-    add_route, del_route, get_routes, ip_checksum, lookup_route, parse_ipv4_addr, Ipv4Header,
-    RouteEntry, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, MAX_ROUTES, ROUTING_TABLE, RTF_GATEWAY,
-    RTF_HOST, RTF_UP,
+    add_route, del_route, format_proc_route, get_routes, ip_checksum, lookup_route,
+    parse_ipv4_addr, Ipv4Header, RouteEntry, IPPROTO_ICMP, IPPROTO_TCP, IPPROTO_UDP, MAX_ROUTES,
+    ROUTING_TABLE, RTF_GATEWAY, RTF_HOST, RTF_UP,
 };
 pub use socket::sock::{
     connect_socket, create_socket, validate_socket_port, TcpSocket, AF_INET, AF_INET6, AF_UNIX,
