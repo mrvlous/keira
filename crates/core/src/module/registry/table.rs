@@ -37,7 +37,7 @@ pub static MODULE_TABLE: SpinMutex<[Option<KernelModule>; MAX_MODULES]> = {
             state: ModuleState::Live,
             ref_count: 1,
             load_address: 0xFFFF_8000_0040_0000,
-            description: "Native Linux EXT4 Filesystem Driver",
+            description: "Native EXT4 Filesystem Driver",
         }),
         Some(KernelModule {
             name: {

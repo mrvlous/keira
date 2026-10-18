@@ -10,7 +10,7 @@
 //! System call handlers for runtime module management.
 //!
 //! Implements `sys_init_module` (Syscall 34) and `sys_delete_module` (Syscall 35)
-//! conforming to POSIX and Linux system call ABI conventions.
+//! conforming to POSIX system call ABI conventions.
 
 use super::super::registry::manager::{register_module, unregister_module};
 use crate::error::KernelError;

@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Log level severity and Linux syslog priority subsystem.
+//! Log level severity and POSIX syslog priority subsystem.
 
 pub mod severity;
 

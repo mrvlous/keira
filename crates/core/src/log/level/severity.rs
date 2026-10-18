@@ -7,9 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Kernel diagnostic log severity levels and Linux syslog priority definitions.
+//! Kernel diagnostic log severity levels and syslog priority definitions.
 //!
-//! Conforms to standard Linux syslog priority constants (0-7), enabling structured
+//! Conforms to standard syslog priority constants (0-7), enabling structured
 //! diagnostic logging across kernel subsystems, drivers, and userland dmesg tooling.
 
 /// System is unusable; emergency state requiring immediate panic handling.
