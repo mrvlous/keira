@@ -112,6 +112,28 @@ fn test_proc_net_nodes() {
     assert!(s.contains("TCP: inuse"));
     assert!(s.contains("UDP: inuse"));
     assert!(s.contains("RAW: inuse"));
+
+    let n =
+        read_proc_file("net/ip_tables_names", &mut buf).expect("read net/ip_tables_names failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/ip_tables_names");
+    assert!(s.contains("filter"));
+
+    let n = read_proc_file("net/stat/nf_conntrack", &mut buf)
+        .expect("read net/stat/nf_conntrack failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/stat/nf_conntrack");
+    assert!(s.contains("entries"));
+    assert!(s.contains("searched"));
+
+    let n = read_proc_file("net/iptables", &mut buf).expect("read net/iptables failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/iptables");
+    assert!(s.contains("*filter"));
+    assert!(s.contains(":INPUT ACCEPT"));
+    assert!(s.contains("COMMIT"));
+
+    assert!(proc::exists("net/ip_tables_names"));
+    assert!(proc::exists("net/stat/nf_conntrack"));
+    assert!(proc::exists("net/iptables"));
+    assert!(proc::exists("net/ip_tables_rules"));
 }
 
 #[test]
