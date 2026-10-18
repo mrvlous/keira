@@ -208,3 +208,48 @@ pub unsafe fn get_routes() -> [RouteEntry; MAX_ROUTES] {
     let table_ptr = &raw const ROUTING_TABLE;
     *table_ptr
 }
+
+/// Formats live in-kernel routing table (FIB) in canonical /proc/net/route format.
+pub fn format_proc_route(buf: &mut [u8]) -> usize {
+    use core::fmt::Write;
+    struct SliceWriter<'a> {
+        b: &'a mut [u8],
+        o: usize,
+    }
+    impl<'a> Write for SliceWriter<'a> {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            let bytes = s.as_bytes();
+            let rem = self.b.len().saturating_sub(self.o);
+            let n = rem.min(bytes.len());
+            self.b[self.o..self.o + n].copy_from_slice(&bytes[..n]);
+            self.o += n;
+            Ok(())
+        }
+    }
+
+    let mut writer = SliceWriter { b: buf, o: 0 };
+    let _ = writeln!(
+        writer,
+        "Iface\tDestination\tGateway \tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT"
+    );
+
+    unsafe {
+        let table_ptr = &raw const ROUTING_TABLE;
+        for i in 0..MAX_ROUTES {
+            let route = &*(*table_ptr).as_ptr().add(i);
+            if !route.valid {
+                continue;
+            }
+            let dest_u32 = u32::from_ne_bytes(route.dest);
+            let gw_u32 = u32::from_ne_bytes(route.gateway);
+            let mask_u32 = u32::from_ne_bytes(route.netmask);
+            let _ = writeln!(
+                writer,
+                "{}\t{:08X}\t{:08X}\t{:04X}\t0\t0\t{}\t{:08X}\t1500\t0\t0",
+                route.iface, dest_u32, gw_u32, route.flags, route.metric, mask_u32
+            );
+        }
+    }
+
+    writer.o
+}
