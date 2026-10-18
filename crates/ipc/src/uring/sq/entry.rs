@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux ABI-compatible io_uring Submission Queue Entry (SQE).
+//! Freestanding io_uring Submission Queue Entry (SQE).
 
 pub const IOSQE_FIXED_FILE: u8 = 1 << 0;
 pub const IOSQE_IO_DRAIN: u8 = 1 << 1;
@@ -16,7 +16,7 @@ pub const IOSQE_IO_HARDLINK: u8 = 1 << 3;
 pub const IOSQE_ASYNC: u8 = 1 << 4;
 pub const IOSQE_BUFFER_SELECT: u8 = 1 << 5;
 
-/// Linux ABI-compatible Submission Queue Entry (SQE).
+/// Freestanding io_uring Submission Queue Entry (SQE).
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct SubmissionQueueEntry {

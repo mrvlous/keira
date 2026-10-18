@@ -58,7 +58,7 @@
 #define IORING_OP_READ 22
 #define IORING_OP_WRITE 23
 
-/* Linux ABI-compatible Submission Queue Entry (64 bytes) */
+/* Freestanding io_uring Submission Queue Entry (64 bytes) */
 struct io_uring_sqe {
     uint8_t opcode;
     uint8_t flags;
@@ -75,7 +75,7 @@ struct io_uring_sqe {
     uint64_t pad2[2];
 };
 
-/* Linux ABI-compatible Completion Queue Entry (16 bytes) */
+/* Freestanding io_uring Completion Queue Entry (16 bytes) */
 struct io_uring_cqe {
     uint64_t user_data;
     int32_t res;

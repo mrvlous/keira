@@ -7,9 +7,9 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux ABI-compatible io_uring Completion Queue Entry (CQE).
+//! Freestanding io_uring Completion Queue Entry (CQE).
 
-/// Linux ABI-compatible Completion Queue Entry (CQE).
+/// Freestanding io_uring Completion Queue Entry (CQE).
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct CompletionQueueEntry {

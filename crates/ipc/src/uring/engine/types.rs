@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Standard Linux io_uring opcodes, parameters, and ring container structure.
+//! Standard io_uring opcodes, parameters, and ring container structure.
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
@@ -16,7 +16,7 @@ use crate::uring::cq::ring::IoCqringOffsets;
 use crate::uring::sq::entry::SubmissionQueueEntry;
 use crate::uring::sq::ring::IoSqringOffsets;
 
-// Standard Linux io_uring Opcodes.
+// Standard io_uring Opcodes.
 pub const IORING_OP_NOP: u8 = 0;
 pub const IORING_OP_READV: u8 = 1;
 pub const IORING_OP_WRITEV: u8 = 2;

@@ -23,7 +23,7 @@ pub const EPOLL_CTL_MOD: i32 = 3;
 pub const MAX_EPOLL_INSTANCES: usize = 16;
 pub const MAX_EPOLL_ITEMS: usize = 32;
 
-/// Linux ABI-compatible epoll event notification payload.
+/// Freestanding epoll event notification payload.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct EpollEvent {
