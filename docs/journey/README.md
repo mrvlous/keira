@@ -36,6 +36,7 @@ graph TD
     M24 --> M25["25. Network Diagnostic Toolset & ProcFS Telemetry<br/><i>/bin/ping, /bin/ifconfig, /bin/uname, /proc/net/dev, SYS_PING</i>"]
     M25 --> M26["26. In-Kernel Routing Engine FIB & ProcFS Network Telemetry<br/><i>FIB Longest Prefix Match, /proc/net/route, /proc/net/arp, /proc/net/tcp, /bin/route, /bin/arp</i>"]
     M26 --> M27["27. Kernel Socket Telemetry Subsystem & Netstat Utility<br/><i>/proc/net/udp, /proc/net/raw, /proc/net/sockstat, /bin/netstat, Socket Observability</i>"]
+    M27 --> M28["28. Kernel Netfilter Firewall Subsystem & Iptables Utility<br/><i>/proc/net/ip_tables_names, /proc/net/stat/nf_conntrack, /proc/net/iptables, /bin/iptables</i>"]
 ```
 
 ---
@@ -71,6 +72,7 @@ graph TD
 | **Milestone 25** | [`network_userland_v070.md`](network_userland_v070.md) | `v0.7.0` | Network diagnostic toolset (/bin/ping, /bin/ifconfig, /bin/uname), /proc/net/dev virtual telemetry and Vector 89 SYS_PING |
 | **Milestone 26** | [`kernel_routing_v070.md`](kernel_routing_v070.md) | `v0.7.0` | In-Kernel routing engine FIB, ProcFS network telemetry (/proc/net/route, /proc/net/arp, /proc/net/tcp) and core utilities (/bin/route, /bin/arp) |
 | **Milestone 27** | [`kernel_socket_telemetry_v070.md`](kernel_socket_telemetry_v070.md) | `v0.7.0` | Kernel socket telemetry subsystem, ProcFS virtual inspection (/proc/net/udp, /proc/net/raw, /proc/net/sockstat) and core utility (/bin/netstat) |
+| **Milestone 28** | [`kernel_firewall_v070.md`](kernel_firewall_v070.md) | `v0.7.0` | In-kernel Netfilter firewall subsystem, ProcFS telemetry (/proc/net/ip_tables_names, /proc/net/stat/nf_conntrack, /proc/net/iptables) and core utility (/bin/iptables) |
 
 ---
 

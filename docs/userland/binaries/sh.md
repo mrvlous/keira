@@ -138,7 +138,7 @@ Shell Features:
 Core Utilities (/bin):
   File & Dir:    cat, touch, mkdir, rm, ls, df
   System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear
-  Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat
+  Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables
 Direct Execution:
   Binaries in /bin and current directory execute directly via $PATH
 

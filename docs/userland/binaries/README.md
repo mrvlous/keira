@@ -27,6 +27,7 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`route.elf`](route.md) | `userland/bin/route/` | Freestanding network routing table inspection and FIB telemetry utility |
 | [`arp.elf`](arp.md) | `userland/bin/arp/` | Freestanding Address Resolution Protocol neighbor cache inspection utility |
 | [`netstat.elf`](netstat.md) | `userland/bin/netstat/` | Freestanding network socket statistics and connection inspection utility |
+| [`iptables.elf`](iptables.md) | `userland/bin/iptables/` | Freestanding Netfilter packet filtering rule management and telemetry utility |
 | [`uname.elf`](uname.md) | `userland/bin/uname/` | Freestanding POSIX system identity and kernel version inspection utility |
 | [`mkdir.elf`](mkdir.md) | `userland/bin/mkdir/` | Freestanding directory node creation utility with recursive parent support |
 | [`touch.elf`](touch.md) | `userland/bin/touch/` | Freestanding file node instantiation and timestamp update utility |
