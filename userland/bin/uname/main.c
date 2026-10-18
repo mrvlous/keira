@@ -81,13 +81,46 @@ int main(int argc, char **argv) {
 
     const char *kernel_name = "Keira";
     char hostname[64] = "keira";
-    const char *release = "0.6.0";
-    const char *version = "#1 SMP 2026";
+    char release[32] = "0.6.0";
+    char version[64] = "#1 SMP 2026";
 #if defined(__x86_64__)
     const char *machine = "x86_64";
 #else
     const char *machine = "i686";
 #endif
+
+    int vfd = open("/proc/version", O_RDONLY, 0);
+    if (vfd >= 0) {
+        char vbuf[256];
+        ssize_t vn = read(vfd, vbuf, sizeof(vbuf) - 1);
+        close(vfd);
+        if (vn > 0) {
+            vbuf[vn] = '\0';
+            char *ver_pos = strstr(vbuf, "version ");
+            if (ver_pos) {
+                ver_pos += 8;
+                char *space = strchr(ver_pos, ' ');
+                if (space) {
+                    size_t rlen = (size_t)(space - ver_pos);
+                    if (rlen < sizeof(release)) {
+                        memcpy(release, ver_pos, rlen);
+                        release[rlen] = '\0';
+                    }
+                }
+            }
+            char *hash_pos = strchr(vbuf, '#');
+            if (hash_pos) {
+                char *gcc_pos = strstr(hash_pos, " gcc");
+                if (gcc_pos) {
+                    size_t vlen = (size_t)(gcc_pos - hash_pos);
+                    if (vlen < sizeof(version)) {
+                        memcpy(version, hash_pos, vlen);
+                        version[vlen] = '\0';
+                    }
+                }
+            }
+        }
+    }
 
     int fd = open("/etc/hostname", O_RDONLY, 0);
     if (fd >= 0) {
