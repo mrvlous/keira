@@ -21,7 +21,7 @@ graph TD
     Root --> Dev["/dev<br/><i>Device Nodes (tty, null, zero, urandom)</i>"]
     Root --> Proc["/proc<br/><i>Kernel & Task Telemetry (cpuinfo, meminfo)</i>"]
     Root --> Sys["/sys<br/><i>Hardware & Subsystem Attributes</i>"]
-    Root --> Etc["/etc<br/><i>System Configuration (hostname, grub.cfg)</i>"]
+    Root --> Etc["/etc<br/><i>System Configuration (hostname, kernel.cfg)</i>"]
     Root --> Include["/include<br/><i>Freestanding C Standard Headers</i>"]
     Root --> Lib["/lib<br/><i>Static Libraries (libc.a)</i>"]
     Root --> Tmp["/tmp<br/><i>Volatile Scratch Files (main.c)</i>"]
@@ -39,7 +39,7 @@ graph TD
 | `/dev` | DevFS | Character and pseudo-device nodes (`/dev/tty`, `/dev/null`, `/dev/zero`, `/dev/urandom`) |
 | `/proc` | ProcFS | Read-only kernel runtime telemetry (`/proc/version`, `/proc/meminfo`, `/proc/cpuinfo`) |
 | `/sys` | SysFS | Hardware topology and kernel subsystem state nodes |
-| `/etc` | FAT16 / Ext4 | Host configuration files (`/etc/hostname`, `/etc/grub.cfg`, `/etc/kernel.cfg`) |
+| `/etc` | FAT16 / Ext4 | Host configuration files (`/etc/hostname`, `/etc/kernel.cfg`) |
 | `/include` | FAT16 / Ext4 | Freestanding C standard library headers (`stdio.h`, `stdlib.h`, `string.h`) |
 | `/lib` | FAT16 / Ext4 | Static compiler runtime archives (`libc.a`, `crt0.o`) |
 | `/tmp` | FAT16 / Ext4 | Ephemeral compilation scratch space (`/tmp/main.c`) |
@@ -76,7 +76,6 @@ LRU Cache:     5/16 slots (Hits: 1, Misses: 5, Evictions: 0, Hit Ratio: 16%)
 
 keira:/# list /etc
 Directory of IDE disk:
-  [file] grub.cfg
   [file] hostname
   [file] kernel.cfg
 

@@ -56,7 +56,7 @@ At boot time, Keira mounts:
 * `/dev`: Pseudo-filesystem exposing character and block devices (`/dev/null`, `/dev/zero`, `/dev/tty`, `/dev/sda`).
 * `/proc`: Dynamic kernel metrics and process telemetry pseudo-filesystem (`/proc/uptime`, `/proc/meminfo`, `/proc/cpuinfo`).
 * `/sys`: Hardware driver hierarchy and subsystem telemetry.
-* `/etc`: System configuration files (`/etc/grub.cfg`, `/etc/kernel.cfg`, `/etc/hostname`).
+* `/etc`: System configuration files (`/etc/kernel.cfg`, `/etc/hostname`).
 * `/include`: Freestanding C standard library headers.
 * `/lib`: Static C runtime library archives and source stubs.
 * `/tmp`: Temporary runtime scratch files and build buffers.

@@ -128,7 +128,7 @@ All runtime and VFS paths must adhere to the 100% Standard UNIX Filesystem Hiera
 * `/dev`: DevFS virtual character device nodes (`/dev/tty`, `/dev/null`, `/dev/zero`, `/dev/random`, `/dev/urandom`, `/dev/ptmx`, `/dev/sda`).
 * `/proc`: ProcFS kernel status, process metrics and telemetry endpoints (`/proc/uptime`, `/proc/meminfo`, `/proc/cpuinfo`, `/proc/version`, `/proc/loadavg`, `/proc/self/status`).
 * `/sys`: SysFS hardware and subsystem hierarchy.
-* `/etc`: System configuration files (`/etc/grub.cfg`, `/etc/kernel.cfg`, `/etc/hostname`).
+* `/etc`: System configuration files (`/etc/kernel.cfg`, `/etc/hostname`).
 * `/include`: Freestanding C standard library headers (`/include/math.h`, `/include/sys/stat.h`).
 * `/lib`: Static C runtime library archives and source libraries (`/lib/libc.a`, `/lib/math.c`).
 * `/tmp`: Temporary scratch files and build staging buffers (`/tmp/main.c`, `/tmp/mmap_abi.txt`).
