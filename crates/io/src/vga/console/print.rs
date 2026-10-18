@@ -365,7 +365,7 @@ pub fn set_color(fg: Color, bg: Color) {
     }
 }
 
-/// Emits formatted boot milestone status log in authentic Linux/systemd style.
+/// Emits formatted boot milestone status log to serial and VGA console.
 pub fn print_boot_log(msg: &str, status: u8) {
     // 1. Output colored boot log to COM1 Serial (for host terminal stdout)
     match status {
