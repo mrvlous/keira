@@ -16,4 +16,4 @@ license = "GPL-2.0-only"
 description = "Pure freestanding cryptographic algorithms (SHA-256, AES-128-GCM, Curve25519, TPM 2.0) for Keira Kernel"
 
 [dependencies]
-keira-core = { path = "../core" }
+

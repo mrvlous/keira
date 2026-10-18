@@ -16,9 +16,6 @@ version = "0.6.0"
 [[package]]
 name = "keira-crypto"
 version = "0.6.0"
-dependencies = [
- "keira-core",
-]
 
 [[package]]
 name = "keira-fs"
