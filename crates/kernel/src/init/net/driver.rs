@@ -20,5 +20,14 @@ pub unsafe fn init_network() {
     if e1000::init() {
         vga::print_boot_log("Initializing Intel e1000 Gigabit Ethernet NIC driver", 0);
         vga::print_boot_log("Configuring Network Stack (Ethernet/ARP/IPv4/ICMP)", 0);
+        keira_fs::proc::register_net_hooks(
+            Some(keira_net::ip::ipv4::format_proc_route),
+            Some(keira_net::arp::format_proc_arp),
+            None,
+            None,
+            Some(keira_net::filter::format_iptables_rules),
+            Some(keira_net::filter::format_conntrack_stat),
+            None,
+        );
     }
 }
