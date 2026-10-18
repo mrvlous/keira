@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Linux-grade virtual loopback network device driver (lo @ 127.0.0.1/8).
+//! Standard virtual loopback network device driver (lo @ 127.0.0.1/8).
 //!
 //! Provides in-memory zero-copy packet reflection for inter-process communication
 //! without routing through physical network interface controllers.
@@ -24,7 +24,7 @@ pub const LOOPBACK_NETMASK: [u8; 4] = [255, 0, 0, 0];
 /// Virtual hardware MAC address for loopback (all zeroes).
 pub const LOOPBACK_MAC: [u8; 6] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-/// Maximum Transmission Unit (MTU) matching Linux loopback standard (65536 bytes).
+/// Maximum Transmission Unit (MTU) matching POSIX loopback standard (65536 bytes).
 pub const LOOPBACK_MTU: usize = 65536;
 
 /// Cumulative transmitted loopback packet counter.

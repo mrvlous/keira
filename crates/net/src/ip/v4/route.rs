@@ -9,7 +9,7 @@
 
 //! In-kernel IPv4 routing table (Forwarding Information Base - FIB) and longest-prefix match.
 
-/// Route flags matching standard POSIX / Linux route table semantics.
+/// Route flags matching standard POSIX route table semantics.
 pub const RTF_UP: u16 = 0x0001;
 pub const RTF_GATEWAY: u16 = 0x0002;
 pub const RTF_HOST: u16 = 0x0004;
