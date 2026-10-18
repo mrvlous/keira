@@ -21,7 +21,8 @@ pub use family::{
 };
 pub use handle::{SocketEntry, TcpSocket, MAX_SOCKETS, SOCKET_BUF_SIZE};
 pub use manager::{
-    close_socket, connect_socket, create_socket, is_socket_nonblocking, queue_rx_data, recv_socket,
+    close_socket, connect_socket, create_socket, format_proc_raw, format_proc_sockstat,
+    format_proc_tcp, format_proc_udp, is_socket_nonblocking, queue_rx_data, recv_socket,
     send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
     socket_table_reset, NEXT_SOCKET_ID, SOCKET_TABLE,
 };
@@ -33,8 +34,9 @@ pub mod sock {
     };
     pub use super::handle::{SocketEntry, TcpSocket, MAX_SOCKETS, SOCKET_BUF_SIZE};
     pub use super::manager::{
-        close_socket, connect_socket, create_socket, is_socket_nonblocking, queue_rx_data,
-        recv_socket, send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
+        close_socket, connect_socket, create_socket, format_proc_raw, format_proc_sockstat,
+        format_proc_tcp, format_proc_udp, is_socket_nonblocking, queue_rx_data, recv_socket,
+        send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
         socket_table_reset, NEXT_SOCKET_ID, SOCKET_TABLE,
     };
 }

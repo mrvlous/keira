@@ -38,8 +38,10 @@ pub use dns::resolver::{
 };
 pub use driver::e1000::{
     self, init as e1000_init, receive_raw_frame, transmit_raw_frame, E1000RxDesc, E1000TxDesc,
-    E1000_FOUND, E1000_IO_BASE, E1000_MAC, E1000_MEM_BASE, PACKETS_RECEIVED, PACKETS_SENT,
+    BYTES_RECEIVED, BYTES_SENT, E1000_FOUND, E1000_IO_BASE, E1000_MAC, E1000_MEM_BASE,
+    PACKETS_RECEIVED, PACKETS_SENT,
 };
+pub use driver::format_proc_dev;
 pub use driver::loopback::{
     get_loopback_stats, is_loopback_addr, is_loopback_str, reset_loopback_stats,
     send_loopback_ping, transmit_loopback_packet, LOOPBACK_BYTES, LOOPBACK_IP, LOOPBACK_MAC,
@@ -70,8 +72,11 @@ pub use ip::ipv4::{
     ROUTING_TABLE, RTF_GATEWAY, RTF_HOST, RTF_UP,
 };
 pub use socket::sock::{
-    connect_socket, create_socket, validate_socket_port, TcpSocket, AF_INET, AF_INET6, AF_UNIX,
-    AF_UNSPEC, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
+    close_socket, connect_socket, create_socket, format_proc_raw, format_proc_sockstat,
+    format_proc_tcp, format_proc_udp, is_socket_nonblocking, queue_rx_data, recv_socket,
+    send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
+    socket_table_reset, validate_socket_port, TcpSocket, AF_INET, AF_INET6, AF_UNIX, AF_UNSPEC,
+    NEXT_SOCKET_ID, SOCKET_TABLE, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
 };
 pub use tcp::{
     fetch_http, fetch_http_stream, fetch_stream_download, parse_tcp_payload, tcp_checksum,
@@ -84,7 +89,15 @@ pub use tls::native::{
 };
 
 #[cfg(target_arch = "x86_64")]
-pub const HTTP_USER_AGENT: &str = "Mozilla/5.0 (compatible; KeiraKernel/0.6.0; x86_64)";
+pub const HTTP_USER_AGENT: &str = concat!(
+    "Mozilla/5.0 (compatible; KeiraKernel/",
+    env!("CARGO_PKG_VERSION"),
+    "; x86_64)"
+);
 
 #[cfg(not(target_arch = "x86_64"))]
-pub const HTTP_USER_AGENT: &str = "Mozilla/5.0 (compatible; KeiraKernel/0.6.0; i686)";
+pub const HTTP_USER_AGENT: &str = concat!(
+    "Mozilla/5.0 (compatible; KeiraKernel/",
+    env!("CARGO_PKG_VERSION"),
+    "; i686)"
+);

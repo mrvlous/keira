@@ -77,3 +77,62 @@ fn test_loopback_socket_communication() {
         assert!(close_socket(s2).is_ok());
     }
 }
+
+#[test]
+fn test_format_proc_sockets_and_sockstat() {
+    unsafe {
+        socket_table_reset();
+
+        let mut buf = [0u8; 512];
+
+        // 1. Initial state: zero sockets
+        let len_tcp = format_proc_tcp(&mut buf);
+        let s_tcp = core::str::from_utf8(&buf[..len_tcp]).expect("utf8");
+        assert!(s_tcp.contains("local_address"));
+
+        let len_stat0 = format_proc_sockstat(&mut buf);
+        let s_stat0 = core::str::from_utf8(&buf[..len_stat0]).expect("utf8");
+        assert!(s_stat0.contains("sockets: used 0"));
+        assert!(s_stat0.contains("TCP: inuse 0"));
+
+        // 2. Allocate TCP socket
+        let s_tcp_fd = create_socket(AF_INET as u64, SOCK_STREAM as u64, 0).expect("tcp create");
+        let tcp_addr = [0u8, 0, 0x00, 0x50, 10, 0, 2, 2]; // Port 80, 10.0.2.2
+        assert!(connect_socket(s_tcp_fd, tcp_addr.as_ptr(), 8).is_ok());
+
+        // 3. Allocate UDP socket
+        let s_udp_fd = create_socket(AF_INET as u64, SOCK_DGRAM as u64, 0).expect("udp create");
+
+        // 4. Allocate RAW socket
+        let s_raw_fd = create_socket(AF_INET as u64, SOCK_RAW as u64, 0).expect("raw create");
+
+        // 5. Verify format_proc_tcp contains the connected socket
+        let len_tcp2 = format_proc_tcp(&mut buf);
+        let s_tcp2 = core::str::from_utf8(&buf[..len_tcp2]).expect("utf8");
+        assert!(s_tcp2.contains("0202000A:0050")); // 10.0.2.2:80
+
+        // 6. Verify format_proc_udp contains UDP slot
+        let len_udp = format_proc_udp(&mut buf);
+        let s_udp = core::str::from_utf8(&buf[..len_udp]).expect("utf8");
+        assert!(s_udp.contains("00000000:0000"));
+
+        // 7. Verify format_proc_raw contains RAW slot
+        let len_raw = format_proc_raw(&mut buf);
+        let s_raw = core::str::from_utf8(&buf[..len_raw]).expect("utf8");
+        assert!(s_raw.contains("00000000:0000"));
+
+        // 8. Verify sockstat counts
+        let len_stat1 = format_proc_sockstat(&mut buf);
+        let s_stat1 = core::str::from_utf8(&buf[..len_stat1]).expect("utf8");
+        assert!(s_stat1.contains("sockets: used 3"));
+        assert!(s_stat1.contains("TCP: inuse 1"));
+        assert!(s_stat1.contains("UDP: inuse 1"));
+        assert!(s_stat1.contains("RAW: inuse 1"));
+
+        // Cleanup
+        assert!(close_socket(s_tcp_fd).is_ok());
+        assert!(close_socket(s_udp_fd).is_ok());
+        assert!(close_socket(s_raw_fd).is_ok());
+        socket_table_reset();
+    }
+}

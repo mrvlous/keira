@@ -285,3 +285,189 @@ pub unsafe fn socket_table_reset() {
     SOCKET_TABLE = [SocketEntry::empty(); MAX_SOCKETS];
     NEXT_SOCKET_ID = 1;
 }
+
+/// Formats live in-kernel TCP sockets into canonical `/proc/net/tcp` format.
+pub fn format_proc_tcp(buf: &mut [u8]) -> usize {
+    use core::fmt::Write;
+    struct SliceWriter<'a> {
+        b: &'a mut [u8],
+        o: usize,
+    }
+    impl<'a> Write for SliceWriter<'a> {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            let bytes = s.as_bytes();
+            let rem = self.b.len().saturating_sub(self.o);
+            let n = rem.min(bytes.len());
+            self.b[self.o..self.o + n].copy_from_slice(&bytes[..n]);
+            self.o += n;
+            Ok(())
+        }
+    }
+
+    let mut writer = SliceWriter { b: buf, o: 0 };
+    let _ = writeln!(
+        writer,
+        "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode"
+    );
+
+    unsafe {
+        let mut sl = 0;
+        for entry in SOCKET_TABLE.iter() {
+            if entry.in_use && entry.socket_type == 1 {
+                let loc_ip = u32::from_ne_bytes(entry.local_ip);
+                let rem_ip = u32::from_ne_bytes(entry.remote_ip);
+                let st_num: u8 = match entry.state {
+                    TcpState::Established => 0x01,
+                    TcpState::SynSent => 0x02,
+                    TcpState::FinWait => 0x04,
+                    TcpState::Closed => 0x07,
+                };
+                let _ = writeln!(
+                    writer,
+                    "{:>4}: {:08X}:{:04X} {:08X}:{:04X} {:02X} {:08X}:{:08X} 00:00000000 00000000     0        0 {}",
+                    sl, loc_ip, entry.local_port, rem_ip, entry.remote_port, st_num, entry.tx_len, entry.rx_len, entry.id
+                );
+                sl += 1;
+            }
+        }
+    }
+
+    writer.o
+}
+
+/// Formats live in-kernel UDP sockets into canonical `/proc/net/udp` format.
+pub fn format_proc_udp(buf: &mut [u8]) -> usize {
+    use core::fmt::Write;
+    struct SliceWriter<'a> {
+        b: &'a mut [u8],
+        o: usize,
+    }
+    impl<'a> Write for SliceWriter<'a> {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            let bytes = s.as_bytes();
+            let rem = self.b.len().saturating_sub(self.o);
+            let n = rem.min(bytes.len());
+            self.b[self.o..self.o + n].copy_from_slice(&bytes[..n]);
+            self.o += n;
+            Ok(())
+        }
+    }
+
+    let mut writer = SliceWriter { b: buf, o: 0 };
+    let _ = writeln!(
+        writer,
+        "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode ref pointer drops"
+    );
+
+    unsafe {
+        let mut sl = 0;
+        for entry in SOCKET_TABLE.iter() {
+            if entry.in_use && entry.socket_type == 2 {
+                let loc_ip = u32::from_ne_bytes(entry.local_ip);
+                let rem_ip = u32::from_ne_bytes(entry.remote_ip);
+                let _ = writeln!(
+                    writer,
+                    "{:>4}: {:08X}:{:04X} {:08X}:{:04X} 07 {:08X}:{:08X} 00:00000000 00000000     0        0 {} 1 0000000000000000 0",
+                    sl, loc_ip, entry.local_port, rem_ip, entry.remote_port, entry.tx_len, entry.rx_len, entry.id
+                );
+                sl += 1;
+            }
+        }
+    }
+
+    writer.o
+}
+
+/// Formats live in-kernel RAW sockets into canonical `/proc/net/raw` format.
+pub fn format_proc_raw(buf: &mut [u8]) -> usize {
+    use core::fmt::Write;
+    struct SliceWriter<'a> {
+        b: &'a mut [u8],
+        o: usize,
+    }
+    impl<'a> Write for SliceWriter<'a> {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            let bytes = s.as_bytes();
+            let rem = self.b.len().saturating_sub(self.o);
+            let n = rem.min(bytes.len());
+            self.b[self.o..self.o + n].copy_from_slice(&bytes[..n]);
+            self.o += n;
+            Ok(())
+        }
+    }
+
+    let mut writer = SliceWriter { b: buf, o: 0 };
+    let _ = writeln!(
+        writer,
+        "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode ref pointer drops"
+    );
+
+    unsafe {
+        let mut sl = 0;
+        for entry in SOCKET_TABLE.iter() {
+            if entry.in_use && entry.socket_type == 3 {
+                let loc_ip = u32::from_ne_bytes(entry.local_ip);
+                let rem_ip = u32::from_ne_bytes(entry.remote_ip);
+                let _ = writeln!(
+                    writer,
+                    "{:>4}: {:08X}:{:04X} {:08X}:{:04X} 07 {:08X}:{:08X} 00:00000000 00000000     0        0 {} 1 0000000000000000 0",
+                    sl, loc_ip, entry.local_port, rem_ip, entry.remote_port, entry.tx_len, entry.rx_len, entry.id
+                );
+                sl += 1;
+            }
+        }
+    }
+
+    writer.o
+}
+
+/// Formats socket allocation statistics into canonical `/proc/net/sockstat` format.
+pub fn format_proc_sockstat(buf: &mut [u8]) -> usize {
+    use core::fmt::Write;
+    struct SliceWriter<'a> {
+        b: &'a mut [u8],
+        o: usize,
+    }
+    impl<'a> Write for SliceWriter<'a> {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            let bytes = s.as_bytes();
+            let rem = self.b.len().saturating_sub(self.o);
+            let n = rem.min(bytes.len());
+            self.b[self.o..self.o + n].copy_from_slice(&bytes[..n]);
+            self.o += n;
+            Ok(())
+        }
+    }
+
+    let mut writer = SliceWriter { b: buf, o: 0 };
+    let mut total_used = 0;
+    let mut tcp_inuse = 0;
+    let mut udp_inuse = 0;
+    let mut raw_inuse = 0;
+
+    unsafe {
+        for entry in SOCKET_TABLE.iter() {
+            if entry.in_use {
+                total_used += 1;
+                match entry.socket_type {
+                    1 => tcp_inuse += 1,
+                    2 => udp_inuse += 1,
+                    3 => raw_inuse += 1,
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    let _ = writeln!(writer, "sockets: used {}", total_used);
+    let _ = writeln!(
+        writer,
+        "TCP: inuse {} orphan 0 tw 0 alloc {} mem 1",
+        tcp_inuse, tcp_inuse
+    );
+    let _ = writeln!(writer, "UDP: inuse {} mem 0", udp_inuse);
+    let _ = writeln!(writer, "RAW: inuse {}", raw_inuse);
+    let _ = writeln!(writer, "FRAG: inuse 0 memory 0");
+
+    writer.o
+}

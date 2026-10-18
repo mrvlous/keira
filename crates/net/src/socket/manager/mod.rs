@@ -12,7 +12,8 @@
 pub mod table;
 
 pub use table::{
-    close_socket, connect_socket, create_socket, is_socket_nonblocking, queue_rx_data, recv_socket,
+    close_socket, connect_socket, create_socket, format_proc_raw, format_proc_sockstat,
+    format_proc_tcp, format_proc_udp, is_socket_nonblocking, queue_rx_data, recv_socket,
     send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
     socket_table_reset, NEXT_SOCKET_ID, SOCKET_TABLE,
 };
