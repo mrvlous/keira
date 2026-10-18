@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    unsigned long lo_rx_b = 1024, lo_rx_p = 16, lo_tx_b = 1024, lo_tx_p = 16;
-    unsigned long eth_rx_b = 4096, eth_rx_p = 32, eth_tx_b = 2048, eth_tx_p = 24;
+    unsigned long lo_rx_b = 0, lo_rx_p = 0, lo_tx_b = 0, lo_tx_p = 0;
+    unsigned long eth_rx_b = 0, eth_rx_p = 0, eth_tx_b = 0, eth_tx_p = 0;
 
     /* Parse dynamic telemetry from /proc/net/dev if accessible */
     int fd = open("/proc/net/dev", O_RDONLY, 0);
@@ -83,11 +83,15 @@ int main(int argc, char **argv) {
             buf[n] = '\0';
             char *lo_line = strstr(buf, "lo:");
             if (lo_line) {
-                sscanf(lo_line + 3, "%lu %lu", &lo_rx_b, &lo_rx_p);
+                unsigned long d0 = 0, d1 = 0, d2 = 0, d3 = 0, d4 = 0, d5 = 0;
+                sscanf(lo_line + 3, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu", &lo_rx_b, &lo_rx_p,
+                       &d0, &d1, &d2, &d3, &d4, &d5, &lo_tx_b, &lo_tx_p);
             }
             char *eth_line = strstr(buf, "eth0:");
             if (eth_line) {
-                sscanf(eth_line + 5, "%lu %lu", &eth_rx_b, &eth_rx_p);
+                unsigned long d0 = 0, d1 = 0, d2 = 0, d3 = 0, d4 = 0, d5 = 0;
+                sscanf(eth_line + 5, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu", &eth_rx_b,
+                       &eth_rx_p, &d0, &d1, &d2, &d3, &d4, &d5, &eth_tx_b, &eth_tx_p);
             }
         }
         close(fd);
