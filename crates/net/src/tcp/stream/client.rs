@@ -14,6 +14,9 @@ use crate::driver::e1000::{self, E1000_FOUND, E1000_MAC};
 use crate::ip::ipv4::ip_checksum;
 use crate::tcp::header::{tcp_checksum, TCP_FLAG_FIN, TCP_FLAG_RST};
 use crate::tcp::state::get_next_src_port;
+use core::sync::atomic::{AtomicU32, Ordering};
+
+static NEXT_CLIENT_SEQ: AtomicU32 = AtomicU32::new(0x10000000);
 
 #[cfg(not(test))]
 extern "C" {
@@ -77,8 +80,8 @@ pub unsafe fn tcp_send_and_receive(
         return Err("Network card offline");
     }
 
-    let src_port = 49152u16;
-    let initial_seq = 0x10000000u32;
+    let src_port = get_next_src_port();
+    let initial_seq = NEXT_CLIENT_SEQ.fetch_add(0x10000, Ordering::Relaxed);
     let mac = E1000_MAC;
 
     send_arp_announcement();
@@ -126,6 +129,7 @@ pub unsafe fn tcp_send_and_receive(
                 && rx_buf[13] == 0x00
                 && rx_buf[23] == 0x06
                 && rx_buf[30..34] == [10, 0, 2, 15]
+                && rx_buf[36..38] == src_port.to_be_bytes()
             {
                 let tcp_flags = rx_buf[47];
                 if (tcp_flags & 0x12) == 0x12 || (tcp_flags & 0x02) != 0 {
@@ -186,7 +190,7 @@ pub unsafe fn tcp_send_and_receive(
     let resp_start = get_uptime_ms();
     while get_uptime_ms() < resp_start + 4000 {
         if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
-            if bytes >= 54 {
+            if bytes >= 54 && rx_buf[36..38] == src_port.to_be_bytes() {
                 if let Some(payload) = parse_tcp_payload(&rx_buf[..bytes]) {
                     if !payload.is_empty() {
                         let mut out = [0u8; 512];
