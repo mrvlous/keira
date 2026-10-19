@@ -98,6 +98,8 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_UNLINK => "sys_unlink",
         SYS_MKDIR => "sys_mkdir",
         SYS_PING => "sys_ping",
+        SYS_GETEUID => "sys_geteuid",
+        SYS_GETEGID => "sys_getegid",
         _ => "sys_unknown",
     }
 }

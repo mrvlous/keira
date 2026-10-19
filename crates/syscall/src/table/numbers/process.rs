@@ -27,3 +27,5 @@ pub const SYS_WAITPID: u64 = 62;
 pub const SYS_GETPPID: u64 = 63;
 pub const SYS_GETGID: u64 = 68;
 pub const SYS_SETGID: u64 = 69;
+pub const SYS_GETEUID: u64 = 90;
+pub const SYS_GETEGID: u64 = 91;
