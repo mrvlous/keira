@@ -102,6 +102,8 @@
 #define SYS_UNLINK 87
 #define SYS_MKDIR 88
 #define SYS_PING 89
+#define SYS_GETEUID 90
+#define SYS_GETEGID 91
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -125,8 +127,10 @@ ssize_t sys_getcwd(char *buf, size_t size);
 pid_t sys_getpid(void);
 pid_t sys_getppid(void);
 uid_t sys_getuid(void);
+uid_t sys_geteuid(void);
 int sys_setuid(uid_t uid);
 gid_t sys_getgid(void);
+gid_t sys_getegid(void);
 int sys_setgid(gid_t gid);
 pid_t sys_fork(void);
 int sys_socket(int domain, int type, int protocol);

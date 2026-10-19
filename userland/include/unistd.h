@@ -49,6 +49,7 @@ uid_t getuid(void);
 uid_t geteuid(void);
 int setuid(uid_t uid);
 gid_t getgid(void);
+gid_t getegid(void);
 int setgid(gid_t gid);
 
 pid_t fork(void);
