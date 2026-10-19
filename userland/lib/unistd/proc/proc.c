@@ -27,7 +27,7 @@ uid_t getuid(void) {
 }
 
 uid_t geteuid(void) {
-    return sys_getuid();
+    return sys_geteuid();
 }
 
 int setuid(uid_t uid) {
@@ -41,6 +41,10 @@ int setuid(uid_t uid) {
 
 gid_t getgid(void) {
     return sys_getgid();
+}
+
+gid_t getegid(void) {
+    return sys_getegid();
 }
 
 int setgid(gid_t gid) {

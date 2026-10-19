@@ -31,12 +31,20 @@ uid_t sys_getuid(void) {
     return (uid_t)syscall0(SYS_GETUID);
 }
 
+uid_t sys_geteuid(void) {
+    return (uid_t)syscall0(SYS_GETEUID);
+}
+
 int sys_setuid(uid_t uid) {
     return (int)syscall1(SYS_SETUID, (uint64_t)uid);
 }
 
 gid_t sys_getgid(void) {
     return (gid_t)syscall0(SYS_GETGID);
+}
+
+gid_t sys_getegid(void) {
+    return (gid_t)syscall0(SYS_GETEGID);
 }
 
 int sys_setgid(gid_t gid) {
