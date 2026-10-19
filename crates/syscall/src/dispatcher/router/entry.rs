@@ -134,6 +134,8 @@ fn syscall_dispatcher_inner(
         87 => handle_unlink(arg1),
         88 => handle_mkdir(arg1, arg2),
         89 => handle_ping(arg1, arg2),
+        90 => handle_geteuid(),
+        91 => handle_getegid(),
         _ => errno_to_ret(ENOSYS),
     }
 }

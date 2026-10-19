@@ -14,8 +14,9 @@ use keira_io::vga;
 use keira_mem::pmm;
 use keira_mem::vmm;
 use keira_task::scheduler::{
-    fork_current_task, get_current_gid, get_current_uid, set_current_gid, set_current_uid,
-    spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX, TASKS,
+    fork_current_task, get_current_egid, get_current_euid, get_current_gid, get_current_uid,
+    set_current_gid, set_current_uid, spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX,
+    TASKS,
 };
 
 use crate::user_copy::{
@@ -558,4 +559,14 @@ pub fn handle_setgid(arg1: u64) -> u64 {
             Err(_) => errno_to_ret(EPERM),
         }
     }
+}
+
+/// Syscall 90: Get effective user ID.
+pub fn handle_geteuid() -> u64 {
+    unsafe { get_current_euid() as u64 }
+}
+
+/// Syscall 91: Get effective group ID.
+pub fn handle_getegid() -> u64 {
+    unsafe { get_current_egid() as u64 }
 }
