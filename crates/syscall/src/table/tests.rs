@@ -27,6 +27,8 @@ pub mod test {
         assert_eq!(SYS_UNLINK, 87);
         assert_eq!(SYS_MKDIR, 88);
         assert_eq!(SYS_PING, 89);
+        assert_eq!(SYS_GETEUID, 90);
+        assert_eq!(SYS_GETEGID, 91);
     }
 
     #[test]
@@ -41,6 +43,8 @@ pub mod test {
         assert_eq!(syscall_name(SYS_UNLINK), "sys_unlink");
         assert_eq!(syscall_name(SYS_MKDIR), "sys_mkdir");
         assert_eq!(syscall_name(SYS_PING), "sys_ping");
+        assert_eq!(syscall_name(SYS_GETEUID), "sys_geteuid");
+        assert_eq!(syscall_name(SYS_GETEGID), "sys_getegid");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
