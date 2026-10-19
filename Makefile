@@ -224,7 +224,19 @@ IPTABLES_ELF    := $(BIN_DIR)/iptables.elf
 IPTABLES_SRCS   := $(shell find $(USER_DIR)/bin/iptables -type f -name "*.c" 2>/dev/null)
 IPTABLES_OBJS   := $(patsubst $(USER_DIR)/bin/iptables/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/iptables/%.o,$(IPTABLES_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF)
+WHOAMI_ELF      := $(BIN_DIR)/whoami.elf
+WHOAMI_SRCS     := $(shell find $(USER_DIR)/bin/whoami -type f -name "*.c" 2>/dev/null)
+WHOAMI_OBJS     := $(patsubst $(USER_DIR)/bin/whoami/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/whoami/%.o,$(WHOAMI_SRCS))
+
+ID_ELF          := $(BIN_DIR)/id.elf
+ID_SRCS         := $(shell find $(USER_DIR)/bin/id -type f -name "*.c" 2>/dev/null)
+ID_OBJS         := $(patsubst $(USER_DIR)/bin/id/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/id/%.o,$(ID_SRCS))
+
+SU_ELF          := $(BIN_DIR)/su.elf
+SU_SRCS         := $(shell find $(USER_DIR)/bin/su -type f -name "*.c" 2>/dev/null)
+SU_OBJS         := $(patsubst $(USER_DIR)/bin/su/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/su/%.o,$(SU_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF) $(WHOAMI_ELF) $(ID_ELF) $(SU_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -695,6 +707,36 @@ $(IPTABLES_ELF): $(USER_CRT_OBJ) $(IPTABLES_OBJS) $(USER_LIBC_A) $(USER_LINKER_S
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(IPTABLES_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(IPTABLES_ELF)
 	@$(LOG_DONE) "$(IPTABLES_ELF) ready"
 
+# Userland current username utility (whoami.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/whoami/%.o: $(USER_DIR)/bin/whoami/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(WHOAMI_ELF): $(USER_CRT_OBJ) $(WHOAMI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: whoami ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(WHOAMI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(WHOAMI_ELF)
+	@$(LOG_DONE) "$(WHOAMI_ELF) ready"
+
+# Userland identity utility (id.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/id/%.o: $(USER_DIR)/bin/id/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(ID_ELF): $(USER_CRT_OBJ) $(ID_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: id ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(ID_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(ID_ELF)
+	@$(LOG_DONE) "$(ID_ELF) ready"
+
+# Userland switch user utility (su.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/su/%.o: $(USER_DIR)/bin/su/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(SU_ELF): $(USER_CRT_OBJ) $(SU_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: su ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SU_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SU_ELF)
+	@$(LOG_DONE) "$(SU_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -755,6 +797,12 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(NETSTAT_ELF) $(FS_ROOT)/bin/netstat
 	$(Q)cp $(IPTABLES_ELF) $(FS_ROOT)/bin/iptables.elf
 	$(Q)cp $(IPTABLES_ELF) $(FS_ROOT)/bin/iptables
+	$(Q)cp $(WHOAMI_ELF) $(FS_ROOT)/bin/whoami.elf
+	$(Q)cp $(WHOAMI_ELF) $(FS_ROOT)/bin/whoami
+	$(Q)cp $(ID_ELF) $(FS_ROOT)/bin/id.elf
+	$(Q)cp $(ID_ELF) $(FS_ROOT)/bin/id
+	$(Q)cp $(SU_ELF) $(FS_ROOT)/bin/su.elf
+	$(Q)cp $(SU_ELF) $(FS_ROOT)/bin/su
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
