@@ -225,10 +225,19 @@ pub unsafe fn spawn_user(
     let mut parent_cwd_len = 1usize;
     let mut child_fds = [FileDescriptor::new(); MAX_FDS];
     let parent_id = CURRENT_TASK_IDX;
+    let mut parent_uid = 0u32;
+    let mut parent_gid = 0u32;
+    let mut parent_euid = 0u32;
+    let mut parent_egid = 0u32;
+
     if let Some(ref parent) = TASKS[parent_id] {
         child_cwd[..parent.cwd_len].copy_from_slice(&parent.cwd[..parent.cwd_len]);
         parent_cwd_len = parent.cwd_len;
         child_fds = parent.fds;
+        parent_uid = parent.uid;
+        parent_gid = parent.gid;
+        parent_euid = parent.euid;
+        parent_egid = parent.egid;
     }
 
     #[cfg(target_arch = "x86_64")]
@@ -251,10 +260,10 @@ pub unsafe fn spawn_user(
         pml4_phys,
         exit_code: 0,
         is_user: true,
-        uid: 0,
-        gid: 0,
-        euid: 0,
-        egid: 0,
+        uid: parent_uid,
+        gid: parent_gid,
+        euid: parent_euid,
+        egid: parent_egid,
         saved_sigcontext: None,
         signal_mask: 0,
         pending_signals: 0,
