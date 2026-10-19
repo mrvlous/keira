@@ -67,7 +67,9 @@ static void print_shell_prompt(void) {
     if (!getcwd(cwd, sizeof(cwd))) {
         strcpy(cwd, "/");
     }
-    printf("%s:%s$ ", hostname, cwd);
+    uid_t euid = geteuid();
+    char prompt_char = (euid == 0) ? '#' : '$';
+    printf("%s:%s%c ", hostname, cwd, prompt_char);
     fflush(stdout);
 }
 
@@ -200,7 +202,7 @@ static int builtin_help(void) {
     puts("  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2");
     puts("Core Utilities (/bin):");
     puts("  File & Dir:    cat, touch, mkdir, rm, ls, df");
-    puts("  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear");
+    puts("  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear, whoami, id, su");
     puts("  Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables");
     puts("Direct Execution:");
     puts("  Binaries in /bin and current directory execute directly via $PATH");
