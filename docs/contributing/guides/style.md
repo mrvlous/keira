@@ -130,7 +130,7 @@ All runtime and VFS paths must adhere to the 100% Standard UNIX Filesystem Hiera
 * `/sys`: SysFS hardware and subsystem hierarchy.
 * `/etc`: System configuration files (`/etc/kernel.cfg`, `/etc/hostname`).
 * `/include`: Freestanding C standard library headers (`/include/math.h`, `/include/sys/stat.h`).
-* `/lib`: Static C runtime library archives and source libraries (`/lib/libc.a`, `/lib/math.c`).
+* `/lib`: Static C runtime library archives (`/lib/libc.a`).
 * `/tmp`: Temporary scratch files and build staging buffers (`/tmp/main.c`, `/tmp/mmap_abi.txt`).
 * `/var/log`: System logs, boot telemetry and persistent crash dumps (`/var/log/boot.log`, `/var/log/system.log`, `/var/log/core_<PID>.dmp`).
 
