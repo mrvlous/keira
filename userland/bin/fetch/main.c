@@ -24,7 +24,7 @@ static void print_usage(void) {
     puts("  Freestanding Ring 3 HTTP client utility to retrieve web resources.");
     puts("");
     puts("Options:");
-    puts("  -o <file>      Write payload to local file instead of standard output");
+    puts("  -o, -O <file>  Write payload to local file instead of standard output");
     puts("  -I, --head     Show response headers and status line only");
     puts("  -v, --verbose  Display connection and payload transfer telemetry");
     puts("  -h, --help     Display this help reference and exit");
@@ -45,11 +45,11 @@ int main(int argc, char **argv) {
             verbose = 1;
         } else if (strcmp(argv[i], "-I") == 0 || strcmp(argv[i], "--head") == 0) {
             head_only = 1;
-        } else if (strcmp(argv[i], "-o") == 0) {
+        } else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "-O") == 0) {
             if (i + 1 < argc) {
                 out_file = argv[++i];
             } else {
-                fprintf(stderr, "fetch: option '-o' requires an output file argument\n");
+                fprintf(stderr, "fetch: option '%s' requires an output file argument\n", argv[i]);
                 return 1;
             }
         } else if (argv[i][0] != '-') {
