@@ -21,7 +21,7 @@ In accordance with UNIX purity and the Keira v0.7.0 pure kernel slimming roadmap
 
 | Option | Long Option | Description |
 | :--- | :--- | :--- |
-| `-o <file>` | *N/A* | Writes received payload to specified local file instead of standard output |
+| `-o, -O <file>` | *N/A* | Writes received payload to specified local file instead of standard output |
 | `-I` | `--head` | Displays HTTP response status line and headers only |
 | `-v` | `--verbose` | Displays verbose network connection and payload transfer telemetry |
 | `-h` | `--help` | Displays usage reference and exits with status 0 |
