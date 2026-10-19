@@ -37,6 +37,8 @@ graph TD
     M25 --> M26["26. In-Kernel Routing Engine FIB & ProcFS Network Telemetry<br/><i>FIB Longest Prefix Match, /proc/net/route, /proc/net/arp, /proc/net/tcp, /bin/route, /bin/arp</i>"]
     M26 --> M27["27. Kernel Socket Telemetry Subsystem & Netstat Utility<br/><i>/proc/net/udp, /proc/net/raw, /proc/net/sockstat, /bin/netstat, Socket Observability</i>"]
     M27 --> M28["28. Kernel Netfilter Firewall Subsystem & Iptables Utility<br/><i>/proc/net/ip_tables_names, /proc/net/stat/nf_conntrack, /proc/net/iptables, /bin/iptables</i>"]
+    M28 --> M29["29. Bare-Metal Freestanding Purity & Canonical Numerical Credential Model<br/><i>Distro Database Purge, Freestanding Identity Engine, Zero-Stub Telemetry</i>"]
+    M29 --> M30["30. POSIX Multi-User Security & Session Management<br/><i>SYS_GETEUID (90), SYS_GETEGID (91), Credential Inheritance, /bin/whoami, /bin/id, /bin/su</i>"]
 ```
 
 ---
@@ -73,6 +75,8 @@ graph TD
 | **Milestone 26** | [`kernel_routing_v070.md`](kernel_routing_v070.md) | `v0.7.0` | In-Kernel routing engine FIB, ProcFS network telemetry (/proc/net/route, /proc/net/arp, /proc/net/tcp) and core utilities (/bin/route, /bin/arp) |
 | **Milestone 27** | [`kernel_socket_telemetry_v070.md`](kernel_socket_telemetry_v070.md) | `v0.7.0` | Kernel socket telemetry subsystem, ProcFS virtual inspection (/proc/net/udp, /proc/net/raw, /proc/net/sockstat) and core utility (/bin/netstat) |
 | **Milestone 28** | [`kernel_firewall_v070.md`](kernel_firewall_v070.md) | `v0.7.0` | In-kernel Netfilter firewall subsystem, ProcFS telemetry (/proc/net/ip_tables_names, /proc/net/stat/nf_conntrack, /proc/net/iptables) and core utility (/bin/iptables) |
+| **Milestone 29** | [`pure_telemetry_v070.md`](pure_telemetry_v070.md) | `v0.7.0` | Bare-metal freestanding purity, complete eradication of distro databases, and pure numerical credential model |
+| **Milestone 30** | [`multiuser_security_v070.md`](multiuser_security_v070.md) | `v0.7.0` | POSIX multi-user security, kernel credential subsystem (SYS_GETEUID, SYS_GETEGID), credential inheritance and core utilities (/bin/whoami, /bin/id, /bin/su) |
 
 ---
 
