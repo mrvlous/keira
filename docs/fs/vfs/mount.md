@@ -58,6 +58,6 @@ At boot time, Keira mounts:
 * `/sys`: Hardware driver hierarchy and subsystem telemetry.
 * `/etc`: System configuration files (`/etc/kernel.cfg`, `/etc/hostname`).
 * `/include`: Freestanding C standard library headers.
-* `/lib`: Static C runtime library archives and source stubs.
+* `/lib`: Static C runtime library archives (`libc.a`).
 * `/tmp`: Temporary runtime scratch files and build buffers.
 * `/var/log`: System event logs, boot records and core dumps.
