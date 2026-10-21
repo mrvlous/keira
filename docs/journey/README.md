@@ -40,6 +40,7 @@ graph TD
     M28 --> M29["29. Bare-Metal Freestanding Purity & Canonical Numerical Credential Model<br/><i>Distro Database Purge, Freestanding Identity Engine, Zero-Stub Telemetry</i>"]
     M29 --> M30["30. POSIX Multi-User Security & Session Management<br/><i>SYS_GETEUID (90), SYS_GETEGID (91), Credential Inheritance, /bin/whoami, /bin/id, /bin/su</i>"]
     M30 --> M31["31. Distro Bloat Eradication & Pure Rootfs Architecture<br/><i>Libc Source Tree Purge, Canonical /lib/libc.a, 100% Zero-Stub Verification</i>"]
+    M31 --> M32["32. VFS Symbolic Links & Freestanding Link Utility<br/><i>SYS_SYMLINK (92), SYS_READLINK (93), In-Kernel Symlink Table, /bin/ln (-s)</i>"]
 ```
 
 ---
@@ -79,6 +80,7 @@ graph TD
 | **Milestone 29** | [`pure_telemetry_v070.md`](pure_telemetry_v070.md) | `v0.7.0` | Bare-metal freestanding purity, complete eradication of distro databases and pure numerical credential model |
 | **Milestone 30** | [`multiuser_security_v070.md`](multiuser_security_v070.md) | `v0.7.0` | POSIX multi-user security, kernel credential subsystem (SYS_GETEUID, SYS_GETEGID), credential inheritance and core utilities (/bin/whoami, /bin/id, /bin/su) |
 | **Milestone 31** | [`distro_purge_v070.md`](distro_purge_v070.md) | `v0.7.0` | Distro bloat eradication, rootfs C source tree purge, canonical `/lib/libc.a` and full hardware verification |
+| **Milestone 32** | [`vfs_symlink_v070.md`](vfs_symlink_v070.md) | `v0.7.0` | VFS symbolic links, kernel registry, SYS_SYMLINK/SYS_READLINK, transparent path dereferencing and freestanding `/bin/ln` |
 
 ---
 
