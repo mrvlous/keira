@@ -19,20 +19,16 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems:
+of computer systems across 34 chronological engineering milestones:
 
-* Bare-Metal Bootstrap: Multiboot2, GDT, TSS, IDT and APIC interrupts.
-* Multi-Core SMP: 16-bit real-mode AP bootstrap trampoline (0x8000), Local APIC INIT-SIPI-SIPI wake sequence, ACPI MADT hardware discovery, per-CPU stacks and race-free swapgs syscall re-entrancy.
-* Memory Architecture: Frame bitmapped allocator, 4-level paging and heap.
-* Multitasking: Preemptive timer-tick context switching and POSIX signals.
-* Bare-Metal Networking: e1000/RTL8139, ARP, IPv4, UDP, DHCP, DNS, TCP, TLS 1.3 socket engine and Netfilter firewall.
-* Storage & Filesystems: ATA, AHCI, NVMe, FAT16, block LRU cache and VFS.
-* Asynchronous I/O: Bare-metal io_uring submission/completion queue engine.
-* Security Enclaves: TPM 2.0 TIS MMIO, PCR banks, Seccomp BPF, MAC and in-kernel eBPF virtual machine.
-* Pure Kernel Architecture: Canonical Ring 3 userspace init (PID 1), standalone userspace shell (sh.elf) with redirection and pipelines, complete userspace core utilities (cat.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf), shell script execution (shebang #!) and pure BSD/Linux-model separation.
-* Kernel Control Plane: Interactive Ring 0 emergency debugger with 15 diagnostic commands, direct $PATH execution, hardware telemetry and low-level recovery.
+* Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
+* Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
+* Milestones 16-24: Canonical FHS, Page Cache, Loopback, Pure Kernel, Shell and Complete Coreutils.
+* Milestones 25-30: Network Diagnostics, Routing FIB, Netstat, Iptables and Multi-User Security.
+* Milestones 31-34: Distro Purge, VFS Symlinks, Modular Decoupling and Pure Kernel Demarcation.
 
 Read the detailed engineering journal: docs/journey/README.md
+System architecture overview: docs/architecture/README.md
 
 Quick Start
 -----------
@@ -48,8 +44,9 @@ Quick Start
 Hyper-Modular Documentation Architecture
 ----------------------------------------
 
-Explore the kernel across 13 first-class hyper-modular domains:
+Explore the kernel across 14 first-class hyper-modular domains:
 
+* Architecture & UAPI: docs/architecture/README.md
 * Learning Journey: docs/journey/README.md
 * Kernel Core: docs/kernel/README.md
 * Memory Subsystems: docs/memory/README.md

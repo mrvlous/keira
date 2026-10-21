@@ -14,10 +14,11 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 
 ---
 
-## 13 First-Class Hyper-Modular Domains
+## 14 First-Class Hyper-Modular Domains
 
 | Domain Module | Path | Description |
 | :--- | :--- | :--- |
+| **Architecture & UAPI** | [`architecture/`](architecture/README.md) | Master system architecture, privilege demarcation and [UAPI boundary](architecture/uapi_boundary.md) |
 | **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 34 |
 | **Kernel Core** | [`kernel/`](kernel/README.md) | Multiboot2, SMP bootstrap trampolines, GDT, TSS, IDT, Local/IO-APIC, HPET, ACPI and panic |
 | **Memory** | [`memory/`](memory/README.md) | Physical frame allocator (PMM), 4-level paging (VMM), heap, DMA and swap |
