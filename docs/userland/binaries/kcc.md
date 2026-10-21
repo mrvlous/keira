@@ -30,7 +30,7 @@ Options:
   -h, --help     Display this help reference and exit
 
 keira:/# kcc -v
-kcc (Keira C Compiler) 0.6.0
+kcc (Keira C Compiler) 0.7.0
 ```
 
 ### B. Standard Compilation

@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
     const char *kernel_name = "Keira";
     char hostname[64] = "keira";
-    char release[32] = "0.6.0";
+    char release[32] = "0.7.0";
     char version[64] = "#1 SMP 2026";
 #if defined(__x86_64__)
     const char *machine = "x86_64";
