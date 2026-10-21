@@ -9,11 +9,11 @@
 
 [package]
 name = "keira-syscall"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra"]
 license = "GPL-2.0-only"
-description = "System call vector dispatchers, safe user copying, and exception handlers for Keira Kernel"
+description = "System call vector dispatchers, safe user copying and exception handlers for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

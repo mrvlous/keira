@@ -9,11 +9,11 @@
 
 [package]
 name = "keira-task"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra"]
 license = "GPL-2.0-only"
-description = "Preemptive multitasking scheduler, cgroups, MAC policies, and signals for Keira Kernel"
+description = "Preemptive multitasking scheduler, cgroups, MAC policies and signals for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

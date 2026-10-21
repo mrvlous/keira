@@ -9,11 +9,11 @@
 
 [package]
 name = "keira-ipc"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra"]
 license = "GPL-2.0-only"
-description = "Pipes, Futex, Epoll, EventFD, MQueue, Splice, POSIX SHM, and io_uring for Keira Kernel"
+description = "Pipes, Futex, Epoll, EventFD, MQueue, Splice, POSIX SHM and io_uring for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

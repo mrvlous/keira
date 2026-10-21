@@ -9,11 +9,11 @@
 
 [package]
 name = "keira-shell"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra"]
 license = "GPL-2.0-only"
-description = "Interactive system shell, code editor, autocomplete, and 78 native commands for Keira Kernel"
+description = "Interactive system shell, code editor, autocomplete and 78 native commands for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

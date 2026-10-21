@@ -9,11 +9,11 @@
 
 [package]
 name = "keira-mem"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Moh. Ananda Firmansyah Putra"]
 license = "GPL-2.0-only"
-description = "Physical memory allocator, 4-level virtual paging, DMA, and swap pager for Keira Kernel"
+description = "Physical memory allocator, 4-level virtual paging, DMA and swap pager for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }
