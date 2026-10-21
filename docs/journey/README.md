@@ -42,6 +42,7 @@ graph TD
     M30 --> M31["31. Distro Bloat Eradication & Pure Rootfs Architecture<br/><i>Libc Source Tree Purge, Canonical /lib/libc.a, 100% Zero-Stub Verification</i>"]
     M31 --> M32["32. VFS Symbolic Links & Freestanding Link Utility<br/><i>SYS_SYMLINK (92), SYS_READLINK (93), In-Kernel Symlink Table, /bin/ln (-s)</i>"]
     M32 --> M33["33. Modular Userland Decoupling & Pure Ring 0 Kernel<br/><i>USERLAND=0/1 Flag, make kernel, make kernel-iso, make run-bare</i>"]
+    M33 --> M34["34. Torvalds-Grade Pure Kernel Demarcation & Autonomous Userland<br/><i>userland/Makefile, .config, make defconfig, make headers_install</i>"]
 ```
 
 ---
@@ -83,6 +84,7 @@ graph TD
 | **Milestone 31** | [`distro_purge_v070.md`](distro_purge_v070.md) | `v0.7.0` | Distro bloat eradication, rootfs C source tree purge, canonical `/lib/libc.a` and full hardware verification |
 | **Milestone 32** | [`vfs_symlink_v070.md`](vfs_symlink_v070.md) | `v0.7.0` | VFS symbolic links, kernel registry, SYS_SYMLINK/SYS_READLINK, transparent path dereferencing and freestanding `/bin/ln` |
 | **Milestone 33** | [`kernel_decoupling_v070.md`](kernel_decoupling_v070.md) | `v0.7.0` | Modular userland decoupling, USERLAND=0/1 build flag, pure kernel ISO, make run-bare and freestanding Ring 0 supervisor console |
+| **Milestone 34** | [`kernel_demarcation_v070.md`](kernel_demarcation_v070.md) | `v0.7.0` | Torvalds-grade pure kernel demarcation, autonomous userland build system, .config engine and make headers_install |
 
 ---
 
