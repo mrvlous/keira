@@ -37,6 +37,8 @@ pub fn is_io_syscall(num: u64) -> bool {
             | SYS_MKDIR
             | SYS_SPLICE
             | SYS_VMSPLICE
+            | SYS_SYMLINK
+            | SYS_READLINK
     )
 }
 
