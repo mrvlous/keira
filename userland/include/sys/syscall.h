@@ -104,6 +104,8 @@
 #define SYS_PING 89
 #define SYS_GETEUID 90
 #define SYS_GETEGID 91
+#define SYS_SYMLINK 92
+#define SYS_READLINK 93
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -152,6 +154,8 @@ int sys_dup2(int oldfd, int newfd);
 int sys_getdents(int fd, void *dirp, size_t count);
 int sys_unlink(const char *pathname);
 int sys_mkdir(const char *pathname, mode_t mode);
+int sys_symlink(const char *target, const char *linkpath);
+ssize_t sys_readlink(const char *pathname, char *buf, size_t bufsiz);
 long sys_ping(const char *target_ip, int timeout_ms);
 ssize_t sys_http_get(const char *url, void *buf, size_t count);
 
