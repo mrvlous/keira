@@ -76,6 +76,9 @@ The `Makefile` defines a complete developer interface for compilation, emulation
 | Make Target | Description | Preflight Guard |
 | :--- | :--- | :--- |
 | `make all` | Builds assembly, kernel binary, userland binaries, initrd and bootable ISO for active `ARCH`. | `preflight` |
+| `make kernel` | Compiles only the Ring 0 ELF kernel binary (`keira.bin`) without packaging. | `preflight` |
+| `make kernel-iso` | Builds pure kernel bootable ISO without compiling userland binaries (`USERLAND=0`). | `preflight` |
+| `make run-bare` | Launches pure Ring 0 kernel in QEMU without userland disk, directly entering supervisor console. | `preflight-qemu` |
 | `make full` | Symmetrically builds complete kernel releases, disk images and ISOs for both `x86_64` and `i686`. | `preflight` |
 | `make preflight` | Validates presence of core build utilities (`nasm`, `gcc`, `ld`, `cargo`, `rustc`, `grub-mkrescue`, `xorriso`, `mkfs.fat`, `mmd`, `mcopy`, `tar`, `dd`). Halts with copy-paste host commands on failure. | None |
 | `make preflight-qemu` | Validates presence of QEMU hypervisor binaries for current target architecture. | None |
