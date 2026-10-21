@@ -201,7 +201,7 @@ static int builtin_help(void) {
     puts("  Pipelines:     cmd1 | cmd2");
     puts("  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2");
     puts("Core Utilities (/bin):");
-    puts("  File & Dir:    cat, touch, mkdir, rm, ls, df");
+    puts("  File & Dir:    cat, touch, mkdir, rm, ls, df, ln");
     puts("  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear, whoami, id, su");
     puts("  Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables");
     puts("Direct Execution:");
