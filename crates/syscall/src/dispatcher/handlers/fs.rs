@@ -17,8 +17,8 @@ use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    EAGAIN, EBADF, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENOENT, ENOMEM, ENOSPC, ENOTDIR,
-    ENOTEMPTY, ESRCH,
+    EAGAIN, EBADF, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENAMETOOLONG, ENOENT, ENOMEM,
+    ENOSPC, ENOTDIR, ENOTEMPTY, ESRCH,
 };
 
 /// Syscall 6: Open file or device node with POSIX flags.
@@ -972,6 +972,156 @@ pub fn handle_mkdir(arg1: u64, _arg2: u64) -> u64 {
                 errno_to_ret(EEXIST)
             } else if e.contains("read-only") {
                 errno_to_ret(EACCES)
+            } else {
+                errno_to_ret(ENOENT)
+            }
+        }
+    }
+}
+
+/// Syscall 92: Create a symbolic link pointing to a target pathname.
+pub fn handle_symlink(arg1: u64, arg2: u64) -> u64 {
+    let target_ptr = arg1 as *const u8;
+    let link_ptr = arg2 as *const u8;
+
+    let mut target_buf = [0u8; 128];
+    let target_len = match unsafe { read_user_string(target_ptr, &mut target_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let target_str = match core::str::from_utf8(&target_buf[..target_len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    let mut link_buf = [0u8; 128];
+    let link_len = match unsafe { read_user_string(link_ptr, &mut link_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let link_str = match core::str::from_utf8(&link_buf[..link_len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if target_str.is_empty() || link_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut resolved_link_buf = [0u8; 128];
+    let (target_link_path, _norm_len) = if !link_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    link_str,
+                    &mut resolved_link_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_link_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (link_str, link_len)
+    };
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        target_link_path,
+        keira_task::security::MAC_WRITE,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    match keira_fs::vfs::create_symlink(target_str, target_link_path) {
+        Ok(()) => 0,
+        Err(e) => {
+            if e.contains("File exists") {
+                errno_to_ret(EEXIST)
+            } else if e.contains("too long") {
+                errno_to_ret(ENAMETOOLONG)
+            } else if e.contains("full") {
+                errno_to_ret(ENOSPC)
+            } else {
+                errno_to_ret(EINVAL)
+            }
+        }
+    }
+}
+
+/// Syscall 93: Read value of a symbolic link into user buffer.
+pub fn handle_readlink(arg1: u64, arg2: u64, arg3: u64) -> u64 {
+    let path_ptr = arg1 as *const u8;
+    let user_buf = arg2;
+    let bufsiz = arg3 as usize;
+
+    if bufsiz == 0 {
+        return errno_to_ret(EINVAL);
+    }
+
+    let mut path_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let path_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _norm_len) = if !path_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        target_path,
+        keira_task::security::MAC_READ,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    let mut kbuf = [0u8; 128];
+    match keira_fs::vfs::read_symlink(target_path, &mut kbuf) {
+        Ok(bytes_read) => {
+            let to_copy = core::cmp::min(bufsiz, bytes_read);
+            if let Err(e) = unsafe { copy_to_user(user_buf, &kbuf[..to_copy]) } {
+                return errno_to_ret(e);
+            }
+            to_copy as u64
+        }
+        Err(e) => {
+            if e.contains("not a symbolic link") {
+                errno_to_ret(EINVAL)
             } else {
                 errno_to_ret(ENOENT)
             }
