@@ -29,3 +29,5 @@ pub const ENOTDIR: i64 = 20;
 pub const EISDIR: i64 = 21;
 pub const ENOSYS: i64 = 38;
 pub const ENOTEMPTY: i64 = 39;
+pub const ENAMETOOLONG: i64 = 36;
+pub const ELOOP: i64 = 40;
