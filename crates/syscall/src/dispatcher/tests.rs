@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for system call dispatcher, parameter validation, and routing.
+//! Unit tests for system call dispatcher, parameter validation and routing.
 
 #[cfg(test)]
 pub mod test {
@@ -81,5 +81,16 @@ pub mod test {
         )
         .unwrap();
         assert_eq!(&buf[..len], b"/etc/hostname");
+    }
+
+    #[test]
+    fn test_symlink_and_readlink_dispatch() {
+        // Calling symlink with null pointer should return EFAULT
+        let ret = syscall_dispatcher(92, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EFAULT));
+
+        // Calling readlink with null pointer should return EFAULT
+        let ret = syscall_dispatcher(93, 0, 0, 10, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EFAULT));
     }
 }
