@@ -66,12 +66,25 @@ pub fn enter_main_loop() -> ! {
             );
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         } else {
-            vga::set_color(vga::Color::LightRed, vga::Color::Black);
+            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str(
-                "[kernel] Warning: /bin/sh unavailable. Dropping to supervisor console (Ring 0).\n\n",
+                "[kernel] Pure freestanding Ring 0 mode: No userland /bin/sh attached.\n",
+            );
+            vga::print_str(
+                "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
             );
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
+    }
+
+    #[cfg(target_arch = "x86")]
+    if !keira_fs::exists("/bin/sh.elf") && !keira_fs::exists("/bin/sh") {
+        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::print_str("[kernel] Pure freestanding Ring 0 mode: No userland /bin/sh attached.\n");
+        vga::print_str(
+            "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
+        );
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 
     shell::print_prompt();
