@@ -29,3 +29,4 @@ graph TD
 | [`compiler/`](compiler/README.md) | KCC Native Compiler | Preprocessor, recursive descent parser, lexer, AST and x86 code generator |
 | [`binaries/`](binaries/README.md) | Ring 3 Binaries | Native ELF executables: `init.elf`, `sh.elf`, `cat.elf`, `ls.elf`, `fetch.elf`, `kcc.elf`, `ps.elf`, `kill.elf`, `hostname.elf`, `clear.elf`, `dmesg.elf`, `df.elf`, `ping.elf`, `ifconfig.elf`, `route.elf`, `arp.elf`, `netstat.elf`, `iptables.elf`, `uname.elf`, `mkdir.elf`, `touch.elf`, `rm.elf`, `sysinfo.elf`, `test_abi.elf` and `fuzz_abi.elf` |
 | [`system/`](system/README.md) | Userland Runtime | Multi-user credentials, file permissions, hostname configuration and initialization |
+| [UAPI Boundary](../architecture/uapi_boundary.md) | Privilege Demarcation | Torvalds-grade Ring 0/Ring 3 privilege demarcation, UAPI headers and system call calling conventions |
