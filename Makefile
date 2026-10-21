@@ -236,7 +236,11 @@ SU_ELF          := $(BIN_DIR)/su.elf
 SU_SRCS         := $(shell find $(USER_DIR)/bin/su -type f -name "*.c" 2>/dev/null)
 SU_OBJS         := $(patsubst $(USER_DIR)/bin/su/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/su/%.o,$(SU_SRCS))
 
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF) $(WHOAMI_ELF) $(ID_ELF) $(SU_ELF)
+LN_ELF          := $(BIN_DIR)/ln.elf
+LN_SRCS         := $(shell find $(USER_DIR)/bin/ln -type f -name "*.c" 2>/dev/null)
+LN_OBJS         := $(patsubst $(USER_DIR)/bin/ln/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ln/%.o,$(LN_SRCS))
+
+USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF) $(WHOAMI_ELF) $(ID_ELF) $(SU_ELF) $(LN_ELF)
 
 # QEMU hardware & emulation flags
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -737,6 +741,16 @@ $(SU_ELF): $(USER_CRT_OBJ) $(SU_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dir
 	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SU_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SU_ELF)
 	@$(LOG_DONE) "$(SU_ELF) ready"
 
+# Userland link utility (ln.elf)
+$(OBJ_DIR)/$(USER_DIR)/bin/ln/%.o: $(USER_DIR)/bin/ln/%.c | dirs
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
+
+$(LN_ELF): $(USER_CRT_OBJ) $(LN_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
+	@$(LOG_INFO) "Linking user space program: ln ($(ARCH))..."
+	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(LN_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(LN_ELF)
+	@$(LOG_DONE) "$(LN_ELF) ready"
+
 # Canonical root filesystem & disk image rules
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
@@ -803,6 +817,8 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(ID_ELF) $(FS_ROOT)/bin/id
 	$(Q)cp $(SU_ELF) $(FS_ROOT)/bin/su.elf
 	$(Q)cp $(SU_ELF) $(FS_ROOT)/bin/su
+	$(Q)cp $(LN_ELF) $(FS_ROOT)/bin/ln.elf
+	$(Q)cp $(LN_ELF) $(FS_ROOT)/bin/ln
 	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
