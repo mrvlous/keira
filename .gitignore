@@ -28,7 +28,7 @@
 *.img
 *.d
 
-# Temporary editor files, swaps, and backups
+# Temporary editor files, swaps and backups
 *~
 *.swp
 *.swo
@@ -53,3 +53,8 @@ __pycache__/
 .eglot/
 .cache/
 .gdb_history
+
+# Linux-style build configuration and exported UAPI headers
+.config
+.config.old
+/include/uapi/
