@@ -54,6 +54,32 @@ int rmdir(const char *pathname) {
     return 0;
 }
 
+int symlink(const char *target, const char *linkpath) {
+    if (!target || !linkpath) {
+        errno = EINVAL;
+        return -1;
+    }
+    int ret = sys_symlink(target, linkpath);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return 0;
+}
+
+ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
+    if (!pathname || !buf || bufsiz == 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    ssize_t ret = sys_readlink(pathname, buf, bufsiz);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return -1;
+    }
+    return ret;
+}
+
 int chdir(const char *path) {
     int ret = sys_chdir(path);
     if (ret < 0) {

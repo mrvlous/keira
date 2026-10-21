@@ -72,3 +72,12 @@ int sys_unlink(const char *pathname) {
 int sys_mkdir(const char *pathname, mode_t mode) {
     return (int)syscall2(SYS_MKDIR, (uint64_t)(uintptr_t)pathname, (uint64_t)mode);
 }
+
+int sys_symlink(const char *target, const char *linkpath) {
+    return (int)syscall2(SYS_SYMLINK, (uint64_t)(uintptr_t)target, (uint64_t)(uintptr_t)linkpath);
+}
+
+ssize_t sys_readlink(const char *pathname, char *buf, size_t bufsiz) {
+    return (ssize_t)syscall3(SYS_READLINK, (uint64_t)(uintptr_t)pathname, (uint64_t)(uintptr_t)buf,
+                             (uint64_t)bufsiz);
+}
