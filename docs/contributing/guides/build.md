@@ -23,11 +23,10 @@ graph TD
         CARGO --> KERNEL_LIB["build/x86/<arch>/libkeira_kernel.a"]
     end
 
-    subgraph Userland Runtime
-        USER_ARCH["userland/arch/x86/<arch>/crt0.S"] --> USER_CC["GCC / Host Toolchain"]
-        USER_LIBC["userland/lib/* (POSIX C Library)"] --> USER_CC
-        USER_BIN["userland/bin/* (kcc, sysinfo, test_abi, fuzz_abi)"] --> USER_CC
-        USER_CC --> USER_ELFS["build/x86/<arch>/bin/*.elf"]
+    subgraph Autonomous Userland Runtime
+        USER_MAKE["userland/Makefile (Autonomous Orchestrator)"] --> USER_CRT["crt0.o & libc.a"]
+        USER_MAKE --> USER_BINS["30 Core Utility Binaries"]
+        USER_BINS --> USER_ELFS["build/x86/<arch>/staging/fs_root/bin/*.elf"]
     end
 
     ASM_OBJ --> LINKER["GNU ld Linker (-T linker.ld)"]
@@ -76,8 +75,12 @@ The `Makefile` defines a complete developer interface for compilation, emulation
 | Make Target | Description | Preflight Guard |
 | :--- | :--- | :--- |
 | `make all` | Builds assembly, kernel binary, userland binaries, initrd and bootable ISO for active `ARCH`. | `preflight` |
+| `make defconfig` | Generates default configuration (`.config`) from `.example.config` with full userland enabled (`CONFIG_USERLAND=y`). | None |
+| `make pure_defconfig` | Generates pure freestanding Ring 0 configuration (`.config`) from `.example.config` without userland (`CONFIG_USERLAND=n`). | None |
+| `make headers_install` | Exports Ring 3 system call and POSIX headers to `include/uapi/`. | None |
 | `make kernel` | Compiles only the Ring 0 ELF kernel binary (`keira.bin`) without packaging. | `preflight` |
 | `make kernel-iso` | Builds pure kernel bootable ISO without compiling userland binaries (`USERLAND=0`). | `preflight` |
+| `make user` | Delegates to `userland/Makefile` to build all userland runtime libraries and binaries. | `preflight` |
 | `make run-bare` | Launches pure Ring 0 kernel in QEMU without userland disk, directly entering supervisor console. | `preflight-qemu` |
 | `make full` | Symmetrically builds complete kernel releases, disk images and ISOs for both `x86_64` and `i686`. | `preflight` |
 | `make preflight` | Validates presence of core build utilities (`nasm`, `gcc`, `ld`, `cargo`, `rustc`, `grub-mkrescue`, `xorriso`, `mkfs.fat`, `mmd`, `mcopy`, `tar`, `dd`). Halts with copy-paste host commands on failure. | None |
@@ -93,6 +96,7 @@ The `Makefile` defines a complete developer interface for compilation, emulation
 | `make format` | Formats all Rust crates (`cargo fmt`) and all userland C code (`clang-format`). | `preflight-format` |
 | `make lint` | Runs `clang-tidy` across all userland C sources. | `preflight-lint` |
 | `make clean` | Removes all build output directories (`build/`), compiled objects, disk images and cargo build artifacts. | None |
+| `make mrproper` | Cleans repository to pristine state, removing build artifacts, `.config` and exported UAPI headers. | None |
 
 ---
 
