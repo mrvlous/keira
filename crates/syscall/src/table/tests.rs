@@ -29,6 +29,8 @@ pub mod test {
         assert_eq!(SYS_PING, 89);
         assert_eq!(SYS_GETEUID, 90);
         assert_eq!(SYS_GETEGID, 91);
+        assert_eq!(SYS_SYMLINK, 92);
+        assert_eq!(SYS_READLINK, 93);
     }
 
     #[test]
@@ -45,6 +47,8 @@ pub mod test {
         assert_eq!(syscall_name(SYS_PING), "sys_ping");
         assert_eq!(syscall_name(SYS_GETEUID), "sys_geteuid");
         assert_eq!(syscall_name(SYS_GETEGID), "sys_getegid");
+        assert_eq!(syscall_name(SYS_SYMLINK), "sys_symlink");
+        assert_eq!(syscall_name(SYS_READLINK), "sys_readlink");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
@@ -52,11 +56,15 @@ pub mod test {
     fn test_syscall_categories() {
         assert!(is_valid_syscall(SYS_OPEN));
         assert!(is_valid_syscall(SYS_MKDIR));
+        assert!(is_valid_syscall(SYS_SYMLINK));
+        assert!(is_valid_syscall(SYS_READLINK));
         assert!(!is_valid_syscall(999));
 
         assert!(is_io_syscall(SYS_OPEN));
         assert!(is_io_syscall(SYS_WRITE));
         assert!(is_io_syscall(SYS_MKDIR));
+        assert!(is_io_syscall(SYS_SYMLINK));
+        assert!(is_io_syscall(SYS_READLINK));
         assert!(!is_io_syscall(SYS_MMAP));
 
         assert!(is_memory_syscall(SYS_MMAP));
