@@ -43,7 +43,7 @@ OBJ_DIR         := $(BUILD_DIR)/obj
 STAGING_DIR     := $(BUILD_DIR)/staging
 ISO_DIR         := $(STAGING_DIR)/isofiles
 FS_ROOT         := $(STAGING_DIR)/fs_root
-FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp
+FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp-$(USERLAND)
 
 KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
 KERNEL_ISO      := $(ISO_OUT_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
@@ -55,6 +55,7 @@ INITRD_TAR      := $(DISK_DIR)/initrd.tar
 DISK_SIZE       ?= 32
 QEMU_MEM        ?= 128M
 USER_DIR        ?= userland
+USERLAND        ?= 1
 
 # Verbose mode: set V=1 to display raw command executions
 ifeq ($(V),1)
@@ -243,11 +244,17 @@ LN_OBJS         := $(patsubst $(USER_DIR)/bin/ln/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/
 USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF) $(WHOAMI_ELF) $(ID_ELF) $(SU_ELF) $(LN_ELF)
 
 # QEMU hardware & emulation flags
+ifeq ($(USERLAND),0)
+    QEMU_DISK_FLAGS :=
+else
+    QEMU_DISK_FLAGS := -device ahci,id=ahci0 \
+                       -drive file=$(DISK_IMG),format=raw,id=sata0,if=none \
+                       -device ide-hd,drive=sata0,bus=ahci0.0
+endif
+
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
                    -smp $(SMP) \
-                   -device ahci,id=ahci0 \
-                   -drive file=$(DISK_IMG),format=raw,id=sata0,if=none \
-                   -device ide-hd,drive=sata0,bus=ahci0.0 \
+                   $(QEMU_DISK_FLAGS) \
                    -device e1000,netdev=net0 \
                    -netdev user,id=net0 \
                    -boot d \
@@ -283,7 +290,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
                    shutdown reboot
 
 # Phony targets declaration
-.PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 debug clean rust iso dirs \
+.PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean rust kernel kernel-iso iso dirs \
         format lint user disk initrd help info check size objdump qemu-net test test-all test-unit fs-root \
         preflight preflight-qemu preflight-format preflight-lint
 
@@ -292,7 +299,11 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 # Toolchain preflight dependency guards
 preflight: ## Validate presence of all essential build, packaging and filesystem utilities
 	@MISSING=""; \
-	for tool in $(ASM) $(CC) $(LD) $(CARGO) rustc $(GRUB_MKRESCUE) xorriso mkfs.fat mmd mcopy tar dd; do \
+	TOOLS="$(ASM) $(LD) $(CARGO) rustc $(GRUB_MKRESCUE) xorriso tar dd"; \
+	if [ "$(USERLAND)" != "0" ]; then \
+	    TOOLS="$$TOOLS $(CC) mkfs.fat mmd mcopy"; \
+	fi; \
+	for tool in $$TOOLS; do \
 	    if ! command -v $$tool >/dev/null 2>&1; then \
 	        MISSING="$$MISSING $$tool"; \
 	    fi; \
@@ -383,7 +394,21 @@ preflight-lint: ## Validate presence of static analysis utilities
 	fi
 
 # Primary build targets
-all: preflight $(KERNEL_ISO) $(DISK_IMG) ## Build kernel, ISO image and FAT16 disk image for current ARCH
+ifeq ($(USERLAND),0)
+    DISK_TARGET :=
+else
+    DISK_TARGET := $(DISK_IMG)
+endif
+
+all: preflight $(KERNEL_ISO) $(DISK_TARGET) ## Build kernel, ISO image and FAT16 disk image for current ARCH
+
+kernel: preflight $(KERNEL_BIN) ## Build only the Ring 0 kernel binary (ELF)
+
+kernel-iso: preflight ## Build pure kernel bootable ISO without userland binaries
+	$(Q)$(MAKE) USERLAND=0 iso
+
+run-bare: preflight-qemu ## Launch pure Ring 0 kernel in QEMU without userland disk
+	$(Q)$(MAKE) USERLAND=0 run
 
 full: preflight ## Build kernel and ISO images for all supported architectures (x86_64 & i686)
 	@$(LOG_INFO) "Building Keira for all architectures (x86_64 & i686)..."
@@ -752,9 +777,28 @@ $(LN_ELF): $(USER_CRT_OBJ) $(LN_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dir
 	@$(LOG_DONE) "$(LN_ELF) ready"
 
 # Canonical root filesystem & disk image rules
+ifeq ($(USERLAND),0)
+$(FS_ROOT_STAMP): | dirs
+	@$(LOG_INFO) "Populating minimal root filesystem for pure kernel mode ($(ARCH))..."
+	$(Q)rm -rf $(FS_ROOT) $(STAGING_DIR)/.fs-root-stamp-*
+	$(Q)mkdir -p $(FS_ROOT)/bin
+	$(Q)mkdir -p $(FS_ROOT)/dev
+	$(Q)mkdir -p $(FS_ROOT)/proc
+	$(Q)mkdir -p $(FS_ROOT)/sys
+	$(Q)mkdir -p $(FS_ROOT)/etc
+	$(Q)mkdir -p $(FS_ROOT)/tmp
+	$(Q)mkdir -p $(FS_ROOT)/var/log
+	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=0\n" > $(FS_ROOT)/etc/kernel.cfg
+	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
+	$(Q)printf "[    0.000000] Keira Kernel v$(VERSION) ($(ARCH)) bootloader handover completed\n[    0.000010] Pure freestanding Ring 0 mode: root filesystem mounted in initrd\n" > $(FS_ROOT)/var/log/boot.log
+	$(Q)printf "[    0.000000] Keira Kernel v$(VERSION) ($(ARCH))\n[    0.000010] Kernel Ring 0 initialized, supervisor console ready\n" > $(FS_ROOT)/var/log/system.log
+	$(Q)touch $(FS_ROOT)/tmp/.keep
+	$(Q)touch $(FS_ROOT_STAMP)
+	@$(LOG_DONE) "Minimal root filesystem ready ($(ARCH))"
+else
 $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
-	$(Q)rm -rf $(FS_ROOT)
+	$(Q)rm -rf $(FS_ROOT) $(STAGING_DIR)/.fs-root-stamp-*
 	$(Q)mkdir -p $(FS_ROOT)/bin
 	$(Q)mkdir -p $(FS_ROOT)/dev
 	$(Q)mkdir -p $(FS_ROOT)/proc
@@ -823,7 +867,7 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
 	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
 	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/include/common.h
-	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\n" > $(FS_ROOT)/etc/kernel.cfg
+	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=1\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/tmp/main.c
 	$(Q)printf "[    0.000000] Keira Kernel v$(VERSION) ($(ARCH)) bootloader handover completed\n[    0.000010] Root filesystem mounted at / (FAT16)\n" > $(FS_ROOT)/var/log/boot.log
@@ -831,6 +875,7 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)touch $(FS_ROOT)/tmp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Canonical root filesystem ready ($(ARCH))"
+endif
 
 fs-root: $(FS_ROOT_STAMP)
 
@@ -963,7 +1008,8 @@ info: ## Display build configuration and toolchain versions
 	@printf "    Name         : $(KERNEL_NAME)\n"
 	@printf "    Binary       : $(KERNEL_BIN)\n"
 	@printf "    ISO          : $(KERNEL_ISO)\n"
-	@printf "    Disk Image   : $(DISK_IMG) ($(DISK_SIZE)MB FAT16)\n\n"
+	@printf "    Disk Image   : $(DISK_IMG) ($(DISK_SIZE)MB FAT16)\n"
+	@printf "    Userland     : $(USERLAND) (0=disabled, 1=enabled)\n\n"
 	@printf "  Toolchain\n"
 	@printf "    NASM         : $(shell $(ASM) --version 2>/dev/null | head -1 || echo 'not found')\n"
 	@printf "    GCC          : $(shell $(CC) --version 2>/dev/null | head -1 || echo 'not found')\n"
@@ -983,11 +1029,12 @@ info: ## Display build configuration and toolchain versions
 
 help: ## Display all available Makefile targets
 	@printf "\nKeira Kernel Build System  v$(VERSION) ($(ARCH))\n\n"
-	@printf "  Usage: make <target> [ARCH=x86_64|i686] [V=1] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
+	@printf "  Usage: make <target> [ARCH=x86_64|i686] [USERLAND=0|1] [V=1] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
 	@printf "  Build Targets:\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    %-15s %s\n", $$1, $$2}'
 	@printf "\n  Variables:\n"
 	@printf "    ARCH=x86_64|i686 Target architecture (default: x86_64)\n"
+	@printf "    USERLAND=0|1    Enable or disable userland compilation (default: 1)\n"
 	@printf "    V=1             Show raw commands (verbose mode)\n"
 	@printf "    DISK_SIZE=N     FAT16 disk size in MB (default: 32)\n"
 	@printf "    QEMU_MEM=NM     QEMU guest memory (default: 128M)\n\n"
