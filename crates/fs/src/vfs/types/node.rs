@@ -20,6 +20,8 @@ pub enum NodeKind {
     CharDevice,
     /// Block storage interface.
     BlockDevice,
+    /// Symbolic link to target path.
+    Symlink,
 }
 
 /// Metadata attributes for a virtual filesystem entry.
@@ -29,6 +31,8 @@ pub struct FileStat {
     pub size: u64,
     /// Target filesystem type identifier.
     pub is_dir: bool,
+    /// Symbolic link identifier.
+    pub is_symlink: bool,
     /// Read-only access restriction.
     pub is_readonly: bool,
 }
