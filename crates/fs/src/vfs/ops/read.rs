@@ -24,7 +24,13 @@ pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
     let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => tar::read_file_content(clean_path, buf),
-        FilesystemType::Fat => unsafe { fat::read_file_content(clean_path, buf) },
+        FilesystemType::Fat => unsafe {
+            if fat::VOLUME.is_none() {
+                tar::read_file_content(clean_path, buf)
+            } else {
+                fat::read_file_content(clean_path, buf)
+            }
+        },
         FilesystemType::Proc => crate::proc::read_proc_file(clean_path, buf),
         FilesystemType::Dev => unsafe { crate::dev::read_dev_node(clean_path, buf) },
     }
@@ -40,7 +46,13 @@ pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize
     let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => tar::read_file_offset(clean_path, offset, buf),
-        FilesystemType::Fat => unsafe { fat::read_file_offset(clean_path, offset, buf) },
+        FilesystemType::Fat => unsafe {
+            if fat::VOLUME.is_none() {
+                tar::read_file_offset(clean_path, offset, buf)
+            } else {
+                fat::read_file_offset(clean_path, offset, buf)
+            }
+        },
         FilesystemType::Proc => Err("VFS Error: ProcFS does not support offset read"),
         FilesystemType::Dev => Err("VFS Error: DevFS does not support offset read"),
     }

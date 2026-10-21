@@ -63,6 +63,9 @@ pub fn exists(path: &str) -> bool {
             clean_path.is_empty() || crate::dev::char::exists(clean_path) || clean_path == "sda"
         }
         FilesystemType::Fat => unsafe {
+            if fat::VOLUME.is_none() {
+                return tar::exists(clean_path);
+            }
             let (dir_cluster, name) = match fat::resolve_path(clean_path) {
                 Ok(res) => res,
                 Err(_) => return false,
@@ -88,6 +91,9 @@ pub fn is_dir(path: &str) -> bool {
         FilesystemType::Proc => clean_path.is_empty() || clean_path == "self",
         FilesystemType::Dev => clean_path.is_empty(),
         FilesystemType::Fat => unsafe {
+            if fat::VOLUME.is_none() {
+                return clean_path.is_empty();
+            }
             let (dir_cluster, name) = match fat::resolve_path(clean_path) {
                 Ok(res) => res,
                 Err(_) => return false,
@@ -114,7 +120,13 @@ pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
     let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => tar::get_file_size(clean_path),
-        FilesystemType::Fat => unsafe { fat::get_file_size(clean_path) },
+        FilesystemType::Fat => unsafe {
+            if fat::VOLUME.is_none() {
+                tar::get_file_size(clean_path)
+            } else {
+                fat::get_file_size(clean_path)
+            }
+        },
         FilesystemType::Proc => Err("VFS Error: ProcFS files have dynamic size"),
         FilesystemType::Dev => Err("VFS Error: DevFS nodes have no size"),
     }
