@@ -15,7 +15,12 @@ use crate::vfs::types::FilesystemType;
 
 /// Writes byte buffer content into a file on the target routed filesystem.
 pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
-    let (clean_path, fs_type) = route_path(path);
+    let mut sym_buf = [0u8; 128];
+    let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
+        Ok(p) => p,
+        Err(_) => path,
+    };
+    let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
@@ -29,7 +34,12 @@ pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
 
 /// Writes byte buffer content at a specific offset in a file on the routed filesystem.
 pub fn write_file_offset(path: &str, offset: u64, content: &[u8]) -> Result<usize, &'static str> {
-    let (clean_path, fs_type) = route_path(path);
+    let mut sym_buf = [0u8; 128];
+    let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
+        Ok(p) => p,
+        Err(_) => path,
+    };
+    let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),

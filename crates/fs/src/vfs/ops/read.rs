@@ -16,7 +16,12 @@ use crate::vfs::types::FilesystemType;
 
 /// Reads content of a file into a caller-supplied buffer from the routed filesystem.
 pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
-    let (clean_path, fs_type) = route_path(path);
+    let mut sym_buf = [0u8; 128];
+    let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
+        Ok(p) => p,
+        Err(_) => path,
+    };
+    let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => tar::read_file_content(clean_path, buf),
         FilesystemType::Fat => unsafe { fat::read_file_content(clean_path, buf) },
@@ -27,7 +32,12 @@ pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
 
 /// Reads file content starting at a specific byte offset from the routed filesystem.
 pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
-    let (clean_path, fs_type) = route_path(path);
+    let mut sym_buf = [0u8; 128];
+    let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
+        Ok(p) => p,
+        Err(_) => path,
+    };
+    let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => tar::read_file_offset(clean_path, offset, buf),
         FilesystemType::Fat => unsafe { fat::read_file_offset(clean_path, offset, buf) },

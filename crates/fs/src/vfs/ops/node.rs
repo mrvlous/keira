@@ -25,8 +25,11 @@ pub fn create_file(path: &str) -> Result<(), &'static str> {
     }
 }
 
-/// Removes a file or directory entry on the routed filesystem.
+/// Removes a file, directory or symbolic link entry on the routed filesystem.
 pub fn remove_entry(path: &str) -> Result<(), &'static str> {
+    if crate::vfs::ops::symlink::remove_symlink(path) {
+        return Ok(());
+    }
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
@@ -49,6 +52,9 @@ pub fn create_dir(path: &str) -> Result<(), &'static str> {
 
 /// Checks whether a given path exists on any registered filesystem driver.
 pub fn exists(path: &str) -> bool {
+    if crate::vfs::ops::symlink::is_symlink(path) {
+        return true;
+    }
     let (clean_path, fs_type) = route_path(path);
     match fs_type {
         FilesystemType::Initrd => clean_path.is_empty() || tar::exists(clean_path),
@@ -71,7 +77,12 @@ pub fn exists(path: &str) -> bool {
 
 /// Checks whether a given path is a directory on any registered filesystem driver.
 pub fn is_dir(path: &str) -> bool {
-    let (clean_path, fs_type) = route_path(path);
+    let mut sym_buf = [0u8; 128];
+    let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
+        Ok(p) => p,
+        Err(_) => path,
+    };
+    let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => clean_path.is_empty(),
         FilesystemType::Proc => clean_path.is_empty() || clean_path == "self",
@@ -95,7 +106,12 @@ pub fn is_dir(path: &str) -> bool {
 
 /// Retrieves the size of a file in bytes from the routed filesystem.
 pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
-    let (clean_path, fs_type) = route_path(path);
+    let mut sym_buf = [0u8; 128];
+    let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
+        Ok(p) => p,
+        Err(_) => path,
+    };
+    let (clean_path, fs_type) = route_path(actual_path);
     match fs_type {
         FilesystemType::Initrd => tar::get_file_size(clean_path),
         FilesystemType::Fat => unsafe { fat::get_file_size(clean_path) },
