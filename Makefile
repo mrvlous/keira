@@ -15,11 +15,20 @@ SHELL           := /bin/bash
 #   1. NASM (Assembly)  : Compiles 32-bit and 64-bit boot trampolines & ISR handlers.
 #   2. Cargo (Rust Core): Compiles `no_std` 100% Pure Rust kernel static library (`.a`).
 #   3. LD (Linker)      : Links object files into a single ELF kernel executable.
-#   4. Userland (KCC/C) : Compiles userland C compiler (kcc.elf) and standard library.
+#   4. Userland (C)     : Autonomous Ring 3 C runtime and utilities (userland/Makefile).
 #   5. GRUB (Bootloader): Packages kernel and USTAR initrd into a bootable ISO.
 
+# Include Linux-style configuration file if present
+-include .config
+
 # Target Architecture: x86_64 (default) or i686 (pure 32-bit x86)
-ARCH            ?= x86_64
+ifeq ($(CONFIG_ARCH_I686),y)
+    ARCH        := i686
+else ifeq ($(CONFIG_ARCH_X86_64),y)
+    ARCH        := x86_64
+else
+    ARCH        ?= x86_64
+endif
 
 # Toolchain executables
 ASM             := nasm
@@ -47,15 +56,37 @@ FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp-$(USERLAND)
 
 KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
 KERNEL_ISO      := $(ISO_OUT_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
-USER_ELF        := $(BIN_DIR)/kcc.elf
 DISK_IMG        := $(DISK_DIR)/disk.img
 INITRD_TAR      := $(DISK_DIR)/initrd.tar
 
-# Configurable build parameters
-DISK_SIZE       ?= 32
-QEMU_MEM        ?= 128M
+# Configurable build parameters (with Kconfig-style override support)
+ifeq ($(CONFIG_USERLAND),y)
+    USERLAND    := 1
+else ifeq ($(CONFIG_USERLAND),n)
+    USERLAND    := 0
+else
+    USERLAND    ?= 1
+endif
+
+ifdef CONFIG_SMP
+    SMP         := $(CONFIG_SMP)
+else
+    SMP         ?= 2
+endif
+
+ifdef CONFIG_DISK_SIZE
+    DISK_SIZE   := $(CONFIG_DISK_SIZE)
+else
+    DISK_SIZE   ?= 32
+endif
+
+ifdef CONFIG_QEMU_MEM
+    QEMU_MEM    := $(CONFIG_QEMU_MEM)
+else
+    QEMU_MEM    ?= 128M
+endif
+
 USER_DIR        ?= userland
-USERLAND        ?= 1
 
 # Verbose mode: set V=1 to display raw command executions
 ifeq ($(V),1)
@@ -79,12 +110,6 @@ ifeq ($(ARCH),i686)
                    arch/x86/i686/kernel/idt.asm \
                    arch/x86/i686/kernel/isr.asm \
                    arch/x86/i686/kernel/syscall.asm
-    USER_LINKER_SCRIPT := $(USER_DIR)/arch/x86/i686/linker.ld
-    USER_CFLAGS := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
-                   -mno-sse -mno-sse2 -mno-mmx \
-                   -I$(USER_DIR)/include
-    USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
-                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
     ASM_FLAGS   := -f elf64 -I arch/x86/common/include/
     LD_FLAGS    := -n -T arch/x86/x86_64/linker.ld --gc-sections --no-warn-rwx-segments
@@ -101,147 +126,10 @@ else
                    arch/x86/x86_64/kernel/idt.asm \
                    arch/x86/x86_64/kernel/isr.asm \
                    arch/x86/x86_64/kernel/syscall.asm
-    USER_LINKER_SCRIPT := $(USER_DIR)/arch/x86/x86_64/linker.ld
-    USER_CFLAGS := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
-                   -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
-                   -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
-                   -I$(USER_DIR)/include
-    USER_LDFLAGS := -T $(USER_LINKER_SCRIPT) \
-                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 endif
-
-SMP             ?= 2
 
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS        := $(ASM_OBJS)
-
-USER_CRT_SRC    := $(USER_DIR)/arch/x86/$(ARCH)/crt0.asm
-USER_CRT_OBJ    := $(OBJ_DIR)/$(USER_CRT_SRC).o
-
-USER_LIBC_A     := $(BUILD_DIR)/lib/libc.a
-USER_LIB_SRCS   := $(shell find $(USER_DIR)/lib -type f -name "*.c")
-USER_LIB_OBJS   := $(patsubst $(USER_DIR)/lib/%.c,$(OBJ_DIR)/$(USER_DIR)/lib/%.o,$(USER_LIB_SRCS))
-
-USER_KCC_SRCS   := $(shell find $(USER_DIR)/bin/kcc -type f -name "*.c")
-USER_KCC_OBJS   := $(patsubst $(USER_DIR)/bin/kcc/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/kcc/%.o,$(USER_KCC_SRCS))
-
-SYSINFO_ELF     := $(BIN_DIR)/sysinfo.elf
-SYSINFO_SRCS    := $(shell find $(USER_DIR)/bin/sysinfo -type f -name "*.c")
-SYSINFO_OBJS    := $(patsubst $(USER_DIR)/bin/sysinfo/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/sysinfo/%.o,$(SYSINFO_SRCS))
-
-TEST_ABI_ELF    := $(BIN_DIR)/test_abi.elf
-TEST_ABI_SRCS   := $(shell find $(USER_DIR)/bin/test_abi -type f -name "*.c")
-TEST_ABI_OBJS   := $(patsubst $(USER_DIR)/bin/test_abi/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/test_abi/%.o,$(TEST_ABI_SRCS))
-
-FUZZ_ABI_ELF    := $(BIN_DIR)/fuzz_abi.elf
-FUZZ_ABI_SRCS   := $(shell find $(USER_DIR)/bin/fuzz_abi -type f -name "*.c" 2>/dev/null)
-FUZZ_ABI_OBJS   := $(patsubst $(USER_DIR)/bin/fuzz_abi/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/fuzz_abi/%.o,$(FUZZ_ABI_SRCS))
-
-TEST_THREADS_ELF := $(BIN_DIR)/test_threads.elf
-TEST_THREADS_SRCS := $(shell find $(USER_DIR)/bin/test_threads -type f -name "*.c" 2>/dev/null)
-TEST_THREADS_OBJS := $(patsubst $(USER_DIR)/bin/test_threads/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/test_threads/%.o,$(TEST_THREADS_SRCS))
-
-INIT_ELF        := $(BIN_DIR)/init.elf
-INIT_SRCS       := $(shell find $(USER_DIR)/bin/init -type f -name "*.c" 2>/dev/null)
-INIT_OBJS       := $(patsubst $(USER_DIR)/bin/init/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/init/%.o,$(INIT_SRCS))
-
-SH_ELF          := $(BIN_DIR)/sh.elf
-SH_SRCS         := $(shell find $(USER_DIR)/bin/sh -type f -name "*.c" 2>/dev/null)
-SH_OBJS         := $(patsubst $(USER_DIR)/bin/sh/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/sh/%.o,$(SH_SRCS))
-
-CAT_ELF         := $(BIN_DIR)/cat.elf
-CAT_SRCS        := $(shell find $(USER_DIR)/bin/cat -type f -name "*.c" 2>/dev/null)
-CAT_OBJS        := $(patsubst $(USER_DIR)/bin/cat/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/cat/%.o,$(CAT_SRCS))
-
-LS_ELF          := $(BIN_DIR)/ls.elf
-LS_SRCS         := $(shell find $(USER_DIR)/bin/ls -type f -name "*.c" 2>/dev/null)
-LS_OBJS         := $(patsubst $(USER_DIR)/bin/ls/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ls/%.o,$(LS_SRCS))
-
-FETCH_ELF       := $(BIN_DIR)/fetch.elf
-FETCH_SRCS      := $(shell find $(USER_DIR)/bin/fetch -type f -name "*.c" 2>/dev/null)
-FETCH_OBJS      := $(patsubst $(USER_DIR)/bin/fetch/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/fetch/%.o,$(FETCH_SRCS))
-
-PS_ELF          := $(BIN_DIR)/ps.elf
-PS_SRCS         := $(shell find $(USER_DIR)/bin/ps -type f -name "*.c" 2>/dev/null)
-PS_OBJS         := $(patsubst $(USER_DIR)/bin/ps/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ps/%.o,$(PS_SRCS))
-
-KILL_ELF        := $(BIN_DIR)/kill.elf
-KILL_SRCS       := $(shell find $(USER_DIR)/bin/kill -type f -name "*.c" 2>/dev/null)
-KILL_OBJS       := $(patsubst $(USER_DIR)/bin/kill/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/kill/%.o,$(KILL_SRCS))
-
-HOSTNAME_ELF    := $(BIN_DIR)/hostname.elf
-HOSTNAME_SRCS   := $(shell find $(USER_DIR)/bin/hostname -type f -name "*.c" 2>/dev/null)
-HOSTNAME_OBJS   := $(patsubst $(USER_DIR)/bin/hostname/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/hostname/%.o,$(HOSTNAME_SRCS))
-
-CLEAR_ELF       := $(BIN_DIR)/clear.elf
-CLEAR_SRCS      := $(shell find $(USER_DIR)/bin/clear -type f -name "*.c" 2>/dev/null)
-CLEAR_OBJS      := $(patsubst $(USER_DIR)/bin/clear/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/clear/%.o,$(CLEAR_SRCS))
-
-DMESG_ELF       := $(BIN_DIR)/dmesg.elf
-DMESG_SRCS      := $(shell find $(USER_DIR)/bin/dmesg -type f -name "*.c" 2>/dev/null)
-DMESG_OBJS      := $(patsubst $(USER_DIR)/bin/dmesg/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/dmesg/%.o,$(DMESG_SRCS))
-
-DF_ELF          := $(BIN_DIR)/df.elf
-DF_SRCS         := $(shell find $(USER_DIR)/bin/df -type f -name "*.c" 2>/dev/null)
-DF_OBJS         := $(patsubst $(USER_DIR)/bin/df/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/df/%.o,$(DF_SRCS))
-
-MKDIR_ELF       := $(BIN_DIR)/mkdir.elf
-MKDIR_SRCS      := $(shell find $(USER_DIR)/bin/mkdir -type f -name "*.c" 2>/dev/null)
-MKDIR_OBJS      := $(patsubst $(USER_DIR)/bin/mkdir/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/mkdir/%.o,$(MKDIR_SRCS))
-
-TOUCH_ELF       := $(BIN_DIR)/touch.elf
-TOUCH_SRCS      := $(shell find $(USER_DIR)/bin/touch -type f -name "*.c" 2>/dev/null)
-TOUCH_OBJS      := $(patsubst $(USER_DIR)/bin/touch/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/touch/%.o,$(TOUCH_SRCS))
-
-RM_ELF          := $(BIN_DIR)/rm.elf
-RM_SRCS         := $(shell find $(USER_DIR)/bin/rm -type f -name "*.c" 2>/dev/null)
-RM_OBJS         := $(patsubst $(USER_DIR)/bin/rm/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/rm/%.o,$(RM_SRCS))
-
-PING_ELF        := $(BIN_DIR)/ping.elf
-PING_SRCS       := $(shell find $(USER_DIR)/bin/ping -type f -name "*.c" 2>/dev/null)
-PING_OBJS       := $(patsubst $(USER_DIR)/bin/ping/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ping/%.o,$(PING_SRCS))
-
-IFCONFIG_ELF    := $(BIN_DIR)/ifconfig.elf
-IFCONFIG_SRCS   := $(shell find $(USER_DIR)/bin/ifconfig -type f -name "*.c" 2>/dev/null)
-IFCONFIG_OBJS   := $(patsubst $(USER_DIR)/bin/ifconfig/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ifconfig/%.o,$(IFCONFIG_SRCS))
-
-UNAME_ELF       := $(BIN_DIR)/uname.elf
-UNAME_SRCS      := $(shell find $(USER_DIR)/bin/uname -type f -name "*.c" 2>/dev/null)
-UNAME_OBJS      := $(patsubst $(USER_DIR)/bin/uname/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/uname/%.o,$(UNAME_SRCS))
-
-ROUTE_ELF       := $(BIN_DIR)/route.elf
-ROUTE_SRCS      := $(shell find $(USER_DIR)/bin/route -type f -name "*.c" 2>/dev/null)
-ROUTE_OBJS      := $(patsubst $(USER_DIR)/bin/route/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/route/%.o,$(ROUTE_SRCS))
-
-ARP_ELF         := $(BIN_DIR)/arp.elf
-ARP_SRCS        := $(shell find $(USER_DIR)/bin/arp -type f -name "*.c" 2>/dev/null)
-ARP_OBJS        := $(patsubst $(USER_DIR)/bin/arp/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/arp/%.o,$(ARP_SRCS))
-
-NETSTAT_ELF     := $(BIN_DIR)/netstat.elf
-NETSTAT_SRCS    := $(shell find $(USER_DIR)/bin/netstat -type f -name "*.c" 2>/dev/null)
-NETSTAT_OBJS    := $(patsubst $(USER_DIR)/bin/netstat/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/netstat/%.o,$(NETSTAT_SRCS))
-
-IPTABLES_ELF    := $(BIN_DIR)/iptables.elf
-IPTABLES_SRCS   := $(shell find $(USER_DIR)/bin/iptables -type f -name "*.c" 2>/dev/null)
-IPTABLES_OBJS   := $(patsubst $(USER_DIR)/bin/iptables/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/iptables/%.o,$(IPTABLES_SRCS))
-
-WHOAMI_ELF      := $(BIN_DIR)/whoami.elf
-WHOAMI_SRCS     := $(shell find $(USER_DIR)/bin/whoami -type f -name "*.c" 2>/dev/null)
-WHOAMI_OBJS     := $(patsubst $(USER_DIR)/bin/whoami/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/whoami/%.o,$(WHOAMI_SRCS))
-
-ID_ELF          := $(BIN_DIR)/id.elf
-ID_SRCS         := $(shell find $(USER_DIR)/bin/id -type f -name "*.c" 2>/dev/null)
-ID_OBJS         := $(patsubst $(USER_DIR)/bin/id/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/id/%.o,$(ID_SRCS))
-
-SU_ELF          := $(BIN_DIR)/su.elf
-SU_SRCS         := $(shell find $(USER_DIR)/bin/su -type f -name "*.c" 2>/dev/null)
-SU_OBJS         := $(patsubst $(USER_DIR)/bin/su/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/su/%.o,$(SU_SRCS))
-
-LN_ELF          := $(BIN_DIR)/ln.elf
-LN_SRCS         := $(shell find $(USER_DIR)/bin/ln -type f -name "*.c" 2>/dev/null)
-LN_OBJS         := $(patsubst $(USER_DIR)/bin/ln/%.c,$(OBJ_DIR)/$(USER_DIR)/bin/ln/%.o,$(LN_SRCS))
-
-USER_ELFS       := $(USER_ELF) $(SYSINFO_ELF) $(TEST_ABI_ELF) $(FUZZ_ABI_ELF) $(TEST_THREADS_ELF) $(INIT_ELF) $(SH_ELF) $(CAT_ELF) $(LS_ELF) $(FETCH_ELF) $(PS_ELF) $(KILL_ELF) $(HOSTNAME_ELF) $(CLEAR_ELF) $(DMESG_ELF) $(DF_ELF) $(MKDIR_ELF) $(TOUCH_ELF) $(RM_ELF) $(PING_ELF) $(IFCONFIG_ELF) $(UNAME_ELF) $(ROUTE_ELF) $(ARP_ELF) $(NETSTAT_ELF) $(IPTABLES_ELF) $(WHOAMI_ELF) $(ID_ELF) $(SU_ELF) $(LN_ELF)
 
 # QEMU hardware & emulation flags
 ifeq ($(USERLAND),0)
@@ -290,9 +178,9 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
                    shutdown reboot
 
 # Phony targets declaration
-.PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean rust kernel kernel-iso iso dirs \
-        format lint user disk initrd help info check size objdump qemu-net test test-all test-unit fs-root \
-        preflight preflight-qemu preflight-format preflight-lint
+.PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
+        format lint user libc disk initrd help info check size objdump qemu-net test test-all test-unit fs-root \
+        preflight preflight-qemu preflight-format preflight-lint defconfig full_defconfig pure_defconfig kernel_defconfig headers_install
 
 .DEFAULT_GOAL   := all
 
@@ -424,7 +312,15 @@ disk: preflight $(DISK_IMG) ## Create and populate FAT16 hard disk image
 
 initrd: preflight $(INITRD_TAR) ## Build RAM Disk USTAR archive
 
-user: preflight $(USER_ELFS) $(USER_LIBC_A) ## Build user-space C binaries (kcc.elf, sysinfo.elf) and libc.a
+user: preflight ## Build user-space C runtime, standard library and binaries
+	@$(LOG_INFO) "Delegating userland build to $(USER_DIR)/Makefile ($(ARCH))..."
+	$(Q)$(MAKE) -C $(USER_DIR) all ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
+	@$(LOG_DONE) "Userland build complete ($(ARCH))"
+
+libc: preflight ## Build userland freestanding C standard library (libc.a)
+	@$(LOG_INFO) "Delegating libc build to $(USER_DIR)/Makefile ($(ARCH))..."
+	$(Q)$(MAKE) -C $(USER_DIR) libc ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
+	@$(LOG_DONE) "Userland libc build complete ($(ARCH))"
 
 rust: preflight | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
@@ -464,317 +360,31 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
-# Userland freestanding C standard library (libc.a)
-$(OBJ_DIR)/$(USER_DIR)/lib/%.o: $(USER_DIR)/lib/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -c $< -o $@
+# Linux-style configuration generation targets
+defconfig full_defconfig: ## Generate default configuration with userland enabled
+	@if [ -f .example.config ]; then \
+	    cp .example.config .config; \
+	else \
+	    printf "CONFIG_ARCH_$(shell echo $(ARCH) | tr a-z A-Z)=y\nCONFIG_USERLAND=y\nCONFIG_SMP=2\nCONFIG_DISK_SIZE=32\nCONFIG_QEMU_MEM=128M\n" > .config; \
+	fi
+	@$(LOG_DONE) "Generated default configuration (.config) with userland enabled ($(ARCH))"
 
-$(USER_LIBC_A): $(USER_LIB_OBJS) | dirs
-	@$(LOG_INFO) "Archiving freestanding C standard library: libc.a ($(ARCH))..."
-	$(Q)mkdir -p $(dir $@)
-	$(Q)rm -f $@
-	$(Q)ar rcs $@ $(USER_LIB_OBJS)
-	@$(LOG_DONE) "$(USER_LIBC_A) ready"
+pure_defconfig kernel_defconfig: ## Generate pure freestanding Ring 0 configuration without userland
+	@if [ -f .example.config ]; then \
+	    sed -e 's/CONFIG_USERLAND=y/CONFIG_USERLAND=n/' .example.config > .config; \
+	else \
+	    printf "CONFIG_ARCH_$(shell echo $(ARCH) | tr a-z A-Z)=y\nCONFIG_USERLAND=n\nCONFIG_SMP=2\nCONFIG_DISK_SIZE=32\nCONFIG_QEMU_MEM=128M\n" > .config; \
+	fi
+	@$(LOG_DONE) "Generated pure Ring 0 kernel configuration (.config) ($(ARCH))"
 
-# Userland C compiler (kcc.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/kcc/%.o: $(USER_DIR)/bin/kcc/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/kcc/include -c $< -o $@
+INSTALL_HDR_PATH ?= include/uapi
 
-$(USER_ELF): $(USER_CRT_OBJ) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: kcc ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(USER_KCC_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(USER_ELF)
-	@$(LOG_DONE) "$(USER_ELF) ready"
-
-# Userland diagnostic tool (sysinfo.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/sysinfo/%.o: $(USER_DIR)/bin/sysinfo/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/sysinfo/include -c $< -o $@
-
-$(SYSINFO_ELF): $(USER_CRT_OBJ) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: sysinfo ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SYSINFO_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SYSINFO_ELF)
-	@$(LOG_DONE) "$(SYSINFO_ELF) ready"
-
-# Userland ABI verification & fault injection test tool (test_abi.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/test_abi/%.o: $(USER_DIR)/bin/test_abi/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/test_abi/include -c $< -o $@
-
-$(TEST_ABI_ELF): $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: test_abi ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TEST_ABI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TEST_ABI_ELF)
-	@$(LOG_DONE) "$(TEST_ABI_ELF) ready"
-
-# Userland automated fuzzing & chaos test tool (fuzz_abi.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/fuzz_abi/%.o: $(USER_DIR)/bin/fuzz_abi/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/bin/fuzz_abi/include -c $< -o $@
-
-$(FUZZ_ABI_ELF): $(USER_CRT_OBJ) $(FUZZ_ABI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: fuzz_abi ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(FUZZ_ABI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(FUZZ_ABI_ELF)
-	@$(LOG_DONE) "$(FUZZ_ABI_ELF) ready"
-
-# Userland multi-threading test tool (test_threads.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/test_threads/%.o: $(USER_DIR)/bin/test_threads/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(TEST_THREADS_ELF): $(USER_CRT_OBJ) $(TEST_THREADS_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: test_threads ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TEST_THREADS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TEST_THREADS_ELF)
-	@$(LOG_DONE) "$(TEST_THREADS_ELF) ready"
-
-# Userland canonical init system (init.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/init/%.o: $(USER_DIR)/bin/init/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(INIT_ELF): $(USER_CRT_OBJ) $(INIT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: init ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(INIT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(INIT_ELF)
-	@$(LOG_DONE) "$(INIT_ELF) ready"
-
-# Userland canonical standalone shell (sh.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/sh/%.o: $(USER_DIR)/bin/sh/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(SH_ELF): $(USER_CRT_OBJ) $(SH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: sh ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SH_ELF)
-	@$(LOG_DONE) "$(SH_ELF) ready"
-
-# Userland canonical file concatenation utility (cat.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/cat/%.o: $(USER_DIR)/bin/cat/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(CAT_ELF): $(USER_CRT_OBJ) $(CAT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: cat ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(CAT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(CAT_ELF)
-	@$(LOG_DONE) "$(CAT_ELF) ready"
-
-# Userland canonical directory listing utility (ls.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/ls/%.o: $(USER_DIR)/bin/ls/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(LS_ELF): $(USER_CRT_OBJ) $(LS_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: ls ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(LS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(LS_ELF)
-	@$(LOG_DONE) "$(LS_ELF) ready"
-
-# Userland canonical HTTP fetch utility (fetch.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/fetch/%.o: $(USER_DIR)/bin/fetch/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(FETCH_ELF): $(USER_CRT_OBJ) $(FETCH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: fetch ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(FETCH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(FETCH_ELF)
-	@$(LOG_DONE) "$(FETCH_ELF) ready"
-
-# Userland process status utility (ps.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/ps/%.o: $(USER_DIR)/bin/ps/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(PS_ELF): $(USER_CRT_OBJ) $(PS_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: ps ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(PS_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(PS_ELF)
-	@$(LOG_DONE) "$(PS_ELF) ready"
-
-# Userland process signal utility (kill.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/kill/%.o: $(USER_DIR)/bin/kill/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(KILL_ELF): $(USER_CRT_OBJ) $(KILL_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: kill ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(KILL_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(KILL_ELF)
-	@$(LOG_DONE) "$(KILL_ELF) ready"
-
-# Userland system hostname utility (hostname.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/hostname/%.o: $(USER_DIR)/bin/hostname/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(HOSTNAME_ELF): $(USER_CRT_OBJ) $(HOSTNAME_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: hostname ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(HOSTNAME_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(HOSTNAME_ELF)
-	@$(LOG_DONE) "$(HOSTNAME_ELF) ready"
-
-# Userland terminal clear utility (clear.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/clear/%.o: $(USER_DIR)/bin/clear/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(CLEAR_ELF): $(USER_CRT_OBJ) $(CLEAR_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: clear ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(CLEAR_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(CLEAR_ELF)
-	@$(LOG_DONE) "$(CLEAR_ELF) ready"
-
-# Userland kernel log display utility (dmesg.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/dmesg/%.o: $(USER_DIR)/bin/dmesg/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(DMESG_ELF): $(USER_CRT_OBJ) $(DMESG_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: dmesg ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(DMESG_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(DMESG_ELF)
-	@$(LOG_DONE) "$(DMESG_ELF) ready"
-
-# Userland filesystem disk free utility (df.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/df/%.o: $(USER_DIR)/bin/df/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(DF_ELF): $(USER_CRT_OBJ) $(DF_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: df ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(DF_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(DF_ELF)
-	@$(LOG_DONE) "$(DF_ELF) ready"
-
-# Userland directory creation utility (mkdir.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/mkdir/%.o: $(USER_DIR)/bin/mkdir/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(MKDIR_ELF): $(USER_CRT_OBJ) $(MKDIR_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: mkdir ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(MKDIR_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(MKDIR_ELF)
-	@$(LOG_DONE) "$(MKDIR_ELF) ready"
-
-# Userland file timestamp and creation utility (touch.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/touch/%.o: $(USER_DIR)/bin/touch/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(TOUCH_ELF): $(USER_CRT_OBJ) $(TOUCH_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: touch ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(TOUCH_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(TOUCH_ELF)
-	@$(LOG_DONE) "$(TOUCH_ELF) ready"
-
-# Userland file and directory removal utility (rm.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/rm/%.o: $(USER_DIR)/bin/rm/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(RM_ELF): $(USER_CRT_OBJ) $(RM_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: rm ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(RM_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(RM_ELF)
-	@$(LOG_DONE) "$(RM_ELF) ready"
-
-# Userland network ping utility (ping.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/ping/%.o: $(USER_DIR)/bin/ping/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(PING_ELF): $(USER_CRT_OBJ) $(PING_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: ping ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(PING_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(PING_ELF)
-	@$(LOG_DONE) "$(PING_ELF) ready"
-
-# Userland network interface config utility (ifconfig.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/ifconfig/%.o: $(USER_DIR)/bin/ifconfig/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(IFCONFIG_ELF): $(USER_CRT_OBJ) $(IFCONFIG_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: ifconfig ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(IFCONFIG_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(IFCONFIG_ELF)
-	@$(LOG_DONE) "$(IFCONFIG_ELF) ready"
-
-# Userland system information utility (uname.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/uname/%.o: $(USER_DIR)/bin/uname/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(UNAME_ELF): $(USER_CRT_OBJ) $(UNAME_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: uname ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(UNAME_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(UNAME_ELF)
-	@$(LOG_DONE) "$(UNAME_ELF) ready"
-
-# Userland network routing table utility (route.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/route/%.o: $(USER_DIR)/bin/route/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(ROUTE_ELF): $(USER_CRT_OBJ) $(ROUTE_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: route ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(ROUTE_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(ROUTE_ELF)
-	@$(LOG_DONE) "$(ROUTE_ELF) ready"
-
-# Userland address resolution protocol utility (arp.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/arp/%.o: $(USER_DIR)/bin/arp/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(ARP_ELF): $(USER_CRT_OBJ) $(ARP_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: arp ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(ARP_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(ARP_ELF)
-	@$(LOG_DONE) "$(ARP_ELF) ready"
-
-# Userland network statistics utility (netstat.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/netstat/%.o: $(USER_DIR)/bin/netstat/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(NETSTAT_ELF): $(USER_CRT_OBJ) $(NETSTAT_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: netstat ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(NETSTAT_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(NETSTAT_ELF)
-	@$(LOG_DONE) "$(NETSTAT_ELF) ready"
-
-# Userland Netfilter firewall utility (iptables.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/iptables/%.o: $(USER_DIR)/bin/iptables/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(IPTABLES_ELF): $(USER_CRT_OBJ) $(IPTABLES_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: iptables ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(IPTABLES_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(IPTABLES_ELF)
-	@$(LOG_DONE) "$(IPTABLES_ELF) ready"
-
-# Userland current username utility (whoami.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/whoami/%.o: $(USER_DIR)/bin/whoami/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(WHOAMI_ELF): $(USER_CRT_OBJ) $(WHOAMI_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: whoami ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(WHOAMI_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(WHOAMI_ELF)
-	@$(LOG_DONE) "$(WHOAMI_ELF) ready"
-
-# Userland identity utility (id.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/id/%.o: $(USER_DIR)/bin/id/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(ID_ELF): $(USER_CRT_OBJ) $(ID_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: id ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(ID_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(ID_ELF)
-	@$(LOG_DONE) "$(ID_ELF) ready"
-
-# Userland switch user utility (su.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/su/%.o: $(USER_DIR)/bin/su/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(SU_ELF): $(USER_CRT_OBJ) $(SU_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: su ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(SU_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(SU_ELF)
-	@$(LOG_DONE) "$(SU_ELF) ready"
-
-# Userland link utility (ln.elf)
-$(OBJ_DIR)/$(USER_DIR)/bin/ln/%.o: $(USER_DIR)/bin/ln/%.c | dirs
-	$(Q)mkdir -p $(dir $@)
-	$(Q)$(CC) $(USER_CFLAGS) -I$(USER_DIR)/include -c $< -o $@
-
-$(LN_ELF): $(USER_CRT_OBJ) $(LN_OBJS) $(USER_LIBC_A) $(USER_LINKER_SCRIPT) | dirs
-	@$(LOG_INFO) "Linking user space program: ln ($(ARCH))..."
-	$(Q)$(CC) $(USER_CFLAGS) $(USER_CRT_OBJ) $(LN_OBJS) $(USER_LIBC_A) $(USER_LDFLAGS) -o $(LN_ELF)
-	@$(LOG_DONE) "$(LN_ELF) ready"
+headers_install: ## Export Ring 3 userland ABI headers to $(INSTALL_HDR_PATH)
+	@$(LOG_INFO) "Exporting Ring 3 UAPI headers to $(INSTALL_HDR_PATH)..."
+	$(Q)mkdir -p $(INSTALL_HDR_PATH)/sys
+	$(Q)cp -u $(USER_DIR)/include/sys/*.h $(INSTALL_HDR_PATH)/sys/ 2>/dev/null || cp $(USER_DIR)/include/sys/*.h $(INSTALL_HDR_PATH)/sys/
+	$(Q)cp -u $(USER_DIR)/include/*.h $(INSTALL_HDR_PATH)/ 2>/dev/null || cp $(USER_DIR)/include/*.h $(INSTALL_HDR_PATH)/
+	@$(LOG_DONE) "Ring 3 UAPI headers successfully exported to $(INSTALL_HDR_PATH)"
 
 # Canonical root filesystem & disk image rules
 ifeq ($(USERLAND),0)
@@ -796,8 +406,8 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Minimal root filesystem ready ($(ARCH))"
 else
-$(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
-	@$(LOG_INFO) "Populating canonical root filesystem ($(ARCH))..."
+$(FS_ROOT_STAMP): | dirs
+	@$(LOG_INFO) "Populating canonical root filesystem via userland installation ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT) $(STAGING_DIR)/.fs-root-stamp-*
 	$(Q)mkdir -p $(FS_ROOT)/bin
 	$(Q)mkdir -p $(FS_ROOT)/dev
@@ -808,65 +418,7 @@ $(FS_ROOT_STAMP): $(USER_ELFS) $(USER_LIBC_A) | dirs
 	$(Q)mkdir -p $(FS_ROOT)/lib
 	$(Q)mkdir -p $(FS_ROOT)/tmp
 	$(Q)mkdir -p $(FS_ROOT)/var/log
-	$(Q)cp $(USER_ELF) $(FS_ROOT)/bin/kcc.elf
-	$(Q)cp $(SYSINFO_ELF) $(FS_ROOT)/bin/sysinfo.elf
-	$(Q)cp $(TEST_ABI_ELF) $(FS_ROOT)/bin/test_abi.elf
-	$(Q)cp $(FUZZ_ABI_ELF) $(FS_ROOT)/bin/fuzz_abi.elf
-	$(Q)cp $(TEST_THREADS_ELF) $(FS_ROOT)/bin/test_threads.elf
-	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init.elf
-	$(Q)cp $(INIT_ELF) $(FS_ROOT)/bin/init
-	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh.elf
-	$(Q)cp $(SH_ELF) $(FS_ROOT)/bin/sh
-	$(Q)cp $(CAT_ELF) $(FS_ROOT)/bin/cat.elf
-	$(Q)cp $(CAT_ELF) $(FS_ROOT)/bin/cat
-	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls.elf
-	$(Q)cp $(LS_ELF) $(FS_ROOT)/bin/ls
-	$(Q)cp $(FETCH_ELF) $(FS_ROOT)/bin/fetch.elf
-	$(Q)cp $(FETCH_ELF) $(FS_ROOT)/bin/fetch
-	$(Q)cp $(PS_ELF) $(FS_ROOT)/bin/ps.elf
-	$(Q)cp $(PS_ELF) $(FS_ROOT)/bin/ps
-	$(Q)cp $(KILL_ELF) $(FS_ROOT)/bin/kill.elf
-	$(Q)cp $(KILL_ELF) $(FS_ROOT)/bin/kill
-	$(Q)cp $(HOSTNAME_ELF) $(FS_ROOT)/bin/hostname.elf
-	$(Q)cp $(HOSTNAME_ELF) $(FS_ROOT)/bin/hostname
-	$(Q)cp $(CLEAR_ELF) $(FS_ROOT)/bin/clear.elf
-	$(Q)cp $(CLEAR_ELF) $(FS_ROOT)/bin/clear
-	$(Q)cp $(DMESG_ELF) $(FS_ROOT)/bin/dmesg.elf
-	$(Q)cp $(DMESG_ELF) $(FS_ROOT)/bin/dmesg
-	$(Q)cp $(DF_ELF) $(FS_ROOT)/bin/df.elf
-	$(Q)cp $(DF_ELF) $(FS_ROOT)/bin/df
-	$(Q)cp $(MKDIR_ELF) $(FS_ROOT)/bin/mkdir.elf
-	$(Q)cp $(MKDIR_ELF) $(FS_ROOT)/bin/mkdir
-	$(Q)cp $(TOUCH_ELF) $(FS_ROOT)/bin/touch.elf
-	$(Q)cp $(TOUCH_ELF) $(FS_ROOT)/bin/touch
-	$(Q)cp $(RM_ELF) $(FS_ROOT)/bin/rm.elf
-	$(Q)cp $(RM_ELF) $(FS_ROOT)/bin/rm
-	$(Q)cp $(PING_ELF) $(FS_ROOT)/bin/ping.elf
-	$(Q)cp $(PING_ELF) $(FS_ROOT)/bin/ping
-	$(Q)cp $(IFCONFIG_ELF) $(FS_ROOT)/bin/ifconfig.elf
-	$(Q)cp $(IFCONFIG_ELF) $(FS_ROOT)/bin/ifconfig
-	$(Q)cp $(UNAME_ELF) $(FS_ROOT)/bin/uname.elf
-	$(Q)cp $(UNAME_ELF) $(FS_ROOT)/bin/uname
-	$(Q)cp $(ROUTE_ELF) $(FS_ROOT)/bin/route.elf
-	$(Q)cp $(ROUTE_ELF) $(FS_ROOT)/bin/route
-	$(Q)cp $(ARP_ELF) $(FS_ROOT)/bin/arp.elf
-	$(Q)cp $(ARP_ELF) $(FS_ROOT)/bin/arp
-	$(Q)cp $(NETSTAT_ELF) $(FS_ROOT)/bin/netstat.elf
-	$(Q)cp $(NETSTAT_ELF) $(FS_ROOT)/bin/netstat
-	$(Q)cp $(IPTABLES_ELF) $(FS_ROOT)/bin/iptables.elf
-	$(Q)cp $(IPTABLES_ELF) $(FS_ROOT)/bin/iptables
-	$(Q)cp $(WHOAMI_ELF) $(FS_ROOT)/bin/whoami.elf
-	$(Q)cp $(WHOAMI_ELF) $(FS_ROOT)/bin/whoami
-	$(Q)cp $(ID_ELF) $(FS_ROOT)/bin/id.elf
-	$(Q)cp $(ID_ELF) $(FS_ROOT)/bin/id
-	$(Q)cp $(SU_ELF) $(FS_ROOT)/bin/su.elf
-	$(Q)cp $(SU_ELF) $(FS_ROOT)/bin/su
-	$(Q)cp $(LN_ELF) $(FS_ROOT)/bin/ln.elf
-	$(Q)cp $(LN_ELF) $(FS_ROOT)/bin/ln
-	$(Q)cp $(USER_DIR)/etc/init.sh $(FS_ROOT)/etc/init.sh
-	$(Q)cp $(USER_LIBC_A) $(FS_ROOT)/lib/libc.a
-	$(Q)cp -r $(USER_DIR)/include/* $(FS_ROOT)/include/
-	$(Q)cp $(USER_DIR)/bin/kcc/include/common.h $(FS_ROOT)/include/common.h
+	$(Q)$(MAKE) -C $(USER_DIR) install DESTDIR=$(CURDIR)/$(FS_ROOT) ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=1\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/tmp/main.c
@@ -945,9 +497,15 @@ clean: ## Remove build directory and compiled artifacts
 	@$(LOG_INFO) "Cleaning build artifacts..."
 	$(Q)rm -rf $(BUILD_ROOT)
 	$(Q)$(CARGO) clean
+	$(Q)$(MAKE) -C $(USER_DIR) clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland
 	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
+
+mrproper distclean: clean ## Restore repository to pristine state including removing .config
+	$(Q)rm -f .config
+	$(Q)rm -rf include/uapi
+	@$(LOG_DONE) "Repository cleaned to pristine state (.config removed)"
 
 format: preflight-format ## Format Rust and C source code
 	@$(LOG_INFO) "Formatting Rust code..."
