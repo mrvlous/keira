@@ -93,4 +93,15 @@ pub mod test {
         let ret = syscall_dispatcher(93, 0, 0, 10, 0, 0, 0);
         assert_eq!(ret, errno_to_ret(EFAULT));
     }
+
+    #[test]
+    fn test_mount_and_umount_dispatch() {
+        // Calling mount with null pointer should return EINVAL
+        let ret = syscall_dispatcher(94, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+
+        // Calling umount with null pointer should return EINVAL
+        let ret = syscall_dispatcher(95, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+    }
 }
