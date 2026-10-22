@@ -18,7 +18,7 @@ use keira_task::types::{FileDescriptor, MAX_FDS};
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
     EAGAIN, EBADF, EBUSY, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENAMETOOLONG, ENODEV,
-    ENOENT, ENOMEM, ENOSPC, ENOTDIR, ENOTEMPTY, EPERM, ESRCH,
+    ENOENT, ENOMEM, ENOSPC, ENOTDIR, ENOTEMPTY, EPERM, EPIPE, ESRCH,
 };
 
 /// Syscall 6: Open file or device node with POSIX flags.
@@ -153,14 +153,24 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 if t.fds[fd].is_pipe && !t.fds[fd].pipe_write {
                     let mut kernel_buf = [0u8; 1024];
                     let to_read = (len as usize).min(kernel_buf.len());
-                    let bytes = keira_ipc::pipe::read_pipe(&mut kernel_buf[..to_read]);
-                    if bytes > 0 {
-                        if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
-                            return bytes as u64;
+                    let pipe_id = t.fds[fd].pipe_id;
+                    let res = if pipe_id != 0 {
+                        keira_ipc::pipe::read_pipe_channel(pipe_id, &mut kernel_buf[..to_read])
+                    } else {
+                        Ok(keira_ipc::pipe::read_pipe(&mut kernel_buf[..to_read]))
+                    };
+                    match res {
+                        Ok(bytes) => {
+                            if bytes > 0 {
+                                if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                    return bytes as u64;
+                                }
+                                return errno_to_ret(EFAULT);
+                            }
+                            return 0;
                         }
-                        return errno_to_ret(EFAULT);
+                        Err(code) => return code as u64,
                     }
-                    return 0;
                 }
 
                 if t.fds[fd].is_socket {
@@ -192,6 +202,39 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 if let Some(node_name) = path_str.strip_prefix("/dev/") {
                     let mut kernel_buf = [0u8; 512];
                     let to_read = (len as usize).min(kernel_buf.len());
+                    if node_name == "tty" {
+                        #[cfg(target_os = "none")]
+                        loop {
+                            if let Ok(bytes) =
+                                keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
+                            {
+                                if bytes > 0 {
+                                    if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                        return bytes as u64;
+                                    }
+                                    return errno_to_ret(EFAULT);
+                                }
+                                if t.fds[fd].nonblocking {
+                                    return errno_to_ret(EAGAIN);
+                                }
+                            } else {
+                                return errno_to_ret(EIO);
+                            }
+                            core::arch::asm!("sti; hlt");
+                        }
+                        #[cfg(not(target_os = "none"))]
+                        {
+                            if let Ok(bytes) =
+                                keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
+                            {
+                                if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                                    return bytes as u64;
+                                }
+                            }
+                            return 0;
+                        }
+                    }
+
                     if let Ok(bytes) =
                         keira_fs::dev::read_dev_node(node_name, &mut kernel_buf[..to_read])
                     {
@@ -295,8 +338,23 @@ pub fn handle_write(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                     let mut kernel_buf = [0u8; 1024];
                     let to_write = (len as usize).min(kernel_buf.len());
                     if copy_from_user(&mut kernel_buf[..to_write], buf_ptr).is_ok() {
-                        let written = keira_ipc::pipe::write_pipe(&kernel_buf[..to_write]);
-                        return written as u64;
+                        let pipe_id = t.fds[fd].pipe_id;
+                        let res = if pipe_id != 0 {
+                            keira_ipc::pipe::write_pipe_channel(pipe_id, &kernel_buf[..to_write])
+                        } else {
+                            Ok(keira_ipc::pipe::write_pipe(&kernel_buf[..to_write]))
+                        };
+                        match res {
+                            Ok(written) => return written as u64,
+                            Err(code) => {
+                                if code == -32 {
+                                    let _ =
+                                        keira_task::scheduler::send_signal(CURRENT_TASK_IDX, 13);
+                                    return errno_to_ret(EPIPE);
+                                }
+                                return code as u64;
+                            }
+                        }
                     }
                     return errno_to_ret(EFAULT);
                 }
@@ -415,6 +473,12 @@ pub fn handle_close(arg1: u64) -> u64 {
             if t.fds[fd].is_open {
                 if t.fds[fd].is_socket {
                     let _ = keira_net::socket::close_socket(t.fds[fd].socket_id as u64);
+                } else if t.fds[fd].is_pipe {
+                    if t.fds[fd].pipe_write {
+                        keira_ipc::pipe::close_pipe_write(t.fds[fd].pipe_id);
+                    } else {
+                        keira_ipc::pipe::close_pipe_read(t.fds[fd].pipe_id);
+                    }
                 } else if t.fds[fd].write_mode {
                     let path_slice = &t.fds[fd].path[..t.fds[fd].path_len];
                     let other_open = (0..MAX_FDS).any(|i| {
@@ -636,11 +700,26 @@ pub fn handle_dup(arg1: u64) -> u64 {
         let task = &mut TASKS[CURRENT_TASK_IDX];
         if let Some(t) = task {
             if !t.fds[oldfd].is_open {
-                return errno_to_ret(EBADF);
+                if oldfd < 3 {
+                    let mut desc = FileDescriptor::new();
+                    desc.is_open = true;
+                    desc.write_mode = oldfd != 0;
+                    desc.path[..8].copy_from_slice(b"/dev/tty");
+                    desc.path_len = 8;
+                    t.fds[oldfd] = desc;
+                } else {
+                    return errno_to_ret(EBADF);
+                }
             }
             for i in 0..MAX_FDS {
                 if !t.fds[i].is_open {
                     t.fds[i] = t.fds[oldfd];
+                    if t.fds[oldfd].is_pipe {
+                        keira_ipc::pipe::dup_pipe_endpoint(
+                            t.fds[oldfd].pipe_id,
+                            t.fds[oldfd].pipe_write,
+                        );
+                    }
                     return i as u64;
                 }
             }
@@ -662,7 +741,16 @@ pub fn handle_dup2(arg1: u64, arg2: u64) -> u64 {
         let task = &mut TASKS[CURRENT_TASK_IDX];
         if let Some(t) = task {
             if !t.fds[oldfd].is_open {
-                return errno_to_ret(EBADF);
+                if oldfd < 3 {
+                    let mut desc = FileDescriptor::new();
+                    desc.is_open = true;
+                    desc.write_mode = oldfd != 0;
+                    desc.path[..8].copy_from_slice(b"/dev/tty");
+                    desc.path_len = 8;
+                    t.fds[oldfd] = desc;
+                } else {
+                    return errno_to_ret(EBADF);
+                }
             }
             if oldfd == newfd {
                 return newfd as u64;
@@ -670,6 +758,12 @@ pub fn handle_dup2(arg1: u64, arg2: u64) -> u64 {
             if t.fds[newfd].is_open {
                 if t.fds[newfd].is_socket {
                     let _ = keira_net::socket::close_socket(t.fds[newfd].socket_id as u64);
+                } else if t.fds[newfd].is_pipe {
+                    if t.fds[newfd].pipe_write {
+                        keira_ipc::pipe::close_pipe_write(t.fds[newfd].pipe_id);
+                    } else {
+                        keira_ipc::pipe::close_pipe_read(t.fds[newfd].pipe_id);
+                    }
                 } else if t.fds[newfd].write_mode {
                     let path_slice = &t.fds[newfd].path[..t.fds[newfd].path_len];
                     let other_open = (0..MAX_FDS).any(|i| {
@@ -688,6 +782,9 @@ pub fn handle_dup2(arg1: u64, arg2: u64) -> u64 {
                 t.fds[newfd] = FileDescriptor::new();
             }
             t.fds[newfd] = t.fds[oldfd];
+            if t.fds[oldfd].is_pipe {
+                keira_ipc::pipe::dup_pipe_endpoint(t.fds[oldfd].pipe_id, t.fds[oldfd].pipe_write);
+            }
             newfd as u64
         } else {
             errno_to_ret(EBADF)
