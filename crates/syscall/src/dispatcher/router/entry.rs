@@ -140,6 +140,7 @@ fn syscall_dispatcher_inner(
         93 => handle_readlink(arg1, arg2, arg3),
         94 => handle_mount(arg1, arg2, arg3, arg4, arg5),
         95 => handle_umount(arg1, arg2),
+        96 => handle_pipe2(arg1, arg2),
         _ => errno_to_ret(ENOSYS),
     }
 }

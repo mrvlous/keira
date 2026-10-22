@@ -104,4 +104,12 @@ pub mod test {
         let ret = syscall_dispatcher(95, 0, 0, 0, 0, 0, 0);
         assert_eq!(ret, errno_to_ret(EINVAL));
     }
+
+    #[test]
+    fn test_pipe2_dispatch() {
+        let ret = syscall_dispatcher(96, 0, 0, 0, 0, 0, 0);
+        // Valid pipe allocation returns packed (rd | (wr << 32))
+        assert_ne!(ret, errno_to_ret(EINVAL));
+        assert_ne!(ret, errno_to_ret(ENOSYS));
+    }
 }

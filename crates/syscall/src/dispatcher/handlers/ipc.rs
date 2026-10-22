@@ -18,7 +18,18 @@ use crate::user_copy::{
 
 /// Syscall 23: Create an anonymous unidirectional data channel (pipe).
 pub fn handle_pipe(arg1: u64) -> u64 {
+    handle_pipe2(arg1, 0)
+}
+
+/// Syscall 96: Create an anonymous pipe with POSIX flags (O_NONBLOCK, O_CLOEXEC).
+pub fn handle_pipe2(arg1: u64, arg2: u64) -> u64 {
     let pipe_ptr = arg1;
+    let flags = arg2 as u32;
+
+    if (flags & !(keira_ipc::pipe::O_NONBLOCK | keira_ipc::pipe::O_CLOEXEC)) != 0 {
+        return errno_to_ret(EINVAL);
+    }
+
     let mut rd_slot = None;
     let mut wr_slot = None;
 
@@ -37,14 +48,28 @@ pub fn handle_pipe(arg1: u64) -> u64 {
             }
 
             if let (Some(rd), Some(wr)) = (rd_slot, wr_slot) {
-                let _ = keira_ipc::pipe::create_pipe();
-                t.fds[rd] = FileDescriptor::new_pipe(false);
-                t.fds[wr] = FileDescriptor::new_pipe(true);
+                let pipe_id = match keira_ipc::pipe::create_pipe_channel(flags) {
+                    Ok(id) => id,
+                    Err(_) => return errno_to_ret(ENOMEM),
+                };
+
+                let mut rd_desc = FileDescriptor::new_pipe(pipe_id, false);
+                let mut wr_desc = FileDescriptor::new_pipe(pipe_id, true);
+
+                if (flags & keira_ipc::pipe::O_NONBLOCK) != 0 {
+                    rd_desc.nonblocking = true;
+                    wr_desc.nonblocking = true;
+                }
+
+                t.fds[rd] = rd_desc;
+                t.fds[wr] = wr_desc;
 
                 if pipe_ptr != 0 {
                     let fds_to_copy = [rd as i32, wr as i32];
                     let raw_bytes: [u8; 8] = core::mem::transmute(fds_to_copy);
                     if copy_to_user(pipe_ptr, &raw_bytes).is_err() {
+                        keira_ipc::pipe::close_pipe_read(pipe_id);
+                        keira_ipc::pipe::close_pipe_write(pipe_id);
                         t.fds[rd] = FileDescriptor::new();
                         t.fds[wr] = FileDescriptor::new();
                         return errno_to_ret(EFAULT);
