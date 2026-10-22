@@ -42,4 +42,5 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`test_threads.elf`](test_threads.md) | `userland/bin/test_threads/` | Userland multithreading, mutex synchronization and thread join test suite |
 | [`mount.elf`](mount.md) | `userland/bin/mount/` | Filesystem mount point attachment and active mount inspection utility |
 | [`umount.elf`](umount.md) | `userland/bin/umount/` | Filesystem mount point detachment and resource reclamation utility |
+| [`test_pipe.elf`](test_pipe.md) | `userland/bin/test_pipe/` | Anonymous pipe subsystem, multi-channel concurrency and POSIX stream test suite |
 

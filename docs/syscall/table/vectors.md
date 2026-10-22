@@ -40,5 +40,6 @@ Keira implements a POSIX-compliant system call table providing kernel services t
 | `91` | `SYS_munmap`| `int munmap(void *addr, size_t len)` | Unmaps virtual memory pages |
 | `94` | `SYS_mount` | `int mount(const char *src, const char *tgt, const char *type, unsigned long flags, const void *data)` | Attaches filesystem to mount point |
 | `95` | `SYS_umount`| `int umount(const char *target)` | Detaches filesystem from mount point |
+| `96` | `SYS_pipe2` | `int pipe2(int pipefd[2], int flags)` | Allocates anonymous pipe with POSIX flags |
 | `102`| `SYS_socket`| `int socket(int domain, int type, int protocol)` | Allocates BSD socket descriptor |
 
