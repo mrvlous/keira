@@ -106,6 +106,8 @@
 #define SYS_GETEGID 91
 #define SYS_SYMLINK 92
 #define SYS_READLINK 93
+#define SYS_MOUNT 94
+#define SYS_UMOUNT 95
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -156,6 +158,10 @@ int sys_unlink(const char *pathname);
 int sys_mkdir(const char *pathname, mode_t mode);
 int sys_symlink(const char *target, const char *linkpath);
 ssize_t sys_readlink(const char *pathname, char *buf, size_t bufsiz);
+int sys_mount(const char *source, const char *target, const char *filesystemtype,
+              unsigned long mountflags, const void *data);
+int sys_umount(const char *target);
+int sys_umount2(const char *target, int flags);
 long sys_ping(const char *target_ip, int timeout_ms);
 ssize_t sys_http_get(const char *url, void *buf, size_t count);
 
