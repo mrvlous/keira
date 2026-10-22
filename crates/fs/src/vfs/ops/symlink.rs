@@ -83,6 +83,8 @@ pub fn create_symlink(target: &str, linkpath: &str) -> Result<(), &'static str> 
         crate::vfs::types::FilesystemType::Dev => {
             routed_path.is_empty() || crate::dev::char::exists(routed_path) || routed_path == "sda"
         }
+        crate::vfs::types::FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::exists(routed_path),
+        crate::vfs::types::FilesystemType::Ext4 => false,
         crate::vfs::types::FilesystemType::Fat => unsafe {
             if let Ok((dir_cluster, name)) = crate::fat::resolve_path(routed_path) {
                 if name.is_empty() {

@@ -21,6 +21,8 @@ pub fn create_file(path: &str) -> Result<(), &'static str> {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => Err("VFS Error: DevFS nodes are static"),
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::create_file(clean_path),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
         FilesystemType::Fat => unsafe { fat::create_file(clean_path) },
     }
 }
@@ -35,6 +37,8 @@ pub fn remove_entry(path: &str) -> Result<(), &'static str> {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => Err("VFS Error: DevFS nodes cannot be removed"),
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::remove_entry(clean_path),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
         FilesystemType::Fat => unsafe { fat::remove_entry(clean_path) },
     }
 }
@@ -46,6 +50,8 @@ pub fn create_dir(path: &str) -> Result<(), &'static str> {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => Err("VFS Error: DevFS is read-only"),
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::create_dir(clean_path),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
         FilesystemType::Fat => unsafe { fat::create_dir(clean_path) },
     }
 }
@@ -62,6 +68,8 @@ pub fn exists(path: &str) -> bool {
         FilesystemType::Dev => {
             clean_path.is_empty() || crate::dev::char::exists(clean_path) || clean_path == "sda"
         }
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::exists(clean_path),
+        FilesystemType::Ext4 => false,
         FilesystemType::Fat => unsafe {
             if fat::VOLUME.is_none() {
                 return tar::exists(clean_path);
@@ -90,6 +98,8 @@ pub fn is_dir(path: &str) -> bool {
         FilesystemType::Initrd => clean_path.is_empty(),
         FilesystemType::Proc => clean_path.is_empty() || clean_path == "self",
         FilesystemType::Dev => clean_path.is_empty(),
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::is_dir(clean_path),
+        FilesystemType::Ext4 => clean_path.is_empty(),
         FilesystemType::Fat => unsafe {
             if fat::VOLUME.is_none() {
                 return clean_path.is_empty();
@@ -127,6 +137,8 @@ pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
                 fat::get_file_size(clean_path)
             }
         },
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::get_file_size(clean_path),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 file size query not supported"),
         FilesystemType::Proc => Err("VFS Error: ProcFS files have dynamic size"),
         FilesystemType::Dev => Err("VFS Error: DevFS nodes have no size"),
     }
