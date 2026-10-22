@@ -81,3 +81,31 @@ ssize_t sys_readlink(const char *pathname, char *buf, size_t bufsiz) {
     return (ssize_t)syscall3(SYS_READLINK, (uint64_t)(uintptr_t)pathname, (uint64_t)(uintptr_t)buf,
                              (uint64_t)bufsiz);
 }
+
+int sys_mount(const char *source, const char *target, const char *filesystemtype,
+              unsigned long mountflags, const void *data) {
+    return (int)syscall5(SYS_MOUNT, (uint64_t)(uintptr_t)source, (uint64_t)(uintptr_t)target,
+                         (uint64_t)(uintptr_t)filesystemtype, (uint64_t)mountflags,
+                         (uint64_t)(uintptr_t)data);
+}
+
+int sys_umount(const char *target) {
+    return (int)syscall2(SYS_UMOUNT, (uint64_t)(uintptr_t)target, 0);
+}
+
+int sys_umount2(const char *target, int flags) {
+    return (int)syscall2(SYS_UMOUNT, (uint64_t)(uintptr_t)target, (uint64_t)flags);
+}
+
+int mount(const char *source, const char *target, const char *filesystemtype,
+          unsigned long mountflags, const void *data) {
+    return sys_mount(source, target, filesystemtype, mountflags, data);
+}
+
+int umount(const char *target) {
+    return sys_umount(target);
+}
+
+int umount2(const char *target, int flags) {
+    return sys_umount2(target, flags);
+}
