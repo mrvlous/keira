@@ -31,3 +31,5 @@ pub const ENOSYS: i64 = 38;
 pub const ENOTEMPTY: i64 = 39;
 pub const ENAMETOOLONG: i64 = 36;
 pub const ELOOP: i64 = 40;
+pub const EBUSY: i64 = 16;
+pub const ENODEV: i64 = 19;
