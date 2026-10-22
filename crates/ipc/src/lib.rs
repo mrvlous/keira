@@ -46,7 +46,10 @@ pub use mqueue::queue::{
     MAX_MQUEUES, MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE,
 };
 pub use pipe::fifo::{
-    create_pipe, read_pipe, write_pipe, PipeBuffer, PIPE_BUFFER_SIZE, SYSTEM_PIPE,
+    close_pipe_read, close_pipe_write, create_pipe, create_pipe_channel, dup_pipe_endpoint,
+    get_pipe_stats, get_pipe_table, pipe_table_reset, read_pipe, read_pipe_channel, write_pipe,
+    write_pipe_channel, PipeBuffer, PipeChannel, MAX_PIPES, O_CLOEXEC, O_NONBLOCK,
+    PIPE_BUFFER_CAPACITY, PIPE_BUFFER_SIZE, PIPE_TABLE, SYSTEM_PIPE,
 };
 pub use pipe::splice::{sys_splice, sys_vmsplice};
 pub use shm::segment::{
