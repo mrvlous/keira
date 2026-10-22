@@ -405,34 +405,68 @@ static int execute_pipeline(char *cmd_line) {
         return execute_single_command(argc, argv);
     }
 
+    int saved_stdin = dup(STDIN_FILENO);
+    int saved_stdout = dup(STDOUT_FILENO);
+    if (saved_stdin < 0 || saved_stdout < 0) {
+        if (saved_stdin >= 0) {
+            close(saved_stdin);
+        }
+        if (saved_stdout >= 0) {
+            close(saved_stdout);
+        }
+        return 1;
+    }
+
+    int prev_in = -1;
     int pipe_status = 0;
 
     for (int i = 0; i < num_pipes; i++) {
-        char subcmd_buf[SH_MAX_LINE];
-        if (i == 0) {
-            snprintf(subcmd_buf, sizeof(subcmd_buf), "%s > /tmp/.sh_p0", pipes[0]);
-            char *argv[SH_MAX_ARGS];
-            int argc = tokenize_line(subcmd_buf, argv, SH_MAX_ARGS);
-            pipe_status = execute_single_command(argc, argv);
-        } else if (i == num_pipes - 1) {
-            snprintf(subcmd_buf, sizeof(subcmd_buf), "%s < /tmp/.sh_p%d", pipes[i], i - 1);
-            char *argv[SH_MAX_ARGS];
-            int argc = tokenize_line(subcmd_buf, argv, SH_MAX_ARGS);
-            pipe_status = execute_single_command(argc, argv);
+        int pipefd[2] = {-1, -1};
+        if (i < num_pipes - 1) {
+            if (pipe(pipefd) < 0) {
+                pipe_status = 1;
+                break;
+            }
+        }
+
+        if (prev_in != -1) {
+            dup2(prev_in, STDIN_FILENO);
+            close(prev_in);
+            prev_in = -1;
+        }
+
+        if (i < num_pipes - 1) {
+            dup2(pipefd[1], STDOUT_FILENO);
+            close(pipefd[1]);
         } else {
-            snprintf(subcmd_buf, sizeof(subcmd_buf), "%s < /tmp/.sh_p%d > /tmp/.sh_p%d", pipes[i],
-                     i - 1, i);
-            char *argv[SH_MAX_ARGS];
-            int argc = tokenize_line(subcmd_buf, argv, SH_MAX_ARGS);
+            dup2(saved_stdout, STDOUT_FILENO);
+        }
+
+        char *argv[SH_MAX_ARGS];
+        int argc = tokenize_line(pipes[i], argv, SH_MAX_ARGS);
+        if (argc > 0) {
             pipe_status = execute_single_command(argc, argv);
+        }
+
+        if (i < num_pipes - 1) {
+            prev_in = pipefd[0];
+            dup2(saved_stdout, STDOUT_FILENO);
         }
     }
 
-    for (int j = 0; j < num_pipes - 1; j++) {
-        char fname[64];
-        snprintf(fname, sizeof(fname), "/tmp/.sh_p%d", j);
-        unlink(fname);
+    if (prev_in != -1) {
+        close(prev_in);
     }
+
+    if (saved_stdin >= 0) {
+        dup2(saved_stdin, STDIN_FILENO);
+        close(saved_stdin);
+    }
+    if (saved_stdout >= 0) {
+        dup2(saved_stdout, STDOUT_FILENO);
+        close(saved_stdout);
+    }
+
     return pipe_status;
 }
 
