@@ -12,13 +12,13 @@
 use keira_fs::vfs::{create_file, exists, read_file, write_file};
 use keira_io::vga;
 use keira_mem::pmm;
-use keira_task::scheduler::{CURRENT_TASK_IDX, TASKS};
+use keira_task::scheduler::{get_current_uid, CURRENT_TASK_IDX, TASKS};
 use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    EAGAIN, EBADF, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENAMETOOLONG, ENOENT, ENOMEM,
-    ENOSPC, ENOTDIR, ENOTEMPTY, ESRCH,
+    EAGAIN, EBADF, EBUSY, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENAMETOOLONG, ENODEV,
+    ENOENT, ENOMEM, ENOSPC, ENOTDIR, ENOTEMPTY, EPERM, ESRCH,
 };
 
 /// Syscall 6: Open file or device node with POSIX flags.
@@ -800,6 +800,36 @@ pub fn handle_getdents(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 return 0;
             }
 
+            let (_, fs_type) = keira_fs::vfs::route_path(normalized_path);
+            if fs_type == keira_fs::vfs::FilesystemType::Tmpfs {
+                let target_idx = t.fds[fd].offset as usize;
+                if let Some((name_arr, name_len, d_type, ino)) =
+                    keira_fs::vfs::get_tmpfs_entry(target_idx)
+                {
+                    let mut d = Dirent {
+                        d_ino: ino,
+                        d_off: (target_idx + 1) as i64,
+                        d_reclen: core::mem::size_of::<Dirent>() as u16,
+                        d_type,
+                        d_name: [0u8; 256],
+                        _pad: [0u8; 5],
+                    };
+                    let len = name_len.min(255);
+                    d.d_name[..len].copy_from_slice(&name_arr[..len]);
+
+                    let entry_bytes = core::slice::from_raw_parts(
+                        &d as *const Dirent as *const u8,
+                        core::mem::size_of::<Dirent>(),
+                    );
+                    if copy_to_user(buf_ptr, entry_bytes).is_err() {
+                        return errno_to_ret(EFAULT);
+                    }
+                    t.fds[fd].offset += 1;
+                    return core::mem::size_of::<Dirent>() as u64;
+                }
+                return 0;
+            }
+
             let target_cluster = match keira_fs::fat::get_dir_cluster(normalized_path) {
                 Ok(cluster) => cluster,
                 Err(_) => return errno_to_ret(ENOTDIR),
@@ -1124,6 +1154,168 @@ pub fn handle_readlink(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 errno_to_ret(EINVAL)
             } else {
                 errno_to_ret(ENOENT)
+            }
+        }
+    }
+}
+
+/// Syscall 94: Mount a filesystem into the virtual directory hierarchy.
+pub fn handle_mount(arg1: u64, arg2: u64, arg3: u64, arg4: u64, _arg5: u64) -> u64 {
+    let source_ptr = arg1 as *const u8;
+    let target_ptr = arg2 as *const u8;
+    let fstype_ptr = arg3 as *const u8;
+    let flags = arg4 as u32;
+
+    if target_ptr.is_null() || fstype_ptr.is_null() {
+        return errno_to_ret(EINVAL);
+    }
+
+    let uid = unsafe { get_current_uid() };
+    if uid != 0 {
+        return errno_to_ret(EPERM);
+    }
+
+    let mut source_buf = [0u8; 128];
+    let source_str = if !source_ptr.is_null() {
+        match unsafe { read_user_string(source_ptr, &mut source_buf) } {
+            Ok(l) => match core::str::from_utf8(&source_buf[..l]) {
+                Ok(s) => s,
+                Err(_) => return errno_to_ret(EINVAL),
+            },
+            Err(e) => return errno_to_ret(e),
+        }
+    } else {
+        "none"
+    };
+
+    let mut target_buf = [0u8; 128];
+    let target_len = match unsafe { read_user_string(target_ptr, &mut target_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let target_str = match core::str::from_utf8(&target_buf[..target_len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if target_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut fstype_buf = [0u8; 32];
+    let fstype_len = match unsafe { read_user_string(fstype_ptr, &mut fstype_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let fstype_str = match core::str::from_utf8(&fstype_buf[..fstype_len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    let fs_type = match keira_fs::vfs::FilesystemType::from_str(fstype_str) {
+        Some(t) => t,
+        None => return errno_to_ret(ENODEV),
+    };
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _norm_len) = if !target_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    target_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (target_str, target_len)
+    };
+
+    match keira_fs::vfs::vfs_mount(source_str, target_path, fs_type, flags) {
+        Ok(()) => 0,
+        Err(e) => {
+            if e.contains("already mounted") {
+                errno_to_ret(EBUSY)
+            } else if e.contains("full") {
+                errno_to_ret(ENOSPC)
+            } else {
+                errno_to_ret(EINVAL)
+            }
+        }
+    }
+}
+
+/// Syscall 95: Unmount a filesystem from the virtual directory hierarchy.
+pub fn handle_umount(arg1: u64, arg2: u64) -> u64 {
+    let target_ptr = arg1 as *const u8;
+    let flags = arg2 as u32;
+
+    if target_ptr.is_null() {
+        return errno_to_ret(EINVAL);
+    }
+
+    let uid = unsafe { get_current_uid() };
+    if uid != 0 {
+        return errno_to_ret(EPERM);
+    }
+
+    let mut target_buf = [0u8; 128];
+    let target_len = match unsafe { read_user_string(target_ptr, &mut target_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let target_str = match core::str::from_utf8(&target_buf[..target_len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if target_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _norm_len) = if !target_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    target_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (target_str, target_len)
+    };
+
+    match keira_fs::vfs::vfs_umount(target_path, flags) {
+        Ok(()) => 0,
+        Err(e) => {
+            if e.contains("busy") || e.contains("root") {
+                errno_to_ret(EBUSY)
+            } else if e.contains("not found") {
+                errno_to_ret(ENOENT)
+            } else {
+                errno_to_ret(EINVAL)
             }
         }
     }
