@@ -12,5 +12,12 @@
 pub mod buffer;
 pub mod ops;
 
-pub use buffer::{PipeBuffer, PIPE_BUFFER_SIZE, SYSTEM_PIPE};
-pub use ops::{create_pipe, read_pipe, write_pipe};
+pub use buffer::{
+    PipeBuffer, PipeChannel, MAX_PIPES, O_CLOEXEC, O_NONBLOCK, PIPE_BUFFER_CAPACITY,
+    PIPE_BUFFER_SIZE, PIPE_TABLE, SYSTEM_PIPE,
+};
+pub use ops::{
+    close_pipe_read, close_pipe_write, create_pipe, create_pipe_channel, dup_pipe_endpoint,
+    get_pipe_stats, get_pipe_table, pipe_table_reset, read_pipe, read_pipe_channel, write_pipe,
+    write_pipe_channel,
+};
