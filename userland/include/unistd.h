@@ -59,6 +59,7 @@ int execve(const char *pathname, char *const argv[], char *const envp[]);
 pid_t waitpid(pid_t pid, int *wstatus, int options);
 pid_t wait(int *wstatus);
 int pipe(int pipefd[2]);
+int pipe2(int pipefd[2], int flags);
 int dup(int oldfd);
 int dup2(int oldfd, int newfd);
 

@@ -108,6 +108,7 @@
 #define SYS_READLINK 93
 #define SYS_MOUNT 94
 #define SYS_UMOUNT 95
+#define SYS_PIPE2 96
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
