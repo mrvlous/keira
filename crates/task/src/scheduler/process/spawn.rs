@@ -240,6 +240,15 @@ pub unsafe fn spawn_user(
         parent_egid = parent.egid;
     }
 
+    for (fd, item) in child_fds.iter_mut().enumerate().take(3) {
+        if !item.is_open {
+            item.is_open = true;
+            item.write_mode = fd != 0;
+            item.path[..8].copy_from_slice(b"/dev/tty");
+            item.path_len = 8;
+        }
+    }
+
     #[cfg(target_arch = "x86_64")]
     let default_brk = 0x600000000000;
     #[cfg(target_arch = "x86")]
