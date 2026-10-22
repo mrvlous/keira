@@ -10,3 +10,4 @@
 //! Storage device low-level diagnostic and raw disk geometry commands.
 
 pub mod disk;
+pub mod mount;
