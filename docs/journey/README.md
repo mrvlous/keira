@@ -85,6 +85,7 @@ graph TD
 | **Milestone 32** | [`vfs_symlink_v070.md`](vfs_symlink_v070.md) | `v0.7.0` | VFS symbolic links, kernel registry, SYS_SYMLINK/SYS_READLINK, transparent path dereferencing and freestanding `/bin/ln` |
 | **Milestone 33** | [`kernel_decoupling_v070.md`](kernel_decoupling_v070.md) | `v0.7.0` | Modular userland decoupling, USERLAND=0/1 build flag, pure kernel ISO, make run-bare and freestanding Ring 0 supervisor console |
 | **Milestone 34** | [`kernel_demarcation_v070.md`](kernel_demarcation_v070.md) | `v0.7.0` | Torvalds-grade pure kernel demarcation, autonomous userland build system, .config engine and make headers_install |
+| **Milestone 35** | [`vfs_mount_v070.md`](vfs_mount_v070.md) | `v0.7.0` | Dynamic VFS mount subsystem, in-memory TmpFS, SYS_MOUNT/SYS_UMOUNT syscalls, /bin/mount, /bin/umount and Ring 0 supervisor console mount command |
 
 ---
 
