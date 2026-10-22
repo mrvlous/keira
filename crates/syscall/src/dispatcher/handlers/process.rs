@@ -262,7 +262,19 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
             vmm::switch_address_space(parent_pml4);
 
             match spawn_user("user_app", entry_point, initial_user_rsp, child_pml4) {
-                Ok(pid) => pid as u64,
+                Ok(pid) => {
+                    if let Some(ref task) = keira_task::scheduler::TASKS[pid] {
+                        for fd in 0..keira_task::types::MAX_FDS {
+                            if task.fds[fd].is_open && task.fds[fd].is_pipe {
+                                keira_ipc::pipe::dup_pipe_endpoint(
+                                    task.fds[fd].pipe_id,
+                                    task.fds[fd].pipe_write,
+                                );
+                            }
+                        }
+                    }
+                    pid as u64
+                }
                 Err(_) => errno_to_ret(ENOMEM),
             }
         }
@@ -416,7 +428,19 @@ pub fn handle_chdir(arg1: u64) -> u64 {
 pub fn handle_fork() -> u64 {
     unsafe {
         match fork_current_task() {
-            Ok(child_pid) => child_pid as u64,
+            Ok(child_pid) => {
+                if let Some(ref task) = keira_task::scheduler::TASKS[child_pid] {
+                    for fd in 0..keira_task::types::MAX_FDS {
+                        if task.fds[fd].is_open && task.fds[fd].is_pipe {
+                            keira_ipc::pipe::dup_pipe_endpoint(
+                                task.fds[fd].pipe_id,
+                                task.fds[fd].pipe_write,
+                            );
+                        }
+                    }
+                }
+                child_pid as u64
+            }
             Err(_) => errno_to_ret(ENOMEM),
         }
     }
