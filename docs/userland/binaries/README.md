@@ -39,3 +39,7 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`sysinfo.elf`](sysinfo.md) | `userland/bin/sysinfo/` | System telemetry, CPU, memory, uptime and hardware inspection utility |
 | [`test_abi.elf`](test_abi.md) | `userland/bin/test_abi/` | Kernel ABI and system call compliance test suite |
 | [`fuzz_abi.elf`](fuzz_abi.md) | `userland/bin/fuzz_abi/` | Differential and boundary fuzz testing utility for kernel system call vectors |
+| [`test_threads.elf`](test_threads.md) | `userland/bin/test_threads/` | Userland multithreading, mutex synchronization and thread join test suite |
+| [`mount.elf`](mount.md) | `userland/bin/mount/` | Filesystem mount point attachment and active mount inspection utility |
+| [`umount.elf`](umount.md) | `userland/bin/umount/` | Filesystem mount point detachment and resource reclamation utility |
+
