@@ -15,25 +15,20 @@ use crate::vfs::types::FilesystemType;
 /// Routes an absolute or relative path to its target filesystem type and relative sub-path.
 pub fn route_path(path: &str) -> (&str, FilesystemType) {
     let resolved = resolve_alias_path(path);
-    if let Some(rest) = resolved.strip_prefix("/proc/") {
-        (rest, FilesystemType::Proc)
-    } else if resolved == "/proc" || resolved == "proc" {
-        ("", FilesystemType::Proc)
-    } else if let Some(rest) = resolved.strip_prefix("proc/") {
-        (rest, FilesystemType::Proc)
-    } else if let Some(rest) = resolved.strip_prefix("/dev/") {
-        (rest, FilesystemType::Dev)
-    } else if resolved == "/dev" || resolved == "dev" {
-        ("", FilesystemType::Dev)
-    } else if let Some(rest) = resolved.strip_prefix("dev/") {
-        (rest, FilesystemType::Dev)
-    } else if let Some(rest) = resolved.strip_prefix("/initrd/") {
-        (rest, FilesystemType::Initrd)
-    } else if resolved == "/initrd" || resolved == "initrd" {
-        ("", FilesystemType::Initrd)
-    } else if let Some(rest) = resolved.strip_prefix("initrd/") {
-        (rest, FilesystemType::Initrd)
+    if resolved.starts_with('/') {
+        crate::vfs::mount::lookup_mount(resolved)
     } else {
-        (resolved, FilesystemType::Fat)
+        if resolved == "proc" || resolved.starts_with("proc/") {
+            let sub = resolved.strip_prefix("proc/").unwrap_or("");
+            (sub, FilesystemType::Proc)
+        } else if resolved == "dev" || resolved.starts_with("dev/") {
+            let sub = resolved.strip_prefix("dev/").unwrap_or("");
+            (sub, FilesystemType::Dev)
+        } else if resolved == "initrd" || resolved.starts_with("initrd/") {
+            let sub = resolved.strip_prefix("initrd/").unwrap_or("");
+            (sub, FilesystemType::Initrd)
+        } else {
+            (resolved, FilesystemType::Fat)
+        }
     }
 }
