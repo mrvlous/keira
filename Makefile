@@ -172,7 +172,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
                    go view create folder delete edit copy help history \
                    move search download network stop sync \
                    fileinfo framebuffer usb https hostname syslog kvm \
-                   nvme ext4 cgroups futex bpf tpm swap seccomp epoll \
+                   nvme ext4 mount cgroups futex bpf tpm swap seccomp epoll \
                    drivers lkm unwind watchpoint power perf timer eventfd mac mqueue \
                    kill jobs fg bg lvm raid firewall \
                    shutdown reboot
@@ -396,6 +396,7 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)mkdir -p $(FS_ROOT)/proc
 	$(Q)mkdir -p $(FS_ROOT)/sys
 	$(Q)mkdir -p $(FS_ROOT)/etc
+	$(Q)mkdir -p $(FS_ROOT)/mnt
 	$(Q)mkdir -p $(FS_ROOT)/tmp
 	$(Q)mkdir -p $(FS_ROOT)/var/log
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=0\n" > $(FS_ROOT)/etc/kernel.cfg
@@ -416,6 +417,7 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)mkdir -p $(FS_ROOT)/etc
 	$(Q)mkdir -p $(FS_ROOT)/include/sys
 	$(Q)mkdir -p $(FS_ROOT)/lib
+	$(Q)mkdir -p $(FS_ROOT)/mnt
 	$(Q)mkdir -p $(FS_ROOT)/tmp
 	$(Q)mkdir -p $(FS_ROOT)/var/log
 	$(Q)$(MAKE) -C $(USER_DIR) install DESTDIR=$(CURDIR)/$(FS_ROOT) ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
@@ -437,7 +439,7 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/tmp ::/var ::/var/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/mnt ::/tmp ::/var ::/var/log 2>/dev/null || true
 	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
 	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
 	done
