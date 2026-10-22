@@ -31,6 +31,8 @@ pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
                 fat::read_file_content(clean_path, buf)
             }
         },
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::read_file(clean_path, buf),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 read not implemented"),
         FilesystemType::Proc => crate::proc::read_proc_file(clean_path, buf),
         FilesystemType::Dev => unsafe { crate::dev::read_dev_node(clean_path, buf) },
     }
@@ -53,6 +55,10 @@ pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize
                 fat::read_file_offset(clean_path, offset, buf)
             }
         },
+        FilesystemType::Tmpfs => {
+            crate::vfs::mount::tmpfs::read_file_offset(clean_path, offset, buf)
+        }
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 offset read not implemented"),
         FilesystemType::Proc => Err("VFS Error: ProcFS does not support offset read"),
         FilesystemType::Dev => Err("VFS Error: DevFS does not support offset read"),
     }

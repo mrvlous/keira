@@ -25,6 +25,8 @@ pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => unsafe { crate::dev::write_dev_node(clean_path, content) },
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::write_file(clean_path, content),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 write not implemented"),
         FilesystemType::Fat => unsafe {
             fat::write_file_content(clean_path, content)?;
             Ok(content.len())
@@ -44,6 +46,8 @@ pub fn write_file_offset(path: &str, offset: u64, content: &[u8]) -> Result<usiz
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => Err("VFS Error: DevFS does not support offset write"),
+        FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::write_file(clean_path, content),
+        FilesystemType::Ext4 => Err("VFS Error: Ext4 write not implemented"),
         FilesystemType::Fat => unsafe { fat::write_file_offset(clean_path, offset, content) },
     }
 }
