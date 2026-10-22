@@ -174,7 +174,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
                    fileinfo framebuffer usb https hostname syslog kvm \
                    nvme ext4 mount cgroups futex bpf tpm swap seccomp epoll \
                    drivers lkm unwind watchpoint power perf timer eventfd mac mqueue \
-                   kill jobs fg bg lvm raid firewall \
+                   pipes kill jobs fg bg lvm raid firewall \
                    shutdown reboot
 
 # Phony targets declaration
