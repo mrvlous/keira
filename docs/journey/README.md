@@ -49,23 +49,18 @@ graph TD
 
 ## Milestone Chapters
 
+### Archived Milestones (v0.1.0 to v0.6.0)
+
+Foundational development milestones (Milestones 1 through 15) are consolidated and preserved in the [Historical Milestones Archive (`archive_v010_v060.md`)](archive_v010_v060.md).
+
 | Milestone | Chapter Document | Target Version | Primary Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Milestone 1** | [`bootstrap.md`](bootstrap.md) | `v0.1.0` | Multiboot2 handshake, GDT, TSS, IDT, APIC and 16-bit real-mode AP trampolines |
-| **Milestone 2** | [`memory.md`](memory.md) | `v0.1.0` | Physical frame allocator, 4-level paging, segregated free-list heap and swap |
-| **Milestone 3** | [`multitasking.md`](multitasking.md) | `v0.2.0` | Preemptive timer scheduling, PCB context switching, cgroups and POSIX signals |
-| **Milestone 4** | [`storage_vfs.md`](storage_vfs.md) | `v0.2.0` | VFS architecture, AHCI SATA, NVMe, FAT16/32, EXT4 extents and sector LRU cache |
-| **Milestone 5** | [`networking.md`](networking.md) | `v0.3.0` | Intel e1000 DMA rings, ARP cache, IPv4, TCP state machine and TLS 1.3 socket engine |
-| **Milestone 6** | [`userland_compiler.md`](userland_compiler.md) | `v0.3.0` | Ring 3 userland isolation, freestanding libc.a runtime and native in-kernel KCC C compiler |
-| **Milestone 7** | [`security_ebpf.md`](security_ebpf.md) | `v0.4.0` | TPM 2.0 enclave PCR measurements, in-kernel eBPF virtual machine and asynchronous io_uring |
-| **Milestone 8** | [`network_engine.md`](network_engine.md) | `v0.4.0` | Modular network fetch engine, chunked streaming, progress bars and Netfilter firewall |
-| **Milestone 9** | [`hardening_v050.md`](hardening_v050.md) | `v0.5.0` | Dual-architecture x86_64/i686 parity, 81 syscall vectors and Syzkaller-Lite fuzzing defense |
-| **Milestone 10** | [`raw_kernel_v060.md`](raw_kernel_v060.md) | `v0.6.0` | Type-Safe Epoch-Based Reclamation (EBR), physical frame reference counting and Copy-on-Write (COW) |
-| **Milestone 11** | [`work_stealing_v060.md`](work_stealing_v060.md) | `v0.6.0` | Per-CPU lock-free work-stealing scheduler, Chase-Lev deques, EBR pinning and decentralized task balancer |
-| **Milestone 12** | [`magazine_slab_v060.md`](magazine_slab_v060.md) | `v0.6.0` | Hierarchical per-CPU magazine slab allocator, Jeff Bonwick object caching and zero-lock fast paths |
-| **Milestone 13** | [`smp_tlb_shootdown_v060.md`](smp_tlb_shootdown_v060.md) | `v0.6.0` | Local APIC Inter-Processor Interrupt (IPI) framework, multi-core rendezvous and cross-core TLB shootdown |
-| **Milestone 14** | [`smp_reschedule_v060.md`](smp_reschedule_v060.md) | `v0.6.0` | SMP Reschedule IPI framework, Vector 0xFE preemption stubs and low-latency cross-core dispatch |
-| **Milestone 15** | [`multithreading_v060.md`](multithreading_v060.md) | `v0.6.0` | Userland multi-threading, clone syscall with CLONE_VM/CLONE_THREAD and freestanding POSIX pthreads |
+| **Milestones 1–15** | [`archive_v010_v060.md`](archive_v010_v060.md) | `v0.1.0`–`v0.6.0` | Bare-metal bootstrap, paging, multitasking, storage, networking, KCC compiler, TPM 2.0, eBPF, work-stealing, slab allocator, SMP IPI, TLB shootdown and multithreading |
+
+### Active v0.7.0 Milestones
+
+| Milestone | Chapter Document | Target Version | Primary Focus Areas |
+| :--- | :--- | :--- | :--- |
 | **Milestone 16** | [`canonical_fhs_v070.md`](canonical_fhs_v070.md) | `v0.7.0` | Canonical UNIX FHS namespace, removal of legacy prefixes and root prompt `keira:/# ` |
 | **Milestone 17** | [`page_cache_v070.md`](page_cache_v070.md) | `v0.7.0` | 4 KiB unified page cache, dynamic buffer management, dirty page writeback and telemetry |
 | **Milestone 18** | [`loopback_v070.md`](loopback_v070.md) | `v0.7.0` | Linux-grade loopback (`lo`) adapter, 127.0.0.1/8 local IPC reflection and zero-NIC socket routing |
