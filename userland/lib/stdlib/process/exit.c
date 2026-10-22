@@ -8,10 +8,17 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <syscall.h>
 
 void exit(int status) {
+    if (stdout) {
+        fflush(stdout);
+    }
+    if (stderr) {
+        fflush(stderr);
+    }
     sys_exit(status);
 }
 
