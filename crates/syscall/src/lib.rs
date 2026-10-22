@@ -27,7 +27,7 @@ pub use user_copy::{
     copy_from_user, copy_to_user, copy_val_from_user, copy_val_to_user, errno_to_ret,
     read_user_string, read_user_string_bounded, ret_to_errno, validate_user_ptr, EACCES, EAGAIN,
     EBADF, ECHILD, EEXIST, EFAULT, EINTR, EINVAL, EIO, EMFILE, ENOENT, ENOMEM, ENOSYS, EPERM,
-    ESRCH, USER_MAX_ADDR, USER_MIN_ADDR,
+    EPIPE, ESRCH, USER_MAX_ADDR, USER_MIN_ADDR,
 };
 
 #[cfg(test)]

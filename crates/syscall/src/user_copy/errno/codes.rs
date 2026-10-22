@@ -33,3 +33,4 @@ pub const ENAMETOOLONG: i64 = 36;
 pub const ELOOP: i64 = 40;
 pub const EBUSY: i64 = 16;
 pub const ENODEV: i64 = 19;
+pub const EPIPE: i64 = 32;

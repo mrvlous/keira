@@ -22,3 +22,4 @@ pub const SYS_EPOLL_CTL: u64 = 56;
 pub const SYS_EPOLL_WAIT: u64 = 57;
 pub const SYS_MQ_OPEN: u64 = 58;
 pub const SYS_SHM_SEM: u64 = 75;
+pub const SYS_PIPE2: u64 = 96;
