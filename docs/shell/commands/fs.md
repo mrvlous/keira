@@ -14,3 +14,5 @@ The `fs` command suite provides low-level block storage device and partition geo
 | Command | Syntax | Description | Flags / Options |
 | :--- | :--- | :--- | :--- |
 | `disk` | `disk` | Display block storage devices and partition tables | `-h, --help` |
+| `mount` | `mount` | Display active VFS mount table entries and flags directly from Ring 0 | `-h, --help` |
+
