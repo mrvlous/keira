@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! File descriptor handles, socket associations, and pipe descriptors.
+//! File descriptor handles, socket associations and pipe descriptors.
 
 /// Maximum number of file descriptors per process.
 pub const MAX_FDS: usize = 32;
@@ -25,6 +25,7 @@ pub struct FileDescriptor {
     pub nonblocking: bool,
     pub is_pipe: bool,
     pub pipe_write: bool,
+    pub pipe_id: u32,
 }
 
 impl FileDescriptor {
@@ -41,6 +42,7 @@ impl FileDescriptor {
             nonblocking: false,
             is_pipe: false,
             pipe_write: false,
+            pipe_id: 0,
         }
     }
 
@@ -57,11 +59,12 @@ impl FileDescriptor {
             nonblocking,
             is_pipe: false,
             pipe_write: false,
+            pipe_id: 0,
         }
     }
 
-    /// Construct an open pipe file descriptor.
-    pub fn new_pipe(write_mode: bool) -> Self {
+    /// Construct an open pipe file descriptor with designated pipe channel identifier.
+    pub fn new_pipe(pipe_id: u32, write_mode: bool) -> Self {
         Self {
             is_open: true,
             path: [0u8; 128],
@@ -73,6 +76,7 @@ impl FileDescriptor {
             nonblocking: false,
             is_pipe: true,
             pipe_write: write_mode,
+            pipe_id,
         }
     }
 }

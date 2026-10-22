@@ -32,9 +32,10 @@ fn test_file_descriptor_initialization() {
     assert_eq!(sock.socket_id, 5);
     assert!(sock.nonblocking);
 
-    let pipe = FileDescriptor::new_pipe(true);
+    let pipe = FileDescriptor::new_pipe(1, true);
     assert!(pipe.is_open);
     assert!(pipe.is_pipe);
+    assert_eq!(pipe.pipe_id, 1);
     assert!(pipe.pipe_write);
 }
 
