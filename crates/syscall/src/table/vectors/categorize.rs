@@ -39,6 +39,8 @@ pub fn is_io_syscall(num: u64) -> bool {
             | SYS_VMSPLICE
             | SYS_SYMLINK
             | SYS_READLINK
+            | SYS_MOUNT
+            | SYS_UMOUNT
     )
 }
 

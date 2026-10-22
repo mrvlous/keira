@@ -27,3 +27,5 @@ pub const SYS_UNLINK: u64 = 87;
 pub const SYS_MKDIR: u64 = 88;
 pub const SYS_SYMLINK: u64 = 92;
 pub const SYS_READLINK: u64 = 93;
+pub const SYS_MOUNT: u64 = 94;
+pub const SYS_UMOUNT: u64 = 95;
