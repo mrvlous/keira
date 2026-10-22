@@ -20,4 +20,35 @@ pub enum FilesystemType {
     Proc,
     /// Virtual DevFS character device nodes.
     Dev,
+    /// In-memory volatile scratch filesystem.
+    Tmpfs,
+    /// Linux Ext4 filesystem partition.
+    Ext4,
+}
+
+impl FilesystemType {
+    /// Returns canonical filesystem type name as a string slice.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Fat => "fat",
+            Self::Initrd => "initrd",
+            Self::Proc => "procfs",
+            Self::Dev => "devfs",
+            Self::Tmpfs => "tmpfs",
+            Self::Ext4 => "ext4",
+        }
+    }
+
+    /// Parses a filesystem type string into a recognized enum variant.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "fat" | "vfat" | "fat16" => Some(Self::Fat),
+            "initrd" | "tar" => Some(Self::Initrd),
+            "proc" | "procfs" => Some(Self::Proc),
+            "dev" | "devfs" | "devtmpfs" => Some(Self::Dev),
+            "tmp" | "tmpfs" | "ramfs" => Some(Self::Tmpfs),
+            "ext4" | "ext2" | "ext3" => Some(Self::Ext4),
+            _ => None,
+        }
+    }
 }
