@@ -57,10 +57,10 @@ LIBC_A          := $(LIB_DIR)/libc.a
 LIB_SRCS        := $(shell find lib -type f -name "*.c")
 LIB_OBJS        := $(patsubst lib/%.c,$(OBJ_DIR)/lib/%.o,$(LIB_SRCS))
 
-# Canonical list of 30 core utility programs
+# Canonical list of 32 core utility programs
 BINS            := arp cat clear df dmesg fetch fuzz_abi hostname id ifconfig \
-                   init iptables kcc kill ln ls mkdir netstat ping ps \
-                   rm route sh su sysinfo test_abi test_threads touch uname whoami
+                   init iptables kcc kill ln ls mkdir mount netstat ping ps \
+                   rm route sh su sysinfo test_abi test_threads touch umount uname whoami
 
 BIN_ELFS        := $(patsubst %,$(BIN_DIR)/%.elf,$(BINS))
 
