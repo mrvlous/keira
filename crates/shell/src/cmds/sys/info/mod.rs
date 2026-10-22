@@ -12,6 +12,7 @@
 pub mod cpu;
 pub mod irq;
 pub mod memory;
+pub mod pipes;
 pub mod regs;
 pub mod smp;
 pub mod system;
