@@ -26,7 +26,14 @@ int mkdir(const char *pathname, mode_t mode) {
 }
 
 int chmod(const char *pathname, mode_t mode) {
-    (void)pathname;
-    (void)mode;
+    if (!pathname) {
+        errno = EINVAL;
+        return -1;
+    }
+    int ret = sys_chmod(pathname, mode);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
     return 0;
 }

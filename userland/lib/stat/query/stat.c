@@ -11,16 +11,18 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 
 int stat(const char *pathname, struct stat *statbuf) {
     if (!pathname || !statbuf) {
         errno = EFAULT;
         return -1;
     }
-    memset(statbuf, 0, sizeof(struct stat));
-    statbuf->st_mode = S_IFREG | 0644;
-    statbuf->st_nlink = 1;
-    statbuf->st_blksize = 512;
+    int ret = sys_stat(pathname, statbuf);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
     return 0;
 }
 
