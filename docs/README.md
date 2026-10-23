@@ -19,16 +19,16 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | Domain Module | Path | Description |
 | :--- | :--- | :--- |
 | **Architecture & UAPI** | [`architecture/`](architecture/README.md) | Master system architecture, privilege demarcation and [UAPI boundary](architecture/uapi_boundary.md) |
-| **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 37 |
+| **Learning Journey** | [`journey/`](journey/README.md) | Engineering journal and educational milestones 1 through 38 |
 | **Kernel Core** | [`kernel/`](kernel/README.md) | Multiboot2, SMP bootstrap trampolines, GDT, TSS, IDT, Local/IO-APIC, HPET, ACPI and panic |
 | **Memory** | [`memory/`](memory/README.md) | Physical frame allocator (PMM), 4-level paging (VMM), heap, DMA and swap |
 | **Task & Scheduling** | [`task/`](task/README.md) | Preemptive scheduler, context switching, task descriptors, cgroups and signals |
-| **System Calls** | [`syscall/`](syscall/README.md) | 89 system call vector table, dispatcher ABI and validated user copying |
+| **System Calls** | [`syscall/`](syscall/README.md) | 92 system call vector table, dispatcher ABI and validated user copying |
 | **IPC** | [`ipc/`](ipc/README.md) | Anonymous pipes, zero-copy splice, shared memory, futex, eventfd, epoll, mqueue and io_uring |
 | **Filesystems** | [`fs/`](fs/README.md) | Virtual Filesystem (VFS), FAT12/16/32, EXT4, USTAR initrd, LVM/RAID and sector caching |
 | **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, PCI/USB and TTYs |
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3 and firewall |
 | **Cryptography** | [`crypto/`](crypto/README.md) | SHA-256, AES-128-GCM, Curve25519, TPM 2.0 enclave, Seccomp BPF and MAC |
 | **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete and 15 emergency diagnostic commands |
-| **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, freestanding KCC compiler, HTTP fetch, 39 core utility binaries, dynamic ELF loader and multi-user |
+| **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, freestanding KCC compiler, HTTP fetch, 41 core utility binaries, dynamic ELF loader and multi-user |
 | **Contributor Guide** | [`contributing/`](contributing/README.md) | Environment setup, build targets, coding style, testing and debugging |
