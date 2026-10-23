@@ -11,7 +11,7 @@
 
 use core::sync::atomic::{AtomicUsize, Ordering};
 use keira_core::sync::{IrqSpinLock, LockRank};
-use keira_mem::vmm;
+use keira_mem::{pmm, vmm};
 
 use super::hooks::{current_pid_provider, task_cmdline_provider, task_status_provider};
 pub use crate::types::MAX_TASKS;
@@ -59,11 +59,12 @@ pub unsafe fn init() {
     let mut main_cwd = [0u8; 128];
     main_cwd[0] = b'/';
     let boot_pml4 = vmm::active_pml4();
+    let main_stack = pmm::alloc_contiguous_frames(TASK_STACK_PAGES).unwrap_or(0);
     let main_task = Task {
         id: 0,
         name: "kernel_shell",
         rsp: 0,
-        stack_addr: 0,
+        stack_addr: main_stack,
         state: TaskState::Running,
         fds: [FileDescriptor::new(); MAX_FDS],
         program_break: 0,
