@@ -9,7 +9,7 @@
 
 //! Bootloader Multiboot2 memory map parsing and early allocator initialization.
 
-use super::super::frame::bitmap::TOTAL_USABLE_RAM;
+use super::super::frame::bitmap::{mark_frame_allocated, TOTAL_USABLE_RAM};
 use super::super::frame::types::{MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, PAGE_SIZE};
 use super::super::sync::PmmGuard;
 use super::descriptor::{UsableRegion, MAX_PHYS_ADDR, REGIONS, REGION_COUNT};
@@ -28,6 +28,13 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
     let _guard = PmmGuard::lock();
     let mut mmap_tag_ptr: u64 = 0;
 
+    let aligned_kernel_end = (kernel_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+    let mut kaddr = 0u64;
+    while kaddr < aligned_kernel_end {
+        mark_frame_allocated(kaddr);
+        kaddr += PAGE_SIZE;
+    }
+
     let mut addr = multiboot_info_ptr + 8;
     loop {
         let tag_type = *(addr as *const u32);
@@ -43,7 +50,7 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
     }
 
     if mmap_tag_ptr == 0 {
-        let start = (kernel_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+        let start = aligned_kernel_end;
         let size = 32 * 1024 * 1024;
         let capped_end = (start + size).min(MAX_PHYS_ADDR_LIMIT);
         REGIONS[0] = UsableRegion {
@@ -62,8 +69,6 @@ pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
 
     let entries_start = mmap_tag_ptr + 16;
     let entries_end = mmap_tag_ptr + tag_size;
-
-    let aligned_kernel_end = (kernel_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
 
     let mut entry_ptr = entries_start;
     while entry_ptr < entries_end {
