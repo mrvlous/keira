@@ -23,8 +23,9 @@ use crate::tss::segment::stack::{BOOT_KERNEL_STACK_TOP, TSS};
 pub unsafe fn init_user_mode() {
     keira_task::scheduler::register_task_cleanup_hook(crate::dispatcher::syscall_task_cleanup_hook);
 
-    let stack_frame = pmm::alloc_frame().unwrap_or(0x1000_0000);
-    BOOT_KERNEL_STACK_TOP = (stack_frame + pmm::PAGE_SIZE) as usize;
+    let stack_pages = 8usize;
+    let stack_frame = pmm::alloc_contiguous_frames(stack_pages).unwrap_or(0x1000_0000);
+    BOOT_KERNEL_STACK_TOP = (stack_frame + (stack_pages as u64) * pmm::PAGE_SIZE) as usize;
 
     #[cfg(target_arch = "x86_64")]
     {
