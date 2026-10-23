@@ -67,8 +67,9 @@ pub use tar::reader::{
     read_file_content as tar_read_file_content,
 };
 pub use vfs::ops::{
-    create_dir as vfs_create_dir, create_file, exists, get_file_size, is_dir, read_file,
-    read_file_offset, remove_entry, write_file, write_file_offset,
+    check_access, create_dir as vfs_create_dir, create_file, exists, get_file_size, get_metadata,
+    is_dir, read_file, read_file_offset, remove_entry, set_ownership, set_permissions, write_file,
+    write_file_offset, R_OK, W_OK, X_OK,
 };
 pub use vfs::path::{resolve_alias_path, route_path};
 pub use vfs::types::{FilesystemType, VirtualDirEntry};
