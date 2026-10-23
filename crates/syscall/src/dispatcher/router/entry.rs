@@ -141,6 +141,9 @@ fn syscall_dispatcher_inner(
         94 => handle_mount(arg1, arg2, arg3, arg4, arg5),
         95 => handle_umount(arg1, arg2),
         96 => handle_pipe2(arg1, arg2),
+        97 => handle_chmod(arg1, arg2),
+        98 => handle_chown(arg1, arg2, arg3),
+        99 => handle_stat(arg1, arg2),
         _ => errno_to_ret(ENOSYS),
     }
 }

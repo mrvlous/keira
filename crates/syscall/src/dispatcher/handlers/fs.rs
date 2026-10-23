@@ -9,10 +9,15 @@
 
 //! File system and descriptor I/O system call handlers.
 
-use keira_fs::vfs::{create_file, exists, read_file, write_file};
+use keira_fs::vfs::{
+    check_access, create_file, exists, get_file_size, get_metadata, is_dir, read_file,
+    set_ownership, set_permissions, write_file, R_OK, W_OK,
+};
 use keira_io::vga;
 use keira_mem::pmm;
-use keira_task::scheduler::{get_current_uid, CURRENT_TASK_IDX, TASKS};
+use keira_task::scheduler::{
+    get_current_egid, get_current_euid, get_current_uid, CURRENT_TASK_IDX, TASKS,
+};
 use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
@@ -20,6 +25,38 @@ use crate::user_copy::{
     EAGAIN, EBADF, EBUSY, EEXIST, EFAULT, EINVAL, EIO, EISDIR, EMFILE, ENAMETOOLONG, ENODEV,
     ENOENT, ENOMEM, ENOSPC, ENOTDIR, ENOTEMPTY, EPERM, EPIPE, ESRCH,
 };
+
+/// Kernel representation of POSIX `struct stat` for userland ABI compatibility.
+#[repr(C)]
+#[derive(Clone, Copy, Default, Debug)]
+pub struct KernelStat {
+    /// Device ID containing file.
+    pub st_dev: u64,
+    /// Inode number.
+    pub st_ino: u64,
+    /// File type and mode bitmask.
+    pub st_mode: u32,
+    /// Number of hard links.
+    pub st_nlink: u32,
+    /// User ID of owner.
+    pub st_uid: u32,
+    /// Group ID of owner.
+    pub st_gid: u32,
+    /// Device ID (if special file).
+    pub st_rdev: u64,
+    /// Total file size in bytes.
+    pub st_size: i64,
+    /// Block size for filesystem I/O.
+    pub st_blksize: u64,
+    /// Number of 512B blocks allocated.
+    pub st_blocks: u64,
+    /// Time of last access.
+    pub st_atime: i64,
+    /// Time of last modification.
+    pub st_mtime: i64,
+    /// Time of last status change.
+    pub st_ctime: i64,
+}
 
 /// Syscall 6: Open file or device node with POSIX flags.
 pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
@@ -80,6 +117,16 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
 
     let is_directory = (flags & 0x0001_0000) != 0;
 
+    let current_euid = unsafe { get_current_euid() };
+    let current_egid = unsafe { get_current_egid() };
+    let desired_access = if (flags & 0x0003) == 2 {
+        R_OK | W_OK
+    } else if write_mode {
+        W_OK
+    } else {
+        R_OK
+    };
+
     let exists_val = exists(target_path);
     if !exists_val {
         if is_directory {
@@ -91,8 +138,21 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
         if create_file(target_path).is_err() {
             return errno_to_ret(EACCES);
         }
+        let default_mode = if target_path.ends_with(".elf")
+            || target_path.ends_with(".sh")
+            || target_path.starts_with("/bin/")
+        {
+            0o755
+        } else {
+            0o644
+        };
+        let _ = set_ownership(target_path, current_euid, current_egid);
+        let _ = set_permissions(target_path, default_mode);
     } else {
-        let target_is_dir = keira_fs::vfs::is_dir(target_path);
+        if check_access(target_path, desired_access, current_euid, current_egid).is_err() {
+            return errno_to_ret(EACCES);
+        }
+        let target_is_dir = is_dir(target_path);
         if write_mode && target_is_dir {
             return errno_to_ret(EISDIR);
         }
@@ -1093,7 +1153,18 @@ pub fn handle_mkdir(arg1: u64, _arg2: u64) -> u64 {
     }
 
     match keira_fs::vfs::create_dir(target_path) {
-        Ok(_) => 0,
+        Ok(_) => {
+            let current_euid = unsafe { get_current_euid() };
+            let current_egid = unsafe { get_current_egid() };
+            let dir_mode = if _arg2 != 0 {
+                (_arg2 as u32) & 0o777
+            } else {
+                0o755
+            };
+            let _ = set_ownership(target_path, current_euid, current_egid);
+            let _ = set_permissions(target_path, dir_mode);
+            0
+        }
         Err(e) => {
             if e.contains("already exists") {
                 errno_to_ret(EEXIST)
@@ -1416,4 +1487,258 @@ pub fn handle_umount(arg1: u64, arg2: u64) -> u64 {
             }
         }
     }
+}
+
+/// Syscall 97: Change file mode permissions according to POSIX DAC rules.
+pub fn handle_chmod(arg1: u64, arg2: u64) -> u64 {
+    let path_ptr = arg1 as *const u8;
+    let mode = (arg2 as u32) & 0o7777;
+
+    if path_ptr.is_null() {
+        return errno_to_ret(EINVAL);
+    }
+
+    let mut path_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let path_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if path_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _norm_len) = if !path_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
+    if !exists(target_path) && !is_dir(target_path) {
+        return errno_to_ret(ENOENT);
+    }
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        target_path,
+        keira_task::security::MAC_WRITE,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    let current_euid = unsafe { get_current_euid() };
+    let (owner_uid, _, _) = get_metadata(target_path);
+
+    // POSIX DAC check: caller must be superuser (EUID 0) or the file owner
+    if current_euid != 0 && current_euid != owner_uid {
+        return errno_to_ret(EPERM);
+    }
+
+    match set_permissions(target_path, mode) {
+        Ok(()) => 0,
+        Err(_) => errno_to_ret(EINVAL),
+    }
+}
+
+/// Syscall 98: Change file owner and group identity.
+pub fn handle_chown(arg1: u64, arg2: u64, arg3: u64) -> u64 {
+    let path_ptr = arg1 as *const u8;
+    let uid = arg2 as u32;
+    let gid = arg3 as u32;
+
+    if path_ptr.is_null() {
+        return errno_to_ret(EINVAL);
+    }
+
+    let mut path_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let path_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if path_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _norm_len) = if !path_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
+    if !exists(target_path) && !is_dir(target_path) {
+        return errno_to_ret(ENOENT);
+    }
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        target_path,
+        keira_task::security::MAC_WRITE,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    let current_euid = unsafe { get_current_euid() };
+
+    // POSIX DAC check: only superuser (EUID 0) may change file owner
+    if current_euid != 0 {
+        return errno_to_ret(EPERM);
+    }
+
+    match set_ownership(target_path, uid, gid) {
+        Ok(()) => 0,
+        Err(_) => errno_to_ret(EINVAL),
+    }
+}
+
+/// Syscall 99: Query file status and metadata into userland stat buffer.
+pub fn handle_stat(arg1: u64, arg2: u64) -> u64 {
+    let path_ptr = arg1 as *const u8;
+    let statbuf_ptr = arg2;
+
+    if path_ptr.is_null() || statbuf_ptr == 0 {
+        return errno_to_ret(EINVAL);
+    }
+
+    if let Err(e) =
+        unsafe { validate_user_ptr(statbuf_ptr, core::mem::size_of::<KernelStat>() as u64, true) }
+    {
+        return errno_to_ret(e);
+    }
+
+    let mut path_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    let path_str = match core::str::from_utf8(&path_buf[..len]) {
+        Ok(s) => s,
+        Err(_) => return errno_to_ret(EINVAL),
+    };
+
+    if path_str.is_empty() {
+        return errno_to_ret(ENOENT);
+    }
+
+    let mut resolved_path_buf = [0u8; 128];
+    let (target_path, _norm_len) = if !path_str.starts_with('/') {
+        unsafe {
+            if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+                let current_cwd = core::str::from_utf8(&t.cwd[..t.cwd_len]).unwrap_or("/");
+                match crate::dispatcher::handlers::process::normalize_path(
+                    current_cwd,
+                    path_str,
+                    &mut resolved_path_buf,
+                ) {
+                    Ok(norm_len) => (
+                        core::str::from_utf8(&resolved_path_buf[..norm_len]).unwrap_or("/"),
+                        norm_len,
+                    ),
+                    Err(e) => return errno_to_ret(e),
+                }
+            } else {
+                ("/", 1)
+            }
+        }
+    } else {
+        (path_str, len)
+    };
+
+    let target_is_dir = is_dir(target_path);
+    let target_exists = exists(target_path) || target_is_dir;
+
+    if !target_exists {
+        return errno_to_ret(ENOENT);
+    }
+
+    let task_id = unsafe { CURRENT_TASK_IDX };
+    if !keira_task::security::check_path_access(
+        task_id as u64,
+        target_path,
+        keira_task::security::MAC_READ,
+    ) {
+        return errno_to_ret(EACCES);
+    }
+
+    let (uid, gid, mode) = get_metadata(target_path);
+    let file_size = if target_is_dir {
+        4096
+    } else {
+        get_file_size(target_path).unwrap_or(0)
+    };
+
+    let stat = KernelStat {
+        st_dev: 1,
+        st_ino: 1,
+        st_mode: mode,
+        st_nlink: if target_is_dir { 2 } else { 1 },
+        st_uid: uid,
+        st_gid: gid,
+        st_rdev: 0,
+        st_size: file_size as i64,
+        st_blksize: 4096,
+        st_blocks: (file_size as u64 + 511) / 512,
+        st_atime: 1700000000,
+        st_mtime: 1700000000,
+        st_ctime: 1700000000,
+    };
+
+    let stat_slice = unsafe {
+        core::slice::from_raw_parts(
+            &stat as *const KernelStat as *const u8,
+            core::mem::size_of::<KernelStat>(),
+        )
+    };
+
+    if let Err(e) = unsafe { copy_to_user(statbuf_ptr, stat_slice) } {
+        return errno_to_ret(e);
+    }
+
+    0
 }

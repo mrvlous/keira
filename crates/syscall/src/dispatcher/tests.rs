@@ -112,4 +112,19 @@ pub mod test {
         assert_ne!(ret, errno_to_ret(EINVAL));
         assert_ne!(ret, errno_to_ret(ENOSYS));
     }
+
+    #[test]
+    fn test_chmod_chown_stat_dispatch() {
+        // Calling chmod with null pointer returns EINVAL
+        let ret = syscall_dispatcher(97, 0, 0o644, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+
+        // Calling chown with null pointer returns EINVAL
+        let ret = syscall_dispatcher(98, 0, 1000, 1000, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+
+        // Calling stat with null pointer returns EINVAL
+        let ret = syscall_dispatcher(99, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+    }
 }

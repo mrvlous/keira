@@ -108,6 +108,12 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
             return errno_to_ret(EACCES);
         }
 
+        let euid = unsafe { get_current_euid() };
+        let egid = unsafe { get_current_egid() };
+        if keira_fs::vfs::check_access(filename_str, keira_fs::vfs::X_OK, euid, egid).is_err() {
+            return errno_to_ret(EACCES);
+        }
+
         let mut arg_storage: [[u8; 128]; 16] = [[0u8; 128]; 16];
         let mut arg_slices: [&str; 16] = [""; 16];
         let mut argc = 0;
