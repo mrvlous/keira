@@ -43,4 +43,10 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`mount.elf`](mount.md) | `userland/bin/mount/` | Filesystem mount point attachment and active mount inspection utility |
 | [`umount.elf`](umount.md) | `userland/bin/umount/` | Filesystem mount point detachment and resource reclamation utility |
 | [`test_pipe.elf`](test_pipe.md) | `userland/bin/test_pipe/` | Anonymous pipe subsystem, multi-channel concurrency and POSIX stream test suite |
+| [`grep.elf`](grep.md) | `userland/bin/grep/` | Freestanding regular pattern searching and stream filtering utility |
+| [`wc.elf`](wc.md) | `userland/bin/wc/` | Freestanding word, line, byte and character counting utility |
+| [`head.elf`](head.md) | `userland/bin/head/` | Freestanding first lines/bytes stream head truncation utility |
+| [`tail.elf`](tail.md) | `userland/bin/tail/` | Freestanding last lines/bytes stream tail extraction utility |
+| [`echo.elf`](echo.md) | `userland/bin/echo/` | Freestanding string argument printing and escape sequence interpolation utility |
+| [`sleep.elf`](sleep.md) | `userland/bin/sleep/` | Freestanding execution delay and interval suspension utility |
 

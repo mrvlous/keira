@@ -136,9 +136,11 @@ Shell Features:
   Pipelines:     cmd1 | cmd2
   Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2
 Core Utilities (/bin):
-  File & Dir:    cat, touch, mkdir, rm, ls, df
-  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear
+  File & Dir:    cat, touch, mkdir, rm, ls, df, ln, mount, umount
+  Text Pipeline: grep, wc, head, tail, echo, sleep
+  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear, whoami, id, su
   Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables
+  Verification:  test_abi, fuzz_abi, test_threads, test_pipe
 Direct Execution:
   Binaries in /bin and current directory execute directly via $PATH
 
