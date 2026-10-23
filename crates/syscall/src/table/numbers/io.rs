@@ -29,3 +29,6 @@ pub const SYS_SYMLINK: u64 = 92;
 pub const SYS_READLINK: u64 = 93;
 pub const SYS_MOUNT: u64 = 94;
 pub const SYS_UMOUNT: u64 = 95;
+pub const SYS_CHMOD: u64 = 97;
+pub const SYS_CHOWN: u64 = 98;
+pub const SYS_STAT: u64 = 99;

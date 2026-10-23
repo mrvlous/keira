@@ -105,6 +105,9 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_MOUNT => "sys_mount",
         SYS_UMOUNT => "sys_umount",
         SYS_PIPE2 => "sys_pipe2",
+        SYS_CHMOD => "sys_chmod",
+        SYS_CHOWN => "sys_chown",
+        SYS_STAT => "sys_stat",
         _ => "sys_unknown",
     }
 }
