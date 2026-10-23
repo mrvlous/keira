@@ -19,6 +19,6 @@ pub use entry::{
     USER_MIN_VADDR,
 };
 pub use walk::{
-    active_pml4, get_phys_addr, get_phys_addr_in_pml4, get_pte_in_pml4, get_pte_mut_in_pml4,
-    is_page_mapped_in_pml4, switch_address_space,
+    active_pml4, boot_pml4, get_phys_addr, get_phys_addr_in_pml4, get_pte_in_pml4,
+    get_pte_mut_in_pml4, init_boot_pml4, is_page_mapped_in_pml4, switch_address_space,
 };

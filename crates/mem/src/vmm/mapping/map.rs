@@ -55,6 +55,7 @@ pub unsafe fn map_page_in_pml4(
     let mut newly_allocated_pdpt: Option<u64> = None;
     let pdpt_addr = if (pdpt_entry & PAGE_PRESENT) == 0 {
         let frame = pmm::alloc_frame().ok_or("Out of physical memory for PDPT")?;
+        core::ptr::write_bytes(frame as *mut u8, 0, 4096);
         *pml4.add(pml4_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
         newly_allocated_pdpt = Some(frame);
         frame
@@ -70,7 +71,10 @@ pub unsafe fn map_page_in_pml4(
     let mut newly_allocated_pd: Option<u64> = None;
     let pd_addr = if (pd_entry & PAGE_PRESENT) == 0 {
         let frame = match pmm::alloc_frame() {
-            Some(f) => f,
+            Some(f) => {
+                core::ptr::write_bytes(f as *mut u8, 0, 4096);
+                f
+            }
             None => {
                 if let Some(pdpt_frame) = newly_allocated_pdpt {
                     *pml4.add(pml4_idx) = 0;
@@ -93,7 +97,10 @@ pub unsafe fn map_page_in_pml4(
     let pt_entry = *pd.add(pd_idx);
     let pt_addr = if (pt_entry & PAGE_PRESENT) == 0 {
         let frame = match pmm::alloc_frame() {
-            Some(f) => f,
+            Some(f) => {
+                core::ptr::write_bytes(f as *mut u8, 0, 4096);
+                f
+            }
             None => {
                 if let Some(pd_frame) = newly_allocated_pd {
                     *pdpt.add(pdpt_idx) = 0;
@@ -152,6 +159,7 @@ pub unsafe fn map_huge_2m_page(
     let pml4_entry = *pml4.add(pml4_idx);
     let pdpt_addr = if (pml4_entry & PAGE_PRESENT) == 0 {
         let frame = pmm::alloc_frame().ok_or("Out of physical memory for PDPT")?;
+        core::ptr::write_bytes(frame as *mut u8, 0, 4096);
         *pml4.add(pml4_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
         frame
     } else {
@@ -162,6 +170,7 @@ pub unsafe fn map_huge_2m_page(
     let pdpt_entry = *pdpt.add(pdpt_idx);
     let pd_addr = if (pdpt_entry & PAGE_PRESENT) == 0 {
         let frame = pmm::alloc_frame().ok_or("Out of physical memory for PD")?;
+        core::ptr::write_bytes(frame as *mut u8, 0, 4096);
         *pdpt.add(pdpt_idx) = frame | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
         frame
     } else {

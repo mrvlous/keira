@@ -53,11 +53,11 @@ pub use swap::{
     sys_swapoff, sys_swapon, SwapStats,
 };
 pub use vmm::{
-    active_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, clone_user_address_space,
+    active_pml4, boot_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, clone_user_address_space,
     clone_user_address_space_cow, find_free_mmap_range, free_and_unmap_page, free_user_pages,
     get_file_read_hook, get_file_sync_hook, get_kaslr_offset, get_phys_addr, get_phys_addr_in_pml4,
-    get_pte_in_pml4, is_page_mapped_in_pml4, madvise_pages, map_huge_2m_page, map_page,
-    mmap_anonymous, mprotect_pages, munmap_pages, register_file_backing_hooks,
+    get_pte_in_pml4, init_boot_pml4, is_page_mapped_in_pml4, madvise_pages, map_huge_2m_page,
+    map_page, mmap_anonymous, mprotect_pages, munmap_pages, register_file_backing_hooks,
     switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect, sys_msync, sys_munmap,
     sys_munmap_ext, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
     validate_virt_addr_range, verify_vma_pte_invariants, vmm_get_fault_stats, FileReadHook,
@@ -80,6 +80,7 @@ pub unsafe fn init(multiboot_info_ptr: u64, initrd_end: u64, heap_end: u64) {
     };
 
     pmm::init(multiboot_info_ptr, kernel_end);
+    vmm::init_boot_pml4();
 }
 
 #[cfg(test)]

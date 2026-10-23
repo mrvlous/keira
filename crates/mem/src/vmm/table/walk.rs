@@ -16,6 +16,28 @@ use super::entry::{translate_pte_to_phys, PAGE_HUGE, PAGE_PRESENT};
 use crate::pmm;
 use keira_arch::cpu::{read_cr3, write_cr3};
 
+static BOOT_PML4_PHYS: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+/// Initializes and records the canonical boot PML4 physical base address.
+pub fn init_boot_pml4() {
+    unsafe {
+        let pml4 = active_pml4();
+        if pml4 != 0 {
+            BOOT_PML4_PHYS.store(pml4 as usize, core::sync::atomic::Ordering::SeqCst);
+        }
+    }
+}
+
+/// Retrieves the canonical boot PML4 physical base address, falling back to `active_pml4()`.
+pub fn boot_pml4() -> u64 {
+    let p = BOOT_PML4_PHYS.load(core::sync::atomic::Ordering::SeqCst);
+    if p != 0 {
+        p as u64
+    } else {
+        unsafe { active_pml4() }
+    }
+}
+
 /// Retrieves the physical base address of the active PML4 table from CR3.
 ///
 /// # Safety

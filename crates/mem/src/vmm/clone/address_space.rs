@@ -12,8 +12,8 @@
 use super::super::mapping::map_page_in_pml4;
 use super::super::reclaim::free_user_pages;
 use super::super::table::{
-    active_pml4, switch_address_space, PAGE_COW, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT,
-    PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
+    active_pml4, boot_pml4, switch_address_space, PAGE_COW, PAGE_HUGE, PAGE_NO_EXECUTE,
+    PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
 };
 use crate::pmm;
 use keira_arch::cpu::invlpg;
@@ -26,11 +26,12 @@ use keira_arch::cpu::invlpg;
 ///
 /// Directly reads physical memory, modifies page tables, and allocates page frames.
 pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
-    let boot_pml4_phys = active_pml4();
+    let boot_pml4_phys = boot_pml4();
     let boot_pml4 = boot_pml4_phys as *const u64;
 
     let new_pml4_phys = pmm::alloc_frame().ok_or("Out of memory for new PML4")?;
     let new_pml4 = new_pml4_phys as *mut u64;
+    core::ptr::write_bytes(new_pml4 as *mut u8, 0, 4096);
 
     let boot_pml4_0 = *boot_pml4;
     if (boot_pml4_0 & PAGE_PRESENT) == 0 {
@@ -49,6 +50,7 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
         }
     };
     let new_pdpt = new_pdpt_phys as *mut u64;
+    core::ptr::write_bytes(new_pdpt as *mut u8, 0, 4096);
 
     *new_pdpt.add(0) = (*boot_pdpt.add(0)) & !PAGE_USER;
     *new_pdpt.add(3) = (*boot_pdpt.add(3)) & !PAGE_USER;
