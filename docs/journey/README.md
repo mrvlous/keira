@@ -45,6 +45,7 @@ graph TD
     M33 --> M34["34. Torvalds-Grade Pure Kernel Demarcation & Autonomous Userland<br/><i>userland/Makefile, .config, make defconfig, make headers_install</i>"]
     M34 --> M35["35. Dynamic VFS Mount Subsystem<br/><i>TmpFS, SYS_MOUNT/SYS_UMOUNT, /bin/mount, /bin/umount</i>"]
     M35 --> M36["36. Dynamic Anonymous Pipe Subsystem & POSIX Stream Pipelines<br/><i>PIPE_TABLE, SYS_PIPE2 (96), Broken Pipe SIGPIPE, /bin/sh Streaming, /bin/test_pipe</i>"]
+    M36 --> M37["37. Text Processing Pipeline Suite & Kernel Memory Hardening<br/><i>/bin/grep, /bin/wc, /bin/head, /bin/tail, /bin/echo, /bin/sleep, Stack Safety, 39 Binaries</i>"]
 ```
 
 ---
@@ -84,6 +85,8 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 34** | [`kernel_demarcation_v070.md`](kernel_demarcation_v070.md) | `v0.7.0` | Torvalds-grade pure kernel demarcation, autonomous userland build system, .config engine and make headers_install |
 | **Milestone 35** | [`vfs_mount_v070.md`](vfs_mount_v070.md) | `v0.7.0` | Dynamic VFS mount subsystem, in-memory TmpFS, SYS_MOUNT/SYS_UMOUNT syscalls, /bin/mount, /bin/umount and Ring 0 supervisor console mount command |
 | **Milestone 36** | [`pipe_subsystem_v070.md`](pipe_subsystem_v070.md) | `v0.7.0` | Dynamic anonymous pipe subsystem, PIPE_TABLE (32 channels), SYS_PIPE2 (96), broken pipe SIGPIPE, /bin/sh streaming pipelines and /bin/test_pipe |
+| **Milestone 37** | [`text_pipeline_v070.md`](text_pipeline_v070.md) | `v0.7.0` | Freestanding text processing pipeline suite (/bin/grep, /bin/wc, /bin/head, /bin/tail, /bin/echo, /bin/sleep), kernel stack hardening and VMM table zeroing |
+
 
 ---
 

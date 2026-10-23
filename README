@@ -11,7 +11,7 @@ provides a preemptive multitasking scheduler, multi-core Symmetric
 Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 92 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
-with I/O redirection and pipelines, 33 native core utilities (cat.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, etc.),
+with I/O redirection and pipelines, 39 native core utilities (cat.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
 canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 45+ verified ABI security test vectors, bare-metal io_uring asynchronous I/O engine, High-Precision
 Event Timer (HPET) monotonic clocks, an interactive 15-command emergency debugger and freestanding native C compiler (kcc.elf).
 
@@ -19,13 +19,14 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 36 chronological engineering milestones:
+of computer systems across 37 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
 * Milestones 16-24: Canonical FHS, Page Cache, Loopback, Pure Kernel, Shell and Complete Coreutils.
 * Milestones 25-30: Network Diagnostics, Routing FIB, Netstat, Iptables and Multi-User Security.
 * Milestones 31-36: Distro Purge, VFS Symlinks, Modular Decoupling, Pure Kernel Demarcation, Dynamic VFS Mounts and Dynamic Anonymous Pipes.
+* Milestone 37: Text Processing Pipeline Suite (grep, wc, head, tail, echo, sleep), Kernel Stack Hardening and VMM Table Zeroing.
 
 Read the detailed engineering journal: docs/journey/README.md
 System architecture overview: docs/architecture/README.md
