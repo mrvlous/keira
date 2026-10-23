@@ -8,6 +8,7 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,7 +70,11 @@ int main(int argc, char **argv) {
 
         int fd = open(argv[i], O_RDONLY, 0);
         if (fd < 0) {
-            printf("cat: %s: No such file or directory\n", argv[i]);
+            if (errno == EACCES) {
+                printf("cat: %s: Permission denied\n", argv[i]);
+            } else {
+                printf("cat: %s: No such file or directory\n", argv[i]);
+            }
             exit_status = 1;
             continue;
         }

@@ -92,6 +92,7 @@ int write_elf_executable(const char *output_path) {
     sys_write(out_fd, (char *)code_buf, final_code_size);
     sys_write(out_fd, (char *)data_buf, data_idx);
     sys_close(out_fd);
+    sys_chmod(output_path, 0755);
 
     return 0;
 #else
@@ -163,6 +164,7 @@ int write_elf_executable(const char *output_path) {
     sys_write(out_fd, (char *)code_buf, final_code_size);
     sys_write(out_fd, (char *)data_buf, data_idx);
     sys_close(out_fd);
+    sys_chmod(output_path, 0755);
 
     return 0;
 #endif
