@@ -109,3 +109,16 @@ int umount(const char *target) {
 int umount2(const char *target, int flags) {
     return sys_umount2(target, flags);
 }
+
+int sys_chmod(const char *pathname, mode_t mode) {
+    return (int)syscall2(SYS_CHMOD, (uint64_t)(uintptr_t)pathname, (uint64_t)mode);
+}
+
+int sys_chown(const char *pathname, uid_t owner, gid_t group) {
+    return (int)syscall3(SYS_CHOWN, (uint64_t)(uintptr_t)pathname, (uint64_t)owner,
+                         (uint64_t)group);
+}
+
+int sys_stat(const char *pathname, struct stat *statbuf) {
+    return (int)syscall2(SYS_STAT, (uint64_t)(uintptr_t)pathname, (uint64_t)(uintptr_t)statbuf);
+}

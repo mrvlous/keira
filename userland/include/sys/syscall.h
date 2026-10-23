@@ -109,6 +109,11 @@
 #define SYS_MOUNT 94
 #define SYS_UMOUNT 95
 #define SYS_PIPE2 96
+#define SYS_CHMOD 97
+#define SYS_CHOWN 98
+#define SYS_STAT 99
+
+struct stat;
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -165,6 +170,9 @@ int sys_umount(const char *target);
 int sys_umount2(const char *target, int flags);
 long sys_ping(const char *target_ip, int timeout_ms);
 ssize_t sys_http_get(const char *url, void *buf, size_t count);
+int sys_chmod(const char *pathname, mode_t mode);
+int sys_chown(const char *pathname, uid_t owner, gid_t group);
+int sys_stat(const char *pathname, struct stat *statbuf);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2

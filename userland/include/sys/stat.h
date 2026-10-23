@@ -26,6 +26,9 @@
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #define S_ISCHR(m) (((m) & S_IFMT) == S_IFCHR)
 #define S_ISBLK(m) (((m) & S_IFMT) == S_IFBLK)
+#define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
+#define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
+#define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
 
 #define S_IRWXU 00700
 #define S_IRUSR 00400
