@@ -21,7 +21,7 @@ Directory listing in UNIX operating systems is fundamentally a userspace utility
 | Option | Long Option | Description |
 | :--- | :--- | :--- |
 | `-a` | `--all` | Lists all entries, including entries starting with a dot (`.`) |
-| `-l` | *N/A* | Displays detailed columnar output including entry type and file size |
+| `-l` | *N/A* | Displays detailed columnar output including file mode permissions, link count, owner UID, group GID, file size and entry name |
 | `-h` | `--help` | Displays usage options and exits with status 0 |
 
 ---
@@ -45,12 +45,12 @@ cat.elf  cat  ls.elf  ls  sh.elf  sh  sysinfo.elf  kcc.elf
 ```bash
 # Listing with file attributes:
 keira:/# ls.elf -l /bin
--  12856  cat.elf
--  12856  cat
--  14320  ls.elf
--  14320  ls
--  28416  sh.elf
--  28416  sh
+-rwxr-xr-x  1    0    0    12856 cat.elf
+-rwxr-xr-x  1    0    0    12856 cat
+-rwxr-xr-x  1    0    0    14320 ls.elf
+-rwxr-xr-x  1    0    0    14320 ls
+-rwxr-xr-x  1    0    0    28416 sh.elf
+-rwxr-xr-x  1    0    0    28416 sh
 ```
 
 ### All Entries Listing (`-a`)

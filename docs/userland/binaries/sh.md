@@ -136,7 +136,7 @@ Shell Features:
   Pipelines:     cmd1 | cmd2
   Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2
 Core Utilities (/bin):
-  File & Dir:    cat, touch, mkdir, rm, ls, df, ln, mount, umount
+  File & Dir:    cat, touch, mkdir, rm, ls, chmod, chown, df, ln, mount, umount
   Text Pipeline: grep, wc, head, tail, echo, sleep
   System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear, whoami, id, su
   Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables
