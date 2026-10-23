@@ -49,4 +49,5 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`tail.elf`](tail.md) | `userland/bin/tail/` | Freestanding last lines/bytes stream tail extraction utility |
 | [`echo.elf`](echo.md) | `userland/bin/echo/` | Freestanding string argument printing and escape sequence interpolation utility |
 | [`sleep.elf`](sleep.md) | `userland/bin/sleep/` | Freestanding execution delay and interval suspension utility |
-
+| [`chmod.elf`](chmod.md) | `userland/bin/chmod/` | Freestanding file mode bits and Discretionary Access Control modification utility |
+| [`chown.elf`](chown.md) | `userland/bin/chown/` | Freestanding file owner and group identity modification utility |
