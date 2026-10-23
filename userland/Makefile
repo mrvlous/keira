@@ -57,8 +57,8 @@ LIBC_A          := $(LIB_DIR)/libc.a
 LIB_SRCS        := $(shell find lib -type f -name "*.c")
 LIB_OBJS        := $(patsubst lib/%.c,$(OBJ_DIR)/lib/%.o,$(LIB_SRCS))
 
-# Canonical list of 39 core utility programs
-BINS            := arp cat clear df dmesg echo fetch fuzz_abi grep head hostname id ifconfig \
+# Canonical list of 41 core utility programs
+BINS            := arp cat chmod chown clear df dmesg echo fetch fuzz_abi grep head hostname id ifconfig \
                    init iptables kcc kill ln ls mkdir mount netstat ping ps \
                    rm route sh sleep su sysinfo tail test_abi test_pipe test_threads touch umount uname wc whoami
 
