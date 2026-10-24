@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* ANSI escape sequence: Clear entire screen (2J) and cursor home (H) */
-    const char *ansi_clear = "\033[2J\033[H";
+    /* ANSI escape sequence: Clear entire screen (2J), cursor home (H) and reset color (0m) */
+    const char *ansi_clear = "\033[2J\033[H\033[0m";
     write(STDOUT_FILENO, ansi_clear, strlen(ansi_clear));
     return 0;
 }
