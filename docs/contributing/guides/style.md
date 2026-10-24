@@ -179,8 +179,8 @@ All shell commands, driver logging and terminal output must strictly adhere to t
 ### A. Color Palette Matrix:
 | Element / Role | Color Constant | Hex RGB | Semantic Usage |
 | :--- | :--- | :--- | :--- |
-| **Headers & Prompts** | `vga::Color::White` | `#FFFFFF` | Table column headers, command prompts (`keira:/path#`), titles, category headings. |
-| **Body & Data Lines** | `vga::Color::LightGrey` | `#AAAAAA` | Default stdout, file listings, telemetry metrics, register values, memory addresses. |
+| **Headers, Prompts & Stdout** | `vga::Color::White` | `#FFFFFF` | Default stdout, command prompts (`keira:/path#`), titles, file listings and metrics. |
+| **Muted & Secondary Text** | `vga::Color::LightGrey` | `#AAAAAA` | Inactive devices, secondary diagnostics and subtle dividers. |
 | **Success Badges** | `vga::Color::LightGreen` | `#55FF55` | Minimal status tokens: `[OK]`, `[Mounted]`, `RUNNING`, `UP (e1000)`, `Connecting`, `Downloading`, `Finished`. |
 | **Warning Badges** | `vga::Color::Yellow` | `#FFFF55` | Alerts, cache invalidations, fallback notices: `[ WARN ]`, `[REBUILDING]`, `Warning`. |
 | **Error Messages** | `vga::Color::LightRed` | `#FF5555` | Critical failures, permission errors: `[FAILED]`, `Error`, `error`. |
