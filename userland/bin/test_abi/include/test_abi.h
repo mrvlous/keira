@@ -21,6 +21,7 @@
 #include <sys/io_uring.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <termios.h>

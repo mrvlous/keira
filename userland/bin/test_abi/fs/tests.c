@@ -424,5 +424,50 @@ int run_test_abi_fs(void) {
          "verified");
 #endif
 
+    /* 38. Century Syscall 100 Descriptor Metadata Query (fstat) */
+    puts("  [TEST] Century Syscall 100 descriptor metadata query (fstat)...");
+    struct stat fst;
+    memset(&fst, 0, sizeof(fst));
+    if (fstat(-1, &fst) == 0 || errno != EBADF) {
+        puts("  [FAIL] fstat accepted invalid descriptor");
+        return 1;
+    }
+
+    if (fstat(0, &fst) != 0) {
+        puts("  [FAIL] fstat failed on standard input (stdin)");
+        return 1;
+    }
+    if (!S_ISCHR(fst.st_mode)) {
+        puts("  [FAIL] stdin mode is not character device");
+        return 1;
+    }
+
+    const char *fstat_tmp_path = "/tmp/test_fstat100.txt";
+    unlink(fstat_tmp_path);
+    int fd_fstat = open(fstat_tmp_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd_fstat < 0) {
+        puts("  [FAIL] Failed to create temporary file for fstat verification");
+        return 1;
+    }
+    write(fd_fstat, "KEIRA100", 8);
+
+    memset(&fst, 0, sizeof(fst));
+    if (fstat(fd_fstat, &fst) != 0) {
+        puts("  [FAIL] fstat failed on open regular file descriptor");
+        close(fd_fstat);
+        unlink(fstat_tmp_path);
+        return 1;
+    }
+    if (!S_ISREG(fst.st_mode)) {
+        puts("  [FAIL] Expected S_IFREG mode on regular file");
+        close(fd_fstat);
+        unlink(fstat_tmp_path);
+        return 1;
+    }
+    close(fd_fstat);
+    unlink(fstat_tmp_path);
+    puts("  [INFO] Syscall 100 fstat verified on character devices and regular files");
+    puts("  [OK]   Century Syscall 100 descriptor metadata query operational");
+
     return 0;
 }
