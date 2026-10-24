@@ -7,10 +7,17 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unified buffer cache and page management subsystem.
+//! Unified buffer cache, dentry cache and page management subsystem.
 
+pub mod dentry;
 pub mod page;
 
+pub use self::dentry::{
+    dcache_add, dcache_add_negative, dcache_clear, dcache_invalidate, dcache_lookup, dcache_stats,
+    dentry_hash, Dentry, DentryLookupResult, DENTRY_CACHE, DENTRY_CACHE_CAPACITY, DENTRY_CLOCK,
+    DENTRY_EVICTIONS, DENTRY_FLAG_DIRECTORY, DENTRY_FLAG_NEGATIVE, DENTRY_FLAG_REFERENCED,
+    DENTRY_FLAG_VALID, DENTRY_HITS, DENTRY_MISSES, DENTRY_NEGATIVE_HITS, DENTRY_PATH_MAX,
+};
 pub use self::page::{
     clear_page_cache, find_page_index, flush_dirty_pages, get_page_cache_stats, insert_page,
     invalidate_inode, read_page, write_page, PageCacheEntry, PAGE_CACHE, PAGE_CACHE_CAPACITY,
