@@ -25,6 +25,14 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     unsafe {
+        let dirty_inodes = keira_fs::cache::icache_flush_dirty();
+        if dirty_inodes > 0 {
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("sync: flushed ");
+            vga::print_u64(dirty_inodes as u64);
+            vga::print_str(" dirty inodes to storage\n");
+        }
+
         match fat::flush_dirty_sectors() {
             Ok(count) => {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
