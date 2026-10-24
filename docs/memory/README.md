@@ -2,7 +2,7 @@
 
 # Keira Memory Management Subsystems
 
-The `memory` domain encompasses physical frame management, virtual memory paging, dynamic heap allocation, swap partitions, and DMA buffering.
+The `memory` domain encompasses physical frame management, virtual memory paging, dynamic heap allocation, swap partitions and DMA buffering.
 
 ---
 
