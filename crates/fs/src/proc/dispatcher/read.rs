@@ -12,8 +12,8 @@
 use crate::proc::system::{
     read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
     read_meminfo, read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route,
-    read_net_tcp, read_net_udp, read_nf_conntrack_stat, read_partitions, read_sockstat,
-    read_uptime, read_version,
+    read_net_tcp, read_net_udp, read_nf_conntrack_stat, read_partitions, read_slabinfo,
+    read_sockstat, read_uptime, read_version, read_vmstat,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{read_task_cmdline, read_task_status};
@@ -25,6 +25,8 @@ pub fn exists(clean_node: &str) -> bool {
         node,
         "" | "uptime"
             | "meminfo"
+            | "slabinfo"
+            | "vmstat"
             | "cpuinfo"
             | "version"
             | "loadavg"
@@ -74,6 +76,8 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
         "" | "net" | "net/stat" => Ok(0),
         "uptime" => read_uptime(buf),
         "meminfo" => read_meminfo(buf),
+        "slabinfo" => read_slabinfo(buf),
+        "vmstat" => read_vmstat(buf),
         "cpuinfo" => read_cpuinfo(buf),
         "version" => read_version(buf),
         "loadavg" => read_loadavg(buf),
@@ -122,7 +126,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
 use crate::vfs::VirtualDirEntry;
 
 /// Virtual directory entries representing pseudo-files and directories in /proc.
-pub static PROC_ENTRIES: [VirtualDirEntry; 9] = [
+pub static PROC_ENTRIES: [VirtualDirEntry; 11] = [
     VirtualDirEntry {
         name: ".",
         d_type: 4,
@@ -164,9 +168,19 @@ pub static PROC_ENTRIES: [VirtualDirEntry; 9] = [
         ino: 16,
     },
     VirtualDirEntry {
+        name: "slabinfo",
+        d_type: 8,
+        ino: 17,
+    },
+    VirtualDirEntry {
+        name: "vmstat",
+        d_type: 8,
+        ino: 18,
+    },
+    VirtualDirEntry {
         name: "self",
         d_type: 4,
-        ino: 17,
+        ino: 19,
     },
 ];
 

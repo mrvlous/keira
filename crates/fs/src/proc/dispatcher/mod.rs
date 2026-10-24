@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! ProcFS node lookup, validation, and read dispatcher.
+//! ProcFS node lookup, validation and read dispatcher.
 
 pub mod read;
 
