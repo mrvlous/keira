@@ -32,6 +32,7 @@ pub fn execute_command_inner(cmd: &str) {
         "regs" => crate::cmds::sys::info::regs::run(&mut parts),
         "irq" => crate::cmds::sys::info::irq::run(&mut parts),
         "disk" => crate::cmds::disk::run(&mut parts),
+        "dcache" => crate::cmds::dcache::run(&mut parts),
         "mount" => crate::cmds::fs::mount::mount::run(&mut parts),
         "pipes" => crate::cmds::sys::info::pipes::run(&mut parts),
         "sync" => crate::cmds::sync::run(&mut parts),

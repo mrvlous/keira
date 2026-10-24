@@ -16,4 +16,12 @@ fn test_fs_commands_help_invocation() {
     let mut args = "disk --help".split_whitespace();
     args.next();
     disk::run(&mut args);
+
+    let mut dcache_args = "dcache --help".split_whitespace();
+    dcache_args.next();
+    dcache::run(&mut dcache_args);
+
+    let mut dcache_run_args = "dcache".split_whitespace();
+    dcache_run_args.next();
+    dcache::run(&mut dcache_run_args);
 }
