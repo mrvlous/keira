@@ -110,3 +110,21 @@ fn test_sys_irq() {
     let mut args_empty = "".split_whitespace();
     irq::run(&mut args_empty);
 }
+
+#[test]
+fn test_sys_slabinfo() {
+    let mut args_help = "slabinfo --help".split_whitespace();
+    args_help.next();
+    slabinfo::run(&mut args_help);
+
+    let mut args_cpu = "slabinfo -c".split_whitespace();
+    args_cpu.next();
+    slabinfo::run(&mut args_cpu);
+
+    let mut args_verbose = "slabinfo -v".split_whitespace();
+    args_verbose.next();
+    slabinfo::run(&mut args_verbose);
+
+    let mut args_default = "".split_whitespace();
+    slabinfo::run(&mut args_default);
+}
