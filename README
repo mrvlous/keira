@@ -19,7 +19,7 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 40 chronological engineering milestones:
+of computer systems across 41 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -30,6 +30,7 @@ of computer systems across 40 chronological engineering milestones:
 * Milestone 38: POSIX Discretionary Access Control (DAC), File Permissions (chmod), Ownership (chown) and Real Stat Metadata.
 * Milestone 39: VFS Dentry Cache (dcache), Century Syscall 100 (fstat), Telemetry and Ring 0 Inspection.
 * Milestone 40: Pure Kernel Memory Introspection (/proc/slabinfo, /proc/vmstat), Slab Cache Registry and Supervisor Telemetry.
+* Milestone 41: VFS Inode Cache (icache), Cache Trinity Completion (page_cache, dcache, icache) and Ring 0 Inspection.
 
 Read the detailed engineering journal: docs/journey/README.md
 System architecture overview: docs/architecture/README.md

@@ -90,6 +90,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 38** | [`discretionary_access_control_v070.md`](discretionary_access_control_v070.md) | `v0.7.0` | In-kernel POSIX DAC engine, PERM_TABLE, SYS_CHMOD/SYS_CHOWN/SYS_STAT, real stat metadata and core utilities (/bin/chmod, /bin/chown) |
 | **Milestone 39** | [`dcache_syscall100_v070.md`](dcache_syscall100_v070.md) | `v0.7.0` | Pure kernel VFS dentry cache (dcache), Century Syscall 100 (SYS_FSTAT), dcache telemetry and Ring 0 inspection |
 | **Milestone 40** | [`slabinfo_vmstat_v070.md`](slabinfo_vmstat_v070.md) | `v0.7.0` | Pure kernel memory introspection (/proc/slabinfo, /proc/vmstat), slab cache registry, magazine telemetry and Ring 0 supervisor slabinfo command |
+| **Milestone 41** | [`icache_vfs_v070.md`](icache_vfs_v070.md) | `v0.7.0` | Pure kernel VFS inode cache (icache), complete cache trinity (page_cache, dcache, icache), dirty tracking and Ring 0 icache command |
 
 ---
 
