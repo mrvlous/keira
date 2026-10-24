@@ -34,6 +34,7 @@ pub mod test {
         assert_eq!(SYS_CHMOD, 97);
         assert_eq!(SYS_CHOWN, 98);
         assert_eq!(SYS_STAT, 99);
+        assert_eq!(SYS_FSTAT, 100);
     }
 
     #[test]
@@ -55,6 +56,7 @@ pub mod test {
         assert_eq!(syscall_name(SYS_CHMOD), "sys_chmod");
         assert_eq!(syscall_name(SYS_CHOWN), "sys_chown");
         assert_eq!(syscall_name(SYS_STAT), "sys_stat");
+        assert_eq!(syscall_name(SYS_FSTAT), "sys_fstat");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
@@ -67,6 +69,7 @@ pub mod test {
         assert!(is_valid_syscall(SYS_CHMOD));
         assert!(is_valid_syscall(SYS_CHOWN));
         assert!(is_valid_syscall(SYS_STAT));
+        assert!(is_valid_syscall(SYS_FSTAT));
         assert!(!is_valid_syscall(999));
 
         assert!(is_io_syscall(SYS_OPEN));
@@ -77,6 +80,7 @@ pub mod test {
         assert!(is_io_syscall(SYS_CHMOD));
         assert!(is_io_syscall(SYS_CHOWN));
         assert!(is_io_syscall(SYS_STAT));
+        assert!(is_io_syscall(SYS_FSTAT));
         assert!(!is_io_syscall(SYS_MMAP));
 
         assert!(is_memory_syscall(SYS_MMAP));

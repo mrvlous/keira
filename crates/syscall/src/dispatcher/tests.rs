@@ -126,5 +126,9 @@ pub mod test {
         // Calling stat with null pointer returns EINVAL
         let ret = syscall_dispatcher(99, 0, 0, 0, 0, 0, 0);
         assert_eq!(ret, errno_to_ret(EINVAL));
+
+        // Calling fstat with null buffer returns EBADF
+        let ret = syscall_dispatcher(100, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EBADF));
     }
 }
