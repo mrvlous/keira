@@ -27,6 +27,7 @@ pub fn execute_command_inner(cmd: &str) {
         "cpu" => crate::cmds::cpu::run(&mut parts),
         "smp" => crate::cmds::smp::run(&mut parts),
         "memory" | "mem" => crate::cmds::memory::run(&mut parts),
+        "slabinfo" | "slab" => crate::cmds::slabinfo::run(&mut parts),
         "devices" | "pci" => crate::cmds::devices::run(&mut parts),
         "drivers" => crate::cmds::drivers::run(&mut parts),
         "regs" => crate::cmds::sys::info::regs::run(&mut parts),
