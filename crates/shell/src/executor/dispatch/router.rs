@@ -48,7 +48,7 @@ pub fn execute_command_inner(cmd: &str) {
             } else {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
                 vga::print_str("sh: executable not found in /bin\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 return;
             };
 
@@ -59,7 +59,7 @@ pub fn execute_command_inner(cmd: &str) {
                 vga::print_str(
                     "[kernel] Dropping to supervisor console (Ring 0). Type 'help' or 'sh'.\n\n",
                 );
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
             }
         }
         "reset" | "reboot" => crate::cmds::reset::run(&mut parts),
@@ -101,13 +101,13 @@ pub fn execute_command_inner(cmd: &str) {
                 vga::print_str("Binary found in /bin. Use 'run /bin/");
                 vga::print_str(command);
                 vga::print_str("' to execute.\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
             } else {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
                 vga::print_str("Unknown command: ");
                 vga::print_str(command);
                 vga::print_str(". Type 'help' for available commands.\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
             }
         }
     }

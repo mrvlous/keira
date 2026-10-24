@@ -55,7 +55,7 @@ pub unsafe fn editor_handle_keypress(c: u8) {
                     vga::print_str("Error saving file: ");
                     vga::print_str(e);
                     vga::print_str("\nPress any key to return...\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                     EDITOR_CONFIRM_SAVE = false;
                     EDITOR_CONFIRM_EXIT = true;
                     return;

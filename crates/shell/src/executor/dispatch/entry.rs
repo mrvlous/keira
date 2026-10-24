@@ -46,7 +46,7 @@ pub fn execute_command(cmd: &str) {
                     vga::print_str("Error reading input redirection file: ");
                     vga::print_str(e);
                     vga::print_str("\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                     return;
                 }
             };

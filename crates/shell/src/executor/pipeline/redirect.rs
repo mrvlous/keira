@@ -71,7 +71,7 @@ pub unsafe fn execute_with_redirection(
                 vga::print_str("Error creating redirection file: ");
                 vga::print_str(e);
                 vga::print_str("\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 if input_file.is_some() {
                     keira_io::vga::PIPE_ACTIVE = false;
                 }
@@ -93,7 +93,7 @@ pub unsafe fn execute_with_redirection(
                 vga::print_str("Error writing redirected output: ");
                 vga::print_str(e);
                 vga::print_str("\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
             }
         }
     } else {

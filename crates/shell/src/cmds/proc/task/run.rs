@@ -96,6 +96,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         keira_io::tty::flush_tty();
         keira_io::ps2::flush_input_queue();
 
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         let _job_id = keira_task::signal::add_job(1, filename, true);
         jump_to_user(entry_point, initial_user_rsp);
         keira_task::signal::remove_job_by_pid(1);
@@ -190,6 +191,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         keira_io::tty::flush_tty();
         keira_io::ps2::flush_input_queue();
 
+        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
         let _job_id = keira_task::signal::add_job(1, filename, true);
         jump_to_user(entry_point, initial_user_rsp);
         keira_task::signal::remove_job_by_pid(1);
@@ -330,7 +332,7 @@ fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
                 if verbose && !is_clear_cmd {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("Program exited normally.\n");
-                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                 }
             }
             Err(e) => {
@@ -338,7 +340,7 @@ fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
                 vga::print_str("Error executing program: ");
                 vga::print_str(e);
                 vga::print_str("\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
             }
         }
 
@@ -373,6 +375,6 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if !run_direct_with_args_mode(prog_arg, &args_buf[..arg_count], true) {
         vga::set_color(vga::Color::LightRed, vga::Color::Black);
         vga::print_str("Error executing program: file not found\n");
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
     }
 }

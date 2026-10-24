@@ -76,7 +76,7 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
             }
             26 => {}
             12 => {
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::init();
                 print_prompt();
                 let typed = &INPUT_BUFFER[..BUFFER_LEN];
