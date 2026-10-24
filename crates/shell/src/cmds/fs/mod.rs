@@ -14,4 +14,5 @@ pub mod mount;
 #[cfg(test)]
 mod tests;
 
+pub use mount::dcache;
 pub use mount::disk;
