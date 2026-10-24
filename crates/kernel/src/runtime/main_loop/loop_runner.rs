@@ -31,7 +31,7 @@ pub fn enter_main_loop() -> ! {
 
     vga::init();
 
-    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+    vga::set_color(vga::Color::White, vga::Color::Black);
     vga::print_str("Keira Kernel ");
     vga::print_str(env!("CARGO_PKG_VERSION"));
     #[cfg(target_arch = "x86_64")]
@@ -58,13 +58,14 @@ pub fn enter_main_loop() -> ! {
         };
 
         if let Some(path) = sh_path {
+            vga::set_color(vga::Color::White, vga::Color::Black);
             let _ = shell::run_user_program(path, &[path]);
             vga::set_color(vga::Color::Yellow, vga::Color::Black);
             vga::print_str("\n[kernel] Userspace session terminated.\n");
             vga::print_str(
                 "[kernel] Dropping to supervisor console (Ring 0). Type 'help' or 'sh'.\n\n",
             );
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
         } else {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str(
@@ -73,7 +74,7 @@ pub fn enter_main_loop() -> ! {
             vga::print_str(
                 "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
             );
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
         }
     }
 
@@ -84,7 +85,7 @@ pub fn enter_main_loop() -> ! {
         vga::print_str(
             "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
         );
-        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::set_color(vga::Color::White, vga::Color::Black);
     }
 
     shell::print_prompt();
