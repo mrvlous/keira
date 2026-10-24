@@ -605,6 +605,7 @@ pub fn handle_vmsplice(arg1: u64, arg2: u64, arg3: u64) -> u64 {
 /// Syscall 70: Commit buffer cache to disk.
 pub fn handle_sync() -> u64 {
     unsafe {
+        let _ = keira_fs::cache::icache_flush_dirty();
         let _ = keira_fs::fat::flush_dirty_sectors();
         let _ = keira_io::storage::block::flush_mounted_device();
         keira_io::storage::ahci::flush_dma_cache();
