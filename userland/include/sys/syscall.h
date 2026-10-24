@@ -112,6 +112,7 @@
 #define SYS_CHMOD 97
 #define SYS_CHOWN 98
 #define SYS_STAT 99
+#define SYS_FSTAT 100
 
 struct stat;
 
@@ -173,6 +174,7 @@ ssize_t sys_http_get(const char *url, void *buf, size_t count);
 int sys_chmod(const char *pathname, mode_t mode);
 int sys_chown(const char *pathname, uid_t owner, gid_t group);
 int sys_stat(const char *pathname, struct stat *statbuf);
+int sys_fstat(int fd, struct stat *statbuf);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2
