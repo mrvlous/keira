@@ -7,9 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unified buffer cache, dentry cache and page management subsystem.
+//! Unified page cache, dentry cache and inode cache subsystem.
 
 pub mod dentry;
+pub mod inode;
 pub mod page;
 
 pub use self::dentry::{
@@ -17,6 +18,13 @@ pub use self::dentry::{
     dentry_hash, Dentry, DentryLookupResult, DENTRY_CACHE, DENTRY_CACHE_CAPACITY, DENTRY_CLOCK,
     DENTRY_EVICTIONS, DENTRY_FLAG_DIRECTORY, DENTRY_FLAG_NEGATIVE, DENTRY_FLAG_REFERENCED,
     DENTRY_FLAG_VALID, DENTRY_HITS, DENTRY_MISSES, DENTRY_NEGATIVE_HITS, DENTRY_PATH_MAX,
+};
+pub use self::inode::{
+    icache_clear, icache_flush_dirty, icache_insert, icache_invalidate, icache_lookup,
+    icache_mark_dirty, icache_stats, icache_update_metadata, icache_update_size, CachedInode,
+    INODE_CACHE, INODE_CACHE_CAPACITY, INODE_CACHE_LOCK, INODE_CLOCK, INODE_EVICTIONS,
+    INODE_FLAG_DIRTY, INODE_FLAG_LOCKED, INODE_FLAG_REFERENCED, INODE_FLAG_VALID, INODE_HITS,
+    INODE_MISSES, INODE_WRITEBACKS, S_IFBLK, S_IFCHR, S_IFDIR, S_IFIFO, S_IFLNK, S_IFREG, S_IFSOCK,
 };
 pub use self::page::{
     clear_page_cache, find_page_index, flush_dirty_pages, get_page_cache_stats, insert_page,

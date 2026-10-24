@@ -26,8 +26,10 @@ pub mod vfs;
 pub use cache::{
     clear_page_cache, dcache_add, dcache_add_negative, dcache_clear, dcache_invalidate,
     dcache_lookup, dcache_stats, find_page_index, flush_dirty_pages, get_page_cache_stats,
-    insert_page, invalidate_inode, read_page, write_page, DentryLookupResult, PageCacheEntry,
-    PAGE_CACHE_CAPACITY, PAGE_SIZE,
+    icache_clear, icache_flush_dirty, icache_insert, icache_invalidate, icache_lookup,
+    icache_mark_dirty, icache_stats, icache_update_metadata, icache_update_size, insert_page,
+    invalidate_inode, read_page, write_page, CachedInode, DentryLookupResult, PageCacheEntry,
+    INODE_CACHE_CAPACITY, PAGE_CACHE_CAPACITY, PAGE_SIZE,
 };
 pub use dev::char::{get_dev_entry, read_dev_node, write_dev_node, DEV_ENTRIES};
 pub use elf::loader::{execute_user_mode, load_elf};
