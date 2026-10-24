@@ -108,6 +108,7 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_CHMOD => "sys_chmod",
         SYS_CHOWN => "sys_chown",
         SYS_STAT => "sys_stat",
+        SYS_FSTAT => "sys_fstat",
         _ => "sys_unknown",
     }
 }

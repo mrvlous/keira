@@ -44,6 +44,7 @@ pub fn is_io_syscall(num: u64) -> bool {
             | SYS_CHMOD
             | SYS_CHOWN
             | SYS_STAT
+            | SYS_FSTAT
     )
 }
 
