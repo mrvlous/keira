@@ -22,8 +22,8 @@ pub static mut TEXT_CURSOR_X: u16 = 0;
 /// Active vertical text cursor position in 80x25 text mode.
 pub static mut TEXT_CURSOR_Y: u16 = 0;
 
-/// Active text color attribute byte in 80x25 text mode.
-pub static mut TEXT_COLOR: u8 = 0x07;
+/// Active text color attribute byte in 80x25 text mode (0x0F = bright white on black).
+pub static mut TEXT_COLOR: u8 = 0x0F;
 
 /// Physical memory base address of the linear framebuffer.
 pub static mut FRAMEBUFFER_ADDR: u64 = 0;
@@ -43,8 +43,8 @@ pub static mut FRAMEBUFFER_BPP: u8 = 0;
 /// Flag indicating whether the linear framebuffer is mapped into virtual memory.
 pub static mut FRAMEBUFFER_MAPPED: bool = false;
 
-/// Active foreground 32-bpp RGB color for framebuffer text rendering.
-pub static mut ACTIVE_FG_COLOR: u32 = 0xAAAAAA;
+/// Active foreground 32-bpp RGB color for framebuffer text rendering (0xFFFFFF = bright white).
+pub static mut ACTIVE_FG_COLOR: u32 = 0xFFFFFF;
 
 /// Active background 32-bpp RGB color for framebuffer text rendering.
 pub static mut ACTIVE_BG_COLOR: u32 = 0x000000;
@@ -122,6 +122,7 @@ pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
         } else if byte == b'\r' {
             TEXT_CURSOR_X = 0;
         } else if byte == 0x08 {
+            #[allow(clippy::implicit_saturating_sub)]
             if TEXT_CURSOR_X > 0 {
                 TEXT_CURSOR_X -= 1;
                 #[cfg(target_os = "none")]

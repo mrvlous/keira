@@ -66,3 +66,11 @@ fn test_ansi_clear_and_cursor_home() {
     assert_eq!(super::print::get_cursor_row(), 0);
     assert_eq!(super::print::get_cursor_col(), 0);
 }
+
+#[test]
+fn test_ansi_sgr_color_handling() {
+    // Emit ANSI color and reset sequences
+    super::print::print_str("\x1b[31mRed\x1b[0mWhite");
+    super::print::print_str("\x1b[32mGreen\x1b[39mDefault");
+    super::print::print_str("\x1b[97mBrightWhite\x1b[mReset");
+}

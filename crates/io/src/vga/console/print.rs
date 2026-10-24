@@ -231,8 +231,20 @@ fn handle_ansi_byte(c: u8) -> bool {
                                 clear_line_from(get_cursor_col());
                             }
                         }
-                        b'm' if !ANSI_HAS_PARAM || ANSI_PARAM_0 == 0 => {
-                            set_color(Color::LightGrey, Color::Black);
+                        b'm' => {
+                            let code = if ANSI_HAS_PARAM { ANSI_PARAM_0 } else { 0 };
+                            match code {
+                                0 | 1 | 37 | 39 | 97 => set_color(Color::White, Color::Black),
+                                30 => set_color(Color::Black, Color::Black),
+                                31 | 91 => set_color(Color::LightRed, Color::Black),
+                                32 | 92 => set_color(Color::LightGreen, Color::Black),
+                                33 | 93 => set_color(Color::Yellow, Color::Black),
+                                34 | 94 => set_color(Color::LightBlue, Color::Black),
+                                35 | 95 => set_color(Color::LightMagenta, Color::Black),
+                                36 | 96 => set_color(Color::LightCyan, Color::Black),
+                                90 => set_color(Color::DarkGrey, Color::Black),
+                                _ => {}
+                            }
                         }
                         _ => {}
                     }
@@ -408,5 +420,5 @@ pub fn print_boot_log(msg: &str, status: u8) {
     print_str(msg);
     print_str("\n");
 
-    set_color(Color::LightGrey, Color::Black);
+    set_color(Color::White, Color::Black);
 }
