@@ -15,6 +15,8 @@ use super::*;
 fn test_procfs_nodes_exist() {
     assert!(exists("uptime"));
     assert!(exists("meminfo"));
+    assert!(exists("slabinfo"));
+    assert!(exists("vmstat"));
     assert!(exists("cpuinfo"));
     assert!(exists("version"));
     assert!(exists("loadavg"));
@@ -77,4 +79,24 @@ fn test_read_loadavg_and_cmdline() {
     let n = read_proc_file("cmdline", &mut buf).expect("read cmdline failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 cmdline");
     assert!(s.contains("console=tty0"));
+}
+
+#[test]
+fn test_read_slabinfo_and_vmstat() {
+    let mut buf = [0u8; 2048];
+    let n = read_proc_file("slabinfo", &mut buf).expect("read slabinfo failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 slabinfo");
+    assert!(s.contains("slabinfo - version: 2.1"));
+    assert!(s.contains("task_struct"));
+    assert!(s.contains("inode_cache"));
+    assert!(s.contains("file_desc_cache"));
+    assert!(s.contains("vma_cache"));
+    assert!(s.contains("dentry_cache"));
+
+    let n = read_proc_file("vmstat", &mut buf).expect("read vmstat failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 vmstat");
+    assert!(s.contains("nr_free_pages"));
+    assert!(s.contains("nr_alloc_pages"));
+    assert!(s.contains("pgfault"));
+    assert!(s.contains("tlb_flushes"));
 }

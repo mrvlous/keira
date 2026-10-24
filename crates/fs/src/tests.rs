@@ -49,8 +49,10 @@ fn test_virtual_directory_enumeration() {
     assert_eq!(proc::get_proc_entry(5).map(|e| e.name), Some("version"));
     assert_eq!(proc::get_proc_entry(6).map(|e| e.name), Some("loadavg"));
     assert_eq!(proc::get_proc_entry(7).map(|e| e.name), Some("cmdline"));
-    assert_eq!(proc::get_proc_entry(8).map(|e| e.name), Some("self"));
-    assert_eq!(proc::get_proc_entry(9), None);
+    assert_eq!(proc::get_proc_entry(8).map(|e| e.name), Some("slabinfo"));
+    assert_eq!(proc::get_proc_entry(9).map(|e| e.name), Some("vmstat"));
+    assert_eq!(proc::get_proc_entry(10).map(|e| e.name), Some("self"));
+    assert_eq!(proc::get_proc_entry(11), None);
 }
 
 #[test]
