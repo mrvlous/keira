@@ -21,6 +21,7 @@ pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
         Err(_) => path,
     };
     let (clean_path, fs_type) = route_path(actual_path);
+    crate::cache::dcache_invalidate(actual_path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
@@ -42,6 +43,7 @@ pub fn write_file_offset(path: &str, offset: u64, content: &[u8]) -> Result<usiz
         Err(_) => path,
     };
     let (clean_path, fs_type) = route_path(actual_path);
+    crate::cache::dcache_invalidate(actual_path);
     match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
