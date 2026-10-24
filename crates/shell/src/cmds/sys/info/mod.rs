@@ -14,6 +14,7 @@ pub mod irq;
 pub mod memory;
 pub mod pipes;
 pub mod regs;
+pub mod slabinfo;
 pub mod smp;
 pub mod system;
 pub mod unwind;
