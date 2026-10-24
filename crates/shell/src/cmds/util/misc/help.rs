@@ -32,6 +32,9 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("Emergency Control:\n");
     vga::print_str("  disk           Inspect storage drives and block device geometry\n");
     vga::print_str("  dcache         Inspect VFS in-memory dentry cache telemetry and hits\n");
+    vga::print_str(
+        "  icache         Inspect VFS in-memory inode cache telemetry and dirty state\n",
+    );
     vga::print_str("  mount [vol]    Display mounted filesystems or mount storage volume\n");
     vga::print_str("  pipes          Inspect active IPC pipe streams and buffer allocations\n");
     vga::print_str("  sync           Flush dirty block cache buffers to non-volatile disk\n");

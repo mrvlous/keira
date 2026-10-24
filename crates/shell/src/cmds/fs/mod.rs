@@ -16,3 +16,4 @@ mod tests;
 
 pub use mount::dcache;
 pub use mount::disk;
+pub use mount::icache;

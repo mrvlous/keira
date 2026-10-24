@@ -24,4 +24,20 @@ fn test_fs_commands_help_invocation() {
     let mut dcache_run_args = "dcache".split_whitespace();
     dcache_run_args.next();
     dcache::run(&mut dcache_run_args);
+
+    let mut icache_help_args = "icache --help".split_whitespace();
+    icache_help_args.next();
+    icache::run(&mut icache_help_args);
+
+    let mut icache_clear_args = "icache -c".split_whitespace();
+    icache_clear_args.next();
+    icache::run(&mut icache_clear_args);
+
+    let mut icache_flush_args = "icache -f".split_whitespace();
+    icache_flush_args.next();
+    icache::run(&mut icache_flush_args);
+
+    let mut icache_run_args = "icache".split_whitespace();
+    icache_run_args.next();
+    icache::run(&mut icache_run_args);
 }

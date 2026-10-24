@@ -11,4 +11,5 @@
 
 pub mod dcache;
 pub mod disk;
+pub mod icache;
 pub mod mount;

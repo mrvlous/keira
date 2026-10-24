@@ -22,6 +22,7 @@ pub const COMMANDS_LIST: &[&str] = &[
     "dmesg",
     "drivers",
     "help",
+    "icache",
     "irq",
     "mem",
     "memory",
