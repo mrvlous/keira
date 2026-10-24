@@ -16,6 +16,7 @@ use crate::state::session::{BUFFER_LEN, INPUT_BUFFER};
 
 pub const COMMANDS_LIST: &[&str] = &[
     "cpu",
+    "dcache",
     "devices",
     "disk",
     "dmesg",
@@ -32,6 +33,8 @@ pub const COMMANDS_LIST: &[&str] = &[
     "reset",
     "run",
     "sh",
+    "slab",
+    "slabinfo",
     "smp",
     "sync",
     "syslog",
