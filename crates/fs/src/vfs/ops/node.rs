@@ -17,18 +17,24 @@ use crate::vfs::types::FilesystemType;
 /// Creates a new empty file on the routed filesystem.
 pub fn create_file(path: &str) -> Result<(), &'static str> {
     let (clean_path, fs_type) = route_path(path);
-    match fs_type {
+    let res = match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => Err("VFS Error: DevFS nodes are static"),
         FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::create_file(clean_path),
         FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
         FilesystemType::Fat => unsafe { fat::create_file(clean_path) },
+    };
+    if res.is_ok() {
+        crate::cache::dcache_invalidate(path);
+        crate::cache::dcache_add(path, false, 0, fs_type, 0);
     }
+    res
 }
 
 /// Removes a file, directory or symbolic link entry on the routed filesystem.
 pub fn remove_entry(path: &str) -> Result<(), &'static str> {
+    crate::cache::dcache_invalidate(path);
     if crate::vfs::ops::symlink::remove_symlink(path) {
         return Ok(());
     }
@@ -46,23 +52,36 @@ pub fn remove_entry(path: &str) -> Result<(), &'static str> {
 /// Creates a directory entry on the routed filesystem.
 pub fn create_dir(path: &str) -> Result<(), &'static str> {
     let (clean_path, fs_type) = route_path(path);
-    match fs_type {
+    let res = match fs_type {
         FilesystemType::Initrd => Err("VFS Error: Initrd is read-only"),
         FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
         FilesystemType::Dev => Err("VFS Error: DevFS is read-only"),
         FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::create_dir(clean_path),
         FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
         FilesystemType::Fat => unsafe { fat::create_dir(clean_path) },
+    };
+    if res.is_ok() {
+        crate::cache::dcache_invalidate(path);
+        crate::cache::dcache_add(path, true, 0, fs_type, 0);
     }
+    res
 }
 
 /// Checks whether a given path exists on any registered filesystem driver.
 pub fn exists(path: &str) -> bool {
+    if let Some(res) = crate::cache::dcache_lookup(path) {
+        return match res {
+            crate::cache::DentryLookupResult::Positive { .. } => true,
+            crate::cache::DentryLookupResult::Negative => false,
+        };
+    }
+
     if crate::vfs::ops::symlink::is_symlink(path) {
+        crate::cache::dcache_add(path, false, 0, FilesystemType::Tmpfs, 0);
         return true;
     }
     let (clean_path, fs_type) = route_path(path);
-    match fs_type {
+    let found = match fs_type {
         FilesystemType::Initrd => clean_path.is_empty() || tar::exists(clean_path),
         FilesystemType::Proc => crate::proc::exists(clean_path),
         FilesystemType::Dev => {
@@ -83,7 +102,15 @@ pub fn exists(path: &str) -> bool {
             }
             fat::find_entry(name, dir_cluster).is_ok()
         },
+    };
+
+    if found {
+        crate::cache::dcache_add(path, clean_path.is_empty(), 0, fs_type, 0);
+    } else {
+        crate::cache::dcache_add_negative(path);
     }
+
+    found
 }
 
 /// Checks whether a given path is a directory on any registered filesystem driver.
@@ -93,8 +120,15 @@ pub fn is_dir(path: &str) -> bool {
         Ok(p) => p,
         Err(_) => path,
     };
+    if let Some(res) = crate::cache::dcache_lookup(actual_path) {
+        match res {
+            crate::cache::DentryLookupResult::Positive { is_dir: d, .. } if d => return true,
+            crate::cache::DentryLookupResult::Negative => return false,
+            _ => {}
+        }
+    }
     let (clean_path, fs_type) = route_path(actual_path);
-    match fs_type {
+    let dir = match fs_type {
         FilesystemType::Initrd => clean_path.is_empty(),
         FilesystemType::Proc => clean_path.is_empty() || clean_path == "self",
         FilesystemType::Dev => clean_path.is_empty(),
@@ -117,7 +151,11 @@ pub fn is_dir(path: &str) -> bool {
                 false
             }
         },
+    };
+    if dir {
+        crate::cache::dcache_add(actual_path, true, 0, fs_type, 0);
     }
+    dir
 }
 
 /// Retrieves the size of a file in bytes from the routed filesystem.
