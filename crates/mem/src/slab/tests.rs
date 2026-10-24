@@ -221,4 +221,36 @@ fn test_static_caches_definition() {
     assert_eq!(FD_CACHE.obj_size(), 64);
     assert_eq!(VMA_CACHE.name(), "vma_cache");
     assert_eq!(VMA_CACHE.obj_size(), 128);
+    assert_eq!(DENTRY_CACHE.name(), "dentry_cache");
+    assert_eq!(DENTRY_CACHE.obj_size(), 128);
+
+    let all = get_all_kmem_caches();
+    assert_eq!(all.len(), 5);
+    assert_eq!(all[0].name(), "task_struct");
+    assert_eq!(all[1].name(), "inode_cache");
+    assert_eq!(all[2].name(), "file_desc_cache");
+    assert_eq!(all[3].name(), "vma_cache");
+    assert_eq!(all[4].name(), "dentry_cache");
+}
+
+#[test]
+fn test_kmem_cache_telemetry_methods() {
+    let cache = KmemCache::new("test_telemetry", 64, 8);
+    assert_eq!(cache.objs_per_slab(), MAGAZINE_CAPACITY);
+    assert_eq!(cache.pages_per_slab(), 1);
+    assert_eq!(cache.active_slabs(), 0);
+    assert_eq!(cache.num_slabs(), 0);
+    assert_eq!(cache.limit_tunable(), MAGAZINE_CAPACITY);
+    assert_eq!(cache.batchcount_tunable(), MAGAZINE_CAPACITY / 2);
+    assert_eq!(cache.sharedfactor_tunable(), 8);
+
+    let cpu0 = cache.cpu_stats(0);
+    assert!(cpu0.is_some());
+    let (cached, alloc_hits, free_hits, exchanges) = cpu0.unwrap();
+    assert_eq!(cached, 0);
+    assert_eq!(alloc_hits, 0);
+    assert_eq!(free_hits, 0);
+    assert_eq!(exchanges, 0);
+
+    assert!(cache.cpu_stats(MAX_CPU_CORES + 5).is_none());
 }
