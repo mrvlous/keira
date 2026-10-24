@@ -17,15 +17,15 @@ use crate::pmm;
 
 #[inline]
 fn is_valid_page_table_frame(phys: u64) -> bool {
-    if !phys.is_multiple_of(pmm::PAGE_SIZE) || phys == 0 {
-        return false;
-    }
     #[cfg(test)]
     {
-        true
+        phys.is_multiple_of(pmm::PAGE_SIZE) && phys != 0
     }
     #[cfg(not(test))]
     {
+        if !phys.is_multiple_of(pmm::PAGE_SIZE) || phys == 0 {
+            return false;
+        }
         (pmm::KERNEL_BASE_1MB..pmm::MAX_PHYS_ADDR_LIMIT).contains(&phys)
             && pmm::is_valid_ram_range(phys, pmm::PAGE_SIZE)
     }
