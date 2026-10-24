@@ -12,6 +12,6 @@
 pub mod manager;
 
 pub use manager::{
-    kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache, FD_CACHE, INODE_CACHE,
-    TASK_CACHE, VMA_CACHE,
+    get_all_kmem_caches, kmem_cache_alloc, kmem_cache_create, kmem_cache_free, KmemCache,
+    ALL_KMEM_CACHES, DENTRY_CACHE, FD_CACHE, INODE_CACHE, TASK_CACHE, VMA_CACHE,
 };

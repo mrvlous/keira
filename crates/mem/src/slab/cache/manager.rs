@@ -246,6 +246,73 @@ impl KmemCache {
     pub fn total_depot_cached(&self) -> usize {
         self.global_depot.full_count() * MAGAZINE_CAPACITY
     }
+
+    /// Retrieves count of objects contained in one slab.
+    #[inline]
+    pub const fn objs_per_slab(&self) -> usize {
+        MAGAZINE_CAPACITY
+    }
+
+    /// Retrieves count of physical pages allocated per slab.
+    #[inline]
+    pub const fn pages_per_slab(&self) -> usize {
+        1
+    }
+
+    /// Retrieves count of active slabs containing allocated objects.
+    #[inline]
+    pub fn active_slabs(&self) -> usize {
+        let active = self.allocated_count();
+        if active == 0 {
+            0
+        } else {
+            (active + MAGAZINE_CAPACITY - 1) / MAGAZINE_CAPACITY
+        }
+    }
+
+    /// Retrieves total count of allocated slabs.
+    #[inline]
+    pub fn num_slabs(&self) -> usize {
+        let total = self.total_count();
+        if total == 0 {
+            0
+        } else {
+            (total + MAGAZINE_CAPACITY - 1) / MAGAZINE_CAPACITY
+        }
+    }
+
+    /// Retrieves magazine capacity tunable limit.
+    #[inline]
+    pub const fn limit_tunable(&self) -> usize {
+        MAGAZINE_CAPACITY
+    }
+
+    /// Retrieves magazine refill batch count tunable.
+    #[inline]
+    pub const fn batchcount_tunable(&self) -> usize {
+        MAGAZINE_CAPACITY / 2
+    }
+
+    /// Retrieves central depot shared factor tunable.
+    #[inline]
+    pub const fn sharedfactor_tunable(&self) -> usize {
+        8
+    }
+
+    /// Retrieves per-CPU core allocation metrics: (cached_count, alloc_hits, free_hits, exchanges).
+    pub fn cpu_stats(&self, core_id: usize) -> Option<(usize, usize, usize, usize)> {
+        if core_id < MAX_CPU_CORES {
+            let depot = &self.cpu_depots[core_id];
+            Some((
+                depot.cached_count(),
+                depot.alloc_hits(),
+                depot.free_hits(),
+                depot.exchanges(),
+            ))
+        } else {
+            None
+        }
+    }
 }
 
 /// Pre-allocated cache for task control blocks (512 bytes).
@@ -259,6 +326,24 @@ pub static FD_CACHE: KmemCache = KmemCache::new("file_desc_cache", 64, 16);
 
 /// Pre-allocated cache for virtual memory area descriptors (128 bytes).
 pub static VMA_CACHE: KmemCache = KmemCache::new("vma_cache", 128, 16);
+
+/// Pre-allocated cache for VFS directory entry descriptors (128 bytes).
+pub static DENTRY_CACHE: KmemCache = KmemCache::new("dentry_cache", 128, 16);
+
+/// Static array of all registered kernel slab caches.
+pub static ALL_KMEM_CACHES: [&KmemCache; 5] = [
+    &TASK_CACHE,
+    &INODE_CACHE,
+    &FD_CACHE,
+    &VMA_CACHE,
+    &DENTRY_CACHE,
+];
+
+/// Retrieves slice of all registered kernel slab caches.
+#[inline]
+pub fn get_all_kmem_caches() -> &'static [&'static KmemCache] {
+    &ALL_KMEM_CACHES
+}
 
 /// Creates a new kernel object cache dynamically.
 pub fn kmem_cache_create(name: &'static str, obj_size: usize, align: usize) -> KmemCache {
