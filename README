@@ -8,7 +8,7 @@ Ring 0 built from scratch in safe Rust, Assembly and C, supporting both modern
 Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
-Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 92 POSIX
+Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 100 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
 with I/O redirection and pipelines, 41 native core utilities (cat.elf, chmod.elf, chown.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
@@ -19,7 +19,7 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 38 chronological engineering milestones:
+of computer systems across 39 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -28,6 +28,7 @@ of computer systems across 38 chronological engineering milestones:
 * Milestones 31-36: Distro Purge, VFS Symlinks, Modular Decoupling, Pure Kernel Demarcation, Dynamic VFS Mounts and Dynamic Anonymous Pipes.
 * Milestone 37: Text Processing Pipeline Suite (grep, wc, head, tail, echo, sleep), Kernel Stack Hardening and VMM Table Zeroing.
 * Milestone 38: POSIX Discretionary Access Control (DAC), File Permissions (chmod), Ownership (chown) and Real Stat Metadata.
+* Milestone 39: VFS Dentry Cache (dcache), Century Syscall 100 (fstat), Telemetry and Ring 0 Inspection.
 
 Read the detailed engineering journal: docs/journey/README.md
 System architecture overview: docs/architecture/README.md
