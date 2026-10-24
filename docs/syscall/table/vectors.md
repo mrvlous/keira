@@ -39,7 +39,10 @@ Keira implements a POSIX-compliant system call table providing kernel services t
 | `90` | `SYS_mmap` | `void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)` | Maps virtual memory pages |
 | `91` | `SYS_munmap`| `int munmap(void *addr, size_t len)` | Unmaps virtual memory pages |
 | `94` | `SYS_mount` | `int mount(const char *src, const char *tgt, const char *type, unsigned long flags, const void *data)` | Attaches filesystem to mount point |
-| `95` | `SYS_umount`| `int umount(const char *target)` | Detaches filesystem from mount point |
 | `96` | `SYS_pipe2` | `int pipe2(int pipefd[2], int flags)` | Allocates anonymous pipe with POSIX flags |
+| `97` | `SYS_chmod` | `int chmod(const char *path, mode_t mode)` | Mutates file permission bitmask |
+| `98` | `SYS_chown` | `int chown(const char *path, uid_t owner, gid_t group)` | Changes file ownership credentials |
+| `99` | `SYS_stat`  | `int stat(const char *path, struct stat *buf)` | Queries file metadata via path |
+| `100`| `SYS_fstat` | `int fstat(int fd, struct stat *buf)` | Queries descriptor metadata (Century Syscall 100) |
 | `102`| `SYS_socket`| `int socket(int domain, int type, int protocol)` | Allocates BSD socket descriptor |
 
