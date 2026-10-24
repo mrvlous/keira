@@ -144,6 +144,7 @@ fn syscall_dispatcher_inner(
         97 => handle_chmod(arg1, arg2),
         98 => handle_chown(arg1, arg2, arg3),
         99 => handle_stat(arg1, arg2),
+        100 => handle_fstat(arg1, arg2),
         _ => errno_to_ret(ENOSYS),
     }
 }

@@ -1742,3 +1742,112 @@ pub fn handle_stat(arg1: u64, arg2: u64) -> u64 {
 
     0
 }
+
+/// Syscall 100: Query file descriptor status and metadata into userland stat buffer.
+pub fn handle_fstat(arg1: u64, arg2: u64) -> u64 {
+    let fd = arg1 as usize;
+    let statbuf_ptr = arg2;
+
+    if fd >= MAX_FDS || statbuf_ptr == 0 {
+        return errno_to_ret(EBADF);
+    }
+
+    if let Err(e) =
+        unsafe { validate_user_ptr(statbuf_ptr, core::mem::size_of::<KernelStat>() as u64, true) }
+    {
+        return errno_to_ret(e);
+    }
+
+    let (st_mode, st_size, st_ino, st_uid, st_gid, st_nlink, st_rdev) = unsafe {
+        if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
+            let f = &t.fds[fd];
+            if !f.is_open {
+                return errno_to_ret(EBADF);
+            }
+
+            if f.is_pipe {
+                (
+                    0o010666, // S_IFIFO | 0666
+                    0i64,
+                    1000 + f.pipe_id as u64,
+                    get_current_uid(),
+                    0,
+                    1,
+                    0u64,
+                )
+            } else if f.is_socket {
+                (
+                    0o140666, // S_IFSOCK | 0666
+                    0i64,
+                    2000 + f.socket_id as u64,
+                    get_current_uid(),
+                    0,
+                    1,
+                    0u64,
+                )
+            } else {
+                let path_str = core::str::from_utf8(&f.path[..f.path_len]).unwrap_or("");
+                if path_str.is_empty() {
+                    // Standard streams (stdin, stdout and stderr)
+                    (
+                        0o020666, // S_IFCHR | 0666
+                        0i64,
+                        fd as u64 + 1,
+                        get_current_uid(),
+                        0,
+                        1,
+                        5u64,
+                    )
+                } else {
+                    let target_is_dir = is_dir(path_str);
+                    let (uid, gid, mode) = get_metadata(path_str);
+                    let size = if target_is_dir {
+                        4096
+                    } else {
+                        get_file_size(path_str).unwrap_or(0)
+                    };
+                    (
+                        mode,
+                        size as i64,
+                        100 + fd as u64,
+                        uid,
+                        gid,
+                        if target_is_dir { 2 } else { 1 },
+                        0u64,
+                    )
+                }
+            }
+        } else {
+            return errno_to_ret(ESRCH);
+        }
+    };
+
+    let stat = KernelStat {
+        st_dev: 1,
+        st_ino,
+        st_mode,
+        st_nlink,
+        st_uid,
+        st_gid,
+        st_rdev,
+        st_size,
+        st_blksize: 4096,
+        st_blocks: (st_size as u64).div_ceil(512),
+        st_atime: 1700000000,
+        st_mtime: 1700000000,
+        st_ctime: 1700000000,
+    };
+
+    let stat_slice = unsafe {
+        core::slice::from_raw_parts(
+            &stat as *const KernelStat as *const u8,
+            core::mem::size_of::<KernelStat>(),
+        )
+    };
+
+    if let Err(e) = unsafe { copy_to_user(statbuf_ptr, stat_slice) } {
+        return errno_to_ret(e);
+    }
+
+    0
+}
