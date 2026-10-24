@@ -31,13 +31,10 @@ int fstat(int fd, struct stat *statbuf) {
         errno = EBADF;
         return -1;
     }
-    memset(statbuf, 0, sizeof(struct stat));
-    if (fd <= 2) {
-        statbuf->st_mode = S_IFCHR | 0666;
-    } else {
-        statbuf->st_mode = S_IFREG | 0644;
+    int ret = sys_fstat(fd, statbuf);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
     }
-    statbuf->st_nlink = 1;
-    statbuf->st_blksize = 512;
     return 0;
 }

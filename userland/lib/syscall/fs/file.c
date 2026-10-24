@@ -122,3 +122,7 @@ int sys_chown(const char *pathname, uid_t owner, gid_t group) {
 int sys_stat(const char *pathname, struct stat *statbuf) {
     return (int)syscall2(SYS_STAT, (uint64_t)(uintptr_t)pathname, (uint64_t)(uintptr_t)statbuf);
 }
+
+int sys_fstat(int fd, struct stat *statbuf) {
+    return (int)syscall2(SYS_FSTAT, (uint64_t)fd, (uint64_t)(uintptr_t)statbuf);
+}
