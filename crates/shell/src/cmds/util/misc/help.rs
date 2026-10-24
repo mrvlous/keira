@@ -22,6 +22,9 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("  cpu            Display CPU model, features and cache topology\n");
     vga::print_str("  smp            Display symmetric multiprocessing core status\n");
     vga::print_str("  memory         Display physical and virtual memory usage (mem)\n");
+    vga::print_str(
+        "  slabinfo       Display slab memory allocator caches and hit metrics (slab)\n",
+    );
     vga::print_str("  devices        Enumerate PCI buses and peripheral hardware (pci)\n");
     vga::print_str("  drivers        List registered block, char and network drivers\n");
     vga::print_str("  regs           Dump CPU general-purpose and control registers\n");
