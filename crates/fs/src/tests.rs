@@ -254,3 +254,24 @@ fn test_page_cache_subsystem_lifecycle() {
     assert_eq!(active_after, cache::PAGE_CACHE_CAPACITY);
     assert_eq!(evictions_after, 1);
 }
+
+#[test]
+fn test_proc_pid_directory_and_stat_nodes() {
+    assert!(proc::exists("self/stat"));
+    assert!(proc::exists("self/statm"));
+    assert!(proc::exists("self/status"));
+    assert!(proc::exists("self/cmdline"));
+    assert!(proc::exists("self/mounts"));
+    assert!(proc::is_proc_dir(""));
+    assert!(proc::is_proc_dir("self"));
+    assert!(proc::is_proc_dir("net"));
+
+    assert_eq!(proc::get_pid_dir_entry(0).map(|e| e.name), Some("."));
+    assert_eq!(proc::get_pid_dir_entry(1).map(|e| e.name), Some(".."));
+    assert_eq!(proc::get_pid_dir_entry(2).map(|e| e.name), Some("status"));
+    assert_eq!(proc::get_pid_dir_entry(3).map(|e| e.name), Some("cmdline"));
+    assert_eq!(proc::get_pid_dir_entry(4).map(|e| e.name), Some("stat"));
+    assert_eq!(proc::get_pid_dir_entry(5).map(|e| e.name), Some("statm"));
+    assert_eq!(proc::get_pid_dir_entry(6).map(|e| e.name), Some("mounts"));
+    assert_eq!(proc::get_pid_dir_entry(7), None);
+}
