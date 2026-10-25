@@ -65,7 +65,10 @@ pub use lvm::volume::{
     VolumeGroup, LVM_CMD_CREATE_LV, LVM_CMD_CREATE_VG, LVM_CMD_INFO, LVM_CMD_RAID_STATUS,
     LVM_CMD_RAID_SYNC,
 };
-pub use proc::{get_proc_entry, read_proc_file, register_task_hooks, PROC_ENTRIES};
+pub use proc::{
+    get_pid_dir_entry, get_proc_entry, is_proc_dir, read_proc_file, register_extended_task_hooks,
+    register_task_hooks, task_exists, PID_DIR_ENTRIES, PROC_ENTRIES,
+};
 pub use tar::reader::{
     cat_file as tar_cat_file, exists as tar_exists, init as tar_init, list_files as tar_list_files,
     read_file_content as tar_read_file_content,

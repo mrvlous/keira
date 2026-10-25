@@ -16,7 +16,22 @@ use crate::proc::system::{
     read_sockstat, read_uptime, read_version, read_vmstat,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
-use crate::proc::task::{read_task_cmdline, read_task_status};
+use crate::proc::task::{
+    get_active_pids, read_task_cmdline, read_task_stat, read_task_statm, read_task_status,
+    task_exists,
+};
+
+/// Queries whether a procfs pseudo-node represents a directory.
+pub fn is_proc_dir(clean_node: &str) -> bool {
+    let node = clean_node.trim_start_matches('/');
+    if node.is_empty() || node == "self" || node == "net" || node == "net/stat" {
+        return true;
+    }
+    if let Ok(pid) = node.parse::<usize>() {
+        return task_exists(pid);
+    }
+    false
+}
 
 /// Queries whether a procfs pseudo-node exists.
 pub fn exists(clean_node: &str) -> bool {
@@ -52,16 +67,25 @@ pub fn exists(clean_node: &str) -> bool {
     ) {
         return true;
     }
-    if node == "self/status" || node == "self/cmdline" || node == "self/mounts" {
+    if node == "self/status"
+        || node == "self/cmdline"
+        || node == "self/mounts"
+        || node == "self/stat"
+        || node == "self/statm"
+    {
         return true;
     }
+    if let Ok(pid) = node.parse::<usize>() {
+        return task_exists(pid);
+    }
     if let Some((pid_str, sub)) = node.split_once('/') {
-        if sub == "status" || sub == "cmdline" || sub == "mounts" {
+        if sub == "status" || sub == "cmdline" || sub == "mounts" || sub == "stat" || sub == "statm"
+        {
             if pid_str == "self" {
                 return true;
             }
-            if pid_str.parse::<usize>().is_ok() {
-                return true;
+            if let Ok(pid) = pid_str.parse::<usize>() {
+                return task_exists(pid);
             }
         }
     }
@@ -101,6 +125,12 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
             } else if node == "self/cmdline" {
                 let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
                 (pid, "cmdline")
+            } else if node == "self/stat" {
+                let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
+                (pid, "stat")
+            } else if node == "self/statm" {
+                let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
+                (pid, "statm")
             } else if let Some((pid_str, sub)) = node.split_once('/') {
                 let pid = if pid_str == "self" {
                     unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) }
@@ -117,6 +147,8 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
             match sub {
                 "status" => read_task_status(target_pid, buf),
                 "cmdline" => read_task_cmdline(target_pid, buf),
+                "stat" => read_task_stat(target_pid, buf),
+                "statm" => read_task_statm(target_pid, buf),
                 _ => Err("Unsupported proc subfile"),
             }
         }
@@ -184,7 +216,75 @@ pub static PROC_ENTRIES: [VirtualDirEntry; 11] = [
     },
 ];
 
-/// Retrieves a virtual ProcFS directory entry by index.
+/// Pre-allocated static string representations for numeric process identifiers (0..63).
+const PID_STRS: [&str; 64] = [
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+    "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32",
+    "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48",
+    "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63",
+];
+
+/// Standard virtual directory entries resident inside every /proc/[pid] directory.
+pub static PID_DIR_ENTRIES: [VirtualDirEntry; 7] = [
+    VirtualDirEntry {
+        name: ".",
+        d_type: 4,
+        ino: 1,
+    },
+    VirtualDirEntry {
+        name: "..",
+        d_type: 4,
+        ino: 10,
+    },
+    VirtualDirEntry {
+        name: "status",
+        d_type: 8,
+        ino: 2,
+    },
+    VirtualDirEntry {
+        name: "cmdline",
+        d_type: 8,
+        ino: 3,
+    },
+    VirtualDirEntry {
+        name: "stat",
+        d_type: 8,
+        ino: 4,
+    },
+    VirtualDirEntry {
+        name: "statm",
+        d_type: 8,
+        ino: 5,
+    },
+    VirtualDirEntry {
+        name: "mounts",
+        d_type: 8,
+        ino: 6,
+    },
+];
+
+/// Retrieves a virtual directory entry inside /proc/[pid] by index.
+pub fn get_pid_dir_entry(index: usize) -> Option<VirtualDirEntry> {
+    PID_DIR_ENTRIES.get(index).copied()
+}
+
+/// Retrieves a virtual ProcFS directory entry by index, including active dynamic PIDs.
 pub fn get_proc_entry(index: usize) -> Option<VirtualDirEntry> {
-    PROC_ENTRIES.get(index).copied()
+    if let Some(entry) = PROC_ENTRIES.get(index).copied() {
+        return Some(entry);
+    }
+    let pid_idx = index.checked_sub(PROC_ENTRIES.len())?;
+    let mut active_pids = [0usize; 64];
+    let count = get_active_pids(&mut active_pids);
+    if pid_idx < count {
+        let pid = active_pids[pid_idx];
+        if pid < PID_STRS.len() {
+            return Some(VirtualDirEntry {
+                name: PID_STRS[pid],
+                d_type: 4,
+                ino: 100 + pid as u64,
+            });
+        }
+    }
+    None
 }

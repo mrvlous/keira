@@ -130,7 +130,7 @@ pub fn is_dir(path: &str) -> bool {
     let (clean_path, fs_type) = route_path(actual_path);
     let dir = match fs_type {
         FilesystemType::Initrd => clean_path.is_empty(),
-        FilesystemType::Proc => clean_path.is_empty() || clean_path == "self",
+        FilesystemType::Proc => crate::proc::is_proc_dir(clean_path),
         FilesystemType::Dev => clean_path.is_empty(),
         FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::is_dir(clean_path),
         FilesystemType::Ext4 => clean_path.is_empty(),

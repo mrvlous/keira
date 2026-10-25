@@ -23,13 +23,19 @@ pub mod writer;
 #[cfg(test)]
 mod tests;
 
-pub use self::dispatcher::{exists, get_proc_entry, read_proc_file, PROC_ENTRIES};
+pub use self::dispatcher::{
+    exists, get_pid_dir_entry, get_proc_entry, is_proc_dir, read_proc_file, PID_DIR_ENTRIES,
+    PROC_ENTRIES,
+};
 pub use self::system::{
     register_net_hooks, NetTelemetryProvider, NET_ARP_HOOK, NET_CONNTRACK_HOOK, NET_DEV_HOOK,
     NET_IPTABLES_HOOK, NET_RAW_HOOK, NET_ROUTE_HOOK, NET_SOCKSTAT_HOOK, NET_TCP_HOOK, NET_UDP_HOOK,
 };
 pub use self::task::{
-    register_task_hooks, CurrentPidProvider, TaskCmdlineProvider, TaskStatusProvider,
-    CURRENT_PID_HOOK, TASK_CMDLINE_HOOK, TASK_STATUS_HOOK,
+    get_active_pids, read_task_cmdline, read_task_stat, read_task_statm, read_task_status,
+    register_extended_task_hooks, register_task_hooks, task_exists, CurrentPidProvider,
+    TaskCmdlineProvider, TaskExistsProvider, TaskListProvider, TaskStatProvider, TaskStatmProvider,
+    TaskStatusProvider, CURRENT_PID_HOOK, TASK_CMDLINE_HOOK, TASK_EXISTS_HOOK, TASK_LIST_HOOK,
+    TASK_STATM_HOOK, TASK_STATUS_HOOK, TASK_STAT_HOOK,
 };
 pub use self::writer::BufWriter;
