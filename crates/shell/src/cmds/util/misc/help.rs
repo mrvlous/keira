@@ -29,6 +29,7 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("  drivers        List registered block, char and network drivers\n");
     vga::print_str("  regs           Dump CPU general-purpose and control registers\n");
     vga::print_str("  irq            Display interrupt request lines and handler counters\n");
+    vga::print_str("  pidinfo [pid]  Inspect active process hierarchy and kernel task state\n");
     vga::print_str("Emergency Control:\n");
     vga::print_str("  disk           Inspect storage drives and block device geometry\n");
     vga::print_str("  dcache         Inspect VFS in-memory dentry cache telemetry and hits\n");

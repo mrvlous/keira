@@ -9,6 +9,7 @@
 
 //! Process and task execution shell commands.
 
+pub mod pidinfo;
 pub mod task;
 
 #[cfg(test)]
