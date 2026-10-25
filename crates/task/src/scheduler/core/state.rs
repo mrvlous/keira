@@ -13,7 +13,10 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 use keira_core::sync::{IrqSpinLock, LockRank};
 use keira_mem::{pmm, vmm};
 
-use super::hooks::{current_pid_provider, task_cmdline_provider, task_status_provider};
+use super::hooks::{
+    current_pid_provider, task_cmdline_provider, task_exists_provider, task_list_provider,
+    task_stat_provider, task_statm_provider, task_status_provider,
+};
 pub use crate::types::MAX_TASKS;
 use crate::types::{FileDescriptor, Task, TaskState, MAX_FDS};
 
@@ -97,5 +100,11 @@ pub unsafe fn init() {
         task_status_provider,
         task_cmdline_provider,
         current_pid_provider,
+    );
+    keira_fs::proc::register_extended_task_hooks(
+        task_stat_provider,
+        task_statm_provider,
+        task_exists_provider,
+        task_list_provider,
     );
 }
