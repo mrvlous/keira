@@ -958,6 +958,42 @@ pub fn handle_getdents(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 return 0;
             }
 
+            let is_proc_pid_dir = if let Some(sub) = normalized_path.strip_prefix("/proc/") {
+                sub == "self" || sub.parse::<usize>().is_ok()
+            } else if let Some(sub) = normalized_path.strip_prefix("proc/") {
+                sub == "self" || sub.parse::<usize>().is_ok()
+            } else {
+                false
+            };
+
+            if is_proc_pid_dir {
+                let target_idx = t.fds[fd].offset as usize;
+                if let Some(v_entry) = keira_fs::proc::get_pid_dir_entry(target_idx) {
+                    let mut d = Dirent {
+                        d_ino: v_entry.ino,
+                        d_off: (target_idx + 1) as i64,
+                        d_reclen: core::mem::size_of::<Dirent>() as u16,
+                        d_type: v_entry.d_type,
+                        d_name: [0u8; 256],
+                        _pad: [0u8; 5],
+                    };
+                    let name_bytes = v_entry.name.as_bytes();
+                    let len = name_bytes.len().min(255);
+                    d.d_name[..len].copy_from_slice(&name_bytes[..len]);
+
+                    let entry_bytes = core::slice::from_raw_parts(
+                        &d as *const Dirent as *const u8,
+                        core::mem::size_of::<Dirent>(),
+                    );
+                    if copy_to_user(buf_ptr, entry_bytes).is_err() {
+                        return errno_to_ret(EFAULT);
+                    }
+                    t.fds[fd].offset += 1;
+                    return core::mem::size_of::<Dirent>() as u64;
+                }
+                return 0;
+            }
+
             let (_, fs_type) = keira_fs::vfs::route_path(normalized_path);
             if fs_type == keira_fs::vfs::FilesystemType::Tmpfs {
                 let target_idx = t.fds[fd].offset as usize;
