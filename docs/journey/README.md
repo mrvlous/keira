@@ -47,6 +47,11 @@ graph TD
     M35 --> M36["36. Dynamic Anonymous Pipe Subsystem & POSIX Stream Pipelines<br/><i>PIPE_TABLE, SYS_PIPE2 (96), Broken Pipe SIGPIPE, /bin/sh Streaming, /bin/test_pipe</i>"]
     M36 --> M37["37. Text Processing Pipeline Suite & Kernel Memory Hardening<br/><i>/bin/grep, /bin/wc, /bin/head, /bin/tail, /bin/echo, /bin/sleep, Stack Safety, 39 Binaries</i>"]
     M37 --> M38["38. POSIX DAC, File Permissions, Ownership & Real Stat Metadata<br/><i>PERM_TABLE, SYS_CHMOD, SYS_CHOWN, SYS_STAT, /bin/chmod, /bin/chown, 41 Binaries</i>"]
+    M38 --> M39["39. VFS Dentry Cache & Syscall 100<br/><i>dcache, SYS_FSTAT, dcache Invalidation & Telemetry</i>"]
+    M39 --> M40["40. Pure Kernel Memory Introspection<br/><i>/proc/slabinfo, /proc/vmstat, Slab Telemetry, slabinfo</i>"]
+    M40 --> M41["41. Pure Kernel Inode Cache<br/><i>icache, Cache Trinity, Inode Lookup Telemetry, icache</i>"]
+    M41 --> M42["42. ProcFS Per-Process Telemetry<br/><i>/proc/[pid]/stat, /proc/[pid]/statm, Dynamic PID Listing, Ring 0 pidinfo</i>"]
+    M42 --> M43["43. Hardware W^X & Kernel Exploit Mitigations<br/><i>NX/DEP Bit 63, CR0.WP, CR4.SMEP/SMAP/UMIP, Ring 0 secinfo</i>"]
 ```
 
 ---
@@ -92,6 +97,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 40** | [`slabinfo_vmstat_v070.md`](slabinfo_vmstat_v070.md) | `v0.7.0` | Pure kernel memory introspection (/proc/slabinfo, /proc/vmstat), slab cache registry, magazine telemetry and Ring 0 supervisor slabinfo command |
 | **Milestone 41** | [`icache_vfs_v070.md`](icache_vfs_v070.md) | `v0.7.0` | Pure kernel VFS inode cache (icache), complete cache trinity (page_cache, dcache, icache), dirty tracking and Ring 0 icache command |
 | **Milestone 42** | [`proc_pid_telemetry_v070.md`](proc_pid_telemetry_v070.md) | `v0.7.0` | Pure kernel dynamic ProcFS process hierarchy (/proc/[pid]/stat, /proc/[pid]/statm), dynamic PID enumeration and Ring 0 pidinfo command |
+| **Milestone 43** | [`hardware_wx_mitigations_v070.md`](hardware_wx_mitigations_v070.md) | `v0.7.0` | Hardware W^X exploit mitigations, page table NX/DEP bit 63 enforcement, supervisor write protection (CR0.WP), SMEP/SMAP/UMIP detection and Ring 0 secinfo command |
 
 ---
 
