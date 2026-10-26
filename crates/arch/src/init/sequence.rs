@@ -22,4 +22,9 @@ pub fn init() {
 
     // 3. Configure 8254 PIT timer to 1000Hz (1ms tick interval)
     pit::init(1000);
+
+    // 4. Activate hardware exploit mitigations (CR0.WP, CR4.SMEP, CR4.UMIP, EFER.NXE)
+    unsafe {
+        crate::cpu::security::enable_hardware_mitigations();
+    }
 }
