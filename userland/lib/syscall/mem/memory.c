@@ -8,6 +8,7 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
@@ -16,21 +17,40 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
     int64_t ret =
         syscall6(SYS_MMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length, (uint64_t)(uint32_t)prot,
                  (uint64_t)(uint32_t)flags, (uint64_t)(int64_t)fd, (uint64_t)offset);
+    if (ret < 0) {
+        errno = (int)(-ret);
+        return MAP_FAILED;
+    }
     return (void *)(uintptr_t)ret;
 }
 
 int sys_munmap(void *addr, size_t length) {
-    return (int)syscall2(SYS_MUNMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length);
+    int64_t ret = syscall2(SYS_MUNMAP, (uint64_t)(uintptr_t)addr, (uint64_t)length);
+    if (ret < 0) {
+        errno = (int)(-ret);
+        return -1;
+    }
+    return 0;
 }
 
 int sys_mprotect(void *addr, size_t len, int prot) {
-    return (int)syscall3(SYS_MPROTECT, (uint64_t)(uintptr_t)addr, (uint64_t)len,
-                         (uint64_t)(uint32_t)prot);
+    int64_t ret =
+        syscall3(SYS_MPROTECT, (uint64_t)(uintptr_t)addr, (uint64_t)len, (uint64_t)(uint32_t)prot);
+    if (ret < 0) {
+        errno = (int)(-ret);
+        return -1;
+    }
+    return 0;
 }
 
 int sys_msync(void *addr, size_t length, int flags) {
-    return (int)syscall3(SYS_MSYNC, (uint64_t)(uintptr_t)addr, (uint64_t)length,
-                         (uint64_t)(uint32_t)flags);
+    int64_t ret =
+        syscall3(SYS_MSYNC, (uint64_t)(uintptr_t)addr, (uint64_t)length, (uint64_t)(uint32_t)flags);
+    if (ret < 0) {
+        errno = (int)(-ret);
+        return -1;
+    }
+    return 0;
 }
 
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) {
