@@ -131,6 +131,12 @@ pub unsafe extern "C" fn exception_dispatcher(frame_ptr: *const ExceptionStackFr
                             0,
                             keira_mem::pmm::PAGE_SIZE as usize,
                         );
+                        #[cfg(target_arch = "x86_64")]
+                        let flags = keira_mem::vmm::PAGE_PRESENT
+                            | keira_mem::vmm::PAGE_WRITABLE
+                            | keira_mem::vmm::PAGE_USER
+                            | keira_mem::vmm::PAGE_NO_EXECUTE;
+                        #[cfg(not(target_arch = "x86_64"))]
                         let flags = keira_mem::vmm::PAGE_PRESENT
                             | keira_mem::vmm::PAGE_WRITABLE
                             | keira_mem::vmm::PAGE_USER;
