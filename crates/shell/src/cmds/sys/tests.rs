@@ -128,3 +128,17 @@ fn test_sys_slabinfo() {
     let mut args_default = "".split_whitespace();
     slabinfo::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_secinfo() {
+    let mut args_help = "secinfo --help".split_whitespace();
+    args_help.next();
+    secinfo::run(&mut args_help);
+
+    let mut args_verbose = "secinfo -v".split_whitespace();
+    args_verbose.next();
+    secinfo::run(&mut args_verbose);
+
+    let mut args_default = "".split_whitespace();
+    secinfo::run(&mut args_default);
+}
