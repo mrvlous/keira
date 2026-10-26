@@ -247,11 +247,14 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
             for p in 0..stack_pages {
                 let page_vaddr = stack_bottom + (p * pmm::PAGE_SIZE);
                 if let Some(frame) = pmm::alloc_frame() {
-                    let _ = vmm::map_page(
-                        page_vaddr,
-                        frame,
-                        vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-                    );
+                    #[cfg(target_arch = "x86_64")]
+                    let stack_flags = vmm::PAGE_USER
+                        | vmm::PAGE_WRITABLE
+                        | vmm::PAGE_PRESENT
+                        | vmm::PAGE_NO_EXECUTE;
+                    #[cfg(not(target_arch = "x86_64"))]
+                    let stack_flags = vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT;
+                    let _ = vmm::map_page(page_vaddr, frame, stack_flags);
                     let ptr = page_vaddr as *mut u8;
                     core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
                 }
