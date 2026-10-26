@@ -110,3 +110,16 @@ fn test_resched_ipi_handler_execution() {
     let (_, rcvd_after) = interrupts::smp::get_resched_ipi_stats();
     assert_eq!(rcvd_after, rcvd_before + 1);
 }
+
+#[test]
+fn test_cpu_security_features_detection_and_mitigations() {
+    let features = cpu::security::detect_security_features();
+    assert!(features.has_wp);
+    assert!(features.wp_active);
+
+    let updated = unsafe { cpu::security::enable_hardware_mitigations() };
+    assert!(updated.wp_active);
+
+    let cached = cpu::security::get_security_features();
+    assert_eq!(cached, updated);
+}
