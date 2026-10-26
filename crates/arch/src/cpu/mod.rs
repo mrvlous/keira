@@ -16,6 +16,12 @@ pub mod control;
 pub mod instructions;
 pub mod percpu;
 pub mod port;
+pub mod security;
+
+pub use security::{
+    detect_security_features, enable_hardware_mitigations, get_security_features,
+    CpuSecurityFeatures,
+};
 
 pub use control::{
     rdmsr, read_cr0, read_cr2, read_cr3, read_cr4, read_rflags, write_cr0, write_cr3, write_cr4,
