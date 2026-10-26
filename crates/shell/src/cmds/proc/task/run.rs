@@ -168,11 +168,9 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
                 return Err("Out of memory for user stack frame");
             }
         };
-        if let Err(e) = vmm::map_page(
-            top_stack_page,
-            stack_frame,
-            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT,
-        ) {
+        let stack_flags =
+            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT | vmm::PAGE_NO_EXECUTE;
+        if let Err(e) = vmm::map_page(top_stack_page, stack_frame, stack_flags) {
             pmm::free_frame(stack_frame);
             cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
             return Err(e);
