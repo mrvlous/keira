@@ -29,3 +29,4 @@ pub const SYS_PERF_EVENT: u64 = 77;
 pub const SYS_BPF: u64 = 78;
 pub const SYS_TPM2: u64 = 79;
 pub const SYS_PCI_BRIDGE: u64 = 80;
+pub const SYS_GETRANDOM: u64 = 101;

@@ -109,6 +109,7 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_CHOWN => "sys_chown",
         SYS_STAT => "sys_stat",
         SYS_FSTAT => "sys_fstat",
+        SYS_GETRANDOM => "sys_getrandom",
         _ => "sys_unknown",
     }
 }
