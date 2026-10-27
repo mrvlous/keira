@@ -142,3 +142,21 @@ fn test_sys_secinfo() {
     let mut args_default = "".split_whitespace();
     secinfo::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_aslrinfo() {
+    let mut args_help = "aslrinfo --help".split_whitespace();
+    args_help.next();
+    aslrinfo::run(&mut args_help);
+
+    let mut args_verbose = "aslrinfo -v".split_whitespace();
+    args_verbose.next();
+    aslrinfo::run(&mut args_verbose);
+
+    let mut args_set = "aslrinfo 2".split_whitespace();
+    args_set.next();
+    aslrinfo::run(&mut args_set);
+
+    let mut args_default = "".split_whitespace();
+    aslrinfo::run(&mut args_default);
+}
