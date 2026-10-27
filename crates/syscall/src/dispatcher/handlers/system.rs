@@ -409,3 +409,38 @@ pub fn handle_tpm2(arg1: u64, arg2: u64, arg3: u64) -> u64 {
 pub fn handle_pci_bridge(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     unsafe { keira_io::bus::pci::pci_read_config_u32(arg1 as u8, arg2 as u8, arg3 as u8, 0) as u64 }
 }
+
+/// Syscall 101: Obtain cryptographic random entropy bytes from silicon hardware.
+pub fn handle_getrandom(buf_ptr: u64, buflen: u64, _flags: u64) -> u64 {
+    let len = buflen as usize;
+    if len == 0 {
+        return 0;
+    }
+    if len > 32 * 1024 * 1024 {
+        return errno_to_ret(EINVAL);
+    }
+    if unsafe { crate::user_copy::validate::validate_user_ptr(buf_ptr, buflen, true) }.is_err() {
+        return errno_to_ret(EFAULT);
+    }
+
+    let mut chunk_buf = [0u8; 64];
+    let mut written = 0;
+    while written < len {
+        let chunk_size = (len - written).min(chunk_buf.len());
+        for i in 0..(chunk_size + 3) / 4 {
+            let entropy = keira_arch::cpu::get_entropy_u32();
+            let bytes = entropy.to_ne_bytes();
+            let start = i * 4;
+            let end = (start + 4).min(chunk_buf.len());
+            if start < chunk_buf.len() {
+                chunk_buf[start..end].copy_from_slice(&bytes[..end - start]);
+            }
+        }
+        let dest = buf_ptr + written as u64;
+        if unsafe { copy_to_user(dest, &chunk_buf[..chunk_size]) }.is_err() {
+            return errno_to_ret(EFAULT);
+        }
+        written += chunk_size;
+    }
+    written as u64
+}
