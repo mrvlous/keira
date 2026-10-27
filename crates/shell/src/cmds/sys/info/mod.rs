@@ -9,6 +9,7 @@
 
 //! System hardware telemetry, CPU topology, memory metrics and stack unwinding commands.
 
+pub mod aslrinfo;
 pub mod cpu;
 pub mod irq;
 pub mod memory;
