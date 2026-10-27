@@ -52,6 +52,7 @@ graph TD
     M40 --> M41["41. Pure Kernel Inode Cache<br/><i>icache, Cache Trinity, Inode Lookup Telemetry, icache</i>"]
     M41 --> M42["42. ProcFS Per-Process Telemetry<br/><i>/proc/[pid]/stat, /proc/[pid]/statm, Dynamic PID Listing, Ring 0 pidinfo</i>"]
     M42 --> M43["43. Hardware W^X & Kernel Exploit Mitigations<br/><i>NX/DEP Bit 63, CR0.WP, CR4.SMEP/SMAP/UMIP, Ring 0 secinfo</i>"]
+    M43 --> M44["44. Kernel ASLR & Userland Randomization<br/><i>CPU RDRAND/RDSEED, SplitMix64 Mixer, Stack/Mmap/Brk ASLR, Ring 0 aslrinfo</i>"]
 ```
 
 ---
@@ -98,6 +99,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 41** | [`icache_vfs_v070.md`](icache_vfs_v070.md) | `v0.7.0` | Pure kernel VFS inode cache (icache), complete cache trinity (page_cache, dcache, icache), dirty tracking and Ring 0 icache command |
 | **Milestone 42** | [`proc_pid_telemetry_v070.md`](proc_pid_telemetry_v070.md) | `v0.7.0` | Pure kernel dynamic ProcFS process hierarchy (/proc/[pid]/stat, /proc/[pid]/statm), dynamic PID enumeration and Ring 0 pidinfo command |
 | **Milestone 43** | [`hardware_wx_mitigations_v070.md`](hardware_wx_mitigations_v070.md) | `v0.7.0` | Hardware W^X exploit mitigations, page table NX/DEP bit 63 enforcement, supervisor write protection (CR0.WP), SMEP/SMAP/UMIP detection and Ring 0 secinfo command |
+| **Milestone 44** | [`aslr_entropy_v070.md`](aslr_entropy_v070.md) | `v0.7.0` | Kernel ASLR (KASLR) & userland address space randomization (stack, mmap, brk), hardware CPU entropy harvesting (RDRAND/RDSEED), /proc/sys/kernel/randomize_va_space and Ring 0 aslrinfo command |
 
 ---
 
