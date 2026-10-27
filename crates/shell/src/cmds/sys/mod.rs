@@ -18,4 +18,4 @@ mod tests;
 
 pub use control::{power, reset, sync, wipe};
 pub use daemon::{syslog, watchpoint};
-pub use info::{aslrinfo, cpu, irq, memory, regs, secinfo, slabinfo, smp, system, unwind};
+pub use info::{aslrinfo, cpu, irq, memory, regs, rnginfo, secinfo, slabinfo, smp, system, unwind};
