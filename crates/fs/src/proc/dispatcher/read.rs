@@ -12,8 +12,8 @@
 use crate::proc::system::{
     read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
     read_meminfo, read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route,
-    read_net_tcp, read_net_udp, read_nf_conntrack_stat, read_partitions, read_slabinfo,
-    read_sockstat, read_uptime, read_version, read_vmstat,
+    read_net_tcp, read_net_udp, read_nf_conntrack_stat, read_partitions, read_randomize_va_space,
+    read_slabinfo, read_sockstat, read_uptime, read_version, read_vmstat,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{
@@ -24,7 +24,13 @@ use crate::proc::task::{
 /// Queries whether a procfs pseudo-node represents a directory.
 pub fn is_proc_dir(clean_node: &str) -> bool {
     let node = clean_node.trim_start_matches('/');
-    if node.is_empty() || node == "self" || node == "net" || node == "net/stat" {
+    if node.is_empty()
+        || node == "self"
+        || node == "net"
+        || node == "net/stat"
+        || node == "sys"
+        || node == "sys/kernel"
+    {
         return true;
     }
     if let Ok(pid) = node.parse::<usize>() {
@@ -64,6 +70,9 @@ pub fn exists(clean_node: &str) -> bool {
             | "net/nf_conntrack"
             | "net/iptables"
             | "net/ip_tables_rules"
+            | "sys"
+            | "sys/kernel"
+            | "sys/kernel/randomize_va_space"
     ) {
         return true;
     }
@@ -97,7 +106,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
     let node = clean_node.trim_start_matches('/');
 
     match node {
-        "" | "net" | "net/stat" => Ok(0),
+        "" | "net" | "net/stat" | "sys" | "sys/kernel" => Ok(0),
         "uptime" => read_uptime(buf),
         "meminfo" => read_meminfo(buf),
         "slabinfo" => read_slabinfo(buf),
@@ -118,6 +127,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
         "net/ip_tables_names" => read_ip_tables_names(buf),
         "net/stat/nf_conntrack" | "net/nf_conntrack" => read_nf_conntrack_stat(buf),
         "net/iptables" | "net/ip_tables_rules" => read_ip_tables_rules(buf),
+        "sys/kernel/randomize_va_space" => read_randomize_va_space(buf),
         _ => {
             let (target_pid, sub) = if node == "self/status" {
                 let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
@@ -158,7 +168,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
 use crate::vfs::VirtualDirEntry;
 
 /// Virtual directory entries representing pseudo-files and directories in /proc.
-pub static PROC_ENTRIES: [VirtualDirEntry; 11] = [
+pub static PROC_ENTRIES: [VirtualDirEntry; 12] = [
     VirtualDirEntry {
         name: ".",
         d_type: 4,
@@ -213,6 +223,11 @@ pub static PROC_ENTRIES: [VirtualDirEntry; 11] = [
         name: "self",
         d_type: 4,
         ino: 19,
+    },
+    VirtualDirEntry {
+        name: "sys",
+        d_type: 4,
+        ino: 20,
     },
 ];
 
