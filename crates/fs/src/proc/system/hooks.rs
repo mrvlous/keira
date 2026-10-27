@@ -81,3 +81,16 @@ pub fn register_net_hooks(
         }
     }
 }
+
+/// Callback provider function type for reading the active ASLR policy byte.
+pub type AslrPolicyProvider = fn() -> u8;
+
+/// Registered hook for live ASLR policy reflection (/proc/sys/kernel/randomize_va_space).
+pub static mut ASLR_POLICY_HOOK: Option<AslrPolicyProvider> = None;
+
+/// Registers live ASLR policy hook for ProcFS reflection.
+pub fn register_aslr_hook(hook: Option<AslrPolicyProvider>) {
+    unsafe {
+        ASLR_POLICY_HOOK = hook;
+    }
+}
