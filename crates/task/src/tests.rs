@@ -100,3 +100,32 @@ fn test_user_stack_and_auxv_setup() {
     let argc = u64::from_le_bytes(page[offset..offset + 8].try_into().unwrap());
     assert_eq!(argc, 3);
 }
+
+#[test]
+fn test_aslr_policy_lifecycle_and_offset_generation() {
+    set_aslr_policy(ASLR_MODE_DISABLED);
+    assert_eq!(get_aslr_policy(), ASLR_MODE_DISABLED);
+    let (s0, m0, b0) = generate_task_aslr_offsets();
+    assert_eq!(s0, 0);
+    assert_eq!(m0, 0);
+    assert_eq!(b0, 0);
+
+    set_aslr_policy(ASLR_MODE_CONSERVATIVE);
+    assert_eq!(get_aslr_policy(), ASLR_MODE_CONSERVATIVE);
+    let (_s1, m1, b1) = generate_task_aslr_offsets();
+    assert_eq!(m1, 0);
+    assert_eq!(b1, 0);
+
+    set_aslr_policy(ASLR_MODE_FULL);
+    assert_eq!(get_aslr_policy(), ASLR_MODE_FULL);
+    let (s2, m2, b2) = generate_task_aslr_offsets();
+    assert_eq!(s2 % 4096, 0);
+    assert_eq!(m2 % 4096, 0);
+    assert_eq!(b2 % 4096, 0);
+
+    let status = get_aslr_status();
+    assert_eq!(status.policy, ASLR_MODE_FULL);
+    assert!(status.stack_range_bytes > 0);
+    assert!(status.mmap_range_bytes > 0);
+    assert!(status.brk_range_bytes > 0);
+}
