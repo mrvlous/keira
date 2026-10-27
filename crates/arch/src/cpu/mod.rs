@@ -7,17 +7,22 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! x86/x86_64 CPU instructions, control registers, MSRs, and per-CPU data structures.
+//! x86/x86_64 CPU instructions, control registers, MSRs and per-CPU data structures.
 //!
 //! Subdivided into dedicated modules for port-mapped I/O, control registers,
-//! CPU assembly intrinsics, and per-CPU hardware execution state.
+//! CPU assembly intrinsics and per-CPU hardware execution state.
 
 pub mod control;
+pub mod entropy;
 pub mod instructions;
 pub mod percpu;
 pub mod port;
 pub mod security;
 
+pub use entropy::{
+    detect_entropy_features, get_entropy_features, get_entropy_u32, get_entropy_u64,
+    CpuEntropyFeatures,
+};
 pub use security::{
     detect_security_features, enable_hardware_mitigations, get_security_features,
     CpuSecurityFeatures,
