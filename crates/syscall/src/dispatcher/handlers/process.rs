@@ -236,13 +236,19 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
                 }
             };
 
+            let (stack_aslr, mmap_aslr, brk_aslr) = keira_task::generate_task_aslr_offsets();
+
             let stack_pages = 256;
             #[cfg(target_arch = "x86_64")]
-            let (stack_bottom, top_stack_page): (u64, u64) =
-                (0x7FFFFFD80000, 0x7FFFFFE00000 - pmm::PAGE_SIZE);
+            let (stack_bottom, top_stack_page): (u64, u64) = (
+                0x7FFFFFD80000 - stack_aslr,
+                (0x7FFFFFE00000 - stack_aslr) - pmm::PAGE_SIZE,
+            );
             #[cfg(target_arch = "x86")]
-            let (stack_bottom, top_stack_page): (u64, u64) =
-                (0x07F00000, 0x07FFF000 - pmm::PAGE_SIZE);
+            let (stack_bottom, top_stack_page): (u64, u64) = (
+                0x07F00000 - stack_aslr,
+                (0x07FFF000 - stack_aslr) - pmm::PAGE_SIZE,
+            );
 
             for p in 0..stack_pages {
                 let page_vaddr = stack_bottom + (p * pmm::PAGE_SIZE);
@@ -272,7 +278,12 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
 
             match spawn_user("user_app", entry_point, initial_user_rsp, child_pml4) {
                 Ok(pid) => {
-                    if let Some(ref task) = keira_task::scheduler::TASKS[pid] {
+                    if let Some(ref mut task) = keira_task::scheduler::TASKS[pid] {
+                        task.stack_aslr_offset = stack_aslr;
+                        task.mmap_aslr_offset = mmap_aslr;
+                        task.brk_aslr_offset = brk_aslr;
+                        task.program_break += brk_aslr;
+                        task.program_break_start += brk_aslr;
                         for fd in 0..keira_task::types::MAX_FDS {
                             if task.fds[fd].is_open && task.fds[fd].is_pipe {
                                 keira_ipc::pipe::dup_pipe_endpoint(
