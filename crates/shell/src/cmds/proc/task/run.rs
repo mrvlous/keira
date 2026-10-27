@@ -159,8 +159,10 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
             }
         };
 
+        let (stack_aslr, mmap_aslr, brk_aslr) = keira_task::generate_task_aslr_offsets();
+
         // Allocate initial top stack frame (4KB); further stack frames are allocated on-demand via #PF
-        let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
+        let top_stack_page = (USER_STACK_TOP - stack_aslr) & !(pmm::PAGE_SIZE - 1);
         let stack_frame = match pmm::alloc_frame() {
             Some(f) => f,
             None => {
@@ -179,10 +181,13 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
         let initial_user_rsp = setup_user_stack_64(ptr, top_stack_page, args, entry_point);
 
-        let mut brk_end = USER_DEFAULT_BRK;
+        let mut brk_end = USER_DEFAULT_BRK + brk_aslr;
         if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            task.program_break = USER_DEFAULT_BRK;
-            task.program_break_start = USER_DEFAULT_BRK;
+            task.stack_aslr_offset = stack_aslr;
+            task.mmap_aslr_offset = mmap_aslr;
+            task.brk_aslr_offset = brk_aslr;
+            task.program_break = brk_end;
+            task.program_break_start = brk_end;
             task.pml4_phys = child_pml4;
         }
 
