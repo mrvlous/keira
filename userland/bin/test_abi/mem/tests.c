@@ -320,5 +320,86 @@ int run_test_abi_mem(void) {
     munmap(aslr_mmap, 4096);
     puts("  [OK]   ASLR & hardware entropy virtual address randomization operational");
 
+    /* 34. Dynamic Stack Canary & Cryptographic Hardware Entropy (SYS_GETRANDOM & /dev/urandom) */
+    puts("  [TEST] Dynamic stack canary & cryptographic hardware entropy...");
+
+    /* A. getrandom() basic verification */
+    uint8_t rand_buf1[32];
+    uint8_t rand_buf2[32];
+    memset(rand_buf1, 0, sizeof(rand_buf1));
+    memset(rand_buf2, 0, sizeof(rand_buf2));
+
+    ssize_t gr1 = getrandom(rand_buf1, sizeof(rand_buf1), 0);
+    if (gr1 != (ssize_t)sizeof(rand_buf1)) {
+        printf("  [FAIL] getrandom(buf1, 32, 0) returned %ld (errno=%d)\n", (long)gr1, errno);
+        return 1;
+    }
+
+    ssize_t gr2 = getrandom(rand_buf2, sizeof(rand_buf2), 0);
+    if (gr2 != (ssize_t)sizeof(rand_buf2)) {
+        printf("  [FAIL] getrandom(buf2, 32, 0) returned %ld (errno=%d)\n", (long)gr2, errno);
+        return 1;
+    }
+
+    /* Entropy variance check: consecutive random buffers should not be identical */
+    if (memcmp(rand_buf1, rand_buf2, sizeof(rand_buf1)) == 0) {
+        puts("  [FAIL] Consecutive getrandom calls produced identical output (zero variance)!");
+        return 1;
+    }
+    puts("  [INFO] getrandom syscall returned 32 bytes with healthy entropy variance");
+
+    /* B. getrandom() error boundary checks */
+    ssize_t bad_ptr_res = getrandom(NULL, 16, 0);
+    if (bad_ptr_res != -1 || errno != EFAULT) {
+        printf("  [FAIL] getrandom(NULL) did not fail with EFAULT (res=%ld, errno=%d)\n",
+               (long)bad_ptr_res, errno);
+        return 1;
+    }
+
+    ssize_t bad_len_res = getrandom(rand_buf1, 33554432ULL + 1, 0);
+    if (bad_len_res != -1 || errno != EINVAL) {
+        printf("  [FAIL] getrandom(oversized) did not fail with EINVAL (res=%ld, errno=%d)\n",
+               (long)bad_len_res, errno);
+        return 1;
+    }
+    puts("  [INFO] getrandom EFAULT and EINVAL parameter validation verified");
+
+    /* C. /dev/urandom hardware character device verification */
+    int urandom_fd = open("/dev/urandom", O_RDONLY, 0);
+    if (urandom_fd < 0) {
+        puts("  [FAIL] Failed to open /dev/urandom");
+        return 1;
+    }
+    uint8_t dev_rand[32];
+    memset(dev_rand, 0, sizeof(dev_rand));
+    ssize_t dev_bytes = read(urandom_fd, dev_rand, sizeof(dev_rand));
+    close(urandom_fd);
+    if (dev_bytes != (ssize_t)sizeof(dev_rand)) {
+        printf("  [FAIL] /dev/urandom read returned %ld\n", (long)dev_bytes);
+        return 1;
+    }
+    int non_zero = 0;
+    for (size_t i = 0; i < sizeof(dev_rand); i++) {
+        if (dev_rand[i] != 0) {
+            non_zero = 1;
+            break;
+        }
+    }
+    if (!non_zero) {
+        puts("  [FAIL] /dev/urandom returned all zeroes!");
+        return 1;
+    }
+    puts("  [INFO] /dev/urandom hardware device read validated");
+
+    /* D. Dynamic stack canary (__stack_chk_guard) non-zero verification */
+    extern uintptr_t __stack_chk_guard;
+    if (__stack_chk_guard == 0) {
+        puts("  [FAIL] __stack_chk_guard is zero (uninitialized stack canary)!");
+        return 1;
+    }
+    printf("  [INFO] __stack_chk_guard active with hardware entropy canary: 0x%lx\n",
+           (unsigned long)__stack_chk_guard);
+    puts("  [OK]   Dynamic stack canary & cryptographic hardware entropy operational");
+
     return 0;
 }
