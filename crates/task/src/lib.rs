@@ -7,11 +7,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Process management, preemptive multitasking scheduler, cgroups, MAC policies, and signal delivery.
+//! Process management, preemptive multitasking scheduler, cgroups, MAC policies and signal delivery.
 
 #![no_std]
 #![allow(static_mut_refs)]
 
+pub mod aslr;
 pub mod cgroups;
 pub mod scheduler;
 pub mod security;
@@ -19,6 +20,10 @@ pub mod signal;
 pub mod stack;
 pub mod types;
 
+pub use aslr::{
+    generate_task_aslr_offsets, get_aslr_limits, get_aslr_policy, get_aslr_status, set_aslr_policy,
+    AslrStatus, ASLR_MODE_CONSERVATIVE, ASLR_MODE_DISABLED, ASLR_MODE_FULL,
+};
 pub use cgroups::{
     check_memory_limit, create_cgroup, delete_cgroup, get_cgroup_stats, get_cgroup_table,
     init as cgroups_init, set_cgroup_limits, translate_pid_to_namespace, Cgroup, MAX_CGROUPS,
