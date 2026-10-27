@@ -46,4 +46,7 @@ pub struct Task {
     pub tls: u64,
     pub cpu_ticks: u64,
     pub switches: u64,
+    pub stack_aslr_offset: u64,
+    pub mmap_aslr_offset: u64,
+    pub brk_aslr_offset: u64,
 }
