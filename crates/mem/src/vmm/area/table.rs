@@ -47,16 +47,42 @@ pub unsafe fn find_active_vma(pml4_phys: u64, addr: u64) -> Option<Vma> {
     None
 }
 
+/// Optional callback hook providing per-task ASLR offset for dynamic mmap allocations.
+static mut MMAP_ASLR_OFFSET_HOOK: Option<fn() -> u64> = None;
+
+/// Registers a callback hook providing per-task ASLR offset for mmap ranges.
+pub fn register_mmap_aslr_hook(hook: fn() -> u64) {
+    unsafe {
+        MMAP_ASLR_OFFSET_HOOK = Some(hook);
+    }
+}
+
 /// Finds the lowest available non-overlapping virtual memory range within `[MMAP_START, MMAP_END)`.
+///
+/// When an ASLR hook is registered and active, begins search from `MMAP_START + offset`
+/// and wraps around to `MMAP_START` if no contiguous space is found at the randomized offset.
 ///
 /// # Safety
 ///
 /// Inspects global VMA allocation records.
 pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u64> {
-    let mut candidate = MMAP_START;
+    let offset = MMAP_ASLR_OFFSET_HOOK.map(|f| f()).unwrap_or(0);
+    let start_candidate = match MMAP_START.checked_add(offset) {
+        Some(s) if s < MMAP_END => s,
+        _ => MMAP_START,
+    };
+
+    let mut candidate = start_candidate;
+    let mut wrapped = false;
+
     loop {
         let end = candidate.checked_add(aligned_len)?;
         if end > MMAP_END {
+            if !wrapped && start_candidate > MMAP_START {
+                candidate = MMAP_START;
+                wrapped = true;
+                continue;
+            }
             return None;
         }
 
