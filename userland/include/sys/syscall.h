@@ -113,6 +113,8 @@
 #define SYS_CHOWN 98
 #define SYS_STAT 99
 #define SYS_FSTAT 100
+#define SYS_GETRANDOM 101
+#define SYS_getrandom 101
 
 struct stat;
 
@@ -175,6 +177,7 @@ int sys_chmod(const char *pathname, mode_t mode);
 int sys_chown(const char *pathname, uid_t owner, gid_t group);
 int sys_stat(const char *pathname, struct stat *statbuf);
 int sys_fstat(int fd, struct stat *statbuf);
+ssize_t sys_getrandom(void *buf, size_t buflen, unsigned int flags);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2
