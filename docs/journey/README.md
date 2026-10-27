@@ -53,6 +53,7 @@ graph TD
     M41 --> M42["42. ProcFS Per-Process Telemetry<br/><i>/proc/[pid]/stat, /proc/[pid]/statm, Dynamic PID Listing, Ring 0 pidinfo</i>"]
     M42 --> M43["43. Hardware W^X & Kernel Exploit Mitigations<br/><i>NX/DEP Bit 63, CR0.WP, CR4.SMEP/SMAP/UMIP, Ring 0 secinfo</i>"]
     M43 --> M44["44. Kernel ASLR & Userland Randomization<br/><i>CPU RDRAND/RDSEED, SplitMix64 Mixer, Stack/Mmap/Brk ASLR, Ring 0 aslrinfo</i>"]
+    M44 --> M45["45. Dynamic Stack Canary & Cryptographic Hardware Entropy<br/><i>AT_RANDOM Auxv, __stack_chk_guard, Syscall 101 SYS_GETRANDOM, Ring 0 rnginfo</i>"]
 ```
 
 ---
@@ -100,6 +101,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 42** | [`proc_pid_telemetry_v070.md`](proc_pid_telemetry_v070.md) | `v0.7.0` | Pure kernel dynamic ProcFS process hierarchy (/proc/[pid]/stat, /proc/[pid]/statm), dynamic PID enumeration and Ring 0 pidinfo command |
 | **Milestone 43** | [`hardware_wx_mitigations_v070.md`](hardware_wx_mitigations_v070.md) | `v0.7.0` | Hardware W^X exploit mitigations, page table NX/DEP bit 63 enforcement, supervisor write protection (CR0.WP), SMEP/SMAP/UMIP detection and Ring 0 secinfo command |
 | **Milestone 44** | [`aslr_entropy_v070.md`](aslr_entropy_v070.md) | `v0.7.0` | Kernel ASLR (KASLR) & userland address space randomization (stack, mmap, brk), hardware CPU entropy harvesting (RDRAND/RDSEED), /proc/sys/kernel/randomize_va_space and Ring 0 aslrinfo command |
+| **Milestone 45** | [`dynamic_stack_canary_v070.md`](dynamic_stack_canary_v070.md) | `v0.7.0` | Dynamic stack canary protection, silicon hardware entropy auxiliary vector (AT_RANDOM), Century Syscall 101 (SYS_GETRANDOM), /dev/urandom silicon integration and Ring 0 rnginfo command |
 
 ---
 
