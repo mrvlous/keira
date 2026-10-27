@@ -27,4 +27,7 @@ pub fn init() {
     unsafe {
         crate::cpu::security::enable_hardware_mitigations();
     }
+
+    // 5. Detect hardware entropy capabilities (RDRAND, RDSEED)
+    crate::cpu::entropy::detect_entropy_features();
 }
