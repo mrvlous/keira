@@ -123,3 +123,20 @@ fn test_cpu_security_features_detection_and_mitigations() {
     let cached = cpu::security::get_security_features();
     assert_eq!(cached, updated);
 }
+
+#[test]
+fn test_cpu_entropy_features_detection_and_generation() {
+    let entropy_feat = cpu::entropy::detect_entropy_features();
+    let cached = cpu::entropy::get_entropy_features();
+    assert_eq!(entropy_feat, cached);
+
+    let r64_1 = cpu::entropy::get_entropy_u64();
+    let r64_2 = cpu::entropy::get_entropy_u64();
+    assert_ne!(r64_1, 0);
+    assert_ne!(r64_2, 0);
+
+    let r32_1 = cpu::entropy::get_entropy_u32();
+    let r32_2 = cpu::entropy::get_entropy_u32();
+    assert_ne!(r32_1, 0);
+    assert_ne!(r32_2, 0);
+}
