@@ -29,6 +29,6 @@ pub use ops::{
     sys_mprotect, sys_msync, sys_munmap, sys_munmap_ext,
 };
 pub use table::{
-    cleanup_vmas_for_pml4, find_active_vma, find_free_mmap_range, validate_virt_addr_range,
-    VMA_TABLE,
+    cleanup_vmas_for_pml4, find_active_vma, find_free_mmap_range, register_mmap_aslr_hook,
+    validate_virt_addr_range, VMA_TABLE,
 };
