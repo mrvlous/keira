@@ -15,6 +15,8 @@ use crate::autocomplete::word::matcher::find_last_word;
 use crate::state::session::{BUFFER_LEN, INPUT_BUFFER};
 
 pub const COMMANDS_LIST: &[&str] = &[
+    "aslr",
+    "aslrinfo",
     "cpu",
     "dcache",
     "devices",
