@@ -160,3 +160,17 @@ fn test_sys_aslrinfo() {
     let mut args_default = "".split_whitespace();
     aslrinfo::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_rnginfo() {
+    let mut args_help = "rnginfo --help".split_whitespace();
+    args_help.next();
+    rnginfo::run(&mut args_help);
+
+    let mut args_verbose = "rnginfo -v".split_whitespace();
+    args_verbose.next();
+    rnginfo::run(&mut args_verbose);
+
+    let mut args_default = "".split_whitespace();
+    rnginfo::run(&mut args_default);
+}
