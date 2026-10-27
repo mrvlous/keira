@@ -131,6 +131,9 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         tls: 0,
         cpu_ticks: 0,
         switches: 0,
+        stack_aslr_offset: 0,
+        mmap_aslr_offset: 0,
+        brk_aslr_offset: 0,
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -254,6 +257,8 @@ pub unsafe fn spawn_user(
     #[cfg(target_arch = "x86")]
     let default_brk = 0x0200_0000;
 
+    let (stack_aslr, mmap_aslr, brk_aslr) = crate::aslr::generate_task_aslr_offsets();
+
     let new_task = Task {
         id: slot_idx,
         name,
@@ -283,6 +288,9 @@ pub unsafe fn spawn_user(
         tls: 0,
         cpu_ticks: 0,
         switches: 0,
+        stack_aslr_offset: stack_aslr,
+        mmap_aslr_offset: mmap_aslr,
+        brk_aslr_offset: brk_aslr,
     };
 
     TASKS[slot_idx] = Some(new_task);
