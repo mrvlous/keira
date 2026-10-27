@@ -45,6 +45,7 @@ pub fn execute_command_inner(cmd: &str) {
         "pidinfo" | "procs" => crate::cmds::proc::pidinfo::run(&mut parts),
         "secinfo" | "mitigations" => crate::cmds::sys::info::secinfo::run(&mut parts),
         "aslrinfo" | "aslr" => crate::cmds::sys::info::aslrinfo::run(&mut parts),
+        "rnginfo" | "entropy" => crate::cmds::sys::info::rnginfo::run(&mut parts),
         "run" => crate::cmds::run::run(&mut parts),
         "sh" => {
             let sh_path = if keira_fs::vfs::exists("/bin/sh.elf") {
