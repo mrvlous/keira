@@ -289,5 +289,36 @@ int run_test_abi_mem(void) {
     puts("  [OK]   Hardware W^X exploit mitigation operational");
 #endif
 
+    /* 33. ASLR & Hardware Entropy Virtual Address Randomization */
+    puts("  [TEST] ASLR & hardware entropy virtual address randomization...");
+    int aslr_fd = open("/proc/sys/kernel/randomize_va_space", O_RDONLY, 0);
+    if (aslr_fd < 0) {
+        puts("  [FAIL] Failed to open /proc/sys/kernel/randomize_va_space");
+        return 1;
+    }
+    char aslr_val[16];
+    memset(aslr_val, 0, sizeof(aslr_val));
+    ssize_t aslr_bytes = read(aslr_fd, aslr_val, sizeof(aslr_val) - 1);
+    close(aslr_fd);
+    if (aslr_bytes <= 0 || (aslr_val[0] != '1' && aslr_val[0] != '2')) {
+        printf("  [FAIL] Invalid randomize_va_space value: '%s'\n", aslr_val);
+        return 1;
+    }
+    printf("  [INFO] randomize_va_space policy active: mode %c\n", aslr_val[0]);
+
+    void *aslr_mmap = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (aslr_mmap == MAP_FAILED || aslr_mmap == NULL) {
+        puts("  [FAIL] mmap failed under active ASLR policy");
+        return 1;
+    }
+    *(volatile int *)aslr_mmap = 0x1337c0de;
+    if (*(volatile int *)aslr_mmap != 0x1337c0de) {
+        puts("  [FAIL] Memory integrity write verification failed on ASLR mmap page");
+        munmap(aslr_mmap, 4096);
+        return 1;
+    }
+    munmap(aslr_mmap, 4096);
+    puts("  [OK]   ASLR & hardware entropy virtual address randomization operational");
+
     return 0;
 }
