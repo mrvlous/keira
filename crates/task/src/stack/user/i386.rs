@@ -43,17 +43,15 @@ pub unsafe fn setup_user_stack_32(
 
     // Allocate 16 random entropy bytes for AT_RANDOM stack canary seed
     offset = offset.saturating_sub(16);
-    let mut random_entropy = [
-        0x4bu8, 0x65, 0x69, 0x72, 0x61, 0x5f, 0x72, 0x6e, 0x67, 0x5f, 0x73, 0x65, 0x65, 0x64, 0x32,
-        0x36,
-    ];
-    let lo: u32;
-    let hi: u32;
-    core::arch::asm!("rdtsc", out("eax") lo, out("edx") hi);
-    let tsc = ((hi as u64) << 32) | (lo as u64);
-    for (i, byte) in random_entropy.iter_mut().enumerate() {
-        *byte = ((tsc >> ((i % 8) * 8)) ^ (i as u64 * 0x9E37_79B9) ^ 0xA5) as u8;
-    }
+    let mut random_entropy = [0u8; 16];
+    let e1 = keira_arch::cpu::get_entropy_u32();
+    let e2 = keira_arch::cpu::get_entropy_u32();
+    let e3 = keira_arch::cpu::get_entropy_u32();
+    let e4 = keira_arch::cpu::get_entropy_u32();
+    random_entropy[0..4].copy_from_slice(&e1.to_ne_bytes());
+    random_entropy[4..8].copy_from_slice(&e2.to_ne_bytes());
+    random_entropy[8..12].copy_from_slice(&e3.to_ne_bytes());
+    random_entropy[12..16].copy_from_slice(&e4.to_ne_bytes());
     if random_entropy[0] == 0 {
         random_entropy[0] = 0x4B;
     }
