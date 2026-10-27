@@ -92,6 +92,9 @@ pub unsafe fn init() {
         tls: 0,
         cpu_ticks: 0,
         switches: 1,
+        stack_aslr_offset: 0,
+        mmap_aslr_offset: 0,
+        brk_aslr_offset: 0,
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;
@@ -107,4 +110,17 @@ pub unsafe fn init() {
         task_exists_provider,
         task_list_provider,
     );
+    keira_mem::register_mmap_aslr_hook(mmap_aslr_offset_provider);
+    keira_fs::proc::register_aslr_hook(Some(crate::aslr::get_aslr_policy));
+}
+
+fn mmap_aslr_offset_provider() -> u64 {
+    unsafe {
+        let idx = CURRENT_TASK_IDX;
+        if let Some(ref t) = TASKS[idx] {
+            t.mmap_aslr_offset
+        } else {
+            0
+        }
+    }
 }
