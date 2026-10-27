@@ -9,6 +9,7 @@
 
 //! System-level diagnostic and telemetry ProcFS nodes.
 
+pub mod aslr;
 pub mod cpuinfo;
 pub mod hooks;
 pub mod iptables_names;
@@ -30,6 +31,7 @@ pub mod uptime;
 pub mod version;
 pub mod vmstat;
 
+pub use self::aslr::read_randomize_va_space;
 pub use self::cpuinfo::read_cpuinfo;
 pub use self::hooks::*;
 pub use self::iptables_names::read_ip_tables_names;
