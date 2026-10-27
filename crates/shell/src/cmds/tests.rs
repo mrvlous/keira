@@ -48,6 +48,8 @@ fn test_all_shell_commands_dispatch() {
         "pidinfo --help",
         "secinfo --help",
         "mitigations --help",
+        "aslrinfo --help",
+        "aslr --help",
         "wipe --help",
         "reset --help",
         "reboot --help",
