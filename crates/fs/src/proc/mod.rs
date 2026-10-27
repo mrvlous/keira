@@ -28,8 +28,9 @@ pub use self::dispatcher::{
     PROC_ENTRIES,
 };
 pub use self::system::{
-    register_net_hooks, NetTelemetryProvider, NET_ARP_HOOK, NET_CONNTRACK_HOOK, NET_DEV_HOOK,
-    NET_IPTABLES_HOOK, NET_RAW_HOOK, NET_ROUTE_HOOK, NET_SOCKSTAT_HOOK, NET_TCP_HOOK, NET_UDP_HOOK,
+    register_aslr_hook, register_net_hooks, AslrPolicyProvider, NetTelemetryProvider, NET_ARP_HOOK,
+    NET_CONNTRACK_HOOK, NET_DEV_HOOK, NET_IPTABLES_HOOK, NET_RAW_HOOK, NET_ROUTE_HOOK,
+    NET_SOCKSTAT_HOOK, NET_TCP_HOOK, NET_UDP_HOOK,
 };
 pub use self::task::{
     get_active_pids, read_task_cmdline, read_task_stat, read_task_statm, read_task_status,
