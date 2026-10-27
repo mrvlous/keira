@@ -9,29 +9,15 @@
 
 //! Pseudo character devices `/dev/random` and `/dev/urandom` providing entropy.
 
-/// Fills destination buffer with pseudo-random entropy derived from CPU Time-Stamp Counter (TSC).
+/// Fills destination buffer with hardware-harvested silicon entropy.
 pub fn read(buf: &mut [u8]) -> Result<usize, &'static str> {
-    let lo: u32;
-    let hi: u32;
-    #[cfg(target_arch = "x86_64")]
-    unsafe {
-        core::arch::asm!("rdtsc", out("eax") lo, out("edx") hi, options(nomem, nostack));
-    }
-    #[cfg(target_arch = "x86")]
-    unsafe {
-        core::arch::asm!("rdtsc", out("eax") lo, out("edx") hi, options(nomem, nostack));
-    }
-    #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-    {
-        lo = 0x1234_5678;
-        hi = 0x9ABC_DEF0;
-    }
-
-    let tsc = ((hi as u64) << 32) | (lo as u64);
-    for (idx, slot) in buf.iter_mut().enumerate() {
-        let shift = (idx % 8) * 8;
-        let byte = ((tsc >> shift) ^ (idx as u64 * 0x9E37_79B9)) as u8;
-        *slot = byte;
+    let mut i = 0;
+    while i < buf.len() {
+        let entropy = keira_arch::cpu::get_entropy_u32();
+        let bytes = entropy.to_ne_bytes();
+        let chunk = (buf.len() - i).min(4);
+        buf[i..i + chunk].copy_from_slice(&bytes[..chunk]);
+        i += chunk;
     }
     Ok(buf.len())
 }
