@@ -100,3 +100,13 @@ fn test_read_slabinfo_and_vmstat() {
     assert!(s.contains("pgfault"));
     assert!(s.contains("tlb_flushes"));
 }
+
+#[test]
+fn test_read_randomize_va_space() {
+    assert!(exists("sys/kernel/randomize_va_space"));
+    let mut buf = [0u8; 64];
+    let n = read_proc_file("sys/kernel/randomize_va_space", &mut buf)
+        .expect("read randomize_va_space failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 randomize_va_space");
+    assert_eq!(s, "2\n");
+}
