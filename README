@@ -8,18 +8,18 @@ Ring 0 built from scratch in safe Rust, Assembly and C, supporting both modern
 Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
-Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 101 POSIX
+Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 104 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
 with I/O redirection and pipelines, 41 native core utilities (cat.elf, chmod.elf, chown.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
 canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 45+ verified ABI security test vectors, bare-metal io_uring asynchronous I/O engine, High-Precision
-Event Timer (HPET) monotonic clocks, an interactive 18-command emergency debugger and freestanding native C compiler (kcc.elf).
+Event Timer (HPET) monotonic clocks, an interactive 19-command emergency debugger and freestanding native C compiler (kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 45 chronological engineering milestones:
+of computer systems across 46 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -35,6 +35,7 @@ of computer systems across 45 chronological engineering milestones:
 * Milestone 43: Hardware W^X & Kernel Exploit Mitigations (NX/DEP Bit 63, CR0.WP, CR4.SMEP/SMAP/UMIP Detection and Ring 0 secinfo Command).
 * Milestone 44: Kernel ASLR (KASLR) & Userland Randomization (CPU RDRAND/RDSEED, SplitMix64 Mixer, Stack/Mmap/Brk ASLR and Ring 0 aslrinfo Command).
 * Milestone 45: Dynamic Stack Canary & Cryptographic Hardware Entropy (AT_RANDOM Auxv, __stack_chk_guard, Century Syscall 101 SYS_GETRANDOM, /dev/urandom Silicon Integration and Ring 0 rnginfo Command).
+* Milestone 46: Process Resource Limits (RLIMIT), Memory/FD Quota Enforcement & Process Sandboxing (SYS_GETRLIMIT, SYS_SETRLIMIT, SYS_PRLIMIT64, /proc/[pid]/limits and Ring 0 rlimit Command).
 
 Read the detailed engineering journal: docs/journey/README.md
 System architecture overview: docs/architecture/README.md
