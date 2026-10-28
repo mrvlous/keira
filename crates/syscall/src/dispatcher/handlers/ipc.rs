@@ -36,7 +36,9 @@ pub fn handle_pipe2(arg1: u64, arg2: u64) -> u64 {
     unsafe {
         let task = &mut TASKS[CURRENT_TASK_IDX];
         if let Some(t) = task {
-            for i in 3..MAX_FDS {
+            let max_open_limit =
+                (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
+            for i in 3..max_open_limit {
                 if !t.fds[i].is_open {
                     if rd_slot.is_none() {
                         rd_slot = Some(i);

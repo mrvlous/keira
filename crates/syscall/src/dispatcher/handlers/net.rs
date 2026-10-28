@@ -48,8 +48,10 @@ pub fn handle_socket(arg1: u64, arg2: u64, arg3: u64) -> u64 {
             Ok(sock_id) => {
                 let task = &mut TASKS[CURRENT_TASK_IDX];
                 if let Some(t) = task {
+                    let max_open_limit =
+                        (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
                     let mut free_fd = None;
-                    for i in 3..MAX_FDS {
+                    for i in 3..max_open_limit {
                         if !t.fds[i].is_open {
                             free_fd = Some(i);
                             break;

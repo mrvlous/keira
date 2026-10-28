@@ -167,8 +167,10 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
     unsafe {
         let task = &mut TASKS[CURRENT_TASK_IDX];
         if let Some(t) = task {
+            let max_open_limit =
+                (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
             let mut fd_slot = None;
-            for i in 0..MAX_FDS {
+            for i in 0..max_open_limit {
                 if !t.fds[i].is_open {
                     fd_slot = Some(i);
                     break;
@@ -186,6 +188,7 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
                 t.fds[fd].path[..target_len].copy_from_slice(target_path.as_bytes());
                 return fd as u64;
             }
+            return errno_to_ret(EMFILE);
         }
     }
     errno_to_ret(ENOMEM)
@@ -651,7 +654,9 @@ pub fn handle_fcntl(arg1: u64, arg2: u64) -> u64 {
             }
             match cmd {
                 0 => {
-                    for i in 0..MAX_FDS {
+                    let max_open_limit =
+                        (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
+                    for i in 0..max_open_limit {
                         if !t.fds[i].is_open {
                             t.fds[i] = t.fds[fd];
                             return i as u64;
@@ -772,7 +777,9 @@ pub fn handle_dup(arg1: u64) -> u64 {
                     return errno_to_ret(EBADF);
                 }
             }
-            for i in 0..MAX_FDS {
+            let max_open_limit =
+                (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
+            for i in 0..max_open_limit {
                 if !t.fds[i].is_open {
                     t.fds[i] = t.fds[oldfd];
                     if t.fds[oldfd].is_pipe {
