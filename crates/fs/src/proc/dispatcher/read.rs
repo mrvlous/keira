@@ -17,8 +17,8 @@ use crate::proc::system::{
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{
-    get_active_pids, read_task_cmdline, read_task_stat, read_task_statm, read_task_status,
-    task_exists,
+    get_active_pids, read_task_cmdline, read_task_limits, read_task_stat, read_task_statm,
+    read_task_status, task_exists,
 };
 
 /// Queries whether a procfs pseudo-node represents a directory.
@@ -81,6 +81,7 @@ pub fn exists(clean_node: &str) -> bool {
         || node == "self/mounts"
         || node == "self/stat"
         || node == "self/statm"
+        || node == "self/limits"
     {
         return true;
     }
@@ -88,7 +89,12 @@ pub fn exists(clean_node: &str) -> bool {
         return task_exists(pid);
     }
     if let Some((pid_str, sub)) = node.split_once('/') {
-        if sub == "status" || sub == "cmdline" || sub == "mounts" || sub == "stat" || sub == "statm"
+        if sub == "status"
+            || sub == "cmdline"
+            || sub == "mounts"
+            || sub == "stat"
+            || sub == "statm"
+            || sub == "limits"
         {
             if pid_str == "self" {
                 return true;
@@ -141,6 +147,9 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
             } else if node == "self/statm" {
                 let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
                 (pid, "statm")
+            } else if node == "self/limits" {
+                let pid = unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) };
+                (pid, "limits")
             } else if let Some((pid_str, sub)) = node.split_once('/') {
                 let pid = if pid_str == "self" {
                     unsafe { CURRENT_PID_HOOK.map(|f| f()).unwrap_or(0) }
@@ -159,6 +168,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
                 "cmdline" => read_task_cmdline(target_pid, buf),
                 "stat" => read_task_stat(target_pid, buf),
                 "statm" => read_task_statm(target_pid, buf),
+                "limits" => read_task_limits(target_pid, buf),
                 _ => Err("Unsupported proc subfile"),
             }
         }
@@ -240,7 +250,7 @@ const PID_STRS: [&str; 64] = [
 ];
 
 /// Standard virtual directory entries resident inside every /proc/[pid] directory.
-pub static PID_DIR_ENTRIES: [VirtualDirEntry; 7] = [
+pub static PID_DIR_ENTRIES: [VirtualDirEntry; 8] = [
     VirtualDirEntry {
         name: ".",
         d_type: 4,
@@ -275,6 +285,11 @@ pub static PID_DIR_ENTRIES: [VirtualDirEntry; 7] = [
         name: "mounts",
         d_type: 8,
         ino: 6,
+    },
+    VirtualDirEntry {
+        name: "limits",
+        d_type: 8,
+        ino: 7,
     },
 ];
 
