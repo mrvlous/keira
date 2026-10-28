@@ -30,6 +30,9 @@ pub type TaskListProvider = fn(out_pids: &mut [usize]) -> usize;
 /// Callback provider function type for querying the current process ID.
 pub type CurrentPidProvider = fn() -> usize;
 
+/// Callback provider function type for process resource limits strings.
+pub type TaskLimitsProvider = fn(pid: usize, buf: &mut [u8]) -> Option<usize>;
+
 /// Registered hook for task status inspection.
 pub static mut TASK_STATUS_HOOK: Option<TaskStatusProvider> = None;
 
@@ -50,6 +53,9 @@ pub static mut TASK_LIST_HOOK: Option<TaskListProvider> = None;
 
 /// Registered hook for current process identifier.
 pub static mut CURRENT_PID_HOOK: Option<CurrentPidProvider> = None;
+
+/// Registered hook for task resource limits inspection.
+pub static mut TASK_LIMITS_HOOK: Option<TaskLimitsProvider> = None;
 
 /// Checks whether a task with the specified PID is currently active in the scheduler.
 pub fn task_exists(pid: usize) -> bool {
@@ -92,5 +98,12 @@ pub fn register_extended_task_hooks(
         TASK_STATM_HOOK = Some(statm_hook);
         TASK_EXISTS_HOOK = Some(exists_hook);
         TASK_LIST_HOOK = Some(list_hook);
+    }
+}
+
+/// Registers callback hook for task resource limits inspection.
+pub fn register_task_limits_hook(limits_hook: TaskLimitsProvider) {
+    unsafe {
+        TASK_LIMITS_HOOK = Some(limits_hook);
     }
 }
