@@ -36,6 +36,9 @@ pub mod test {
         assert_eq!(SYS_STAT, 99);
         assert_eq!(SYS_FSTAT, 100);
         assert_eq!(SYS_GETRANDOM, 101);
+        assert_eq!(SYS_GETRLIMIT, 102);
+        assert_eq!(SYS_SETRLIMIT, 103);
+        assert_eq!(SYS_PRLIMIT64, 104);
     }
 
     #[test]
@@ -59,6 +62,9 @@ pub mod test {
         assert_eq!(syscall_name(SYS_STAT), "sys_stat");
         assert_eq!(syscall_name(SYS_FSTAT), "sys_fstat");
         assert_eq!(syscall_name(SYS_GETRANDOM), "sys_getrandom");
+        assert_eq!(syscall_name(SYS_GETRLIMIT), "sys_getrlimit");
+        assert_eq!(syscall_name(SYS_SETRLIMIT), "sys_setrlimit");
+        assert_eq!(syscall_name(SYS_PRLIMIT64), "sys_prlimit64");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
