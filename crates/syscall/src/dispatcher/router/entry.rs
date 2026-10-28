@@ -146,6 +146,9 @@ fn syscall_dispatcher_inner(
         99 => handle_stat(arg1, arg2),
         100 => handle_fstat(arg1, arg2),
         101 | 318 => handle_getrandom(arg1, arg2, arg3),
+        102 => handle_getrlimit(arg1, arg2),
+        103 | 160 => handle_setrlimit(arg1, arg2),
+        104 | 302 => handle_prlimit64(arg1, arg2, arg3, arg4),
         _ => errno_to_ret(ENOSYS),
     }
 }
