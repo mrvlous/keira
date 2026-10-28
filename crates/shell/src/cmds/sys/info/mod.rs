@@ -15,6 +15,7 @@ pub mod irq;
 pub mod memory;
 pub mod pipes;
 pub mod regs;
+pub mod rlimit;
 pub mod rnginfo;
 pub mod secinfo;
 pub mod slabinfo;
