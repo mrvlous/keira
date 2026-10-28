@@ -129,3 +129,19 @@ fn test_aslr_policy_lifecycle_and_offset_generation() {
     assert!(status.mmap_range_bytes > 0);
     assert!(status.brk_range_bytes > 0);
 }
+
+#[test]
+fn test_rlimit_lifecycle_and_constants() {
+    let limits = default_rlimits();
+    assert_eq!(limits.len(), RLIM_NLIMITS);
+    assert_eq!(limits[RLIMIT_NOFILE].cur, 32);
+    assert_eq!(limits[RLIMIT_NOFILE].max, 32);
+    assert_eq!(resource_name(RLIMIT_NOFILE), "Max open files");
+    assert_eq!(resource_unit(RLIMIT_NOFILE), "files");
+
+    let mut buf = [0u8; 1024];
+    let n = format_task_limits(&limits, &mut buf);
+    assert!(n > 0);
+    let s = core::str::from_utf8(&buf[..n]).unwrap();
+    assert!(s.contains("Max open files"));
+}

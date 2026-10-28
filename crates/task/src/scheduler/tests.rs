@@ -142,6 +142,7 @@ fn test_orphan_reparenting_and_reap() {
             stack_aslr_offset: 0,
             mmap_aslr_offset: 0,
             brk_aslr_offset: 0,
+            rlimits: crate::rlimit::default_rlimits(),
         };
         TASKS[1] = Some(dummy_task);
         assert!(TASKS[1].is_some());
