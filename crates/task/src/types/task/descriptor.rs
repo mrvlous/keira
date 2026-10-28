@@ -49,4 +49,5 @@ pub struct Task {
     pub stack_aslr_offset: u64,
     pub mmap_aslr_offset: u64,
     pub brk_aslr_offset: u64,
+    pub rlimits: [crate::rlimit::RLimit; crate::rlimit::RLIM_NLIMITS],
 }
