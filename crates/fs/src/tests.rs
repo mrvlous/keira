@@ -263,6 +263,7 @@ fn test_proc_pid_directory_and_stat_nodes() {
     assert!(proc::exists("self/status"));
     assert!(proc::exists("self/cmdline"));
     assert!(proc::exists("self/mounts"));
+    assert!(proc::exists("self/limits"));
     assert!(proc::is_proc_dir(""));
     assert!(proc::is_proc_dir("self"));
     assert!(proc::is_proc_dir("net"));
@@ -274,5 +275,6 @@ fn test_proc_pid_directory_and_stat_nodes() {
     assert_eq!(proc::get_pid_dir_entry(4).map(|e| e.name), Some("stat"));
     assert_eq!(proc::get_pid_dir_entry(5).map(|e| e.name), Some("statm"));
     assert_eq!(proc::get_pid_dir_entry(6).map(|e| e.name), Some("mounts"));
-    assert_eq!(proc::get_pid_dir_entry(7), None);
+    assert_eq!(proc::get_pid_dir_entry(7).map(|e| e.name), Some("limits"));
+    assert_eq!(proc::get_pid_dir_entry(8), None);
 }
