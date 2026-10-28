@@ -115,8 +115,12 @@
 #define SYS_FSTAT 100
 #define SYS_GETRANDOM 101
 #define SYS_getrandom 101
+#define SYS_GETRLIMIT 102
+#define SYS_SETRLIMIT 103
+#define SYS_PRLIMIT64 104
 
 struct stat;
+struct rlimit;
 
 int64_t syscall0(uint64_t num);
 int64_t syscall1(uint64_t num, uint64_t a1);
@@ -178,6 +182,10 @@ int sys_chown(const char *pathname, uid_t owner, gid_t group);
 int sys_stat(const char *pathname, struct stat *statbuf);
 int sys_fstat(int fd, struct stat *statbuf);
 ssize_t sys_getrandom(void *buf, size_t buflen, unsigned int flags);
+int sys_getrlimit(int resource, struct rlimit *rlim);
+int sys_setrlimit(int resource, const struct rlimit *rlim);
+int sys_prlimit64(pid_t pid, int resource, const struct rlimit *new_limit,
+                  struct rlimit *old_limit);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2
