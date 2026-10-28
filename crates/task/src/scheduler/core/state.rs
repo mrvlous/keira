@@ -14,8 +14,8 @@ use keira_core::sync::{IrqSpinLock, LockRank};
 use keira_mem::{pmm, vmm};
 
 use super::hooks::{
-    current_pid_provider, task_cmdline_provider, task_exists_provider, task_list_provider,
-    task_stat_provider, task_statm_provider, task_status_provider,
+    current_pid_provider, task_cmdline_provider, task_exists_provider, task_limits_provider,
+    task_list_provider, task_stat_provider, task_statm_provider, task_status_provider,
 };
 pub use crate::types::MAX_TASKS;
 use crate::types::{FileDescriptor, Task, TaskState, MAX_FDS};
@@ -95,6 +95,7 @@ pub unsafe fn init() {
         stack_aslr_offset: 0,
         mmap_aslr_offset: 0,
         brk_aslr_offset: 0,
+        rlimits: crate::rlimit::default_rlimits(),
     };
     TASKS[0] = Some(main_task);
     CURRENT_TASK_IDX = 0;
@@ -110,6 +111,7 @@ pub unsafe fn init() {
         task_exists_provider,
         task_list_provider,
     );
+    keira_fs::proc::register_task_limits_hook(task_limits_provider);
     keira_mem::register_mmap_aslr_hook(mmap_aslr_offset_provider);
     keira_fs::proc::register_aslr_hook(Some(crate::aslr::get_aslr_policy));
 }

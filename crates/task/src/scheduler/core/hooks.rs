@@ -238,3 +238,14 @@ pub fn task_list_provider(out_pids: &mut [usize]) -> usize {
 pub fn current_pid_provider() -> usize {
     unsafe { CURRENT_TASK_IDX }
 }
+
+/// Dynamic task resource limits provider for /proc/[pid]/limits.
+pub fn task_limits_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
+    unsafe {
+        if pid >= MAX_TASKS {
+            return None;
+        }
+        let task = TASKS[pid].as_ref()?;
+        Some(crate::rlimit::format_task_limits(&task.rlimits, buf))
+    }
+}
