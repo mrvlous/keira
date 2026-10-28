@@ -37,6 +37,11 @@ pub fn handle_brk(arg1: u64) -> u64 {
                 return errno_to_ret(ENOMEM);
             }
 
+            let heap_size = new_brk.saturating_sub(t.program_break_start);
+            if heap_size > t.rlimits[keira_task::rlimit::RLIMIT_DATA].cur {
+                return errno_to_ret(ENOMEM);
+            }
+
             let old_page_top = (old_brk + pmm::PAGE_SIZE - 1) & !(pmm::PAGE_SIZE - 1);
             let new_page_top = (new_brk + pmm::PAGE_SIZE - 1) & !(pmm::PAGE_SIZE - 1);
 
@@ -58,6 +63,14 @@ pub fn handle_brk(arg1: u64) -> u64 {
 /// Syscall 20: Map memory pages into process address space (anonymous or file-backed).
 pub fn handle_mmap(arg1: u64, arg2: u64, arg3: u64, arg4: u64, arg5: u64, arg6: u64) -> u64 {
     unsafe {
+        let len = arg2;
+        let current_idx = CURRENT_TASK_IDX;
+        if let Some(ref t) = TASKS[current_idx] {
+            if len > t.rlimits[keira_task::rlimit::RLIMIT_AS].cur {
+                return errno_to_ret(ENOMEM);
+            }
+        }
+
         let flags = arg4 as u32;
         let fd = arg5 as i32;
 
