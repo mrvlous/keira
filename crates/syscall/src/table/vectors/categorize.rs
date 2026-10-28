@@ -74,6 +74,9 @@ pub fn is_process_syscall(num: u64) -> bool {
             | SYS_SETGID
             | SYS_GETEUID
             | SYS_GETEGID
+            | SYS_GETRLIMIT
+            | SYS_SETRLIMIT
+            | SYS_PRLIMIT64
     )
 }
 

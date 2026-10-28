@@ -110,6 +110,9 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_STAT => "sys_stat",
         SYS_FSTAT => "sys_fstat",
         SYS_GETRANDOM => "sys_getrandom",
+        SYS_GETRLIMIT => "sys_getrlimit",
+        SYS_SETRLIMIT => "sys_setrlimit",
+        SYS_PRLIMIT64 => "sys_prlimit64",
         _ => "sys_unknown",
     }
 }
