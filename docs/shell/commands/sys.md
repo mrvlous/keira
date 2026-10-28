@@ -17,6 +17,7 @@ The `sys` command suite provides emergency telemetry, power management and hardw
 | `power` | `power [status\|shutdown]` | Query ACPI S0-S5 states, motherboard MADT topology or soft-off power down (aliases: `poweroff`, `shutdown`) | `-h, --help` |
 | `regs` | `regs` | Display CPU control registers (CR0-CR4) and execution flags | `-h, --help` |
 | `reset` | `reset` | Reboot kernel and motherboard via PS/2 controller pulse (alias: `reboot`) | `-h, --help` |
+| `rlimit` | `rlimit [-v]` | Display process resource limits, soft and hard limits and sandbox quota utilization (alias: `limit`) | `-v, --verbose`: Display per-task resource utilization and quota limits<br>`-h, --help`: Usage info |
 | `rnginfo` | `rnginfo [-v]` | Display silicon hardware entropy source, random generator subsystems and live entropy sample (alias: `entropy`) | `-v, --verbose`: Harvest and display 16-byte silicon entropy sample and CPU RNG features<br>`-h, --help`: Usage info |
 | `secinfo` | `secinfo [-v]` | Display hardware exploit mitigations, memory boundary protections and #PF telemetry (alias: `mitigations`) | `-v, --verbose`: Display VMM fault counters<br>`-h, --help`: Usage info |
 | `smp` | `smp` | Inspect multi-core APIC topology and secondary processor status | `-h, --help` |
