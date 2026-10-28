@@ -174,3 +174,17 @@ fn test_sys_rnginfo() {
     let mut args_default = "".split_whitespace();
     rnginfo::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_rlimit() {
+    let mut args_help = "rlimit --help".split_whitespace();
+    args_help.next();
+    rlimit::run(&mut args_help);
+
+    let mut args_verbose = "rlimit -v".split_whitespace();
+    args_verbose.next();
+    rlimit::run(&mut args_verbose);
+
+    let mut args_default = "".split_whitespace();
+    rlimit::run(&mut args_default);
+}
