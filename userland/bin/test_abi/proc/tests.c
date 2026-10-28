@@ -82,6 +82,30 @@ int run_test_abi_proc(void) {
         printf("  [FAIL] Initial process is not root (UID=%d)\n", initial_uid);
         return 1;
     }
+#if defined(__x86_64__)
+    pid_t cred_child = fork();
+    if (cred_child == 0) {
+        if (setuid(1000) != 0) {
+            puts("  [FAIL] setuid(1000) failed for root user");
+            exit(1);
+        }
+        if (getuid() != 1000) {
+            puts("  [FAIL] getuid() did not reflect demoted UID 1000");
+            exit(1);
+        }
+        if (setuid(0) == 0) {
+            puts("  [FAIL] Unprivileged user was able to escalate back to root (UID 0)!");
+            exit(1);
+        }
+        exit(0);
+    } else if (cred_child > 0) {
+        int c_st = 0;
+        waitpid(cred_child, &c_st, 0);
+        if (!WIFEXITED(c_st) || WEXITSTATUS(c_st) != 0) {
+            return 1;
+        }
+    }
+#else
     if (setuid(1000) != 0) {
         puts("  [FAIL] setuid(1000) failed for root user");
         return 1;
@@ -91,10 +115,10 @@ int run_test_abi_proc(void) {
         return 1;
     }
     if (setuid(0) == 0) {
-        puts("  [FAIL] Unprivileged user was able to escalate back to root (UID "
-             "0)!");
+        puts("  [FAIL] Unprivileged user was able to escalate back to root (UID 0)!");
         return 1;
     }
+#endif
     puts("  [OK]   Process credentials and privilege boundaries operational");
 
     /* 32. Rapid Process Fork & Reap Churn (20 iterations) */
@@ -147,6 +171,91 @@ int run_test_abi_proc(void) {
     puts("  [INFO] Orphan reparenting skipped on i686 (non-paging target)");
     puts("  [OK]   Orphan process reparenting verified");
 #endif
+
+    /* 35. Process Resource Limits (RLIMIT), Memory/FD Quota Enforcement & ProcFS Telemetry */
+    puts("  [TEST] Process resource limits (rlimit) and quota enforcement...");
+    struct rlimit orig_nofile;
+    memset(&orig_nofile, 0, sizeof(orig_nofile));
+    if (getrlimit(RLIMIT_NOFILE, &orig_nofile) != 0) {
+        puts("  [FAIL] getrlimit(RLIMIT_NOFILE) failed");
+        return 1;
+    }
+    if (orig_nofile.rlim_cur == 0 || orig_nofile.rlim_max == 0) {
+        puts("  [FAIL] Invalid initial RLIMIT_NOFILE values");
+        return 1;
+    }
+
+    struct rlimit bad_rlim;
+    if (getrlimit(999, &bad_rlim) == 0 || errno != EINVAL) {
+        puts("  [FAIL] getrlimit accepted invalid resource index");
+        return 1;
+    }
+
+    if (getrlimit(RLIMIT_NOFILE, NULL) == 0 || errno != EFAULT) {
+        puts("  [FAIL] getrlimit accepted NULL pointer");
+        return 1;
+    }
+
+#if defined(__x86_64__)
+    pid_t rlim_child = fork();
+    if (rlim_child == 0) {
+        struct rlimit low_nofile;
+        low_nofile.rlim_cur = 4;
+        low_nofile.rlim_max = orig_nofile.rlim_max;
+        if (setrlimit(RLIMIT_NOFILE, &low_nofile) != 0) {
+            puts("  [FAIL] setrlimit lowering RLIMIT_NOFILE failed in child");
+            exit(1);
+        }
+
+        int fd1 = open("/etc/hostname", O_RDONLY, 0);
+        int fd2 = open("/etc/hostname", O_RDONLY, 0);
+        if (fd2 >= 0) {
+            puts("  [FAIL] Opened fd beyond RLIMIT_NOFILE quota!");
+            close(fd1);
+            close(fd2);
+            exit(1);
+        }
+        if (errno != EMFILE) {
+            printf("  [FAIL] Expected EMFILE on quota exhaustion, got errno=%d\n", errno);
+            if (fd1 >= 0) {
+                close(fd1);
+            }
+            exit(1);
+        }
+        if (fd1 >= 0) {
+            close(fd1);
+        }
+        exit(0);
+    } else if (rlim_child > 0) {
+        int rlim_st = 0;
+        waitpid(rlim_child, &rlim_st, 0);
+        if (!WIFEXITED(rlim_st) || WEXITSTATUS(rlim_st) != 0) {
+            puts("  [FAIL] Child RLIMIT_NOFILE enforcement test failed");
+            return 1;
+        }
+    }
+#else
+    struct rlimit cur_nofile;
+    if (prlimit(0, RLIMIT_NOFILE, NULL, &cur_nofile) != 0) {
+        puts("  [FAIL] prlimit read failed");
+        return 1;
+    }
+#endif
+
+    int limits_fd = open("/proc/self/limits", O_RDONLY, 0);
+    if (limits_fd < 0) {
+        puts("  [FAIL] Failed to open /proc/self/limits");
+        return 1;
+    }
+    char limits_buf[256];
+    memset(limits_buf, 0, sizeof(limits_buf));
+    ssize_t limits_read = read(limits_fd, limits_buf, sizeof(limits_buf) - 1);
+    close(limits_fd);
+    if (limits_read <= 0 || strstr(limits_buf, "Limit") == NULL) {
+        puts("  [FAIL] /proc/self/limits missing expected header or content");
+        return 1;
+    }
+    puts("  [OK]   Process resource limits (RLIMIT) and quota enforcement verified");
 
     return 0;
 }

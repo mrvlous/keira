@@ -140,10 +140,11 @@ int run_test_abi_mem(void) {
     puts("  [OK]   Copy-on-Write memory mutation isolation operational");
 #endif
 
-    /* 26. File-Backed Memory Mapping, Demand Paging, and msync Synchronization */
-    puts("  [TEST] File-backed mmap, demand paging, and msync synchronization...");
+    /* 26. File-Backed Memory Mapping, Demand Paging and msync Synchronization */
+    puts("  [TEST] File-backed mmap, demand paging and msync synchronization...");
 #if defined(__x86_64__)
     const char *test_path = "/tmp/mmap_abi.txt";
+    unlink(test_path);
     int f_init = open(test_path, O_CREAT | O_RDWR | O_TRUNC, 0644);
     if (f_init < 0) {
         puts("  [FAIL] Failed to create /tmp/mmap_abi.txt for mmap test");
