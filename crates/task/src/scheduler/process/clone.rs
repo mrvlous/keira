@@ -259,6 +259,7 @@ pub unsafe fn clone_current_task(
                 stack_aslr_offset: parent.stack_aslr_offset,
                 mmap_aslr_offset: parent.mmap_aslr_offset,
                 brk_aslr_offset: parent.brk_aslr_offset,
+                rlimits: parent.rlimits,
             };
 
             TASKS[slot_idx] = Some(child_task);

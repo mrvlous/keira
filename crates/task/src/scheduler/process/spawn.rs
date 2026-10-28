@@ -134,6 +134,7 @@ pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'st
         stack_aslr_offset: 0,
         mmap_aslr_offset: 0,
         brk_aslr_offset: 0,
+        rlimits: crate::rlimit::default_rlimits(),
     };
 
     TASKS[slot_idx] = Some(new_task);
@@ -232,6 +233,7 @@ pub unsafe fn spawn_user(
     let mut parent_gid = 0u32;
     let mut parent_euid = 0u32;
     let mut parent_egid = 0u32;
+    let mut parent_rlimits = crate::rlimit::default_rlimits();
 
     if let Some(ref parent) = TASKS[parent_id] {
         child_cwd[..parent.cwd_len].copy_from_slice(&parent.cwd[..parent.cwd_len]);
@@ -241,6 +243,7 @@ pub unsafe fn spawn_user(
         parent_gid = parent.gid;
         parent_euid = parent.euid;
         parent_egid = parent.egid;
+        parent_rlimits = parent.rlimits;
     }
 
     for (fd, item) in child_fds.iter_mut().enumerate().take(3) {
@@ -291,6 +294,7 @@ pub unsafe fn spawn_user(
         stack_aslr_offset: stack_aslr,
         mmap_aslr_offset: mmap_aslr,
         brk_aslr_offset: brk_aslr,
+        rlimits: parent_rlimits,
     };
 
     TASKS[slot_idx] = Some(new_task);
