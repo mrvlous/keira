@@ -14,6 +14,7 @@ pub mod ipc;
 pub mod memory;
 pub mod net;
 pub mod process;
+pub mod resource;
 pub mod signal;
 pub mod system;
 
@@ -22,5 +23,6 @@ pub use ipc::*;
 pub use memory::*;
 pub use net::*;
 pub use process::*;
+pub use resource::*;
 pub use signal::*;
 pub use system::*;
