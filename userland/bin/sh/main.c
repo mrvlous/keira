@@ -545,6 +545,20 @@ static int execute_chained_statement(char *statement) {
 }
 
 static int run_command_string(char *cmd_str) {
+    char *s = cmd_str;
+    char q = '\0';
+    while (*s) {
+        if ((*s == '"' || *s == '\'') && q == '\0') {
+            q = *s;
+        } else if (*s == q) {
+            q = '\0';
+        } else if (*s == '#' && q == '\0') {
+            *s = '\0';
+            break;
+        }
+        s++;
+    }
+
     char *p = cmd_str;
     char *stmt_start = p;
     char in_quote = '\0';
