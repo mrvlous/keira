@@ -128,7 +128,7 @@ The supervisor program runner identifies `.sh` files during command dispatch:
 
 The build system automatically copies system scripts into the FAT16 system disk image:
 - `/bin/demo.sh`: Demonstration script verifying shebang execution, `echo` and `pwd`.
-- `/etc/init.sh`: System initialization script invoking `sysinfo.elf` and displaying boot telemetry.
+- `/etc/init.sh`: Canonical system bootstrap script configuring hostname, TmpFS scratch volume, DAC permissions, runtime directories and network telemetry.
 
 ---
 
