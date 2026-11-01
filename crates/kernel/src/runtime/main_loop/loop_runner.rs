@@ -14,21 +14,6 @@ use keira_shell as shell;
 
 /// Launch interactive terminal session and enter the primary kernel event loop.
 pub fn enter_main_loop() -> ! {
-    // Run canonical early userspace init (PID 1) in Ring 3 if present
-    unsafe {
-        let init_path = if keira_fs::exists("/bin/init.elf") {
-            Some("/bin/init.elf")
-        } else if keira_fs::exists("/bin/init") {
-            Some("/bin/init")
-        } else {
-            None
-        };
-
-        if let Some(path) = init_path {
-            let _ = shell::run_user_program(path, &[path]);
-        }
-    }
-
     vga::init();
 
     vga::set_color(vga::Color::White, vga::Color::Black);
@@ -45,6 +30,21 @@ pub fn enter_main_loop() -> ! {
     }
 
     shell::run_boot_script();
+
+    // Run canonical early userspace init (PID 1) in Ring 3 if present
+    unsafe {
+        let init_path = if keira_fs::exists("/bin/init.elf") {
+            Some("/bin/init.elf")
+        } else if keira_fs::exists("/bin/init") {
+            Some("/bin/init")
+        } else {
+            None
+        };
+
+        if let Some(path) = init_path {
+            let _ = shell::run_user_program(path, &[path]);
+        }
+    }
 
     // Direct handover to canonical Ring 3 userspace shell on 64-bit systems
     #[cfg(target_arch = "x86_64")]
