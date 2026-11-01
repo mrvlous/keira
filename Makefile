@@ -424,6 +424,7 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=1\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/tmp/main.c
+	$(Q)cp $(FS_ROOT)/tmp/main.c $(FS_ROOT)/etc/main.c
 	$(Q)printf "[    0.000000] Keira Kernel v$(VERSION) ($(ARCH)) bootloader handover completed\n[    0.000010] Root filesystem mounted at / (FAT16)\n" > $(FS_ROOT)/var/log/boot.log
 	$(Q)printf "[    0.000000] Keira Kernel v$(VERSION) ($(ARCH))\n[    0.000010] Kernel Ring 0 initialized, supervisor console ready\n" > $(FS_ROOT)/var/log/system.log
 	$(Q)touch $(FS_ROOT)/tmp/.keep
