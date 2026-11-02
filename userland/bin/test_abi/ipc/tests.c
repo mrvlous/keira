@@ -322,5 +322,69 @@ int run_test_abi_ipc(void) {
            (unsigned long long)(fast_nanos2 - fast_nanos1), (unsigned long long)spin_acc);
     puts("  [OK]   High-precision monotonic clock & timer precision verified");
 
+    /* 36. UNIX Domain Sockets & socketpair(AF_UNIX, SOCK_STREAM, 0, sv) */
+    puts("  [TEST] UNIX domain socketpair (AF_UNIX & Syscall 105) bidirectional IPC...");
+    int sv[2] = {-1, -1};
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) {
+        printf("  [FAIL] socketpair(AF_UNIX, SOCK_STREAM) failed: errno=%d\n", errno);
+        return 1;
+    }
+
+    if (sv[0] < 0 || sv[1] < 0 || sv[0] == sv[1]) {
+        printf("  [FAIL] Invalid socket descriptors returned: sv[0]=%d, sv[1]=%d\n", sv[0], sv[1]);
+        return 1;
+    }
+
+    const char *ping_msg = "UNIX_IPC_PING";
+    size_t ping_len = strlen(ping_msg);
+    ssize_t w = write(sv[0], ping_msg, ping_len);
+    if (w != (ssize_t)ping_len) {
+        printf("  [FAIL] write(sv[0]) returned %ld, expected %zu\n", (long)w, ping_len);
+        return 1;
+    }
+
+    char recv_buf[32];
+    memset(recv_buf, 0, sizeof(recv_buf));
+    ssize_t r = read(sv[1], recv_buf, sizeof(recv_buf) - 1);
+    if (r != (ssize_t)ping_len || strcmp(recv_buf, ping_msg) != 0) {
+        printf("  [FAIL] read(sv[1]) mismatch: got '%s' (len=%ld), expected '%s'\n", recv_buf,
+               (long)r, ping_msg);
+        return 1;
+    }
+
+    const char *pong_msg = "UNIX_IPC_PONG";
+    size_t pong_len = strlen(pong_msg);
+    w = write(sv[1], pong_msg, pong_len);
+    if (w != (ssize_t)pong_len) {
+        printf("  [FAIL] write(sv[1]) returned %ld, expected %zu\n", (long)w, pong_len);
+        return 1;
+    }
+
+    memset(recv_buf, 0, sizeof(recv_buf));
+    r = read(sv[0], recv_buf, sizeof(recv_buf) - 1);
+    if (r != (ssize_t)pong_len || strcmp(recv_buf, pong_msg) != 0) {
+        printf("  [FAIL] read(sv[0]) mismatch: got '%s' (len=%ld), expected '%s'\n", recv_buf,
+               (long)r, pong_msg);
+        return 1;
+    }
+
+    /* Test peer closure propagates EOF */
+    close(sv[0]);
+    r = read(sv[1], recv_buf, sizeof(recv_buf));
+    if (r != 0) {
+        printf("  [FAIL] read(sv[1]) after close(sv[0]) returned %ld, expected 0 (EOF)\n", (long)r);
+        return 1;
+    }
+    close(sv[1]);
+
+    /* Test invalid domain rejection */
+    int bad_sv[2] = {-1, -1};
+    if (socketpair(999, SOCK_STREAM, 0, bad_sv) == 0) {
+        puts("  [FAIL] socketpair with invalid domain unexpectedly succeeded");
+        return 1;
+    }
+
+    puts("  [OK]   UNIX domain socketpair (AF_UNIX & Syscall 105) bidirectional IPC verified");
+
     return 0;
 }
