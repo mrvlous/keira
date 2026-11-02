@@ -208,3 +208,59 @@ fn test_memory_alignment_and_layout_helpers() {
     assert_eq!(align_up(MIB + 10, PAGE_SIZE_2M), 2 * MIB);
     assert_eq!(align_down(2 * MIB + 50, PAGE_SIZE_2M), 2 * MIB);
 }
+
+#[test]
+fn test_klog_lifecycle() {
+    klog_clear();
+    set_uptime_provider(|| 45);
+
+    klog_write(KERN_INFO, "pmm", "32768 frames indexed (131072 KiB RAM)");
+
+    let mut buf = [0u8; 256];
+    let len = klog_read_all(&mut buf);
+    assert!(len > 0);
+
+    let s = core::str::from_utf8(&buf[..len]).expect("UTF-8 valid");
+    assert!(s.contains("[     0.000045 ] pmm: 32768 frames indexed (131072 KiB RAM)\n"));
+
+    // Test macros execution
+    set_uptime_provider(|| 1_250_000);
+    pr_info!("vmm", "4-level paging initialized with {} tables", 4);
+    pr_warn!("disk", "controller delay: {} ms", 15);
+    pr_err!("net", "packet drop on interface {}", "eth0");
+
+    let mut buf2 = [0u8; 1024];
+    let len2 = klog_read_all(&mut buf2);
+    let s2 = core::str::from_utf8(&buf2[..len2]).expect("UTF-8 valid");
+
+    assert!(s2.contains("[     1.250000 ] vmm: 4-level paging initialized with 4 tables\n"));
+    assert!(s2.contains("[     1.250000 ] disk: controller delay: 15 ms\n"));
+    assert!(s2.contains("[     1.250000 ] net: packet drop on interface eth0\n"));
+
+    // Test circular buffer wrap-around
+    klog_clear();
+    set_uptime_provider(|| 100);
+
+    for _ in 0..1000 {
+        klog_write(
+            KERN_INFO,
+            "test",
+            "sequential log record verification entry",
+        );
+    }
+
+    assert!(klog_total_written() > KLOG_BUFFER_SIZE);
+
+    let mut wrap_buf = [0u8; 1024];
+    let wrap_len = klog_read_all(&mut wrap_buf);
+    assert_eq!(wrap_len, 1024);
+
+    let wrap_str = core::str::from_utf8(&wrap_buf).expect("UTF-8 valid");
+    assert!(wrap_str.contains("test: sequential log record verification entry\n"));
+
+    // Test sys_syslog_read wrapper
+    let mut sys_buf = [0u8; 512];
+    let sys_len =
+        unsafe { sys_syslog_read(sys_buf.as_mut_ptr(), sys_buf.len()) }.expect("syslog read");
+    assert_eq!(sys_len, 512);
+}

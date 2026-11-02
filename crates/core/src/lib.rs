@@ -26,7 +26,12 @@ pub use collections::lru_cache::LruCache;
 pub use collections::ring_buffer::RingBuffer;
 pub use collections::Bitmap;
 pub use error::{KernelError, Result as KernelResult};
-pub use log::{klog, sys_syslog_read, KLOG_HEAD, KLOG_RING_BUFFER};
+pub use log::{
+    klog, klog_clear, klog_fmt, klog_get_records, klog_read_all, klog_total_written, klog_write,
+    set_log_sink, set_uptime_provider, sys_syslog_read, FixedWriter, LogLevel, LogSinkFn,
+    UptimeProviderFn, KERN_ALERT, KERN_CRIT, KERN_DEBUG, KERN_EMERG, KERN_ERR, KERN_INFO,
+    KERN_NOTICE, KERN_WARNING, KLOG_BUFFER_SIZE, KLOG_HEAD, KLOG_RING_BUFFER, KLOG_TOTAL_WRITTEN,
+};
 pub use mem::align::{align_down, align_up, is_aligned};
 pub use mem::layout::{
     BYTE, GIB, KIB, MIB, PAGE_OFFSET_MASK_2M, PAGE_OFFSET_MASK_4K, PAGE_SHIFT_1G, PAGE_SHIFT_2M,
