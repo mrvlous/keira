@@ -11,8 +11,9 @@
 
 use crate::tcp::state::TcpState;
 
-pub const MAX_SOCKETS: usize = 16;
+pub const MAX_SOCKETS: usize = 32;
 pub const SOCKET_BUF_SIZE: usize = 2048;
+pub const UNIX_PATH_MAX: usize = 108;
 
 /// Legacy TCP socket structure maintained for backward compatibility.
 pub struct TcpSocket {
@@ -59,6 +60,9 @@ pub struct SocketEntry {
     pub tx_len: usize,
     pub in_use: bool,
     pub is_connected: bool,
+    pub peer_id: u32,
+    pub path: [u8; UNIX_PATH_MAX],
+    pub path_len: usize,
 }
 
 impl SocketEntry {
@@ -81,6 +85,9 @@ impl SocketEntry {
             tx_len: 0,
             in_use: false,
             is_connected: false,
+            peer_id: 0,
+            path: [0; UNIX_PATH_MAX],
+            path_len: 0,
         }
     }
 }

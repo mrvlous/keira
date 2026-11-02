@@ -11,4 +11,4 @@
 
 pub mod descriptor;
 
-pub use descriptor::{SocketEntry, TcpSocket, MAX_SOCKETS, SOCKET_BUF_SIZE};
+pub use descriptor::{SocketEntry, TcpSocket, MAX_SOCKETS, SOCKET_BUF_SIZE, UNIX_PATH_MAX};
