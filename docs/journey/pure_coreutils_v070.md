@@ -21,7 +21,7 @@ Milestone 24 achieves five primary architectural milestones:
    All high-level user utilities (`tasks`, `kill`, `stop`, `hostname`, `wipe`) were completely removed from the Ring 0 shell dispatch table and autocomplete index. The supervisor console (`keira:/# `) is now focused exclusively on emergency kernel debugging, crash diagnostics, hardware enumeration, memory inspection and low-level control.
 
 3. **Transparent PATH Execution Fallthrough**:
-   The kernel command router automatically falls through to execute `/bin/<cmd>.elf` and `/bin/<cmd>` in Ring 3 whenever a command is not a low-level supervisor diagnostic. Invoking `ps`, `kill`, `hostname`, `clear`, `dmesg` or `df` executes unprivileged userspace binaries seamlessly.
+   The kernel command router automatically falls through to execute `/bin/<cmd>.elf` and `/bin/<cmd>` in Ring 3 whenever a command is not a low-level supervisor diagnostic. Invoking `ps`, `kill`, `hostname`, `dmesg` or `df` executes unprivileged userspace binaries seamlessly. Display reset in Ring 0 is handled via native `wipe`.
 
 4. **ProcFS Telemetry Integration**:
    The `/bin/ps` utility demonstrates complete integration with Keira's dynamic procfs subsystem (`/proc/<pid>/status`), parsing standard Linux-compatible telemetry fields (`Name:`, `State:`, `Pid:`, `PPid:`) without requiring kernel-level hooks.
@@ -182,7 +182,7 @@ The Ring 0 supervisor console commands were audited and aggressively streamlined
 | **Network & Security** | `network`, `firewall`, `mqueue`, `bpf`, `mac`, `seccomp`, `tpm` | Handled via socket syscalls, `/bin/fetch` and kernel syscall security boundaries |
 | **Storage & Mounts** | `drives`, `use`, `ramdisk`, `initrd`, `ext4`, `swap`, `lvm`, `raid` | Low-level filesystem mounting belongs to userspace `/bin/init` or unprivileged shell |
 | **Device Virtualization** | `epoll`, `kvm`, `lkm`, `framebuffer`, `usb` | Subsystem state managed via driver interfaces rather than console commands |
-| **System & Shell Control** | `init`, `sh`, `runtime`, `time`, `hostname`, `go` / `cd`, `history` | Userspace init (`/bin/init`), POSIX shell (`/bin/sh`) and `/bin/clear` handle these tasks |
+| **System & Shell Control** | `init`, `sh`, `runtime`, `time`, `hostname`, `go` / `cd`, `history` | Userspace init (`/bin/init`) and POSIX shell (`/bin/sh`) handle these tasks |
 
 The supervisor console retains precisely **18 emergency kernel debugger commands** partitioned into three operational categories:
 

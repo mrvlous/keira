@@ -2,7 +2,7 @@
 
 # Keira Interactive Shell & Command Subsystem
 
-The `shell` domain provides the kernel emergency debugger control plane, modal text editor and 15 built-in diagnostic commands. Standard user utilities (`ps`, `kill`, `hostname`, `clear`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) run exclusively in Ring 3 userspace (`/bin`).
+The `shell` domain provides the kernel emergency debugger control plane, modal text editor and 15 built-in diagnostic commands. Standard user utilities (`ps`, `kill`, `hostname`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) run exclusively in Ring 3 userspace (`/bin`).
 
 ---
 

@@ -2,7 +2,7 @@
 
 # Keira Built-in Command Reference Manual
 
-Keira Shell provides 18 native built-in emergency diagnostic commands partitioned into 5 functional modules. Standard user utilities (`ps`, `kill`, `hostname`, `clear`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) are hosted in Ring 3 userspace (`/bin`).
+Keira Shell provides 20 native built-in emergency diagnostic commands partitioned into 5 functional modules. Standard user utilities (`ps`, `kill`, `hostname`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) are hosted in Ring 3 userspace (`/bin`). Terminal console display clearing in Ring 0 is handled via `wipe`.
 
 ---
 
