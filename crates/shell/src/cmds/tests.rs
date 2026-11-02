@@ -100,6 +100,7 @@ fn test_all_shell_commands_default_invocation() {
         "unixsock",
         "unix",
         "wipe",
+        "clear",
         "run",
         "power",
         "help",
