@@ -14,7 +14,7 @@ Inspired by the Linux kernel repository structure (`torvalds/linux`), Keira stri
 +-------------------------------------------------------------------------+
 |                              RING 3 USERLAND                            |
 |  +---------------------+   +---------------------+   +---------------+  |
-|  | Core Utilities (30) |   | Native Compiler     |   | User Runtimes |  |
+|  | Core Utilities (41) |   | Native Compiler     |   | User Runtimes |  |
 |  | sh, cat, ls, fetch  |   | (kcc.elf)           |   | & POSIX Apps  |  |
 |  +----------+----------+   +----------+----------+   +-------+-------+  |
 |             \                         |                     /           |
@@ -39,7 +39,7 @@ Inspired by the Linux kernel repository structure (`torvalds/linux`), Keira stri
 |                                       |                                 |
 |         +-----------------------------+-----------------------------+   |
 |         |                 Syscall Dispatch Engine                   |   |
-|         |             (crates/syscall - 89 Syscalls)                |   |
+|         |             (crates/syscall - 105 Syscalls)               |   |
 |         +-----+---------------+---------------+---------------+-----+   |
 |               |               |               |               |         |
 |         +-----v-----+   +-----v-----+   +-----v-----+   +-----v-----+   |
