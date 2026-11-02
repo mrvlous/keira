@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! View kernel and system event log records.
+//! View kernel diagnostic ring buffer records.
 
 use crate::args::CliArgs;
 use keira_io::vga;
@@ -18,34 +18,33 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if args.has_flag('h', "help") {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Usage: syslog [OPTIONS]\n\n");
-        vga::print_str("Description:\n  Display system and kernel event log records.\n\n");
+        vga::print_str("Description:\n  Display live kernel diagnostic ring buffer records.\n\n");
         vga::print_str("Options:\n");
-        vga::print_str("  -b, --boot  Display system boot record instead of runtime syslog\n");
-        vga::print_str("  -h, --help  Show this help message and exit\n");
+        vga::print_str("  -c, --clear  Clear kernel diagnostic ring buffer\n");
+        vga::print_str("  -h, --help   Show this help message and exit\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         return;
     }
 
-    let path = if args.has_flag('b', "boot") {
-        "/var/log/boot.log"
-    } else {
-        "/var/log/system.log"
-    };
+    if args.has_flag('c', "clear") {
+        keira_core::klog_clear();
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("syslog: kernel ring buffer cleared\n");
+        return;
+    }
 
-    let mut buf = [0u8; 1024];
-    match keira_fs::vfs::read_file(path, &mut buf) {
-        Ok(len) if len > 0 => {
+    let mut total_bytes = 0;
+    keira_core::klog_get_records(keira_core::KLOG_BUFFER_SIZE, |chunk| {
+        if let Ok(s) = core::str::from_utf8(chunk) {
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            if let Ok(s) = core::str::from_utf8(&buf[..len]) {
-                vga::print_str(s);
-                if !s.ends_with('\n') {
-                    vga::print_str("\n");
-                }
-            }
+            vga::print_str(s);
+            total_bytes += chunk.len();
         }
-        _ => {
-            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            vga::print_str("syslog: no active log records available\n");
-        }
+        Ok(())
+    });
+
+    if total_bytes == 0 {
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("syslog: no active log records available\n");
     }
 }

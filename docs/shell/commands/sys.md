@@ -22,7 +22,7 @@ The `sys` command suite provides emergency telemetry, power management and hardw
 | `secinfo` | `secinfo [-v]` | Display hardware exploit mitigations, memory boundary protections and #PF telemetry (alias: `mitigations`) | `-v, --verbose`: Display VMM fault counters<br>`-h, --help`: Usage info |
 | `smp` | `smp` | Inspect multi-core APIC topology and secondary processor status | `-h, --help` |
 | `sync` | `sync` | Flush dirty filesystem cache sectors to physical disk | `-h, --help` |
-| `syslog` | `syslog [-b]` | Read system event and kernel log records (alias: `dmesg`) | `-b, --boot`: Display boot record<br>`-h, --help`: Usage info |
+| `syslog` | `syslog [-c]` | Display live kernel diagnostic ring buffer records | `-c, --clear`: Clear ring buffer<br>`-h, --help`: Usage info |
 | `system` | `system` | Print kernel version, architecture, compiler target and build info | `-h, --help` |
 | `unwind` | `unwind` | Display stack frame trace and symbol unwind diagnostic test | `-h, --help` |
 | `watchpoint` | `watchpoint` | Inspect hardware debug registers (DR0-DR3) and watchpoint traps | `-h, --help` |

@@ -88,7 +88,7 @@ fn syscall_dispatcher_inner(
         41 => handle_clone_thread(arg1, arg2, arg3, arg4, arg5),
         42 => handle_kvm_create_vm(),
         43 => handle_kvm_run_vcpu(arg1, arg2),
-        44 => handle_syslog(arg2, arg3),
+        44 => handle_syslog(arg1, arg2, arg3),
         45 => handle_timer_create(arg1, arg2),
         46 => handle_timer_settime(arg1, arg2, arg3),
         47 => handle_splice(arg1, arg2, arg3),

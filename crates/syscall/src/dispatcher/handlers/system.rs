@@ -101,11 +101,30 @@ pub fn handle_kvm_run_vcpu(arg1: u64, arg2: u64) -> u64 {
     }
 }
 
-/// Syscall 44: Kernel log ring buffer inspection.
-pub fn handle_syslog(arg2: u64, arg3: u64) -> u64 {
-    let buf_ptr = arg2 as *mut u8;
-    let len = arg3 as usize;
-    match keira_core::log::klog::sys_syslog_read(buf_ptr, len) {
+/// Syscall 44: Kernel log ring buffer inspection (syslog / klogctl).
+pub fn handle_syslog(arg1: u64, arg2: u64, arg3: u64) -> u64 {
+    if arg1 == 10 {
+        return keira_core::KLOG_BUFFER_SIZE as u64;
+    }
+
+    let (buf_ptr, len) = if arg1 == 2 || arg1 == 3 || arg1 == 4 {
+        (arg2, arg3 as usize)
+    } else if arg1 > 10 {
+        (arg1, arg2 as usize)
+    } else {
+        (arg2, arg3 as usize)
+    };
+
+    if len == 0 {
+        return 0;
+    }
+
+    if let Err(e) = unsafe { validate_user_ptr(buf_ptr, len as u64, true) } {
+        return errno_to_ret(e);
+    }
+
+    let dest = buf_ptr as *mut u8;
+    match unsafe { keira_core::sys_syslog_read(dest, len) } {
         Ok(read_bytes) => read_bytes as u64,
         Err(_) => errno_to_ret(EINVAL),
     }
