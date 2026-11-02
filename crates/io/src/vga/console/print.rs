@@ -377,48 +377,54 @@ pub fn set_color(fg: Color, bg: Color) {
     }
 }
 
-/// Emits formatted boot milestone status log to serial and VGA console.
+/// Kernel diagnostic log sink multiplexer routing messages to Serial COM1 and VGA console.
+pub fn kernel_log_sink(level: u8, _tag: &str, formatted: &str) {
+    // 1. Output to COM1 Serial (converting \n to \r\n for terminal formatting)
+    for &b in formatted.as_bytes() {
+        if b == b'\n' {
+            crate::serial::uart::putchar(b'\r');
+        }
+        crate::serial::uart::putchar(b);
+    }
+
+    // 2. Render to active VGA display
+    let fg = match level {
+        keira_core::KERN_EMERG
+        | keira_core::KERN_ALERT
+        | keira_core::KERN_CRIT
+        | keira_core::KERN_ERR => Color::LightRed,
+        keira_core::KERN_WARNING => Color::Yellow,
+        keira_core::KERN_NOTICE => Color::White,
+        keira_core::KERN_INFO => Color::LightGrey,
+        _ => Color::DarkGrey,
+    };
+    set_color(fg, Color::Black);
+    print_str(formatted);
+    set_color(Color::LightGrey, Color::Black);
+}
+
+/// Provides monotonic uptime in microseconds for kernel log timestamps.
+fn kernel_uptime_us() -> u64 {
+    let nanos = keira_arch::timers::hpet_get_elapsed_nanos();
+    if nanos > 0 {
+        nanos / 1_000
+    } else {
+        keira_arch::timers::uptime_ms() * 1_000
+    }
+}
+
+/// Initializes and binds the kernel logging sink and monotonic uptime provider.
+pub fn init_logging_sink() {
+    keira_core::set_log_sink(kernel_log_sink);
+    keira_core::set_uptime_provider(kernel_uptime_us);
+}
+
+/// Legacy boot milestone logging shim, forwards to canonical kernel logging.
 pub fn print_boot_log(msg: &str, status: u8) {
-    // 1. Output colored boot log to COM1 Serial (for host terminal stdout)
-    match status {
-        0 => {
-            crate::serial::uart::print_str("[\x1b[1;32m  OK  \x1b[0m] ");
-        }
-        1 => {
-            crate::serial::uart::print_str("[\x1b[1;33m WARN \x1b[0m] ");
-        }
-        _ => {
-            crate::serial::uart::print_str("[\x1b[1;31mFAILED\x1b[0m] ");
-        }
-    }
-    crate::serial::uart::print_str(msg);
-    crate::serial::uart::print_str("\r\n");
-
-    // 2. Render to VGA display
-    set_color(Color::White, Color::Black);
-    print_str("[");
-
-    match status {
-        0 => {
-            set_color(Color::LightGreen, Color::Black);
-            print_str("  OK  ");
-        }
-        1 => {
-            set_color(Color::Yellow, Color::Black);
-            print_str(" WARN ");
-        }
-        _ => {
-            set_color(Color::LightRed, Color::Black);
-            print_str("FAILED");
-        }
-    }
-
-    set_color(Color::White, Color::Black);
-    print_str("] ");
-
-    set_color(Color::White, Color::Black);
-    print_str(msg);
-    print_str("\n");
-
-    set_color(Color::White, Color::Black);
+    let level = match status {
+        0 => keira_core::KERN_INFO,
+        1 => keira_core::KERN_WARNING,
+        _ => keira_core::KERN_ERR,
+    };
+    keira_core::klog_write(level, "boot", msg);
 }

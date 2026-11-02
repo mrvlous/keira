@@ -71,11 +71,11 @@ pub use self::vga::color::Color as VgaColor;
 pub use self::vga::console::{
     backspace as vga_backspace, clear_line_from as vga_clear_line_from,
     get_cursor_col as vga_get_cursor_col, get_cursor_row as vga_get_cursor_row,
-    handle_timer_tick as vga_handle_timer_tick, init as vga_init_screen, print as vga_print,
-    print_boot_log, print_hex as vga_print_hex, print_str as vga_print_str,
-    print_u64 as vga_print_u64, putchar as vga_putchar, set_color as vga_set_color,
-    set_cursor_pos as vga_set_cursor_pos, ACTIVE_BG_COLOR, ACTIVE_FG_COLOR, FRAMEBUFFER_ADDR,
-    FRAMEBUFFER_BPP, FRAMEBUFFER_HEIGHT, FRAMEBUFFER_MAPPED, FRAMEBUFFER_PITCH, FRAMEBUFFER_WIDTH,
-    PIPE_ACTIVE, PIPE_BUFFER, PIPE_LEN, PIPE_READ_INDEX, REDIRECT_BUFFER, REDIRECT_LEN,
-    REDIRECT_TO_FILE, VGA_BUSY,
+    handle_timer_tick as vga_handle_timer_tick, init as vga_init_screen, init_logging_sink,
+    kernel_log_sink, print as vga_print, print_boot_log, print_hex as vga_print_hex,
+    print_str as vga_print_str, print_u64 as vga_print_u64, putchar as vga_putchar,
+    set_color as vga_set_color, set_cursor_pos as vga_set_cursor_pos, ACTIVE_BG_COLOR,
+    ACTIVE_FG_COLOR, FRAMEBUFFER_ADDR, FRAMEBUFFER_BPP, FRAMEBUFFER_HEIGHT, FRAMEBUFFER_MAPPED,
+    FRAMEBUFFER_PITCH, FRAMEBUFFER_WIDTH, PIPE_ACTIVE, PIPE_BUFFER, PIPE_LEN, PIPE_READ_INDEX,
+    REDIRECT_BUFFER, REDIRECT_LEN, REDIRECT_TO_FILE, VGA_BUSY,
 };

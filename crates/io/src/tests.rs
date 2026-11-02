@@ -53,4 +53,16 @@ fn test_io_subsystem_reexports_and_query() {
     switch_tty(2);
     assert_eq!(get_active_tty(), 2);
     switch_tty(0);
+
+    // 6. Logging sink multiplexer
+    init_logging_sink();
+    keira_core::klog_write(
+        keira_core::KERN_INFO,
+        "io/test",
+        "io driver multiplexer integration verified",
+    );
+    let mut log_buf = [0u8; 256];
+    let read_len = keira_core::klog_read_all(&mut log_buf);
+    let log_str = core::str::from_utf8(&log_buf[..read_len]).expect("UTF-8");
+    assert!(log_str.contains("io/test: io driver multiplexer integration verified\n"));
 }
