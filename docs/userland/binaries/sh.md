@@ -30,7 +30,6 @@ The userspace shell implements essential built-in commands natively within the b
 | `export` | `export [VAR=VAL]` | Sets an environment variable or prints existing environment variables |
 | `clear` | `clear` | Clears terminal screen via standard ANSI escape codes (`\x1b[2J\x1b[H`) |
 | `history` | `history` | Displays command execution history ring buffer |
-| `help` | `help` | Displays built-in command summary and shell usage guidance |
 | `exit` | `exit [code]` | Terminates the shell process with the specified exit status |
 
 ---
@@ -120,29 +119,8 @@ Users can invoke `sh` or `sh.elf` directly from the supervisor prompt without ty
 
 ```bash
 # Direct binary execution:
-ring0@keira:/# sh.elf -c help
+ring0@keira:/# sh.elf -c 'echo "Keira Standalone Userspace Shell (sh v0.7.0)"'
 Keira Standalone Userspace Shell (sh v0.7.0)
-Built-in Commands:
-  cd [dir]       Change current working directory
-  pwd            Print working directory
-  echo [args]    Display text or environment variables
-  export [K=V]   Set environment variable
-  clear          Clear console screen
-  history        Display command execution history
-  help           Display this reference manual
-  exit [code]    Exit userspace shell
-Shell Features:
-  I/O Redir:     > file, >> file, < file
-  Pipelines:     cmd1 | cmd2
-  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2
-Core Utilities (/bin):
-  File & Dir:    cat, touch, mkdir, rm, ls, chmod, chown, df, ln, mount, umount
-  Text Pipeline: grep, wc, head, tail, echo, sleep
-  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear, whoami, id, su
-  Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables
-  Verification:  test_abi, fuzz_abi, test_threads, test_pipe
-Direct Execution:
-  Binaries in /bin and current directory execute directly via $PATH
 
 # Direct shebang script execution:
 keira:/$ /etc/init.sh

@@ -38,7 +38,7 @@ Milestone 20 resolves this architectural challenge through a dual-layer approach
 |   +-----------------------------------------------------------------+   |
 |   |                  /bin/sh.elf (POSIX Shell, PID 2)               |   |
 |   |  - Prompt: sh-0.7$                                              |   |
-|   |  - Built-ins: cd, pwd, echo, export, clear, help, exit          |   |
+|   |  - Built-ins: cd, pwd, echo, export, clear, exit                |   |
 |   |  - Process Control: fork(), execve(), waitpid()                 |   |
 |   |  - $PATH Resolver: /bin/<cmd> and /bin/<cmd>.elf               |   |
 |   +-----------------------------------------------------------------+   |
@@ -67,7 +67,6 @@ Key features include:
   - `echo [args]`: Prints arguments with support for `$?` (exit status) and environment variable expansion.
   - `export [KEY=VALUE]`: Sets environment variables via `putenv()` or displays current variables.
   - `clear`: Emits standard ANSI clear screen escape sequence `\x1b[2J\x1b[H`.
-  - `help`: Displays built-in command reference and usage instructions.
   - `exit [code]`: Terminates the shell process with the requested exit code.
 - **Binary Resolution & Execution**: Commands that are not built-ins are resolved against `/bin/<cmd>` and `/bin/<cmd>.elf`. The shell forks a child process with `fork()`, invokes `execve()` and awaits completion via `waitpid()`.
 
