@@ -11,11 +11,18 @@
 
 use crate::state::session::{HOSTNAME, HOSTNAME_LEN, SHELL_PATH, SHELL_PATH_LEN};
 
+const DEFAULT_HOSTNAME: &[u8] = b"keira";
 const HOSTNAME_PATH: &str = "/etc/hostname";
 
-/// Load hostname from `/etc/hostname` into global state on boot.
+/// Initialize kernel hostname from static default and synchronize with disk if present.
 pub fn load_hostname() {
     unsafe {
+        // Enforce baseline freestanding kernel default: 'keira'
+        if HOSTNAME_LEN == 0 {
+            HOSTNAME[..DEFAULT_HOSTNAME.len()].copy_from_slice(DEFAULT_HOSTNAME);
+            HOSTNAME_LEN = DEFAULT_HOSTNAME.len();
+        }
+
         let mut buf = [0u8; 32];
         if let Ok(len) = keira_fs::fat::read_file_content(HOSTNAME_PATH, &mut buf) {
             let mut actual_len = len;
