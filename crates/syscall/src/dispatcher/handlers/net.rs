@@ -13,8 +13,8 @@ use keira_task::scheduler::{CURRENT_TASK_IDX, TASKS};
 use keira_task::types::{FileDescriptor, MAX_FDS};
 
 use crate::user_copy::{
-    copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EBADF, EINVAL, EIO, EMFILE,
-    ENOMEM, ESRCH,
+    copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EAFNOSUPPORT, EBADF, EFAULT,
+    EINVAL, EIO, EMFILE, ENFILE, ENOMEM, EPROTONOSUPPORT, ESRCH,
 };
 
 /// Syscall 17: Fetch remote URL content via synchronous HTTP GET request.
@@ -171,5 +171,62 @@ pub fn handle_ping(arg1: u64, _arg2: u64) -> u64 {
         }
     } else {
         errno_to_ret(EINVAL)
+    }
+}
+
+/// Syscall 105: Create an interconnected pair of anonymous sockets.
+pub fn handle_socketpair(domain: u64, socket_type: u64, protocol: u64, sv_ptr: u64) -> u64 {
+    unsafe {
+        if let Err(e) = validate_user_ptr(sv_ptr, 8, true) {
+            return errno_to_ret(e);
+        }
+
+        let task = &mut TASKS[CURRENT_TASK_IDX];
+        if let Some(t) = task {
+            let max_open_limit =
+                (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
+
+            let mut free_fds = [None, None];
+            let mut found = 0;
+            for i in 3..max_open_limit {
+                if !t.fds[i].is_open {
+                    free_fds[found] = Some(i);
+                    found += 1;
+                    if found == 2 {
+                        break;
+                    }
+                }
+            }
+
+            if found < 2 {
+                return errno_to_ret(EMFILE);
+            }
+
+            let fd1 = free_fds[0].unwrap();
+            let fd2 = free_fds[1].unwrap();
+
+            match keira_net::socket::create_socketpair(domain, socket_type, protocol) {
+                Ok((sock1_id, sock2_id)) => {
+                    t.fds[fd1] = FileDescriptor::new_socket(sock1_id as u32, false);
+                    t.fds[fd2] = FileDescriptor::new_socket(sock2_id as u32, false);
+
+                    let fds: [i32; 2] = [fd1 as i32, fd2 as i32];
+                    let fds_bytes = core::slice::from_raw_parts(fds.as_ptr() as *const u8, 8);
+                    if copy_to_user(sv_ptr, fds_bytes).is_err() {
+                        let _ = keira_net::socket::close_socket(sock1_id);
+                        let _ = keira_net::socket::close_socket(sock2_id);
+                        t.fds[fd1] = FileDescriptor::new();
+                        t.fds[fd2] = FileDescriptor::new();
+                        return errno_to_ret(EFAULT);
+                    }
+                    0
+                }
+                Err("Domain not supported") => errno_to_ret(EAFNOSUPPORT),
+                Err("Socket type not supported") => errno_to_ret(EPROTONOSUPPORT),
+                Err(_) => errno_to_ret(ENFILE),
+            }
+        } else {
+            errno_to_ret(ESRCH)
+        }
     }
 }

@@ -149,6 +149,7 @@ fn syscall_dispatcher_inner(
         102 => handle_getrlimit(arg1, arg2),
         103 | 160 => handle_setrlimit(arg1, arg2),
         104 | 302 => handle_prlimit64(arg1, arg2, arg3, arg4),
+        105 | 360 => handle_socketpair(arg1, arg2, arg3, arg4),
         _ => errno_to_ret(ENOSYS),
     }
 }
