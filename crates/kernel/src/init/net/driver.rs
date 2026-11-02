@@ -17,6 +17,8 @@ use keira_net::driver::e1000;
 /// # Safety
 /// Caller guarantees PCI bus scanning has completed.
 pub unsafe fn init_network() {
+    keira_fs::proc::register_unix_net_hook(Some(keira_net::socket::format_proc_unix));
+
     if e1000::init() {
         vga::print_boot_log("Initializing Intel e1000 Gigabit Ethernet NIC driver", 0);
         vga::print_boot_log("Configuring Network Stack (Ethernet/ARP/IPv4/ICMP)", 0);
