@@ -124,7 +124,7 @@ With high-level utilities moved to Ring 3, the supervisor console exposes 51 pri
 | **Storage & VFS** | `disk`, `format`, `mount`, `unmount`, `fat`, `ext4`, `vfs`, `cache`, `initrd` | `umount` | Block driver geometry, filesystems, sector caches and initrd inspection |
 | **Process & Tasks** | `task`, `cgroup`, `sched`, `sig`, `ipc`, `pipe`, `splice`, `futex`, `eventfd`, `epoll`, `mqueue`, `io_uring` | `ps`, `kill` | Process tables, CFS scheduling, IPC queues, event loops and async I/O |
 | **Network & Security** | `network`, `tpm`, `bpf`, `seccomp`, `mac` | `net` | Link status, hardware MAC address, packet counters, TPM PCRs and eBPF filters |
-| **Utilities** | `help`, `history`, `wipe` | `clear`, `cls` | Command reference, shell history and display clear |
+| **Utilities** | `help`, `wipe` | - | Emergency command reference and VGA text console display reset |
 
 ---
 

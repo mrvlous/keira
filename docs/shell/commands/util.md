@@ -2,7 +2,7 @@
 
 # General Utility Commands
 
-The `util` command suite provides emergency diagnostics assistance for the supervisor console. Terminal screen clearing is handled via the freestanding Ring 3 utility [`/bin/clear.elf`](../../userland/binaries/clear.md).
+The `util` command suite provides emergency diagnostics assistance for the supervisor console. Terminal screen clearing in Ring 0 is handled via the native supervisor command `wipe`.
 
 ---
 
