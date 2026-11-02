@@ -118,6 +118,7 @@
 #define SYS_GETRLIMIT 102
 #define SYS_SETRLIMIT 103
 #define SYS_PRLIMIT64 104
+#define SYS_SOCKETPAIR 105
 
 struct stat;
 struct rlimit;
@@ -151,6 +152,7 @@ gid_t sys_getegid(void);
 int sys_setgid(gid_t gid);
 pid_t sys_fork(void);
 int sys_socket(int domain, int type, int protocol);
+int sys_socketpair(int domain, int type, int protocol, int sv[2]);
 int sys_connect(int sockfd, const void *addr, size_t addrlen);
 void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
 int sys_munmap(void *addr, size_t length);
