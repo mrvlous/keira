@@ -21,4 +21,5 @@ pub mod secinfo;
 pub mod slabinfo;
 pub mod smp;
 pub mod system;
+pub mod unixsock;
 pub mod unwind;
