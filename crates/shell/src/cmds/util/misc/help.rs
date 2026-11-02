@@ -47,7 +47,7 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("  syslog         Display circular kernel log buffer messages (dmesg)\n");
     vga::print_str("  unwind         Print kernel execution stack trace backtrace\n");
     vga::print_str("  watchpoint     Configure memory access watchpoints and breakpoints\n");
-    vga::print_str("  wipe           Securely zero volatile memory regions and caches\n");
+    vga::print_str("  wipe           Clear and reset the VGA text console display buffer\n");
     vga::print_str("Execution & Power:\n");
     vga::print_str("  sh             Launch canonical POSIX userspace shell in Ring 3\n");
     vga::print_str("  run <path>     Execute freestanding ELF binary from filesystem\n");
