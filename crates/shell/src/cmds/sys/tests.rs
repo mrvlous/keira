@@ -188,3 +188,17 @@ fn test_sys_rlimit() {
     let mut args_default = "".split_whitespace();
     rlimit::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_unixsock() {
+    let mut args_help = "unixsock --help".split_whitespace();
+    args_help.next();
+    unixsock::run(&mut args_help);
+
+    let mut args_verbose = "unixsock -v".split_whitespace();
+    args_verbose.next();
+    unixsock::run(&mut args_verbose);
+
+    let mut args_default = "".split_whitespace();
+    unixsock::run(&mut args_default);
+}

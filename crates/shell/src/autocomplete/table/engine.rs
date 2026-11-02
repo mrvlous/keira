@@ -50,6 +50,8 @@ pub const COMMANDS_LIST: &[&str] = &[
     "sync",
     "syslog",
     "system",
+    "unix",
+    "unixsock",
     "unwind",
     "watchpoint",
     "wipe",
