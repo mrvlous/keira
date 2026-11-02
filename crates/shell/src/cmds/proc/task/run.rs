@@ -244,6 +244,9 @@ pub fn run_direct_with_args_mode(arg: &str, args: &[&str], verbose: bool) -> boo
 }
 
 fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
+    if arg == "clear" {
+        return false;
+    }
     unsafe {
         let mut path_buf = [0u8; 128];
         let mut resolved_str = "";

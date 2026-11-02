@@ -42,6 +42,13 @@ pub fn execute_command_inner(cmd: &str) {
         "unwind" => crate::cmds::unwind::run(&mut parts),
         "watchpoint" => crate::cmds::watchpoint::run(&mut parts),
         "wipe" => crate::cmds::sys::control::wipe::run(&mut parts),
+        "clear" => {
+            vga::set_color(vga::Color::LightRed, vga::Color::Black);
+            vga::print_str(
+                "Unknown command: clear. Type 'help' for available commands or 'wipe' to reset console.\n",
+            );
+            vga::set_color(vga::Color::White, vga::Color::Black);
+        }
         "pidinfo" | "procs" => crate::cmds::proc::pidinfo::run(&mut parts),
         "secinfo" | "mitigations" => crate::cmds::sys::info::secinfo::run(&mut parts),
         "aslrinfo" | "aslr" => crate::cmds::sys::info::aslrinfo::run(&mut parts),
