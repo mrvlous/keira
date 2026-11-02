@@ -39,6 +39,16 @@ pub static mut NET_CONNTRACK_HOOK: Option<NetTelemetryProvider> = None;
 /// Registered hook for live in-kernel socket allocation summary (/proc/net/sockstat).
 pub static mut NET_SOCKSTAT_HOOK: Option<NetTelemetryProvider> = None;
 
+/// Registered hook for live in-kernel UNIX domain socket table reflection (/proc/net/unix).
+pub static mut NET_UNIX_HOOK: Option<NetTelemetryProvider> = None;
+
+/// Registers live UNIX domain socket introspection hook.
+pub fn register_unix_net_hook(unix_hook: Option<NetTelemetryProvider>) {
+    unsafe {
+        NET_UNIX_HOOK = unix_hook;
+    }
+}
+
 /// Registers live network subsystem callback hooks for dynamic bare-metal introspection.
 pub fn register_net_hooks(
     route_hook: Option<NetTelemetryProvider>,

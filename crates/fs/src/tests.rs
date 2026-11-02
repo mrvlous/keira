@@ -76,6 +76,7 @@ fn test_proc_net_nodes() {
     assert!(proc::exists("net/arp"));
     assert!(proc::exists("net/tcp"));
     assert!(proc::exists("net/udp"));
+    assert!(proc::exists("net/unix"));
     assert!(proc::exists("net/raw"));
     assert!(proc::exists("net/sockstat"));
 
@@ -105,6 +106,10 @@ fn test_proc_net_nodes() {
     let n = read_proc_file("net/raw", &mut buf).expect("read net/raw failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/raw");
     assert!(s.contains("local_address"));
+
+    let n = read_proc_file("net/unix", &mut buf).expect("read net/unix failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/unix");
+    assert!(s.contains("Num       RefCount Protocol Flags    Type St Inode Path"));
 
     let n = read_proc_file("net/sockstat", &mut buf).expect("read net/sockstat failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 net/sockstat");

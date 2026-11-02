@@ -12,8 +12,8 @@
 use crate::proc::system::{
     read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
     read_meminfo, read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route,
-    read_net_tcp, read_net_udp, read_nf_conntrack_stat, read_partitions, read_randomize_va_space,
-    read_slabinfo, read_sockstat, read_uptime, read_version, read_vmstat,
+    read_net_tcp, read_net_udp, read_net_unix, read_nf_conntrack_stat, read_partitions,
+    read_randomize_va_space, read_slabinfo, read_sockstat, read_uptime, read_version, read_vmstat,
 };
 use crate::proc::task::hooks::CURRENT_PID_HOOK;
 use crate::proc::task::{
@@ -61,6 +61,7 @@ pub fn exists(clean_node: &str) -> bool {
             | "net/arp"
             | "net/tcp"
             | "net/udp"
+            | "net/unix"
             | "net/raw"
             | "net/sockstat"
             | "sockstat"
@@ -128,6 +129,7 @@ pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'stati
         "net/arp" => read_net_arp(buf),
         "net/tcp" => read_net_tcp(buf),
         "net/udp" => read_net_udp(buf),
+        "net/unix" => read_net_unix(buf),
         "net/raw" => read_net_raw(buf),
         "net/sockstat" | "sockstat" => read_sockstat(buf),
         "net/ip_tables_names" => read_ip_tables_names(buf),
