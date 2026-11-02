@@ -316,11 +316,7 @@ fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
             return false;
         }
 
-        let is_clear_cmd = arg == "clear"
-            || resolved_str.ends_with("/clear")
-            || resolved_str.ends_with("/clear.elf");
-
-        if verbose && !is_clear_cmd {
+        if verbose {
             if resolved_str.ends_with(".sh") {
                 vga::print_str("Executing script: ");
             } else {
@@ -332,7 +328,7 @@ fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
 
         match run_user_program(resolved_str, args) {
             Ok(_) => {
-                if verbose && !is_clear_cmd {
+                if verbose {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("Program exited normally.\n");
                     vga::set_color(vga::Color::White, vga::Color::Black);
