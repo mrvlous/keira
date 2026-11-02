@@ -49,11 +49,121 @@ pub unsafe fn create_socket(
                 tx_len: 0,
                 in_use: true,
                 is_connected: false,
+                peer_id: 0,
+                path: [0; crate::socket::handle::UNIX_PATH_MAX],
+                path_len: 0,
             };
             return Ok(id as u64);
         }
     }
     Err("Socket table exhausted")
+}
+
+/// Create an interconnected pair of anonymous UNIX domain sockets.
+///
+/// # Safety
+/// Directly mutates static `SOCKET_TABLE` table.
+pub unsafe fn create_socketpair(
+    domain: u64,
+    socket_type: u64,
+    proto: u64,
+) -> Result<(u64, u64), &'static str> {
+    if domain != crate::socket::family::domains::AF_UNIX as u64 {
+        return Err("Domain not supported");
+    }
+    if socket_type != crate::socket::family::domains::SOCK_STREAM as u64
+        && socket_type != crate::socket::family::domains::SOCK_DGRAM as u64
+    {
+        return Err("Socket type not supported");
+    }
+
+    let mut free_slots = [None, None];
+    let mut found = 0;
+    for (idx, slot) in SOCKET_TABLE.iter().enumerate() {
+        if !slot.in_use {
+            free_slots[found] = Some(idx);
+            found += 1;
+            if found == 2 {
+                break;
+            }
+        }
+    }
+
+    if found < 2 {
+        return Err("Socket table exhausted");
+    }
+
+    let idx1 = free_slots[0].unwrap();
+    let idx2 = free_slots[1].unwrap();
+
+    let id1 = NEXT_SOCKET_ID;
+    NEXT_SOCKET_ID = NEXT_SOCKET_ID.wrapping_add(1);
+    if NEXT_SOCKET_ID == 0 {
+        NEXT_SOCKET_ID = 1;
+    }
+
+    let id2 = NEXT_SOCKET_ID;
+    NEXT_SOCKET_ID = NEXT_SOCKET_ID.wrapping_add(1);
+    if NEXT_SOCKET_ID == 0 {
+        NEXT_SOCKET_ID = 1;
+    }
+
+    let mut entry1 = SocketEntry::empty();
+    entry1.id = id1;
+    entry1.domain = domain as u32;
+    entry1.socket_type = socket_type as u32;
+    entry1.protocol = proto as u32;
+    entry1.state = TcpState::Established;
+    entry1.in_use = true;
+    entry1.is_connected = true;
+    entry1.peer_id = id2;
+
+    let mut entry2 = SocketEntry::empty();
+    entry2.id = id2;
+    entry2.domain = domain as u32;
+    entry2.socket_type = socket_type as u32;
+    entry2.protocol = proto as u32;
+    entry2.state = TcpState::Established;
+    entry2.in_use = true;
+    entry2.is_connected = true;
+    entry2.peer_id = id1;
+
+    SOCKET_TABLE[idx1] = entry1;
+    SOCKET_TABLE[idx2] = entry2;
+
+    Ok((id1 as u64, id2 as u64))
+}
+
+/// Bind an AF_UNIX socket to a filesystem pathname.
+///
+/// # Safety
+/// Mutates slot in static `SOCKET_TABLE`.
+pub unsafe fn bind_socket(sockfd: u64, addr_ptr: *const u8, len: u64) -> Result<(), &'static str> {
+    let id = sockfd as u32;
+    for slot in SOCKET_TABLE.iter_mut() {
+        if slot.in_use && slot.id == id {
+            if slot.domain != crate::socket::family::domains::AF_UNIX {
+                return Err("Operation not supported");
+            }
+            if !addr_ptr.is_null() && len >= 2 {
+                let path_len = (len as usize)
+                    .saturating_sub(2)
+                    .min(crate::socket::handle::UNIX_PATH_MAX);
+                slot.path = [0; crate::socket::handle::UNIX_PATH_MAX];
+                if path_len > 0 {
+                    core::ptr::copy_nonoverlapping(
+                        addr_ptr.add(2),
+                        slot.path.as_mut_ptr(),
+                        path_len,
+                    );
+                }
+                slot.path_len = path_len;
+                return Ok(());
+            }
+            return Err("Invalid address");
+        }
+    }
+    Err("Invalid socket descriptor")
 }
 
 /// Connect a socket descriptor to a remote network address.
@@ -68,6 +178,51 @@ pub unsafe fn connect_socket(
     let id = sockfd as u32;
     for slot in SOCKET_TABLE.iter_mut() {
         if slot.in_use && slot.id == id {
+            if slot.domain == crate::socket::family::domains::AF_UNIX {
+                if !addr_ptr.is_null() && len >= 2 {
+                    let mut target_path = [0u8; crate::socket::handle::UNIX_PATH_MAX];
+                    let path_len = (len as usize)
+                        .saturating_sub(2)
+                        .min(crate::socket::handle::UNIX_PATH_MAX);
+                    if path_len > 0 {
+                        core::ptr::copy_nonoverlapping(
+                            addr_ptr.add(2),
+                            target_path.as_mut_ptr(),
+                            path_len,
+                        );
+                    }
+                    let mut target_id = None;
+                    for other in SOCKET_TABLE.iter() {
+                        if other.in_use
+                            && other.id != id
+                            && other.domain == crate::socket::family::domains::AF_UNIX
+                            && other.path_len > 0
+                            && &other.path[..other.path_len] == &target_path[..other.path_len]
+                        {
+                            target_id = Some(other.id);
+                            break;
+                        }
+                    }
+                    if let Some(peer_id) = target_id {
+                        slot.peer_id = peer_id;
+                        slot.is_connected = true;
+                        slot.state = TcpState::Established;
+                        for other in SOCKET_TABLE.iter_mut() {
+                            if other.in_use && other.id == peer_id {
+                                other.peer_id = id;
+                                other.is_connected = true;
+                                other.state = TcpState::Established;
+                                break;
+                            }
+                        }
+                        return Ok(());
+                    } else {
+                        return Err("Connection refused");
+                    }
+                }
+                return Err("Invalid address");
+            }
+
             if !addr_ptr.is_null() && len >= 8 {
                 let port_bytes = [*(addr_ptr.add(2)), *(addr_ptr.add(3))];
                 let port = u16::from_be_bytes(port_bytes);
@@ -101,6 +256,46 @@ pub unsafe fn send_socket(sockfd: u64, buf: *const u8, len: usize) -> Result<usi
         return Err("Bad buffer pointer");
     }
     let id = sockfd as u32;
+
+    let (is_unix, peer_id, is_connected) = {
+        let mut found = None;
+        for slot in SOCKET_TABLE.iter() {
+            if slot.in_use && slot.id == id {
+                found = Some((
+                    slot.domain == crate::socket::family::domains::AF_UNIX,
+                    slot.peer_id,
+                    slot.is_connected,
+                ));
+                break;
+            }
+        }
+        match found {
+            Some(v) => v,
+            None => return Err("Invalid socket descriptor"),
+        }
+    };
+
+    if is_unix {
+        if !is_connected || peer_id == 0 {
+            return Err("Socket is not connected");
+        }
+        for peer in SOCKET_TABLE.iter_mut() {
+            if peer.in_use && peer.id == peer_id {
+                let avail = SOCKET_BUF_SIZE.saturating_sub(peer.rx_len);
+                let to_write = core::cmp::min(len, avail);
+                if to_write > 0 {
+                    let dst = peer.rx_buf.as_mut_ptr().add(peer.rx_len);
+                    core::ptr::copy_nonoverlapping(buf, dst, to_write);
+                    peer.rx_len += to_write;
+                    return Ok(to_write);
+                } else {
+                    return Err("Peer receive buffer full");
+                }
+            }
+        }
+        return Err("Broken pipe");
+    }
+
     for slot in SOCKET_TABLE.iter_mut() {
         if slot.in_use && slot.id == id {
             if !slot.is_connected {
@@ -162,6 +357,11 @@ pub unsafe fn recv_socket(sockfd: u64, buf: *mut u8, len: usize) -> Result<usize
     for slot in SOCKET_TABLE.iter_mut() {
         if slot.in_use && slot.id == id {
             if slot.rx_len == 0 {
+                if slot.domain == crate::socket::family::domains::AF_UNIX
+                    && (!slot.is_connected || slot.peer_id == 0)
+                {
+                    return Ok(0);
+                }
                 if slot.nonblocking {
                     return Err("Resource temporarily unavailable");
                 }
@@ -192,7 +392,17 @@ pub unsafe fn close_socket(sockfd: u64) -> Result<(), &'static str> {
     let id = sockfd as u32;
     for slot in SOCKET_TABLE.iter_mut() {
         if slot.in_use && slot.id == id {
+            let peer_id = slot.peer_id;
             *slot = SocketEntry::empty();
+            if peer_id != 0 {
+                for peer in SOCKET_TABLE.iter_mut() {
+                    if peer.in_use && peer.id == peer_id {
+                        peer.peer_id = 0;
+                        peer.is_connected = false;
+                        peer.state = TcpState::Closed;
+                    }
+                }
+            }
             return Ok(());
         }
     }
@@ -470,4 +680,65 @@ pub fn format_proc_sockstat(buf: &mut [u8]) -> usize {
     let _ = writeln!(writer, "FRAG: inuse 0 memory 0");
 
     writer.o
+}
+
+/// Formats live in-kernel UNIX domain sockets into canonical `/proc/net/unix` format.
+pub fn format_proc_unix(buf: &mut [u8]) -> usize {
+    use core::fmt::Write;
+    struct SliceWriter<'a> {
+        b: &'a mut [u8],
+        o: usize,
+    }
+    impl<'a> Write for SliceWriter<'a> {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            let bytes = s.as_bytes();
+            let rem = self.b.len().saturating_sub(self.o);
+            let n = rem.min(bytes.len());
+            self.b[self.o..self.o + n].copy_from_slice(&bytes[..n]);
+            self.o += n;
+            Ok(())
+        }
+    }
+
+    let mut writer = SliceWriter { b: buf, o: 0 };
+    let _ = writeln!(
+        writer,
+        "Num       RefCount Protocol Flags    Type St Inode Path"
+    );
+
+    unsafe {
+        for slot in SOCKET_TABLE.iter() {
+            if slot.in_use && slot.domain == crate::socket::family::domains::AF_UNIX {
+                let st_num: u8 = if slot.is_connected { 3 } else { 1 };
+                let type_num = slot.socket_type;
+                let path_str = if slot.path_len > 0 {
+                    core::str::from_utf8(&slot.path[..slot.path_len]).unwrap_or("[invalid]")
+                } else if slot.peer_id != 0 {
+                    "[socketpair]"
+                } else {
+                    "[unnamed]"
+                };
+
+                let _ = writeln!(
+                    writer,
+                    "{:08x}: 00000002 00000000 00010000 {:04x} {:02x}     0 {}",
+                    slot.id, type_num, st_num, path_str
+                );
+            }
+        }
+    }
+
+    writer.o
+}
+
+/// Iterate active UNIX domain sockets for diagnostic inspection.
+///
+/// # Safety
+/// Reads static `SOCKET_TABLE`.
+pub unsafe fn for_each_unix_socket<F: FnMut(&SocketEntry)>(mut f: F) {
+    for slot in SOCKET_TABLE.iter() {
+        if slot.in_use && slot.domain == crate::socket::family::domains::AF_UNIX {
+            f(slot);
+        }
+    }
 }
