@@ -15,6 +15,11 @@ int sys_socket(int domain, int type, int protocol) {
     return (int)syscall3(SYS_SOCKET, (uint64_t)domain, (uint64_t)type, (uint64_t)protocol);
 }
 
+int sys_socketpair(int domain, int type, int protocol, int sv[2]) {
+    return (int)syscall4(SYS_SOCKETPAIR, (uint64_t)domain, (uint64_t)type, (uint64_t)protocol,
+                         (uint64_t)(uintptr_t)sv);
+}
+
 int sys_connect(int sockfd, const void *addr, size_t addrlen) {
     return (int)syscall3(SYS_CONNECT, (uint64_t)sockfd, (uint64_t)(uintptr_t)addr,
                          (uint64_t)addrlen);
