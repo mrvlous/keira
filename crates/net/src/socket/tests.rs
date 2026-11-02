@@ -136,3 +136,50 @@ fn test_format_proc_sockets_and_sockstat() {
         socket_table_reset();
     }
 }
+
+#[test]
+fn test_unix_domain_socketpair_and_proc_telemetry() {
+    unsafe {
+        socket_table_reset();
+
+        // 1. Create UNIX domain socketpair
+        let (s1, s2) = create_socketpair(AF_UNIX as u64, SOCK_STREAM as u64, 0)
+            .expect("Socketpair creation failed");
+        assert!(s1 > 0 && s2 > 0 && s1 != s2);
+
+        // 2. Bidirectional transmission: s1 -> s2
+        let payload1 = b"UNIX_STREAM_TEST";
+        let sent = send_socket(s1, payload1.as_ptr(), payload1.len()).expect("Send s1 failed");
+        assert_eq!(sent, payload1.len());
+
+        let mut rx_buf = [0u8; 32];
+        let recvd = recv_socket(s2, rx_buf.as_mut_ptr(), rx_buf.len()).expect("Recv s2 failed");
+        assert_eq!(recvd, payload1.len());
+        assert_eq!(&rx_buf[..recvd], payload1);
+
+        // 3. Bidirectional transmission: s2 -> s1
+        let payload2 = b"REPLY_BACK";
+        let sent2 = send_socket(s2, payload2.as_ptr(), payload2.len()).expect("Send s2 failed");
+        assert_eq!(sent2, payload2.len());
+
+        let recvd2 = recv_socket(s1, rx_buf.as_mut_ptr(), rx_buf.len()).expect("Recv s1 failed");
+        assert_eq!(recvd2, payload2.len());
+        assert_eq!(&rx_buf[..recvd2], payload2);
+
+        // 4. Verify /proc/net/unix reflection
+        let mut proc_buf = [0u8; 256];
+        let p_len = format_proc_unix(&mut proc_buf);
+        let p_str = core::str::from_utf8(&proc_buf[..p_len]).expect("utf8");
+        assert!(p_str.contains("Num       RefCount Protocol Flags    Type St Inode Path"));
+        assert!(p_str.contains("[socketpair]"));
+
+        // 5. Test teardown: close s1, verify s2 receives EOF and write fails
+        assert!(close_socket(s1).is_ok());
+        let eof = recv_socket(s2, rx_buf.as_mut_ptr(), rx_buf.len()).expect("Recv EOF failed");
+        assert_eq!(eof, 0); // EOF on closed peer
+        assert!(send_socket(s2, payload2.as_ptr(), payload2.len()).is_err()); // Broken pipe
+
+        assert!(close_socket(s2).is_ok());
+        socket_table_reset();
+    }
+}
