@@ -185,32 +185,6 @@ static int builtin_export(int argc, char **argv) {
     return 0;
 }
 
-static int builtin_help(void) {
-    puts("Keira Standalone Userspace Shell (sh v0.7.0)");
-    puts("Built-in Commands:");
-    puts("  cd [dir]       Change current working directory");
-    puts("  pwd            Print working directory");
-    puts("  echo [args]    Display text or environment variables");
-    puts("  export [K=V]   Set environment variable");
-    puts("  clear          Clear console screen");
-    puts("  history        Display command execution history");
-    puts("  help           Display this reference manual");
-    puts("  exit [code]    Exit userspace shell");
-    puts("Shell Features:");
-    puts("  I/O Redir:     > file, >> file, < file");
-    puts("  Pipelines:     cmd1 | cmd2");
-    puts("  Chaining:      cmd1 && cmd2, cmd1 || cmd2, cmd1 ; cmd2");
-    puts("Core Utilities (/bin):");
-    puts("  File & Dir:    cat, touch, mkdir, rm, ls, chmod, chown, df, ln, mount, umount");
-    puts("  Text Pipeline: grep, wc, head, tail, echo, sleep");
-    puts("  System & Proc: sysinfo, hostname, uname, ps, kill, dmesg, clear, whoami, id, su");
-    puts("  Dev & Network: kcc, fetch, ping, ifconfig, route, arp, netstat, iptables");
-    puts("  Verification:  test_abi, fuzz_abi, test_threads, test_pipe");
-    puts("Direct Execution:");
-    puts("  Binaries in /bin and current directory execute directly via $PATH");
-    return 0;
-}
-
 static int resolve_binary_path(const char *cmd, char *out_path, size_t out_size) {
     if (strchr(cmd, '/')) {
         snprintf(out_path, out_size, "%s", cmd);
@@ -336,8 +310,6 @@ static int execute_single_command(int argc, char **argv) {
         ret_status = 0;
     } else if (strcmp(clean_argv[0], "history") == 0) {
         ret_status = builtin_history();
-    } else if (strcmp(clean_argv[0], "help") == 0) {
-        ret_status = builtin_help();
     } else if (strcmp(clean_argv[0], "exit") == 0) {
         int code = (clean_argc > 1) ? atoi(clean_argv[1]) : 0;
         exit(code);
