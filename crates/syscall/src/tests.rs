@@ -80,3 +80,8 @@ fn test_exception_name_and_signals() {
 fn test_netfilter_syscall_mapping() {
     assert_eq!(table::syscall_name(SYS_NETFILTER), "sys_netfilter");
 }
+
+#[test]
+fn test_socketpair_syscall_mapping() {
+    assert_eq!(table::syscall_name(SYS_SOCKETPAIR), "sys_socketpair");
+}
