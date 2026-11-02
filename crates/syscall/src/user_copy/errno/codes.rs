@@ -34,3 +34,6 @@ pub const ELOOP: i64 = 40;
 pub const EBUSY: i64 = 16;
 pub const ENODEV: i64 = 19;
 pub const EPIPE: i64 = 32;
+pub const ENFILE: i64 = 23;
+pub const EPROTONOSUPPORT: i64 = 93;
+pub const EAFNOSUPPORT: i64 = 97;
