@@ -9,7 +9,7 @@
 
 //! Ring 3 user-mode privilege setup, TSS context loading, and security initialization.
 
-use keira_io::vga;
+use keira_core::pr_info;
 use keira_syscall::init_user_mode;
 
 /// Transition hardware registers into user-mode execution readiness.
@@ -19,11 +19,13 @@ use keira_syscall::init_user_mode;
 pub unsafe fn enter_userspace() {
     init_user_mode();
 
-    vga::print_boot_log("Re-configuring Global Descriptor Table (GDT) segments", 0);
-    vga::print_boot_log("Loading Task State Segment (TSS) cpu context structure", 0);
-    vga::print_boot_log("Enabling CPU ring 3 user-mode syscall interface MSRs", 0);
-    vga::print_boot_log("Initializing Mandatory Access Control (MAC) Security", 0);
-    vga::print_boot_log("Executing canonical userspace init process (PID 1)", 0);
-    vga::print_boot_log("Spawning interactive terminal shell environment", 0);
-    vga::print_boot_log("Keira Kernel initialized successfully. System ready", 0);
+    pr_info!("gdt", "re-configured Global Descriptor Table segments");
+    pr_info!("tss", "Task State Segment CPU context loaded");
+    pr_info!("msr", "CPU Ring 3 user-mode syscall interface MSRs enabled");
+    pr_info!("mac", "Mandatory Access Control security subsystem active");
+    pr_info!("init", "executing canonical userspace init process (PID 1)");
+    pr_info!(
+        "init",
+        "system initialization complete; spawning interactive shell"
+    );
 }

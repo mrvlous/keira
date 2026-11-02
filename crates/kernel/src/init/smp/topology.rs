@@ -9,7 +9,6 @@
 
 //! ACPI topology parsing, APIC identity mapping, and multi-core SMP bootstrap.
 
-use keira_io::vga;
 use keira_mem::vmm;
 
 /// Initialize ACPI tables, High-Precision Event Timer, and symmetric multi-processing.
@@ -39,9 +38,9 @@ pub unsafe fn init_smp_and_timers(acpi_rsdp_ptr: u64) {
 
     keira_arch::smp::init_smp();
 
-    vga::print_boot_log(
-        "Parsing ACPI MADT & discovering multi-core APIC topology",
-        0,
+    keira_core::pr_info!(
+        "acpi",
+        "MADT parsed: ACPI APIC multi-core topology discovered"
     );
-    vga::print_boot_log("Initializing High-Precision Event Timer (HPET) MMIO", 0);
+    keira_core::pr_info!("hpet", "MMIO register space mapped and timer calibrated");
 }

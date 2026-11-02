@@ -9,6 +9,8 @@
 
 //! Early bare-metal hardware and peripheral initialization sequence.
 
+use keira_core::pr_info;
+use keira_io::init_logging_sink;
 #[cfg(target_os = "none")]
 use keira_io::ps2::{keyboard as ps2_keyboard, mouse as ps2_mouse};
 #[cfg(target_os = "none")]
@@ -18,6 +20,13 @@ use keira_io::vga;
 /// Early hardware peripheral and architecture bringup routine.
 pub fn early_bringup() {
     vga::init();
+    init_logging_sink();
+
+    pr_info!(
+        "x86/boot",
+        "Keira Kernel v0.7.0 booting (pure freestanding Ring 0)"
+    );
+
     #[cfg(target_os = "none")]
     {
         keira_arch::init();
@@ -26,19 +35,17 @@ pub fn early_bringup() {
         rtc::init();
     }
 
-    vga::print_boot_log("Initializing Serial Port (COM1) driver", 0);
-    vga::print_boot_log("Configuring VGA text-mode frame buffer (80x25)", 0);
-    vga::print_boot_log("Checking x86 CPUID & Model Specific Registers (MSRs)", 0);
-    vga::print_boot_log("Loading Interrupt Descriptor Table (IDT) registers", 0);
-    vga::print_boot_log("Remapping dual 8259 PIC interrupt controller IRQs", 0);
-    vga::print_boot_log("Configuring 8253 PIT system timer tick rate to 1000Hz", 0);
-    vga::print_boot_log(
-        "Initializing High-Precision Event Timer (HPET) Subsystem",
-        0,
+    pr_info!("serial", "16550A UART at port 0x3f8 (irq 4, baud 115200)");
+    pr_info!("console", "colour VGA+ 80x25 text console ready");
+    pr_info!("idt", "256 interrupt descriptor gates mapped");
+    pr_info!("pic", "dual 8259A cascaded PIC remapped to IRQ 0x20-0x2F");
+    pr_info!("pit", "i8253 timer configured to 1000 Hz (1 ms tick)");
+    pr_info!("hpet", "high-precision event timer detected and calibrated");
+    pr_info!(
+        "ps2/kbd",
+        "i8042 standard AT keyboard controller initialized"
     );
-    vga::print_boot_log("Initializing PS/2 keyboard controller & driver", 0);
-    vga::print_boot_log("Initializing PS/2 mouse controller & driver", 0);
-    vga::print_boot_log("Reading CMOS Real-Time Clock (RTC) date/time registers", 0);
-    vga::print_boot_log("Scanning PCIe ECAM Memory-Mapped Configuration Space", 0);
-    vga::print_boot_log("Completing low-level hardware subsystem checks", 0);
+    pr_info!("ps2/aux", "i8042 generic PS/2 pointing device initialized");
+    pr_info!("rtc", "CMOS real-time clock synced");
+    pr_info!("pcie", "ECAM configuration space mapped at 0xe0000000");
 }

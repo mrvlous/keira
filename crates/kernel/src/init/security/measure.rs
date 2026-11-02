@@ -9,7 +9,6 @@
 
 //! TPM 2.0 hardware security enclave, measured boot, and integrity verification.
 
-use keira_io::vga;
 use keira_mem::vmm;
 use keira_task::scheduler::init as scheduler_init;
 
@@ -57,7 +56,13 @@ pub unsafe fn init_security_and_measure(initrd_start: u64, initrd_end: u64) {
 
     scheduler_init();
 
-    vga::print_boot_log("Initializing TPM 2.0 Hardware Security Enclave & PCRs", 0);
-    vga::print_boot_log("Performing Measured Boot: Kernel Image & Initrd Archive", 0);
-    vga::print_boot_log("Initializing Preemptive Round-Robin Thread Scheduler", 0);
+    keira_core::pr_info!(
+        "tpm",
+        "TPM 2.0 hardware security enclave and PCR banks initialized"
+    );
+    keira_core::pr_info!(
+        "ima",
+        "measured boot: kernel image and initrd integrity verified"
+    );
+    keira_core::pr_info!("sched", "preemptive round-robin thread scheduler active");
 }

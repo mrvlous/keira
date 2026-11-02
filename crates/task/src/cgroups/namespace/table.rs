@@ -9,8 +9,6 @@
 
 //! Control group hierarchy table and registration manager.
 
-use keira_io::vga;
-
 use crate::cgroups::model::{Cgroup, MAX_CGROUPS};
 
 pub static mut CGROUP_TABLE: [Cgroup; MAX_CGROUPS] = [
@@ -62,11 +60,8 @@ pub static mut NEXT_CGROUP_ID: u32 = 3;
 
 /// Initialize Resource Control Group (cgroups) and PID Namespace engine.
 pub fn init() {
-    vga::print_boot_log(
-        "Initializing Resource Control Groups (cgroups) Subsystem",
-        0,
-    );
-    vga::print_boot_log("Mapping Isolated PID Container Namespaces", 0);
+    keira_core::pr_info!("cgroup", "resource control groups subsystem initialized");
+    keira_core::pr_info!("namespace", "isolated PID container namespaces mapped");
 }
 
 /// Retrieve reference to in-kernel control group table.

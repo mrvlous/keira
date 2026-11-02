@@ -16,68 +16,49 @@ use keira_io::serial;
 #[cfg(target_os = "none")]
 use keira_io::vga;
 
-/// Kernel panic handler: prints panic diagnostics to serial COM1 and VGA blue screen and halts CPU.
+/// Kernel panic handler: prints panic diagnostics to serial COM1 and VGA console and halts CPU.
 #[cfg(target_os = "none")]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    serial::print_str("\n\n!!! KERNEL PANIC !!!\n");
-
+    // 1. Output to COM1 Serial
+    serial::print_str("\r\nKernel panic - not syncing: ");
     if let Some(message) = info.message().as_str() {
-        serial::print_str("Message: ");
         serial::print_str(message);
-        serial::print_str("\n");
+    } else {
+        serial::print_str("fatal execution failure");
     }
+    serial::print_str("\r\n");
 
+    serial::print_str("CPU: 0 PID: 1 Comm: init 0.7.0 #1\r\n");
     if let Some(location) = info.location() {
         serial::print_str("Location: ");
         serial::print_str(location.file());
-        serial::print_str(" Line: ");
-        let mut line = location.line();
-        if line == 0 {
-            serial::putchar(b'0');
-        } else {
-            let mut buf = [0u8; 10];
-            let mut i = 9;
-            while line > 0 {
-                buf[i] = b'0' + (line % 10) as u8;
-                line /= 10;
-                if i == 0 {
-                    break;
-                }
-                i -= 1;
-            }
-            serial::print(&buf[(i + 1)..=9]);
-        }
-        serial::print_str("\n");
+        serial::print_str(":");
+        serial::print_u64(location.line() as u64);
+        serial::print_str("\r\n");
     }
+    serial::print_str("---[ end Kernel panic - not syncing ]---\r\n");
 
-    serial::print_str("System halted.\n");
-
-    vga::set_color(vga::Color::White, vga::Color::Blue);
-    vga::init();
-
-    vga::print_str("\n");
-    vga::print_str("  KEIRA KERNEL PANIC\n\n");
-
+    // 2. Output to VGA text console (using Linux console palette on black background)
+    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+    vga::print_str("\nKernel panic - not syncing: ");
     if let Some(message) = info.message().as_str() {
-        vga::print_str("  Message: ");
         vga::print_str(message);
-        vga::print_str("\n");
     } else {
-        vga::print_str("  Message: Undefined kernel execution failure.\n");
+        vga::print_str("fatal execution failure");
     }
+    vga::print_str("\n");
 
+    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+    vga::print_str("CPU: 0 PID: 1 Comm: init 0.7.0 #1\n");
     if let Some(location) = info.location() {
-        vga::print_str("  Location: ");
+        vga::print_str("Location: ");
         vga::print_str(location.file());
         vga::print_str(":");
         vga::print_u64(location.line() as u64);
         vga::print_str("\n");
     }
-    vga::print_str("\n");
-
-    vga::print_str("  A fatal error has occurred and the system was halted to prevent damage.\n");
-    vga::print_str("  Please restart your computer or emulator.\n");
+    vga::print_str("---[ end Kernel panic - not syncing ]---\n");
 
     loop {
         unsafe {

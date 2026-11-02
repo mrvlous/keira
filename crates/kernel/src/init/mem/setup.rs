@@ -70,7 +70,7 @@ pub unsafe fn init_memory(multiboot_info_ptr: usize, initrd_end: u64) {
         vga::init();
     }
 
-    vga::print_boot_log("Initializing Physical Memory Manager (PMM) frames", 0);
-    vga::print_boot_log("Initializing Virtual Memory Manager (VMM) paging", 0);
-    vga::print_boot_log("Initializing Segregated Free-List Kernel Heap", 0);
+    keira_core::pr_info!("pmm", "physical memory frame allocator active");
+    keira_core::pr_info!("vmm", "4-level paging memory manager initialized");
+    keira_core::pr_info!("slab", "segregated magazine slab kernel heap ready");
 }

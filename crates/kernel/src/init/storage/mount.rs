@@ -12,7 +12,6 @@
 use keira_fs::fat;
 use keira_io::bus::pci;
 use keira_io::storage::{ahci, block, ide};
-use keira_io::vga;
 
 fn file_backing_read(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
     keira_fs::vfs::read_file_offset(path, offset, buf)
@@ -31,7 +30,7 @@ fn file_backing_sync(path: &str, offset: u64, buf: &[u8]) -> Result<usize, &'sta
 /// # Safety
 /// Caller guarantees virtual memory and scheduler primitives are active.
 pub unsafe fn init_storage_and_fs() {
-    vga::print_boot_log("Initializing PCI Bus & storage/network host controllers", 0);
+    keira_core::pr_info!("pci", "PCI bus enumeration and host controller discovery");
     pci::init();
     let _ = ahci::init();
 
@@ -51,45 +50,32 @@ pub unsafe fn init_storage_and_fs() {
             Ok(_) => {
                 if let Some(dev) = block::get_mounted_device() {
                     if dev.get_name() == "ahci0" {
-                        vga::print_boot_log("Probing SATA master storage controller via AHCI", 0);
+                        keira_core::pr_info!(
+                            "ahci",
+                            "SATA AHCI host controller detected and active"
+                        );
                     } else {
-                        vga::print_boot_log("Probing IDE primary master storage controller", 0);
+                        keira_core::pr_info!("ide", "IDE primary master drive detected");
                     }
                 }
-                vga::print_boot_log("Registering active storage block device drives", 0);
-                vga::print_boot_log("Mounting and initializing FAT16 file system driver", 0);
+                keira_core::pr_info!("block", "active block device registered");
+                keira_core::pr_info!("vfs", "mounted root filesystem (FAT16)");
             }
             Err(e) => {
-                let mut err_msg = [0u8; 80];
-                let prefix = b"Mounting and initializing FAT16 file system driver (Error: ";
-                let suffix = b")";
-                let mut offset = 0;
-                err_msg[offset..offset + prefix.len()].copy_from_slice(prefix);
-                offset += prefix.len();
-                let e_bytes = e.as_bytes();
-                let to_copy = core::cmp::min(e_bytes.len(), err_msg.len() - offset - suffix.len());
-                err_msg[offset..offset + to_copy].copy_from_slice(&e_bytes[..to_copy]);
-                offset += to_copy;
-                err_msg[offset..offset + suffix.len()].copy_from_slice(suffix);
-                offset += suffix.len();
-                if let Ok(msg_str) = core::str::from_utf8(&err_msg[..offset]) {
-                    vga::print_boot_log(msg_str, 1);
-                } else {
-                    vga::print_boot_log("Mounting and initializing FAT16 file system driver", 1);
-                }
+                keira_core::pr_warn!("vfs", "FAT16 root mount failed: {}", e);
             }
         }
     } else {
-        vga::print_boot_log(
-            "Probing primary storage controller (no block drive attached)",
-            0,
+        keira_core::pr_info!(
+            "block",
+            "no hardware drive attached; falling back to ramdisk"
         );
-        vga::print_boot_log("Mounting and initializing RAM Disk (Initrd) file system", 0);
+        keira_core::pr_info!("vfs", "mounted root filesystem (ramdisk/initrd)");
     }
 
     keira_mem::vmm::register_file_backing_hooks(file_backing_read, file_backing_sync);
-    vga::print_boot_log(
-        "Registering Virtual Memory demand paging and msync hooks",
-        0,
+    keira_core::pr_info!(
+        "vmm",
+        "demand paging and msync file backing hooks registered"
     );
 }

@@ -10,7 +10,7 @@
 //! Unit tests for kernel diagnostic reporting.
 
 #[test]
-fn test_diagnostic_blue_screen_colors() {
-    assert_eq!(keira_io::vga::Color::White as u8, 15);
-    assert_eq!(keira_io::vga::Color::Blue as u8, 1);
+fn test_diagnostic_panic_colors() {
+    assert_eq!(keira_io::vga::Color::LightRed as u8, 12);
+    assert_eq!(keira_io::vga::Color::Black as u8, 0);
 }

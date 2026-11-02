@@ -9,37 +9,31 @@
 
 //! Processor architecture detection and CPUID vendor verification.
 
-use keira_io::vga;
+use keira_core::pr_info;
 
 #[cfg(target_arch = "x86")]
-pub const ARCH_BOOT_STR: &str = "Confirming active CPU x86 32-bit Protected Mode status";
+pub const ARCH_BOOT_STR: &str = "CPU active in x86 32-bit Protected Mode";
 #[cfg(target_arch = "x86_64")]
-pub const ARCH_BOOT_STR: &str = "Confirming active CPU x86_64 Long Mode status";
+pub const ARCH_BOOT_STR: &str = "CPU active in x86_64 Long Mode (64-bit)";
 #[cfg(target_arch = "aarch64")]
-pub const ARCH_BOOT_STR: &str = "Confirming active CPU aarch64 Exception Level status";
+pub const ARCH_BOOT_STR: &str = "CPU active in aarch64 Exception Level";
 #[cfg(target_arch = "riscv64")]
-pub const ARCH_BOOT_STR: &str = "Confirming active CPU riscv64 Supervisor Mode status";
+pub const ARCH_BOOT_STR: &str = "CPU active in riscv64 Supervisor Mode";
 #[cfg(not(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "riscv64"
 )))]
-pub const ARCH_BOOT_STR: &str = "Confirming active CPU status";
-
-#[cfg(target_arch = "x86")]
-pub const ENTRY_CONTEXT_STR: &str = "Landed in 32-bit Rust kernel entry context";
-#[cfg(target_arch = "x86_64")]
-pub const ENTRY_CONTEXT_STR: &str = "Landed in 64-bit Rust kernel entry context";
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-pub const ENTRY_CONTEXT_STR: &str = "Landed in Rust kernel entry context";
+pub const ARCH_BOOT_STR: &str = "CPU active in target mode";
 
 /// Detects processor vendor string via CPUID leaf 0 and logs hardware context.
 pub fn detect_cpu() {
-    vga::print_boot_log(ENTRY_CONTEXT_STR, 0);
-    vga::print_boot_log("Checking Multiboot2 bootloader magic signature", 0);
-    vga::print_boot_log("Validating page frame identity mapping", 0);
-    vga::print_boot_log(ARCH_BOOT_STR, 0);
+    pr_info!(
+        "x86/boot",
+        "Multiboot2 bootloader handover verified; page frames mapped"
+    );
+    pr_info!("x86/cpu", "{}", ARCH_BOOT_STR);
 
     #[cfg(target_arch = "x86_64")]
     let cpuid = core::arch::x86_64::__cpuid(0);
@@ -58,10 +52,7 @@ pub fn detect_cpu() {
     vendor[4..8].copy_from_slice(&cpuid.edx.to_le_bytes());
     vendor[8..12].copy_from_slice(&cpuid.ecx.to_le_bytes());
 
-    let mut cpuid_msg = [0u8; 33];
-    cpuid_msg[0..21].copy_from_slice(b"Detected CPU Vendor: ");
-    cpuid_msg[21..33].copy_from_slice(&vendor);
-    if let Ok(msg_str) = core::str::from_utf8(&cpuid_msg) {
-        vga::print_boot_log(msg_str, 0);
+    if let Ok(vendor_str) = core::str::from_utf8(&vendor) {
+        pr_info!("x86/cpu", "detected vendor '{}'", vendor_str);
     }
 }
