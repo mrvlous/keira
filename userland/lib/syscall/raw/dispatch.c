@@ -142,3 +142,19 @@ int64_t syscall6(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a
 }
 
 #endif
+
+#include <stdarg.h>
+
+long syscall(long number, ...) {
+    va_list args;
+    va_start(args, number);
+    uint64_t a1 = va_arg(args, uint64_t);
+    uint64_t a2 = va_arg(args, uint64_t);
+    uint64_t a3 = va_arg(args, uint64_t);
+    uint64_t a4 = va_arg(args, uint64_t);
+    uint64_t a5 = va_arg(args, uint64_t);
+    uint64_t a6 = va_arg(args, uint64_t);
+    va_end(args);
+    return (long)syscall6((uint64_t)number, a1, a2, a3, a4, a5, a6);
+}
+
