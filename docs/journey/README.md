@@ -56,6 +56,8 @@ graph TD
     M44 --> M45["45. Dynamic Stack Canary & Cryptographic Hardware Entropy<br/><i>AT_RANDOM Auxv, __stack_chk_guard, Syscall 101 SYS_GETRANDOM, Ring 0 rnginfo</i>"]
     M45 --> M46["46. Process Resource Limits (RLIMIT) & Sandboxing<br/><i>SYS_GETRLIMIT (102), SYS_SETRLIMIT (103), SYS_PRLIMIT64 (104), /proc/[pid]/limits, Ring 0 rlimit</i>"]
     M46 --> M47["47. UNIX Domain Sockets (AF_UNIX) & Inter-Process IPC<br/><i>SYS_SOCKETPAIR (105), /proc/net/unix, Zero-Copy Stream, Ring 0 unixsock</i>"]
+    M47 --> M48["48. Industrial-Grade Kernel Logging & Telemetry<br/><i>32 KiB Ring Buffer, pr_* Macros, Syscall 44, Live dmesg</i>"]
+    M48 --> M49["49. CoW Fork Engine & Virtual Memory Fault Paging<br/><i>O(1) Hash Table, Knuth Shift Deletion, In-Place Promotion, Ring 0 memory -c</i>"]
 ```
 
 ---
@@ -106,7 +108,8 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 45** | [`dynamic_stack_canary_v070.md`](dynamic_stack_canary_v070.md) | `v0.7.0` | Dynamic stack canary protection, silicon hardware entropy auxiliary vector (AT_RANDOM), Century Syscall 101 (SYS_GETRANDOM), /dev/urandom silicon integration and Ring 0 rnginfo command |
 | **Milestone 46** | [`process_rlimit_v070.md`](process_rlimit_v070.md) | `v0.7.0` | Process resource limits (RLIMIT), memory/FD quota enforcement, SYS_GETRLIMIT (102), SYS_SETRLIMIT (103), SYS_PRLIMIT64 (104), /proc/[pid]/limits and Ring 0 rlimit command |
 | **Milestone 47** | [`unix_sockets_v070.md`](unix_sockets_v070.md) | `v0.7.0` | In-kernel UNIX domain sockets (AF_UNIX), zero-copy streaming, Century-Plus Syscall 105 (SYS_SOCKETPAIR), /proc/net/unix and Ring 0 unixsock command |
-| **Milestone 48** | [`kernel_logging_v070.md`](kernel_logging_v070.md) | `v0.7.0` | Linux-grade logging overhaul, 32 KiB live ring buffer, microsecond timestamps, pr_* macros, Syscall 44 live dmesg telemetry, and Linux oops panic dump |
+| **Milestone 48** | [`kernel_logging_v070.md`](kernel_logging_v070.md) | `v0.7.0` | Linux-grade logging overhaul, 32 KiB live ring buffer, microsecond timestamps, pr_* macros, Syscall 44 live dmesg telemetry and Linux oops panic dump |
+| **Milestone 49** | [`cow_fork_v070.md`](cow_fork_v070.md) | `v0.7.0` | O(1) hash table frame refcounting, Knuth backward-shift deletion, CoW fault paging, zero-alloc in-place promotion, /proc/vmstat and supervisor memory -c |
 
 ---
 
