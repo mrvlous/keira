@@ -13,7 +13,7 @@ The `sys` command suite provides emergency telemetry, power management and hardw
 | `aslrinfo` | `aslrinfo [-v] [0\|1\|2]` | Display and configure Address Space Layout Randomization (ASLR) and hardware entropy status (alias: `aslr`) | `-v, --verbose`: Display per-task randomized layout table<br>`-h, --help`: Usage info |
 | `cpu` | `cpu` | Display processor model, feature flags, APIC clock, context switches and ticks | `-h, --help` |
 | `irq` | `irq` | Display IDT interrupt vector routing and processed hit counters | `-h, --help` |
-| `memory` | `memory [-t\|-p]` | Display physical memory (PMM) frames and kernel dynamic heap usage (alias: `mem`) | `-t, --test`: Heap & slab stress test<br>`-p, --paging`: Demand paging & #PF telemetry<br>`-h, --help`: Usage info |
+| `memory` | `memory [-t\|-p\|-c\|-l]` | Display physical memory (PMM) frames, kernel heap and Copy-On-Write statistics (alias: `mem`) | `-c, --cow`: Copy-On-Write sharing and fault metrics<br>`-p, --paging`: Paging, COW and #PF telemetry<br>`-l, --slab`: Magazine slab cache stats<br>`-t, --test`: Heap stress test<br>`-h, --help`: Usage info |
 | `power` | `power [status\|shutdown]` | Query ACPI S0-S5 states, motherboard MADT topology or soft-off power down (aliases: `poweroff`, `shutdown`) | `-h, --help` |
 | `regs` | `regs` | Display CPU control registers (CR0-CR4) and execution flags | `-h, --help` |
 | `reset` | `reset` | Reboot kernel and motherboard via PS/2 controller pulse (alias: `reboot`) | `-h, --help` |
