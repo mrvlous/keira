@@ -23,6 +23,7 @@ pub fn read_vmstat(buf: &mut [u8]) -> Result<usize, &'static str> {
 
     let (total_faults, cow_faults, stack_faults, demand_faults, _violations, tlb_flushes) =
         keira_mem::vmm_get_fault_stats();
+    let (cow_active, cow_peak, cow_replicate, cow_inplace) = keira_mem::vmm_get_cow_stats();
 
     let mut nr_slab_reclaimable = 0usize;
     let mut nr_slab_unreclaimable = 0usize;
@@ -45,6 +46,10 @@ pub fn read_vmstat(buf: &mut [u8]) -> Result<usize, &'static str> {
          pgfault {}\n\
          pgmajfault {}\n\
          pgfault_cow {}\n\
+         pgfault_cow_inplace {}\n\
+         pgfault_cow_replicate {}\n\
+         nr_cow_active {}\n\
+         nr_cow_peak {}\n\
          pgfault_stack {}\n\
          pgfault_demand {}\n\
          tlb_flushes {}\n",
@@ -55,6 +60,10 @@ pub fn read_vmstat(buf: &mut [u8]) -> Result<usize, &'static str> {
         total_faults,
         demand_faults,
         cow_faults,
+        cow_inplace,
+        cow_replicate,
+        cow_active,
+        cow_peak,
         stack_faults,
         demand_faults,
         tlb_flushes
