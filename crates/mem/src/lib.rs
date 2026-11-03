@@ -11,7 +11,7 @@
 //!
 //! Encompasses physical frame allocation (PMM), 4-level paging and virtual memory areas (VMM),
 //! segregated kernel heap (Heap), slab-like descriptor object caches (Slab), contiguous
-//! bus master buffers (DMA), and anonymous page slot swapping (Swap).
+//! bus master buffers (DMA) and anonymous page slot swapping (Swap).
 
 #![cfg_attr(not(test), no_std)]
 #![allow(static_mut_refs)]
@@ -35,13 +35,14 @@ pub use heap::{
 #[cfg(test)]
 pub use pmm::TEST_MUTEX;
 pub use pmm::{
-    alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount, free_contiguous_frames,
-    free_frame, free_memory, get_freed_frame_count, get_stats, init as pmm_init,
-    is_frame_allocated, is_valid_ram_range, mark_frame_allocated, mark_frame_free,
-    max_physical_address, release_frame, reset_pmm_stats, reset_refcounts, retain_frame,
-    set_test_ram_region, set_test_ram_region_empty, total_memory, total_usable_memory, used_memory,
-    verify_pmm_invariants, verify_pmm_invariants_locked, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT,
-    MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
+    active_shared_frames, alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount,
+    free_contiguous_frames, free_frame, free_memory, get_cow_refcount_stats, get_freed_frame_count,
+    get_stats, init as pmm_init, is_frame_allocated, is_valid_ram_range, mark_frame_allocated,
+    mark_frame_free, max_physical_address, peak_shared_frames, release_frame, reset_pmm_stats,
+    reset_refcounts, retain_frame, set_test_ram_region, set_test_ram_region_empty, total_memory,
+    total_usable_memory, used_memory, verify_pmm_invariants, verify_pmm_invariants_locked,
+    KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE,
+    PAGE_SIZE_4K,
 };
 pub use slab::{
     get_all_kmem_caches, kmem_cache_alloc, kmem_cache_create, kmem_cache_free, CpuDepot,
@@ -60,10 +61,11 @@ pub use vmm::{
     map_page, mmap_anonymous, mprotect_pages, munmap_pages, register_file_backing_hooks,
     register_mmap_aslr_hook, switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect,
     sys_msync, sys_munmap, sys_munmap_ext, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
-    validate_virt_addr_range, verify_vma_pte_invariants, vmm_get_fault_stats, FileReadHook,
-    FileSyncHook, GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED, PAGE_COW,
-    PAGE_DIRTY, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
-    PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR, USER_MIN_VADDR,
+    validate_virt_addr_range, verify_vma_pte_invariants, vmm_get_cow_stats, vmm_get_fault_stats,
+    FileReadHook, FileSyncHook, GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED,
+    PAGE_COW, PAGE_DIRTY, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE,
+    PTE_ADDR_MASK, PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR,
+    USER_MIN_VADDR,
 };
 
 /// Initializes early physical and virtual memory subsystems from Multiboot2 descriptors.

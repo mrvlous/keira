@@ -142,7 +142,7 @@ pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str>
         let frame = entry & PTE_ADDR_MASK;
         unmap_page(virtual_addr)?;
         if frame >= pmm::KERNEL_BASE_1MB {
-            pmm::free_frame(frame);
+            pmm::release_frame(frame);
         }
         Ok(())
     } else {

@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Page Fault (#PF, Interrupt 14) handling, stack auto-growth, and demand paging.
+//! Page Fault (#PF, Interrupt 14) handling, stack auto-growth and demand paging.
 
 use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -37,6 +37,12 @@ pub static TOTAL_PAGE_FAULTS: AtomicUsize = AtomicUsize::new(0);
 /// Total Copy-on-Write (COW) page frame duplications.
 pub static COW_FAULTS: AtomicUsize = AtomicUsize::new(0);
 
+/// Total Copy-on-Write in-place promotions to writable (zero frame allocation).
+pub static COW_IN_PLACE_PROMOTIONS: AtomicUsize = AtomicUsize::new(0);
+
+/// Total Copy-on-Write page replications requiring frame allocation and copy.
+pub static COW_REPLICATIONS: AtomicUsize = AtomicUsize::new(0);
+
 /// Total user stack auto-growth expansions.
 pub static STACK_GROWTH_FAULTS: AtomicUsize = AtomicUsize::new(0);
 
@@ -59,6 +65,17 @@ pub fn vmm_get_fault_stats() -> (u64, u64, u64, u64, u64, u64) {
         DEMAND_PAGING_FAULTS.load(Ordering::Relaxed) as u64,
         PROTECTION_VIOLATIONS.load(Ordering::Relaxed) as u64,
         TLB_INVLPG_COUNT.load(Ordering::Relaxed) as u64,
+    )
+}
+
+/// Retrieves Copy-on-Write telemetry metrics:
+/// `(active_shared, peak_shared, replications, in_place_promotions)`.
+pub fn vmm_get_cow_stats() -> (u64, u64, u64, u64) {
+    (
+        pmm::active_shared_frames() as u64,
+        pmm::peak_shared_frames() as u64,
+        COW_REPLICATIONS.load(Ordering::Relaxed) as u64,
+        COW_IN_PLACE_PROMOTIONS.load(Ordering::Relaxed) as u64,
     )
 }
 
@@ -97,6 +114,7 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
                 if pmm::frame_refcount(old_frame) <= 1 {
                     *pte_ptr = (pte & !PAGE_COW) | PAGE_WRITABLE;
                     COW_FAULTS.fetch_add(1, Ordering::Relaxed);
+                    COW_IN_PLACE_PROMOTIONS.fetch_add(1, Ordering::Relaxed);
                     TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
                     tlb_shootdown(fault_page);
                     return true;
@@ -112,6 +130,7 @@ pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
                     pmm::release_frame(old_frame);
 
                     COW_FAULTS.fetch_add(1, Ordering::Relaxed);
+                    COW_REPLICATIONS.fetch_add(1, Ordering::Relaxed);
                     TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
                     tlb_shootdown(fault_page);
                     return true;

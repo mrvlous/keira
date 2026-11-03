@@ -7,8 +7,11 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Page Fault (#PF) interrupt dispatching, stack growth, and COW fault resolution.
+//! Page Fault (#PF) interrupt dispatching, stack growth and COW fault resolution.
 
 pub mod handler;
 
-pub use handler::{handle_page_fault, vmm_get_fault_stats, USER_STACK_BOTTOM, USER_STACK_TOP};
+pub use handler::{
+    handle_page_fault, vmm_get_cow_stats, vmm_get_fault_stats, COW_IN_PLACE_PROMOTIONS,
+    COW_REPLICATIONS, USER_STACK_BOTTOM, USER_STACK_TOP,
+};

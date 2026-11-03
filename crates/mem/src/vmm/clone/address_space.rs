@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! PML4 address space cloning preserving kernel identity mapping, MMIO, and process isolation.
+//! PML4 address space cloning preserving kernel identity mapping, MMIO and process isolation.
 
 use super::super::mapping::map_page_in_pml4;
 use super::super::reclaim::free_user_pages;
@@ -17,6 +17,7 @@ use super::super::table::{
 };
 use crate::pmm;
 use keira_arch::cpu::invlpg;
+use keira_arch::interrupts::smp::tlb_shootdown;
 
 /// Clones the boot PML4 table, sharing the kernel identity mapping (PDPT[0]) and MMIO (PDPT[3]).
 ///
@@ -24,7 +25,7 @@ use keira_arch::cpu::invlpg;
 ///
 /// # Safety
 ///
-/// Directly reads physical memory, modifies page tables, and allocates page frames.
+/// Directly reads physical memory, modifies page tables and allocates page frames.
 pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
     let boot_pml4_phys = boot_pml4();
     let boot_pml4 = boot_pml4_phys as *const u64;
@@ -73,7 +74,7 @@ pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
 ///
 /// # Safety
 ///
-/// Modifies address space configurations, page tables, and copies frame contents.
+/// Modifies address space configurations, page tables and copies frame contents.
 pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'static str> {
     let child_pml4_phys = clone_kernel_pml4()?;
 
@@ -185,13 +186,14 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
     }
 
     switch_address_space(current_pml4);
+    tlb_shootdown(0);
     Ok(child_pml4_phys)
 }
 
 /// Clones an entire parent process address space using Copy-on-Write (COW).
 ///
 /// Modifies parent writable page entries to read-only with `PAGE_COW` set,
-/// increments physical frame reference count, maps child with `PAGE_COW`, and flushes TLB.
+/// increments physical frame reference count, maps child with `PAGE_COW` and flushes TLB.
 ///
 /// # Safety
 /// Modifies live page tables and processor address spaces.
@@ -308,5 +310,6 @@ pub unsafe fn clone_user_address_space_cow(parent_pml4_phys: u64) -> Result<u64,
     }
 
     switch_address_space(current_pml4);
+    tlb_shootdown(0);
     Ok(child_pml4_phys)
 }
