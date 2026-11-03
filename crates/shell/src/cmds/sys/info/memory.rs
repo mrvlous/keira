@@ -20,7 +20,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if args.has_flag('h', "help") {
         {
             vga::set_color(vga::Color::White, vga::Color::Black);
-            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-l]\n\n");
+            vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-c] [-l]\n\n");
             vga::print_str(
                 "Description:\n  Display physical frame allocator, kernel heap and paging statistics.\n\n",
             );
@@ -31,10 +31,42 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
             vga::print_str("  -s, --summary  Display compact one-line memory summary\n");
             vga::print_str("  -t, --test     Run bare-metal allocator stress test\n");
             vga::print_str("  -p, --paging   Display virtual memory and page fault telemetry\n");
+            vga::print_str("  -c, --cow      Display Copy-On-Write sharing and fault metrics\n");
             vga::print_str("  -l, --slab     Display magazine slab object cache telemetry\n");
             vga::print_str("  -h, --help     Show this help message and exit\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         }
+        return;
+    }
+
+    if args.has_flag('c', "cow") {
+        let (cow_active, cow_peak, cow_replicate, cow_inplace) = keira_mem::vmm_get_cow_stats();
+        let (_total, cow_total, _stack, _demand, _viol, _tlb) = keira_mem::vmm_get_fault_stats();
+        vga::set_color(vga::Color::White, vga::Color::Black);
+        vga::print_str("Copy-On-Write (COW) Memory Telemetry:\n");
+        vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+        vga::print_str("  Active Shared Frames : ");
+        vga::print_u64(cow_active);
+        vga::print_str(" frames (");
+        vga::print_u64(cow_active * 4);
+        vga::print_str(" KB)\n");
+        vga::print_str("  Peak Shared Frames   : ");
+        vga::print_u64(cow_peak);
+        vga::print_str(" frames (");
+        vga::print_u64(cow_peak * 4);
+        vga::print_str(" KB)\n");
+        vga::print_str("  Total COW Traps      : ");
+        vga::print_u64(cow_total);
+        vga::print_str(" faults\n");
+        vga::print_str("  Page Replications    : ");
+        vga::print_u64(cow_replicate);
+        vga::print_str(" allocations\n");
+        vga::print_str("  In-Place Promotions  : ");
+        vga::print_u64(cow_inplace);
+        vga::print_str(" zero-alloc promotions\n");
+        vga::print_str("  Capacity Limit       : ");
+        vga::print_u64(keira_mem::MAX_SHARED_COW_FRAMES as u64);
+        vga::print_str(" slots (O(1) Hash Table)\n");
         return;
     }
 
@@ -44,7 +76,8 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     }
 
     if args.has_flag('p', "paging") {
-        let (total, cow, stack, demand, viol, tlb) = keira_mem::vmm_get_fault_stats();
+        let (total, _cow, stack, demand, viol, tlb) = keira_mem::vmm_get_fault_stats();
+        let (cow_active, cow_peak, cow_replicate, cow_inplace) = keira_mem::vmm_get_cow_stats();
         let (shootdowns, ipis) = keira_arch::interrupts::smp::get_tlb_shootdown_stats();
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Virtual Memory & Paging Telemetry:\n");
@@ -56,8 +89,17 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
         vga::print_u64(stack);
         vga::print_str(" pages (W^X protected)\n");
         vga::print_str("  COW Replications   : ");
-        vga::print_u64(cow);
+        vga::print_u64(cow_replicate);
         vga::print_str(" pages duplicated\n");
+        vga::print_str("  COW In-Place Prom. : ");
+        vga::print_u64(cow_inplace);
+        vga::print_str(" pages promoted (zero alloc)\n");
+        vga::print_str("  COW Active Shared  : ");
+        vga::print_u64(cow_active);
+        vga::print_str(" frames\n");
+        vga::print_str("  COW Peak Shared    : ");
+        vga::print_u64(cow_peak);
+        vga::print_str(" frames\n");
         vga::print_str("  Demand Pages Mapped: ");
         vga::print_u64(demand);
         vga::print_str(" pages loaded\n");
