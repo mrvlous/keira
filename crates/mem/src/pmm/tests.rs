@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for physical memory frame allocation, boundary checks, and invariant assertions.
+//! Unit tests for physical memory frame allocation, boundary checks and invariant assertions.
 
 use super::frame::bitmap::*;
 use super::region::descriptor::*;
@@ -537,4 +537,86 @@ fn test_cow_frame_refcount_lifecycle() {
     assert!(release_frame(frame));
     assert_eq!(frame_refcount(frame), 0);
     assert!(!is_frame_allocated(frame));
+}
+
+#[test]
+fn test_cow_hash_table_collision_and_backward_shift_deletion() {
+    let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    reset_pmm_stats();
+    reset_refcounts();
+    set_test_ram_region_empty(0x20_0000, 0x120_0000);
+
+    // Allocate 128 frames and verify O(1) hash table retention and telemetry
+    let mut frames = [0u64; 128];
+    for i in 0..128 {
+        let f = alloc_frame().expect("Alloc frame failed");
+        frames[i] = f;
+        assert_eq!(retain_frame(f), 2);
+        assert_eq!(frame_refcount(f), 2);
+    }
+
+    assert_eq!(active_shared_frames(), 128);
+    assert!(peak_shared_frames() >= 128);
+
+    // Release odd-indexed frames (backward-shift deletion must preserve even-indexed search paths)
+    for i in (1..128).step_by(2) {
+        assert!(!release_frame(frames[i]));
+        assert_eq!(frame_refcount(frames[i]), 1);
+    }
+
+    assert_eq!(active_shared_frames(), 64);
+
+    // Verify even-indexed frames are all still found and retain count 2
+    for i in (0..128).step_by(2) {
+        assert_eq!(frame_refcount(frames[i]), 2);
+    }
+
+    // Release even-indexed frames
+    for i in (0..128).step_by(2) {
+        assert!(!release_frame(frames[i]));
+        assert_eq!(frame_refcount(frames[i]), 1);
+    }
+
+    assert_eq!(active_shared_frames(), 0);
+
+    // Now release final ownership for all frames to return to PMM free list
+    for f in frames {
+        assert!(release_frame(f));
+        assert_eq!(frame_refcount(f), 0);
+    }
+}
+
+#[test]
+fn test_cow_multi_level_sharing_and_stats() {
+    let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    reset_pmm_stats();
+    reset_refcounts();
+    set_test_ram_region_empty(0x20_0000, 0x120_0000);
+
+    let frame = alloc_frame().expect("Alloc frame failed");
+    assert_eq!(active_shared_frames(), 0);
+
+    // Simulate fork chain: 1 parent, 5 children (6 total references)
+    for expected_count in 2..=6 {
+        assert_eq!(retain_frame(frame), expected_count);
+    }
+    assert_eq!(frame_refcount(frame), 6);
+    assert_eq!(active_shared_frames(), 1);
+
+    // Release 4 children
+    for expected_count in (2..=5).rev() {
+        assert!(!release_frame(frame));
+        assert_eq!(frame_refcount(frame), expected_count);
+        assert_eq!(active_shared_frames(), 1);
+    }
+
+    // Release 5th child (count drops to 1, table slot cleared)
+    assert!(!release_frame(frame));
+    assert_eq!(frame_refcount(frame), 1);
+    assert_eq!(active_shared_frames(), 0);
+
+    // Final process exits
+    assert!(release_frame(frame));
+    assert_eq!(frame_refcount(frame), 0);
+    assert_eq!(active_shared_frames(), 0);
 }

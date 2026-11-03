@@ -19,7 +19,8 @@ pub use bitmap::{
     reset_pmm_stats, set_test_ram_region, set_test_ram_region_empty, ALLOCATION_BITMAP,
 };
 pub use refcount::{
-    frame_refcount, release_frame, reset_refcounts, retain_frame, MAX_SHARED_COW_FRAMES,
+    active_shared_frames, frame_refcount, get_cow_refcount_stats, peak_shared_frames,
+    release_frame, reset_refcounts, retain_frame, MAX_SHARED_COW_FRAMES,
 };
 pub use types::{
     BITMAP_WORDS, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, MAX_TRACKED_FRAMES, PAGE_SIZE,

@@ -10,10 +10,10 @@
 //! Physical Memory Manager (PMM) bitmap frame allocator and memory accounting.
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
-//! - `frame/`: Physical frame types, limits, constants, and 64-bit bitmap state.
-//! - `region/`: Usable RAM regions, memory hole validation, and Multiboot2 boot parsing.
-//! - `sync/`: Concurrency locks, CPU affinity tracking, and reentrancy detection.
-//! - `telemetry/`: Real-time metrics queries, statistics counters, and structural invariant validation.
+//! - `frame/`: Physical frame types, limits, constants and 64-bit bitmap state.
+//! - `region/`: Usable RAM regions, memory hole validation and Multiboot2 boot parsing.
+//! - `sync/`: Concurrency locks, CPU affinity tracking and reentrancy detection.
+//! - `telemetry/`: Real-time metrics queries, statistics counters and structural invariant validation.
 
 pub mod frame;
 pub mod region;
@@ -21,12 +21,12 @@ pub mod sync;
 pub mod telemetry;
 
 pub use frame::{
-    alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount, free_contiguous_frames,
-    free_frame, get_freed_frame_count, is_frame_allocated, mark_frame_allocated, mark_frame_free,
-    release_frame, reset_pmm_stats, reset_refcounts, retain_frame, set_test_ram_region,
-    set_test_ram_region_empty, ALLOCATION_BITMAP, BITMAP_WORDS, KERNEL_BASE_1MB,
-    MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE,
-    PAGE_SIZE_4K,
+    active_shared_frames, alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount,
+    free_contiguous_frames, free_frame, get_cow_refcount_stats, get_freed_frame_count,
+    is_frame_allocated, mark_frame_allocated, mark_frame_free, peak_shared_frames, release_frame,
+    reset_pmm_stats, reset_refcounts, retain_frame, set_test_ram_region, set_test_ram_region_empty,
+    ALLOCATION_BITMAP, BITMAP_WORDS, KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_REGIONS,
+    MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use region::{init, is_valid_ram_range, UsableRegion};
 #[cfg(test)]

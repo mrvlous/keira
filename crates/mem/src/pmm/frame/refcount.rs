@@ -9,15 +9,21 @@
 
 //! Physical frame reference counting for Copy-On-Write (COW) memory sharing.
 //!
-//! Tracks shared physical page frame allocations across cloned address spaces,
+//! Tracks shared physical page frame allocations across cloned address spaces
+//! using an O(1) open-addressing hash table with backward-shift deletion,
 //! enabling zero-copy process forking and safe deferred deallocation.
+
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use super::bitmap::{free_frame, is_frame_allocated};
 use super::types::PAGE_SIZE;
 use keira_core::sync::spinlock::IrqSpinLock;
 
 /// Maximum number of concurrently shared Copy-On-Write physical frames tracked.
-pub const MAX_SHARED_COW_FRAMES: usize = 4096;
+pub const MAX_SHARED_COW_FRAMES: usize = 16384;
+
+const TABLE_CAPACITY: usize = MAX_SHARED_COW_FRAMES;
+const TABLE_MASK: usize = TABLE_CAPACITY - 1;
 
 /// Entry recording reference count for a shared physical page frame.
 #[derive(Clone, Copy, Debug)]
@@ -33,8 +39,23 @@ impl CowFrameEntry {
 }
 
 static COW_TABLE_LOCK: IrqSpinLock = IrqSpinLock::new();
-static mut COW_FRAME_TABLE: [CowFrameEntry; MAX_SHARED_COW_FRAMES] =
-    [CowFrameEntry::empty(); MAX_SHARED_COW_FRAMES];
+static mut COW_FRAME_TABLE: [CowFrameEntry; TABLE_CAPACITY] =
+    [CowFrameEntry::empty(); TABLE_CAPACITY];
+
+static COW_ACTIVE_SHARED: AtomicUsize = AtomicUsize::new(0);
+static COW_PEAK_SHARED: AtomicUsize = AtomicUsize::new(0);
+
+#[inline(always)]
+fn hash_frame(frame: u64) -> usize {
+    let pfn = frame >> 12;
+    let hash = pfn.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    (hash as usize) & TABLE_MASK
+}
+
+#[inline(always)]
+fn probe_distance(current_idx: usize, ideal_idx: usize) -> usize {
+    current_idx.wrapping_sub(ideal_idx) & TABLE_MASK
+}
 
 /// Increments the reference count of a physical page frame.
 ///
@@ -47,21 +68,38 @@ pub fn retain_frame(frame: u64) -> u32 {
 
     let _guard = COW_TABLE_LOCK.lock();
     unsafe {
-        let mut first_empty_idx = None;
+        let start_idx = hash_frame(frame);
+        let mut idx = start_idx;
+        let mut probes = 0;
 
-        for (idx, entry) in COW_FRAME_TABLE.iter_mut().enumerate() {
-            if entry.count > 0 && entry.frame == frame {
+        while probes < TABLE_CAPACITY {
+            let entry = &mut COW_FRAME_TABLE[idx];
+            if entry.frame == frame {
                 entry.count = entry.count.saturating_add(1);
                 return entry.count;
             }
-            if entry.count == 0 && first_empty_idx.is_none() {
-                first_empty_idx = Some(idx);
-            }
-        }
+            if entry.frame == 0 {
+                entry.frame = frame;
+                entry.count = 2;
 
-        if let Some(idx) = first_empty_idx {
-            COW_FRAME_TABLE[idx] = CowFrameEntry { frame, count: 2 };
-            return 2;
+                let active = COW_ACTIVE_SHARED.fetch_add(1, Ordering::Relaxed) + 1;
+                let mut peak = COW_PEAK_SHARED.load(Ordering::Relaxed);
+                while active > peak {
+                    match COW_PEAK_SHARED.compare_exchange_weak(
+                        peak,
+                        active,
+                        Ordering::Relaxed,
+                        Ordering::Relaxed,
+                    ) {
+                        Ok(_) => break,
+                        Err(actual) => peak = actual,
+                    }
+                }
+                return 2;
+            }
+
+            idx = (idx + 1) & TABLE_MASK;
+            probes += 1;
         }
 
         // Table capacity saturated: return 1 to indicate fallback
@@ -83,16 +121,47 @@ pub fn release_frame(frame: u64) -> bool {
     {
         let _guard = COW_TABLE_LOCK.lock();
         unsafe {
-            for entry in COW_FRAME_TABLE.iter_mut() {
-                if entry.count > 0 && entry.frame == frame {
+            let start_idx = hash_frame(frame);
+            let mut idx = start_idx;
+            let mut probes = 0;
+
+            while probes < TABLE_CAPACITY {
+                let entry = &mut COW_FRAME_TABLE[idx];
+                if entry.frame == 0 {
+                    break;
+                }
+                if entry.frame == frame {
                     if entry.count > 2 {
                         entry.count -= 1;
-                    } else {
-                        // Count was 2, now 1: sole ownership restored, clear table slot
-                        *entry = CowFrameEntry::empty();
+                        return false;
                     }
+
+                    // Count was 2, now 1: sole ownership restored, remove entry
+                    entry.frame = 0;
+                    entry.count = 0;
+                    COW_ACTIVE_SHARED.fetch_sub(1, Ordering::Relaxed);
+
+                    // Knuth backward-shift deletion to preserve linear probing invariant
+                    let mut empty_idx = idx;
+                    let mut next_idx = (idx + 1) & TABLE_MASK;
+
+                    while COW_FRAME_TABLE[next_idx].frame != 0 {
+                        let next_ideal = hash_frame(COW_FRAME_TABLE[next_idx].frame);
+                        if probe_distance(next_idx, next_ideal)
+                            >= probe_distance(next_idx, empty_idx)
+                        {
+                            COW_FRAME_TABLE[empty_idx] = COW_FRAME_TABLE[next_idx];
+                            COW_FRAME_TABLE[next_idx] = CowFrameEntry::empty();
+                            empty_idx = next_idx;
+                        }
+                        next_idx = (next_idx + 1) & TABLE_MASK;
+                    }
+
                     return false;
                 }
+
+                idx = (idx + 1) & TABLE_MASK;
+                probes += 1;
             }
         }
     }
@@ -113,10 +182,20 @@ pub fn frame_refcount(frame: u64) -> u32 {
 
     let _guard = COW_TABLE_LOCK.lock();
     unsafe {
-        for entry in COW_FRAME_TABLE.iter() {
-            if entry.count > 0 && entry.frame == frame {
+        let start_idx = hash_frame(frame);
+        let mut idx = start_idx;
+        let mut probes = 0;
+
+        while probes < TABLE_CAPACITY {
+            let entry = &COW_FRAME_TABLE[idx];
+            if entry.frame == 0 {
+                break;
+            }
+            if entry.frame == frame {
                 return entry.count;
             }
+            idx = (idx + 1) & TABLE_MASK;
+            probes += 1;
         }
     }
 
@@ -127,6 +206,21 @@ pub fn frame_refcount(frame: u64) -> u32 {
     }
 }
 
+/// Returns the current number of actively shared Copy-on-Write physical frames.
+pub fn active_shared_frames() -> usize {
+    COW_ACTIVE_SHARED.load(Ordering::Relaxed)
+}
+
+/// Returns the peak number of concurrently shared Copy-on-Write physical frames.
+pub fn peak_shared_frames() -> usize {
+    COW_PEAK_SHARED.load(Ordering::Relaxed)
+}
+
+/// Queries CoW physical frame reference counting telemetry: `(active_shared, peak_shared)`.
+pub fn get_cow_refcount_stats() -> (usize, usize) {
+    (active_shared_frames(), peak_shared_frames())
+}
+
 /// Resets all reference count table entries (used during test setups and reboot).
 pub fn reset_refcounts() {
     let _guard = COW_TABLE_LOCK.lock();
@@ -135,4 +229,6 @@ pub fn reset_refcounts() {
             *entry = CowFrameEntry::empty();
         }
     }
+    COW_ACTIVE_SHARED.store(0, Ordering::Relaxed);
+    COW_PEAK_SHARED.store(0, Ordering::Relaxed);
 }
