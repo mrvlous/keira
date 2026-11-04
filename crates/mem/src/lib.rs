@@ -55,15 +55,17 @@ pub use swap::{
 };
 pub use vmm::{
     active_pml4, boot_pml4, cleanup_vmas_for_pml4, clone_kernel_pml4, clone_user_address_space,
-    clone_user_address_space_cow, find_free_mmap_range, free_and_unmap_page, free_user_pages,
-    get_file_read_hook, get_file_sync_hook, get_kaslr_offset, get_phys_addr, get_phys_addr_in_pml4,
-    get_pte_in_pml4, init_boot_pml4, is_page_mapped_in_pml4, madvise_pages, map_huge_2m_page,
-    map_page, mmap_anonymous, mprotect_pages, munmap_pages, register_file_backing_hooks,
-    register_mmap_aslr_hook, switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect,
-    sys_msync, sys_munmap, sys_munmap_ext, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
+    clone_user_address_space_cow, clone_vmas_for_pml4, find_free_mmap_range, free_and_unmap_page,
+    free_user_pages, get_file_read_hook, get_file_sync_hook, get_kaslr_offset, get_phys_addr,
+    get_phys_addr_in_pml4, get_pte_in_pml4, get_vmas_for_pml4, init_boot_pml4,
+    is_page_mapped_in_pml4, madvise_pages, map_huge_2m_page, map_page, mmap_anonymous,
+    mprotect_pages, munmap_pages, register_file_backing_hooks, register_mmap_aslr_hook,
+    switch_address_space, sys_mmap, sys_mmap_file, sys_mprotect, sys_msync, sys_munmap,
+    sys_munmap_ext, total_active_vmas, translate_pte_to_phys, unmap_huge_2m_page, unmap_page,
     validate_virt_addr_range, verify_vma_pte_invariants, vmm_get_cow_stats, vmm_get_fault_stats,
-    FileReadHook, FileSyncHook, GB_1_IDENTITY_MAP, MS_ASYNC, MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED,
-    PAGE_COW, PAGE_DIRTY, PAGE_HUGE, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE,
+    FileReadHook, FileSyncHook, Vma, GB_1_IDENTITY_MAP, MAP_SHARED, MAX_VMAS, MS_ASYNC,
+    MS_INVALIDATE, MS_SYNC, PAGE_ACCESSED, PAGE_COW, PAGE_DIRTY, PAGE_HUGE, PAGE_NO_EXECUTE,
+    PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PROT_EXEC, PROT_NONE, PROT_READ, PROT_WRITE,
     PTE_ADDR_MASK, PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M, PTE_ADDR_MASK_4K, USER_MAX_VADDR,
     USER_MIN_VADDR,
 };
@@ -72,7 +74,7 @@ pub use vmm::{
 ///
 /// # Safety
 ///
-/// The caller must ensure `multiboot_info_ptr` references valid bootloader structures,
+/// The caller must ensure `multiboot_info_ptr` references valid bootloader structures
 /// and `initrd_end` / `heap_end` specify accurate kernel boundary markers.
 pub unsafe fn init(multiboot_info_ptr: u64, initrd_end: u64, heap_end: u64) {
     let kernel_end = if initrd_end > heap_end {

@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Virtual Memory Area (VMA) management, demand paging, and memory mapping system calls.
+//! Virtual Memory Area (VMA) management, demand paging and memory mapping system calls.
 
 pub mod descriptor;
 pub mod hooks;
@@ -29,6 +29,7 @@ pub use ops::{
     sys_mprotect, sys_msync, sys_munmap, sys_munmap_ext,
 };
 pub use table::{
-    cleanup_vmas_for_pml4, find_active_vma, find_free_mmap_range, register_mmap_aslr_hook,
-    validate_virt_addr_range, VMA_TABLE,
+    cleanup_vmas_for_pml4, clone_vmas_for_pml4, find_active_vma, find_free_mmap_range,
+    get_vmas_for_pml4, register_mmap_aslr_hook, total_active_vmas, validate_virt_addr_range,
+    VMA_TABLE,
 };

@@ -760,3 +760,56 @@ fn test_vmm_fault_telemetry_counters() {
     let (total, cow, stack, demand, viol, tlb) = vmm_get_fault_stats();
     let _ = (total, cow, stack, demand, viol, tlb);
 }
+
+#[test]
+fn test_vma_retrieval_and_fork_cloning() {
+    let _lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    unsafe {
+        let parent_pml4 = 0xAAAA_0000;
+        let child_pml4 = 0xBBBB_0000;
+
+        reset_vma_table_for(parent_pml4);
+        reset_vma_table_for(child_pml4);
+
+        // Inject 2 parent VMAs
+        inject_vma(
+            0,
+            parent_pml4,
+            MMAP_START,
+            MMAP_START + 0x1000,
+            PROT_READ,
+            MAP_PRIVATE | MAP_ANONYMOUS,
+        );
+        inject_vma(
+            1,
+            parent_pml4,
+            MMAP_START + 0x2000,
+            MMAP_START + 0x4000,
+            PROT_READ | PROT_WRITE,
+            MAP_SHARED,
+        );
+
+        let mut vmas = [Vma::empty(); 8];
+        let parent_count = get_vmas_for_pml4(parent_pml4, &mut vmas);
+        assert_eq!(parent_count, 2);
+        assert_eq!(vmas[0].start, MMAP_START);
+        assert_eq!(vmas[1].start, MMAP_START + 0x2000);
+
+        // Clone to child
+        let clone_res = clone_vmas_for_pml4(parent_pml4, child_pml4);
+        assert!(clone_res.is_ok());
+
+        let mut child_vmas = [Vma::empty(); 8];
+        let child_count = get_vmas_for_pml4(child_pml4, &mut child_vmas);
+        assert_eq!(child_count, 2);
+        assert_eq!(child_vmas[0].start, MMAP_START);
+        assert_eq!(child_vmas[0].pml4_phys, child_pml4);
+        assert_eq!(child_vmas[1].start, MMAP_START + 0x2000);
+        assert_eq!(child_vmas[1].pml4_phys, child_pml4);
+
+        cleanup_vmas_for_pml4(parent_pml4);
+        cleanup_vmas_for_pml4(child_pml4);
+        assert_eq!(get_vmas_for_pml4(parent_pml4, &mut vmas), 0);
+        assert_eq!(get_vmas_for_pml4(child_pml4, &mut child_vmas), 0);
+    }
+}

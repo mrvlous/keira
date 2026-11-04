@@ -9,6 +9,7 @@
 
 //! PML4 address space cloning preserving kernel identity mapping, MMIO and process isolation.
 
+use super::super::area::clone_vmas_for_pml4;
 use super::super::mapping::map_page_in_pml4;
 use super::super::reclaim::free_user_pages;
 use super::super::table::{
@@ -187,6 +188,7 @@ pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'s
 
     switch_address_space(current_pml4);
     tlb_shootdown(0);
+    let _ = clone_vmas_for_pml4(parent_pml4_phys, child_pml4_phys);
     Ok(child_pml4_phys)
 }
 
@@ -311,5 +313,6 @@ pub unsafe fn clone_user_address_space_cow(parent_pml4_phys: u64) -> Result<u64,
 
     switch_address_space(current_pml4);
     tlb_shootdown(0);
+    let _ = clone_vmas_for_pml4(parent_pml4_phys, child_pml4_phys);
     Ok(child_pml4_phys)
 }

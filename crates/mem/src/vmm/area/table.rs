@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Global VMA tracking table, range validation, and address allocation algorithms.
+//! Global VMA tracking table, range validation and address allocation algorithms.
 
 use super::super::table::{USER_MAX_VADDR, USER_MIN_VADDR};
 use super::descriptor::{Vma, MAX_VMAS, MMAP_END, MMAP_START};
@@ -100,6 +100,70 @@ pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u6
             return Some(candidate);
         }
     }
+}
+
+/// Copies active VMAs associated with a given address space into the destination slice.
+///
+/// # Safety
+///
+/// Reads global kernel VMA tracking structures.
+pub unsafe fn get_vmas_for_pml4(pml4_phys: u64, out_vmas: &mut [Vma]) -> usize {
+    if pml4_phys == 0 {
+        return 0;
+    }
+    let mut count = 0;
+    for vma in VMA_TABLE.iter() {
+        if vma.is_active && vma.pml4_phys == pml4_phys {
+            if count < out_vmas.len() {
+                out_vmas[count] = *vma;
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
+/// Clones all active VMAs from parent address space to child address space.
+///
+/// # Safety
+///
+/// Modifies global kernel VMA tracking structures.
+pub unsafe fn clone_vmas_for_pml4(parent_pml4: u64, child_pml4: u64) -> Result<(), &'static str> {
+    if parent_pml4 == 0 || child_pml4 == 0 {
+        return Ok(());
+    }
+    for i in 0..MAX_VMAS {
+        let vma = VMA_TABLE[i];
+        if vma.is_active && vma.pml4_phys == parent_pml4 {
+            let mut slot = None;
+            for (j, candidate) in VMA_TABLE.iter().enumerate() {
+                if !candidate.is_active {
+                    slot = Some(j);
+                    break;
+                }
+            }
+            let free_slot = slot.ok_or("Max VMA capacity reached during fork clone")?;
+            let mut child_vma = vma;
+            child_vma.pml4_phys = child_pml4;
+            VMA_TABLE[free_slot] = child_vma;
+        }
+    }
+    Ok(())
+}
+
+/// Retrieves total number of active VMAs currently tracked across the kernel.
+///
+/// # Safety
+///
+/// Reads global kernel VMA tracking structures.
+pub unsafe fn total_active_vmas() -> usize {
+    let mut count = 0;
+    for vma in VMA_TABLE.iter() {
+        if vma.is_active {
+            count += 1;
+        }
+    }
+    count
 }
 
 /// Validates that a requested virtual address range does not overflow and stays within canonical user space.

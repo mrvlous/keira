@@ -7,10 +7,10 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Virtual Memory Manager (VMM) 4-level paging, VMA address space, and page fault handling.
+//! Virtual Memory Manager (VMM) 4-level paging, VMA address space and page fault handling.
 //!
 //! Subdivided into specialized modules for page table entries, hardware traversal,
-//! page mapping and protection, virtual memory areas, demand paging, cloning, and reclamation.
+//! page mapping and protection, virtual memory areas, demand paging, cloning and reclamation.
 
 pub mod area;
 pub mod clone;
