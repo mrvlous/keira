@@ -25,6 +25,7 @@ The `sys` command suite provides emergency telemetry, power management and hardw
 | `syslog` | `syslog [-c]` | Display live kernel diagnostic ring buffer records | `-c, --clear`: Clear ring buffer<br>`-h, --help`: Usage info |
 | `system` | `system` | Print kernel version, architecture, compiler target and build info | `-h, --help` |
 | `unwind` | `unwind` | Display stack frame trace and symbol unwind diagnostic test | `-h, --help` |
+| `vmainfo` | `vmainfo [-a] [pid]` | Display Virtual Memory Areas (VMAs), page mappings and address space layout (alias: `vma`) | `-a, --all`: Inspect VMAs for all active tasks<br>`-h, --help`: Usage info |
 | `watchpoint` | `watchpoint` | Inspect hardware debug registers (DR0-DR3) and watchpoint traps | `-h, --help` |
 | `wipe` | `wipe` | Clear and reset the VGA text console display buffer | `-h, --help` |
 
