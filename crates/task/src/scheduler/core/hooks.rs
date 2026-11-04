@@ -249,3 +249,119 @@ pub fn task_limits_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         Some(crate::rlimit::format_task_limits(&task.rlimits, buf))
     }
 }
+
+/// Helper to write virtual address range into maps output.
+fn write_vaddr_range(writer: &mut SliceWriter, start: u64, end: u64) {
+    if end <= 0xFFFF_FFFF {
+        let _ = core::write!(writer, "{:08x}-{:08x}", start, end);
+    } else {
+        let _ = core::write!(writer, "{:012x}-{:012x}", start, end);
+    }
+}
+
+/// Dynamic task virtual memory mappings provider for /proc/[pid]/maps.
+pub fn task_maps_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
+    unsafe {
+        if pid >= MAX_TASKS {
+            return None;
+        }
+        let task = TASKS[pid].as_ref()?;
+        let mut writer = SliceWriter { buf, offset: 0 };
+
+        if !task.is_user {
+            // Kernel thread: emit kernel stack mapping
+            let stack_top = task.stack_addr + super::state::TASK_STACK_SIZE;
+            write_vaddr_range(&mut writer, task.stack_addr, stack_top);
+            let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [kstack]\n");
+            return Some(writer.offset);
+        }
+
+        // 1. Text segment (ELF executable)
+        let text_start: u64 = 0x0040_0000;
+        let text_end: u64 = text_start + 0x5000;
+        write_vaddr_range(&mut writer, text_start, text_end);
+        let _ = core::write!(
+            writer,
+            " r-xp 00000000 00:00 0                  {}\n",
+            task.name
+        );
+
+        // 2. Data / BSS segment
+        let data_start: u64 = text_end;
+        let data_end: u64 = data_start + 0x1000;
+        write_vaddr_range(&mut writer, data_start, data_end);
+        let _ = core::write!(
+            writer,
+            " rw-p 00005000 00:00 0                  {}\n",
+            task.name
+        );
+
+        // 3. Heap segment (if active)
+        if task.program_break > task.program_break_start {
+            write_vaddr_range(&mut writer, task.program_break_start, task.program_break);
+            let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [heap]\n");
+        }
+
+        // 4. Dynamic VMAs from VMA_TABLE (anonymous mmap or file-backed mmap)
+        if task.pml4_phys != 0 {
+            let mut vmas = [keira_mem::Vma::empty(); keira_mem::MAX_VMAS];
+            let count = keira_mem::get_vmas_for_pml4(task.pml4_phys, &mut vmas);
+            for vma in &vmas[..count] {
+                write_vaddr_range(&mut writer, vma.start, vma.end);
+                let r = if (vma.prot & keira_mem::PROT_READ) != 0 {
+                    'r'
+                } else {
+                    '-'
+                };
+                let w = if (vma.prot & keira_mem::PROT_WRITE) != 0 {
+                    'w'
+                } else {
+                    '-'
+                };
+                let x = if (vma.prot & keira_mem::PROT_EXEC) != 0 {
+                    'x'
+                } else {
+                    '-'
+                };
+                let p = if (vma.flags & keira_mem::MAP_SHARED) != 0 {
+                    's'
+                } else {
+                    'p'
+                };
+                let path = if let Some(p) = vma.file_path_str() {
+                    p
+                } else {
+                    "[anon]"
+                };
+                let _ = core::write!(
+                    writer,
+                    " {}{}{}{} {:08x} 00:00 0                  {}\n",
+                    r,
+                    w,
+                    x,
+                    p,
+                    vma.file_offset,
+                    path
+                );
+            }
+        }
+
+        // 5. User Stack segment
+        #[cfg(target_arch = "x86")]
+        {
+            let stack_top = 0x07FFF000u64;
+            let stack_bottom = stack_top.saturating_sub(0x20000);
+            write_vaddr_range(&mut writer, stack_bottom, stack_top);
+            let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [stack]\n");
+        }
+        #[cfg(not(target_arch = "x86"))]
+        {
+            let stack_top = 0x7FFFFFE00000u64.saturating_sub(task.stack_aslr_offset);
+            let stack_bottom = stack_top.saturating_sub(0x20000);
+            write_vaddr_range(&mut writer, stack_bottom, stack_top);
+            let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [stack]\n");
+        }
+
+        Some(writer.offset)
+    }
+}
