@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 22 marks a transformative leap in Keira's operating system architecture along the **Road to v0.7.0**. By adhering strictly to the classical UNIX and Linux kernel design philosophy, Milestone 22 delineates the boundary between Ring 0 supervisor mechanics and Ring 3 unprivileged userspace capabilities.
+Milestone 22 marks a transformative leap in Keira's operating system architecture along the **Road to v0.8.0**. By adhering strictly to the classical UNIX and Linux kernel design philosophy, Milestone 22 delineates the boundary between Ring 0 supervisor mechanics and Ring 3 unprivileged userspace capabilities.
 
 In traditional UNIX systems (such as Linux, FreeBSD and Darwin/XNU), the monolithic kernel does not host application-level utilities or desktop conveniences in supervisor mode. Instead, the kernel focuses on memory virtualization, task scheduling, interrupt dispatching, Virtual Filesystem (VFS) abstractions, networking and standard system call interfaces. Application workflows—including shell pipelines, I/O redirection, conditional job chaining and foundational filesystem inspection utilities—are executed strictly as unprivileged Ring 3 binaries.
 
@@ -188,4 +188,4 @@ All subsystems were verified through automated headless QEMU harnesses and unit 
 
 ## Summary
 
-Milestone 22 brings Keira to true UNIX and POSIX parity, providing freestanding Ring 3 tools, a capable shell environment and clean kernel abstractions on the path to v0.7.0.
+Milestone 22 brings Keira to true UNIX and POSIX parity, providing freestanding Ring 3 tools, a capable shell environment and clean kernel abstractions on the path to v0.8.0.

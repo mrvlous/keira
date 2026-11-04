@@ -22,6 +22,6 @@ graph TD
 | Document | Focus Area | Description |
 | :--- | :--- | :--- |
 | [`uapi_boundary.md`](uapi_boundary.md) | Privilege Demarcation | Formal Ring 0 / Ring 3 privilege demarcation, system call calling conventions and UAPI header specifications |
-| [`../journey/README.md`](../journey/README.md) | Engineering Journey | Complete chronological 34-milestone engineering journal from bare metal to v0.7.0 |
+| [`../journey/README.md`](../journey/README.md) | Engineering Journey | Complete chronological 50-milestone engineering journal from bare metal to v0.8.0 |
 | [`../../userland/Makefile`](../../userland/Makefile) | Autonomous Build System | Standalone userland Makefile managing libc.a and 30 core utility binaries |
 | [`../../.example.config`](../../.example.config) | Configuration Template | Reference template for Linux-style kernel build configuration |

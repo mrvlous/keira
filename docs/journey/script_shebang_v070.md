@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 21 advances Keira's operating system architecture along the **Road to v0.7.0** by delivering native POSIX/Linux-grade shell script execution and kernel-level shebang (`#!`) interpreter recognition across both the supervisor control plane and unprivileged Ring 3 userspace.
+Milestone 21 advances Keira's operating system architecture along the **Road to v0.8.0** by delivering native POSIX/Linux-grade shell script execution and kernel-level shebang (`#!`) interpreter recognition across both the supervisor control plane and unprivileged Ring 3 userspace.
 
 Prior to Milestone 21, Keira's program execution subsystem operated exclusively on compiled ELF executables (such as `sysinfo.elf` or `kcc.elf`). Attempting to execute a script file resulted in an invalid ELF header format error. With Milestone 21, Keira bridges this gap by introducing:
 

@@ -51,7 +51,7 @@ Every record written to the kernel log conforms strictly to the canonical format
 
 Example cold boot sequence captured from COM1 serial output:
 ```text
-[     0.000000 ] x86/boot: Keira Kernel v0.7.0 booting (pure freestanding Ring 0)
+[     0.000000 ] x86/boot: Keira Kernel v0.8.0 booting (pure freestanding Ring 0)
 [     0.000000 ] serial: 16550A UART at port 0x3f8 (irq 4, baud 115200)
 [     0.000000 ] console: colour VGA+ 80x25 text console ready
 [     0.000000 ] idt: 256 interrupt descriptor gates mapped

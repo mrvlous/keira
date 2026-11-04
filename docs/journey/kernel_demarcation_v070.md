@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 34 finalizes Keira's architectural evolution towards version `v0.7.0`, establishing a strict privilege and build demarcation inspired directly by `torvalds/linux`. In classic Linux kernel repository style, the Ring 0 kernel tree is purified of all userland compilation logic, while the Ring 3 C userland runtime becomes a fully autonomous subsystem with its own independent build orchestrator (`userland/Makefile`).
+Milestone 34 finalizes Keira's architectural evolution towards version `v0.8.0`, establishing a strict privilege and build demarcation inspired directly by `torvalds/linux`. In classic Linux kernel repository style, the Ring 0 kernel tree is purified of all userland compilation logic, while the Ring 3 C userland runtime becomes a fully autonomous subsystem with its own independent build orchestrator (`userland/Makefile`).
 
 This milestone achieves complete architectural decoupling across source code, build scripts, configuration engines and binary interfaces:
 
@@ -138,9 +138,9 @@ This architecture makes adding new utilities or userland libraries completely ze
 
 ---
 
-## 5. Official Keira v0.7.0 Release Certification
+## 5. Official Keira v0.8.0 Release Certification
 
-With the completion of Milestone 34, Keira Kernel officially reaches the `v0.7.0` milestone. The architecture achieves:
+With the completion of Milestone 34, Keira Kernel officially reaches the `v0.8.0` milestone. The architecture achieves:
 - Strict Ring 0 / Ring 3 privilege demarcation modeled after `torvalds/linux`
 - Pure freestanding Rust kernel (`no_std`) compiling across 12 hyper-modular crates
 - Autonomous userland runtime with independent `userland/Makefile`, freestanding `libc.a` and 30 core utility binaries

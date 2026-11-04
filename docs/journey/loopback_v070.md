@@ -2,7 +2,7 @@
 
 # Journey Milestone 18: Linux-Grade Loopback (lo) Interface & Sockets
 
-Milestone 18 introduces the in-kernel **Linux-Grade Loopback (`lo`) Virtual Network Interface & Socket Reflection** subsystem for Keira Kernel `v0.7.0`. It provides a freestanding, 100% from scratch virtual networking adapter bound to `127.0.0.1/8` with standard 65536-byte MTU, enabling high-performance inter-process communication, local service binding and self-diagnostics without routing through physical Ethernet controllers.
+Milestone 18 introduces the in-kernel **Linux-Grade Loopback (`lo`) Virtual Network Interface & Socket Reflection** subsystem for Keira Kernel `v0.8.0`. It provides a freestanding, 100% from scratch virtual networking adapter bound to `127.0.0.1/8` with standard 65536-byte MTU, enabling high-performance inter-process communication, local service binding and self-diagnostics without routing through physical Ethernet controllers.
 
 ---
 

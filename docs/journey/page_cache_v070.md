@@ -2,7 +2,7 @@
 
 # Journey Milestone 17: Unified Page Cache & Buffer Management
 
-Milestone 17 introduces the in-kernel **Unified 4 KiB Page Cache & Dynamic Buffer Management** engine for Keira Kernel `v0.7.0`. It bridges the high-level Virtual Filesystem (VFS) with the low-level Physical Memory Manager (PMM) and demand-paged address spaces by caching disk files at native 4096-byte memory frame granularity rather than primitive 512-byte sectors.
+Milestone 17 introduces the in-kernel **Unified 4 KiB Page Cache & Dynamic Buffer Management** engine for Keira Kernel `v0.8.0`. It bridges the high-level Virtual Filesystem (VFS) with the low-level Physical Memory Manager (PMM) and demand-paged address spaces by caching disk files at native 4096-byte memory frame granularity rather than primitive 512-byte sectors.
 
 ---
 

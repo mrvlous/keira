@@ -8,7 +8,7 @@ The `pmap.elf` executable (`/bin/pmap.elf` and `/bin/pmap`) is a freestanding Ri
 
 ## 1. Architectural Purpose
 
-In accordance with UNIX purity and the Keira v0.7.0 milestone roadmap, address space inspection is decoupled from the Ring 0 supervisor console and implemented as a freestanding unprivileged Ring 3 binary:
+In accordance with UNIX purity and the Keira v0.8.0 milestone roadmap, address space inspection is decoupled from the Ring 0 supervisor console and implemented as a freestanding unprivileged Ring 3 binary:
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged Ring 3, inspecting process address space mappings via `/proc/[pid]/maps`.
 2. **Canonical Output Formatting**: Parses `/proc/[pid]/maps` records and emits standard columns for virtual address range, size in KiB, permission bits, backing offset and mapping description.

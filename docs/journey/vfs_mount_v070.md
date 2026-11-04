@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 35 advances the Keira Kernel towards version `v0.7.0` by introducing a dynamic Virtual File System (VFS) mount subsystem and mount table registry. Conforming to the project's strict architecture as a **pure freestanding kernel from scratch** (built with `#![no_std]` Rust at Ring 0, without relying on Linux, BSD, or distribution packages), this milestone enables runtime attachment and detachment of filesystem namespaces at arbitrary directory hierarchy points.
+Milestone 35 advances the Keira Kernel towards version `v0.8.0` by introducing a dynamic Virtual File System (VFS) mount subsystem and mount table registry. Conforming to the project's strict architecture as a **pure freestanding kernel from scratch** (built with `#![no_std]` Rust at Ring 0, without relying on Linux, BSD, or distribution packages), this milestone enables runtime attachment and detachment of filesystem namespaces at arbitrary directory hierarchy points.
 
 Prior to Milestone 35, path routing between FAT16, DevFS, ProcFS and Initrd relied on hardcoded path prefix matching. Milestone 35 replaces static prefix logic with a dynamic, longest-prefix matching mount point table (`MOUNT_TABLE`), standard POSIX mount syscalls (`sys_mount` and `sys_umount`), an in-memory volatile scratch filesystem (`TmpFS`), userland utility binaries (`/bin/mount` and `/bin/umount`) and Ring 0 supervisor inspection commands.
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 20 advances the Keira operating system architecture along the **Road to v0.7.0** by delivering a canonical standalone Ring 3 userspace shell binary (`userland/bin/sh/main.c`) and establishing direct binary execution semantics across the entire operating system.
+Milestone 20 advances the Keira operating system architecture along the **Road to v0.8.0** by delivering a canonical standalone Ring 3 userspace shell binary (`userland/bin/sh/main.c`) and establishing direct binary execution semantics across the entire operating system.
 
 In earlier milestones, running userland ELF executables required prefixing commands with `run` (e.g. `run /bin/sysinfo.elf`). With Milestone 20, Keira adopts Linux-grade execution semantics:
 1. **Direct `$PATH` Execution**: Users can type binary names directly (e.g. `sysinfo`, `sysinfo.elf`, `/bin/sysinfo.elf`, `sh -c "echo hello"`) along with arbitrary command-line arguments. The kernel command router automatically resolves binary paths against `/bin` and the root filesystem, launches them in unprivileged Ring 3 and forwards argument tokens seamlessly.

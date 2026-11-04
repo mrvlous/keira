@@ -73,45 +73,45 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | :--- | :--- | :--- | :--- |
 | **Milestones 1–15** | [`archive_v010_v060.md`](archive_v010_v060.md) | `v0.1.0`–`v0.6.0` | Bare-metal bootstrap, paging, multitasking, storage, networking, KCC compiler, TPM 2.0, eBPF, work-stealing, slab allocator, SMP IPI, TLB shootdown and multithreading |
 
-### Active v0.7.0 Milestones
+### Active v0.8.0 Milestones
 
 | Milestone | Chapter Document | Target Version | Primary Focus Areas |
 | :--- | :--- | :--- | :--- |
-| **Milestone 16** | [`canonical_fhs_v070.md`](canonical_fhs_v070.md) | `v0.7.0` | Canonical UNIX FHS namespace, removal of legacy prefixes and root prompt `keira:/# ` |
-| **Milestone 17** | [`page_cache_v070.md`](page_cache_v070.md) | `v0.7.0` | 4 KiB unified page cache, dynamic buffer management, dirty page writeback and telemetry |
-| **Milestone 18** | [`loopback_v070.md`](loopback_v070.md) | `v0.7.0` | Linux-grade loopback (`lo`) adapter, 127.0.0.1/8 local IPC reflection and zero-NIC socket routing |
-| **Milestone 19** | [`pure_kernel_v070.md`](pure_kernel_v070.md) | `v0.7.0` | Pure freestanding Ring 0 kernel architecture, complete OS purge, canonical userspace init (PID 1) and supervisor handover |
-| **Milestone 20** | [`sh_userspace_v070.md`](sh_userspace_v070.md) | `v0.7.0` | Standalone Ring 3 POSIX shell (`/bin/sh.elf`), direct supervisor `$PATH` execution, multi-token `-c` string parsing and userspace parity |
-| **Milestone 21** | [`script_shebang_v070.md`](script_shebang_v070.md) | `v0.7.0` | Canonical shell script execution, kernel shebang (`#!`) interpreter recognition, userspace script runner and `/etc/init.sh` system bootstrap |
-| **Milestone 22** | [`unix_parity_v070.md`](unix_parity_v070.md) | `v0.7.0` | Pure kernel slimming, Ring 3 shell maturity (redirection, pipes, chaining), /bin/cat.elf, /bin/ls.elf and UNIX parity |
-| **Milestone 23** | [`kernel_slimming_v070.md`](kernel_slimming_v070.md) | `v0.7.0` | In-kernel compiler elimination, freestanding Ring 3 `/bin/fetch.elf`, supervisor diagnostic monitor and TTY/FAT fixes |
-| **Milestone 24** | [`pure_coreutils_v070.md`](pure_coreutils_v070.md) | `v0.7.0` | Pure kernel demarcation, complete userspace coreutils (/bin/ps, /bin/kill, /bin/hostname, /bin/clear, /bin/dmesg, /bin/df) and emergency debugger slimming |
-| **Milestone 25** | [`network_userland_v070.md`](network_userland_v070.md) | `v0.7.0` | Network diagnostic toolset (/bin/ping, /bin/ifconfig, /bin/uname), /proc/net/dev virtual telemetry and Vector 89 SYS_PING |
-| **Milestone 26** | [`kernel_routing_v070.md`](kernel_routing_v070.md) | `v0.7.0` | In-Kernel routing engine FIB, ProcFS network telemetry (/proc/net/route, /proc/net/arp, /proc/net/tcp) and core utilities (/bin/route, /bin/arp) |
-| **Milestone 27** | [`kernel_socket_telemetry_v070.md`](kernel_socket_telemetry_v070.md) | `v0.7.0` | Kernel socket telemetry subsystem, ProcFS virtual inspection (/proc/net/udp, /proc/net/raw, /proc/net/sockstat) and core utility (/bin/netstat) |
-| **Milestone 28** | [`kernel_firewall_v070.md`](kernel_firewall_v070.md) | `v0.7.0` | In-kernel Netfilter firewall subsystem, ProcFS telemetry (/proc/net/ip_tables_names, /proc/net/stat/nf_conntrack, /proc/net/iptables) and core utility (/bin/iptables) |
-| **Milestone 29** | [`pure_telemetry_v070.md`](pure_telemetry_v070.md) | `v0.7.0` | Bare-metal freestanding purity, complete eradication of distro databases and pure numerical credential model |
-| **Milestone 30** | [`multiuser_security_v070.md`](multiuser_security_v070.md) | `v0.7.0` | POSIX multi-user security, kernel credential subsystem (SYS_GETEUID, SYS_GETEGID), credential inheritance and core utilities (/bin/whoami, /bin/id, /bin/su) |
-| **Milestone 31** | [`distro_purge_v070.md`](distro_purge_v070.md) | `v0.7.0` | Distro bloat eradication, rootfs C source tree purge, canonical `/lib/libc.a` and full hardware verification |
-| **Milestone 32** | [`vfs_symlink_v070.md`](vfs_symlink_v070.md) | `v0.7.0` | VFS symbolic links, kernel registry, SYS_SYMLINK/SYS_READLINK, transparent path dereferencing and freestanding `/bin/ln` |
-| **Milestone 33** | [`kernel_decoupling_v070.md`](kernel_decoupling_v070.md) | `v0.7.0` | Modular userland decoupling, USERLAND=0/1 build flag, pure kernel ISO, make run-bare and freestanding Ring 0 supervisor console |
-| **Milestone 34** | [`kernel_demarcation_v070.md`](kernel_demarcation_v070.md) | `v0.7.0` | Torvalds-grade pure kernel demarcation, autonomous userland build system, .config engine and make headers_install |
-| **Milestone 35** | [`vfs_mount_v070.md`](vfs_mount_v070.md) | `v0.7.0` | Dynamic VFS mount subsystem, in-memory TmpFS, SYS_MOUNT/SYS_UMOUNT syscalls, /bin/mount, /bin/umount and Ring 0 supervisor console mount command |
-| **Milestone 36** | [`pipe_subsystem_v070.md`](pipe_subsystem_v070.md) | `v0.7.0` | Dynamic anonymous pipe subsystem, PIPE_TABLE (32 channels), SYS_PIPE2 (96), broken pipe SIGPIPE, /bin/sh streaming pipelines and /bin/test_pipe |
-| **Milestone 37** | [`text_pipeline_v070.md`](text_pipeline_v070.md) | `v0.7.0` | Freestanding text processing pipeline suite (/bin/grep, /bin/wc, /bin/head, /bin/tail, /bin/echo, /bin/sleep), kernel stack hardening and VMM table zeroing |
-| **Milestone 38** | [`discretionary_access_control_v070.md`](discretionary_access_control_v070.md) | `v0.7.0` | In-kernel POSIX DAC engine, PERM_TABLE, SYS_CHMOD/SYS_CHOWN/SYS_STAT, real stat metadata and core utilities (/bin/chmod, /bin/chown) |
-| **Milestone 39** | [`dcache_syscall100_v070.md`](dcache_syscall100_v070.md) | `v0.7.0` | Pure kernel VFS dentry cache (dcache), Century Syscall 100 (SYS_FSTAT), dcache telemetry and Ring 0 inspection |
-| **Milestone 40** | [`slabinfo_vmstat_v070.md`](slabinfo_vmstat_v070.md) | `v0.7.0` | Pure kernel memory introspection (/proc/slabinfo, /proc/vmstat), slab cache registry, magazine telemetry and Ring 0 supervisor slabinfo command |
-| **Milestone 41** | [`icache_vfs_v070.md`](icache_vfs_v070.md) | `v0.7.0` | Pure kernel VFS inode cache (icache), complete cache trinity (page_cache, dcache, icache), dirty tracking and Ring 0 icache command |
-| **Milestone 42** | [`proc_pid_telemetry_v070.md`](proc_pid_telemetry_v070.md) | `v0.7.0` | Pure kernel dynamic ProcFS process hierarchy (/proc/[pid]/stat, /proc/[pid]/statm), dynamic PID enumeration and Ring 0 pidinfo command |
-| **Milestone 43** | [`hardware_wx_mitigations_v070.md`](hardware_wx_mitigations_v070.md) | `v0.7.0` | Hardware W^X exploit mitigations, page table NX/DEP bit 63 enforcement, supervisor write protection (CR0.WP), SMEP/SMAP/UMIP detection and Ring 0 secinfo command |
-| **Milestone 44** | [`aslr_entropy_v070.md`](aslr_entropy_v070.md) | `v0.7.0` | Kernel ASLR (KASLR) & userland address space randomization (stack, mmap, brk), hardware CPU entropy harvesting (RDRAND/RDSEED), /proc/sys/kernel/randomize_va_space and Ring 0 aslrinfo command |
-| **Milestone 45** | [`dynamic_stack_canary_v070.md`](dynamic_stack_canary_v070.md) | `v0.7.0` | Dynamic stack canary protection, silicon hardware entropy auxiliary vector (AT_RANDOM), Century Syscall 101 (SYS_GETRANDOM), /dev/urandom silicon integration and Ring 0 rnginfo command |
-| **Milestone 46** | [`process_rlimit_v070.md`](process_rlimit_v070.md) | `v0.7.0` | Process resource limits (RLIMIT), memory/FD quota enforcement, SYS_GETRLIMIT (102), SYS_SETRLIMIT (103), SYS_PRLIMIT64 (104), /proc/[pid]/limits and Ring 0 rlimit command |
-| **Milestone 47** | [`unix_sockets_v070.md`](unix_sockets_v070.md) | `v0.7.0` | In-kernel UNIX domain sockets (AF_UNIX), zero-copy streaming, Century-Plus Syscall 105 (SYS_SOCKETPAIR), /proc/net/unix and Ring 0 unixsock command |
-| **Milestone 48** | [`kernel_logging_v070.md`](kernel_logging_v070.md) | `v0.7.0` | Linux-grade logging overhaul, 32 KiB live ring buffer, microsecond timestamps, pr_* macros, Syscall 44 live dmesg telemetry and Linux oops panic dump |
-| **Milestone 49** | [`cow_fork_v070.md`](cow_fork_v070.md) | `v0.7.0` | O(1) hash table frame refcounting, Knuth backward-shift deletion, CoW fault paging, zero-alloc in-place promotion, /proc/vmstat and supervisor memory -c |
-| **Milestone 50** | [`vma_maps_v070.md`](vma_maps_v070.md) | `v0.7.0` | Virtual memory areas (VMA) address space inspection, /proc/[pid]/maps node, freestanding /bin/pmap utility (42 binaries), fork VMA replication and Ring 0 vmainfo command |
+| **Milestone 16** | [`canonical_fhs_v070.md`](canonical_fhs_v070.md) | `v0.8.0` | Canonical UNIX FHS namespace, removal of legacy prefixes and root prompt `keira:/# ` |
+| **Milestone 17** | [`page_cache_v070.md`](page_cache_v070.md) | `v0.8.0` | 4 KiB unified page cache, dynamic buffer management, dirty page writeback and telemetry |
+| **Milestone 18** | [`loopback_v070.md`](loopback_v070.md) | `v0.8.0` | Linux-grade loopback (`lo`) adapter, 127.0.0.1/8 local IPC reflection and zero-NIC socket routing |
+| **Milestone 19** | [`pure_kernel_v070.md`](pure_kernel_v070.md) | `v0.8.0` | Pure freestanding Ring 0 kernel architecture, complete OS purge, canonical userspace init (PID 1) and supervisor handover |
+| **Milestone 20** | [`sh_userspace_v070.md`](sh_userspace_v070.md) | `v0.8.0` | Standalone Ring 3 POSIX shell (`/bin/sh.elf`), direct supervisor `$PATH` execution, multi-token `-c` string parsing and userspace parity |
+| **Milestone 21** | [`script_shebang_v070.md`](script_shebang_v070.md) | `v0.8.0` | Canonical shell script execution, kernel shebang (`#!`) interpreter recognition, userspace script runner and `/etc/init.sh` system bootstrap |
+| **Milestone 22** | [`unix_parity_v070.md`](unix_parity_v070.md) | `v0.8.0` | Pure kernel slimming, Ring 3 shell maturity (redirection, pipes, chaining), /bin/cat.elf, /bin/ls.elf and UNIX parity |
+| **Milestone 23** | [`kernel_slimming_v070.md`](kernel_slimming_v070.md) | `v0.8.0` | In-kernel compiler elimination, freestanding Ring 3 `/bin/fetch.elf`, supervisor diagnostic monitor and TTY/FAT fixes |
+| **Milestone 24** | [`pure_coreutils_v070.md`](pure_coreutils_v070.md) | `v0.8.0` | Pure kernel demarcation, complete userspace coreutils (/bin/ps, /bin/kill, /bin/hostname, /bin/clear, /bin/dmesg, /bin/df) and emergency debugger slimming |
+| **Milestone 25** | [`network_userland_v070.md`](network_userland_v070.md) | `v0.8.0` | Network diagnostic toolset (/bin/ping, /bin/ifconfig, /bin/uname), /proc/net/dev virtual telemetry and Vector 89 SYS_PING |
+| **Milestone 26** | [`kernel_routing_v070.md`](kernel_routing_v070.md) | `v0.8.0` | In-Kernel routing engine FIB, ProcFS network telemetry (/proc/net/route, /proc/net/arp, /proc/net/tcp) and core utilities (/bin/route, /bin/arp) |
+| **Milestone 27** | [`kernel_socket_telemetry_v070.md`](kernel_socket_telemetry_v070.md) | `v0.8.0` | Kernel socket telemetry subsystem, ProcFS virtual inspection (/proc/net/udp, /proc/net/raw, /proc/net/sockstat) and core utility (/bin/netstat) |
+| **Milestone 28** | [`kernel_firewall_v070.md`](kernel_firewall_v070.md) | `v0.8.0` | In-kernel Netfilter firewall subsystem, ProcFS telemetry (/proc/net/ip_tables_names, /proc/net/stat/nf_conntrack, /proc/net/iptables) and core utility (/bin/iptables) |
+| **Milestone 29** | [`pure_telemetry_v070.md`](pure_telemetry_v070.md) | `v0.8.0` | Bare-metal freestanding purity, complete eradication of distro databases and pure numerical credential model |
+| **Milestone 30** | [`multiuser_security_v070.md`](multiuser_security_v070.md) | `v0.8.0` | POSIX multi-user security, kernel credential subsystem (SYS_GETEUID, SYS_GETEGID), credential inheritance and core utilities (/bin/whoami, /bin/id, /bin/su) |
+| **Milestone 31** | [`distro_purge_v070.md`](distro_purge_v070.md) | `v0.8.0` | Distro bloat eradication, rootfs C source tree purge, canonical `/lib/libc.a` and full hardware verification |
+| **Milestone 32** | [`vfs_symlink_v070.md`](vfs_symlink_v070.md) | `v0.8.0` | VFS symbolic links, kernel registry, SYS_SYMLINK/SYS_READLINK, transparent path dereferencing and freestanding `/bin/ln` |
+| **Milestone 33** | [`kernel_decoupling_v070.md`](kernel_decoupling_v070.md) | `v0.8.0` | Modular userland decoupling, USERLAND=0/1 build flag, pure kernel ISO, make run-bare and freestanding Ring 0 supervisor console |
+| **Milestone 34** | [`kernel_demarcation_v070.md`](kernel_demarcation_v070.md) | `v0.8.0` | Torvalds-grade pure kernel demarcation, autonomous userland build system, .config engine and make headers_install |
+| **Milestone 35** | [`vfs_mount_v070.md`](vfs_mount_v070.md) | `v0.8.0` | Dynamic VFS mount subsystem, in-memory TmpFS, SYS_MOUNT/SYS_UMOUNT syscalls, /bin/mount, /bin/umount and Ring 0 supervisor console mount command |
+| **Milestone 36** | [`pipe_subsystem_v070.md`](pipe_subsystem_v070.md) | `v0.8.0` | Dynamic anonymous pipe subsystem, PIPE_TABLE (32 channels), SYS_PIPE2 (96), broken pipe SIGPIPE, /bin/sh streaming pipelines and /bin/test_pipe |
+| **Milestone 37** | [`text_pipeline_v070.md`](text_pipeline_v070.md) | `v0.8.0` | Freestanding text processing pipeline suite (/bin/grep, /bin/wc, /bin/head, /bin/tail, /bin/echo, /bin/sleep), kernel stack hardening and VMM table zeroing |
+| **Milestone 38** | [`discretionary_access_control_v070.md`](discretionary_access_control_v070.md) | `v0.8.0` | In-kernel POSIX DAC engine, PERM_TABLE, SYS_CHMOD/SYS_CHOWN/SYS_STAT, real stat metadata and core utilities (/bin/chmod, /bin/chown) |
+| **Milestone 39** | [`dcache_syscall100_v070.md`](dcache_syscall100_v070.md) | `v0.8.0` | Pure kernel VFS dentry cache (dcache), Century Syscall 100 (SYS_FSTAT), dcache telemetry and Ring 0 inspection |
+| **Milestone 40** | [`slabinfo_vmstat_v070.md`](slabinfo_vmstat_v070.md) | `v0.8.0` | Pure kernel memory introspection (/proc/slabinfo, /proc/vmstat), slab cache registry, magazine telemetry and Ring 0 supervisor slabinfo command |
+| **Milestone 41** | [`icache_vfs_v070.md`](icache_vfs_v070.md) | `v0.8.0` | Pure kernel VFS inode cache (icache), complete cache trinity (page_cache, dcache, icache), dirty tracking and Ring 0 icache command |
+| **Milestone 42** | [`proc_pid_telemetry_v070.md`](proc_pid_telemetry_v070.md) | `v0.8.0` | Pure kernel dynamic ProcFS process hierarchy (/proc/[pid]/stat, /proc/[pid]/statm), dynamic PID enumeration and Ring 0 pidinfo command |
+| **Milestone 43** | [`hardware_wx_mitigations_v070.md`](hardware_wx_mitigations_v070.md) | `v0.8.0` | Hardware W^X exploit mitigations, page table NX/DEP bit 63 enforcement, supervisor write protection (CR0.WP), SMEP/SMAP/UMIP detection and Ring 0 secinfo command |
+| **Milestone 44** | [`aslr_entropy_v070.md`](aslr_entropy_v070.md) | `v0.8.0` | Kernel ASLR (KASLR) & userland address space randomization (stack, mmap, brk), hardware CPU entropy harvesting (RDRAND/RDSEED), /proc/sys/kernel/randomize_va_space and Ring 0 aslrinfo command |
+| **Milestone 45** | [`dynamic_stack_canary_v070.md`](dynamic_stack_canary_v070.md) | `v0.8.0` | Dynamic stack canary protection, silicon hardware entropy auxiliary vector (AT_RANDOM), Century Syscall 101 (SYS_GETRANDOM), /dev/urandom silicon integration and Ring 0 rnginfo command |
+| **Milestone 46** | [`process_rlimit_v070.md`](process_rlimit_v070.md) | `v0.8.0` | Process resource limits (RLIMIT), memory/FD quota enforcement, SYS_GETRLIMIT (102), SYS_SETRLIMIT (103), SYS_PRLIMIT64 (104), /proc/[pid]/limits and Ring 0 rlimit command |
+| **Milestone 47** | [`unix_sockets_v070.md`](unix_sockets_v070.md) | `v0.8.0` | In-kernel UNIX domain sockets (AF_UNIX), zero-copy streaming, Century-Plus Syscall 105 (SYS_SOCKETPAIR), /proc/net/unix and Ring 0 unixsock command |
+| **Milestone 48** | [`kernel_logging_v070.md`](kernel_logging_v070.md) | `v0.8.0` | Linux-grade logging overhaul, 32 KiB live ring buffer, microsecond timestamps, pr_* macros, Syscall 44 live dmesg telemetry and Linux oops panic dump |
+| **Milestone 49** | [`cow_fork_v070.md`](cow_fork_v070.md) | `v0.8.0` | O(1) hash table frame refcounting, Knuth backward-shift deletion, CoW fault paging, zero-alloc in-place promotion, /proc/vmstat and supervisor memory -c |
+| **Milestone 50** | [`vma_maps_v070.md`](vma_maps_v070.md) | `v0.8.0` | Virtual memory areas (VMA) address space inspection, /proc/[pid]/maps node, freestanding /bin/pmap utility (42 binaries), fork VMA replication and Ring 0 vmainfo command |
 
 ---
 

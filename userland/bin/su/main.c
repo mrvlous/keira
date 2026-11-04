@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
             return 0;
         }
         if (strcmp(argv[arg_idx], "-v") == 0 || strcmp(argv[arg_idx], "--version") == 0) {
-            puts("su (Keira Coreutils) 0.7.0");
+            puts("su (Keira Coreutils) 0.8.0");
             return 0;
         }
         if (strcmp(argv[arg_idx], "-") == 0 || strcmp(argv[arg_idx], "-l") == 0 ||

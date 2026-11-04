@@ -119,8 +119,8 @@ Users can invoke `sh` or `sh.elf` directly from the supervisor prompt without ty
 
 ```bash
 # Direct binary execution:
-ring0@keira:/# sh.elf -c 'echo "Keira Standalone Userspace Shell (sh v0.7.0)"'
-Keira Standalone Userspace Shell (sh v0.7.0)
+ring0@keira:/# sh.elf -c 'echo "Keira Standalone Userspace Shell (sh v0.8.0)"'
+Keira Standalone Userspace Shell (sh v0.8.0)
 
 # Direct shebang script execution:
 keira:/$ /etc/init.sh

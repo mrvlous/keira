@@ -36,7 +36,7 @@ As part of Keira Milestone 37 (Text Processing Pipeline Suite), `grep.elf` empow
 # Searching for a keyword in a configuration file:
 keira:/# grep KERNEL /etc/kernel.cfg
 KERNEL_NAME=keira
-KERNEL_VERSION=0.7.0
+KERNEL_VERSION=0.8.0
 KERNEL_ARCH=x86_64
 
 # Case-insensitive search with line numbering:
@@ -49,12 +49,12 @@ keira:/# grep -i -n root /var/log/boot.log
 ```bash
 # Filtering command output through a pipeline:
 keira:/# dmesg | grep -i bootloader
-[    0.000000] Keira Kernel v0.7.0 (x86_64) bootloader handover completed
+[    0.000000] Keira Kernel v0.8.0 (x86_64) bootloader handover completed
 
 # Inverted matching in pipelines:
 keira:/# cat /etc/kernel.cfg | grep -v USERLAND
 KERNEL_NAME=keira
-KERNEL_VERSION=0.7.0
+KERNEL_VERSION=0.8.0
 KERNEL_ARCH=x86_64
 ```
 

@@ -8,7 +8,7 @@ The `cat.elf` executable (`/bin/cat.elf` and `/bin/cat`) is a freestanding Ring 
 
 ## 1. Architectural Purpose
 
-In accordance with UNIX purity and the Keira v0.7.0 milestone roadmap, foundational file viewing and text streaming are decoupled from the Ring 0 supervisor console and implemented as freestanding unprivileged Ring 3 binaries:
+In accordance with UNIX purity and the Keira v0.8.0 milestone roadmap, foundational file viewing and text streaming are decoupled from the Ring 0 supervisor console and implemented as freestanding unprivileged Ring 3 binaries:
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged Ring 3, reading filesystem entries exclusively through the kernel VFS system call boundary.
 2. **Stream Concatenation**: Reads multiple files sequentially or streams continuously from standard input (file descriptor 0) when no files are specified or when `-` is given.

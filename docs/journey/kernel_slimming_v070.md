@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 23 represents the definitive culmination of Keira's monolithic kernel slimming initiative on the **Road to v0.7.0**. Following the architectural groundwork established in Milestone 22, Milestone 23 strips all remaining high-level compilers, application-layer web clients and redundant job control utilities from Ring 0 supervisor space.
+Milestone 23 represents the definitive culmination of Keira's monolithic kernel slimming initiative on the **Road to v0.8.0**. Following the architectural groundwork established in Milestone 22, Milestone 23 strips all remaining high-level compilers, application-layer web clients and redundant job control utilities from Ring 0 supervisor space.
 
 In accordance with classical UNIX architecture, the Ring 0 kernel acts exclusively as an austere hardware supervisor, diagnostic monitor and system call resource arbiter. High-level capabilities—such as C compilation and HTTP web resource retrieval—are delegated entirely to unprivileged Ring 3 binaries executing in user space.
 

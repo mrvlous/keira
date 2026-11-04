@@ -8,7 +8,7 @@ The `fetch.elf` executable (`/bin/fetch.elf` and `/bin/fetch`) is a freestanding
 
 ## 1. Architectural Purpose
 
-In accordance with UNIX purity and the Keira v0.7.0 pure kernel slimming roadmap, high-level network client operations are decoupled from the Ring 0 supervisor console and implemented as freestanding unprivileged Ring 3 binaries:
+In accordance with UNIX purity and the Keira v0.8.0 pure kernel slimming roadmap, high-level network client operations are decoupled from the Ring 0 supervisor console and implemented as freestanding unprivileged Ring 3 binaries:
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged Ring 3, requesting network resources exclusively through the kernel network system call boundary.
 2. **Resource Retrieval & Disk Streaming**: Downloads HTTP payloads to standard output or streams them directly to disk via `-o <file>`.

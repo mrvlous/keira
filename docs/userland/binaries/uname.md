@@ -39,7 +39,7 @@ Keira
 
 # Print complete system identity:
 keira:/# uname -a
-Keira keira 0.7.0 Keira Monolithic Kernel x86_64
+Keira keira 0.8.0 Keira Monolithic Kernel x86_64
 
 # Print machine architecture:
 keira:/# uname -m

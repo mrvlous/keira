@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 36 advances the Keira Kernel towards version `v0.7.0` by replacing the legacy static single-buffer pipe stub with a dynamic, multi-channel anonymous pipe subsystem (`PIPE_TABLE`). Conforming to the project's strict architecture as a **pure freestanding kernel from scratch** (built with `#![no_std]` Rust at Ring 0 without external dependencies or distribution bloat), this milestone establishes authentic POSIX inter-process communication streaming semantics across process boundaries.
+Milestone 36 advances the Keira Kernel towards version `v0.8.0` by replacing the legacy static single-buffer pipe stub with a dynamic, multi-channel anonymous pipe subsystem (`PIPE_TABLE`). Conforming to the project's strict architecture as a **pure freestanding kernel from scratch** (built with `#![no_std]` Rust at Ring 0 without external dependencies or distribution bloat), this milestone establishes authentic POSIX inter-process communication streaming semantics across process boundaries.
 
 Prior to Milestone 36, the kernel provided a single global 1024-byte buffer that could not support multiple concurrent pipes, lacked reference counting on endpoints and did not detect broken pipe conditions. Consequently, the Ring 3 shell (`/bin/sh`) had to simulate pipeline execution (`|`) by writing output to temporary files in `/tmp/.sh_p0`. Milestone 36 eliminates this workaround, introducing multi-channel ring buffer management, `SYS_PIPE2` (Vector 96) with `O_CLOEXEC` and `O_NONBLOCK` support, descriptor refcounting across `fork()`, `dup()`, `dup2()` and `close()`, in-kernel streaming pipeline execution in `/bin/sh`, a dedicated `/bin/test_pipe` utility and supervisor console telemetry.
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 38 advances Keira Kernel towards the `v0.7.0` release by introducing a full in-kernel POSIX Discretionary Access Control (DAC) security engine, kernel-level file permission and ownership registries, real metadata tracking via `stat` and two essential Ring 3 core utilities (`/bin/chmod` and `/bin/chown`). This milestone expands the canonical userland utility suite to **41 native ELF binaries** and brings the registered system call table up to 99 vectors.
+Milestone 38 advances Keira Kernel towards the `v0.8.0` release by introducing a full in-kernel POSIX Discretionary Access Control (DAC) security engine, kernel-level file permission and ownership registries, real metadata tracking via `stat` and two essential Ring 3 core utilities (`/bin/chmod` and `/bin/chown`). This milestone expands the canonical userland utility suite to **41 native ELF binaries** and brings the registered system call table up to 99 vectors.
 
 Prior to Milestone 38, file permissions and ownership were evaluated strictly under coarse Mandatory Access Control (MAC) sandboxing, while file attribute queries (`stat`) returned hardcoded placeholder values. Milestone 38 implements true POSIX multi-user DAC semantics: files track numerical owner UID, group GID and mode bitmasks, allowing privileged superusers and file owners to restrict read, write and execute privileges across User, Group and Others classes.
 

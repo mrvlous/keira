@@ -2,7 +2,7 @@
 
 # Journey Milestone 16: Canonical UNIX FHS & Root Control Plane
 
-Milestone 16 establishes the architectural foundation for the Keira Kernel `v0.7.0` development cycle. It transforms Keira into an authentic, freestanding UNIX-grade monolithic operating system by permanently purging all legacy distribution path prefixes, standardizing the runtime Virtual Filesystem (VFS) to the canonical Filesystem Hierarchy Standard (FHS) and configuring the bootloader and shell control plane to land directly into the root directory (`/`) with the prompt `keira:/# `.
+Milestone 16 establishes the architectural foundation for the Keira Kernel `v0.8.0` development cycle. It transforms Keira into an authentic, freestanding UNIX-grade monolithic operating system by permanently purging all legacy distribution path prefixes, standardizing the runtime Virtual Filesystem (VFS) to the canonical Filesystem Hierarchy Standard (FHS) and configuring the bootloader and shell control plane to land directly into the root directory (`/`) with the prompt `keira:/# `.
 
 ---
 

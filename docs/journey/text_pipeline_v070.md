@@ -4,7 +4,7 @@
 
 ## Overview
 
-Milestone 37 advances Keira Kernel towards the `v0.7.0` release by introducing a full-featured freestanding text processing pipeline suite in Ring 3 userspace (`/bin/grep`, `/bin/wc`, `/bin/head`, `/bin/tail`, `/bin/echo`, `/bin/sleep`), bringing the total canonical userland utility suite to **39 native ELF binaries**. Furthermore, Milestone 37 resolves critical kernel-space memory invariants—safeguarding against privilege stack overflow collisions and guaranteeing zeroed page table allocations across the Virtual Memory Manager (VMM) and Physical Memory Manager (PMM).
+Milestone 37 advances Keira Kernel towards the `v0.8.0` release by introducing a full-featured freestanding text processing pipeline suite in Ring 3 userspace (`/bin/grep`, `/bin/wc`, `/bin/head`, `/bin/tail`, `/bin/echo`, `/bin/sleep`), bringing the total canonical userland utility suite to **39 native ELF binaries**. Furthermore, Milestone 37 resolves critical kernel-space memory invariants—safeguarding against privilege stack overflow collisions and guaranteeing zeroed page table allocations across the Virtual Memory Manager (VMM) and Physical Memory Manager (PMM).
 
 Building on Milestone 36's anonymous pipe subsystem (`PIPE_TABLE` and `SYS_PIPE2`), users and scripts in Keira can now construct complex, POSIX-compliant data processing workflows directly in memory without relying on disk-backed scratch files or host dependencies.
 
