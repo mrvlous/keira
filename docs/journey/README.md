@@ -58,6 +58,7 @@ graph TD
     M46 --> M47["47. UNIX Domain Sockets (AF_UNIX) & Inter-Process IPC<br/><i>SYS_SOCKETPAIR (105), /proc/net/unix, Zero-Copy Stream, Ring 0 unixsock</i>"]
     M47 --> M48["48. Industrial-Grade Kernel Logging & Telemetry<br/><i>32 KiB Ring Buffer, pr_* Macros, Syscall 44, Live dmesg</i>"]
     M48 --> M49["49. CoW Fork Engine & Virtual Memory Fault Paging<br/><i>O(1) Hash Table, Knuth Shift Deletion, In-Place Promotion, Ring 0 memory -c</i>"]
+    M49 --> M50["50. Virtual Memory Areas (VMA) Address Space Inspection & pmap Utility<br/><i>VMA Table, /proc/[pid]/maps, Canonical Formatting, /bin/pmap, Ring 0 vmainfo</i>"]
 ```
 
 ---
@@ -110,6 +111,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 47** | [`unix_sockets_v070.md`](unix_sockets_v070.md) | `v0.7.0` | In-kernel UNIX domain sockets (AF_UNIX), zero-copy streaming, Century-Plus Syscall 105 (SYS_SOCKETPAIR), /proc/net/unix and Ring 0 unixsock command |
 | **Milestone 48** | [`kernel_logging_v070.md`](kernel_logging_v070.md) | `v0.7.0` | Linux-grade logging overhaul, 32 KiB live ring buffer, microsecond timestamps, pr_* macros, Syscall 44 live dmesg telemetry and Linux oops panic dump |
 | **Milestone 49** | [`cow_fork_v070.md`](cow_fork_v070.md) | `v0.7.0` | O(1) hash table frame refcounting, Knuth backward-shift deletion, CoW fault paging, zero-alloc in-place promotion, /proc/vmstat and supervisor memory -c |
+| **Milestone 50** | [`vma_maps_v070.md`](vma_maps_v070.md) | `v0.7.0` | Virtual memory areas (VMA) address space inspection, /proc/[pid]/maps node, freestanding /bin/pmap utility (42 binaries), fork VMA replication and Ring 0 vmainfo command |
 
 ---
 
