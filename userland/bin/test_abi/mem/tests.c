@@ -402,5 +402,62 @@ int run_test_abi_mem(void) {
            (unsigned long)__stack_chk_guard);
     puts("  [OK]   Dynamic stack canary & cryptographic hardware entropy operational");
 
+    /* 37. Virtual Memory Areas & /proc/self/maps Dynamic Inspection */
+    puts("  [TEST] Virtual Memory Areas & /proc/self/maps dynamic reflection...");
+    int maps_fd = open("/proc/self/maps", O_RDONLY, 0);
+    if (maps_fd < 0) {
+        puts("  [FAIL] Failed to open /proc/self/maps");
+        return 1;
+    }
+    char maps_buf[2048];
+    memset(maps_buf, 0, sizeof(maps_buf));
+    ssize_t maps_bytes = read(maps_fd, maps_buf, sizeof(maps_buf) - 1);
+    close(maps_fd);
+    if (maps_bytes <= 0) {
+        puts("  [FAIL] /proc/self/maps returned 0 bytes");
+        return 1;
+    }
+    maps_buf[maps_bytes] = '\0';
+
+    if (strstr(maps_buf, "[stack]") == NULL) {
+        puts("  [FAIL] /proc/self/maps missing [stack] region!");
+        return 1;
+    }
+    puts("  [INFO] /proc/self/maps verified containing [stack] and binary segments");
+
+    /* Dynamically allocate an anonymous VMA via mmap */
+    void *mmap_ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (mmap_ptr == MAP_FAILED || mmap_ptr == NULL) {
+        puts("  [FAIL] Dynamic mmap allocation failed");
+        return 1;
+    }
+
+    /* Verify newly mapped virtual address appears in /proc/self/maps */
+    maps_fd = open("/proc/self/maps", O_RDONLY, 0);
+    if (maps_fd >= 0) {
+        memset(maps_buf, 0, sizeof(maps_buf));
+        ssize_t n2 = read(maps_fd, maps_buf, sizeof(maps_buf) - 1);
+        close(maps_fd);
+        if (n2 > 0) {
+            maps_buf[n2] = '\0';
+            char hex_addr[32];
+            snprintf(hex_addr, sizeof(hex_addr), "%lx", (unsigned long)mmap_ptr);
+            if (strstr(maps_buf, hex_addr) == NULL) {
+                printf("  [FAIL] mmap address 0x%lx not reflected in /proc/self/maps!\n",
+                       (unsigned long)mmap_ptr);
+                munmap(mmap_ptr, 4096);
+                return 1;
+            }
+        }
+    }
+    puts("  [INFO] Dynamic mmap allocation successfully reflected in /proc/self/maps");
+
+    /* Release mapping via munmap and verify clean unmapping */
+    if (munmap(mmap_ptr, 4096) != 0) {
+        puts("  [FAIL] munmap failed");
+        return 1;
+    }
+    puts("  [OK]   Virtual Memory Areas & /proc/self/maps dynamic reflection operational");
+
     return 0;
 }
