@@ -33,6 +33,9 @@ pub type CurrentPidProvider = fn() -> usize;
 /// Callback provider function type for process resource limits strings.
 pub type TaskLimitsProvider = fn(pid: usize, buf: &mut [u8]) -> Option<usize>;
 
+/// Callback provider function type for process virtual memory mapping strings.
+pub type TaskMapsProvider = fn(pid: usize, buf: &mut [u8]) -> Option<usize>;
+
 /// Registered hook for task status inspection.
 pub static mut TASK_STATUS_HOOK: Option<TaskStatusProvider> = None;
 
@@ -56,6 +59,9 @@ pub static mut CURRENT_PID_HOOK: Option<CurrentPidProvider> = None;
 
 /// Registered hook for task resource limits inspection.
 pub static mut TASK_LIMITS_HOOK: Option<TaskLimitsProvider> = None;
+
+/// Registered hook for task virtual memory maps inspection.
+pub static mut TASK_MAPS_HOOK: Option<TaskMapsProvider> = None;
 
 /// Checks whether a task with the specified PID is currently active in the scheduler.
 pub fn task_exists(pid: usize) -> bool {
@@ -105,5 +111,12 @@ pub fn register_extended_task_hooks(
 pub fn register_task_limits_hook(limits_hook: TaskLimitsProvider) {
     unsafe {
         TASK_LIMITS_HOOK = Some(limits_hook);
+    }
+}
+
+/// Registers callback hook for task virtual memory maps inspection.
+pub fn register_task_maps_hook(maps_hook: TaskMapsProvider) {
+    unsafe {
+        TASK_MAPS_HOOK = Some(maps_hook);
     }
 }

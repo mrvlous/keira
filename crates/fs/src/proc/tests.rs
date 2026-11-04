@@ -26,8 +26,10 @@ fn test_procfs_nodes_exist() {
     assert!(exists("self/status"));
     assert!(exists("self/cmdline"));
     assert!(exists("self/mounts"));
+    assert!(exists("self/maps"));
     assert!(exists("1/status"));
     assert!(exists("1/cmdline"));
+    assert!(exists("1/maps"));
     assert!(!exists("nonexistent"));
 }
 
@@ -109,4 +111,23 @@ fn test_read_randomize_va_space() {
         .expect("read randomize_va_space failed");
     let s = core::str::from_utf8(&buf[..n]).expect("utf8 randomize_va_space");
     assert_eq!(s, "2\n");
+}
+
+#[test]
+fn test_read_task_maps_node() {
+    fn dummy_maps_hook(_pid: usize, buf: &mut [u8]) -> Option<usize> {
+        let text = b"00400000-00405000 r-xp 00000000 00:00 0                  /bin/test\n";
+        buf[..text.len()].copy_from_slice(text);
+        Some(text.len())
+    }
+    register_task_maps_hook(dummy_maps_hook);
+    assert!(exists("self/maps"));
+    assert!(exists("1/maps"));
+
+    let mut buf = [0u8; 256];
+    let n = read_proc_file("1/maps", &mut buf).expect("read 1/maps failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 maps");
+    assert!(s.contains("00400000-00405000"));
+    assert!(s.contains("r-xp"));
+    assert!(s.contains("/bin/test"));
 }

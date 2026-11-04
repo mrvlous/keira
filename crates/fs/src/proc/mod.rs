@@ -33,11 +33,12 @@ pub use self::system::{
     NET_RAW_HOOK, NET_ROUTE_HOOK, NET_SOCKSTAT_HOOK, NET_TCP_HOOK, NET_UDP_HOOK, NET_UNIX_HOOK,
 };
 pub use self::task::{
-    get_active_pids, read_task_cmdline, read_task_limits, read_task_stat, read_task_statm,
-    read_task_status, register_extended_task_hooks, register_task_hooks, register_task_limits_hook,
-    task_exists, CurrentPidProvider, TaskCmdlineProvider, TaskExistsProvider, TaskLimitsProvider,
-    TaskListProvider, TaskStatProvider, TaskStatmProvider, TaskStatusProvider, CURRENT_PID_HOOK,
-    TASK_CMDLINE_HOOK, TASK_EXISTS_HOOK, TASK_LIMITS_HOOK, TASK_LIST_HOOK, TASK_STATM_HOOK,
-    TASK_STATUS_HOOK, TASK_STAT_HOOK,
+    get_active_pids, read_task_cmdline, read_task_limits, read_task_maps, read_task_stat,
+    read_task_statm, read_task_status, register_extended_task_hooks, register_task_hooks,
+    register_task_limits_hook, register_task_maps_hook, task_exists, CurrentPidProvider,
+    TaskCmdlineProvider, TaskExistsProvider, TaskLimitsProvider, TaskListProvider,
+    TaskMapsProvider, TaskStatProvider, TaskStatmProvider, TaskStatusProvider, CURRENT_PID_HOOK,
+    TASK_CMDLINE_HOOK, TASK_EXISTS_HOOK, TASK_LIMITS_HOOK, TASK_LIST_HOOK, TASK_MAPS_HOOK,
+    TASK_STATM_HOOK, TASK_STATUS_HOOK, TASK_STAT_HOOK,
 };
 pub use self::writer::BufWriter;
