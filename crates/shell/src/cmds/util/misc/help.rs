@@ -35,6 +35,7 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("  rnginfo        Inspect silicon hardware entropy and random generator\n");
     vga::print_str("  rlimit         Inspect process resource limits and sandbox quotas\n");
     vga::print_str("  unixsock       Display active UNIX domain sockets and IPC channels (unix)\n");
+    vga::print_str("  vmainfo [pid]  Inspect virtual memory areas and process mappings (vma)\n");
     vga::print_str("Emergency Control:\n");
     vga::print_str("  disk           Inspect storage drives and block device geometry\n");
     vga::print_str("  dcache         Inspect VFS in-memory dentry cache telemetry and hits\n");
@@ -55,5 +56,5 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("  power          Power off system via ACPI shutdown\n");
     vga::print_str("  help           Display this reference manual\n");
     vga::print_str("Userspace Integration:\n");
-    vga::print_str("  Core Utilities (/bin): 41 native ELF binaries execute via sh or run\n");
+    vga::print_str("  Core Utilities (/bin): 42 native ELF binaries execute via sh or run\n");
 }

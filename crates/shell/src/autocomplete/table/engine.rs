@@ -53,6 +53,8 @@ pub const COMMANDS_LIST: &[&str] = &[
     "unix",
     "unixsock",
     "unwind",
+    "vma",
+    "vmainfo",
     "watchpoint",
     "wipe",
 ];

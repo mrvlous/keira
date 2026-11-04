@@ -202,3 +202,17 @@ fn test_sys_unixsock() {
     let mut args_default = "".split_whitespace();
     unixsock::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_vmainfo() {
+    let mut args_help = "vmainfo --help".split_whitespace();
+    args_help.next();
+    vmainfo::run(&mut args_help);
+
+    let mut args_all = "vmainfo -a".split_whitespace();
+    args_all.next();
+    vmainfo::run(&mut args_all);
+
+    let mut args_default = "".split_whitespace();
+    vmainfo::run(&mut args_default);
+}

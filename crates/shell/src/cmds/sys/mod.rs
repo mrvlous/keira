@@ -20,5 +20,5 @@ pub use control::{power, reset, sync, wipe};
 pub use daemon::{syslog, watchpoint};
 pub use info::{
     aslrinfo, cpu, irq, memory, regs, rlimit, rnginfo, secinfo, slabinfo, smp, system, unixsock,
-    unwind,
+    unwind, vmainfo,
 };

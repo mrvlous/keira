@@ -55,6 +55,7 @@ pub fn execute_command_inner(cmd: &str) {
         "rnginfo" | "entropy" => crate::cmds::sys::info::rnginfo::run(&mut parts),
         "rlimit" | "limit" => crate::cmds::sys::info::rlimit::run(&mut parts),
         "unixsock" | "unix" => crate::cmds::sys::info::unixsock::run(&mut parts),
+        "vmainfo" | "vma" => crate::cmds::sys::info::vmainfo::run(&mut parts),
         "run" => crate::cmds::run::run(&mut parts),
         "sh" => {
             let sh_path = if keira_fs::vfs::exists("/bin/sh.elf") {

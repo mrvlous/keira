@@ -23,3 +23,4 @@ pub mod smp;
 pub mod system;
 pub mod unixsock;
 pub mod unwind;
+pub mod vmainfo;
