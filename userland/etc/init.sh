@@ -12,6 +12,7 @@ echo "[INIT] Initializing canonical userland system environment..."
 hostname keira
 mount -t tmpfs none /tmp
 chmod 1777 /tmp
+cat /src/main.c > /tmp/main.c
 mkdir -p /var/run /var/log
 ifconfig lo
 uname -a
