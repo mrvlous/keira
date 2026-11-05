@@ -84,8 +84,8 @@ pub use tcp::{
     TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
 };
 pub use tls::native::{
-    fetch_https, fetch_https_stream, tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256,
-    TLS_CONTENT_APPLICATION_DATA, TLS_CONTENT_HANDSHAKE, TLS_VERSION_12, TLS_VERSION_13,
+    tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256, TLS_CONTENT_APPLICATION_DATA,
+    TLS_CONTENT_HANDSHAKE, TLS_VERSION_12, TLS_VERSION_13,
 };
 
 #[cfg(target_arch = "x86_64")]
