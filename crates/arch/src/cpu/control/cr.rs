@@ -10,7 +10,7 @@
 //! x86/x86_64 Control Register (CR0, CR2, CR3, CR4) and processor flags accessors.
 //!
 //! Provides direct reading and modification of hardware control registers governing
-//! paging enablement, write-protection, page faults, and physical address extensions.
+//! paging enablement, write-protection, page faults and physical address extensions.
 
 #[cfg(target_os = "none")]
 use core::arch::asm;
@@ -129,7 +129,7 @@ pub unsafe fn read_cr4() -> usize {
 ///
 /// # Safety
 ///
-/// Modifying CR4 can alter OS features like PSE, PAE, PGE, and VM extensions.
+/// Modifying CR4 can alter processor architecture features like PSE, PAE, PGE and VM extensions.
 #[inline(always)]
 pub unsafe fn write_cr4(val: usize) {
     #[cfg(not(target_os = "none"))]

@@ -10,7 +10,7 @@
 //! Scoped spin-mutex wrapping protected kernel data with RAII lock guard semantics.
 //!
 //! Provides mutual exclusion and synchronized access to shared data structures
-//! in freestanding contexts where thread sleeping and OS scheduler blocks are unavailable.
+//! in freestanding contexts where thread sleeping and scheduler blocks are unavailable.
 
 use super::super::spinlock::raw::SpinLock;
 use core::cell::UnsafeCell;
