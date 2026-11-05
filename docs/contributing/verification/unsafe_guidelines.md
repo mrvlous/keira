@@ -2,7 +2,7 @@
 
 # Unsafe Rust Guidelines & Safety Invariants
 
-Because Keira is a freestanding operating system kernel interacting directly with hardware registers, MMU page tables and CPU contexts, `unsafe` Rust is necessary in specific low-level components. This document establishes rigorous guidelines for declaring and auditing `unsafe` code.
+Because Keira is a freestanding monolithic kernel interacting directly with hardware registers, MMU page tables and CPU contexts, `unsafe` Rust is necessary in specific low-level components. This document establishes rigorous guidelines for declaring and auditing `unsafe` code.
 
 ---
 

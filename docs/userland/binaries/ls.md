@@ -8,7 +8,7 @@ The `ls.elf` executable (`/bin/ls.elf` and `/bin/ls`) is a freestanding Ring 3 c
 
 ## 1. Architectural Purpose
 
-Directory listing in UNIX operating systems is fundamentally a userspace utility rather than a supervisor kernel function:
+Directory listing in UNIX environments is fundamentally a userspace utility rather than a supervisor kernel function:
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged Ring 3, querying directories via the `opendir()` and `readdir()` libc wrappers over `sys_getdents` (Vector 86).
 2. **Standard POSIX Flags**: Supports standard flags including all-entries display (`-a`) and detailed columnar file attribute display (`-l`).

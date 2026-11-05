@@ -2,7 +2,7 @@
 
 # `arp.elf` Freestanding Core Utility
 
-The `arp.elf` executable (`/bin/arp.elf` and `/bin/arp`) is a freestanding Ring 3 core network utility that queries and displays the operating system Address Resolution Protocol (ARP) neighbor cache.
+The `arp.elf` executable (`/bin/arp.elf` and `/bin/arp`) is a freestanding Ring 3 core network utility that queries and displays the kernel Address Resolution Protocol (ARP) neighbor cache.
 
 ---
 
@@ -11,7 +11,7 @@ The `arp.elf` executable (`/bin/arp.elf` and `/bin/arp`) is a freestanding Ring 
 ARP neighbor table inspection in Keira adheres to strict separation of concerns and standard virtual filesystem telemetry:
 
 1. **ProcFS Telemetry Interface**: The utility accesses `/proc/net/arp`, which reflects active hardware-to-network protocol address bindings.
-2. **Tabular Formatting**: Displays IP addresses, hardware link layer types (`ether`), ARP cache flags, resolved MAC hardware addresses, netmasks, and interface names.
+2. **Tabular Formatting**: Displays IP addresses, hardware link layer types (`ether`), ARP cache flags, resolved MAC hardware addresses, netmasks and interface names.
 3. **Neighbor Cache Telemetry**: Facilitates diagnosing Layer 2 link-layer resolution without kernel-debugging consoles or third-party userspace daemons.
 
 ---

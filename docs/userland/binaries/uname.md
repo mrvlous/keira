@@ -11,7 +11,7 @@ The `uname.elf` executable (`/bin/uname.elf` and `/bin/uname`) is a freestanding
 System identity reporting is handled cleanly in userspace:
 
 1. **Standard Compatibility**: Provides standard POSIX arguments (`-a`, `-s`, `-n`, `-r`, `-v`, `-m`) for script portability.
-2. **Dynamic ProcFS Integration**: Reads kernel name, release version, and build date from `/proc/version`.
+2. **Dynamic ProcFS Integration**: Reads kernel name, release version and build date from `/proc/version`.
 3. **Hostname Synchronization**: Reads current network hostname dynamically from `/etc/hostname`.
 
 ---
@@ -21,7 +21,7 @@ System identity reporting is handled cleanly in userspace:
 | Option | Long Option | Description |
 | :--- | :--- | :--- |
 | `-a` | `--all` | Print all system information in sequence |
-| `-s` | `--kernel-name` | Print the operating system / kernel name (default) |
+| `-s` | `--kernel-name` | Print the kernel name (default) |
 | `-n` | `--nodename` | Print the network node hostname |
 | `-r` | `--kernel-release` | Print the kernel release version |
 | `-v` | `--kernel-version` | Print the kernel build timestamp |
