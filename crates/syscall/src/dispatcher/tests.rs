@@ -131,4 +131,25 @@ pub mod test {
         let ret = syscall_dispatcher(100, 0, 0, 0, 0, 0, 0);
         assert_eq!(ret, errno_to_ret(EBADF));
     }
+
+    #[test]
+    fn test_poll_dispatch_and_validation() {
+        poll_telemetry_reset();
+
+        // Null pointer with nfds > 0 returns EFAULT
+        let ret = syscall_dispatcher(106, 0, 1, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EFAULT));
+
+        // Excess nfds returns EINVAL
+        let ret = syscall_dispatcher(106, 0x1000, 100, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+
+        // nfds == 0 returns 0 immediately
+        let ret = syscall_dispatcher(106, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, 0);
+
+        // Verify telemetry snapshot function
+        let stats = get_poll_telemetry();
+        assert_eq!(stats.total_polls, 0);
+    }
 }

@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System call routing, exception dispatching, safe user pointer copying, and TSS configuration.
+//! System call routing, exception dispatching, safe user pointer copying and TSS configuration.
 
 #![no_std]
 
@@ -17,7 +17,10 @@ pub mod table;
 pub mod tss;
 pub mod user_copy;
 
-pub use dispatcher::{syscall_dispatcher, validate_fd};
+pub use dispatcher::{
+    get_poll_telemetry, poll_telemetry_reset, syscall_dispatcher, validate_fd, PollFd,
+    PollTelemetry, POLLERR, POLLHUP, POLLIN, POLLNVAL, POLLOUT, POLLPRI,
+};
 pub use exception::{
     exception_dispatcher, get_cpu_exception_count, ExceptionStackFrame, TOTAL_CPU_EXCEPTIONS,
 };

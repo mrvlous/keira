@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! 64-bit fast syscall dispatcher, pointer validation, and hardened userland system call router.
+//! 64-bit fast syscall dispatcher, pointer validation and hardened userland system call router.
 
 pub mod cleanup;
 pub mod handlers;
@@ -18,5 +18,9 @@ pub mod validate;
 mod tests;
 
 pub use cleanup::syscall_task_cleanup_hook;
+pub use handlers::poll::{
+    get_poll_telemetry, poll_telemetry_reset, PollFd, PollTelemetry, POLLERR, POLLHUP, POLLIN,
+    POLLNVAL, POLLOUT, POLLPRI,
+};
 pub use router::{sanitize_ret, syscall_dispatcher};
 pub use validate::{validate_fd, HEAP_MAX_VADDR};
