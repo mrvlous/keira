@@ -60,6 +60,7 @@ graph TD
     M48 --> M49["49. CoW Fork Engine & Virtual Memory Fault Paging<br/><i>O(1) Hash Table, Knuth Shift Deletion, In-Place Promotion, Ring 0 memory -c</i>"]
     M49 --> M50["50. Virtual Memory Areas (VMA) Address Space Inspection & pmap Utility<br/><i>VMA Table, /proc/[pid]/maps, Canonical Formatting, /bin/pmap, Ring 0 vmainfo</i>"]
     M50 --> M51["51. Pure Kernel Demarcation, Application-Layer Bloat Purge & Canonical Rootfs Hardening<br/><i>Ring 0 HTTPS Client Purge, Rootfs FHS Hardening, Freestanding Monolithic Kernel Purity</i>"]
+    M51 --> M52["52. POSIX Synchronous I/O Multiplexing & SYS_POLL<br/><i>Century-Plus Syscall 106, /bin/test_poll, ABI Test 38, Ring 0 pollinfo</i>"]
 ```
 
 ---
@@ -114,6 +115,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 49** | [`cow_fork_v070.md`](cow_fork_v070.md) | `v0.8.0` | O(1) hash table frame refcounting, Knuth backward-shift deletion, CoW fault paging, zero-alloc in-place promotion, /proc/vmstat and supervisor memory -c |
 | **Milestone 50** | [`vma_maps_v070.md`](vma_maps_v070.md) | `v0.8.0` | Virtual memory areas (VMA) address space inspection, /proc/[pid]/maps node, freestanding /bin/pmap utility (42 binaries), fork VMA replication and Ring 0 vmainfo command |
 | **Milestone 51** | [`pure_kernel_demarcation_v080.md`](pure_kernel_demarcation_v080.md) | `v0.8.0` | Pure kernel demarcation, application-layer bloat purge (Ring 0 HTTPS client eradication), canonical FHS rootfs hardening and freestanding monolithic kernel terminology |
+| **Milestone 52** | [`posix_poll_v080.md`](posix_poll_v080.md) | `v0.8.0` | POSIX synchronous I/O multiplexing, Century-Plus Syscall 106 (SYS_POLL), freestanding /bin/test_poll utility (43 binaries), ABI Test 38 and Ring 0 pollinfo command |
 
 ---
 
