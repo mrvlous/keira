@@ -24,6 +24,6 @@ graph TD
 | Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
 | [`table/`](table/README.md) | Syscall Numbers | Vector definitions and standard POSIX syscall numbers |
-| [`dispatcher/`](dispatcher/README.md) | Dispatch Engine | Syscall entrypoint, router, and category handlers |
+| [`dispatcher/`](dispatcher/README.md) | Dispatch Engine | Syscall entrypoint, router and category handlers |
 | [`user_copy/`](user_copy/README.md) | Memory Safety | Validated user pointer bounds checking and copy primitives |
 | [`exception/`](exception/README.md) | Exception Trapping | Hardware exception containment, core dump generation |
