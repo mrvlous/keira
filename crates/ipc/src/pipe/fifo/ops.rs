@@ -253,3 +253,26 @@ pub unsafe fn pipe_table_reset() {
     }
     NEXT_PIPE_ID = 1;
 }
+
+/// Query the I/O readiness status of a pipe endpoint.
+///
+/// Returns `(is_readable, is_writable, is_hangup, is_error)`.
+///
+/// # Safety
+/// Directly reads `PIPE_TABLE`.
+pub unsafe fn query_pipe_readiness(pipe_id: u32, is_write: bool) -> (bool, bool, bool, bool) {
+    for slot in PIPE_TABLE.iter() {
+        if slot.in_use && slot.id == pipe_id {
+            if is_write {
+                let err = slot.readers_count == 0;
+                let writable = !err && slot.count < PIPE_BUFFER_CAPACITY;
+                return (false, writable, false, err);
+            } else {
+                let hangup = slot.writers_count == 0;
+                let readable = slot.count > 0 || hangup;
+                return (readable, false, hangup, false);
+            }
+        }
+    }
+    (false, false, false, true)
+}

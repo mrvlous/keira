@@ -18,6 +18,6 @@ pub use buffer::{
 };
 pub use ops::{
     close_pipe_read, close_pipe_write, create_pipe, create_pipe_channel, dup_pipe_endpoint,
-    get_pipe_stats, get_pipe_table, pipe_table_reset, read_pipe, read_pipe_channel, write_pipe,
-    write_pipe_channel,
+    get_pipe_stats, get_pipe_table, pipe_table_reset, query_pipe_readiness, read_pipe,
+    read_pipe_channel, write_pipe, write_pipe_channel,
 };

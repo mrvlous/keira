@@ -146,6 +146,22 @@ pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
                         ready |= EPOLLOUT;
                     }
                     return ready;
+                } else if desc.is_pipe {
+                    let (readable, writable, hangup, error) =
+                        crate::pipe::query_pipe_readiness(desc.pipe_id, desc.pipe_write);
+                    if (requested_events & EPOLLIN) != 0 && readable {
+                        ready |= EPOLLIN;
+                    }
+                    if (requested_events & EPOLLOUT) != 0 && writable {
+                        ready |= EPOLLOUT;
+                    }
+                    if hangup {
+                        ready |= EPOLLHUP;
+                    }
+                    if error {
+                        ready |= EPOLLERR;
+                    }
+                    return ready;
                 } else {
                     if (requested_events & EPOLLIN) != 0 {
                         ready |= EPOLLIN;

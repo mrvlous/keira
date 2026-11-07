@@ -47,9 +47,9 @@ pub use mqueue::queue::{
 };
 pub use pipe::fifo::{
     close_pipe_read, close_pipe_write, create_pipe, create_pipe_channel, dup_pipe_endpoint,
-    get_pipe_stats, get_pipe_table, pipe_table_reset, read_pipe, read_pipe_channel, write_pipe,
-    write_pipe_channel, PipeBuffer, PipeChannel, MAX_PIPES, O_CLOEXEC, O_NONBLOCK,
-    PIPE_BUFFER_CAPACITY, PIPE_BUFFER_SIZE, PIPE_TABLE, SYSTEM_PIPE,
+    get_pipe_stats, get_pipe_table, pipe_table_reset, query_pipe_readiness, read_pipe,
+    read_pipe_channel, write_pipe, write_pipe_channel, PipeBuffer, PipeChannel, MAX_PIPES,
+    O_CLOEXEC, O_NONBLOCK, PIPE_BUFFER_CAPACITY, PIPE_BUFFER_SIZE, PIPE_TABLE, SYSTEM_PIPE,
 };
 pub use pipe::splice::{sys_splice, sys_vmsplice};
 pub use shm::segment::{

@@ -118,4 +118,40 @@ mod test {
         assert!(sys_vmsplice(0, 0, 4, 0).is_ok());
         assert!(sys_vmsplice(0, 0, 2048, 0).is_err());
     }
+
+    #[test]
+    fn test_pipe_readiness_query() {
+        unsafe {
+            pipe_table_reset();
+            let pid = create_pipe_channel(0).expect("create_pipe_channel");
+
+            // Empty pipe: read end not readable, write end writable
+            let (r, w, hup, err) = query_pipe_readiness(pid, false);
+            assert!(!r);
+            assert!(!w);
+            assert!(!hup);
+            assert!(!err);
+
+            let (r, w, hup, err) = query_pipe_readiness(pid, true);
+            assert!(!r);
+            assert!(w);
+            assert!(!hup);
+            assert!(!err);
+
+            // Write data to pipe
+            write_pipe_channel(pid, b"test_payload").expect("write");
+
+            // Now read end should be readable
+            let (r, _, _, _) = query_pipe_readiness(pid, false);
+            assert!(r);
+
+            // Close writer: read end should indicate hangup
+            close_pipe_write(pid);
+            let (r, _, hup, _) = query_pipe_readiness(pid, false);
+            assert!(r);
+            assert!(hup);
+
+            close_pipe_read(pid);
+        }
+    }
 }
