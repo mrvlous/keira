@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <syscall.h>
 #include <unistd.h>
 
@@ -98,4 +99,13 @@ int isatty(int fd) {
     if (fd >= 0 && fd <= 2)
         return 1;
     return 0;
+}
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
+    int ret = sys_poll((void *)fds, (unsigned int)nfds, timeout);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return ret;
 }

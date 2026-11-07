@@ -126,3 +126,8 @@ int sys_stat(const char *pathname, struct stat *statbuf) {
 int sys_fstat(int fd, struct stat *statbuf) {
     return (int)syscall2(SYS_FSTAT, (uint64_t)fd, (uint64_t)(uintptr_t)statbuf);
 }
+
+int sys_poll(void *fds, unsigned int nfds, int timeout) {
+    return (int)syscall3(SYS_POLL, (uint64_t)(uintptr_t)fds, (uint64_t)nfds,
+                         (uint64_t)(int64_t)timeout);
+}
