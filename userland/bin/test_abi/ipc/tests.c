@@ -386,5 +386,110 @@ int run_test_abi_ipc(void) {
 
     puts("  [OK]   UNIX domain socketpair (AF_UNIX & Syscall 105) bidirectional IPC verified");
 
+    /* 38. POSIX Synchronous I/O Multiplexing & sys_poll (Syscall 106) */
+    puts("  [TEST] POSIX Synchronous I/O multiplexing & sys_poll (Syscall 106)...");
+    int poll_pfd[2] = {-1, -1};
+    if (pipe(poll_pfd) < 0) {
+        printf("  [FAIL] pipe() for poll test failed: errno=%d\n", errno);
+        return 1;
+    }
+
+    struct pollfd pfds[2];
+    memset(pfds, 0, sizeof(pfds));
+    pfds[0].fd = poll_pfd[0];
+    pfds[0].events = POLLIN;
+    pfds[1].fd = poll_pfd[1];
+    pfds[1].events = POLLOUT;
+
+    /* Empty pipe: only writer should be ready */
+    int poll_ret = poll(pfds, 2, 0);
+    if (poll_ret != 1) {
+        printf("  [FAIL] Initial poll on pipe returned %d, expected 1\n", poll_ret);
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+    if ((pfds[0].revents & POLLIN) != 0 || (pfds[1].revents & POLLOUT) == 0) {
+        printf("  [FAIL] Initial poll revents mismatch: rd=0x%x, wr=0x%x\n",
+               pfds[0].revents, pfds[1].revents);
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+
+    /* Write data into pipe */
+    const char *poll_msg = "ABI_POLL_VERIFY";
+    if (write(poll_pfd[1], poll_msg, strlen(poll_msg)) != (ssize_t)strlen(poll_msg)) {
+        puts("  [FAIL] write to pipe failed during poll test");
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+
+    /* Post-write: both reader and writer must be ready */
+    poll_ret = poll(pfds, 2, 0);
+    if (poll_ret != 2) {
+        printf("  [FAIL] Post-write poll on pipe returned %d, expected 2\n", poll_ret);
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+    if ((pfds[0].revents & POLLIN) == 0 || (pfds[1].revents & POLLOUT) == 0) {
+        printf("  [FAIL] Post-write poll revents mismatch: rd=0x%x, wr=0x%x\n",
+               pfds[0].revents, pfds[1].revents);
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+
+    /* Read back data */
+    char poll_buf[32];
+    memset(poll_buf, 0, sizeof(poll_buf));
+    read(poll_pfd[0], poll_buf, sizeof(poll_buf) - 1);
+
+    /* Test negative fd ignored and invalid fd returns POLLNVAL */
+    struct pollfd edge_fds[2];
+    memset(edge_fds, 0, sizeof(edge_fds));
+    edge_fds[0].fd = -1;
+    edge_fds[0].events = POLLIN;
+    edge_fds[1].fd = 30;
+    edge_fds[1].events = POLLIN;
+
+    poll_ret = poll(edge_fds, 2, 0);
+    if (poll_ret != 1 || edge_fds[0].revents != 0 || (edge_fds[1].revents & POLLNVAL) == 0) {
+        printf("  [FAIL] Edge case poll mismatch: ret=%d, neg_rev=0x%x, bad_rev=0x%x\n",
+               poll_ret, edge_fds[0].revents, edge_fds[1].revents);
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+
+    /* Test timeout on empty pipe */
+    struct pollfd timeout_fd;
+    memset(&timeout_fd, 0, sizeof(timeout_fd));
+    timeout_fd.fd = poll_pfd[0];
+    timeout_fd.events = POLLIN;
+    poll_ret = poll(&timeout_fd, 1, 5);
+    if (poll_ret != 0 || timeout_fd.revents != 0) {
+        printf("  [FAIL] Timeout poll expected 0, got %d (revents=0x%x)\n",
+               poll_ret, timeout_fd.revents);
+        close(poll_pfd[0]);
+        close(poll_pfd[1]);
+        return 1;
+    }
+
+    /* Close writer and assert POLLHUP on reader */
+    close(poll_pfd[1]);
+    poll_ret = poll(&timeout_fd, 1, 0);
+    if (poll_ret != 1 || (timeout_fd.revents & POLLHUP) == 0) {
+        printf("  [FAIL] Hangup poll mismatch: ret=%d, revents=0x%x\n",
+               poll_ret, timeout_fd.revents);
+        close(poll_pfd[0]);
+        return 1;
+    }
+    close(poll_pfd[0]);
+
+    puts("  [OK]   POSIX Synchronous I/O multiplexing & sys_poll (Syscall 106) verified");
+
     return 0;
 }
