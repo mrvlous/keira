@@ -35,6 +35,8 @@ pub const COMMANDS_LIST: &[&str] = &[
     "pci",
     "pidinfo",
     "pipes",
+    "poll",
+    "pollinfo",
     "power",
     "procs",
     "regs",

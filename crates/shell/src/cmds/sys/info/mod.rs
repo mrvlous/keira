@@ -14,6 +14,7 @@ pub mod cpu;
 pub mod irq;
 pub mod memory;
 pub mod pipes;
+pub mod pollinfo;
 pub mod regs;
 pub mod rlimit;
 pub mod rnginfo;

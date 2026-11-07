@@ -216,3 +216,13 @@ fn test_sys_vmainfo() {
     let mut args_default = "".split_whitespace();
     vmainfo::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_pollinfo() {
+    let mut args_help = "pollinfo --help".split_whitespace();
+    args_help.next();
+    pollinfo::run(&mut args_help);
+
+    let mut args_default = "".split_whitespace();
+    pollinfo::run(&mut args_default);
+}

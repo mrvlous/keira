@@ -36,6 +36,9 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str("  rlimit         Inspect process resource limits and sandbox quotas\n");
     vga::print_str("  unixsock       Display active UNIX domain sockets and IPC channels (unix)\n");
     vga::print_str("  vmainfo [pid]  Inspect virtual memory areas and process mappings (vma)\n");
+    vga::print_str(
+        "  pollinfo       Display POSIX I/O multiplexing telemetry and metrics (poll)\n",
+    );
     vga::print_str("Emergency Control:\n");
     vga::print_str("  disk           Inspect storage drives and block device geometry\n");
     vga::print_str("  dcache         Inspect VFS in-memory dentry cache telemetry and hits\n");
