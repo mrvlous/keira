@@ -2,4 +2,4 @@
 
 # Mandatory Access Control (MAC)
 
-Enforces role-based path access policies across `Kernel`, `System`, `User`, and `Network` security domains.
+Enforces role-based path access policies across `Kernel`, `System`, `User` and `Network` security domains.

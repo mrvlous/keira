@@ -63,7 +63,7 @@ pub struct Task {
 ## 3. Preemption & Context Switch (`switch_to`)
 
 When the Local APIC timer fires an interrupt:
-1. The CPU pushes `%cs`, `%rip`, `%rflags`, `%ss`, and `%rsp` onto the current task's kernel stack.
+1. The CPU pushes `%cs`, `%rip`, `%rflags`, `%ss` and `%rsp` onto the current task's kernel stack.
 2. The ISR saves general-purpose registers (`%rax`, `%rbx`, `%rcx`, `%rdx`, `%rsi`, `%rdi`, `%rbp`, `%r8`-`%r15`).
 3. The scheduler selects the next `Ready` task from the run queue.
 4. If switching address spaces, `CR3` is reloaded with the target task's page directory.

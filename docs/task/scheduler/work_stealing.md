@@ -25,7 +25,7 @@ Keira replaces the global runqueue bottleneck with a decentralized **Chase-Lev w
 * **Pointers**: `bottom: AtomicUsize` and `top: AtomicUsize`.
 * **Operations**:
   - `push(task_idx)`: Owner stores at `buffer[b & DEQUE_MASK]`, then stores `b + 1` with `Ordering::Release`.
-  - `pop()`: Owner decrements `bottom`, issues `Ordering::SeqCst` memory fence, and checks remaining slots. Resolves single-element races against remote thieves via atomic CAS on `top`.
+  - `pop()`: Owner decrements `bottom`, issues `Ordering::SeqCst` memory fence and checks remaining slots. Resolves single-element races against remote thieves via atomic CAS on `top`.
   - `steal()`: Remote thieves pin the active epoch via `keira_core::sync::ebr::pin()` and perform `compare_exchange` on `top` (`Ordering::SeqCst`).
 
 ### B. Per-CPU State & Deduplication (`percpu.rs`)

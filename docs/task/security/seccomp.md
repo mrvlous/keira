@@ -2,5 +2,5 @@
 
 # Seccomp System Call Filtering
 
-* **Strict Mode**: Only permits `read`, `write`, `exit`, and `sigreturn`.
+* **Strict Mode**: Only permits `read`, `write`, `exit` and `sigreturn`.
 * **Filter Mode**: 128-bit bitmask whitelist allowing fine-grained syscall restrictions.

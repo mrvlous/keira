@@ -2,7 +2,7 @@
 
 # Keira Task Management & Scheduling
 
-The `task` domain governs process control blocks, preemptive scheduling, POSIX signal dispatch, cgroups resource controls, and security policies.
+The `task` domain governs process control blocks, preemptive scheduling, POSIX signal dispatch, cgroups resource controls and security policies.
 
 ---
 

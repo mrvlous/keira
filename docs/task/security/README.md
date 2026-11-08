@@ -2,4 +2,4 @@
 
 # Task Security & Isolation Policies
 
-Documents task-level sandboxing, Seccomp BPF filtering, and Mandatory Access Control.
+Documents task-level sandboxing, Seccomp BPF filtering and Mandatory Access Control.
