@@ -491,5 +491,117 @@ int run_test_abi_ipc(void) {
 
     puts("  [OK]   POSIX Synchronous I/O multiplexing & sys_poll (Syscall 106) verified");
 
+    /* 39. POSIX Synchronous I/O Multiplexing & sys_select (Syscall 107) */
+    puts("  [TEST] POSIX Synchronous I/O multiplexing & sys_select (Syscall 107)...");
+    int sel_pfd[2] = {-1, -1};
+    if (pipe(sel_pfd) < 0) {
+        printf("  [FAIL] pipe() for select test failed: errno=%d\n", errno);
+        return 1;
+    }
+
+    fd_set sel_rfds;
+    fd_set sel_wfds;
+    FD_ZERO(&sel_rfds);
+    FD_ZERO(&sel_wfds);
+    FD_SET(sel_pfd[0], &sel_rfds);
+    FD_SET(sel_pfd[1], &sel_wfds);
+
+    int sel_max = (sel_pfd[0] > sel_pfd[1]) ? sel_pfd[0] : sel_pfd[1];
+    struct timeval sel_tv;
+    sel_tv.tv_sec = 0;
+    sel_tv.tv_usec = 0;
+
+    int sel_ret = select(sel_max + 1, &sel_rfds, &sel_wfds, NULL, &sel_tv);
+    if (sel_ret != 1 || FD_ISSET(sel_pfd[0], &sel_rfds) || !FD_ISSET(sel_pfd[1], &sel_wfds)) {
+        printf("  [FAIL] Initial select mismatch: ret=%d, rd=%d, wr=%d\n",
+               sel_ret, FD_ISSET(sel_pfd[0], &sel_rfds), FD_ISSET(sel_pfd[1], &sel_wfds));
+        close(sel_pfd[0]);
+        close(sel_pfd[1]);
+        return 1;
+    }
+
+    /* Write data into pipe and re-select */
+    const char *sel_msg = "ABI_SELECT_VERIFY";
+    if (write(sel_pfd[1], sel_msg, strlen(sel_msg)) != (ssize_t)strlen(sel_msg)) {
+        puts("  [FAIL] write to pipe failed during select test");
+        close(sel_pfd[0]);
+        close(sel_pfd[1]);
+        return 1;
+    }
+
+    FD_ZERO(&sel_rfds);
+    FD_ZERO(&sel_wfds);
+    FD_SET(sel_pfd[0], &sel_rfds);
+    FD_SET(sel_pfd[1], &sel_wfds);
+    sel_tv.tv_sec = 0;
+    sel_tv.tv_usec = 0;
+
+    sel_ret = select(sel_max + 1, &sel_rfds, &sel_wfds, NULL, &sel_tv);
+    if (sel_ret != 2 || !FD_ISSET(sel_pfd[0], &sel_rfds) || !FD_ISSET(sel_pfd[1], &sel_wfds)) {
+        printf("  [FAIL] Post-write select mismatch: ret=%d, rd=%d, wr=%d\n",
+               sel_ret, FD_ISSET(sel_pfd[0], &sel_rfds), FD_ISSET(sel_pfd[1], &sel_wfds));
+        close(sel_pfd[0]);
+        close(sel_pfd[1]);
+        return 1;
+    }
+
+    /* Drain pipe */
+    char sel_buf[32];
+    memset(sel_buf, 0, sizeof(sel_buf));
+    read(sel_pfd[0], sel_buf, sizeof(sel_buf) - 1);
+
+    /* Test EBADF error return on invalid unopened descriptor */
+    fd_set bad_set;
+    FD_ZERO(&bad_set);
+    FD_SET(30, &bad_set);
+    sel_tv.tv_sec = 0;
+    sel_tv.tv_usec = 0;
+    if (select(31, &bad_set, NULL, NULL, &sel_tv) != -1 || errno != EBADF) {
+        printf("  [FAIL] Select on invalid descriptor expected -1 with EBADF, got errno=%d\n", errno);
+        close(sel_pfd[0]);
+        close(sel_pfd[1]);
+        return 1;
+    }
+
+    /* Test microsecond timeout expiration */
+    FD_ZERO(&sel_rfds);
+    FD_SET(sel_pfd[0], &sel_rfds);
+    sel_tv.tv_sec = 0;
+    sel_tv.tv_usec = 4000;
+    sel_ret = select(sel_pfd[0] + 1, &sel_rfds, NULL, NULL, &sel_tv);
+    if (sel_ret != 0 || FD_ISSET(sel_pfd[0], &sel_rfds)) {
+        printf("  [FAIL] Timeout select expected 0, got %d\n", sel_ret);
+        close(sel_pfd[0]);
+        close(sel_pfd[1]);
+        return 1;
+    }
+
+    /* Test high-resolution null sleep */
+    sel_tv.tv_sec = 0;
+    sel_tv.tv_usec = 1000;
+    if (select(0, NULL, NULL, NULL, &sel_tv) != 0) {
+        puts("  [FAIL] Null select sleep failed");
+        close(sel_pfd[0]);
+        close(sel_pfd[1]);
+        return 1;
+    }
+
+    /* Close writer and assert EOF read readiness */
+    close(sel_pfd[1]);
+    FD_ZERO(&sel_rfds);
+    FD_SET(sel_pfd[0], &sel_rfds);
+    sel_tv.tv_sec = 0;
+    sel_tv.tv_usec = 0;
+    sel_ret = select(sel_pfd[0] + 1, &sel_rfds, NULL, NULL, &sel_tv);
+    if (sel_ret != 1 || !FD_ISSET(sel_pfd[0], &sel_rfds)) {
+        printf("  [FAIL] Hangup select mismatch: ret=%d, rd=%d\n",
+               sel_ret, FD_ISSET(sel_pfd[0], &sel_rfds));
+        close(sel_pfd[0]);
+        return 1;
+    }
+    close(sel_pfd[0]);
+
+    puts("  [OK]   POSIX Synchronous I/O multiplexing & sys_select (Syscall 107) verified");
+
     return 0;
 }
