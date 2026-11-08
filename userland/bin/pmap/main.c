@@ -152,12 +152,8 @@ static void dump_process_maps(int pid) {
                 mode[2] = (perms[2] != '-') ? perms[2] : '-';
                 mode[3] = '\0';
 
-                printf("%016llx %7llu %-5s %016llx %s\n",
-                       (unsigned long long)start_addr,
-                       (unsigned long long)kbytes,
-                       mode,
-                       (unsigned long long)offset,
-                       mapping);
+                printf("%016llx %7llu %-5s %016llx %s\n", (unsigned long long)start_addr,
+                       (unsigned long long)kbytes, mode, (unsigned long long)offset, mapping);
             }
         }
 
@@ -200,4 +196,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-

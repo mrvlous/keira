@@ -410,8 +410,8 @@ int run_test_abi_ipc(void) {
         return 1;
     }
     if ((pfds[0].revents & POLLIN) != 0 || (pfds[1].revents & POLLOUT) == 0) {
-        printf("  [FAIL] Initial poll revents mismatch: rd=0x%x, wr=0x%x\n",
-               pfds[0].revents, pfds[1].revents);
+        printf("  [FAIL] Initial poll revents mismatch: rd=0x%x, wr=0x%x\n", pfds[0].revents,
+               pfds[1].revents);
         close(poll_pfd[0]);
         close(poll_pfd[1]);
         return 1;
@@ -435,8 +435,8 @@ int run_test_abi_ipc(void) {
         return 1;
     }
     if ((pfds[0].revents & POLLIN) == 0 || (pfds[1].revents & POLLOUT) == 0) {
-        printf("  [FAIL] Post-write poll revents mismatch: rd=0x%x, wr=0x%x\n",
-               pfds[0].revents, pfds[1].revents);
+        printf("  [FAIL] Post-write poll revents mismatch: rd=0x%x, wr=0x%x\n", pfds[0].revents,
+               pfds[1].revents);
         close(poll_pfd[0]);
         close(poll_pfd[1]);
         return 1;
@@ -457,8 +457,8 @@ int run_test_abi_ipc(void) {
 
     poll_ret = poll(edge_fds, 2, 0);
     if (poll_ret != 1 || edge_fds[0].revents != 0 || (edge_fds[1].revents & POLLNVAL) == 0) {
-        printf("  [FAIL] Edge case poll mismatch: ret=%d, neg_rev=0x%x, bad_rev=0x%x\n",
-               poll_ret, edge_fds[0].revents, edge_fds[1].revents);
+        printf("  [FAIL] Edge case poll mismatch: ret=%d, neg_rev=0x%x, bad_rev=0x%x\n", poll_ret,
+               edge_fds[0].revents, edge_fds[1].revents);
         close(poll_pfd[0]);
         close(poll_pfd[1]);
         return 1;
@@ -471,8 +471,8 @@ int run_test_abi_ipc(void) {
     timeout_fd.events = POLLIN;
     poll_ret = poll(&timeout_fd, 1, 5);
     if (poll_ret != 0 || timeout_fd.revents != 0) {
-        printf("  [FAIL] Timeout poll expected 0, got %d (revents=0x%x)\n",
-               poll_ret, timeout_fd.revents);
+        printf("  [FAIL] Timeout poll expected 0, got %d (revents=0x%x)\n", poll_ret,
+               timeout_fd.revents);
         close(poll_pfd[0]);
         close(poll_pfd[1]);
         return 1;
@@ -482,8 +482,8 @@ int run_test_abi_ipc(void) {
     close(poll_pfd[1]);
     poll_ret = poll(&timeout_fd, 1, 0);
     if (poll_ret != 1 || (timeout_fd.revents & POLLHUP) == 0) {
-        printf("  [FAIL] Hangup poll mismatch: ret=%d, revents=0x%x\n",
-               poll_ret, timeout_fd.revents);
+        printf("  [FAIL] Hangup poll mismatch: ret=%d, revents=0x%x\n", poll_ret,
+               timeout_fd.revents);
         close(poll_pfd[0]);
         return 1;
     }
@@ -513,8 +513,8 @@ int run_test_abi_ipc(void) {
 
     int sel_ret = select(sel_max + 1, &sel_rfds, &sel_wfds, NULL, &sel_tv);
     if (sel_ret != 1 || FD_ISSET(sel_pfd[0], &sel_rfds) || !FD_ISSET(sel_pfd[1], &sel_wfds)) {
-        printf("  [FAIL] Initial select mismatch: ret=%d, rd=%d, wr=%d\n",
-               sel_ret, FD_ISSET(sel_pfd[0], &sel_rfds), FD_ISSET(sel_pfd[1], &sel_wfds));
+        printf("  [FAIL] Initial select mismatch: ret=%d, rd=%d, wr=%d\n", sel_ret,
+               FD_ISSET(sel_pfd[0], &sel_rfds), FD_ISSET(sel_pfd[1], &sel_wfds));
         close(sel_pfd[0]);
         close(sel_pfd[1]);
         return 1;
@@ -538,8 +538,8 @@ int run_test_abi_ipc(void) {
 
     sel_ret = select(sel_max + 1, &sel_rfds, &sel_wfds, NULL, &sel_tv);
     if (sel_ret != 2 || !FD_ISSET(sel_pfd[0], &sel_rfds) || !FD_ISSET(sel_pfd[1], &sel_wfds)) {
-        printf("  [FAIL] Post-write select mismatch: ret=%d, rd=%d, wr=%d\n",
-               sel_ret, FD_ISSET(sel_pfd[0], &sel_rfds), FD_ISSET(sel_pfd[1], &sel_wfds));
+        printf("  [FAIL] Post-write select mismatch: ret=%d, rd=%d, wr=%d\n", sel_ret,
+               FD_ISSET(sel_pfd[0], &sel_rfds), FD_ISSET(sel_pfd[1], &sel_wfds));
         close(sel_pfd[0]);
         close(sel_pfd[1]);
         return 1;
@@ -557,7 +557,8 @@ int run_test_abi_ipc(void) {
     sel_tv.tv_sec = 0;
     sel_tv.tv_usec = 0;
     if (select(31, &bad_set, NULL, NULL, &sel_tv) != -1 || errno != EBADF) {
-        printf("  [FAIL] Select on invalid descriptor expected -1 with EBADF, got errno=%d\n", errno);
+        printf("  [FAIL] Select on invalid descriptor expected -1 with EBADF, got errno=%d\n",
+               errno);
         close(sel_pfd[0]);
         close(sel_pfd[1]);
         return 1;
@@ -594,8 +595,8 @@ int run_test_abi_ipc(void) {
     sel_tv.tv_usec = 0;
     sel_ret = select(sel_pfd[0] + 1, &sel_rfds, NULL, NULL, &sel_tv);
     if (sel_ret != 1 || !FD_ISSET(sel_pfd[0], &sel_rfds)) {
-        printf("  [FAIL] Hangup select mismatch: ret=%d, rd=%d\n",
-               sel_ret, FD_ISSET(sel_pfd[0], &sel_rfds));
+        printf("  [FAIL] Hangup select mismatch: ret=%d, rd=%d\n", sel_ret,
+               FD_ISSET(sel_pfd[0], &sel_rfds));
         close(sel_pfd[0]);
         return 1;
     }

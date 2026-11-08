@@ -14,4 +14,3 @@
 #include <poll.h>
 
 #endif /* _SYS_POLL_H */
-

@@ -16,4 +16,3 @@ struct sockaddr_un {
 };
 
 #endif /* _SYS_UN_H */
-

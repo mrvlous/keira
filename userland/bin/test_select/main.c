@@ -227,15 +227,19 @@ int main(int argc, char **argv) {
     printf("Keira Kernel POSIX select() Subsystem Verification\n");
     printf("==================================================\n");
 
-    if (test_select_pipe_lifecycle() != 0) return 1;
-    if (test_select_bad_fd_handling() != 0) return 1;
-    if (test_select_timeout_expiration() != 0) return 1;
-    if (test_select_null_bitmask_sleep() != 0) return 1;
-    if (test_select_eof_hangup_detection() != 0) return 1;
+    if (test_select_pipe_lifecycle() != 0)
+        return 1;
+    if (test_select_bad_fd_handling() != 0)
+        return 1;
+    if (test_select_timeout_expiration() != 0)
+        return 1;
+    if (test_select_null_bitmask_sleep() != 0)
+        return 1;
+    if (test_select_eof_hangup_detection() != 0)
+        return 1;
 
     printf("==================================================\n");
     printf("[DONE] All POSIX select test cases PASSED.\n");
     printf("==================================================\n");
     return 0;
 }
-

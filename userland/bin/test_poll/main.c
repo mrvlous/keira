@@ -117,7 +117,8 @@ static int test_poll_negative_and_invalid_fd(void) {
     }
 
     if ((fds[1].revents & POLLNVAL) == 0) {
-        printf("  [FAILED] Unopened descriptor did not return POLLNVAL (revents=%d)\n", fds[1].revents);
+        printf("  [FAILED] Unopened descriptor did not return POLLNVAL (revents=%d)\n",
+               fds[1].revents);
         return 1;
     }
 
@@ -202,14 +203,17 @@ int main(int argc, char **argv) {
     printf("Keira Kernel POSIX I/O Multiplexing Verification\n");
     printf("==================================================\n");
 
-    if (test_poll_pipe_lifecycle() != 0) return 1;
-    if (test_poll_negative_and_invalid_fd() != 0) return 1;
-    if (test_poll_timeout_expiration() != 0) return 1;
-    if (test_poll_hangup_detection() != 0) return 1;
+    if (test_poll_pipe_lifecycle() != 0)
+        return 1;
+    if (test_poll_negative_and_invalid_fd() != 0)
+        return 1;
+    if (test_poll_timeout_expiration() != 0)
+        return 1;
+    if (test_poll_hangup_detection() != 0)
+        return 1;
 
     printf("==================================================\n");
     printf("[DONE] All POSIX poll test cases PASSED.\n");
     printf("==================================================\n");
     return 0;
 }
-

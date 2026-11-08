@@ -157,4 +157,3 @@ long syscall(long number, ...) {
     va_end(args);
     return (long)syscall6((uint64_t)number, a1, a2, a3, a4, a5, a6);
 }
-

@@ -113,8 +113,8 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
            struct timeval *timeout) {
-    int ret = sys_select(nfds, (void *)readfds, (void *)writefds,
-                         (void *)exceptfds, (void *)timeout);
+    int ret =
+        sys_select(nfds, (void *)readfds, (void *)writefds, (void *)exceptfds, (void *)timeout);
     if (ret < 0) {
         errno = -ret;
         return -1;
