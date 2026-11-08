@@ -24,7 +24,7 @@ pub fn load_hostname() {
         }
 
         let mut buf = [0u8; 32];
-        if let Ok(len) = keira_fs::fat::read_file_content(HOSTNAME_PATH, &mut buf) {
+        if let Ok(len) = keira_fs::vfs::read_file(HOSTNAME_PATH, &mut buf) {
             let mut actual_len = len;
             while actual_len > 0
                 && (buf[actual_len - 1] == b'\n'
