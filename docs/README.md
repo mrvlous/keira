@@ -30,5 +30,5 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3, AF_UNIX and firewall |
 | **Cryptography** | [`crypto/`](crypto/README.md) | SHA-256, AES-128-GCM, Curve25519, TPM 2.0 enclave, Seccomp BPF and MAC |
 | **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete and 20 emergency diagnostic commands |
-| **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, freestanding KCC compiler, HTTP fetch, 43 core utility binaries, dynamic ELF loader and multi-user |
+| **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, freestanding KCC compiler, HTTP fetch, 44 core utility binaries, dynamic ELF loader and multi-user |
 | **Contributor Guide** | [`contributing/`](contributing/README.md) | Environment setup, build targets, coding style, testing and debugging |
