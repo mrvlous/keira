@@ -8,18 +8,18 @@ Ring 0 built from scratch in safe Rust, Assembly and C, supporting both modern
 Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
-Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 104 POSIX
+Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 107 POSIX
 system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
-with I/O redirection and pipelines, 41 native core utilities (cat.elf, chmod.elf, chown.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
-canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 45+ verified ABI security test vectors, bare-metal io_uring asynchronous I/O engine, High-Precision
-Event Timer (HPET) monotonic clocks, an interactive 19-command emergency debugger and freestanding native C compiler (kcc.elf).
+with I/O redirection and pipelines, 44 native core utilities (cat.elf, chmod.elf, chown.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, test_poll.elf, test_select.elf, pmap.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
+canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 39 verified master ABI security test suites, bare-metal io_uring asynchronous I/O engine, High-Precision
+Event Timer (HPET) monotonic clocks, an interactive supervisor diagnostic shell with 50+ commands and freestanding native C compiler (kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 46 chronological engineering milestones:
+of computer systems across 53 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -36,6 +36,13 @@ of computer systems across 46 chronological engineering milestones:
 * Milestone 44: Kernel ASLR (KASLR) & Userland Randomization (CPU RDRAND/RDSEED, SplitMix64 Mixer, Stack/Mmap/Brk ASLR and Ring 0 aslrinfo Command).
 * Milestone 45: Dynamic Stack Canary & Cryptographic Hardware Entropy (AT_RANDOM Auxv, __stack_chk_guard, Century Syscall 101 SYS_GETRANDOM, /dev/urandom Silicon Integration and Ring 0 rnginfo Command).
 * Milestone 46: Process Resource Limits (RLIMIT), Memory/FD Quota Enforcement & Process Sandboxing (SYS_GETRLIMIT, SYS_SETRLIMIT, SYS_PRLIMIT64, /proc/[pid]/limits and Ring 0 rlimit Command).
+* Milestone 47: In-Kernel UNIX Domain Sockets (AF_UNIX), Zero-Copy Streaming, Century-Plus Syscall 105 (SYS_SOCKETPAIR), /proc/net/unix and Ring 0 unixsock Command.
+* Milestone 48: Industrial-Grade Kernel Logging & Telemetry (32 KiB Ring Buffer, pr_* Macros, Syscall 44, Live dmesg).
+* Milestone 49: CoW Fork Engine & Virtual Memory Fault Paging (O(1) Hash Table, Knuth Shift Deletion, In-Place Promotion, Ring 0 memory -c).
+* Milestone 50: Virtual Memory Areas (VMA) Address Space Inspection & pmap Utility (VMA Table, /proc/[pid]/maps, Canonical Formatting, /bin/pmap, Ring 0 vmainfo).
+* Milestone 51: Pure Kernel Demarcation, Application-Layer Bloat Purge & Canonical Rootfs Hardening (Ring 0 HTTPS Client Purge, Rootfs FHS Hardening, Freestanding Monolithic Kernel Purity).
+* Milestone 52: POSIX Synchronous I/O Multiplexing & SYS_POLL (Century-Plus Syscall 106, /bin/test_poll, ABI Test 38, Ring 0 pollinfo).
+* Milestone 53: POSIX Synchronous I/O Multiplexing Triad & SYS_SELECT (Century-Plus Syscall 107, /bin/test_select, ABI Test 39, Ring 0 selectinfo).
 
 Read the detailed engineering journal: docs/journey/README.md
 System architecture overview: docs/architecture/README.md
