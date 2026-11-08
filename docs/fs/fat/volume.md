@@ -2,7 +2,7 @@
 
 # FAT12 / FAT16 / FAT32 Filesystem Driver
 
-Keira implements a robust, spec-compliant FAT filesystem driver (`crates/fs/src/fat/`) supporting volume mounting, cluster chain traversal, file creation, and data streaming.
+Keira implements a robust, spec-compliant FAT filesystem driver (`crates/fs/src/fat/`) supporting volume mounting, cluster chain traversal, file creation and data streaming.
 
 ---
 

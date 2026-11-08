@@ -2,4 +2,4 @@
 
 # POSIX File Permissions & Access Control
 
-Tracks standard POSIX mode bits (`rwxrwxrwx`) enforcing user, group, and other permission checks.
+Tracks standard POSIX mode bits (`rwxrwxrwx`) enforcing user, group and other permission checks.

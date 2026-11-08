@@ -2,4 +2,4 @@
 
 # Storage Supporting Subsystems
 
-Ancillary storage subsystems supporting caching, volume management, and early initrd archives.
+Ancillary storage subsystems supporting caching, volume management and early initrd archives.

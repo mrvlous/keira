@@ -2,7 +2,7 @@
 
 # EXT4 Filesystem Superblock & Extents
 
-Keira incorporates a read-only EXT4 driver (`crates/fs/src/ext4/`) capable of mounting Linux partitions, parsing inodes, and traversing B-tree extent trees.
+Keira incorporates a read-only EXT4 driver (`crates/fs/src/ext4/`) capable of mounting Linux partitions, parsing inodes and traversing B-tree extent trees.
 
 ---
 
