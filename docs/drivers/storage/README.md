@@ -2,4 +2,4 @@
 
 # Block Storage Drivers
 
-Drivers for hard disks, solid state drives, and memory-backed disks (`crates/io/src/storage/`).
+Drivers for hard disks, solid state drives and memory-backed disks (`crates/io/src/storage/`).

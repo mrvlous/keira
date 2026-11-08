@@ -2,7 +2,7 @@
 
 # Keira Hardware Device Drivers
 
-The `drivers` domain contains low-level device drivers for block storage, video displays, serial ports, buses, and terminal line disciplines.
+The `drivers` domain contains low-level device drivers for block storage, video displays, serial ports, buses and terminal line disciplines.
 
 ---
 
@@ -23,7 +23,7 @@ graph TD
 
 | Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`storage/`](storage/README.md) | Block Storage | AHCI SATA, NVMe, legacy IDE, and RAM disk drivers |
+| [`storage/`](storage/README.md) | Block Storage | AHCI SATA, NVMe, legacy IDE and RAM disk drivers |
 | [`display/`](display/README.md) | Video Output | VGA text mode console and linear VBE framebuffer |
 | [`serial/`](serial/README.md) | Serial Ports | Standard 16550 UART COM1 serial controller |
 | [`bus/`](bus/README.md) | System Buses | PCI/PCIe enumeration, USB host controller interface |
