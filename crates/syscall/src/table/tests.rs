@@ -69,6 +69,7 @@ pub mod test {
         assert_eq!(syscall_name(SYS_PRLIMIT64), "sys_prlimit64");
         assert_eq!(syscall_name(SYS_SOCKETPAIR), "sys_socketpair");
         assert_eq!(syscall_name(SYS_POLL), "sys_poll");
+        assert_eq!(syscall_name(SYS_SELECT), "sys_select");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
@@ -83,6 +84,7 @@ pub mod test {
         assert!(is_valid_syscall(SYS_STAT));
         assert!(is_valid_syscall(SYS_FSTAT));
         assert!(is_valid_syscall(SYS_POLL));
+        assert!(is_valid_syscall(SYS_SELECT));
         assert!(!is_valid_syscall(999));
 
         assert!(is_io_syscall(SYS_OPEN));
@@ -95,6 +97,7 @@ pub mod test {
         assert!(is_io_syscall(SYS_STAT));
         assert!(is_io_syscall(SYS_FSTAT));
         assert!(is_io_syscall(SYS_POLL));
+        assert!(is_io_syscall(SYS_SELECT));
         assert!(!is_io_syscall(SYS_MMAP));
 
         assert!(is_memory_syscall(SYS_MMAP));

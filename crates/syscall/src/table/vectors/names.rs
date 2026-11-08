@@ -115,6 +115,7 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_PRLIMIT64 => "sys_prlimit64",
         SYS_SOCKETPAIR => "sys_socketpair",
         SYS_POLL => "sys_poll",
+        SYS_SELECT => "sys_select",
         _ => "sys_unknown",
     }
 }

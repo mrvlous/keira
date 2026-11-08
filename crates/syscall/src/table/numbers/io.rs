@@ -34,3 +34,4 @@ pub const SYS_CHOWN: u64 = 98;
 pub const SYS_STAT: u64 = 99;
 pub const SYS_FSTAT: u64 = 100;
 pub const SYS_POLL: u64 = 106;
+pub const SYS_SELECT: u64 = 107;
