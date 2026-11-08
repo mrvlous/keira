@@ -2,7 +2,7 @@
 
 # Keira Kernel Documentation Map
 
-Welcome to the technical documentation for Keira Kernel. Built as an open, educational systems programming learning journey, this documentation system is organized into **13 first-class hyper-modular domains** providing exhaustive, in-depth architectural and implementation details.
+Welcome to the technical documentation for Keira Kernel. Built as an open, educational systems programming learning journey, this documentation system is organized into **14 first-class hyper-modular domains** providing exhaustive, in-depth architectural and implementation details.
 
 * **Source Repository**: [https://github.com/mrvlous/keira](https://github.com/mrvlous/keira)
 
@@ -29,6 +29,6 @@ Welcome to the technical documentation for Keira Kernel. Built as an open, educa
 | **Hardware Drivers** | [`drivers/`](drivers/README.md) | Block storage, NICs, VGA/VBE, serial UART, PCI/USB and TTYs |
 | **Networking Stack** | [`net/`](net/README.md) | Layered bare-metal TCP/IP stack, ARP, IPv4, UDP, TCP, TLS 1.3, AF_UNIX and firewall |
 | **Cryptography** | [`crypto/`](crypto/README.md) | SHA-256, AES-128-GCM, Curve25519, TPM 2.0 enclave, Seccomp BPF and MAC |
-| **Shell & Utilities** | [`shell/`](shell/README.md) | Command line interface, `kvi` editor, autocomplete and 50+ emergency diagnostic commands |
+| **Shell & Supervisor** | [`shell/`](shell/README.md) | Emergency supervisor console, CLI argument parser, pipeline routing, autocomplete and 32 diagnostic commands |
 | **Userland & C SDK** | [`userland/`](userland/README.md) | C runtime headers, freestanding KCC compiler, HTTP fetch, 44 core utility binaries, dynamic ELF loader and multi-user |
 | **Contributor Guide** | [`contributing/`](contributing/README.md) | Environment setup, build targets, coding style, testing and debugging |
