@@ -416,13 +416,13 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)mkdir -p $(FS_ROOT)/include/sys
 	$(Q)mkdir -p $(FS_ROOT)/lib
 	$(Q)mkdir -p $(FS_ROOT)/mnt
-	$(Q)mkdir -p $(FS_ROOT)/src
+	$(Q)mkdir -p $(FS_ROOT)/usr/src
 	$(Q)mkdir -p $(FS_ROOT)/tmp
 	$(Q)mkdir -p $(FS_ROOT)/var/log
 	$(Q)$(MAKE) -C $(USER_DIR) install DESTDIR=$(CURDIR)/$(FS_ROOT) ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=1\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
-	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/src/main.c
+	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/usr/src/main.c
 	$(Q)touch $(FS_ROOT)/tmp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Canonical root filesystem ready ($(ARCH))"
@@ -436,7 +436,7 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/mnt ::/src ::/tmp ::/var ::/var/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/mnt ::/usr ::/usr/src ::/tmp ::/var ::/var/log 2>/dev/null || true
 	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
 	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
 	done
