@@ -12,7 +12,7 @@ Network interface telemetry and configuration inspection is decoupled from Ring 
 
 1. **Interface Enumeration**: Inspects active network adapters registered in the kernel.
 2. **ProcFS Telemetry**: Parses `/proc/net/dev` to report live receive and transmit packet and byte counters.
-3. **Addressing Inspection**: Displays IPv4 addresses, netmasks, broadcast addresses, and hardware MAC addresses.
+3. **Addressing Inspection**: Displays IPv4 addresses, netmasks, broadcast addresses and hardware MAC addresses.
 
 ---
 

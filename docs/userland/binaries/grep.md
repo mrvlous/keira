@@ -12,7 +12,7 @@ As part of Keira Milestone 37 (Text Processing Pipeline Suite), `grep.elf` empow
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged userspace, performing file I/O strictly via standard POSIX system calls (`sys_open`, `sys_read`, `sys_write`, `sys_close`).
 2. **Stream Filtering & Pipeline Consumption**: Accepts piped data from stdin or reads directly from specified file paths, emitting matching lines to stdout.
-3. **Comprehensive Pattern Flags**: Supports case-insensitive searching (`-i`), line numbering (`-n`), inverted match selection (`-v`), and match count aggregation (`-c`).
+3. **Comprehensive Pattern Flags**: Supports case-insensitive searching (`-i`), line numbering (`-n`), inverted match selection (`-v`) and match count aggregation (`-c`).
 
 ---
 

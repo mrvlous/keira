@@ -2,7 +2,7 @@
 
 # `netstat.elf` Freestanding Core Utility
 
-The `netstat.elf` executable (`/bin/netstat.elf` and `/bin/netstat`) is a freestanding Ring 3 core network utility that queries kernel virtual filesystem telemetry to display active Internet connections, socket states, and statistical summaries.
+The `netstat.elf` executable (`/bin/netstat.elf` and `/bin/netstat`) is a freestanding Ring 3 core network utility that queries kernel virtual filesystem telemetry to display active Internet connections, socket states and statistical summaries.
 
 ---
 
@@ -10,7 +10,7 @@ The `netstat.elf` executable (`/bin/netstat.elf` and `/bin/netstat`) is a freest
 
 Socket and connection inspection in the Keira pure kernel strictly decouples unprivileged display logic from Ring 0:
 
-1. **ProcFS Telemetry Aggregation**: Interrogates `/proc/net/tcp`, `/proc/net/udp`, `/proc/net/raw`, `/proc/net/route`, and `/proc/net/sockstat` directly.
+1. **ProcFS Telemetry Aggregation**: Interrogates `/proc/net/tcp`, `/proc/net/udp`, `/proc/net/raw`, `/proc/net/route` and `/proc/net/sockstat` directly.
 2. **Hex-to-Dotted-Quad Resolution**: Converts little-endian 32-bit hex IP addresses and 16-bit hex port numbers into human-readable `IP:PORT` format.
 3. **State Decoding**: Maps raw kernel connection states into standardized TCP state descriptors (`ESTABLISHED`, `LISTEN`, `TIME_WAIT`, `CLOSE_WAIT`, etc.).
 4. **Zero Daemon Overhead**: Operates without background daemons, socket caches, or foreign dependencies.

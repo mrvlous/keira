@@ -12,7 +12,7 @@ As part of Keira Milestone 37 (Text Processing Pipeline Suite), `sleep.elf` intr
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged userspace, delegating sleep intervals to the kernel through `sys_nanosleep`.
 2. **Flexible Time Suffixes**: Supports pure numerical seconds or suffixed notation (`s` for seconds, `m` for minutes, `h` for hours, `d` for days).
-3. **Script Coordination**: Enables delay loops, polling intervals, and periodic monitoring in userland shell scripts.
+3. **Script Coordination**: Enables delay loops, polling intervals and periodic monitoring in userland shell scripts.
 
 ---
 

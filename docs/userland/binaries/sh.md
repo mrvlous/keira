@@ -74,7 +74,7 @@ Starting with Milestone 22, the userspace shell supports UNIX stream operators, 
 
 ### D. Interactive Line Editing & Command History Navigation
 - **Arrow Navigation**: Pressing **Up Arrow** (`\x1b[A`) scrolls backwards through previous commands stored in the 32-slot history ring buffer. Pressing **Down Arrow** (`\x1b[B`) scrolls forward or restores the uncommitted draft command line.
-- **Raw Mode Line Discipline**: Interactive input uses POSIX `termios` raw mode (`~ICANON` and `~ECHO`) to process keystrokes, inline backspacing, and escape sequences in real time. Canonical terminal mode is automatically restored whenever child processes execute.
+- **Raw Mode Line Discipline**: Interactive input uses POSIX `termios` raw mode (`~ICANON` and `~ECHO`) to process keystrokes, inline backspacing and escape sequences in real time. Canonical terminal mode is automatically restored whenever child processes execute.
 - **Session History Inspection**: The `history` built-in prints all retained history entries indexed sequentially.
 
 ---

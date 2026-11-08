@@ -2,7 +2,7 @@
 
 # `iptables.elf` Freestanding Core Utility
 
-The `iptables.elf` executable (`/bin/iptables.elf` and `/bin/iptables`) is a freestanding Ring 3 core network security utility that queries kernel virtual filesystem telemetry and invokes Syscall 76 (`SYS_NETFILTER`) to inspect, append, delete, flush, and monitor in-kernel Netfilter packet filtering rules.
+The `iptables.elf` executable (`/bin/iptables.elf` and `/bin/iptables`) is a freestanding Ring 3 core network security utility that queries kernel virtual filesystem telemetry and invokes Syscall 76 (`SYS_NETFILTER`) to inspect, append, delete, flush and monitor in-kernel Netfilter packet filtering rules.
 
 ---
 
@@ -10,7 +10,7 @@ The `iptables.elf` executable (`/bin/iptables.elf` and `/bin/iptables`) is a fre
 
 In accordance with Keira's pure freestanding kernel ideology, network packet filtering and connection inspection strictly decouple unprivileged presentation and administrative control from Ring 0:
 
-1. **ProcFS Rule Set Virtualization**: Reads `/proc/net/iptables` (and `/proc/net/ip_tables_rules`) to parse active rules, default chain policies, and match counters in standard canonical format.
+1. **ProcFS Rule Set Virtualization**: Reads `/proc/net/iptables` (and `/proc/net/ip_tables_rules`) to parse active rules, default chain policies and match counters in standard canonical format.
 2. **Table Existence Validation**: Queries `/proc/net/ip_tables_names` to verify supported Netfilter tables (`filter`).
 3. **Connection Tracking Telemetry**: Inspects `/proc/net/stat/nf_conntrack` to monitor stateful connection tracking metrics.
 4. **Deterministic Syscall Control**: Dispatches administrative operations (`SYS_NETFILTER`, Vector 76) to dynamically append rules, delete rules by index, flush rule tables, or toggle filtering.
@@ -90,6 +90,6 @@ iptables: Flushed rules in table `filter`.
 ## 4. Verification and Security
 
 The `iptables.elf` utility is verified across both `x86_64` and `i686` target architectures through:
-- Host unit tests verifying `/proc/net/ip_tables_names`, `/proc/net/stat/nf_conntrack`, and `/proc/net/iptables` synthesis.
+- Host unit tests verifying `/proc/net/ip_tables_names`, `/proc/net/stat/nf_conntrack` and `/proc/net/iptables` synthesis.
 - Syscall 76 validation confirming safe pointer bounds checking with `read_user_string`.
-- Full live execution in headless QEMU testing packet filtering, rule append, deletion, and flush cycles.
+- Full live execution in headless QEMU testing packet filtering, rule append, deletion and flush cycles.

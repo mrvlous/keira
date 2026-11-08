@@ -10,7 +10,7 @@ The `id.elf` executable (`/bin/id.elf` and `/bin/id`) is a freestanding Ring 3 c
 
 In accordance with Keira's freestanding pure-kernel architecture:
 
-1. **Kernel Credential Introspection**: Obtains real and effective user and group identities directly from the kernel via `getuid()` (Vector 24), `geteuid()` (Vector 90), `getgid()` (Vector 47), and `getegid()` (Vector 91).
+1. **Kernel Credential Introspection**: Obtains real and effective user and group identities directly from the kernel via `getuid()` (Vector 24), `geteuid()` (Vector 90), `getgid()` (Vector 47) and `getegid()` (Vector 91).
 2. **Standard POSIX Output**: Emits the standard `uid=... gid=... groups=...` output format, identifying UID 0 / GID 0 as `root` and unprivileged identities as numeric IDs.
 3. **Explicit Identity Queries**: Allows querying arbitrary numerical identities (e.g. `id 1000` or `id root`).
 

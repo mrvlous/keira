@@ -2,7 +2,7 @@
 
 # `wc.elf` Freestanding Core Utility
 
-The `wc.elf` executable (`/bin/wc.elf` and `/bin/wc`) is a freestanding Ring 3 core utility that counts newline characters, words, bytes, and characters in files or standard input streams.
+The `wc.elf` executable (`/bin/wc.elf` and `/bin/wc`) is a freestanding Ring 3 core utility that counts newline characters, words, bytes and characters in files or standard input streams.
 
 ---
 
@@ -11,7 +11,7 @@ The `wc.elf` executable (`/bin/wc.elf` and `/bin/wc`) is a freestanding Ring 3 c
 As part of Keira Milestone 37 (Text Processing Pipeline Suite), `wc.elf` provides stream quantification and metric measurement:
 
 1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged userspace, interacting with the system exclusively through standard POSIX file descriptor system calls.
-2. **Multi-Metric Text Counting**: Tracks newline counts, whitespace-delimited word counts, and byte tallies simultaneously in a single streaming pass.
+2. **Multi-Metric Text Counting**: Tracks newline counts, whitespace-delimited word counts and byte tallies simultaneously in a single streaming pass.
 3. **Pipelined Analytics**: Enables downstream metrics calculations in shell pipelines (e.g. counting lines of process listings, active sockets, or matched patterns).
 
 ---
