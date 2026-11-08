@@ -6,7 +6,7 @@
 
 Milestone 29 establishes the strict architectural boundary between a pure bare-metal operating system kernel and external distribution artifacts. In accordance with the engineering design of the upstream Linux kernel (`torvalds/linux`), Keira enforces the foundational invariant that **the kernel is an engine of numerical identities**, not a distributor of userland account databases.
 
-Distribution databases—such as `/etc/passwd`, `/etc/group`, `/etc/shadow`, and their associated C library parsers (`getpwnam()`, `getgrnam()`)—belong to userland distributions, not the freestanding monolithic kernel. Ring 0 operates strictly on 32-bit integer identifiers (`uid_t`, `gid_t`), managing privileges, access controls, and session ownership purely through numerical credentials.
+Distribution databases—such as `/etc/passwd`, `/etc/group`, `/etc/shadow` and their associated C library parsers (`getpwnam()`, `getgrnam()`)—belong to userland distributions, not the freestanding monolithic kernel. Ring 0 operates strictly on 32-bit integer identifiers (`uid_t`, `gid_t`), managing privileges, access controls and session ownership purely through numerical credentials.
 
 Milestone 29 achieves three core architectural objectives:
 

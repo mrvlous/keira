@@ -7,32 +7,32 @@
 Milestone 47 delivers native, high-performance in-kernel **UNIX Domain Sockets (`AF_UNIX`)** and Century-Plus System Call 105 (`SYS_SOCKETPAIR`) to the Keira freestanding monolithic operating system. Building upon the process resource limits and sandbox quotas established in Milestone 46, Milestone 47 enables bidirectional inter-process communication (IPC) through in-memory kernel ring buffers without traversing the TCP/IP network stack, hardware drivers, or packet framing layers.
 
 Furthermore, Milestone 47 strictly reinforces Keira's **Torvalds-Grade Pure Kernel Demarcation** (`CONFIG_USERLAND=y` vs `CONFIG_USERLAND=n`):
-- The Ring 0 kernel owns the socket buffers, peer endpoint coupling, procfs reflection (`/proc/net/unix`), and supervisor telemetry (`unixsock`).
+- The Ring 0 kernel owns the socket buffers, peer endpoint coupling, procfs reflection (`/proc/net/unix`) and supervisor telemetry (`unixsock`).
 - Ring 3 userland provides autonomous verification through libc wrappers and `test_abi`, remaining completely optional and decoupled.
 - The kernel boot sequence is purified of lingering `/etc/hostname` filesystem reads, enforcing pure freestanding boot behavior.
 
 Milestone 47 delivers five primary achievements:
 
 1. **In-Kernel UNIX Domain Sockets & Peer Coupling (`crates/net`)**:
-   - Extends the kernel `SocketEntry` descriptor with `peer_id: u32`, bound pathname `path: [u8; UNIX_PATH_MAX]`, and path length metadata.
+   - Extends the kernel `SocketEntry` descriptor with `peer_id: u32`, bound pathname `path: [u8; UNIX_PATH_MAX]` and path length metadata.
    - Implements zero-copy stream transfers in `send_socket`: writes to a connected UNIX domain socket copy data directly into the peer endpoint's receive buffer (`peer.rx_buf`), bypassing all network driver queues.
    - Enforces POSIX stream semantics: closing an endpoint notifies the peer, causing subsequent peer reads to return `0` (EOF) and subsequent peer writes to fail with broken pipe (`EPIPE`).
 2. **Century-Plus System Call 105: `SYS_SOCKETPAIR` (`crates/syscall`)**:
    - Assigns official system call number 105 (`SYS_SOCKETPAIR`) with Linux i386 compatibility vector alias 360.
-   - Atomically allocates two socket descriptors, connects their peer IDs, and allocates two file descriptors in the calling task's descriptor table.
+   - Atomically allocates two socket descriptors, connects their peer IDs and allocates two file descriptors in the calling task's descriptor table.
    - Enforces `RLIMIT_NOFILE` quota limits and validates user destination pointer with `validate_user_ptr`.
 3. **Virtual ProcFS Network Telemetry (`/proc/net/unix`)**:
    - Synthesizes `/proc/net/unix` conforming to canonical Linux formatting:
      `Num       RefCount Protocol Flags    Type St Inode Path`
-   - Formats active socket IDs, types (`SOCK_STREAM`), connection states, and pathnames or `[socketpair]` designations.
+   - Formats active socket IDs, types (`SOCK_STREAM`), connection states and pathnames or `[socketpair]` designations.
 4. **Ring 0 Supervisor Console Diagnostics (`unixsock`)**:
    - Introduces `unixsock` (alias `unix`) to the emergency supervisor monitor.
-   - Displays active UNIX domain sockets, connection states, peer IDs, buffer occupancy ratios (`rx_len/SOCKET_BUF_SIZE`), and bound pathnames.
+   - Displays active UNIX domain sockets, connection states, peer IDs, buffer occupancy ratios (`rx_len/SOCKET_BUF_SIZE`) and bound pathnames.
    - Supports `-v` (verbose) mode displaying transmit queue metrics and connection flags.
 5. **Autonomous Userland Verification & UAPI Header Export**:
    - Introduces `userland/include/sys/un.h` declaring `struct sockaddr_un` and `AF_UNIX`.
    - Exports UAPI headers via `make headers_install` to `include/uapi/sys/un.h`.
-   - Adds Test 36 to `userland/bin/test_abi/ipc/tests.c` validating bidirectional `socketpair` communication, buffer isolation, peer closure EOF semantics, and invalid domain error handling.
+   - Adds Test 36 to `userland/bin/test_abi/ipc/tests.c` validating bidirectional `socketpair` communication, buffer isolation, peer closure EOF semantics and invalid domain error handling.
 
 ---
 
@@ -144,7 +144,7 @@ Native system call vector 105 is registered in [`crates/syscall/src/table/number
 pub const SYS_SOCKETPAIR: u64 = 105;
 ```
 
-The handler in [`crates/syscall/src/dispatcher/handlers/net.rs`](../../crates/syscall/src/dispatcher/handlers/net.rs) guarantees memory safety, quota enforcement, and clean rollback on fault:
+The handler in [`crates/syscall/src/dispatcher/handlers/net.rs`](../../crates/syscall/src/dispatcher/handlers/net.rs) guarantees memory safety, quota enforcement and clean rollback on fault:
 
 ```rust
 pub fn handle_socketpair(domain: u64, socket_type: u64, protocol: u64, sv_ptr: u64) -> u64 {

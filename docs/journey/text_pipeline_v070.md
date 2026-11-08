@@ -12,9 +12,9 @@ Key accomplishments of Milestone 37 include:
 
 1. **Freestanding Text Processing Pipeline Suite (`userland/bin/`)**:
    Six fundamental UNIX text utilities have been engineered from first principles as unprivileged Ring 3 C executables in `userland/bin/`:
-   - `/bin/grep.elf` (`/bin/grep`): Regular pattern matching utility supporting case-insensitive searching (`-i`), line numbering (`-n`), inverted match selection (`-v`), and match count aggregation (`-c`).
-   - `/bin/wc.elf` (`/bin/wc`): Stream metric counter measuring newline counts (`-l`), whitespace-delimited word counts (`-w`), byte sizes (`-c`), and character lengths (`-m`).
-   - `/bin/head.elf` (`/bin/head`): First lines/bytes stream head truncation utility supporting line-based slicing (`-n <lines>`), byte extraction (`-c <bytes>`), quiet mode (`-q`), and verbose file headers (`-v`).
+   - `/bin/grep.elf` (`/bin/grep`): Regular pattern matching utility supporting case-insensitive searching (`-i`), line numbering (`-n`), inverted match selection (`-v`) and match count aggregation (`-c`).
+   - `/bin/wc.elf` (`/bin/wc`): Stream metric counter measuring newline counts (`-l`), whitespace-delimited word counts (`-w`), byte sizes (`-c`) and character lengths (`-m`).
+   - `/bin/head.elf` (`/bin/head`): First lines/bytes stream head truncation utility supporting line-based slicing (`-n <lines>`), byte extraction (`-c <bytes>`), quiet mode (`-q`) and verbose file headers (`-v`).
    - `/bin/tail.elf` (`/bin/tail`): Last lines/bytes stream tail extraction utility utilizing an in-memory circular line pointer ring buffer for bounded memory consumption.
    - `/bin/echo.elf` (`/bin/echo`): String argument printing utility supporting `-n` newline suppression and `-e` escape sequence interpolation (`\n`, `\t`, `\r`, `\\`).
    - `/bin/sleep.elf` (`/bin/sleep`): Deterministic process interval suspension utility interfacing with `sys_nanosleep` and supporting time suffixes (`s`, `m`, `h`, `d`).
@@ -25,7 +25,7 @@ Key accomplishments of Milestone 37 include:
    - Allocated a dedicated 16 KiB kernel stack (`TASK_STACK_PAGES = 4`) for Task 0 (`kernel_shell`) in `crates/task/src/scheduler/core/state.rs`.
 
 3. **VMM Page Table Zeroing & Canonical Boot PML4 Root**:
-   - Enforced strict memory zeroing (`core::ptr::write_bytes`) for all newly allocated PDPT, PD, and PT frames in `map_page_in_pml4` and `map_huge_2m_page`.
+   - Enforced strict memory zeroing (`core::ptr::write_bytes`) for all newly allocated PDPT, PD and PT frames in `map_page_in_pml4` and `map_huge_2m_page`.
    - Initialized `BOOT_PML4_PHYS` in `crates/mem` to record the pristine kernel boot PML4, ensuring child processes cloned via `clone_kernel_pml4()` inherit immaculate kernel and MMIO mappings.
    - Explicitly marked frames `0..aligned_kernel_end` as allocated in `ALLOCATION_BITMAP` to safeguard low memory and kernel ELF image code/data against allocator fallback reuse.
 
@@ -84,4 +84,4 @@ With the introduction of Milestone 37, Keira's userspace core utilities encompas
 
 ## Symmetrical Dual-Architecture Verification
 
-All 39 binaries, the userland runtime library (`libc.a`), and the monolithic kernel compile cleanly with 0 errors and 0 warnings on both `x86_64` (64-bit Long Mode) and `i686` (32-bit Protected Mode).
+All 39 binaries, the userland runtime library (`libc.a`) and the monolithic kernel compile cleanly with 0 errors and 0 warnings on both `x86_64` (64-bit Long Mode) and `i686` (32-bit Protected Mode).

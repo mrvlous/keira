@@ -33,7 +33,7 @@ This document archives the foundational engineering milestones of the Keira Kern
 ## Milestone 1: Bare-Metal Multiboot2 Handshake & Core CPU Descriptors
 
 - **Handshake Protocol**: Implemented 32-bit Multiboot2 bootstrap assembly routines parsing memory tags, framebuffer descriptors and initrd modules passed by GRUB.
-- **CPU Descriptor Management**: Configured Global Descriptor Table (GDT), Task State Segment (TSS) with dedicated double-fault interrupt stacks (IST), and Interrupt Descriptor Table (IDT) covering all 32 x86 CPU exception vectors.
+- **CPU Descriptor Management**: Configured Global Descriptor Table (GDT), Task State Segment (TSS) with dedicated double-fault interrupt stacks (IST) and Interrupt Descriptor Table (IDT) covering all 32 x86 CPU exception vectors.
 - **Interrupt Routing**: Implemented dual-mode PIC 8259 remapping and Local APIC / IO-APIC routing with spurious vector protection.
 - **Multi-Core Trampoline**: Designed a 16-bit real-mode Application Processor (AP) assembly trampoline executed via APIC INIT-SIPI-SIPI sequences to transition secondary cores into 64-bit Long Mode.
 
@@ -113,7 +113,7 @@ This document archives the foundational engineering milestones of the Keira Kern
 
 - **Epoch-Based Reclamation (EBR)**: Introduced lock-free memory reclamation utilizing a global epoch counter and per-core thread registration to safely defer deallocations without stop-the-world synchronization.
 - **Physical Frame Reference Counting**: Maintained atomic reference counters for all mapped physical memory frames.
-- **Copy-on-Write (COW)**: Optimized process cloning by sharing physical memory pages marked read-only, trapping write faults in Page Fault Vector 14, and duplicating pages lazily upon write access.
+- **Copy-on-Write (COW)**: Optimized process cloning by sharing physical memory pages marked read-only, trapping write faults in Page Fault Vector 14 and duplicating pages lazily upon write access.
 
 ---
 
