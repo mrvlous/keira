@@ -61,10 +61,4 @@ mod test {
         assert!(bpf_map_delete(1, 8080).is_ok());
         assert_eq!(bpf_map_lookup(1, 8080), None);
     }
-
-    #[test]
-    fn test_user_agent_format() {
-        assert!(HTTP_USER_AGENT.contains("KeiraKernel/"));
-        assert!(HTTP_USER_AGENT.contains("x86_64"));
-    }
 }

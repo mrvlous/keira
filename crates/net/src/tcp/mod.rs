@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Transmission Control Protocol (TCP) stream transport and HTTP client.
+//! Transmission Control Protocol (TCP) stream transport and state management.
 
 pub mod header;
 pub mod state;
@@ -20,7 +20,4 @@ pub use header::{
     tcp_checksum, TcpHeader, TCP_FLAG_ACK, TCP_FLAG_FIN, TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
 };
 pub use state::{get_next_src_port, TcpState};
-pub use stream::{
-    dechunk_in_place, fetch_http, fetch_http_stream, fetch_stream_download, parse_tcp_payload,
-    tcp_send_and_receive, STREAM_BUFFER_CAPACITY, STREAM_DOWNLOAD_BUFFER,
-};
+pub use stream::{parse_tcp_payload, tcp_send_and_receive};

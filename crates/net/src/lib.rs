@@ -79,25 +79,10 @@ pub use socket::sock::{
     NEXT_SOCKET_ID, SOCKET_TABLE, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
 };
 pub use tcp::{
-    fetch_http, fetch_http_stream, fetch_stream_download, parse_tcp_payload, tcp_checksum,
-    tcp_send_and_receive, TcpHeader, TcpState, STREAM_DOWNLOAD_BUFFER, TCP_FLAG_ACK, TCP_FLAG_FIN,
-    TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
+    parse_tcp_payload, tcp_checksum, tcp_send_and_receive, TcpHeader, TcpState, TCP_FLAG_ACK,
+    TCP_FLAG_FIN, TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
 };
 pub use tls::native::{
     tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256, TLS_CONTENT_APPLICATION_DATA,
     TLS_CONTENT_HANDSHAKE, TLS_VERSION_12, TLS_VERSION_13,
 };
-
-#[cfg(target_arch = "x86_64")]
-pub const HTTP_USER_AGENT: &str = concat!(
-    "Mozilla/5.0 (compatible; KeiraKernel/",
-    env!("CARGO_PKG_VERSION"),
-    "; x86_64)"
-);
-
-#[cfg(not(target_arch = "x86_64"))]
-pub const HTTP_USER_AGENT: &str = concat!(
-    "Mozilla/5.0 (compatible; KeiraKernel/",
-    env!("CARGO_PKG_VERSION"),
-    "; i686)"
-);

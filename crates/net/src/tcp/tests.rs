@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Unit tests for TCP flags, port allocator, and chunked decoding.
+//! Unit tests for TCP flags and ephemeral port allocator.
 
 use super::*;
 
@@ -26,11 +26,4 @@ fn test_get_next_src_port() {
     let p2 = get_next_src_port();
     assert!(p1 >= 49152);
     assert_ne!(p1, p2);
-}
-
-#[test]
-fn test_dechunk_in_place() {
-    let mut data = *b"5\r\nhello\r\n0\r\n\r\n";
-    let len = dechunk_in_place(&mut data, 15);
-    assert_eq!(&data[..len], b"hello");
 }
