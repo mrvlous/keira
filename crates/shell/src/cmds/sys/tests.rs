@@ -226,3 +226,13 @@ fn test_sys_pollinfo() {
     let mut args_default = "".split_whitespace();
     pollinfo::run(&mut args_default);
 }
+
+#[test]
+fn test_sys_selectinfo() {
+    let mut args_help = "selectinfo --help".split_whitespace();
+    args_help.next();
+    selectinfo::run(&mut args_help);
+
+    let mut args_default = "".split_whitespace();
+    selectinfo::run(&mut args_default);
+}

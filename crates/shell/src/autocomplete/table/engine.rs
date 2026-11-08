@@ -45,6 +45,8 @@ pub const COMMANDS_LIST: &[&str] = &[
     "rnginfo",
     "run",
     "secinfo",
+    "select",
+    "selectinfo",
     "sh",
     "slab",
     "slabinfo",

@@ -19,6 +19,7 @@ pub mod regs;
 pub mod rlimit;
 pub mod rnginfo;
 pub mod secinfo;
+pub mod selectinfo;
 pub mod slabinfo;
 pub mod smp;
 pub mod system;

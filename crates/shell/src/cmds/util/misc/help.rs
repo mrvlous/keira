@@ -39,6 +39,9 @@ pub fn run(_parts: &mut core::str::SplitWhitespace) {
     vga::print_str(
         "  pollinfo       Display POSIX I/O multiplexing telemetry and metrics (poll)\n",
     );
+    vga::print_str(
+        "  selectinfo     Display POSIX I/O multiplexing telemetry and metrics (select)\n",
+    );
     vga::print_str("Emergency Control:\n");
     vga::print_str("  disk           Inspect storage drives and block device geometry\n");
     vga::print_str("  dcache         Inspect VFS in-memory dentry cache telemetry and hits\n");
