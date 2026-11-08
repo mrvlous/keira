@@ -497,13 +497,14 @@ clean: ## Remove build directory and compiled artifacts
 	$(Q)rm -rf $(BUILD_ROOT)
 	$(Q)$(CARGO) clean
 	$(Q)$(MAKE) -C $(USER_DIR) clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland
+	$(Q)rm -rf include
 	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
 
 mrproper distclean: clean ## Restore repository to pristine state including removing .config
 	$(Q)rm -f .config
-	$(Q)rm -rf include/uapi
+	$(Q)rm -rf include
 	@$(LOG_DONE) "Repository cleaned to pristine state (.config removed)"
 
 format: preflight-format ## Format Rust and C source code
