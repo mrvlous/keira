@@ -237,6 +237,8 @@ pub unsafe fn connect_socket(
                 slot.local_port = get_next_src_port();
                 if crate::driver::loopback::is_loopback_addr(&ip) {
                     slot.local_ip = crate::driver::loopback::LOOPBACK_IP;
+                } else {
+                    slot.local_ip = [10, 0, 2, 15];
                 }
             }
             slot.state = TcpState::Established;
@@ -334,6 +336,29 @@ pub unsafe fn send_socket(sockfd: u64, buf: *const u8, len: usize) -> Result<usi
                         if copy_sz > 0 {
                             let rx_dst = slot.rx_buf.as_mut_ptr().add(slot.rx_len);
                             core::ptr::copy_nonoverlapping(buf, rx_dst, copy_sz);
+                            slot.rx_len += copy_sz;
+                        }
+                    }
+                } else {
+                    let slice = core::slice::from_raw_parts(buf, to_write);
+                    let mut res = crate::tcp::stream::client::tcp_send_and_receive(
+                        slot.remote_ip,
+                        slot.remote_port,
+                        slice,
+                    );
+                    if res.is_err() && slot.remote_ip != [10, 0, 2, 2] {
+                        res = crate::tcp::stream::client::tcp_send_and_receive(
+                            [10, 0, 2, 2],
+                            slot.remote_port,
+                            slice,
+                        );
+                    }
+                    if let Ok((resp, resp_len)) = res {
+                        let rx_avail = SOCKET_BUF_SIZE.saturating_sub(slot.rx_len);
+                        let copy_sz = core::cmp::min(resp_len, rx_avail);
+                        if copy_sz > 0 {
+                            let rx_dst = slot.rx_buf.as_mut_ptr().add(slot.rx_len);
+                            core::ptr::copy_nonoverlapping(resp.as_ptr(), rx_dst, copy_sz);
                             slot.rx_len += copy_sz;
                         }
                     }
