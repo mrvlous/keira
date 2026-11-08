@@ -8,11 +8,12 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syscall.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #define FETCH_BUF_SIZE 4096
@@ -28,6 +29,59 @@ static void print_usage(void) {
     puts("  -I, --head     Show response headers and status line only");
     puts("  -v, --verbose  Display connection and payload transfer telemetry");
     puts("  -h, --help     Display this help reference and exit");
+}
+
+static int parse_url(const char *url, char *host, size_t host_sz, uint16_t *port, char *path,
+                     size_t path_sz) {
+    if (!url || !host || !port || !path) {
+        return -1;
+    }
+
+    const char *p = url;
+    if (strncmp(p, "http://", 7) == 0) {
+        p += 7;
+    } else if (strncmp(p, "https://", 8) == 0) {
+        p += 8;
+    }
+
+    const char *slash = strchr(p, '/');
+    const char *colon = strchr(p, ':');
+
+    if (slash && colon && colon > slash) {
+        colon = NULL;
+    }
+
+    size_t host_len = 0;
+    if (colon) {
+        host_len = (size_t)(colon - p);
+        *port = (uint16_t)atoi(colon + 1);
+    } else if (slash) {
+        host_len = (size_t)(slash - p);
+        *port = 80;
+    } else {
+        host_len = strlen(p);
+        *port = 80;
+    }
+
+    if (host_len >= host_sz) {
+        host_len = host_sz - 1;
+    }
+    memcpy(host, p, host_len);
+    host[host_len] = '\0';
+
+    if (slash) {
+        size_t p_len = strlen(slash);
+        if (p_len >= path_sz) {
+            p_len = path_sz - 1;
+        }
+        memcpy(path, slash, p_len);
+        path[p_len] = '\0';
+    } else {
+        strncpy(path, "/", path_sz - 1);
+        path[path_sz - 1] = '\0';
+    }
+
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -65,19 +119,74 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    char host[128];
+    char path[256];
+    uint16_t port = 80;
+    if (parse_url(url, host, sizeof(host), &port, path, sizeof(path)) < 0) {
+        fprintf(stderr, "fetch: invalid URL syntax: %s\n", url);
+        return 1;
+    }
+
     if (verbose) {
-        printf("[fetch] Requesting resource: %s\n", url);
+        printf("[fetch] Connecting to %s:%u (path: %s)\n", host, (unsigned int)port, path);
+    }
+
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        fprintf(stderr, "fetch: failed to create BSD socket\n");
+        return 1;
+    }
+
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+
+    if (!inet_aton(host, &server_addr.sin_addr)) {
+        if (verbose) {
+            printf("[fetch] Resolving host %s to gateway 10.0.2.2\n", host);
+        }
+        inet_aton("10.0.2.2", &server_addr.sin_addr);
+    }
+
+    if (connect(sockfd, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        fprintf(stderr, "fetch: connection failed to %s:%u\n", host, (unsigned int)port);
+        close(sockfd);
+        return 1;
+    }
+
+    char req[512];
+    int req_len = snprintf(req, sizeof(req),
+                           "GET %s HTTP/1.1\r\n"
+                           "Host: %s:%u\r\n"
+                           "User-Agent: fetch/1.0\r\n"
+                           "Accept: */*\r\n"
+                           "Connection: close\r\n\r\n",
+                           path, host, (unsigned int)port);
+
+    if (verbose) {
+        printf("[fetch] Sending HTTP/1.1 request (%d bytes)\n", req_len);
+    }
+
+    ssize_t sent = write(sockfd, req, (size_t)req_len);
+    if (sent < 0 || sent != req_len) {
+        fprintf(stderr, "fetch: failed to transmit HTTP request\n");
+        close(sockfd);
+        return 1;
     }
 
     char *buf = (char *)malloc(FETCH_BUF_SIZE);
     if (!buf) {
         fprintf(stderr, "fetch: memory allocation error\n");
+        close(sockfd);
         return 1;
     }
     memset(buf, 0, FETCH_BUF_SIZE);
 
-    ssize_t n = sys_http_get(url, buf, FETCH_BUF_SIZE - 1);
-    if (n <= 0) {
+    ssize_t n = read(sockfd, buf, FETCH_BUF_SIZE - 1);
+    close(sockfd);
+
+    if (n <= 0 || (size_t)n >= FETCH_BUF_SIZE) {
         fprintf(stderr, "fetch: failed to retrieve '%s': network or host error\n", url);
         free(buf);
         return 1;
@@ -116,7 +225,6 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        /* If response contains HTTP headers, extract body */
         char *body_start = strstr(buf, "\r\n\r\n");
         const char *data_to_write = buf;
         size_t bytes_to_write = (size_t)n;
