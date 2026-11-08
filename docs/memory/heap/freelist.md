@@ -17,7 +17,7 @@ General dynamic allocation (`crates/mem/src/heap/pool/`) uses segregated power-o
 ## Telemetry & Capacity Accounting
 
 The kernel heap metrics engine (`crates/mem/src/heap/pool/stats.rs`) tracks allocation patterns and fragmentation:
-* `heap_get_telemetry()`: Computes total capacity, active allocated bytes, unallocated free bytes, peak usage watermark, active block count, and fragmentation percentage against arena allocations.
+* `heap_get_telemetry()`: Computes total capacity, active allocated bytes, unallocated free bytes, peak usage watermark, active block count and fragmentation percentage against arena allocations.
 * Displayed in userspace via the `memory` shell command.
 
 ---

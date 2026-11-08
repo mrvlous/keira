@@ -91,7 +91,7 @@ pub struct GlobalDepot {
 * **EBR Protection**: All depot exchanges are executed within an active epoch pin (`keira_core::sync::ebr::pin()`).
 
 ### D. Hierarchical Cache Manager (`crates/mem/src/slab/cache/manager.rs`)
-The `KmemCache` orchestrates per-CPU depots, global depot pools, and heap refills:
+The `KmemCache` orchestrates per-CPU depots, global depot pools and heap refills:
 ```rust
 pub struct KmemCache {
     name: &'static str,
