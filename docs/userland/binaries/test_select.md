@@ -65,3 +65,4 @@ keira:/# test_select
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding `libc.a` (`<sys/select.h>`, `<unistd.h>`, `<stdio.h>`, `<stdlib.h>`, `<string.h>`, `<errno.h>`)
 - **System Calls**: `sys_select` (Vector 107), `sys_pipe`, `sys_read`, `sys_write`, `sys_close` and `sys_exit`
+
