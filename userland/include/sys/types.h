@@ -26,5 +26,6 @@ typedef int32_t ssize_t;
 #endif
 typedef uint32_t mode_t;
 typedef int64_t time_t;
+typedef int64_t suseconds_t;
 
 #endif /* _SYS_TYPES_H */

@@ -131,3 +131,12 @@ int sys_poll(void *fds, unsigned int nfds, int timeout) {
     return (int)syscall3(SYS_POLL, (uint64_t)(uintptr_t)fds, (uint64_t)nfds,
                          (uint64_t)(int64_t)timeout);
 }
+
+int sys_select(int nfds, void *readfds, void *writefds, void *exceptfds,
+               void *timeout) {
+    return (int)syscall5(SYS_SELECT, (uint64_t)nfds,
+                         (uint64_t)(uintptr_t)readfds,
+                         (uint64_t)(uintptr_t)writefds,
+                         (uint64_t)(uintptr_t)exceptfds,
+                         (uint64_t)(uintptr_t)timeout);
+}

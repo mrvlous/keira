@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/select.h>
 #include <syscall.h>
 #include <unistd.h>
 
@@ -103,6 +104,17 @@ int isatty(int fd) {
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     int ret = sys_poll((void *)fds, (unsigned int)nfds, timeout);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return ret;
+}
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+           struct timeval *timeout) {
+    int ret = sys_select(nfds, (void *)readfds, (void *)writefds,
+                         (void *)exceptfds, (void *)timeout);
     if (ret < 0) {
         errno = -ret;
         return -1;
