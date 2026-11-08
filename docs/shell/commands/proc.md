@@ -13,6 +13,7 @@ The `proc` command suite provides direct binary launching and process hierarchy 
 
 | Command | Syntax | Description | Flags / Options |
 | :--- | :--- | :--- | :--- |
-| `run` | `run <binary>` | Execute an ELF binary from storage or launch background worker | `-h, --help` |
 | `pidinfo` | `pidinfo [pid]` | Inspect active process hierarchy, memory usage, break and switch counters | `-h, --help` |
 | `procs` | `procs [pid]` | Alias for `pidinfo` supervisor inspection command | `-h, --help` |
+| `run` | `run <binary>` | Execute an ELF binary from storage or launch background worker | `-h, --help` |
+| `sh` | `sh` | Launch interactive unprivileged userspace shell session (`/bin/sh.elf`) | `-h, --help` |

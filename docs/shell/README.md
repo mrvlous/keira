@@ -2,7 +2,7 @@
 
 # Keira Interactive Shell & Command Subsystem
 
-The `shell` domain provides the kernel emergency debugger control plane, modal text editor and 15 built-in diagnostic commands. Standard user utilities (`ps`, `kill`, `hostname`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) run exclusively in Ring 3 userspace (`/bin`).
+The `shell` domain provides the kernel emergency supervisor console control plane and 32 built-in diagnostic commands. Standard user utilities (`ps`, `kill`, `hostname`, `dmesg`, `df`, `cat`, `ls`, `fetch`, `kcc`, `sh` and `init`) run exclusively in Ring 3 userspace (`/bin`).
 
 ---
 
@@ -11,9 +11,8 @@ The `shell` domain provides the kernel emergency debugger control plane, modal t
 ```mermaid
 graph TD
     Shell["Interactive Shell"] --> Terminal["terminal/<br/>Prompt, Keyboard & Console Palette"]
-    Shell --> Executor["executor/<br/>Command Dispatch & CliArgs"]
-    Shell --> Editor["editor/<br/>kvi Modal Text Editor"]
-    Shell --> Cmds["commands/<br/>15 Emergency Commands"]
+    Shell --> Executor["executor/<br/>Command Dispatch, Autocomplete & CliArgs"]
+    Shell --> Cmds["commands/<br/>32 Emergency Commands"]
 ```
 
 ---
@@ -22,7 +21,6 @@ graph TD
 
 | Submodule | Focus Area | Description |
 | :--- | :--- | :--- |
-| [`terminal/`](terminal/README.md) | Terminal UI | Prompt rendering, keyboard input, monochrome palette |
-| [`executor/`](executor/README.md) | Command Execution | Argument parsing, pipe routing, execution dispatch |
-| [`editor/`](editor/README.md) | Text Editor | `kvi` modal vim-like text editor with syntax highlighting |
-| [`commands/`](commands/README.md) | Built-in Commands | Reference manuals for all 15 built-in emergency commands |
+| [`terminal/`](terminal/README.md) | Terminal UI | Prompt rendering, keyboard input and monochrome palette |
+| [`executor/`](executor/README.md) | Command Execution | Argument parsing, pipe routing, autocomplete and execution dispatch |
+| [`commands/`](commands/README.md) | Built-in Commands | Reference manuals for all 32 built-in emergency commands |
