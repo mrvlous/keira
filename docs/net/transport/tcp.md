@@ -29,5 +29,5 @@ stateDiagram-v2
 
 ## 2. Sliding Window & Flow Control
 
-* **Sequence Tracking**: Every connection tracks `snd_una` (unacknowledged send), `snd_nxt` (next send sequence), and `rcv_nxt` (expected receive sequence).
+* **Sequence Tracking**: Every connection tracks `snd_una` (unacknowledged send), `snd_nxt` (next send sequence) and `rcv_nxt` (expected receive sequence).
 * **Receive Window (`rcv_wnd`)**: Advertised in every TCP header to throttle remote transmitters according to available ring buffer space.

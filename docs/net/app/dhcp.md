@@ -2,4 +2,4 @@
 
 # Dynamic Host Configuration Protocol (DHCP)
 
-Automatically acquires IP address, subnet mask, default gateway, and DNS servers.
+Automatically acquires IP address, subnet mask, default gateway and DNS servers.

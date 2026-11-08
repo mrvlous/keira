@@ -2,4 +2,4 @@
 
 # Global Socket Table
 
-Maintains active socket endpoints, ports, remote peers, and connection states.
+Maintains active socket endpoints, ports, remote peers and connection states.

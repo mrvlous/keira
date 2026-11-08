@@ -2,7 +2,7 @@
 
 # IPv4 Protocol Engine & Packet Processing
 
-The IPv4 layer (`crates/net/src/ip/`) handles packet parsing, route selection, fragmentation reassembly, and checksum validation.
+The IPv4 layer (`crates/net/src/ip/`) handles packet parsing, route selection, fragmentation reassembly and checksum validation.
 
 ---
 
