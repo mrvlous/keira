@@ -2,4 +2,4 @@
 
 # Syscall Dispatcher Engine
 
-Coordinates argument extraction, permission checks, and handler invocation (`crates/syscall/src/dispatcher/`).
+Coordinates argument extraction, permission checks and handler invocation (`crates/syscall/src/dispatcher/`).

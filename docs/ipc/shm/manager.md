@@ -2,4 +2,4 @@
 
 # Global SHM Segment Table
 
-Tracks keys, permissions, reference counts, and lifetime of shared memory regions.
+Tracks keys, permissions, reference counts and lifetime of shared memory regions.

@@ -2,7 +2,7 @@
 
 # Inter-Process Communication (IPC) Subsystems
 
-The `ipc` domain encompasses anonymous pipes, zero-copy splice, POSIX message queues, shared memory, futexes, event multiplexing, and the `io_uring` asynchronous engine.
+The `ipc` domain encompasses anonymous pipes, zero-copy splice, POSIX message queues, shared memory, futexes, event multiplexing and the `io_uring` asynchronous engine.
 
 ---
 
