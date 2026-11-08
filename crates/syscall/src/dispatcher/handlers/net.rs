@@ -17,29 +17,6 @@ use crate::user_copy::{
     EINVAL, EIO, EMFILE, ENFILE, ENOMEM, EPROTONOSUPPORT, ESRCH,
 };
 
-/// Syscall 17: Fetch remote URL content via synchronous HTTP GET request.
-pub fn handle_http_get(arg1: u64, arg2: u64, arg3: u64) -> u64 {
-    let url_ptr = arg1 as *const u8;
-    let out_buf_ptr = arg2;
-    let max_len = arg3;
-
-    let mut url_buf = [0u8; 128];
-    let len = match unsafe { read_user_string(url_ptr, &mut url_buf) } {
-        Ok(l) => l,
-        Err(e) => return errno_to_ret(e),
-    };
-
-    if let Ok(url_str) = core::str::from_utf8(&url_buf[..len]) {
-        if let Ok((resp_buf, resp_len)) = unsafe { keira_net::tcp::stream::fetch_http(url_str) } {
-            let to_copy = (max_len as usize).min(resp_len);
-            if unsafe { copy_to_user(out_buf_ptr, &resp_buf[..to_copy]) }.is_ok() {
-                return to_copy as u64;
-            }
-        }
-    }
-    errno_to_ret(EIO)
-}
-
 /// Syscall 24: Create an endpoint for communication.
 pub fn handle_socket(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     unsafe {

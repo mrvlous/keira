@@ -65,7 +65,7 @@ fn syscall_dispatcher_inner(
         14 => handle_getpid(),
         15 => handle_getcwd(arg1, arg2),
         16 => handle_chdir(arg1),
-        17 => handle_http_get(arg1, arg2, arg3),
+        17 => errno_to_ret(ENOSYS),
         20 => handle_mmap(arg1, arg2, arg3, arg4, arg5, arg6),
         21 => handle_munmap(arg1, arg2),
         22 => handle_kill(arg1, arg2),
