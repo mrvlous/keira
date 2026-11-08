@@ -52,3 +52,5 @@ Keira includes standard native Ring 3 executable binaries (`userland/bin/`) comp
 | [`chmod.elf`](chmod.md) | `userland/bin/chmod/` | Freestanding file mode bits and Discretionary Access Control modification utility |
 | [`chown.elf`](chown.md) | `userland/bin/chown/` | Freestanding file owner and group identity modification utility |
 | [`pmap.elf`](pmap.md) | `userland/bin/pmap/` | Freestanding process memory map and virtual memory area inspection utility |
+| [`test_poll.elf`](test_poll.md) | `userland/bin/test_poll/` | Freestanding POSIX poll synchronous I/O multiplexing test suite |
+| [`test_select.elf`](test_select.md) | `userland/bin/test_select/` | Freestanding POSIX select synchronous I/O multiplexing test suite |

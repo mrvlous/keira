@@ -71,6 +71,6 @@ keira:/# fetch -v http://example.com/
 - **Source Path**: `userland/bin/fetch/main.c`
 - **Binary Locations**: `/bin/fetch.elf`, `/bin/fetch`
 - **Privilege Level**: Ring 3 unprivileged
-- **Dependencies**: Freestanding `libc.a` (`<fcntl.h>`, `<stdio.h>`, `<stdlib.h>`, `<string.h>`, `<unistd.h>`, `<sys/syscall.h>`)
-- **System Calls**: `sys_http_get` (Vector 83), `sys_open`, `sys_write`, `sys_close` and `sys_exit`
+- **Dependencies**: Freestanding `libc.a` (`<arpa/inet.h>`, `<sys/socket.h>`, `<fcntl.h>`, `<stdio.h>`, `<stdlib.h>`, `<string.h>`, `<unistd.h>`)
+- **System Calls**: `sys_socket` (Vector 24), `sys_connect` (Vector 25), `sys_write` (Vector 8), `sys_read` (Vector 7), `sys_open` (Vector 6), `sys_close` (Vector 9) and `sys_exit` (Vector 2)
 - **Buffer Size**: 4096-byte transfer buffer
