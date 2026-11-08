@@ -152,4 +152,31 @@ pub mod test {
         let stats = get_poll_telemetry();
         assert_eq!(stats.total_polls, 0);
     }
+
+    #[test]
+    fn test_select_dispatch_and_validation() {
+        use crate::{get_select_telemetry, select_telemetry_reset, FdSet};
+
+        select_telemetry_reset();
+
+        // Excess nfds returns EINVAL
+        let ret = syscall_dispatcher(107, 2048, 0, 0, 0, 0, 0);
+        assert_eq!(ret, errno_to_ret(EINVAL));
+
+        // nfds == 0 with null sets returns 0 immediately
+        let ret = syscall_dispatcher(107, 0, 0, 0, 0, 0, 0);
+        assert_eq!(ret, 0);
+
+        // Bitmask helper operations test
+        let mut set = FdSet::default();
+        assert!(!set.is_set(5));
+        set.set(5);
+        assert!(set.is_set(5));
+        set.clear(5);
+        assert!(!set.is_set(5));
+
+        // Verify telemetry snapshot function
+        let stats = get_select_telemetry();
+        assert_eq!(stats.total_selects, 0);
+    }
 }

@@ -151,6 +151,7 @@ fn syscall_dispatcher_inner(
         104 | 302 => handle_prlimit64(arg1, arg2, arg3, arg4),
         105 | 360 => handle_socketpair(arg1, arg2, arg3, arg4),
         106 => handle_poll(arg1, arg2, arg3),
+        107 => handle_select(arg1, arg2, arg3, arg4, arg5),
         _ => errno_to_ret(ENOSYS),
     }
 }

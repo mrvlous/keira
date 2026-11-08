@@ -18,8 +18,9 @@ pub mod tss;
 pub mod user_copy;
 
 pub use dispatcher::{
-    get_poll_telemetry, poll_telemetry_reset, syscall_dispatcher, validate_fd, PollFd,
-    PollTelemetry, POLLERR, POLLHUP, POLLIN, POLLNVAL, POLLOUT, POLLPRI,
+    get_poll_telemetry, get_select_telemetry, handle_select, poll_telemetry_reset,
+    select_telemetry_reset, syscall_dispatcher, validate_fd, FdSet, PollFd, PollTelemetry,
+    SelectTelemetry, TimeVal, FD_SETSIZE, POLLERR, POLLHUP, POLLIN, POLLNVAL, POLLOUT, POLLPRI,
 };
 pub use exception::{
     exception_dispatcher, get_cpu_exception_count, ExceptionStackFrame, TOTAL_CPU_EXCEPTIONS,

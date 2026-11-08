@@ -16,6 +16,7 @@ pub mod net;
 pub mod poll;
 pub mod process;
 pub mod resource;
+pub mod select;
 pub mod signal;
 pub mod system;
 
@@ -26,5 +27,6 @@ pub use net::*;
 pub use poll::*;
 pub use process::*;
 pub use resource::*;
+pub use select::*;
 pub use signal::*;
 pub use system::*;

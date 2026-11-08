@@ -22,5 +22,9 @@ pub use handlers::poll::{
     get_poll_telemetry, poll_telemetry_reset, PollFd, PollTelemetry, POLLERR, POLLHUP, POLLIN,
     POLLNVAL, POLLOUT, POLLPRI,
 };
+pub use handlers::select::{
+    get_select_telemetry, handle_select, select_telemetry_reset, FdSet, SelectTelemetry, TimeVal,
+    FD_SETSIZE,
+};
 pub use router::{sanitize_ret, syscall_dispatcher};
 pub use validate::{validate_fd, HEAP_MAX_VADDR};
