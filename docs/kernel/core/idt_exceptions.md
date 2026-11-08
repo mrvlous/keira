@@ -2,7 +2,7 @@
 
 # Interrupt Descriptor Table (IDT) & Hardware Exceptions
 
-The Interrupt Descriptor Table (IDT) maps hardware interrupts, CPU faults, and software system call traps to kernel handlers.
+The Interrupt Descriptor Table (IDT) maps hardware interrupts, CPU faults and software system call traps to kernel handlers.
 
 ---
 

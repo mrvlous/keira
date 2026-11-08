@@ -2,7 +2,7 @@
 
 # Multiboot2 Specification & Early Handshake
 
-Keira conforms to the Multiboot2 Specification, allowing standard bootloaders like GRUB to initialize the machine state, switch to 32-bit Protected Mode, and pass boot metadata structures to the kernel.
+Keira conforms to the Multiboot2 Specification, allowing standard bootloaders like GRUB to initialize the machine state, switch to 32-bit Protected Mode and pass boot metadata structures to the kernel.
 
 ---
 
@@ -67,7 +67,7 @@ pub struct MultibootTagHeader {
 | `3` | Modules | Information about loaded modules (e.g. `initrd.tar`) |
 | `4` | Basic Memory Info | Lower and upper conventional memory limits |
 | `6` | Memory Map | Comprehensive physical memory layout (Usable, Reserved, ACPI) |
-| `8` | Framebuffer Info | VESA/EFI linear framebuffer address, resolution, pitch, and pixel format |
+| `8` | Framebuffer Info | VESA/EFI linear framebuffer address, resolution, pitch and pixel format |
 | `9` | ELF Symbols | Kernel symbol table for stack unwinding |
 | `14` | ACPI Old RSDP | ACPI 1.0 Root System Description Pointer address |
 | `15` | ACPI New RSDP | ACPI 2.0+ Extended System Description Pointer address |

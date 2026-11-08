@@ -2,7 +2,7 @@
 
 # SMP Reschedule IPI & Preemptive Task Dispatch
 
-The Keira Kernel Reschedule Inter-Processor Interrupt (IPI) framework enables low-latency cross-core task migration, instantaneous worker wakeup, and preemptive rescheduling across multi-processor systems.
+The Keira Kernel Reschedule Inter-Processor Interrupt (IPI) framework enables low-latency cross-core task migration, instantaneous worker wakeup and preemptive rescheduling across multi-processor systems.
 
 ---
 
@@ -29,7 +29,7 @@ By allocating hardware interrupt Vector `0xFE` (`VECTOR_RESCHEDULE`) and trigger
    - Invokes `reschedule_ipi_handler` to write End-Of-Interrupt (`EOI`) to Local APIC MMIO register `0x0B0` and record telemetry.
    - Calls `schedule_tick(current_rsp)` which evaluates local runqueues and decentralized work-stealing deques.
    - If a new task is chosen, updates `rsp = rax` (context switch).
-   - Restores registers (`popaq`), executes conditional `swapgs`, and returns via `iretq`.
+   - Restores registers (`popaq`), executes conditional `swapgs` and returns via `iretq`.
 2. **32-bit Protected Mode (`isr_reschedule`)**:
    - Preserves general-purpose registers via `pushad`.
    - Calls `reschedule_ipi_handler`.

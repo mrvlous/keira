@@ -79,5 +79,5 @@ while TLB_ACK_COUNTER.load(Ordering::Acquire) < remote_cores {
 Vector `0xFD` (253) is reserved exclusively for the TLB shootdown interrupt.
 
 - **IDT Gate**: Configured with Ring 0 privilege and interrupt gate attributes (`0x8E`), ensuring hardware clears the `IF` flag upon entry.
-- **64-bit Entry (`arch/x86/x86_64/kernel/isr.asm`)**: Implements `swapgs` checking, preserves all registers, invokes `tlb_shootdown_handler`, and issues `iretq`.
-- **32-bit Entry (`arch/x86/i686/kernel/isr.asm`)**: Preserves all 32-bit general-purpose and segment registers, executes `tlb_shootdown_handler`, and issues `iretd`.
+- **64-bit Entry (`arch/x86/x86_64/kernel/isr.asm`)**: Implements `swapgs` checking, preserves all registers, invokes `tlb_shootdown_handler` and issues `iretq`.
+- **32-bit Entry (`arch/x86/i686/kernel/isr.asm`)**: Preserves all 32-bit general-purpose and segment registers, executes `tlb_shootdown_handler` and issues `iretd`.
