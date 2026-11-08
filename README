@@ -19,7 +19,7 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 53 chronological engineering milestones:
+of computer systems across 54 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -43,6 +43,7 @@ of computer systems across 53 chronological engineering milestones:
 * Milestone 51: Pure Kernel Demarcation, Application-Layer Bloat Purge & Canonical Rootfs Hardening (Ring 0 HTTPS Client Purge, Rootfs FHS Hardening, Freestanding Monolithic Kernel Purity).
 * Milestone 52: POSIX Synchronous I/O Multiplexing & SYS_POLL (Century-Plus Syscall 106, /bin/test_poll, ABI Test 38, Ring 0 pollinfo).
 * Milestone 53: POSIX Synchronous I/O Multiplexing Triad & SYS_SELECT (Century-Plus Syscall 107, /bin/test_select, ABI Test 39, Ring 0 selectinfo).
+* Milestone 54: Pure Freestanding Monolithic Kernel Demarcation, Layer 7 HTTP Ring 0 Purge, BSD Socket Networking Engine & Canonical FHS Purification (Pure L4 TCP Transport, <arpa/inet.h>, /usr/src FHS Standardization).
 
 Read the detailed engineering journal: docs/journey/README.md
 System architecture overview: docs/architecture/README.md
