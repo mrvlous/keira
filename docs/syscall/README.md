@@ -2,7 +2,7 @@
 
 # Keira System Call Subsystem
 
-The `syscall` domain provides the secure interface connecting unprivileged Ring 3 userland processes to Ring 0 kernel services across 107 registered system call vectors.
+The `syscall` domain provides the secure interface connecting unprivileged Ring 3 userland processes to Ring 0 kernel services across 108 registered system call vectors.
 
 ---
 

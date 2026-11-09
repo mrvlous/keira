@@ -128,3 +128,4 @@ Keira implements a robust, secure and standardized system call vector table prov
 | `105` | `SYS_SOCKETPAIR`| IPC/Net | `int socketpair(int domain, int type, int protocol, int sv[2])` | Allocates connected pair of bidirectional sockets |
 | `106` | `SYS_POLL` | File I/O | `int poll(struct pollfd *fds, nfds_t nfds, int timeout)` | Synchronous multiplexing awaiting readiness events |
 | `107` | `SYS_SELECT` | File I/O | `int select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, struct timeval *to)` | Synchronous multiplexing with bitmask descriptor sets |
+| `108` | `SYS_UNAME` | System | `int sys_uname(struct utsname *buf)` | Queries system identification, kernel release and architecture |
