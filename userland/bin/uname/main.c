@@ -8,10 +8,10 @@
  * the Free Software Foundation; version 2 of the License.
  */
 
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 
 static void print_usage(void) {
@@ -79,81 +79,31 @@ int main(int argc, char **argv) {
         opt_s = 1;
     }
 
-    const char *kernel_name = "Keira";
-    char hostname[64] = "keira";
-    char release[32] = "0.8.0";
-    char version[64] = "#1 SMP 2026";
-#if defined(__x86_64__)
-    const char *machine = "x86_64";
-#else
-    const char *machine = "i686";
-#endif
-
-    int vfd = open("/proc/version", O_RDONLY, 0);
-    if (vfd >= 0) {
-        char vbuf[256];
-        ssize_t vn = read(vfd, vbuf, sizeof(vbuf) - 1);
-        close(vfd);
-        if (vn > 0) {
-            vbuf[vn] = '\0';
-            char *ver_pos = strstr(vbuf, "version ");
-            if (ver_pos) {
-                ver_pos += 8;
-                char *space = strchr(ver_pos, ' ');
-                if (space) {
-                    size_t rlen = (size_t)(space - ver_pos);
-                    if (rlen < sizeof(release)) {
-                        memcpy(release, ver_pos, rlen);
-                        release[rlen] = '\0';
-                    }
-                }
-            }
-            char *hash_pos = strchr(vbuf, '#');
-            if (hash_pos) {
-                char *gcc_pos = strstr(hash_pos, " gcc");
-                if (gcc_pos) {
-                    size_t vlen = (size_t)(gcc_pos - hash_pos);
-                    if (vlen < sizeof(version)) {
-                        memcpy(version, hash_pos, vlen);
-                        version[vlen] = '\0';
-                    }
-                }
-            }
-        }
-    }
-
-    int fd = open("/etc/hostname", O_RDONLY, 0);
-    if (fd >= 0) {
-        ssize_t n = read(fd, hostname, sizeof(hostname) - 1);
-        if (n > 0) {
-            while (n > 0 &&
-                   (hostname[n - 1] == '\n' || hostname[n - 1] == '\r' || hostname[n - 1] == ' ')) {
-                n--;
-            }
-            hostname[n] = '\0';
-        }
-        close(fd);
+    struct utsname u;
+    if (uname(&u) < 0) {
+        fprintf(stderr, "uname: cannot get system name\n");
+        return 1;
     }
 
     int first = 1;
     if (opt_s) {
-        printf("%s%s", first ? "" : " ", kernel_name);
+        printf("%s%s", first ? "" : " ", u.sysname);
         first = 0;
     }
     if (opt_n) {
-        printf("%s%s", first ? "" : " ", hostname);
+        printf("%s%s", first ? "" : " ", u.nodename);
         first = 0;
     }
     if (opt_r) {
-        printf("%s%s", first ? "" : " ", release);
+        printf("%s%s", first ? "" : " ", u.release);
         first = 0;
     }
     if (opt_v) {
-        printf("%s%s", first ? "" : " ", version);
+        printf("%s%s", first ? "" : " ", u.version);
         first = 0;
     }
     if (opt_m) {
-        printf("%s%s", first ? "" : " ", machine);
+        printf("%s%s", first ? "" : " ", u.machine);
     }
     putchar('\n');
 
