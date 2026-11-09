@@ -121,6 +121,7 @@
 #define SYS_SOCKETPAIR 105
 #define SYS_POLL 106
 #define SYS_SELECT 107
+#define SYS_UNAME 108
 
 struct stat;
 struct rlimit;
@@ -192,6 +193,7 @@ int sys_prlimit64(pid_t pid, int resource, const struct rlimit *new_limit,
                   struct rlimit *old_limit);
 int sys_poll(void *fds, unsigned int nfds, int timeout);
 int sys_select(int nfds, void *readfds, void *writefds, void *exceptfds, void *timeout);
+int sys_uname(void *buf);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2
