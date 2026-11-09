@@ -257,5 +257,53 @@ int run_test_abi_proc(void) {
     }
     puts("  [OK]   Process resource limits (RLIMIT) and quota enforcement verified");
 
+    /* 40. POSIX System Identity & sys_uname (Syscall 108) */
+    puts("  [TEST] POSIX system identity and sys_uname (Syscall 108)...");
+    if (uname(NULL) == 0 || errno != EFAULT) {
+        puts("  [FAIL] uname accepted NULL pointer");
+        return 1;
+    }
+
+    struct utsname u;
+    memset(&u, 0, sizeof(u));
+    if (uname(&u) != 0) {
+        puts("  [FAIL] uname(&u) failed");
+        return 1;
+    }
+
+    if (strcmp(u.sysname, "Keira") != 0) {
+        printf("  [FAIL] uname sysname mismatch: expected 'Keira', got '%s'\n", u.sysname);
+        return 1;
+    }
+
+    if (strlen(u.nodename) == 0) {
+        puts("  [FAIL] uname nodename is empty");
+        return 1;
+    }
+
+    if (strcmp(u.release, "0.8.0") != 0) {
+        printf("  [FAIL] uname release mismatch: expected '0.8.0', got '%s'\n", u.release);
+        return 1;
+    }
+
+    if (strstr(u.version, "SMP") == NULL) {
+        printf("  [FAIL] uname version missing SMP string: got '%s'\n", u.version);
+        return 1;
+    }
+
+#if defined(__x86_64__)
+    if (strcmp(u.machine, "x86_64") != 0) {
+        printf("  [FAIL] uname machine mismatch: expected 'x86_64', got '%s'\n", u.machine);
+        return 1;
+    }
+#else
+    if (strcmp(u.machine, "i686") != 0) {
+        printf("  [FAIL] uname machine mismatch: expected 'i686', got '%s'\n", u.machine);
+        return 1;
+    }
+#endif
+
+    puts("  [OK]   POSIX system identity (sys_uname) verified");
+
     return 0;
 }
