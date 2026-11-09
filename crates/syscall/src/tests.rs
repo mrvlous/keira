@@ -85,3 +85,12 @@ fn test_netfilter_syscall_mapping() {
 fn test_socketpair_syscall_mapping() {
     assert_eq!(table::syscall_name(SYS_SOCKETPAIR), "sys_socketpair");
 }
+
+#[test]
+fn test_uname_syscall_mapping_and_handling() {
+    assert_eq!(table::syscall_name(SYS_UNAME), "sys_uname");
+    assert_eq!(
+        dispatcher::syscall_dispatcher(SYS_UNAME, 0, 0, 0, 0, 0, 0),
+        errno_to_ret(EFAULT)
+    );
+}

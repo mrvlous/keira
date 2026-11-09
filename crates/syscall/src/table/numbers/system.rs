@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! System hardware, timing, virtualization, and cryptographic coprocessor syscall numbers.
+//! System hardware, timing, virtualization and cryptographic coprocessor syscall numbers.
 
 pub const SYS_INIT_MODULE: u64 = 34;
 pub const SYS_DELETE_MODULE: u64 = 35;
@@ -30,3 +30,4 @@ pub const SYS_BPF: u64 = 78;
 pub const SYS_TPM2: u64 = 79;
 pub const SYS_PCI_BRIDGE: u64 = 80;
 pub const SYS_GETRANDOM: u64 = 101;
+pub const SYS_UNAME: u64 = 108;

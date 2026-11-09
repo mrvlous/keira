@@ -7,7 +7,7 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
 
-//! Hardware, timing, cryptographic coprocessor, and virtual machine syscall handlers.
+//! Hardware, timing, cryptographic coprocessor and virtual machine syscall handlers.
 
 use keira_task::scheduler::{CURRENT_TASK_IDX, TASKS};
 
@@ -462,4 +462,81 @@ pub fn handle_getrandom(buf_ptr: u64, buflen: u64, _flags: u64) -> u64 {
         written += chunk_size;
     }
     written as u64
+}
+
+/// Canonical POSIX system identity descriptor (390 bytes).
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct UtsName {
+    pub sysname: [u8; 65],
+    pub nodename: [u8; 65],
+    pub release: [u8; 65],
+    pub version: [u8; 65],
+    pub machine: [u8; 65],
+    pub domainname: [u8; 65],
+}
+
+/// Syscall 108: Query operating system identity and hardware architecture.
+pub fn handle_uname(buf_ptr: u64) -> u64 {
+    let uts_sz = core::mem::size_of::<UtsName>() as u64;
+    if unsafe { validate_user_ptr(buf_ptr, uts_sz, true) }.is_err() {
+        return errno_to_ret(EFAULT);
+    }
+
+    let mut uts = UtsName {
+        sysname: [0u8; 65],
+        nodename: [0u8; 65],
+        release: [0u8; 65],
+        version: [0u8; 65],
+        machine: [0u8; 65],
+        domainname: [0u8; 65],
+    };
+
+    let sysname_src = b"Keira";
+    uts.sysname[..sysname_src.len()].copy_from_slice(sysname_src);
+
+    let mut hbuf = [0u8; 64];
+    if let Ok(len) = keira_fs::vfs::read_file("/etc/hostname", &mut hbuf) {
+        let mut actual = len;
+        while actual > 0
+            && (hbuf[actual - 1] == b'\n'
+                || hbuf[actual - 1] == b'\r'
+                || hbuf[actual - 1] == b' ')
+        {
+            actual -= 1;
+        }
+        let copy_len = actual.min(64);
+        uts.nodename[..copy_len].copy_from_slice(&hbuf[..copy_len]);
+    } else {
+        let default_host = b"keira";
+        uts.nodename[..default_host.len()].copy_from_slice(default_host);
+    }
+
+    let release_src = b"0.8.0";
+    uts.release[..release_src.len()].copy_from_slice(release_src);
+
+    let version_src = b"#1 SMP 2026";
+    uts.version[..version_src.len()].copy_from_slice(version_src);
+
+    #[cfg(target_arch = "x86_64")]
+    let machine_src = b"x86_64";
+    #[cfg(target_arch = "x86")]
+    let machine_src = b"i686";
+    uts.machine[..machine_src.len()].copy_from_slice(machine_src);
+
+    let domain_src = b"(none)";
+    uts.domainname[..domain_src.len()].copy_from_slice(domain_src);
+
+    let slice = unsafe {
+        core::slice::from_raw_parts(
+            (&uts as *const UtsName) as *const u8,
+            core::mem::size_of::<UtsName>(),
+        )
+    };
+
+    if unsafe { copy_to_user(buf_ptr, slice) }.is_err() {
+        return errno_to_ret(EFAULT);
+    }
+
+    0
 }
