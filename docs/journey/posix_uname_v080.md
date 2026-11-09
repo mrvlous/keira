@@ -113,3 +113,4 @@ pub struct UtsName {
 | **Compiler Test** | `/bin/kcc.elf` | Native C compilation and execution | **Passed** |
 | **Network Engine** | `/bin/fetch.elf` | Live HTTP fetch over pure BSD sockets | **Passed** |
 | **Multi-Arch Build**| `make full` | Both `x86_64` and `i686` targets | **0 err, 0 warn** |
+
