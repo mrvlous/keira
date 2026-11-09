@@ -25,3 +25,4 @@ struct utsname {
 int uname(struct utsname *buf);
 
 #endif /* _SYS_UTSNAME_H */
+
