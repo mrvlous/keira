@@ -11,8 +11,8 @@ The `uname.elf` executable (`/bin/uname.elf` and `/bin/uname`) is a freestanding
 System identity reporting is handled cleanly in userspace:
 
 1. **Standard Compatibility**: Provides standard POSIX arguments (`-a`, `-s`, `-n`, `-r`, `-v`, `-m`) for script portability.
-2. **Dynamic ProcFS Integration**: Reads kernel name, release version and build date from `/proc/version`.
-3. **Hostname Synchronization**: Reads current network hostname dynamically from `/etc/hostname`.
+2. **Native POSIX Syscall Integration**: Directly invokes Century-Plus Syscall 108 (`SYS_UNAME`) via `<sys/utsname.h>` and `uname(&u)`.
+3. **Structured Binary Contract**: Eliminates text-based ProcFS parsing, receiving structured kernel identity records (`sysname`, `nodename`, `release`, `version`, `machine`) directly from Ring 0.
 
 ---
 
@@ -52,5 +52,6 @@ x86_64
 
 - **Source Path**: `userland/bin/uname/main.c`
 - **Binary Locations**: `/bin/uname.elf`, `/bin/uname`
-- **Information Sources**: `/proc/version`, `/etc/hostname`
+- **System Call**: Vector 108 (`SYS_UNAME`) via `uname()`
+- **C Header**: `<sys/utsname.h>` (`struct utsname`)
 - **Privilege Level**: Ring 3 unprivileged
