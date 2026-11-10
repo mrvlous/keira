@@ -31,3 +31,4 @@ pub const SYS_TPM2: u64 = 79;
 pub const SYS_PCI_BRIDGE: u64 = 80;
 pub const SYS_GETRANDOM: u64 = 101;
 pub const SYS_UNAME: u64 = 108;
+pub const SYS_REBOOT: u64 = 109;

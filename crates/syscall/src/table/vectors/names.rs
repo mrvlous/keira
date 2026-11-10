@@ -117,6 +117,7 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_POLL => "sys_poll",
         SYS_SELECT => "sys_select",
         SYS_UNAME => "sys_uname",
+        SYS_REBOOT => "sys_reboot",
         _ => "sys_unknown",
     }
 }

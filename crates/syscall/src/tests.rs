@@ -94,3 +94,28 @@ fn test_uname_syscall_mapping_and_handling() {
         errno_to_ret(EFAULT)
     );
 }
+
+#[test]
+fn test_reboot_syscall_mapping_and_handling() {
+    assert_eq!(table::syscall_name(SYS_REBOOT), "sys_reboot");
+    assert_eq!(
+        dispatcher::syscall_dispatcher(SYS_REBOOT, 0, 0, 0, 0, 0, 0),
+        errno_to_ret(EINVAL)
+    );
+    assert_eq!(
+        dispatcher::syscall_dispatcher(SYS_REBOOT, 0xfee1dead, 672274793, 0xdeadbeef, 0, 0, 0),
+        errno_to_ret(EINVAL)
+    );
+    assert_eq!(
+        dispatcher::syscall_dispatcher(
+            SYS_REBOOT,
+            0xfee1dead,
+            672274793,
+            0x01234567,
+            0,
+            0,
+            0
+        ),
+        0
+    );
+}

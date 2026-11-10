@@ -540,3 +540,55 @@ pub fn handle_uname(buf_ptr: u64) -> u64 {
 
     0
 }
+
+pub const LINUX_REBOOT_MAGIC1: u32 = 0xfee1dead;
+pub const LINUX_REBOOT_MAGIC2: u32 = 672274793;
+pub const LINUX_REBOOT_MAGIC2A: u32 = 85072278;
+pub const LINUX_REBOOT_MAGIC2B: u32 = 369367448;
+pub const LINUX_REBOOT_MAGIC2C: u32 = 537993216;
+
+pub const LINUX_REBOOT_CMD_RESTART: u32 = 0x01234567;
+pub const LINUX_REBOOT_CMD_HALT: u32 = 0xcdef0123;
+pub const LINUX_REBOOT_CMD_POWER_OFF: u32 = 0x4321fedc;
+pub const LINUX_REBOOT_CMD_RESTART2: u32 = 0xa1b2c3d4;
+
+/// Syscall 109: Reboot the machine or initiate ACPI poweroff.
+pub fn handle_reboot(magic1: u64, magic2: u64, cmd: u64, _arg: u64) -> u64 {
+    let uid = unsafe { keira_task::scheduler::get_current_uid() };
+    if uid != 0 {
+        return errno_to_ret(EPERM);
+    }
+
+    let m1 = magic1 as u32;
+    let m2 = magic2 as u32;
+    if m1 != LINUX_REBOOT_MAGIC1
+        || (m2 != LINUX_REBOOT_MAGIC2
+            && m2 != LINUX_REBOOT_MAGIC2A
+            && m2 != LINUX_REBOOT_MAGIC2B
+            && m2 != LINUX_REBOOT_MAGIC2C)
+    {
+        return errno_to_ret(EINVAL);
+    }
+
+    match cmd as u32 {
+        LINUX_REBOOT_CMD_RESTART | LINUX_REBOOT_CMD_RESTART2 => {
+            #[cfg(not(test))]
+            {
+                keira_io::vga::print_str("[kernel] Restarting system via ACPI...\n");
+                keira_arch::power::acpi::reboot();
+            }
+            #[cfg(test)]
+            0
+        }
+        LINUX_REBOOT_CMD_POWER_OFF | LINUX_REBOOT_CMD_HALT => {
+            #[cfg(not(test))]
+            {
+                keira_io::vga::print_str("[kernel] Powering off system via ACPI...\n");
+                keira_arch::power::acpi::poweroff();
+            }
+            #[cfg(test)]
+            0
+        }
+        _ => errno_to_ret(EINVAL),
+    }
+}
