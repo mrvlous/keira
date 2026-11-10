@@ -8,17 +8,17 @@ Keira establishes numerical system call constants across eight functional subsys
 
 ## 1. Subsystem Category Distribution
 
-| Subsystem Category | Source Module | Vector Count | Primary System Calls |
+| Subsystem Category | Source Module | Constant Count | Primary System Calls |
 | :--- | :--- | :--- | :--- |
-| **File I/O & Filesystem** | `numbers/io.rs` | 26 | `open`, `read`, `write`, `close`, `lseek`, `sync`, `fsync`, `fcntl`, `ioctl`, `dup`, `dup2`, `getdents`, `unlink`, `mkdir`, `splice`, `vmsplice`, `symlink`, `readlink`, `mount`, `umount`, `chmod`, `chown`, `stat`, `fstat`, `poll`, `select` |
-| **System Executive & Timers**| `numbers/system.rs` | 28 | `putc`, `sleep`, `uptime`, `clock_gettime_fast`, `ptrace`, `io_uring_setup`, `io_uring_enter`, `kvm_create_vm`, `syslog`, `timer_create`, `timer_settime`, `perf_event_open`, `seccomp`, `gettimeofday`, `settimeofday`, `prctl`, `clock_gettime`, `nanosleep`, `raid_lvm`, `perf_event`, `bpf`, `tpm2`, `pci_bridge`, `getrandom`, `init_module`, `delete_module`, `uname`, `reboot` |
-| **Process & Credentials** | `numbers/process.rs`| 17 | `exit`, `exec`, `wait`, `getpid`, `fork`, `clone_thread`, `waitpid`, `getppid`, `getuid`, `setuid`, `getgid`, `setgid`, `geteuid`, `getegid`, `getrlimit`, `setrlimit`, `prlimit64` |
-| **Inter-Process Comm (IPC)** | `numbers/ipc.rs` | 12 | `pipe`, `pipe2`, `shmget`, `shmat`, `futex`, `eventfd`, `signalfd`, `epoll_create`, `epoll_ctl`, `epoll_wait`, `mq_open`, `shm_sem` |
-| **Virtual Memory (VMM)** | `numbers/memory.rs` | 7 | `sbrk`, `brk`, `mmap`, `munmap`, `mprotect`, `madvise`, `msync` |
-| **Networking & Sockets** | `numbers/net.rs` | 6 | `socket`, `connect`, `tls_connect`, `netfilter`, `ping`, `socketpair` |
-| **POSIX Signal Management**| `numbers/signal.rs` | 5 | `kill`, `sigaction`, `sigreturn`, `sigprocmask`, `sigpending` |
+| **File I/O & Filesystem** | `numbers/io.rs` | 26 | `open`, `read`, `write`, `close`, `lseek`, `splice`, `vmsplice`, `sync`, `fsync`, `fcntl`, `ioctl`, `dup`, `dup2`, `getdents`, `unlink`, `mkdir`, `symlink`, `readlink`, `mount`, `umount`, `chmod`, `chown`, `stat`, `fstat`, `poll` and `select` |
+| **System Executive & Hardware**| `numbers/system.rs` | 23 | `init_module`, `delete_module`, `clock_gettime_fast`, `ptrace`, `kvm_create_vm`, `kvm_run_vcpu`, `syslog`, `timer_create`, `timer_settime`, `perf_event_open`, `seccomp`, `gettimeofday`, `settimeofday`, `clock_gettime`, `nanosleep`, `raid_lvm`, `perf_event`, `bpf`, `tpm2`, `pci_bridge`, `getrandom`, `uname` and `reboot` |
+| **Process & Credentials** | `numbers/process.rs`| 23 | `putc`, `exit`, `sleep`, `uptime`, `exec`, `wait`, `getpid`, `getcwd`, `chdir`, `fork`, `clone_thread`, `prctl`, `getuid`, `setuid`, `waitpid`, `getppid`, `getgid`, `setgid`, `geteuid`, `getegid`, `getrlimit`, `setrlimit` and `prlimit64` |
+| **Inter-Process Comm (IPC)** | `numbers/ipc.rs` | 14 | `pipe`, `pipe2`, `shmget`, `shmat`, `io_uring_setup`, `io_uring_enter`, `futex`, `eventfd`, `signalfd`, `epoll_create`, `epoll_ctl`, `epoll_wait`, `mq_open` and `shm_sem` |
+| **Virtual Memory (VMM)** | `numbers/memory.rs` | 7 | `sbrk`, `brk`, `mmap`, `munmap`, `mprotect`, `madvise` and `msync` |
+| **Networking & Sockets** | `numbers/net.rs` | 9 | `socket`, `connect`, `tls_connect`, `accept`, `listen`, `netfilter`, `ping`, `socketpair` and `http_get` |
+| **POSIX Signal Management**| `numbers/signal.rs` | 5 | `kill`, `sigaction`, `sigreturn`, `sigprocmask` and `sigpending` |
 | **Deprecated Applications** | `numbers/net.rs` | 1 | `http` (Vector 17 deprecated to `-ENOSYS` in Milestone 54) |
-| **Total Registered Vectors** | | **109** | Fully audited across `x86_64` and `i686` |
+| **Total Registered Constants** | | **108** | **105 unique vectors spanning IDs 1 through 109** (audited across `x86_64` and `i686`) |
 
 ---
 

@@ -21,7 +21,7 @@ Keira implements a robust, secure and standardized system call vector table prov
 
 ---
 
-## 2. Complete System Call Vector Directory (107 Vectors)
+## 2. Complete System Call Vector Directory (109 Vectors)
 
 | Vector | Symbolic Name | Category | Signature | Description |
 | :--- | :--- | :--- | :--- | :--- |
