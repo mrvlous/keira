@@ -122,6 +122,7 @@
 #define SYS_POLL 106
 #define SYS_SELECT 107
 #define SYS_UNAME 108
+#define SYS_REBOOT 109
 
 struct stat;
 struct rlimit;
@@ -194,6 +195,7 @@ int sys_prlimit64(pid_t pid, int resource, const struct rlimit *new_limit,
 int sys_poll(void *fds, unsigned int nfds, int timeout);
 int sys_select(int nfds, void *readfds, void *writefds, void *exceptfds, void *timeout);
 int sys_uname(void *buf);
+int sys_reboot(int magic1, int magic2, int cmd, void *arg);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2
