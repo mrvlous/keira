@@ -64,6 +64,7 @@ graph TD
     M52 --> M53["53. POSIX Synchronous I/O Multiplexing Triad & SYS_SELECT<br/><i>Century-Plus Syscall 107, /bin/test_select, ABI Test 39, Ring 0 selectinfo</i>"]
     M53 --> M54["54. Pure Kernel Demarcation & Layer 7 HTTP Purge<br/><i>Ring 0 HTTP Purge, Pure L4 BSD Sockets, <arpa/inet.h>, FHS /usr/src Purification</i>"]
     M54 --> M55["55. POSIX System Identity Subsystem & SYS_UNAME<br/><i>Century-Plus Syscall 108, struct utsname, <sys/utsname.h>, ABI Test 40, Pure uname</i>"]
+    M55 --> M56["56. POSIX System Power Control & SYS_REBOOT<br/><i>Century-Plus Syscall 109, /bin/reboot, /bin/poweroff, <sys/reboot.h>, ABI Test 41</i>"]
 ```
 
 ---
@@ -122,6 +123,7 @@ Foundational development milestones (Milestones 1 through 15) are consolidated a
 | **Milestone 53** | [`posix_select_v080.md`](posix_select_v080.md) | `v0.8.0` | POSIX synchronous I/O multiplexing triad completion, Century-Plus Syscall 107 (SYS_SELECT), freestanding /bin/test_select utility (44 binaries), ABI Test 39 and Ring 0 selectinfo command |
 | **Milestone 54** | [`pure_bsd_sockets_v080.md`](pure_bsd_sockets_v080.md) | `v0.8.0` | Pure freestanding monolithic kernel demarcation, Layer 7 HTTP Ring 0 purge, pure L4 BSD stream sockets, `<arpa/inet.h>`, freestanding Ring 3 fetch and canonical FHS `/usr/src` purification |
 | **Milestone 55** | [`posix_uname_v080.md`](posix_uname_v080.md) | `v0.8.0` | POSIX system identity subsystem, Century-Plus Syscall 108 (SYS_UNAME), canonical `struct utsname`, `<sys/utsname.h>`, ABI Test 40 and native `/bin/uname` refactoring |
+| **Milestone 56** | [`posix_reboot_v080.md`](posix_reboot_v080.md) | `v0.8.0` | POSIX system power management subsystem, Century-Plus Syscall 109 (SYS_REBOOT), `<sys/reboot.h>`, core utilities (/bin/reboot, /bin/poweroff, 46 binaries) and ABI Test 41 |
 
 ---
 
