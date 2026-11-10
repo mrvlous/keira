@@ -11,14 +11,14 @@ Keira establishes numerical system call constants across eight functional subsys
 | Subsystem Category | Source Module | Vector Count | Primary System Calls |
 | :--- | :--- | :--- | :--- |
 | **File I/O & Filesystem** | `numbers/io.rs` | 26 | `open`, `read`, `write`, `close`, `lseek`, `sync`, `fsync`, `fcntl`, `ioctl`, `dup`, `dup2`, `getdents`, `unlink`, `mkdir`, `splice`, `vmsplice`, `symlink`, `readlink`, `mount`, `umount`, `chmod`, `chown`, `stat`, `fstat`, `poll`, `select` |
-| **System Executive & Timers**| `numbers/system.rs` | 27 | `putc`, `sleep`, `uptime`, `clock_gettime_fast`, `ptrace`, `io_uring_setup`, `io_uring_enter`, `kvm_create_vm`, `syslog`, `timer_create`, `timer_settime`, `perf_event_open`, `seccomp`, `gettimeofday`, `settimeofday`, `prctl`, `clock_gettime`, `nanosleep`, `raid_lvm`, `perf_event`, `bpf`, `tpm2`, `pci_bridge`, `getrandom`, `init_module`, `delete_module`, `uname` |
+| **System Executive & Timers**| `numbers/system.rs` | 28 | `putc`, `sleep`, `uptime`, `clock_gettime_fast`, `ptrace`, `io_uring_setup`, `io_uring_enter`, `kvm_create_vm`, `syslog`, `timer_create`, `timer_settime`, `perf_event_open`, `seccomp`, `gettimeofday`, `settimeofday`, `prctl`, `clock_gettime`, `nanosleep`, `raid_lvm`, `perf_event`, `bpf`, `tpm2`, `pci_bridge`, `getrandom`, `init_module`, `delete_module`, `uname`, `reboot` |
 | **Process & Credentials** | `numbers/process.rs`| 17 | `exit`, `exec`, `wait`, `getpid`, `fork`, `clone_thread`, `waitpid`, `getppid`, `getuid`, `setuid`, `getgid`, `setgid`, `geteuid`, `getegid`, `getrlimit`, `setrlimit`, `prlimit64` |
 | **Inter-Process Comm (IPC)** | `numbers/ipc.rs` | 12 | `pipe`, `pipe2`, `shmget`, `shmat`, `futex`, `eventfd`, `signalfd`, `epoll_create`, `epoll_ctl`, `epoll_wait`, `mq_open`, `shm_sem` |
 | **Virtual Memory (VMM)** | `numbers/memory.rs` | 7 | `sbrk`, `brk`, `mmap`, `munmap`, `mprotect`, `madvise`, `msync` |
 | **Networking & Sockets** | `numbers/net.rs` | 6 | `socket`, `connect`, `tls_connect`, `netfilter`, `ping`, `socketpair` |
 | **POSIX Signal Management**| `numbers/signal.rs` | 5 | `kill`, `sigaction`, `sigreturn`, `sigprocmask`, `sigpending` |
 | **Deprecated Applications** | `numbers/net.rs` | 1 | `http` (Vector 17 deprecated to `-ENOSYS` in Milestone 54) |
-| **Total Registered Vectors** | | **108** | Fully audited across `x86_64` and `i686` |
+| **Total Registered Vectors** | | **109** | Fully audited across `x86_64` and `i686` |
 
 ---
 
@@ -131,4 +131,5 @@ The kernel exports canonical `#define` macros in `<sys/syscall.h>` matching inte
 #define SYS_POLL               106
 #define SYS_SELECT             107
 #define SYS_UNAME              108
+#define SYS_REBOOT             109
 ```

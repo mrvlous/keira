@@ -129,3 +129,4 @@ Keira implements a robust, secure and standardized system call vector table prov
 | `106` | `SYS_POLL` | File I/O | `int poll(struct pollfd *fds, nfds_t nfds, int timeout)` | Synchronous multiplexing awaiting readiness events |
 | `107` | `SYS_SELECT` | File I/O | `int select(int nfds, fd_set *rfds, fd_set *wfds, fd_set *efds, struct timeval *to)` | Synchronous multiplexing with bitmask descriptor sets |
 | `108` | `SYS_UNAME` | System | `int sys_uname(struct utsname *buf)` | Queries system identification, kernel release and architecture |
+| `109` | `SYS_REBOOT` | System | `int sys_reboot(int magic1, int magic2, int cmd, void *arg)` | Reboots system, powers off platform or halts CPU |
