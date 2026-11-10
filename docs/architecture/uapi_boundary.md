@@ -14,7 +14,7 @@ Inspired by the Linux kernel repository structure (`torvalds/linux`), Keira stri
 +-------------------------------------------------------------------------+
 |                              RING 3 USERLAND                            |
 |  +---------------------+   +---------------------+   +---------------+  |
-|  | Core Utilities (41) |   | Native Compiler     |   | User Runtimes |  |
+|  | Core Utilities (46) |   | Native Compiler     |   | User Runtimes |  |
 |  | sh, cat, ls, fetch  |   | (kcc.elf)           |   | & POSIX Apps  |  |
 |  +----------+----------+   +----------+----------+   +-------+-------+  |
 |             \                         |                     /           |
@@ -39,7 +39,7 @@ Inspired by the Linux kernel repository structure (`torvalds/linux`), Keira stri
 |                                       |                                 |
 |         +-----------------------------+-----------------------------+   |
 |         |                 Syscall Dispatch Engine                   |   |
-|         |             (crates/syscall - 105 Syscalls)               |   |
+|         |             (crates/syscall - 109 Syscalls)               |   |
 |         +-----+---------------+---------------+---------------+-----+   |
 |               |               |               |               |         |
 |         +-----v-----+   +-----v-----+   +-----v-----+   +-----v-----+   |
@@ -53,7 +53,7 @@ Inspired by the Linux kernel repository structure (`torvalds/linux`), Keira stri
 1. **Source Isolation**: The Ring 0 kernel tree (`crates/` and `arch/`) contains zero userland C files and never includes userland headers.
 2. **Autonomous Userland Tree**: The `userland/` directory operates autonomously with its own dedicated build orchestrator (`userland/Makefile`). Userland can be built independently without invoking the top-level kernel build.
 3. **Formal Header Export (`make headers_install`)**: The kernel and userland share a formal User-space API (UAPI) contract located in `include/uapi/`. Out-of-tree runtimes and external toolchains link solely against these headers.
-4. **Configurable Kernel Mode**: Keira supports both full distro-style runtime (`CONFIG_USERLAND=y`) and pure freestanding Ring 0 mode (`CONFIG_USERLAND=n`), where the kernel boots into an interactive supervisor console with zero userland dependencies.
+4. **Configurable Kernel Mode**: Keira supports both full autonomous userland runtime (`CONFIG_USERLAND=y`) and pure freestanding Ring 0 mode (`CONFIG_USERLAND=n`), where the kernel boots into an interactive supervisor console with zero userland dependencies.
 
 ---
 
