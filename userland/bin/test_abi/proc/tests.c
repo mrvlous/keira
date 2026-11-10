@@ -305,5 +305,26 @@ int run_test_abi_proc(void) {
 
     puts("  [OK]   POSIX system identity (sys_uname) verified");
 
+    /* 41. POSIX System Power Management & sys_reboot (Syscall 109) */
+    puts("  [TEST] POSIX system power management and sys_reboot (Syscall 109)...");
+    int raw_res1 = sys_reboot(0, (int)LINUX_REBOOT_MAGIC2, RB_AUTOBOOT, NULL);
+    if (raw_res1 != -EINVAL) {
+        printf("  [FAIL] sys_reboot accepted invalid magic1 (expected %d, got %d)\n", -EINVAL, raw_res1);
+        return 1;
+    }
+
+    int raw_res2 = sys_reboot((int)LINUX_REBOOT_MAGIC1, 0, RB_AUTOBOOT, NULL);
+    if (raw_res2 != -EINVAL) {
+        printf("  [FAIL] sys_reboot accepted invalid magic2 (expected %d, got %d)\n", -EINVAL, raw_res2);
+        return 1;
+    }
+
+    if (reboot(0x12349999) == 0 || errno != EINVAL) {
+        puts("  [FAIL] reboot wrapper accepted invalid command parameter");
+        return 1;
+    }
+
+    puts("  [OK]   POSIX system power management (sys_reboot) boundary verified");
+
     return 0;
 }

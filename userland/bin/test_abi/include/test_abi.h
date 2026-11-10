@@ -22,6 +22,7 @@
 #include <sys/io_uring.h>
 #include <sys/mman.h>
 #include <sys/random.h>
+#include <sys/reboot.h>
 #include <sys/resource.h>
 #include <sys/select.h>
 #include <sys/socket.h>
