@@ -59,6 +59,7 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
     let is_creat = (flags & 0x0040) != 0;
     let is_trunc = (flags & 0x0200) != 0;
     let is_append = (flags & 0x0400) != 0;
+    let is_nonblock = (flags & 0x0800) != 0;
 
     let mut path_buf = [0u8; 128];
     let len = match unsafe { read_user_string(path_ptr, &mut path_buf) } {
@@ -177,6 +178,7 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
                     0
                 };
                 t.fds[fd].write_mode = write_mode;
+                t.fds[fd].nonblocking = is_nonblock;
                 t.fds[fd].path_len = target_len;
                 t.fds[fd].path[..target_len].copy_from_slice(target_path.as_bytes());
                 return fd as u64;
@@ -261,6 +263,16 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                     if node_name == "tty" {
                         #[cfg(target_os = "none")]
                         loop {
+                            while keira_io::serial::has_byte() {
+                                let mut b = keira_io::serial::read_byte();
+                                if b == 0 {
+                                    break;
+                                }
+                                if b == b'\r' {
+                                    b = b'\n';
+                                }
+                                keira_io::tty::push_char(b);
+                            }
                             if let Ok(bytes) =
                                 keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
                             {
@@ -1809,10 +1821,20 @@ pub fn handle_fstat(arg1: u64, arg2: u64) -> u64 {
         if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
             let f = &t.fds[fd];
             if !f.is_open {
-                return errno_to_ret(EBADF);
-            }
-
-            if f.is_pipe {
+                if fd < 3 {
+                    (
+                        0o020666, // S_IFCHR | 0666
+                        0i64,
+                        fd as u64 + 1,
+                        get_current_uid(),
+                        0,
+                        1,
+                        5u64,
+                    )
+                } else {
+                    return errno_to_ret(EBADF);
+                }
+            } else if f.is_pipe {
                 (
                     0o010666, // S_IFIFO | 0666
                     0i64,
