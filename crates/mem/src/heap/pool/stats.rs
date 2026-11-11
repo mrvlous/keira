@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Kernel heap memory accounting, capacity metrics, and telemetry queries.
+//! Kernel heap memory accounting, capacity metrics and telemetry queries.
 
 use super::allocator::{HEAP_END, HEAP_NEXT, HEAP_START};
 use core::sync::atomic::{AtomicUsize, Ordering};
@@ -83,7 +76,7 @@ pub fn heap_get_telemetry() -> (usize, usize, usize, usize, usize, usize) {
 
 /// Executes an automated bare-metal stress test of the segregated free-list kernel heap allocator.
 ///
-/// Exercises allocation, verification, non-contiguous free, free-list reuse, and total reclamation.
+/// Exercises allocation, verification, non-contiguous free, free-list reuse and total reclamation.
 pub fn heap_stress_test() -> Result<(), &'static str> {
     use super::allocator::{kfree, kmalloc};
 

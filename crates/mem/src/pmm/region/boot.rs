@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Bootloader Multiboot2 memory map parsing and early allocator initialization.
 
@@ -17,13 +10,13 @@ use super::descriptor::{UsableRegion, MAX_PHYS_ADDR, REGIONS, REGION_COUNT};
 /// Initializes the Physical Memory Manager by parsing Multiboot2 memory map tags.
 ///
 /// Discovers usable physical memory segments, reserves low memory (< 1 MiB) and kernel
-/// binary boundaries, and seeds the physical page frame allocator.
+/// binary boundaries and seeds the physical page frame allocator.
 ///
 /// # Safety
 ///
 /// The caller must ensure that `multiboot_info_ptr` points to a valid, intact Multiboot2
-/// information structure provided by the bootloader, and `kernel_end` accurately designates
-/// the uppermost byte occupied by the kernel ELF segments, modules, and early heap.
+/// information structure provided by the bootloader and `kernel_end` accurately designates
+/// the uppermost byte occupied by the kernel ELF segments, modules and early heap.
 pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
     let _guard = PmmGuard::lock();
     let mut mmap_tag_ptr: u64 = 0;

@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Memory Management Subsystem Crate (keira-mem)
 #
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
+# Implements PMM bitmap frame tracking, 4-level paging VMM, segregated
+# slab heap allocators, contiguous DMA buffers and swap paging.
 
 [package]
 name = "keira-mem"

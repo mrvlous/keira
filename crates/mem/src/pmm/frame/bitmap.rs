@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Core bitmap-backed frame allocation, deallocation, and state querying.
+//! Core bitmap-backed frame allocation, deallocation and state querying.
 
 use super::super::region::descriptor::{
     is_valid_ram_range, UsableRegion, CURRENT_REGION_IDX, MAX_PHYS_ADDR, REGIONS, REGION_COUNT,
@@ -215,7 +208,7 @@ pub fn get_freed_frame_count() -> u64 {
     unsafe { FREED_FRAME_COUNT }
 }
 
-/// Resets physical memory allocator statistics, bitmap, and regions (for testing purposes).
+/// Resets physical memory allocator statistics, bitmap and regions (for testing purposes).
 pub fn reset_pmm_stats() {
     let _guard = PmmGuard::lock();
     unsafe {
