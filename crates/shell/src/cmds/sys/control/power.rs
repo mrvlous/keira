@@ -21,7 +21,7 @@ pub fn run(parts: &mut core::str::SplitWhitespace) {
     if let Some("-h") | Some("--help") = sub {
         {
             vga::print_str("Usage: power [status|acpi|shutdown|poweroff|reboot]\n\n");
-            vga::print_str("Description:\n  Query ACPI power management states, MADT topology, or initiate system shutdown/reboot.\n\n");
+            vga::print_str("Description:\n  Query ACPI power management states, MADT topology or initiate system shutdown/reboot.\n\n");
             vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
         }
         return;
