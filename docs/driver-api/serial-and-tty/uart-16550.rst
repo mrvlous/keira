@@ -1,0 +1,58 @@
+.. SPDX-License-Identifier: GPL-2.0-only
+
+===================================
+UART 16550 Serial Controller Driver
+===================================
+
+The 16550 UART driver (``crates/io/src/serial/``) provides early console telemetry and serial communication.
+
+1. Port Register Offsets (COM1 = 0x3F8)
+=======================================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 22 25 24
+
+   * - Offset
+     - DLAB=0 (Read)
+     - DLAB=0 (Write)
+     - DLAB=1
+   * - ``+0``
+     - Receiver Buffer (RBR)
+     - Transmitter Holding (THR)
+     - Divisor Latch Low (DLL)
+   * - ``+1``
+     - Interrupt Enable (IER)
+     - Interrupt Enable (IER)
+     - Divisor Latch High (DLH)
+   * - ``+2``
+     - Interrupt Ident (IIR)
+     - FIFO Control (FCR)
+     - FIFO Control (FCR)
+   * - ``+3``
+     - Line Control (LCR)
+     - Line Control (LCR)
+     - Line Control (LCR)
+   * - ``+4``
+     - Modem Control (MCR)
+     - Modem Control (MCR)
+     - Modem Control (MCR)
+   * - ``+5``
+     - Line Status (LSR)
+     - Factory Test
+     - Line Status (LSR)
+
+2. Initialization Sequence (115200 Baud, 8N1)
+=============================================
+
+.. code-block:: rust
+
+   pub unsafe fn init_uart16550(port: u16) {
+       outb(port + 1, 0x00); // Disable interrupts
+       outb(port + 3, 0x80); // Enable DLAB (set baud rate divisor)
+       outb(port + 0, 0x01); // Divisor Low = 1 (115200 baud)
+       outb(port + 1, 0x00); // Divisor High = 0
+       outb(port + 3, 0x03); // 8 bits, no parity, one stop bit (8N1)
+       outb(port + 2, 0xC7); // Enable FIFO, clear 14-byte threshold
+       outb(port + 4, 0x0B); // IRQs enabled, RTS/DSR set
+   }
