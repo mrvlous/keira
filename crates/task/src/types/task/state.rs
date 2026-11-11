@@ -23,7 +23,7 @@ pub enum TaskState {
     Ready,
     /// Currently executing task on CPU.
     Running,
-    /// Task blocked waiting on I/O, child exit, or sleep timer.
+    /// Task blocked waiting on I/O, child exit or sleep timer.
     Blocked,
     /// Terminated task with exit code.
     Exited(i32),
