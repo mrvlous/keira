@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+Contributing to Keira Kernel
+============================
+
+Welcome to the Keira Kernel project! Keira is an open-source, freestanding
+Ring 0 monolithic kernel built from first principles in safe Rust, Assembly
+and C, targeting both 64-bit (x86_64) and 32-bit (i686) architectures.
+
+We welcome technical contributions including bug fixes, hardware device
+drivers, architecture enhancements, optimization passes and documentation
+improvements.
+
+Quick Contributor Reference
+---------------------------
+
+Before proposing or submitting changes, please review our comprehensive
+technical documentation in the `docs/process/` tree:
+
+* Contributor Guide: docs/process/contributing.rst
+* Submitting Patches & PRs: docs/process/submitting-patches.rst
+* Coding Style & Invariants: docs/process/coding-style.rst
+* Development Workflow: docs/process/development-workflow.rst
+* Build System Reference: docs/process/build-system.rst
+* Verification & Testing: docs/process/verification-and-testing/index.rst
+* Subsystem Maintainers: MAINTAINERS
+* Technical Credits: CREDITS
+
+Architectural Invariants & Non-Negotiables
+------------------------------------------
+
+1. Monolithic Kernel Boundary: Keira is an autonomous Ring 0 monolithic
+   kernel. Ring 3 userland processes run in strict isolation. Faults in
+   userspace must be trapped and isolated; they must never panic Ring 0.
+2. Dual-Architecture Parity: All changes must compile and pass testing on
+   both x86_64 and i686 architectures with 0 errors and 0 warnings.
+3. Zero Warnings Policy: All 12 kernel crates, assembly stubs, userland C
+   code and Sphinx documentation must compile cleanly without warnings.
+4. SPDX Licensing: Every source file must contain a machine-readable
+   SPDX-License-Identifier tag (GPL-2.0-only for kernel source and docs).
+5. Clean Style: Zero Oxford commas in prose and comments. Zero double
+   whitespaces. No decorative comment dividers (such as repeated ==== or ----)
+   in source code comments.
+
+Local Verification Sequence
+---------------------------
+
+Execute the following quality gates before opening a pull request:
+
+    # 1. Format code across Rust and C trees
+    make format
+
+    # 2. Run static analysis on userland C code and documentation
+    make lint
+
+    # 3. Verify documentation compliance with style guide
+    make docs-lint
+
+    # 4. Run host unit tests across all 12 kernel crates
+    make test-unit
+
+    # 5. Build and verify userland diagnostic test binaries
+    make user-test ARCH=x86_64
+    make user-test ARCH=i686
+
+    # 6. Build kernel binaries and ISO images for all architectures
+    make full
+
+    # 7. Run automated headless smoke boot tests
+    make test-all
+
+Submitting Your Work
+--------------------
+
+* Organize changes into small, atomic and bisectable commits following
+  conventional commit syntax: `<type>(<scope>): <subject>`.
+* Include a `Signed-off-by` trailer in each commit message.
+* Submit pull requests against the `main` branch.
