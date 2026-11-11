@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Top-level initialization routine for user mode transition structures.
 
@@ -16,10 +9,10 @@ use crate::tss::privilege::msr::configure_syscall_msrs;
 use crate::tss::segment::stack::{BOOT_KERNEL_STACK_TOP, TSS};
 
 /// Initializes User Mode structures: populates GDT TSS entry, reloads GDT,
-/// loads TSS register, and configures syscall MSR registers.
+/// loads TSS register and configures syscall MSR registers.
 ///
 /// # Safety
-/// Modifies processor privilege registers, MSRs, and hardware task state segment configuration.
+/// Modifies processor privilege registers, MSRs and hardware task state segment configuration.
 pub unsafe fn init_user_mode() {
     keira_task::scheduler::register_task_cleanup_hook(crate::dispatcher::syscall_task_cleanup_hook);
 

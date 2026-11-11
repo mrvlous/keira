@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Demand paging and stack auto-growth resolution during user space pointer validation.
 
@@ -15,7 +8,7 @@ use keira_mem::{pmm, vmm};
 /// Attempts to fault-in an unmapped user page via VMA descriptors or heap expansion.
 ///
 /// # Safety
-/// Directly manipulates active page tables, allocates physical frames, and invalidates TLB.
+/// Directly manipulates active page tables, allocates physical frames and invalidates TLB.
 #[cfg(all(target_arch = "x86_64", not(test)))]
 pub unsafe fn try_fault_user_page(vaddr: u64, require_writable: bool) -> bool {
     let pml4 = vmm::active_pml4();

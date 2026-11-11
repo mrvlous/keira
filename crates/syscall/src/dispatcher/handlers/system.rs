@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Hardware, timing, cryptographic coprocessor and virtual machine syscall handlers.
 
@@ -324,7 +317,7 @@ pub fn handle_bpf(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     }
 }
 
-/// Syscall 79: Hardware TPM 2.0 PCR reading, quote generation, and secret sealing.
+/// Syscall 79: Hardware TPM 2.0 PCR reading, quote generation and secret sealing.
 pub fn handle_tpm2(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     match arg1 {
         0 => {
@@ -476,7 +469,7 @@ pub struct UtsName {
     pub domainname: [u8; 65],
 }
 
-/// Syscall 108: Query operating system identity and hardware architecture.
+/// Syscall 108: Query kernel system identity and hardware architecture.
 pub fn handle_uname(buf_ptr: u64) -> u64 {
     let uts_sz = core::mem::size_of::<UtsName>() as u64;
     if unsafe { validate_user_ptr(buf_ptr, uts_sz, true) }.is_err() {
@@ -499,9 +492,7 @@ pub fn handle_uname(buf_ptr: u64) -> u64 {
     if let Ok(len) = keira_fs::vfs::read_file("/etc/hostname", &mut hbuf) {
         let mut actual = len;
         while actual > 0
-            && (hbuf[actual - 1] == b'\n'
-                || hbuf[actual - 1] == b'\r'
-                || hbuf[actual - 1] == b' ')
+            && (hbuf[actual - 1] == b'\n' || hbuf[actual - 1] == b'\r' || hbuf[actual - 1] == b' ')
         {
             actual -= 1;
         }

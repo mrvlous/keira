@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Global TSS instance and privilege level 0 kernel stack control.
 
@@ -67,7 +60,7 @@ pub static mut BOOT_KERNEL_STACK_TOP: usize = 0;
 /// loaded when transitioning from Ring 3 to Ring 0.
 ///
 /// # Safety
-/// Caller must ensure `sp0` points to a valid, mapped, and aligned kernel stack memory region.
+/// Caller must ensure `sp0` points to a valid, mapped and aligned kernel stack memory region.
 #[no_mangle]
 pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
     #[cfg(target_arch = "x86_64")]

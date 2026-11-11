@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Integration tests for the system call subsystem.
 
@@ -107,15 +100,7 @@ fn test_reboot_syscall_mapping_and_handling() {
         errno_to_ret(EINVAL)
     );
     assert_eq!(
-        dispatcher::syscall_dispatcher(
-            SYS_REBOOT,
-            0xfee1dead,
-            672274793,
-            0x01234567,
-            0,
-            0,
-            0
-        ),
+        dispatcher::syscall_dispatcher(SYS_REBOOT, 0xfee1dead, 672274793, 0x01234567, 0, 0, 0),
         0
     );
 }
