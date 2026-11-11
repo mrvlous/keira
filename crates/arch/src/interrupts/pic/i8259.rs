@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Dual 8259 Programmable Interrupt Controller (PIC) driver in pure Rust.
 //!
-//! Provides cascade initialization, vector remapping, masking, and End-of-Interrupt (EOI) signaling.
+//! Provides cascade initialization, vector remapping, masking and End-of-Interrupt (EOI) signaling.
 
 use crate::cpu::{inb, io_wait, outb};
 

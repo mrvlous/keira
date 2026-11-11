@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! x86/x86_64 Port-Mapped I/O (PMIO) assembly instructions.
 //!
 //! Provides direct hardware communication with standard PC bus peripherals,
-//! serial controllers, PIC chips, and CMOS RTC registers via the `IN` and `OUT` opcodes.
+//! serial controllers, PIC chips and CMOS RTC registers via the `IN` and `OUT` opcodes.
 
 #[cfg(target_os = "none")]
 use core::arch::asm;

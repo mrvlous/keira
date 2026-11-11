@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Stack frame pointer walking and callstack backtrace unwinding.
 //!
 //! Traverses standard frame pointer linked lists (`RBP`/`EBP`) to produce
-//! callstack traces for panic diagnostics, kernel profiling, and deadlock detection.
+//! callstack traces for panic diagnostics, kernel profiling and deadlock detection.
 
 #[cfg(target_os = "none")]
 use core::arch::asm;

@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Local Advanced Programmable Interrupt Controller (LAPIC) register offsets and functions.
 //!
 //! Provides direct Memory-Mapped I/O (MMIO) access to local CPU interrupt routing,
-//! timer configuration, End-of-Interrupt (EOI) signaling, and Inter-Processor Interrupts (IPI).
+//! timer configuration, End-of-Interrupt (EOI) signaling and Inter-Processor Interrupts (IPI).
 
 /// Default physical base address for x86/x86_64 Local APIC MMIO registers.
 pub const LAPIC_DEFAULT_BASE: u64 = 0xFEE00000;

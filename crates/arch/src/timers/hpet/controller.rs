@@ -1,17 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! High-Precision Event Timer (HPET) MMIO hardware driver.
 //!
 //! Provides sub-nanosecond monotonic timekeeping, hardware capabilities detection,
 //! high-resolution counter reads across x86_64 (64-bit atomic MMIO) and i686
-//! (atomic double-read verification loop), and calibrated spin delay routines.
+//! (atomic double-read verification loop) and calibrated spin delay routines.
 
 #![allow(static_mut_refs)]
 

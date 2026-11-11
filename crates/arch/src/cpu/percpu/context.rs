@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Per-CPU hardware control blocks, dedicated kernel stacks, and MSR GS-base management.
+//! Per-CPU hardware control blocks, dedicated kernel stacks and MSR GS-base management.
 //!
 //! Maintains per-core execution state, interrupt stack tops, system call scratch registers,
 //! and thread contexts ensuring thread isolation across Symmetric Multiprocessing (SMP) cores.
@@ -149,7 +142,7 @@ pub unsafe fn load_percpu_msrs(core_id: usize) {
     }
 }
 
-/// Initializes Per-CPU data structure, stack top, and MSR registers for the current core.
+/// Initializes Per-CPU data structure, stack top and MSR registers for the current core.
 ///
 /// # Safety
 ///

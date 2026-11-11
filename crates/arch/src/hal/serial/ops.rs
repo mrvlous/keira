@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Architecture-independent Serial Debug Port interfaces.
 //!
 //! Provides abstract byte-oriented character stream transmission contracts
-//! implemented across 16550A UART, MMIO UART, and virtual hypervisor consoles.
+//! implemented across 16550A UART, MMIO UART and virtual hypervisor consoles.
 
 /// Generic Hardware Serial Interface trait.
 pub trait SerialPort {

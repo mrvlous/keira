@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Model-Specific Registers (MSR) accessors and architectural constants.
 //!
 //! Provides hardware-level configuration of CPU extensions, SYSCALL/SYSRET entry points,
-//! Local APIC base addresses, and per-CPU `GS`/`FS` base registers.
+//! Local APIC base addresses and per-CPU `GS`/`FS` base registers.
 
 #[cfg(target_os = "none")]
 use core::arch::asm;
