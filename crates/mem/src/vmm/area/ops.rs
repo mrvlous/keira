@@ -229,7 +229,7 @@ pub unsafe fn sys_mmap(
 
 /// Extended virtual memory unmap operation returning the exact number of bytes successfully unmapped.
 ///
-/// Returns `Ok(unmapped_bytes)` on complete success, or `Err((error_message, unmapped_bytes))` on partial failure.
+/// Returns `Ok(unmapped_bytes)` on complete success or `Err((error_message, unmapped_bytes))` on partial failure.
 ///
 /// # Safety
 ///

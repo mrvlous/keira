@@ -30,7 +30,7 @@ pub static mut ALLOCATION_BITMAP: [u64; BITMAP_WORDS] = [0; BITMAP_WORDS];
 
 /// Allocates a 4 KiB physical page frame, zero-clearing its contents for safety.
 ///
-/// Returns the physical base address of the allocated frame on success, or `None`
+/// Returns the physical base address of the allocated frame on success or `None`
 /// if physical memory is exhausted.
 pub fn alloc_frame() -> Option<u64> {
     let _guard = PmmGuard::lock();
@@ -298,7 +298,7 @@ pub fn set_test_ram_region_empty(start: u64, end: u64) {
 
 /// Frees an allocated physical frame and returns it to the free pool.
 ///
-/// Returns `true` on successful deallocation, or `false` on double-free or invalid addresses.
+/// Returns `true` on successful deallocation or `false` on double-free or invalid addresses.
 pub fn free_frame(frame: u64) -> bool {
     if !frame.is_multiple_of(PAGE_SIZE)
         || frame == 0
@@ -330,8 +330,8 @@ pub fn free_frame(frame: u64) -> bool {
 
 /// Frees multiple contiguous physical page frames with boundary and ownership validation.
 ///
-/// Returns `true` if all frames in the range were valid and reclaimed, or `false`
-/// if any frame was already free, out of bounds, or invalid.
+/// Returns `true` if all frames in the range were valid and reclaimed or `false`
+/// if any frame was already free, out of bounds or invalid.
 pub fn free_contiguous_frames(start_frame: u64, count: usize) -> bool {
     if count == 0
         || !start_frame.is_multiple_of(PAGE_SIZE)

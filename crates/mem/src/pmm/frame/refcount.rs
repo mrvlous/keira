@@ -117,7 +117,7 @@ pub fn retain_frame(frame: u64) -> u32 {
 /// If the reference count drops to zero (or the frame was uniquely owned),
 /// the frame is returned to the physical memory allocator free list via `free_frame`.
 ///
-/// Returns `true` if the frame was actually freed, or `false` if references remain.
+/// Returns `true` if the frame was actually freed or `false` if references remain.
 pub fn release_frame(frame: u64) -> bool {
     if frame == 0 || !frame.is_multiple_of(PAGE_SIZE) {
         return false;
