@@ -1,11 +1,4 @@
 ; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Freestanding Kernel from Scratch
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
 
 ; Architecture Assembly Constants and Hardware Definitions
 ;
@@ -86,7 +79,7 @@ CR4_PAE_BIT             equ (1 << 5)
 ; Model-Specific Registers (MSR) and Extended Feature Bits
 ; EFER_MSR:
 ;   Extended Feature Enable Register (IA32_EFER, address 0xC0000080).
-;   Controls activation of 64-bit Long Mode, Syscall Extensions, and NX memory protection.
+;   Controls activation of 64-bit Long Mode, Syscall Extensions and NX memory protection.
 EFER_MSR                equ 0xC0000080
 
 ; EFER_LONG_MODE_BIT:

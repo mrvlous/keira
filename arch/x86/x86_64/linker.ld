@@ -1,19 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
 
 /*
  * Linker Script Specification for x86_64 Kernel Target
  *
  * Architectural Role:
  *   Defines the physical memory topology, section mapping, 4 KiB page-alignment
- *   constraints, and exported boundary symbols for Keira on 64-bit x86_64 hardware.
+ *   constraints and exported boundary symbols for Keira on 64-bit x86_64 hardware.
  *
  * Memory Layout Topology:
  *   Physical Load Base: 1 MiB (0x00100000). Guarantees the kernel binary is

@@ -1,23 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
 
 /*
  * Linker Script Specification for i686 (32-Bit) Kernel Target
  *
  * Architectural Role:
  *   Defines the physical memory topology, section layout, 4 KiB page-alignment
- *   constraints, and exported boundary symbols for Keira on 32-bit x86 hardware.
+ *   constraints and exported boundary symbols for Keira on 32-bit x86 hardware.
  *
  * Memory Layout Topology:
  *   Load Address: 1 MiB (0x00100000). Avoids real-mode memory holes, BIOS Data
- *   Area (BDA), and memory-mapped video framebuffers below 1 MiB.
+ *   Area (BDA) and memory-mapped video framebuffers below 1 MiB.
  *   Multiboot2 Header: Guaranteed to reside within the first 32 KiB window.
  *   Text Section: Code segments aligned to 4 KiB page boundaries.
  *   Read-Only Data (.rodata): String literals, jump tables, constant structures.

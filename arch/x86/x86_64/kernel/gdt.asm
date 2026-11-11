@@ -1,11 +1,4 @@
 ; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Freestanding Kernel from Scratch
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
 
 ; Global Descriptor Table (GDT) Configuration and Management (x86_64)
 ;
@@ -19,7 +12,7 @@
 ;   of the descriptor base field (except FS/GS base via MSRs).
 ;   Segment limits are ignored (the entire 64-bit canonical address space is accessible).
 ;   Descriptors still enforce privilege rings (DPL 0 vs DPL 3), code execution
-;   permissions, and long mode submode status (CS.L = 1 for 64-bit mode).
+;   permissions and long mode submode status (CS.L = 1 for 64-bit mode).
 ;
 ; Selector Layout (sysret and syscall Compatibility):
 ;   The x86 sysret instruction assumes a rigid descriptor ordering relative

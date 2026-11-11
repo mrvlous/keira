@@ -1,17 +1,10 @@
 ; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Freestanding Kernel from Scratch
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
 
 ; Interrupt Service Routines (ISRs) and Exception Dispatchers (x86_64)
 ;
 ; Architectural Role:
 ;   This assembly module implements the low-level interrupt service routines,
-;   CPU fault/trap exception entrypoints, and preemptive context switching stubs
+;   CPU fault/trap exception entrypoints and preemptive context switching stubs
 ;   for 64-bit x86_64 architecture.
 ;
 ; Hardware Interrupt Stack Frame (Pushed unconditionally by CPU upon interrupt):

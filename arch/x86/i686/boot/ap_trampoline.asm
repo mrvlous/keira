@@ -1,11 +1,4 @@
 ; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Freestanding Kernel from Scratch
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
 
 ; Application Processor (AP) 16-Bit Real-Mode Bootstrap Trampoline (i686)
 ;
@@ -18,7 +11,7 @@
 ;   2. The BSP copies this trampoline binary payload to physical page 0x8000
 ;      (page frame number 0x08).
 ;   3. The BSP populates the parameter block (target entry address, per-core
-;      kernel stack, and unique AP core ID).
+;      kernel stack and unique AP core ID).
 ;   4. The BSP dispatches an Inter-Processor Interrupt (IPI) sequence:
 ;      - INIT IPI: Asserts hardware reset on the target AP core.
 ;      - 10 ms delay.
