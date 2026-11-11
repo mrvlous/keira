@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Program header structures, segment flags, and user virtual address bounds.
+//! Program header structures, segment flags and user virtual address bounds.
 
 pub use keira_mem::vmm::{USER_MAX_VADDR, USER_MIN_VADDR};
 

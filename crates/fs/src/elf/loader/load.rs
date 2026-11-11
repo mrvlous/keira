@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Hardened ELF binary loader with strict overflow validation, page-aligned overlap rejection, W^X enforcement, and atomic rollback.
+//! Hardened ELF binary loader with strict overflow validation, page-aligned overlap rejection, W^X enforcement and atomic rollback.
 
 use super::buffer::{ELF_FILE_BUF, LAST_LOADED_LEN};
 #[cfg(target_arch = "x86_64")]
@@ -22,10 +15,10 @@ use keira_mem::pmm;
 #[cfg(target_arch = "x86_64")]
 use keira_mem::vmm;
 
-/// Load an ELF binary from Routed VFS disk, map pages with validated permissions, and return entry address.
+/// Load an ELF binary from Routed VFS disk, map pages with validated permissions and return entry address.
 ///
 /// # Safety
-/// Modifies active page tables, allocates physical memory frames, and writes binary segments into mapped user virtual memory.
+/// Modifies active page tables, allocates physical memory frames and writes binary segments into mapped user virtual memory.
 pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
     let file_buf = unsafe { &mut *core::ptr::addr_of_mut!(ELF_FILE_BUF) };
     let file_len = vfs::read_file(filename, file_buf)?;
@@ -112,7 +105,7 @@ pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         return Err("Program header table extends beyond file boundary");
     }
 
-    // 4. Pre-scan PT_LOAD segments: validate boundaries, strict W^X, page-aligned non-overlap, and entry point
+    // 4. Pre-scan PT_LOAD segments: validate boundaries, strict W^X, page-aligned non-overlap and entry point
     let mut segments = [SegmentMapping::empty(); MAX_LOAD_SEGMENTS];
     let mut segment_count: usize = 0;
 

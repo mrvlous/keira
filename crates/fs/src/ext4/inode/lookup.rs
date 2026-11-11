@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Inode table lookup, validation, serialization, and synthetic table initialization.
+//! Inode table lookup, validation, serialization and synthetic table initialization.
 
 use super::types::{Ext4Inode, EXT4_EXTENTS_FL, EXT4_S_IFDIR, EXT4_S_IFREG};
 use crate::ext4::superblock::MOUNTED_EXT4;

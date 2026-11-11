@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Native EXT4 read-only filesystem driver, superblock validation, and extent tree parser.
+//! Native EXT4 read-only filesystem driver, superblock validation and extent tree parser.
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
-//! - `superblock/`: Superblock geometry, feature flags, magic verification, and mount state.
-//! - `inode/`: Inode table lookup, 48-bit physical block address mapping, and extent tree parsing.
-//! - `dir/`: Linear directory record parsing, entry serialization, and hierarchical lookup.
+//! - `superblock/`: Superblock geometry, feature flags, magic verification and mount state.
+//! - `inode/`: Inode table lookup, 48-bit physical block address mapping and extent tree parsing.
+//! - `dir/`: Linear directory record parsing, entry serialization and hierarchical lookup.
 
 pub mod dir;
 pub mod inode;

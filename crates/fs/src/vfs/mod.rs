@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Virtual File System (VFS) abstractions and path routing.
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
-//! - `types/`: Filesystem backend identifiers, node kinds, and stat attributes.
+//! - `types/`: Filesystem backend identifiers, node kinds and stat attributes.
 //! - `path/`: Path alias resolution and destination routing engine.
-//! - `ops/`: Unified file, directory, and node operation dispatchers.
+//! - `ops/`: Unified file, directory and node operation dispatchers.
 
 pub mod mount;
 pub mod ops;

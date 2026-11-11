@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! FAT16 file writing, appending, and cluster allocation chaining.
+//! FAT16 file writing, appending and cluster allocation chaining.
 
 use super::read::read_file_content;
 use crate::fat::cluster::{alloc_cluster, fat_next_cluster, free_cluster_chain};
@@ -47,7 +40,7 @@ pub unsafe fn link_fat_clusters(
 ///
 /// # Safety
 ///
-/// Modifies directory entries, FAT table sectors, and cluster data sectors on disk.
+/// Modifies directory entries, FAT table sectors and cluster data sectors on disk.
 pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &'static str> {
     let vol_ptr = &raw const VOLUME;
     let vol = match (*vol_ptr).as_ref() {
@@ -159,7 +152,7 @@ pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &
 ///
 /// # Safety
 ///
-/// Modifies directory entries, FAT table sectors, and cluster data sectors on disk.
+/// Modifies directory entries, FAT table sectors and cluster data sectors on disk.
 pub unsafe fn append_file_content(filename: &str, content: &[u8]) -> Result<usize, &'static str> {
     let mut buf = [0u8; 4096];
     let existing_len = read_file_content(filename, &mut buf).unwrap_or_default();

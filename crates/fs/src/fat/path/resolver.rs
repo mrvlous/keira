@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Path sanitization, nested path traversal, and directory entry searching.
+//! Path sanitization, nested path traversal and directory entry searching.
 
 use super::sfn::filename_to_8_3;
 use crate::fat::dir::for_each_directory_entry;

@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Cluster scanning and allocation engine for FAT16.
 
@@ -13,7 +6,7 @@ use crate::fat::table::{read_sector, write_sector};
 use crate::fat::types::Fat16Volume;
 use crate::fat::volume::cluster_to_sector;
 
-/// Scans the File Allocation Tables, reserves an unallocated cluster (marking it 0xFFFF), and zeros disk contents.
+/// Scans the File Allocation Tables, reserves an unallocated cluster (marking it 0xFFFF) and zeros disk contents.
 ///
 /// # Safety
 ///

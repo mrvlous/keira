@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! 8.3 Short File Name (SFN) validation, encoding, and display formatting.
+//! 8.3 Short File Name (SFN) validation, encoding and display formatting.
 
 /// Formats a raw 11-byte 8.3 FAT filename into a standard null-terminated lowercase string.
 pub fn format_filename(name: &[u8; 11], dest: &mut [u8; 12]) -> usize {

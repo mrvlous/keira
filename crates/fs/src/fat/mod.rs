@@ -1,22 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! FAT12/16/32 filesystem driver, LRU cached block I/O, and VFAT long filenames.
+//! FAT12/16/32 filesystem driver, LRU cached block I/O and VFAT long filenames.
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
-//! - `types/`: On-disk 32-byte records, VFAT LFN descriptors, and volume metadata.
+//! - `types/`: On-disk 32-byte records, VFAT LFN descriptors and volume metadata.
 //! - `table/`: 16-slot LRU cached sector reader and write-through cache engine.
-//! - `cluster/`: Cluster allocation, chaining, traversal, and deallocation.
-//! - `volume/`: BPB boot sector validation, geometry calculations, and drive info.
-//! - `path/`: 8.3 filename encoding/decoding, UTF-16 LFN accumulator, and path resolution.
-//! - `dir/`: Directory enumeration, creation, navigation, and RTC timestamping.
-//! - `file/`: File read, write, append, truncate, and entry deletion operations.
+//! - `cluster/`: Cluster allocation, chaining, traversal and deallocation.
+//! - `volume/`: BPB boot sector validation, geometry calculations and drive info.
+//! - `path/`: 8.3 filename encoding/decoding, UTF-16 LFN accumulator and path resolution.
+//! - `dir/`: Directory enumeration, creation, navigation and RTC timestamping.
+//! - `file/`: File read, write, append, truncate and entry deletion operations.
 
 pub mod cluster;
 pub mod dir;
