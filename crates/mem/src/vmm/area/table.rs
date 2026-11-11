@@ -13,7 +13,7 @@ pub static mut VMA_TABLE: [Vma; MAX_VMAS] = [Vma::empty(); MAX_VMAS];
 ///
 /// Modifies global kernel VMA tracking structures.
 pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
-    if pml4_phys == 0 {
+    if pml4_phys == 0 && !cfg!(target_arch = "x86") {
         return;
     }
     for vma in VMA_TABLE.iter_mut() {
@@ -29,7 +29,7 @@ pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
 ///
 /// Reads global kernel VMA tracking state.
 pub unsafe fn find_active_vma(pml4_phys: u64, addr: u64) -> Option<Vma> {
-    if pml4_phys == 0 {
+    if pml4_phys == 0 && !cfg!(target_arch = "x86") {
         return None;
     }
     for vma in VMA_TABLE.iter() {
@@ -101,7 +101,7 @@ pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u6
 ///
 /// Reads global kernel VMA tracking structures.
 pub unsafe fn get_vmas_for_pml4(pml4_phys: u64, out_vmas: &mut [Vma]) -> usize {
-    if pml4_phys == 0 {
+    if pml4_phys == 0 && !cfg!(target_arch = "x86") {
         return 0;
     }
     let mut count = 0;

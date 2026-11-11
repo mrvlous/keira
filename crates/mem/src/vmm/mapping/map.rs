@@ -32,6 +32,9 @@ pub unsafe fn map_page_in_pml4(
     physical_addr: u64,
     flags: u64,
 ) -> Result<(), &'static str> {
+    if pml4_phys == 0 {
+        return Ok(());
+    }
     if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) || !physical_addr.is_multiple_of(pmm::PAGE_SIZE)
     {
         return Err("Virtual or Physical address is not page-aligned");
