@@ -1,17 +1,10 @@
 ; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Freestanding Kernel from Scratch
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
 
 ; Standard C Runtime 0 (crt0) for x86_64 Userland
 ;
 ; Initializes the System V AMD64 ABI userland environment, extracts
-; argc, argv, and envp from the initial user stack, aligns the stack to
-; a 16-byte boundary, executes main(), and automatically exits with the
+; argc, argv and envp from the initial user stack, aligns the stack to
+; a 16-byte boundary, executes main() and automatically exits with the
 ; return code via the exit() standard library function.
 
 global _start
