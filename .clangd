@@ -1,13 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 
 # Clangd Language Server Configuration
 #
 # Provides compilation settings and header search paths for the Clangd LSP.
 # This ensures code intelligence tools can resolve headers and provide correct
-# diagnostics, code navigation, and autocomplete in userland C files.
+# diagnostics, code navigation and autocomplete in userland C files.
 
 CompileFlags:
   Add:
