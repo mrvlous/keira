@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Keira Kernel - Freestanding Terminal Clear Utility (clear)
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -10,11 +11,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
-
-/*
- * Keira Kernel - Freestanding Terminal Clear Utility (clear)
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
  */
 
 #include <stdio.h>
