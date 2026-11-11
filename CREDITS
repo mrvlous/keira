@@ -1,14 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
 
-This is at least a partial credits file of people and projects that have
-contributed to or inspired the Keira Kernel project.
+This is the credits file of individuals, communities and upstream projects
+that have contributed to, inspired or formed the technical foundations of the Keira Kernel.
+Modeled after the Linux Kernel CREDITS specification.
 
 The fields are:
 	N: Name
@@ -18,21 +12,17 @@ The fields are:
 	S: Snail mail address
 	P: PGP key ID and fingerprint
 
-----------
-
 N: Moh. Ananda Firmansyah Putra
 E: mrvlous@proton.me
 W: https://github.com/mrvlous
 D: Founder and Lead Kernel Architect
 S: Indonesia
 
-----------
-
 Special Acknowledgements & Upstream Foundations:
 
 * Linux Kernel Developers & Linus Torvalds
   For architectural inspiration, POSIX system call design, VFS architecture,
-  subsystem abstractions, and documentation conventions.
+  subsystem abstractions and documentation conventions.
   https://www.kernel.org
 
 * Dennis Ritchie, Ken Thompson & Bell Labs
@@ -40,23 +30,23 @@ Special Acknowledgements & Upstream Foundations:
   kernel architecture and design principles.
 
 * GNU Project & Free Software Foundation (FSF)
-  For the GNU General Public License (GPLv2), compiler toolchains (GCC),
+  For the GNU General Public License (GPLv2), compiler toolchains (GCC)
   and POSIX userland specifications.
   https://www.gnu.org
 
 * Rust Language & Compiler Team
-  For the Rust programming language, core library (no_std), and freestanding
+  For the Rust programming language, core library (no_std) and freestanding
   bare-metal development capabilities.
   https://www.rust-lang.org
 
 * LLVM / Clang Project
-  For the LLVM compiler infrastructure, code formatting (clang-format),
+  For the LLVM compiler infrastructure, code formatting (clang-format)
   and static analysis tools (clang-tidy).
   https://llvm.org
 
 * Intel Corporation & Advanced Micro Devices (AMD)
   For comprehensive x86_64 / AMD64 Software Developer Manuals, Local APIC /
-  IOAPIC architectures, and hardware virtualization specifications (VMX/SVM).
+  IOAPIC architectures and hardware virtualization specifications (VMX/SVM).
   https://www.intel.com | https://www.amd.com
 
 * POSIX, IEEE & The Open Group
@@ -71,12 +61,12 @@ Special Acknowledgements & Upstream Foundations:
   https://www.ietf.org
 
 * Linux Man-Pages Project (Michael Kerrisk & Contributors)
-  For authoritative documentation of system calls, standard C library routines,
+  For authoritative documentation of system calls, standard C library routines
   and Linux kernel APIs.
   https://www.kernel.org/doc/man-pages/
 
 * OSDev Community
-  For comprehensive hardware specifications, x86_64 architecture documentation,
+  For comprehensive hardware specifications, x86_64 architecture documentation
   and freestanding kernel development knowledge bases.
   https://wiki.osdev.org
 

@@ -1,13 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
 
 List of maintainers and subsystem file patterns for the Keira Kernel project.
+Modeled after the Linux Kernel MAINTAINERS specification.
 
 The fields are:
 	P: Person (Maintainer Name)
@@ -22,3 +16,82 @@ M: mrvlous@proton.me
 W: https://github.com/mrvlous
 S: Maintained
 F: *
+
+ARCHITECTURE & HARDWARE BRINGUP
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: arch/
+F: targets/
+F: docs/arch/
+F: docs/targets/
+
+BUILD SYSTEM & TOOLCHAIN CONFIGURATION
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: Makefile
+F: Cargo.toml
+F: Cargo.lock
+F: rust-toolchain.toml
+F: rustfmt.toml
+F: .config*
+F: .example.config
+
+DOCUMENTATION & LICENSING
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: docs/
+F: LICENSES/
+
+INTER-PROCESS COMMUNICATION & IO_URING
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/ipc/
+
+MEMORY MANAGEMENT (PMM, VMM, SLAB)
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/mem/
+
+NETWORKING STACK & DEVICE DRIVERS
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/net/
+F: crates/io/
+
+POSIX SYSTEM CALL DISPATCH
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/syscall/
+
+PREEMPTIVE SCHEDULER & SMP CONCURRENCY
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/task/
+F: crates/core/
+
+SUPERVISOR EMERGENCY SHELL
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/shell/
+
+USERLAND C RUNTIME & COMPILER TOOLCHAIN
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: userland/
+F: .clang*
+
+VFS & STORAGE BLOCK LAYER
+P: Moh. Ananda Firmansyah Putra
+M: mrvlous@proton.me
+S: Maintained
+F: crates/fs/
