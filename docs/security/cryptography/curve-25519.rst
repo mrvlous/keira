@@ -1,0 +1,7 @@
+.. SPDX-License-Identifier: GPL-2.0-only
+
+=====================================
+X25519 Montgomery Curve Key Agreement
+=====================================
+
+:math:`2^{255} - 19` constant-time scalar multiplication for TLS 1.3 ECDHE key exchange.
