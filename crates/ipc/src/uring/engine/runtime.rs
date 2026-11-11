@@ -119,7 +119,7 @@ pub fn setup_ring_ext(entries: u32, params_ptr: u64) -> Result<u64, &'static str
             (*params).cq_off.user_addr = core::ptr::addr_of!(ring.cqes) as u64;
             (*params).cq_off.pad = [0; 2];
 
-            #[cfg(target_os = "none")]
+            #[cfg(all(target_os = "none", target_arch = "x86_64"))]
             {
                 let page_size = keira_mem::pmm::PAGE_SIZE as usize;
                 let ring_start = (core::ptr::addr_of!(RINGS) as usize) & !(page_size - 1);
