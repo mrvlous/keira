@@ -183,7 +183,13 @@ int main(int argc, char **argv) {
     }
 
     if (pid_count == 0) {
-        dump_process_maps(1);
+        int fd_test = open("/proc/1/maps", O_RDONLY, 0);
+        if (fd_test >= 0) {
+            close(fd_test);
+            dump_process_maps(1);
+        } else {
+            dump_process_maps(0);
+        }
     } else {
         for (int i = 0; i < pid_count; i++) {
             dump_process_maps(pids[i]);
