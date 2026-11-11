@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Master Kernel Assembly Crate (keira-kernel)
 #
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
+# Serves as the top-level orchestration crate, managing the 10-stage boot
+# pipeline, supervisor diagnostics and entry points for Keira Kernel.
 
 [package]
 name = "keira-kernel"

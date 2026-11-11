@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Storage block device discovery, FAT16 filesystem mounting, and VMM demand paging.
+//! Storage block device discovery, FAT16 filesystem mounting and VMM demand paging.
 
 use keira_fs::fat;
 use keira_io::bus::pci;
@@ -25,7 +18,7 @@ fn file_backing_sync(path: &str, offset: u64, buf: &[u8]) -> Result<usize, &'sta
     Ok(res)
 }
 
-/// Initialize PCI host controllers, storage devices, root FAT16 filesystem, and VMM hooks.
+/// Initialize PCI host controllers, storage devices, root FAT16 filesystem and VMM hooks.
 ///
 /// # Safety
 /// Caller guarantees virtual memory and scheduler primitives are active.

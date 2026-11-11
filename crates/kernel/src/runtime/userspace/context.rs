@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Ring 3 user-mode privilege setup, TSS context loading, and security initialization.
+//! Ring 3 user-mode privilege setup, TSS context loading and security initialization.
 
 use keira_core::pr_info;
 use keira_syscall::init_user_mode;
@@ -15,7 +8,7 @@ use keira_syscall::init_user_mode;
 /// Transition hardware registers into user-mode execution readiness.
 ///
 /// # Safety
-/// Caller guarantees GDT, IDT, and scheduler are fully initialized.
+/// Caller guarantees GDT, IDT and scheduler are fully initialized.
 pub unsafe fn enter_userspace() {
     init_user_mode();
 

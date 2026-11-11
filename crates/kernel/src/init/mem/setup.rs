@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Memory management, paging, heap, and linear framebuffer initialization.
+//! Memory management, paging, heap and linear framebuffer initialization.
 
 use keira_io::ps2::mouse as ps2_mouse;
 use keira_io::vga;
@@ -34,7 +27,7 @@ static __heap_start: u8 = 0;
 #[allow(non_upper_case_globals)]
 static __heap_end: u8 = 0;
 
-/// Initialize Physical Frame Allocator (PMM), Paging (VMM), and Segregated Free-List Heap.
+/// Initialize Physical Frame Allocator (PMM), Paging (VMM) and Segregated Free-List Heap.
 ///
 /// # Safety
 /// Caller must ensure `multiboot_info_ptr` is valid and mapped.

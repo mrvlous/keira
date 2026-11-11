@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! TPM 2.0 hardware security enclave, measured boot, and integrity verification.
+//! TPM 2.0 hardware security enclave, measured boot and integrity verification.
 
 use keira_mem::vmm;
 use keira_task::scheduler::init as scheduler_init;
@@ -25,7 +18,7 @@ static __text_start: u8 = 0;
 #[allow(non_upper_case_globals)]
 static __text_end: u8 = 0;
 
-/// Initialize TPM 2.0 controller, measure kernel and initrd hashes, and start scheduler.
+/// Initialize TPM 2.0 controller, measure kernel and initrd hashes and start scheduler.
 ///
 /// # Safety
 /// Caller guarantees virtual memory management and page tables are active.

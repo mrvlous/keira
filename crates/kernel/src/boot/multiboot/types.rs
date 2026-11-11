@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Multiboot2 tag definitions, magic constants, and boot payload descriptors.
+//! Multiboot2 tag definitions, magic constants and boot payload descriptors.
 
 pub const MULTIBOOT2_BOOTLOADER_MAGIC: u32 = 0x36d76289;
 
