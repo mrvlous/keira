@@ -43,7 +43,7 @@ pub unsafe fn read_cr0() -> usize {
 ///
 /// # Safety
 ///
-/// Modifying CR0 can disable paging, alter memory protection, or trigger immediate triple faults.
+/// Modifying CR0 can disable paging, alter memory protection or trigger immediate triple faults.
 #[inline(always)]
 pub unsafe fn write_cr0(val: usize) {
     #[cfg(not(target_os = "none"))]
