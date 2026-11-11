@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! File system and descriptor I/O system call handlers.
 
@@ -344,6 +337,16 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 let to_read = (len as usize).min(kernel_buf.len());
                 #[cfg(target_os = "none")]
                 loop {
+                    while keira_io::serial::has_byte() {
+                        let mut b = keira_io::serial::read_byte();
+                        if b == 0 {
+                            break;
+                        }
+                        if b == b'\r' {
+                            b = b'\n';
+                        }
+                        keira_io::tty::push_char(b);
+                    }
                     if let Ok(bytes) =
                         keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
                     {

@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Formatted console output, text printing, and boot milestone logging.
+//! Formatted console output, text printing and boot milestone logging.
 
 use super::buffer::{
     draw_char, draw_cursor, fb_active, hide_mouse_graphics, scroll_up, show_mouse_graphics,
@@ -18,6 +11,8 @@ use super::buffer::{
 use super::pipe::{REDIRECT_BUFFER, REDIRECT_LEN, REDIRECT_TO_FILE};
 use crate::vga::color::Color;
 use crate::vga::cursor::{CURSOR_BLINK_STATE, CURSOR_X, CURSOR_Y};
+
+static mut SERIAL_MIRROR: bool = true;
 
 /// Initializes and clears the active screen display.
 pub fn init() {
@@ -263,6 +258,12 @@ fn handle_ansi_byte(c: u8) -> bool {
 
 /// Emits a single ASCII character to console.
 pub fn putchar(c: u8) {
+    if unsafe { SERIAL_MIRROR } {
+        if c == b'\n' {
+            crate::serial::uart::putchar(b'\r');
+        }
+        crate::serial::uart::putchar(c);
+    }
     if handle_ansi_byte(c) {
         return;
     }
@@ -399,7 +400,13 @@ pub fn kernel_log_sink(level: u8, _tag: &str, formatted: &str) {
         _ => Color::DarkGrey,
     };
     set_color(fg, Color::Black);
+    unsafe {
+        SERIAL_MIRROR = false;
+    }
     print_str(formatted);
+    unsafe {
+        SERIAL_MIRROR = true;
+    }
     set_color(Color::LightGrey, Color::Black);
 }
 

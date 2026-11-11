@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Low-level VGA text mode buffer manipulation and linear framebuffer character rasterization.
 
@@ -201,8 +194,30 @@ pub extern "C" fn vga_draw_mouse_text(_x: u16, _y: u16) {}
 #[no_mangle]
 pub extern "C" fn vga_clear_mouse_text(_x: u16, _y: u16) {}
 
-/// Timer tick hook for blinking cursor animation.
+#[cfg(not(test))]
+extern "C" {
+    fn shell_handle_keypress(c: u8);
+}
+
+#[cfg(test)]
+unsafe fn shell_handle_keypress(_c: u8) {}
+
+/// Timer tick hook for blinking cursor animation and serial input polling.
 pub fn handle_timer_tick() {
+    while crate::serial::has_byte() {
+        let mut b = crate::serial::read_byte();
+        if b == 0 {
+            break;
+        }
+        if b == b'\r' {
+            b = b'\n';
+        }
+        crate::tty::push_char(b);
+        unsafe {
+            shell_handle_keypress(b);
+        }
+    }
+
     unsafe {
         if !fb_active() {
             return;
