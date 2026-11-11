@@ -12,12 +12,14 @@ Architecture & Subsystems
 .. toctree::
    :maxdepth: 2
 
+   contributing
+   submitting-patches
+   development-workflow
    build-system
    coding-style
-   credits
-   development-workflow
    documentation-system
-   licensing/index
    maintainers
+   credits
+   licensing/index
    tutorials/index
    verification-and-testing/index
