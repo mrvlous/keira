@@ -16,6 +16,7 @@ extern int errno;
 #define EBADF 9
 #define ECHILD 10
 #define EAGAIN 11
+#define EWOULDBLOCK EAGAIN
 #define ENOMEM 12
 #define EACCES 13
 #define EFAULT 14
