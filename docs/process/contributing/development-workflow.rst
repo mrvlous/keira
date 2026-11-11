@@ -4,7 +4,7 @@
 Git Workflow & Collaboration Guidelines
 =======================================
 
-This document outlines the branch management, contribution workflow, automated quality checks and commit structuring rules for Keira Kernel.
+This document outlines the branch management, collaboration workflow and revision procedures for Keira Kernel development.
 
 Branching Strategy
 ==================
@@ -29,30 +29,11 @@ Branching Strategy
 * **Feature Branches**: ``feat/<scope>-<short-description>`` (e.g., ``feat/fs-ext4-extents``, ``feat/net-tls-cipher``).
 * **Fix Branches**: ``fix/<scope>-<issue-description>`` (e.g., ``fix/apic-timer-overflow``, ``fix/syscall-write-bounds``).
 
-Developer Quality Gate Checklist
-================================
-
-Before proposing or committing changes, execute the full local validation sequence:
-
-.. code-block:: bash
-
-   # 1. Format code across Rust and C trees
-   make format
-
-   # 2. Run static analysis on userland C
-   make lint
-
-   # 3. Compile kernel binaries and bootable images for both architectures
-   make full
-
-   # 4. Run automated headless test suite across both architectures
-   make test-all
-
-Atomic & Granular Commits
+Linear History & Rebasing
 =========================
 
-Keira adheres to a strict **atomic commit invariant**:
+Keira enforces a linear git history on the mainline branch:
 
-* Do **NOT** combine unrelated changes across different subsystems into a single commit.
-* Separate documentation updates, kernel core fixes, driver changes and userland code into distinct commits.
-* Ensure every commit compiles independently so ``git bisect`` remains effective for regression testing.
+1. Always rebase your feature branch onto the latest upstream ``main`` branch before submitting.
+2. Avoid merge commits in topic branches. Keep changesets squashed or grouped into logically atomic commits.
+3. Verify that every commit in your branch compiles and tests independently to ensure full ``git bisect`` support.

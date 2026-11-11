@@ -12,9 +12,7 @@ Architecture & Subsystems
 .. toctree::
    :maxdepth: 2
 
-   contributing
-   submitting-patches
-   development-workflow
+   contributing/index
    build-system
    coding-style
    documentation-system

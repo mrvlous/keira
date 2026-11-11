@@ -63,7 +63,7 @@ Pull Request Workflow
 =====================
 
 1. Create a focused topic branch from ``main`` (e.g., ``feat/virtio-net`` or ``fix/page-fault-unmap``).
-2. Write clean, modular code complying with :doc:`coding-style`.
+2. Write clean, modular code complying with :doc:`../coding-style`.
 3. Verify all checks pass via ``make check``, ``make test-all`` and ``make docs-lint``.
 4. Rebase against latest upstream ``main`` to ensure a clean linear git history without merge commits.
 5. Submit the pull request with a clear description referencing relevant issues or milestone targets.
