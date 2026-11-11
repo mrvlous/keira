@@ -1,0 +1,91 @@
+.. SPDX-License-Identifier: GPL-2.0-only
+
+============================================
+Physical Memory Manager (PMM) & Frame Bitmap
+============================================
+
+The Physical Memory Manager (PMM) tracks physical RAM allocations at page granularity (4096 bytes per frame) using an efficient bit array allocator.
+
+1. Frame Allocation Mathematics
+===============================
+
+Physical memory is mapped 1:1 into a flat array of 64-bit words:
+
+.. math::
+
+   \text{Frame Index} = \frac{\text{Physical Address}}{4096}
+
+.. math::
+
+   \text{Bitmap Word Index} = \lfloor \text{Frame Index} / 64 \rfloor
+
+.. math::
+
+   \text{Bit Offset} = \text{Frame Index} \pmod{64}
+
+* Bit value ``0``: Frame is free and available for allocation.
+* Bit value ``1``: Frame is allocated or reserved by hardware/BIOS.
+
+2. Frame Allocator Implementation (crates/mem/src/pmm/)
+=======================================================
+
+.. code-block:: rust
+
+   pub struct FrameAllocator {
+       bitmap: &'static mut [u64],
+       total_frames: usize,
+       used_frames: usize,
+   }
+
+   impl FrameAllocator {
+       /// Allocates a single 4 KiB physical frame.
+       pub fn alloc_frame(&mut self) -> Option<usize> {
+           for (word_idx, word) in self.bitmap.iter_mut().enumerate() {
+               if *word != u64::MAX {
+                   let bit_idx = (!*word).trailing_zeros() as usize;
+                   *word |= 1 << bit_idx;
+                   self.used_frames += 1;
+                   let frame_idx = word_idx * 64 + bit_idx;
+                   return Some(frame_idx * 4096);
+               }
+           }
+           None // Out of physical memory (OOM)
+       }
+
+       /// Releases an allocated frame back to the pool.
+       pub fn free_frame(&mut self, phys_addr: usize) {
+           let frame_idx = phys_addr / 4096;
+           let word_idx = frame_idx / 64;
+           let bit_idx = frame_idx % 64;
+           self.bitmap[word_idx] &= !(1 << bit_idx);
+           self.used_frames -= 1;
+       }
+   }
+
+3. Reserved Regions
+===================
+
+During bootstrap, the following ranges are marked permanently reserved:
+
+1. ``0x00000000`` -- ``0x000FFFFF`` (First 1 MiB: Real-Mode IVT, BDA, EBDA, Video RAM).
+2. Kernel ELF Code and Data segments.
+3. Multiboot2 Information Structure and modules (initrd).
+4. Physical frames mapped to the PMM bitmap itself.
+
+4. Multi-Order & Contiguous Physical Frame Allocation
+=====================================================
+
+For high-performance hardware drivers (DMA ring buffers, AHCI PRDT, NVMe submission queues and 2 MiB / 1 GiB huge pages), the PMM provides multi-order contiguous frame allocation:
+
+* ``alloc_contiguous_frames(count: usize) -> Option<u64>``: Searches the bitmap for a contiguous span of ``count`` unallocated page frames within valid RAM ranges and zero-clears all bytes.
+* ``alloc_order(order: u8) -> Option<u64>``: Allocates :math:`2^{\text{order}}` contiguous physical frames (Order 0 = 4 KiB, Order 9 = 2 MiB, Order 10 = 4 MiB).
+* ``free_contiguous_frames(start: u64, count: usize) -> bool``: Reclaims a contiguous block of allocated frames back to the available physical pool with bounds validation.
+
+5. Physical Frame Reference Counting
+====================================
+
+For Copy-on-Write (COW) address space replication, physical frames support reference counting (``crates/mem/src/pmm/frame/refcount.rs``):
+
+* ``retain_frame(paddr: u64) -> u32``: Increments the reference count of an allocated physical frame when shared across processes.
+* ``release_frame(paddr: u64) -> bool``: Decrements the reference count. If the reference count drops to zero, automatically frees the frame back into the PMM pool.
+* ``frame_refcount(paddr: u64) -> u32``: Queries the current active reference count for any physical frame.
