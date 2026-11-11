@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Task Control Block (TCB) descriptor and process table limits.
 
@@ -16,7 +9,7 @@ use crate::types::fd::{FileDescriptor, MAX_FDS};
 /// Maximum number of concurrent tasks supported by the kernel scheduler.
 pub const MAX_TASKS: usize = 64;
 
-/// Task Control Block (TCB) tracking registers, address space, and resource allocations.
+/// Task Control Block (TCB) tracking registers, address space and resource allocations.
 pub struct Task {
     pub id: usize,
     pub name: &'static str,

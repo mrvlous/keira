@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Seccomp system call bitmap filtering and violation enforcement.
 
@@ -31,7 +24,7 @@ pub fn check_syscall(syscall_num: u64) -> bool {
         match state.mode {
             SeccompMode::Disabled => true,
             SeccompMode::Strict => {
-                // Strict mode: Only allow read (7, 15), write (1, 8, 16), exit (2), sigreturn (65), and seccomp (52)
+                // Strict mode: Only allow read (7, 15), write (1, 8, 16), exit (2), sigreturn (65) and seccomp (52)
                 let allowed = matches!(syscall_num, 1 | 2 | 7 | 8 | 15 | 16 | 52 | 65);
                 if !allowed {
                     state.total_violations += 1;

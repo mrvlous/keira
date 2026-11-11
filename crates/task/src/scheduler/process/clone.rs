@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Process and thread cloning engine (`sys_clone` and `sys_fork`).
 
@@ -43,7 +36,7 @@ pub const CLONE_CHILD_SETTID: u64 = 0x0100_0000;
 /// Clones the currently running task according to clone flags (`sys_clone`).
 ///
 /// Supports thread creation (`CLONE_VM | CLONE_THREAD`), stack pointer assignment,
-/// thread-local storage (`CLONE_SETTLS`), TID notification, and COW process forking.
+/// thread-local storage (`CLONE_SETTLS`), TID notification and COW process forking.
 ///
 /// # Safety
 /// Caller must ensure CPU execution context is consistent and scheduler allows task creation.
