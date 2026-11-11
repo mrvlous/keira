@@ -1,12 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include <stdint.h>
 #include <sys/syscall.h>
@@ -148,6 +140,7 @@ int64_t syscall6(uint64_t num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a
 long syscall(long number, ...) {
     va_list args;
     va_start(args, number);
+    // NOLINTNEXTLINE(clang-analyzer-optin.core.UnconditionalVAArg)
     uint64_t a1 = va_arg(args, uint64_t);
     uint64_t a2 = va_arg(args, uint64_t);
     uint64_t a3 = va_arg(args, uint64_t);
