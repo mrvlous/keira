@@ -1,0 +1,244 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+/* Keira Kernel Documentation - Linux-Grade Sphinx RTD Theme Overrides */
+/* Path: docs/sphinx-static/theme_overrides.css */
+
+:root {
+    --keira-primary: #0ea5e9;
+    --keira-primary-hover: #38bdf8;
+    --keira-accent: #10b981;
+    --keira-bg-dark: #0f172a;
+    --keira-sidebar-bg: #1e293b;
+    --keira-sidebar-border: #334155;
+    --keira-sidebar-text: #e2e8f0;
+    --keira-code-bg: #0f172a;
+    --keira-border-subtle: #e2e8f0;
+    --keira-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --keira-font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", Menlo, Monaco, Consolas, monospace;
+}
+
+/* Base Layout & Typography */
+body {
+    font-family: var(--keira-font-sans);
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+.wy-nav-content {
+    max-width: 1200px !important;
+    padding: 2.2rem 3rem !important;
+    line-height: 1.7;
+}
+
+/* Sidebar Customization */
+.wy-side-nav-search {
+    background-color: var(--keira-bg-dark) !important;
+    border-bottom: 1px solid var(--keira-sidebar-border);
+    padding: 1.5rem 1rem 1.2rem;
+}
+
+.wy-side-nav-search .brand-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.wy-side-nav-search .brand-version {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(14, 165, 233, 0.2);
+    color: var(--keira-primary-hover);
+    border: 1px solid rgba(14, 165, 233, 0.4);
+    margin-bottom: 0.75rem;
+}
+
+.wy-side-nav-search input[type="text"] {
+    border-radius: 6px !important;
+    border: 1px solid var(--keira-sidebar-border) !important;
+    background-color: #0b1120 !important;
+    color: #f1f5f9 !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.wy-side-nav-search input[type="text"]:focus {
+    border-color: var(--keira-primary) !important;
+}
+
+.wy-nav-side {
+    background-color: var(--keira-sidebar-bg) !important;
+}
+
+.wy-menu-vertical a {
+    color: var(--keira-sidebar-text) !important;
+    font-size: 0.9rem;
+    padding: 0.45rem 1.2rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.wy-menu-vertical a:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.on a {
+    background-color: rgba(14, 165, 233, 0.15) !important;
+    color: #38bdf8 !important;
+    border-left: 3px solid var(--keira-primary);
+    font-weight: 600;
+}
+
+.wy-menu-vertical li.toctree-l1 > a {
+    font-weight: 600;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--keira-font-sans);
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 1.8rem;
+    margin-bottom: 0.8rem;
+}
+
+h1 {
+    font-size: 2.1rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.4rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.3rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+}
+
+/* Links */
+a {
+    color: #0284c7;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+a:hover {
+    color: #0369a1;
+    text-decoration: underline;
+}
+
+/* Admonitions */
+.admonition {
+    border-radius: 8px !important;
+    border: 1px solid transparent !important;
+    border-left-width: 5px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin: 1.5rem 0 !important;
+    padding: 1rem 1.25rem !important;
+}
+
+.admonition-title {
+    font-weight: 700 !important;
+    margin: -1rem -1.25rem 0.75rem !important;
+    padding: 0.5rem 1.25rem !important;
+    border-radius: 7px 7px 0 0;
+}
+
+.admonition.note {
+    border-left-color: #0284c7 !important;
+    background-color: #f0f9ff !important;
+    border-color: #bae6fd !important;
+}
+.admonition.note .admonition-title {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+}
+
+.admonition.tip {
+    border-left-color: #059669 !important;
+    background-color: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+}
+.admonition.tip .admonition-title {
+    background-color: #d1fae5 !important;
+    color: #047857 !important;
+}
+
+.admonition.important {
+    border-left-color: #6366f1 !important;
+    background-color: #eef2ff !important;
+    border-color: #c7d2fe !important;
+}
+.admonition.important .admonition-title {
+    background-color: #e0e7ff !important;
+    color: #4338ca !important;
+}
+
+.admonition.warning {
+    border-left-color: #d97706 !important;
+    background-color: #fffbeb !important;
+    border-color: #fde68a !important;
+}
+.admonition.warning .admonition-title {
+    background-color: #fef3c7 !important;
+    color: #b45309 !important;
+}
+
+.admonition.caution, .admonition.danger {
+    border-left-color: #dc2626 !important;
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+.admonition.caution .admonition-title, .admonition.danger .admonition-title {
+    background-color: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+
+/* Tables */
+.rst-content table.docutils {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin: 1.5rem 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.rst-content table.docutils thead th {
+    background-color: #0f172a;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.65rem 0.9rem;
+    border-bottom: 2px solid #334155;
+    text-align: left;
+}
+
+.rst-content table.docutils td {
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.rst-content table.docutils tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.rst-content table.docutils tbody tr:hover {
+    background-color: #f1f5f9;
+}
+

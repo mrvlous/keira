@@ -1,0 +1,27 @@
+{# SPDX-License-Identifier: GPL-2.0-only #}
+{% extends "!layout.html" %}
+
+{% block sidebartitle %}
+  <div class="brand-title">Keira Kernel</div>
+  <div class="brand-version">v{{ release }} &bull; Ring 0 Kernel</div>
+  <div role="search">
+    <form id="rtd-search-form" class="wy-form" action="{{ pathto('search') }}" method="get">
+      <input type="text" name="q" placeholder="Search documentation... (/)" aria-label="Search documentation" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+  </div>
+{% endblock %}
+
+{% block breadcrumbs_aside %}
+  <li class="wy-breadcrumbs-aside">
+    <a href="https://github.com/mrvlous/keira" class="github-link-pill" target="_blank" rel="noopener noreferrer">
+      <span>GitHub Repository</span>
+    </a>
+  </li>
+{% endblock %}
+
+{% block footer %}
+  {% include "footer.html" %}
+{% endblock %}
+

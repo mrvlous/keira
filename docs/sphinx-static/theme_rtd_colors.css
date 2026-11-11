@@ -1,0 +1,46 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+/* Keira Kernel Documentation - RTD Theme Color Tuning */
+/* Path: docs/sphinx-static/theme_rtd_colors.css */
+
+/* RTD Top Navigation & Header */
+.wy-nav-top {
+    background-color: #0f172a !important;
+}
+
+.wy-nav-top a {
+    color: #f8fafc !important;
+    font-weight: 700;
+}
+
+/* Sidebar Search Box & Form */
+.wy-side-nav-search > div.version {
+    color: #94a3b8 !important;
+}
+
+/* Breadcrumbs Link Contrast */
+.wy-breadcrumbs li a {
+    color: #475569;
+}
+
+.wy-breadcrumbs li a:hover {
+    color: #0284c7;
+}
+
+/* Footer Navigation Buttons */
+.btn-neutral {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    transition: all 0.15s ease-in-out !important;
+}
+
+.btn-neutral:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+

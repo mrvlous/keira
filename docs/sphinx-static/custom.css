@@ -1,0 +1,174 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+/* Keira Kernel Documentation - Custom Enhancements & Code Blocks */
+/* Path: docs/sphinx-static/custom.css */
+
+/* Code Blocks & Inline Code */
+code, .rst-content tt, .rst-content code {
+    font-family: var(--keira-font-mono) !important;
+    font-size: 0.88em !important;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+}
+
+div[class^="highlight"] {
+    position: relative;
+    border-radius: 8px;
+    margin: 1.25rem 0;
+    overflow: hidden;
+    border: 1px solid #334155;
+    background: #0f172a;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+div[class^="highlight"] pre {
+    font-family: var(--keira-font-mono) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.55;
+    padding: 1rem 1.2rem !important;
+    margin: 0 !important;
+    background: transparent !important;
+    overflow-x: auto;
+}
+
+/* Copy to Clipboard Button */
+.keira-copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--keira-font-sans);
+    color: #94a3b8;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease;
+    z-index: 10;
+}
+
+div[class^="highlight"]:hover .keira-copy-btn {
+    opacity: 1;
+}
+
+.keira-copy-btn:hover {
+    color: #f8fafc;
+    background: #334155;
+    border-color: #64748b;
+}
+
+.keira-copy-btn.copied {
+    color: #34d399;
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+}
+
+/* Badges & Pills */
+.keira-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+}
+
+.keira-pill-blue {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+}
+
+.keira-pill-green {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.keira-pill-purple {
+    background: #f3e8ff;
+    color: #7e22ce;
+    border-color: #e9d5ff;
+}
+
+/* Breadcrumbs Bar Enhancement */
+.wy-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.wy-breadcrumbs li.wy-breadcrumbs-aside {
+    margin-left: auto;
+}
+
+.github-link-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569 !important;
+    background: #f1f5f9;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease;
+}
+
+.github-link-pill:hover {
+    color: #0f172a !important;
+    background: #e2e8f0;
+    text-decoration: none !important;
+}
+
+/* Kernel Figure Container */
+.kernel-figure-box {
+    margin: 1.5rem 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 1rem;
+}
+
+.kernel-figure-caption {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #64748b;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* Responsive Table Wrapper */
+.keira-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1.5rem;
+}
+
+/* Footer Styling */
+footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+footer p {
+    margin-bottom: 0.4rem;
+}
+

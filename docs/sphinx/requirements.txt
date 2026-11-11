@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Sphinx Documentation Python Dependencies
+#
+# Core requirements for building and rendering Keira Kernel technical documentation.
+
+sphinx>=7.2.0
+sphinx-rtd-theme>=2.0.0
