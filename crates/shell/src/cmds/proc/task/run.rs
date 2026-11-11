@@ -77,6 +77,7 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
             task.program_break = USER_DEFAULT_BRK;
             task.program_break_start = USER_DEFAULT_BRK;
+            task.is_user = true;
         }
 
         let entry_point = load_elf(filename)?;
@@ -95,6 +96,10 @@ pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'st
         keira_task::signal::remove_job_by_pid(1);
         keira_task::signal::reset_signal_handlers(0);
         keira_task::security::seccomp_reset();
+
+        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+            task.is_user = false;
+        }
 
         keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
         core::arch::asm!("sti");

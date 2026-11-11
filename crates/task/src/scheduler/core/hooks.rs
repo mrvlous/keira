@@ -296,7 +296,12 @@ pub fn task_maps_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         }
 
         // 4. Dynamic VMAs from VMA_TABLE (anonymous mmap or file-backed mmap)
-        if task.pml4_phys != 0 {
+        #[cfg(target_arch = "x86")]
+        let has_vma_root = true;
+        #[cfg(not(target_arch = "x86"))]
+        let has_vma_root = task.pml4_phys != 0;
+
+        if has_vma_root {
             let mut vmas = [keira_mem::Vma::empty(); keira_mem::MAX_VMAS];
             let count = keira_mem::get_vmas_for_pml4(task.pml4_phys, &mut vmas);
             for vma in &vmas[..count] {
