@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Keira Kernel - Standalone Ring 3 Head Stream Truncation Utility (head)
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -10,11 +11,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- */
-
-/*
- * Keira Kernel - Standalone Ring 3 Head Stream Truncation Utility (head)
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
  */
 
 #include <fcntl.h>
@@ -32,7 +28,7 @@ static void print_usage(void) {
     puts("Description:");
     puts("  Print the first 10 lines of each FILE to standard output.");
     puts("  With more than one FILE, precede each with a header giving the file name.");
-    puts("  With no FILE, or when FILE is -, read standard input.");
+    puts("  With no FILE or when FILE is -, read standard input.");
     puts("");
     puts("Options:");
     puts("  -n <lines>     Print the first <lines> lines instead of the first 10");
