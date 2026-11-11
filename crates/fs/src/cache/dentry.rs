@@ -161,7 +161,7 @@ fn normalize_dentry_path(path: &str) -> &str {
 
 /// Probes the in-memory dentry cache for a canonical path.
 ///
-/// Returns `Some(DentryLookupResult)` on cache hit, or `None` on cache miss.
+/// Returns `Some(DentryLookupResult)` on cache hit or `None` on cache miss.
 pub fn dcache_lookup(path: &str) -> Option<DentryLookupResult> {
     let norm = normalize_dentry_path(path);
     if norm.len() > DENTRY_PATH_MAX {
