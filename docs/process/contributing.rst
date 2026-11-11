@@ -4,18 +4,28 @@
 How to Contribute to Keira Kernel
 =================================
 
-Thank you for your interest in contributing to the Keira Kernel project! This document outlines the fundamental technical principles, development environment setup, architectural invariants and verification procedures required when proposing code or documentation changes.
+Thank you for your interest in contributing to the Keira Kernel project! This document outlines the fundamental technical principles, development environment setup, architectural invariants, code quality standards and verification procedures required when proposing code or documentation changes.
 
 Guiding Principles & Philosophy
 ===============================
 
-Keira is a pure freestanding monolithic kernel implemented in safe Rust, Assembly and C. Development is guided by several foundational engineering rules:
+Keira is a pure freestanding monolithic kernel implemented from first principles in safe Rust, Assembly and C. Development is guided by several foundational engineering rules:
 
 1. **Pure Monolithic Kernel Demarcation**: Keira is an autonomous Ring 0 kernel. Userland runtime components (such as libc and core utilities) reside in ``userland/`` but maintain strict isolation from Ring 0 kernel crates.
-2. **Dual-Architecture Parity**: Every change must compile cleanly and pass verification on both ``x86_64`` (64-bit Long Mode) and ``i686`` (32-bit Protected Mode) architectures.
+2. **Dual-Architecture Parity**: Every change must compile cleanly and pass verification on both ``x86_64`` (64-bit Long Mode) and ``i686`` (32-bit Protected Mode) architectures with zero errors and zero warnings.
 3. **Freestanding Safety & Robustness**: Unhandled hardware exceptions or unexpected faults in Ring 3 userland processes must never crash or panic the kernel. Panic in Ring 0 is reserved strictly for unrecoverable hardware state faults.
 4. **Zero Warnings & Errors Policy**: The entire codebase, including all 12 modular kernel crates, assembly entry stubs, userland C library and Sphinx documentation, must compile and lint with zero errors and zero warnings.
 5. **SPDX License Compliance**: Every source and documentation file must contain a machine-readable SPDX license identifier header (``GPL-2.0-only`` for kernel sources and documentation).
+
+Coding Standards & Invariants
+=============================
+
+All contributions must adhere strictly to the following styling and structural invariants:
+
+* **Zero Oxford Commas**: Omit commas before "and" or "or" in all prose, commit messages, documentation files and source code comments.
+* **Zero Double Whitespaces**: Consecutive spaces between words are prohibited in all documentation, configuration files and comments.
+* **No Decorative Comment Dividers**: Decorative comment dividers (such as repeated ``====`` or ``----``) are strictly forbidden in Rust, C and assembly sources. Heading underline decorations are reserved exclusively for reStructuredText (``.rst``) files.
+* **Deterministic Formatting**: All Rust code must be formatted using ``cargo fmt``, all userland C code formatted using ``clang-format`` and all documentation verified using ``make docs-lint``.
 
 Development Environment Setup
 =============================
