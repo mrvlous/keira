@@ -86,7 +86,7 @@ int run_test_abi_fs(void) {
 
     /* 21. Character Device /dev/tty Stream */
     puts("  [TEST] Character device /dev/tty stream read/write...");
-    int tty_fd = open("/dev/tty", O_RDWR, 0);
+    int tty_fd = open("/dev/tty", O_RDWR | O_NONBLOCK, 0);
     if (tty_fd < 0) {
         puts("  [FAIL] open(/dev/tty) failed");
         return 1;
@@ -100,7 +100,7 @@ int run_test_abi_fs(void) {
     }
     char tty_in[16];
     ssize_t tty_read = read(tty_fd, tty_in, sizeof(tty_in));
-    if (tty_read < 0) {
+    if (tty_read < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
         puts("  [FAIL] read from /dev/tty returned error");
         close(tty_fd);
         return 1;

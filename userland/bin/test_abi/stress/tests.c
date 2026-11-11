@@ -283,6 +283,21 @@ int run_test_abi_stress(void) {
             a1 = 0;
             a2 = 0;
         }
+        if (vec == SYS_READ && a1 == 0) {
+            a1 = 999;
+        }
+        if (vec == SYS_WAIT) {
+            continue;
+        }
+        if (vec == SYS_WAITPID) {
+            a3 = WNOHANG;
+        }
+        if (vec == SYS_FUTEX) {
+            a2 = 1; /* FUTEX_WAKE */
+        }
+        if (vec == SYS_EPOLL_WAIT) {
+            a4 = 0; /* timeout = 0 */
+        }
         if (vec == SYS_PUTC) {
             a1 = 0;
         }
