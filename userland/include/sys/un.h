@@ -12,11 +12,6 @@
  * GNU General Public License for more details.
  */
 
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- */
-
 #ifndef _SYS_UN_H
 #define _SYS_UN_H
 
