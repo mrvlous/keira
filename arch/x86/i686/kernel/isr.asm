@@ -1,17 +1,10 @@
 ; SPDX-License-Identifier: GPL-2.0-only
-;
-; Keira Kernel - Freestanding Kernel from Scratch
-; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; version 2 of the License.
 
 ; Interrupt Service Routines (ISRs) and Exception Dispatchers (i686 32-Bit)
 ;
 ; Architectural Role:
 ;   This assembly module implements hardware interrupt stubs, CPU fault/trap
-;   exception handlers, and preemptive context switching entry points for
+;   exception handlers and preemptive context switching entry points for
 ;   32-bit x86 architecture.
 ;
 ; Interrupt Frame Layout (Hardware pushed upon interrupt):
@@ -104,14 +97,25 @@ exception_no_err 30
 exception_no_err 31
 
 ; Common CPU Exception Handler
-; Serializes full register state, invokes Rust dispatcher, and performs atomic
+; Serializes full register state, invokes Rust dispatcher and performs atomic
 ; return via iretd.
 global exception_common
 exception_common:
     pushad                      ; Save EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI (32 bytes)
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
     push esp                    ; Pass pointer to full ExceptionFrame as first cdecl argument
     call exception_dispatcher   ; Invoke Rust panic/fault dispatcher
     add esp, 4                  ; Clean argument pointer off stack
+    test byte [esp + 44], 3      ; Check if returning to Ring 3 (CS RPL == 3)
+    jz .exc_kernel
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+.exc_kernel:
     popad                       ; Restore general-purpose registers
     add esp, 8                  ; Pop vector number and error code
     iretd                       ; Atomically restore EIP, CS, EFLAGS (and ESP, SS if Ring 3)
@@ -121,6 +125,9 @@ exception_common:
 ; If schedule_tick selects a new thread, it returns the target thread's ESP.
 isr32:
     pushad                      ; Preserve current task general-purpose registers
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
     call pit_handler            ; Send EOI to PIC/APIC and increment uptime tick
 
     mov eax, esp                ; Current task stack pointer
@@ -130,6 +137,14 @@ isr32:
     add esp, 8                  ; Clean arguments
     mov esp, eax                ; Switch execution stack to target task (context switch)
 
+    test byte [esp + 36], 3     ; Check if target task is returning to Ring 3 (CS RPL == 3)
+    jz .pit_kernel
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+.pit_kernel:
     popad                       ; Restore general-purpose registers of newly scheduled task
     iretd                       ; Return to execution in chosen task
 
@@ -137,7 +152,18 @@ isr32:
 ; Reads scancodes from port 0x60 and forwards to Rust keyboard buffer.
 isr33:
     pushad
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
     call keyboard_handler
+    test byte [esp + 36], 3
+    jz .kbd_kernel
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+.kbd_kernel:
     popad
     iretd
 
@@ -145,20 +171,45 @@ isr33:
 ; Reads auxiliary device mouse packets from port 0x60.
 isr44:
     pushad
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
     call mouse_handler
+    test byte [esp + 36], 3
+    jz .mouse_kernel
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+.mouse_kernel:
     popad
     iretd
 
 ; ISR 253 (0xFD): SMP Cross-Core TLB Shootdown IPI
 isr_tlb_shootdown:
     pushad
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
     call tlb_shootdown_handler
+    test byte [esp + 36], 3
+    jz .tlb_kernel
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+.tlb_kernel:
     popad
     iretd
 
 ; ISR 254 (0xFE): SMP Cross-Core Reschedule IPI - Preemptive Task Switch
 isr_reschedule:
     pushad
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
     call reschedule_ipi_handler ; Send EOI to Local APIC and update telemetry
 
     mov eax, esp
@@ -168,5 +219,13 @@ isr_reschedule:
     add esp, 8
     mov esp, eax                ; Switch execution stack to target task
 
+    test byte [esp + 36], 3
+    jz .resched_kernel
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+.resched_kernel:
     popad
     iretd
