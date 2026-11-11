@@ -21,7 +21,7 @@
  * Queries and prints process credentials, uptime and kernel hostname
  * telemetry.
  *
- * @return 0 on success, or non-zero error code.
+ * @return 0 on success or non-zero error code.
  */
 int display_system_info(void);
 
