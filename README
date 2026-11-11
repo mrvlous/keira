@@ -110,6 +110,8 @@ Welcome! Start your systems development journey here:
 * Getting Started: docs/process/build-system.rst
 * Build Pipeline: docs/process/build-system.rst
 * Coding Style: docs/process/coding-style.rst
+* Contributor Guide: docs/process/contributing.rst
+* Patch Submission: docs/process/submitting-patches.rst
 * Contribution Workflow: docs/process/development-workflow.rst
 * Bootstrapping Sequence: docs/arch/boot-protocol.rst
 
@@ -161,5 +163,6 @@ Communication and Support
 
 * Repository Home: https://github.com/mrvlous/keira
 * Issue Tracker: https://github.com/mrvlous/keira/issues
+* Contributing Guide: CONTRIBUTING
 * Technical Index: docs/index.rst
 * Project Credits & Acknowledgements: CREDITS

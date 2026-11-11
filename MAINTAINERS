@@ -44,6 +44,7 @@ M: mrvlous@proton.me
 S: Maintained
 F: docs/
 F: LICENSES/
+F: CONTRIBUTING
 
 INTER-PROCESS COMMUNICATION & IO_URING
 P: Moh. Ananda Firmansyah Putra
