@@ -155,9 +155,10 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap) {
             format++;
         } else if (*format == 'x' || *format == 'X' || *format == 'p') {
             unsigned long long val = is_long_long ? va_arg(ap, unsigned long long)
-                                     : is_long ? (unsigned long long)va_arg(ap, unsigned long)
-                                     : (*format == 'p') ? (unsigned long long)(uintptr_t)va_arg(ap, void *)
-                                     : (unsigned long long)va_arg(ap, unsigned int);
+                                     : is_long    ? (unsigned long long)va_arg(ap, unsigned long)
+                                     : (*format == 'p')
+                                         ? (unsigned long long)(uintptr_t)va_arg(ap, void *)
+                                         : (unsigned long long)va_arg(ap, unsigned int);
             char num_buf[32];
             int nidx = 0;
             if (val == 0) {
