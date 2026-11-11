@@ -56,7 +56,7 @@ static CURRENT_HELD_RANK: AtomicU8 = AtomicU8::new(0);
 
 /// Verifies that acquiring `rank` obeys the strict lock ordering hierarchy.
 ///
-/// Returns `Ok(())` if compliant, or `Err(&'static str)` if an inversion is detected.
+/// Returns `Ok(())` if compliant or `Err(&'static str)` if an inversion is detected.
 #[inline]
 pub fn check_lock_order(rank: LockRank) -> Result<(), &'static str> {
     let current = CURRENT_HELD_RANK.load(Ordering::Relaxed);

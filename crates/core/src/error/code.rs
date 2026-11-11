@@ -37,9 +37,9 @@ pub enum KernelError {
     InvalidArgument,
     /// Permission denied or privilege violation.
     PermissionDenied,
-    /// Target file, directory, device node, or descriptor not found.
+    /// Target file, directory, device node or descriptor not found.
     NotFound,
-    /// Target hardware resource, lock, or device is currently busy.
+    /// Target hardware resource, lock or device is currently busy.
     DeviceBusy,
     /// Subsystem or hardware bus operation timed out.
     TimedOut,

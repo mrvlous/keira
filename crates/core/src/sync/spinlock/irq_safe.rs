@@ -185,7 +185,7 @@ impl IrqSpinLock {
 
     /// Attempts to acquire the spinlock without blocking.
     ///
-    /// Returns `Some(IrqSpinLockGuard)` if acquired, or `None` if contested.
+    /// Returns `Some(IrqSpinLockGuard)` if acquired or `None` if contested.
     pub fn try_lock(&self) -> Option<IrqSpinLockGuard<'_>> {
         let irq_state = irq_save();
         let core_id = current_core_id();

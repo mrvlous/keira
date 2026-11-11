@@ -32,7 +32,7 @@ use crate::log::buffer::ring::klog_read_all;
 ///
 /// # Returns
 ///
-/// Returns the number of bytes read on success, or a static string error on failure.
+/// Returns the number of bytes read on success or a static string error on failure.
 pub unsafe fn sys_syslog_read(buf_ptr: *mut u8, len: usize) -> Result<usize, &'static str> {
     if buf_ptr.is_null() && len > 0 {
         return Err("Null buffer pointer");

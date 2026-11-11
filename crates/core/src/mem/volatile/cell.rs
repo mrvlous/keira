@@ -14,7 +14,7 @@
 
 //! Volatile memory access wrappers for Memory-Mapped I/O (MMIO) and hardware registers.
 //!
-//! Prevents the optimizing compiler from coalescing, reordering, or caching memory reads
+//! Prevents the optimizing compiler from coalescing, reordering or caching memory reads
 //! and writes to memory-mapped device registers, APIC registers and DMA control structures.
 
 use core::ptr::{read_volatile, write_volatile};

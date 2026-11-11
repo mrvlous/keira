@@ -23,7 +23,7 @@ use crate::error::KernelError;
 /// Syscall 34 implementation (`sys_init_module`).
 ///
 /// Registers and initializes a loadable module provided its name and memory footprint.
-/// Returns the assigned module slot index on success, or a negative POSIX error code on failure.
+/// Returns the assigned module slot index on success or a negative POSIX error code on failure.
 pub fn sys_init_module(name: &str, size: usize) -> Result<i64, i64> {
     if name.is_empty() || size == 0 {
         return Err(-22); // -EINVAL
@@ -42,7 +42,7 @@ pub fn sys_init_module(name: &str, size: usize) -> Result<i64, i64> {
 /// Syscall 35 implementation (`sys_delete_module`).
 ///
 /// Unloads a module identified by name, honoring active reference counts and safety flags.
-/// Returns zero on success, or a negative POSIX error code on failure.
+/// Returns zero on success or a negative POSIX error code on failure.
 pub fn sys_delete_module(name: &str, _flags: u32) -> Result<i64, i64> {
     if name.is_empty() {
         return Err(-22); // -EINVAL

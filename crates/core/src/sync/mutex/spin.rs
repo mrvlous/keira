@@ -54,7 +54,7 @@ impl<T> SpinMutex<T> {
 
     /// Attempts to acquire the mutex lock without blocking.
     ///
-    /// Returns `Some(SpinMutexGuard)` if acquired, or `None` if contested.
+    /// Returns `Some(SpinMutexGuard)` if acquired or `None` if contested.
     pub fn try_lock(&self) -> Option<SpinMutexGuard<'_, T>> {
         if self.lock.try_lock() {
             Some(SpinMutexGuard { mutex: self })
