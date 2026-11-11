@@ -1,13 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-
-SHELL           := /bin/bash
 
 # Master Build System Architecture
 #
@@ -17,6 +8,8 @@ SHELL           := /bin/bash
 #   3. LD (Linker)      : Links object files into a single ELF kernel executable.
 #   4. Userland (C)     : Autonomous Ring 3 C runtime and utilities (userland/Makefile).
 #   5. GRUB (Bootloader): Packages kernel and USTAR initrd into a bootable ISO.
+
+SHELL           := /bin/bash
 
 # Include Linux-style configuration file if present
 -include .config
@@ -179,7 +172,8 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
-        format lint user libc disk initrd help info check size objdump qemu-net test test-all test-unit fs-root \
+        format lint user libc docs htmldocs docs-clean docs-lint docs-check docs-linkcheck docs-info pdfdocs disk initrd help info check \
+        size objdump qemu-net test test-all test-unit fs-root user-format user-lint user-size user-test user-info \
         preflight preflight-qemu preflight-format preflight-lint defconfig full_defconfig pure_defconfig kernel_defconfig headers_install
 
 .DEFAULT_GOAL   := all
@@ -321,6 +315,52 @@ libc: preflight ## Build userland freestanding C standard library (libc.a)
 	@$(LOG_INFO) "Delegating libc build to $(USER_DIR)/Makefile ($(ARCH))..."
 	$(Q)$(MAKE) -C $(USER_DIR) libc ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
 	@$(LOG_DONE) "Userland libc build complete ($(ARCH))"
+
+docs htmldocs: ## Build Sphinx technical documentation (HTML)
+	@$(LOG_INFO) "Building Sphinx HTML documentation..."
+	$(Q)$(MAKE) -C docs html V=$(V)
+	@$(LOG_DONE) "Documentation build complete: docs/_build/html/index.html"
+
+docs-clean: ## Remove generated Sphinx documentation build artifacts
+	@$(LOG_INFO) "Cleaning documentation artifacts..."
+	$(Q)$(MAKE) -C docs clean V=$(V)
+	@$(LOG_DONE) "Documentation clean complete"
+
+docs-lint docs-check: ## Verify all documentation files for SPDX and style compliance
+	@$(LOG_INFO) "Linting documentation..."
+	$(Q)$(MAKE) -C docs lint V=$(V)
+	@$(LOG_DONE) "Documentation linting complete"
+
+docs-linkcheck: ## Verify external documentation hyperlinks
+	@$(LOG_INFO) "Checking documentation links..."
+	$(Q)$(MAKE) -C docs linkcheck V=$(V)
+	@$(LOG_DONE) "Documentation linkcheck complete"
+
+docs-info: ## Display Sphinx documentation build environment and metrics
+	$(Q)$(MAKE) -C docs info V=$(V)
+
+docs-venv docs-deps: ## Setup Python virtual environment and install Sphinx dependencies
+	$(Q)$(MAKE) -C docs venv V=$(V)
+
+pdfdocs: ## Compile PDF technical documentation via LaTeX
+	@$(LOG_INFO) "Building Sphinx PDF documentation..."
+	$(Q)$(MAKE) -C docs pdfdocs V=$(V)
+	@$(LOG_DONE) "Documentation PDF build complete"
+
+user-format: ## Format all userland C source and header files
+	$(Q)$(MAKE) -C $(USER_DIR) format V=$(V)
+
+user-lint: ## Perform static analysis on userland C code using clang-tidy
+	$(Q)$(MAKE) -C $(USER_DIR) lint ARCH=$(ARCH) V=$(V)
+
+user-size: ## Display sizes of userland library and compiled executables
+	$(Q)$(MAKE) -C $(USER_DIR) size ARCH=$(ARCH) V=$(V)
+
+user-test: ## Verify userland diagnostic and ABI test binaries
+	$(Q)$(MAKE) -C $(USER_DIR) test ARCH=$(ARCH) V=$(V)
+
+user-info: ## Display userland architecture and toolchain configuration
+	$(Q)$(MAKE) -C $(USER_DIR) info ARCH=$(ARCH) V=$(V)
 
 rust: preflight | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
@@ -492,32 +532,37 @@ test-all: preflight-qemu ## Run automated headless smoke tests on all architectu
 	@$(LOG_DONE) "All architecture tests completed successfully"
 
 # Code hygiene, formatting and linting
-clean: ## Remove build directory and compiled artifacts
+clean: ## Remove build directory and compiled artifacts across all subsystems
 	@$(LOG_INFO) "Cleaning build artifacts..."
 	$(Q)rm -rf $(BUILD_ROOT)
 	$(Q)$(CARGO) clean
-	$(Q)$(MAKE) -C $(USER_DIR) clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland
+	$(Q)$(MAKE) -C $(USER_DIR) clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
+	$(Q)$(MAKE) -C docs clean V=$(V) 2>/dev/null || true
 	$(Q)rm -rf include
 	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
 
-mrproper distclean: clean ## Restore repository to pristine state including removing .config
+mrproper distclean: clean ## Restore repository to pristine state including userland, docs and .config
+	$(Q)$(MAKE) -C $(USER_DIR) distclean V=$(V) 2>/dev/null || true
+	$(Q)$(MAKE) -C docs distclean V=$(V) 2>/dev/null || true
 	$(Q)rm -f .config
 	$(Q)rm -rf include
 	@$(LOG_DONE) "Repository cleaned to pristine state (.config removed)"
 
-format: preflight-format ## Format Rust and C source code
+format: preflight-format ## Format Rust workspace and C userland sources
 	@$(LOG_INFO) "Formatting Rust code..."
 	$(Q)$(CARGO) fmt --all
-	@$(LOG_INFO) "Formatting C code..."
-	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
+	@$(LOG_INFO) "Formatting userland C code..."
+	$(Q)$(MAKE) -C $(USER_DIR) format V=$(V)
 	@$(LOG_DONE) "Formatting complete"
 
-lint: preflight-lint ## Static analysis of C userland code using clang-tidy
-	@$(LOG_INFO) "Linting userland C code..."
-	$(Q)find $(USER_DIR) -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I $(USER_DIR)/include -I $(USER_DIR)/bin/kcc/include -I $(USER_DIR)/bin/sysinfo/include -I $(USER_DIR)/bin/test_abi/include -I $(USER_DIR)/bin/fuzz_abi/include -I $(USER_DIR)/bin/test_threads/include -ffreestanding -m64 \;
-	@$(LOG_DONE) "Linting complete"
+lint: preflight-lint ## Run comprehensive static analysis on C userland and documentation
+	@$(LOG_INFO) "Linting userland C code ($(ARCH))..."
+	$(Q)$(MAKE) -C $(USER_DIR) lint ARCH=$(ARCH) V=$(V)
+	@$(LOG_INFO) "Linting documentation..."
+	$(Q)$(MAKE) -C docs lint V=$(V)
+	@$(LOG_DONE) "Comprehensive linting complete"
 
 # Inspection & diagnostic utilities
 size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
@@ -589,10 +634,10 @@ help: ## Display all available Makefile targets
 	@printf "\nKeira Kernel Build System  v$(VERSION) ($(ARCH))\n\n"
 	@printf "  Usage: make <target> [ARCH=x86_64|i686] [USERLAND=0|1] [V=1] [DISK_SIZE=N] [QEMU_MEM=NM]\n\n"
 	@printf "  Build Targets:\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    %-15s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_ -]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    %-20s %s\n", $$1, $$2}'
 	@printf "\n  Variables:\n"
-	@printf "    ARCH=x86_64|i686 Target architecture (default: x86_64)\n"
-	@printf "    USERLAND=0|1    Enable or disable userland compilation (default: 1)\n"
-	@printf "    V=1             Show raw commands (verbose mode)\n"
-	@printf "    DISK_SIZE=N     FAT16 disk size in MB (default: 32)\n"
-	@printf "    QEMU_MEM=NM     QEMU guest memory (default: 128M)\n\n"
+	@printf "    ARCH=x86_64|i686     Target architecture (default: x86_64)\n"
+	@printf "    USERLAND=0|1         Enable or disable userland compilation (default: 1)\n"
+	@printf "    V=1                  Show raw commands (verbose mode)\n"
+	@printf "    DISK_SIZE=N          FAT16 disk size in MB (default: 32)\n"
+	@printf "    QEMU_MEM=NM          QEMU guest memory (default: 128M)\n\n"

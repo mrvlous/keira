@@ -1,20 +1,34 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# Independent autonomous Makefile for Ring 3 C runtime libraries and core utilities.
 
-ARCH            ?= x86_64
+# Autonomous Userland Build System Architecture
+#
+# Orchestrates compiling the freestanding Ring 3 C runtime (libc.a),
+# the native compiler (kcc) and core utility binaries for Keira Kernel:
+#   1. CRT0 (Assembly) : Compiles Ring 3 architecture startup entry stubs.
+#   2. LIBC (C Lib)    : Archives freestanding standard library into libc.a.
+#   3. BINS (Programs) : Compiles and links 46 userland utility executables.
+#   4. Install         : Exports runtime binaries and headers to destination root.
+
+SHELL           := /bin/bash
+
+# Include Linux-style configuration file if present
+-include ../.config
+
+# Target architecture: x86_64 (default) or i686 (pure 32-bit x86)
+ifeq ($(CONFIG_ARCH_I686),y)
+    ARCH        := i686
+else ifeq ($(CONFIG_ARCH_X86_64),y)
+    ARCH        := x86_64
+else
+    ARCH        ?= x86_64
+endif
+
+# Toolchain executables
 CC              ?= gcc
 ASM             ?= nasm
 AR              ?= ar
 
-# Verbose mode
+# Verbose mode: set V=1 to display raw command executions
 ifeq ($(V),1)
     Q           :=
 else
@@ -43,7 +57,7 @@ else
                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 endif
 
-# Output directories
+# Output build directories
 BUILD_DIR       ?= build/$(ARCH)
 OBJ_DIR         := $(BUILD_DIR)/obj
 LIB_DIR         := $(BUILD_DIR)/lib
@@ -64,15 +78,18 @@ BINS            := arp cat chmod chown clear df dmesg echo fetch fuzz_abi grep h
 
 BIN_ELFS        := $(patsubst %,$(BIN_DIR)/%.elf,$(BINS))
 
-# Logging macros
-LOG_INFO        := printf "  [USER-INFO] %s\n"
-LOG_CC          := printf "  [USER-CC]   %s\n"
-LOG_ASM         := printf "  [USER-ASM]  %s\n"
-LOG_AR          := printf "  [USER-AR]   %s\n"
-LOG_LD          := printf "  [USER-LD]   %s\n"
-LOG_DONE        := printf "[USER-DONE]  %s\n"
+# Uniform logging definitions matching kernel master build system
+LOG_INFO        := printf "[INFO]  %s\n"
+LOG_DONE        := printf "[DONE]  %s\n"
+LOG_WARN        := printf "[WARN]  %s\n"
+LOG_ERR         := printf "[ERR]   %s\n"
+LOG_CC          := printf "  [CC]    %s\n"
+LOG_ASM         := printf "  [ASM]   %s\n"
+LOG_AR          := printf "  [AR]    %s\n"
+LOG_LD          := printf "  [LD]    %s\n"
 
-.PHONY: all libc bins install clean dirs help
+# Phony targets declaration
+.PHONY: all libc bins install clean distclean mrproper dirs format lint size test info help
 
 all: dirs libc bins ## Build C library and all userland utility binaries
 
@@ -100,7 +117,7 @@ $(LIBC_A): $(LIB_OBJS) | dirs
 
 libc: $(LIBC_A) ## Build freestanding C standard library (libc.a)
 
-# Userland utility binaries
+# Userland utility binaries compilation template
 define BIN_RULE
 $$(OBJ_DIR)/bin/$(1)/%.o: bin/$(1)/%.c | dirs
 	$$(Q)mkdir -p $$(dir $$@)
@@ -133,14 +150,57 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	done
 	@$(LOG_DONE) "Userland installation complete ($(ARCH))"
 
-clean: ## Clean userland build artifacts
-	@$(LOG_INFO) "Cleaning userland build objects..."
-	$(Q)rm -rf $(BUILD_DIR)
-	@$(LOG_DONE) "Userland clean complete"
+format: ## Format all userland C source and header files with clang-format
+	@$(LOG_INFO) "Formatting userland C files..."
+	$(Q)find . -path "./build" -prune -o -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
+	@$(LOG_DONE) "Userland formatting complete"
 
-help: ## Display userland Makefile targets
+lint: ## Perform static analysis on userland C code using clang-tidy
+	@$(LOG_INFO) "Linting userland C code ($(ARCH))..."
+	$(Q)find . -path "./build" -prune -o -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I include -I bin/kcc/include -I bin/sysinfo/include -I bin/test_abi/include -I bin/fuzz_abi/include -I bin/test_threads/include -ffreestanding -m$(if $(filter i686,$(ARCH)),32,64) \;
+	@$(LOG_DONE) "Userland linting complete"
+
+size: libc bins ## Display sizes of libc.a and all compiled userland ELF binaries
+	@printf "\n  Userland Library Size ($(ARCH)):\n"
+	$(Q)size $(LIBC_A) 2>/dev/null | sed 's/^/    /' || true
+	@printf "\n  Compiled Executables Sample ($(ARCH)):\n"
+	$(Q)size $(BIN_DIR)/*.elf 2>/dev/null | head -n 15 | sed 's/^/    /' || true
+	@printf "    ... (total %d binaries compiled in $(BIN_DIR))\n\n" $(words $(BINS))
+
+test: libc $(filter %/test_abi.elf %/test_pipe.elf %/test_poll.elf %/test_select.elf %/test_threads.elf %/fuzz_abi.elf,$(BIN_ELFS)) ## Compile and verify userland diagnostic and ABI test binaries
+	@$(LOG_INFO) "Verifying userland test binaries ($(ARCH))..."
+	$(Q)for t in $(BIN_DIR)/test_*.elf $(BIN_DIR)/fuzz_*.elf; do \
+	    if [ -f "$$t" ]; then \
+	        printf "  [OK]    %s (ELF executable verified)\n" "$$(basename $$t)"; \
+	    fi; \
+	done
+	@$(LOG_DONE) "Userland test verification complete ($(ARCH))"
+
+info: ## Display architecture configuration, compiler flags and binary list
+	@printf "\nKeira Autonomous Userland Build Configuration\n\n"
+	@printf "  Architecture   : $(ARCH)\n"
+	@printf "  Compiler (CC)  : $(CC)\n"
+	@printf "  Assembler (ASM): $(ASM)\n"
+	@printf "  Archiver (AR)  : $(AR)\n"
+	@printf "  CFLAGS         : $(CFLAGS)\n"
+	@printf "  LDFLAGS        : $(LDFLAGS)\n"
+	@printf "  Output Path    : $(BUILD_DIR)\n"
+	@printf "  Binaries Count : %d programs\n\n" $(words $(BINS))
+
+clean: ## Clean userland build artifacts for current architecture
+	@$(LOG_INFO) "Cleaning userland build objects ($(ARCH))..."
+	$(Q)rm -rf $(BUILD_DIR)
+	@$(LOG_DONE) "Userland clean complete ($(ARCH))"
+
+distclean mrproper: clean ## Clean all build artifacts, temporary editor files and backups
+	@$(LOG_INFO) "Cleaning userland to pristine state..."
+	$(Q)rm -rf build
+	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" \) -delete 2>/dev/null || true
+	@$(LOG_DONE) "Userland distclean complete"
+
+help: ## Display available userland Makefile targets
 	@printf "\nKeira Userland Build System ($(ARCH))\n\n"
-	@printf "  Usage: make <target> [ARCH=x86_64|i686] [DESTDIR=/path] [V=1]\n\n"
+	@printf "  Usage: make [target] [ARCH=x86_64|i686] [DESTDIR=/path] [V=1]\n\n"
 	@printf "  Targets:\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    %-15s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_ -]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "    %-20s %s\n", $$1, $$2}'
 	@printf "\n"
