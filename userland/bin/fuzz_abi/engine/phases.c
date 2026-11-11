@@ -1,12 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include "fuzz_abi.h"
 
@@ -57,7 +49,7 @@ int run_phase1_syscall_fuzzing(int *out_calls) {
         uint64_t a5 = get_mutated_arg();
         uint64_t a6 = get_mutated_arg();
 
-        /* Skip process-destroying, sandboxing, blocking, and control-flow mutating
+        /* Skip process-destroying, sandboxing, blocking and control-flow mutating
          * calls */
         if (vec == SYS_EXIT || vec == SYS_EXEC || vec == SYS_FORK || vec == SYS_CLONE_THREAD ||
             vec == SYS_SECCOMP || vec == SYS_SIGACTION || vec == SYS_SIGRETURN ||
@@ -66,7 +58,7 @@ int run_phase1_syscall_fuzzing(int *out_calls) {
             continue;
         }
 
-        /* Prevent closing stdin, stdout, and stderr descriptors */
+        /* Prevent closing stdin, stdout and stderr descriptors */
         if (vec == SYS_CLOSE && a1 <= 2) {
             continue;
         }

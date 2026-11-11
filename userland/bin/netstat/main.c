@@ -2,10 +2,6 @@
 /*
  * Keira Kernel - Standalone Ring 3 Network Statistics Utility (netstat)
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
  */
 
 #include <fcntl.h>
@@ -18,7 +14,7 @@ static void print_usage(void) {
     puts("Usage: netstat [OPTIONS]");
     puts("");
     puts("Description:");
-    puts("  Display active network connections, sockets, and statistics.");
+    puts("  Display active network connections, sockets and statistics.");
     puts("");
     puts("Options:");
     puts("  -a, --all         display all sockets (listening and non-listening)");

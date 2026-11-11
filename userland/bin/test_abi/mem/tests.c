@@ -1,12 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include "test_abi.h"
 
@@ -214,12 +206,12 @@ int run_test_abi_mem(void) {
         return 1;
     }
     printf("  [INFO] Disk persistence confirmed: '%s'\n", verify_buf);
-    puts("  [OK]   File-backed mmap, demand paging, and msync synchronization "
+    puts("  [OK]   File-backed mmap, demand paging and msync synchronization "
          "operational");
 #else
     puts("  [INFO] File-backed lazy demand paging skipped on i686 (non-paging "
          "target)");
-    puts("  [OK]   File-backed mmap, demand paging, and msync synchronization "
+    puts("  [OK]   File-backed mmap, demand paging and msync synchronization "
          "operational");
 #endif
 
@@ -263,6 +255,7 @@ int run_test_abi_mem(void) {
     /* 32. Hardware W^X Exploit Mitigation & Permission Boundary Enforcement */
     puts("  [TEST] Hardware W^X exploit mitigation (simultaneous W+X rejection)...");
 #if defined(__x86_64__)
+    // NOLINTNEXTLINE(clang-analyzer-security.MmapWriteExec)
     void *wx_mmap = mmap(NULL, 4096, PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (wx_mmap != MAP_FAILED) {
         puts("  [FAIL] Simultaneous PROT_WRITE | PROT_EXEC mmap was not rejected!");
@@ -276,6 +269,7 @@ int run_test_abi_mem(void) {
         puts("  [FAIL] Failed to allocate safe PROT_READ | PROT_WRITE page");
         return 1;
     }
+    // NOLINTNEXTLINE(clang-analyzer-security.MmapWriteExec)
     int mprot_res = mprotect(safe_mmap, 4096, PROT_WRITE | PROT_EXEC);
     if (mprot_res == 0) {
         puts("  [FAIL] mprotect with PROT_WRITE | PROT_EXEC was not rejected!");

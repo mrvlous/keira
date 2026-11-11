@@ -2,10 +2,6 @@
 /*
  * Keira Kernel - Standalone Ring 3 Netfilter Firewall Utility (iptables)
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
  */
 
 #include <stdio.h>

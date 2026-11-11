@@ -1,12 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include "test_abi.h"
 
@@ -47,7 +39,7 @@ int run_test_abi_signal(void) {
         puts("  [FAIL] Second sys_sigreturn should fail after context was consumed");
         return 1;
     }
-    puts("  [INFO] Signal handler registered, signal context saved, and restored "
+    puts("  [INFO] Signal handler registered, signal context saved and restored "
          "via sigreturn");
     puts("  [OK]   POSIX signal context delivery and sigreturn restorer "
          "operational");
@@ -91,7 +83,7 @@ int run_test_abi_signal(void) {
         puts("  [FAIL] Unblocked signal was not cleared from pending queue");
         return 1;
     }
-    puts("  [INFO] Masked signal blocked, queued, and delivered on unblock");
+    puts("  [INFO] Masked signal blocked, queued and delivered on unblock");
     puts("  [OK]   POSIX signal masking and pending queue operational");
 
     /* 27. Illegal Instruction (#UD) Fault Containment */

@@ -2,10 +2,6 @@
 /*
  * Keira Kernel - Standalone Ring 3 Word, Line and Byte Count Utility (wc)
  * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
  */
 
 #include <ctype.h>
@@ -25,7 +21,7 @@ static void print_usage(void) {
     puts("Usage: wc [OPTIONS] [FILE...]");
     puts("");
     puts("Description:");
-    puts("  Print newline, word, and byte counts for each FILE, and a total line if");
+    puts("  Print newline, word and byte counts for each FILE and a total line if");
     puts(
         "  more than one FILE is specified. With no FILE, or when FILE is -, read standard input.");
     puts("");

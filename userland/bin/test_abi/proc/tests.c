@@ -1,12 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
-/*
- * Keira Kernel - Freestanding Kernel from Scratch
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- */
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include "test_abi.h"
 
@@ -309,13 +301,15 @@ int run_test_abi_proc(void) {
     puts("  [TEST] POSIX system power management and sys_reboot (Syscall 109)...");
     int raw_res1 = sys_reboot(0, (int)LINUX_REBOOT_MAGIC2, RB_AUTOBOOT, NULL);
     if (raw_res1 != -EINVAL) {
-        printf("  [FAIL] sys_reboot accepted invalid magic1 (expected %d, got %d)\n", -EINVAL, raw_res1);
+        printf("  [FAIL] sys_reboot accepted invalid magic1 (expected %d, got %d)\n", -EINVAL,
+               raw_res1);
         return 1;
     }
 
     int raw_res2 = sys_reboot((int)LINUX_REBOOT_MAGIC1, 0, RB_AUTOBOOT, NULL);
     if (raw_res2 != -EINVAL) {
-        printf("  [FAIL] sys_reboot accepted invalid magic2 (expected %d, got %d)\n", -EINVAL, raw_res2);
+        printf("  [FAIL] sys_reboot accepted invalid magic2 (expected %d, got %d)\n", -EINVAL,
+               raw_res2);
         return 1;
     }
 
