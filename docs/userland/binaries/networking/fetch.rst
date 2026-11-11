@@ -1,0 +1,91 @@
+.. SPDX-License-Identifier: GPL-2.0-only
+
+==========================================
+fetch.elf Freestanding HTTP Client Utility
+==========================================
+
+The ``fetch.elf`` executable (``/bin/fetch.elf`` and ``/bin/fetch``) is a freestanding Ring 3 network utility that retrieves resources over HTTP from network endpoints.
+
+1. Architectural Purpose
+========================
+
+In accordance with UNIX purity and the Keira v0.8.0 pure kernel slimming roadmap, high-level network client operations are decoupled from the Ring 0 supervisor console and implemented as freestanding unprivileged Ring 3 binaries:
+
+1. **Ring 3 Privilege Isolation**: Executes entirely in unprivileged Ring 3, requesting network resources exclusively through the kernel network system call boundary.
+2. **Resource Retrieval & Disk Streaming**: Downloads HTTP payloads to standard output or streams them directly to disk via ``-o <file>``.
+3. **HTTP Header Inspection**: Provides ``-I`` and ``--head`` flags to inspect server HTTP response status lines and headers without displaying payload bodies.
+4. **Pipeline Interoperability**: Integrates cleanly into shell pipelines (e.g. ``/bin/fetch http://api.example.com/data | /bin/cat``).
+
+2. Command-Line Options
+=======================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 11 74
+
+   * - Option
+     - Long Option
+     - Description
+   * - ``-o, -O <file>``
+     - *N/A*
+     - Writes received payload to specified local file instead of standard output
+   * - ``-I``
+     - ``--head``
+     - Displays HTTP response status line and headers only
+   * - ``-v``
+     - ``--verbose``
+     - Displays verbose network connection and payload transfer telemetry
+   * - ``-h``
+     - ``--help``
+     - Displays usage reference and exits with status 0
+
+3. Usage Examples
+=================
+
+Fetching Payloads to Standard Output
+------------------------------------
+
+.. code-block:: bash
+
+   # Retrieve a remote resource to stdout:
+   keira:/# fetch http://example.com/
+
+   # Retrieve via canonical /bin/fetch alias:
+   keira:/# /bin/fetch http://example.com/
+
+Writing Payloads to File
+------------------------
+
+.. code-block:: bash
+
+   # Save remote payload to local disk file:
+   keira:/# fetch -o /tmp/payload.txt http://example.com/
+
+   # Inspect saved payload with cat:
+   keira:/# cat /tmp/payload.txt
+
+Inspecting HTTP Response Headers
+--------------------------------
+
+.. code-block:: bash
+
+   # Display only status line and headers:
+   keira:/# fetch -I http://example.com/
+
+Verbose Network Diagnostics
+---------------------------
+
+.. code-block:: bash
+
+   # Verbose transfer diagnostics:
+   keira:/# fetch -v http://example.com/
+
+4. Technical Specifications
+===========================
+
+- **Source Path**: ``userland/bin/fetch/main.c``
+- **Binary Locations**: ``/bin/fetch.elf``, ``/bin/fetch``
+- **Privilege Level**: Ring 3 unprivileged
+- **Dependencies**: Freestanding ``libc.a`` (``<arpa/inet.h>``, ``<sys/socket.h>``, ``<fcntl.h>``, ``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``)
+- **System Calls**: ``sys_socket`` (Vector 24), ``sys_connect`` (Vector 25), ``sys_write`` (Vector 8), ``sys_read`` (Vector 7), ``sys_open`` (Vector 6), ``sys_close`` (Vector 9) and ``sys_exit`` (Vector 2)
+- **Buffer Size**: 4096-byte transfer buffer
