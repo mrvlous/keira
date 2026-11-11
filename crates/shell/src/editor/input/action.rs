@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Editing primitives for character insertion, line splits, deletions, cut, and paste.
+//! Editing primitives for character insertion, line splits, deletions, cut and paste.
 
 use keira_io::vga;
 
@@ -45,7 +38,7 @@ pub unsafe fn insert_char(c: u8) {
 /// Insert a newline, splitting the current line at cursor into two lines.
 ///
 /// # Safety
-/// Directly modifies global line grids, length metadata, and scroll offsets.
+/// Directly modifies global line grids, length metadata and scroll offsets.
 pub unsafe fn insert_newline() {
     let c_rows = canvas_rows() as u16;
     let cur_y = EDIT_CUR_Y as usize;
@@ -84,7 +77,7 @@ pub unsafe fn insert_newline() {
 /// Delete character before cursor or merge current line with previous line.
 ///
 /// # Safety
-/// Directly modifies editor text cells, shifts buffer lines, and redraws terminal.
+/// Directly modifies editor text cells, shifts buffer lines and redraws terminal.
 pub unsafe fn delete_backspace() {
     let c_cols = content_cols();
     let cur_y = EDIT_CUR_Y as usize;

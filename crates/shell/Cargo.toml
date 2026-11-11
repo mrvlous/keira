@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Supervisor Diagnostic Shell Crate (keira-shell)
 #
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
+# Implements Ring 0 emergency interactive shell, 15 diagnostic commands,
+# CliArgs tokenizer, tab auto-completion and kvi modal text editor.
 
 [package]
 name = "keira-shell"

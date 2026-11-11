@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! I/O file redirection parser for input ('<') and output ('>', '>>').
 
@@ -26,7 +19,7 @@ pub fn parse_input_redirection(cmd: &str) -> (&str, Option<&str>) {
     (cmd, None)
 }
 
-/// Parse output redirection `>` or `>>` returning base command, optional target file, and append flag.
+/// Parse output redirection `>` or `>>` returning base command, optional target file and append flag.
 pub fn parse_output_redirection(cmd: &str) -> (&str, Option<&str>, bool) {
     if let Some(pos) = cmd.find(">>") {
         let cmd_part = &cmd[..pos];

@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Status bar formatting, cursor telemetry, and line counting.
+//! Status bar formatting, cursor telemetry and line counting.
 
 use keira_io::vga;
 
@@ -116,7 +109,7 @@ pub unsafe fn set_status_msg_wrote(lines: usize) {
     EDITOR_STATUS_COLOR = vga::Color::LightGreen;
 }
 
-/// Sets status bar telemetry describing cursor position, column, and total character count.
+/// Sets status bar telemetry describing cursor position, column and total character count.
 ///
 /// # Safety
 /// Accesses static mutable editor cursor and text metadata.

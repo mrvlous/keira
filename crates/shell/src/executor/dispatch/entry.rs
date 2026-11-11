@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! High-level command execution entry point coordinating expansion and pipelines.
 
@@ -17,7 +10,7 @@ use crate::executor::pipeline::redirect::{
     execute_with_redirection, parse_input_redirection, parse_output_redirection,
 };
 
-/// Primary entry point: parses, expands environment variables, and executes a shell command line.
+/// Primary entry point: parses, expands environment variables and executes a shell command line.
 pub fn execute_command(cmd: &str) {
     let mut exp_buf = [0u8; 512];
     let exp_len = expand_env_vars(cmd, &mut exp_buf);

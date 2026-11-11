@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Editor file persistence, initialization, and buffer loading.
+//! Editor file persistence, initialization and buffer loading.
 
 use keira_io::vga;
 
@@ -56,7 +49,7 @@ pub unsafe fn editor_save_file() -> Result<usize, &'static str> {
 /// Start the nano editor session for a given file.
 ///
 /// # Safety
-/// Initializes static mutable editor grid, file buffers, and session flags.
+/// Initializes static mutable editor grid, file buffers and session flags.
 pub unsafe fn editor_start(filename: &str) -> Result<(), &'static str> {
     EDIT_FILENAME = [0; 64];
     EDIT_FILENAME_LEN = core::cmp::min(filename.len(), 64);
