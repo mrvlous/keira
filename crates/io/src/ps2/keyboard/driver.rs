@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! PS/2 Keyboard Controller hardware driver, scancode decoding, and event dispatch.
+//! PS/2 Keyboard Controller hardware driver, scancode decoding and event dispatch.
 
 use super::scancode::{
     KBD_US_LAYOUT, KBD_US_SHIFTED_LAYOUT, KEY_DOWN, KEY_F10, KEY_F3, KEY_LCTRL, KEY_LEFT,

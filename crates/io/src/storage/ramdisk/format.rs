@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Dynamic RAM disk frame allocation and synthetic FAT16 filesystem formatter.
 
@@ -13,7 +6,7 @@ use super::device::{MAX_RAMDISK_FRAMES, RAM_DEVICE};
 use crate::storage::block::{register_device, BlockDevice};
 use keira_mem::pmm;
 
-/// Allocates physical frames for the system RAM disk, formats a FAT16 filesystem, and registers the device.
+/// Allocates physical frames for the system RAM disk, formats a FAT16 filesystem and registers the device.
 pub fn create_ramdisk(size_kb: usize) -> Result<(), &'static str> {
     let frames_needed = (size_kb * 1024).div_ceil(4096);
     if frames_needed == 0 || frames_needed > MAX_RAMDISK_FRAMES {

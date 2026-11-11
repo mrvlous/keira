@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! AHCI HBA register offsets, status flags, and command list/table descriptors.
+//! AHCI HBA register offsets, status flags and command list/table descriptors.
 
 pub const AHCI_REG_GHC: usize = 0x04;
 pub const AHCI_REG_PI: usize = 0x0C;
