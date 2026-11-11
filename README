@@ -1,7 +1,7 @@
 Keira Kernel
 ============
 
-Keira is an educational, exploratory freestanding kernel in
+Keira is an educational, exploratory freestanding monolithic kernel in
 Ring 0 built from scratch in safe Rust, Assembly and C, supporting both modern
 64-bit (x86_64) and pure 32-bit (i686) bare-metal architectures.
 
@@ -9,7 +9,7 @@ Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
 Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 109 POSIX
-system calls, bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
+system call numbers (89 active vectors), bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
 with I/O redirection and pipelines, 46 native core utilities (cat.elf, chmod.elf, chown.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_pipe.elf, test_poll.elf, test_select.elf, pmap.elf, reboot.elf, poweroff.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
 canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 41 verified master ABI security test suites, bare-metal io_uring asynchronous I/O engine, High-Precision
@@ -47,41 +47,46 @@ of computer systems across 56 chronological engineering milestones:
 * Milestone 55: POSIX System Identity Subsystem & SYS_UNAME (Century-Plus Syscall 108, struct utsname, <sys/utsname.h>, ABI Test 40, Pure uname).
 * Milestone 56: POSIX System Power Management Subsystem & SYS_REBOOT (Century-Plus Syscall 109, <sys/reboot.h>, /bin/reboot, /bin/poweroff, ABI Test 41).
 
-Read the detailed engineering journal: docs/journey/README.md
-System architecture overview: docs/architecture/README.md
+Read the detailed engineering journal: docs/journey/index.rst
+System architecture overview: docs/arch/index.rst
 
 Quick Start
 -----------
 
 * Get the latest code: https://github.com/mrvlous/keira
-* Setup the workspace: See docs/contributing/guides/setup.md
+* Setup the workspace: See docs/process/build-system.rst
 * Build & run 64-bit kernel: `make run` (or `make run-64`)
 * Build & run 32-bit kernel: `make ARCH=i686 run` (or `make run-32`)
 * Build & run with multi-core SMP: `make run SMP=4`
+* Build pure Ring 0 kernel (no userland disk): `make run-bare`
 * Build all architectures: `make full`
 * Automated multi-architecture test suite: `make test-all`
+* Build Sphinx technical documentation: `make docs`
 
 Hyper-Modular Documentation Architecture
 ----------------------------------------
 
-Explore the kernel across 14 first-class hyper-modular domains:
+Explore the kernel across 16 first-class hyper-modular domains:
 
-* Architecture & UAPI: docs/architecture/README.md
-* Learning Journey: docs/journey/README.md
-* Kernel Core: docs/kernel/README.md
-* Memory Subsystems: docs/memory/README.md
-* Task & Scheduling: docs/task/README.md
-* System Calls: docs/syscall/README.md
-* Inter-Process Communication: docs/ipc/README.md
-* Filesystems & VFS: docs/fs/README.md
-* Hardware Device Drivers: docs/drivers/README.md
-* Layered Network Stack: docs/net/README.md
-* Cryptographic Security: docs/crypto/README.md
-* Shell & Utilities: docs/shell/README.md
-* Userland & C SDK: docs/userland/README.md
-* Contributor Guidelines: docs/contributing/README.md
+* System Administration & Operations: docs/admin-guide/index.rst
+* Hardware Architecture & Bootstrap: docs/arch/index.rst
+* Core Infrastructure & Primitives: docs/core-api/index.rst
+* Memory Management Subsystem: docs/memory-management/index.rst
+* Process Scheduler & Concurrency: docs/scheduler/index.rst
+* Hardware Device Drivers: docs/driver-api/index.rst
+* Filesystems & Storage Layer: docs/filesystems/index.rst
+* Layered Network Stack & BSD Sockets: docs/networking/index.rst
+* Inter-Process Communication (IPC): docs/ipc/index.rst
+* Security, Hardening & Enclaves: docs/security/index.rst
+* Userspace API & System Calls: docs/userspace-api/index.rst
+* Ring 0 Supervisor Console: docs/supervisor-shell/index.rst
+* Userland C SDK & Utilities: docs/userland/index.rst
+* Development Process & Style: docs/process/index.rst
+* Architectural Learning Journey: docs/journey/index.rst
+* Bare-Metal Target Profiles: docs/targets/index.rst
 
-More modular guides can be found starting from the documentation map: docs/README.md
+Master documentation index: docs/index.rst
+Sphinx documentation requirements: docs/sphinx/requirements.txt
 
 Who Are You?
 ============
@@ -101,47 +106,47 @@ Systems Student & Learner
 
 Welcome! Start your systems development journey here:
 
-* Learning Journal: docs/journey/README.md
-* Getting Started: docs/contributing/guides/setup.md
-* Build Pipeline: docs/contributing/guides/build.md
-* Coding Style: docs/contributing/guides/style.md
-* Contribution Workflow: docs/contributing/guides/workflow.md
-* Bootstrapping Sequence: docs/kernel/boot/README.md
+* Learning Journal: docs/journey/index.rst
+* Getting Started: docs/process/build-system.rst
+* Build Pipeline: docs/process/build-system.rst
+* Coding Style: docs/process/coding-style.rst
+* Contribution Workflow: docs/process/development-workflow.rst
+* Bootstrapping Sequence: docs/arch/boot-protocol.rst
 
 Academic Researcher
 -------------------
 
 Explore the kernel's core subsystems and design details:
 
-* Memory Management: docs/memory/README.md
-* Task Scheduler: docs/task/scheduler/README.md
-* System Calls and Privilege: docs/syscall/table/README.md
-* Cryptographic Subsystem: docs/crypto/README.md
-* Virtual Filesystem (VFS) Layer: docs/fs/README.md
-* Process Information Pseudo-Filesystem (ProcFS): docs/fs/proc/README.md
-* Virtual Device Filesystem (DevFS): docs/fs/dev/README.md
-* FAT Filesystem Implementation: docs/fs/fat/README.md
-* TAR Boot initrd Reader: docs/fs/storage/tar_initrd.md
-* Native KCC Compiler: docs/userland/compiler/README.md
-* Freestanding POSIX C Library: docs/userland/libc/README.md
-* Epoll Event Multiplexer: docs/ipc/event/epoll.md
-* Asynchronous I/O (io_uring): docs/ipc/uring/README.md
-* Logical Volume Manager & RAID: docs/fs/storage/lvm_raid.md
-* Kernel Privilege & Sandbox Security: docs/userland/system/users.md
-* VFS Modes & Boundaries: docs/userland/system/permissions.md
-* System Hostname Configuration: docs/userland/system/hostname.md
+* Memory Management: docs/memory-management/index.rst
+* Task Scheduler: docs/scheduler/scheduler-core.rst
+* System Calls and Privilege: docs/userspace-api/syscall-registry/index.rst
+* Cryptographic Subsystem: docs/security/cryptography/index.rst
+* Virtual Filesystem (VFS) Layer: docs/filesystems/index.rst
+* Process Information Pseudo-Filesystem (ProcFS): docs/filesystems/pseudo-filesystems/procfs.rst
+* Virtual Device Filesystem (DevFS): docs/filesystems/pseudo-filesystems/devfs.rst
+* FAT Filesystem Implementation: docs/filesystems/fat/index.rst
+* TAR Boot initrd Reader: docs/filesystems/storage-layers/tar-initrd.rst
+* Native KCC Compiler: docs/userland/compiler/index.rst
+* Freestanding POSIX C Library: docs/userland/libc/index.rst
+* Epoll Event Multiplexer: docs/ipc/index.rst
+* Asynchronous I/O (io_uring): docs/ipc/io-uring/index.rst
+* Logical Volume Manager & RAID: docs/filesystems/storage-layers/lvm-raid.rst
+* Kernel Privilege & Credentials: docs/userland/system/credentials-and-permissions.rst
+* VFS Modes & Boundaries: docs/userland/system/credentials-and-permissions.rst
+* System Hostname Configuration: docs/userland/system/posix-io.rst
 
 Device Driver Developer
 -----------------------
 
 Write and support hardware device drivers:
 
-* Driver Framework: docs/drivers/README.md
-* VGA Text Console & VBE Framebuffer: docs/drivers/display/README.md
-* Serial UART COM1: docs/drivers/serial/README.md
-* Storage (IDE, AHCI, NVMe): docs/drivers/storage/README.md
-* Intel e1000 Network Driver: docs/net/driver/e1000.md
-* USB Host Controller Driver: docs/drivers/bus/usb.md
+* Driver Framework: docs/driver-api/index.rst
+* VGA Text Console & VBE Framebuffer: docs/driver-api/display/index.rst
+* Serial UART COM1: docs/driver-api/serial-and-tty/index.rst
+* Storage (IDE, AHCI, NVMe): docs/driver-api/storage/index.rst
+* Intel e1000 Network Driver: docs/driver-api/network/intel-e1000.rst
+* USB Host Controller Driver: docs/driver-api/bus/usb-controller.rst
 
 AI Coding Assistant
 -------------------
@@ -149,12 +154,12 @@ AI Coding Assistant
 CRITICAL: If you are an LLM or AI-powered coding assistant, you MUST read and
 follow the coding standards before proposing changes to Keira:
 
-* Coding Style and Comment Rules: docs/contributing/guides/style.md
+* Coding Style and Comment Rules: docs/process/coding-style.rst
 
 Communication and Support
 =========================
 
 * Repository Home: https://github.com/mrvlous/keira
 * Issue Tracker: https://github.com/mrvlous/keira/issues
-* Technical Index: docs/README.md
+* Technical Index: docs/index.rst
 * Project Credits & Acknowledgements: CREDITS
