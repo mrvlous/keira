@@ -1,0 +1,289 @@
+.. SPDX-License-Identifier: GPL-2.0-only
+
+======================================
+Coding Style & Documentation Standards
+======================================
+
+This document establishes the official coding, documentation, licensing and commit conventions for Keira Kernel.
+
+1. License Header Policy & SPDX Architecture
+============================================
+
+Every source file (``.rs``, ``.c``, ``.h``, ``.asm``, ``.inc``), build script (``Makefile``), configuration file (``.toml``, ``.json``) and documentation file (``.md``) **MUST** begin with a standard machine-readable SPDX license identifier mapping to the canonical texts in ```LICENSES/```.
+
+> [!IMPORTANT]
+> **License Header Rules:**
+> 1. **Canonical Texts**: Full legal texts for all supported SPDX identifiers are maintained in ```LICENSES/preferred/``` and ```LICENSES/exceptions/```.
+> 2. **Name Only (No Email Addresses)**: Always use the author's full name without email addresses (e.g. ``Copyright (C) 2026 Moh. Ananda Firmansyah Putra``). Email addresses are maintained exclusively in ``MAINTAINERS`` and ``CREDITS``.
+> 3. **Original Author vs. Contributors**:
+>    - For files authored by the primary creator, use ``Copyright (C) 2026 Moh. Ananda Firmansyah Putra``.
+>    - When an external contributor authors a new standalone file, they must use their own full name: ``Copyright (C) 2026 <Contributor Full Name>``.
+>    - When significantly modifying existing files, contributors may append an additional copyright line below existing authors:
+>      ```text
+>      Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+>      Copyright (C) 2026 <Contributor Full Name>
+>      ```
+>    - Contributors should also append their name and contact information to the root ```CREDITS``` file.
+
+Rust (.rs):
+-----------
+
+.. code-block:: rust
+
+   // SPDX-License-Identifier: GPL-2.0-only
+   //
+   // Keira Kernel - Freestanding Kernel from Scratch
+   // Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+   //
+   // This program is free software; you can redistribute it and/or modify
+   // it under the terms of the GNU General Public License as published by
+   // the Free Software Foundation; version 2 of the License.
+
+C & Headers (.c, .h):
+---------------------
+
+.. code-block:: c
+
+   /* SPDX-License-Identifier: GPL-2.0-only */
+   /*
+    * Keira Kernel - Freestanding Kernel from Scratch
+    * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+    *
+    * This program is free software; you can redistribute it and/or modify
+    * it under the terms of the GNU General Public License as published by
+    * the Free Software Foundation; version 2 of the License.
+    */
+
+Assembly (.asm, .inc):
+----------------------
+
+.. code-block:: text
+
+   ; SPDX-License-Identifier: GPL-2.0-only
+   ;
+   ; Keira Kernel - Freestanding Kernel from Scratch
+   ; Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+   ;
+   ; This program is free software; you can redistribute it and/or modify
+   ; it under the terms of the GNU General Public License as published by
+   ; the Free Software Foundation; version 2 of the License.
+
+Makefile, Shell, TOML (Makefile, .sh, .toml):
+---------------------------------------------
+
+.. code-block:: text
+
+   # SPDX-License-Identifier: GPL-2.0-only
+   #
+   # Keira Kernel - Freestanding Kernel from Scratch
+   # Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+   #
+   # This program is free software; you can redistribute it and/or modify
+   # it under the terms of the GNU General Public License as published by
+   # the Free Software Foundation; version 2 of the License.
+
+Markdown (.md):
+---------------
+
+.. code-block:: text
+
+2. Rust Conventions
+===================
+
+1. **Naming Conventions**:
+
+   - Modules, functions and variables: ``snake_case``.
+   - Structs, enums, traits and type aliases: ``UpperCamelCase``.
+   - Global constants and static variables: ``SCREAMING_SNAKE_CASE``.
+
+2. **Defensive Kernel Programming**:
+
+   - Pure ``#![no_std]`` environment across all crates.
+   - Avoid ``unwrap()`` and ``panic!`` in kernel-space runtime paths. Prefer ``Result<T, &'static str>`` or custom error enums.
+   - Every ``unsafe`` function and block must provide a formal ``# Safety`` docstring explaining preconditions.
+
+3. **Documentation**:
+
+   - Write clear, formal English rustdoc comments (``///``) on all public types, constants and functions.
+   - Provide file-level module docstrings (``//!``) at the top of every module.
+
+4. **Code Formatting**:
+
+   - Always run ``cargo fmt --all`` before committing (enforced via ``make format``).
+
+3. C & Assembly Conventions
+===========================
+
+1. **Userland C (``userland/``)**:
+
+   - Follow standard Linux kernel C conventions (4-space indentation, braces on new lines for functions).
+   - Use freestanding headers and standard type definitions from ``<stdint.h>``, ``<stddef.h>`` and ``<stdbool.h>``.
+   - Protect all header files with standard header guards:
+
+     .. code-block:: c
+
+        #ifndef _KEIRA_HEADERNAME_H
+        #define _KEIRA_HEADERNAME_H
+
+        /* Declarations */
+
+        #endif /* _KEIRA_HEADERNAME_H */
+
+   - Run ``clang-format`` and ``clang-tidy`` (enforced via ``make format`` and ``make lint``).
+
+2. **Low-Level Assembly (``arch/x86/``)**:
+
+   - Use standard NASM syntax.
+   - Use semicolon (``;``) for comments.
+   - Maintain 16-byte stack alignment across all interrupt service routines and context switches.
+
+4. Filesystem & Path Standards
+==============================
+
+All runtime and VFS paths must adhere to the 100% Standard UNIX Filesystem Hierarchy Standard (FHS):
+
+* ``/bin``: Core system and userland executable ELF binaries (``/bin/kcc.elf``, ``/bin/sysinfo.elf``, ``/bin/test_abi.elf``, ``/bin/fuzz_abi.elf``, ``/bin/test_threads.elf``, ``/bin/keira``).
+* ``/dev``: DevFS virtual character device nodes (``/dev/tty``, ``/dev/null``, ``/dev/zero``, ``/dev/random``, ``/dev/urandom``, ``/dev/ptmx``, ``/dev/sda``).
+* ``/proc``: ProcFS kernel status, process metrics and telemetry endpoints (``/proc/uptime``, ``/proc/meminfo``, ``/proc/cpuinfo``, ``/proc/version``, ``/proc/loadavg``, ``/proc/self/status``).
+* ``/sys``: SysFS hardware and subsystem hierarchy.
+* ``/etc``: System configuration files (``/etc/kernel.cfg``, ``/etc/hostname``).
+* ``/include``: Freestanding C standard library headers (``/include/math.h``, ``/include/sys/stat.h``).
+* ``/lib``: Static C runtime library archives (``/lib/libc.a``).
+* ``/tmp``: Temporary scratch files and build staging buffers (``/tmp/main.c``, ``/tmp/mmap_abi.txt``).
+* ``/var/log``: System logs, boot telemetry and persistent crash dumps (``/var/log/boot.log``, ``/var/log/system.log``, ``/var/log/core_<PID>.dmp``).
+
+> [!IMPORTANT]
+> Keira is a freestanding Ring 0 monolithic kernel, not a Linux distribution. Do not introduce distribution or desktop elements (e.g. no ``/var/www``, no unmaintained desktop user homes and no unparsed ``.profile`` scripts).
+
+5. Commit Conventions
+=====================
+
+Keira uses two consistent commit message formats:
+
+A. Release Commits:
+-------------------
+
+.. code-block:: text
+
+   Keira <version>
+
+*Example: ``Keira 0.8.0``*
+
+B. Standard Conventional Commits:
+---------------------------------
+
+.. code-block:: text
+
+   <type>(<scope>): <short imperative summary>
+
+   [optional detailed description explaining WHY, not just what]
+
+Allowed Types:
+~~~~~~~~~~~~~~
+
+* ``feat``: New driver, syscall, command or kernel capability.
+* ``fix``: Bug fix, panic resolution or race condition mitigation.
+* ``refactor``: Structural reorganization without changing functionality.
+* ``perf``: Memory, scheduling or I/O performance optimization.
+* ``docs``: Documentation addition, clarification or link update.
+* ``style``: Formatting, comment syntax or whitespace adjustments.
+* ``test``: Automated test harness additions or QEMU test improvements.
+* ``build``: Build system, Makefile, toolchain or dependency updates.
+* ``chore``: Repository maintenance, metadata or auxiliary tasks.
+
+Allowed Scopes:
+~~~~~~~~~~~~~~~
+
+``arch``, ``core``, ``crypto``, ``mem``, ``io``, ``fs``, ``ipc``, ``net``, ``task``, ``syscall``, ``shell``, ``kernel``, ``userland``, ``build``, ``docs``.
+
+6. Console Output & CLI Styling Standards
+=========================================
+
+All shell commands, driver logging and terminal output must strictly adhere to the **Standard 3 Monochrome Linux Console Palette**:
+
+A. Color Palette Matrix:
+------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 29 24 10 109
+
+   * - Element / Role
+     - Color Constant
+     - Hex RGB
+     - Semantic Usage
+   * - **Headers, Prompts & Stdout**
+     - ``vga::Color::White``
+     - ``#FFFFFF``
+     - Default stdout, command prompts (``keira:/path#``), titles, file listings and metrics.
+   * - **Muted & Secondary Text**
+     - ``vga::Color::LightGrey``
+     - ``#AAAAAA``
+     - Inactive devices, secondary diagnostics and subtle dividers.
+   * - **Success Badges**
+     - ``vga::Color::LightGreen``
+     - ``#55FF55``
+     - Minimal status tokens: ``[OK]``, ``[Mounted]``, ``RUNNING``, ``UP (e1000)``, ``Connecting``, ``Downloading``, ``Finished``.
+   * - **Warning Badges**
+     - ``vga::Color::Yellow``
+     - ``#FFFF55``
+     - Alerts, cache invalidations, fallback notices: ``[ WARN ]``, ``[REBUILDING]``, ``Warning``.
+   * - **Error Messages**
+     - ``vga::Color::LightRed``
+     - ``#FF5555``
+     - Critical failures, permission errors: ``[FAILED]``, ``Error``, ``error``.
+
+> [!CAUTION]
+> **Strict Prohibition**: Never use recreational or non-standard console colors (``Cyan``, ``LightCyan``, ``Magenta``, ``LightBlue``, ``Brown``). The console palette must remain austere, professional and consistent with the Linux monochrome standard.
+
+B. CLI Argument & Flag Parser Conventions:
+------------------------------------------
+
+- Shell commands with flags must utilize the ``#![no_std]`` ```CliArgs``` parser engine.
+- Support standard POSIX single-letter short flags (``-l``, ``-a``, ``-c``, ``-m``, ``-s``, ``-v``, ``-u``, ``-f``, ``-r``, ``-d``, ``-t``, ``-n``, ``-L``) and GNU long flags (``--long``, ``--all``, ``--version``, ``--help``).
+- Commands without arguments or configurations (``sync``, ``reset``, ``unwind``, ``runtime``, ``wipe``) execute immediately without blocking on ``-h`` boilerplate.
+- Network download and streaming progress bars must adhere to the ``rustc``/``cargo`` compiler format with 12-character right-aligned status tags (``Connecting``, ``Downloading``, ``Downloaded``, ``Finished``) and size metrics (``Bytes``, ``KiB``, ``MiB``).
+
+C. Build System & Makefile Logging Standards:
+---------------------------------------------
+
+- The ``Makefile`` build system strictly uses clean, uncolored monochrome plain text output without ANSI color escape codes (``\033[...]``).
+- Standard bracketed status tags: ``[ASM]``, ``[CC]``, ``[CARGO]``, ``[LD]``, ``[ISO]``, ``[DISK]``, ``[DONE]``, ``[INFO]``, ``[WARN]``, ``[ERR]``, ``[OK]``, ``[MISS]``.
+- Output remains austere, predictable and fully readable across all terminal configurations, CI/CD runners and log piping pipelines.
+
+7. Whitespace, Newline & Formatting Standards
+=============================================
+
+1. **Single Trailing Newline**:
+
+   - Every file (``.rs``, ``.c``, ``.h``, ``.asm``, ``.inc``, ``.md``, ``.toml``, ``.json``, ``.ld``, ``Makefile``) **MUST** end with exactly one newline (``\n``).
+   - No missing trailing newline and no multiple trailing newlines at the end of files.
+
+2. **Consecutive Blank Lines Policy**:
+
+   - Multiple consecutive blank lines (``\n\n\n+``) are strictly prohibited across all source code, documentation and build scripts.
+   - Use at most one blank line between function declarations, struct definitions and markdown paragraphs.
+
+3. **No Trailing Whitespace**:
+
+   - Lines must never contain trailing whitespace characters (``\s+$``).
+   - Enforced automatically via ``cargo fmt``, ``clang-format`` and ``make format``.
+
+8. Language & Grammar Standards
+===============================
+
+1. **Strict 100% English Policy**:
+
+   - All code comments, docstrings (``//!``, ``///``), documentation files, commit messages and terminal outputs **MUST** be written in formal, grammatically correct English.
+   - Non-English comments or phrases are strictly forbidden in the codebase.
+
+2. **Grammar & Tone**:
+
+   - Write clear, concise and professional documentation and docstrings.
+   - Use imperative mood for commit summaries (e.g. ``"feat(user): add dual-architecture support"``) and spell out words like ``"and"`` instead of ampersands (``&``) in commit subjects.
+   - Strictly omit the Oxford comma before "and" (no comma before "and") across all documentation, code comments and commit subjects.
+
+3. **Comment Formatting & Decorative Banner Policy**:
+
+   - Decorative banner symbols in code comments (such as ``// ===``, ``// ---``, ``/* === */`` or ``; ===``) are strictly prohibited.
+   - Use clean, concise single-line ``//`` comments or formal rustdoc docstrings (``//!``, ``///``) without ASCII art or divider lines.
