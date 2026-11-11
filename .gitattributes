@@ -1,7 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 
 # Git Attributes Configuration
 #
@@ -20,6 +17,9 @@
 *.toml text
 *.json text
 *.md text
+*.rst text
+*.css text
+*.js text
 *.sh text
 Makefile text
 

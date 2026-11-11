@@ -1,7 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Keira Kernel - Freestanding Kernel from Scratch
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra
 
 # EditorConfig Specification
 #
@@ -43,7 +40,7 @@ indent_style = space
 indent_size = 4
 
 # Indentation settings for Makefile build scripts
-[Makefile]
+[{Makefile,**/Makefile}]
 indent_style = tab
 indent_size = 4
 
@@ -52,10 +49,16 @@ indent_size = 4
 indent_style = space
 indent_size = 4
 
-# Indentation settings for Markdown documentation
-[*.md]
+# Indentation settings for Markdown & reStructuredText documentation
+[*.{md,rst}]
 indent_style = space
 indent_size = 4
+trim_trailing_whitespace = true
+
+# Indentation settings for Web styling and scripts
+[*.{css,js}]
+indent_style = space
+indent_size = 2
 trim_trailing_whitespace = true
 
 # Indentation settings for Shell scripts
