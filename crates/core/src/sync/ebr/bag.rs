@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Deferred retirement container (GarbageBag) for safe Epoch-Based Reclamation.
 
@@ -16,7 +9,7 @@ use crate::sync::spinlock::IrqSpinLock;
 pub const MAX_BAG_CAPACITY: usize = 64;
 
 /// A deferred retirement entry consisting of an opaque pointer or physical address,
-/// the epoch at which it was retired, and an optional custom reclamation callback.
+/// the epoch at which it was retired and an optional custom reclamation callback.
 #[derive(Clone, Copy, Debug)]
 pub struct RetiredEntry {
     /// Opaque pointer or address representing the retired resource.

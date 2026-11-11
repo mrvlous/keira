@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
-//! Foundational types, intrusive collections, error codes, logging, and synchronization.
+//! Foundational types, intrusive collections, error codes, logging and synchronization.
 //!
 //! Provides the core architectural building blocks, memory alignment routines,
-//! freestanding collections, Loadable Kernel Module infrastructure, and interrupt-safe
+//! freestanding collections, Loadable Kernel Module infrastructure and interrupt-safe
 //! synchronization primitives for Keira Kernel.
 
 #![no_std]

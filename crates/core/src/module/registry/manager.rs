@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Global kernel module registration manager and lookup registry.
 //!
 //! Tracks active Loadable Kernel Modules, validates unique module names,
-//! prevents premature unloading of referenced modules, and provides system snapshots.
+//! prevents premature unloading of referenced modules and provides system snapshots.
 
 use super::super::core::descriptor::{KernelModule, MAX_MODULE_NAME};
 use super::super::core::state::ModuleState;

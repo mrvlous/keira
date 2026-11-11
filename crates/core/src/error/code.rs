@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Core kernel error enumeration and unified result type definitions.
 //!
@@ -21,7 +14,7 @@ pub type Result<T> = core::result::Result<T, KernelError>;
 /// Standard kernel error variants categorized by subsystem failure domains.
 ///
 /// Encapsulates all common error states encountered during memory allocation,
-/// hardware I/O, device driver communication, and security checks.
+/// hardware I/O, device driver communication and security checks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KernelError {
     /// Generic failure accompanied by a static string description.

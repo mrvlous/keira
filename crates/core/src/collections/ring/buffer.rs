@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Fixed-size circular ring buffer without heap allocation.
 //!
 //! Provides a bounded FIFO queue and circular logging stream for device drivers,
-//! interrupt queues, serial FIFO buffers, and scheduler runqueues.
+//! interrupt queues, serial FIFO buffers and scheduler runqueues.
 
 /// Fixed-capacity circular ring buffer.
 ///

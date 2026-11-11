@@ -1,11 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//
-// Keira Kernel - Freestanding Kernel from Scratch
-// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
 
 //! Atomic test-and-set spinlock primitive for freestanding kernel synchronization.
 //!
@@ -17,7 +10,7 @@ use core::sync::atomic::{AtomicBool, Ordering};
 /// Atomic test-and-set mutual exclusion lock.
 ///
 /// Suitable for short critical sections where sleeping or context switching is impermissible
-/// (such as low-level scheduler queues, frame allocators, and hardware I/O dispatchers).
+/// (such as low-level scheduler queues, frame allocators and hardware I/O dispatchers).
 pub struct SpinLock {
     locked: AtomicBool,
 }
