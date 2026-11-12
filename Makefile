@@ -433,8 +433,8 @@ INSTALL_HDR_PATH ?= include/uapi
 headers_install: ## Export Ring 3 userland ABI headers to $(INSTALL_HDR_PATH)
 	@$(LOG_INFO) "Exporting Ring 3 UAPI headers to $(INSTALL_HDR_PATH)..."
 	$(Q)mkdir -p $(INSTALL_HDR_PATH)/sys
-	$(Q)cp -u $(USER_DIR)/include/sys/*.h $(INSTALL_HDR_PATH)/sys/ 2>/dev/null || cp $(USER_DIR)/include/sys/*.h $(INSTALL_HDR_PATH)/sys/
-	$(Q)cp -u $(USER_DIR)/include/*.h $(INSTALL_HDR_PATH)/ 2>/dev/null || cp $(USER_DIR)/include/*.h $(INSTALL_HDR_PATH)/
+	$(Q)cp -u $(USER_DIR)/libc/include/sys/*.h $(INSTALL_HDR_PATH)/sys/ 2>/dev/null || cp $(USER_DIR)/libc/include/sys/*.h $(INSTALL_HDR_PATH)/sys/
+	$(Q)cp -u $(USER_DIR)/libc/include/*.h $(INSTALL_HDR_PATH)/ 2>/dev/null || cp $(USER_DIR)/libc/include/*.h $(INSTALL_HDR_PATH)/
 	@$(LOG_DONE) "Ring 3 UAPI headers successfully exported to $(INSTALL_HDR_PATH)"
 
 # Canonical root filesystem & disk image rules

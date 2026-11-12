@@ -17,7 +17,7 @@
 # the native compiler (kcc) and core utility binaries for Keira Kernel:
 #   1. CRT0 (Assembly) : Compiles Ring 3 architecture startup entry stubs.
 #   2. LIBC (C Lib)    : Archives freestanding standard library into libc.a.
-#   3. BINS (Programs) : Compiles and links 46 userland utility executables.
+#   3. APPS (Programs) : Compiles and links 46 categorized userland executables.
 #   4. Install         : Exports runtime binaries and headers to destination root.
 
 SHELL           := /bin/bash
@@ -46,14 +46,21 @@ else
     Q           := @
 endif
 
+# Core subsystem directories
+LIBC_DIR        := libc
+APPS_DIR        := apps
+
 # Architecture-specific toolchain flags
 ifeq ($(ARCH),i686)
     ASM_FLAGS   := -f elf32
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx \
-                   -Iinclude -Ibin/kcc/include -Ibin/sysinfo/include \
-                   -Ibin/test_abi/include -Ibin/fuzz_abi/include -Ibin/test_threads/include
-    LINKER_SCRIPT := arch/x86/i686/linker.ld
+                   -I$(LIBC_DIR)/include \
+                   -I$(APPS_DIR)/devel/kcc/include \
+                   -I$(APPS_DIR)/system/sysinfo/include \
+                   -I$(APPS_DIR)/tests/test_abi/include \
+                   -I$(APPS_DIR)/tests/fuzz_abi/include
+    LINKER_SCRIPT := $(LIBC_DIR)/arch/x86/i686/linker.ld
     LDFLAGS     := -T $(LINKER_SCRIPT) \
                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 else
@@ -61,9 +68,12 @@ else
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
                    -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
-                   -Iinclude -Ibin/kcc/include -Ibin/sysinfo/include \
-                   -Ibin/test_abi/include -Ibin/fuzz_abi/include -Ibin/test_threads/include
-    LINKER_SCRIPT := arch/x86/x86_64/linker.ld
+                   -I$(LIBC_DIR)/include \
+                   -I$(APPS_DIR)/devel/kcc/include \
+                   -I$(APPS_DIR)/system/sysinfo/include \
+                   -I$(APPS_DIR)/tests/test_abi/include \
+                   -I$(APPS_DIR)/tests/fuzz_abi/include
+    LINKER_SCRIPT := $(LIBC_DIR)/arch/x86/x86_64/linker.ld
     LDFLAGS     := -T $(LINKER_SCRIPT) \
                    -Wl,--no-warn-rwx-segments -Wl,--build-id=none -static -no-pie -lgcc
 endif
@@ -75,18 +85,21 @@ LIB_DIR         := $(BUILD_DIR)/lib
 BIN_DIR         := $(BUILD_DIR)/bin
 
 # Core runtime objects
-CRT_SRC         := arch/x86/$(ARCH)/crt0.asm
-CRT_OBJ         := $(OBJ_DIR)/arch/x86/$(ARCH)/crt0.o
+CRT_SRC         := $(LIBC_DIR)/arch/x86/$(ARCH)/crt0.asm
+CRT_OBJ         := $(OBJ_DIR)/libc/arch/x86/$(ARCH)/crt0.o
 LIBC_A          := $(LIB_DIR)/libc.a
 
-LIB_SRCS        := $(shell find lib -type f -name "*.c")
-LIB_OBJS        := $(patsubst lib/%.c,$(OBJ_DIR)/lib/%.o,$(LIB_SRCS))
+LIB_SRCS        := $(shell find $(LIBC_DIR)/src -type f -name "*.c")
+LIB_OBJS        := $(patsubst $(LIBC_DIR)/src/%.c,$(OBJ_DIR)/libc/%.o,$(LIB_SRCS))
 
-# Canonical list of 46 core utility programs
-BINS            := arp cat chmod chown clear df dmesg echo fetch fuzz_abi grep head hostname id ifconfig \
-                   init iptables kcc kill ln ls mkdir mount netstat ping pmap poweroff ps reboot \
-                   rm route sh sleep su sysinfo tail test_abi test_pipe test_poll test_select test_threads touch umount uname wc whoami
+# Canonical list of 46 userland executables organized by domain
+CORE_BINS       := cat chmod chown clear echo grep head ln ls mkdir rm tail touch wc
+SYSTEM_BINS     := df dmesg hostname id init kill mount pmap poweroff ps reboot sh sleep su umount uname whoami
+NET_BINS        := arp fetch ifconfig iptables netstat ping route
+TESTS_BINS      := test_pipe test_poll test_select test_threads
+MULTI_BINS      := sysinfo kcc test_abi fuzz_abi
 
+BINS            := $(sort $(CORE_BINS) $(SYSTEM_BINS) $(NET_BINS) $(TESTS_BINS) $(MULTI_BINS))
 BIN_ELFS        := $(patsubst %,$(BIN_DIR)/%.elf,$(BINS))
 
 # Uniform logging definitions matching kernel master build system
@@ -114,7 +127,7 @@ $(CRT_OBJ): $(CRT_SRC) | dirs
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
 # Freestanding C library objects
-$(OBJ_DIR)/lib/%.o: lib/%.c | dirs
+$(OBJ_DIR)/libc/%.o: $(LIBC_DIR)/src/%.c | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
@@ -128,19 +141,39 @@ $(LIBC_A): $(LIB_OBJS) | dirs
 
 libc: $(LIBC_A) ## Build freestanding C standard library (libc.a)
 
-# Userland utility binaries compilation template
-define BIN_RULE
-$$(OBJ_DIR)/bin/$(1)/%.o: bin/$(1)/%.c | dirs
+# Single-file userland utility binaries compilation template
+define SINGLE_BIN_RULE
+$$(OBJ_DIR)/apps/$(1)/%.o: $(APPS_DIR)/$(1)/%.c | dirs
 	$$(Q)mkdir -p $$(dir $$@)
 	$$(Q)$$(CC) $$(CFLAGS) -c $$< -o $$@
 
-$$(BIN_DIR)/$(1).elf: $(CRT_OBJ) $$(patsubst bin/$(1)/%.c,$$(OBJ_DIR)/bin/$(1)/%.o,$$(shell find bin/$(1) -type f -name "*.c")) $(LIBC_A) $(LINKER_SCRIPT) | dirs
-	@$$(LOG_LD) "Linking user binary: $(1).elf ($$(ARCH))..."
-	$$(Q)$$(CC) $$(CFLAGS) $(CRT_OBJ) $$(patsubst bin/$(1)/%.c,$$(OBJ_DIR)/bin/$(1)/%.o,$$(shell find bin/$(1) -type f -name "*.c")) $(LIBC_A) $$(LDFLAGS) -o $$@
-	@$$(LOG_DONE) "$$(BIN_DIR)/$(1).elf ready"
+$$(BIN_DIR)/$(2).elf: $$(CRT_OBJ) $$(OBJ_DIR)/apps/$(1)/$(2).o $$(LIBC_A) $$(LINKER_SCRIPT) | dirs
+	@$$(LOG_LD) "Linking user binary: $(2).elf ($$(ARCH))..."
+	$$(Q)$$(CC) $$(CFLAGS) $$(CRT_OBJ) $$(OBJ_DIR)/apps/$(1)/$(2).o $$(LIBC_A) $$(LDFLAGS) -o $$@
+	@$$(LOG_DONE) "$$(BIN_DIR)/$(2).elf ready"
 endef
 
-$(foreach b,$(BINS),$(eval $(call BIN_RULE,$(b))))
+$(foreach b,$(CORE_BINS),$(eval $(call SINGLE_BIN_RULE,core,$(b))))
+$(foreach b,$(SYSTEM_BINS),$(eval $(call SINGLE_BIN_RULE,system,$(b))))
+$(foreach b,$(NET_BINS),$(eval $(call SINGLE_BIN_RULE,net,$(b))))
+$(foreach b,$(TESTS_BINS),$(eval $(call SINGLE_BIN_RULE,tests,$(b))))
+
+# Multi-file complex project binaries compilation template
+define MULTI_BIN_RULE
+$$(OBJ_DIR)/apps/$(1)/%.o: $(APPS_DIR)/$(1)/%.c | dirs
+	$$(Q)mkdir -p $$(dir $$@)
+	$$(Q)$$(CC) $$(CFLAGS) -c $$< -o $$@
+
+$$(BIN_DIR)/$(2).elf: $$(CRT_OBJ) $$(patsubst $(APPS_DIR)/$(1)/%.c,$$(OBJ_DIR)/apps/$(1)/%.o,$$(shell find $(APPS_DIR)/$(1) -type f -name "*.c")) $$(LIBC_A) $$(LINKER_SCRIPT) | dirs
+	@$$(LOG_LD) "Linking user binary: $(2).elf ($$(ARCH))..."
+	$$(Q)$$(CC) $$(CFLAGS) $$(CRT_OBJ) $$(patsubst $(APPS_DIR)/$(1)/%.c,$$(OBJ_DIR)/apps/$(1)/%.o,$$(shell find $(APPS_DIR)/$(1) -type f -name "*.c")) $$(LIBC_A) $$(LDFLAGS) -o $$@
+	@$$(LOG_DONE) "$$(BIN_DIR)/$(2).elf ready"
+endef
+
+$(eval $(call MULTI_BIN_RULE,system/sysinfo,sysinfo))
+$(eval $(call MULTI_BIN_RULE,devel/kcc,kcc))
+$(eval $(call MULTI_BIN_RULE,tests/test_abi,test_abi))
+$(eval $(call MULTI_BIN_RULE,tests/fuzz_abi,fuzz_abi))
 
 bins: $(BIN_ELFS) ## Build all user space utility binaries
 
@@ -152,8 +185,8 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	@$(LOG_INFO) "Installing userland binaries and runtime to $(DESTDIR)..."
 	$(Q)mkdir -p $(DESTDIR)/bin $(DESTDIR)/lib $(DESTDIR)/include $(DESTDIR)/etc
 	$(Q)cp $(LIBC_A) $(DESTDIR)/lib/libc.a
-	$(Q)cp -r include/* $(DESTDIR)/include/
-	$(Q)cp bin/kcc/include/common.h $(DESTDIR)/include/common.h
+	$(Q)cp -r $(LIBC_DIR)/include/* $(DESTDIR)/include/
+	$(Q)cp $(APPS_DIR)/devel/kcc/include/common.h $(DESTDIR)/include/common.h
 	$(Q)cp etc/init.sh $(DESTDIR)/etc/init.sh
 	$(Q)for b in $(BINS); do \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b.elf; \
@@ -168,7 +201,7 @@ format: ## Format all userland C source and header files with clang-format
 
 lint: ## Perform static analysis on userland C code using clang-tidy
 	@$(LOG_INFO) "Linting userland C code ($(ARCH))..."
-	$(Q)find . -path "./build" -prune -o -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I include -I bin/kcc/include -I bin/sysinfo/include -I bin/test_abi/include -I bin/fuzz_abi/include -I bin/test_threads/include -ffreestanding -m$(if $(filter i686,$(ARCH)),32,64) \;
+	$(Q)find . -path "./build" -prune -o -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I $(LIBC_DIR)/include -I $(APPS_DIR)/devel/kcc/include -I $(APPS_DIR)/system/sysinfo/include -I $(APPS_DIR)/tests/test_abi/include -I $(APPS_DIR)/tests/fuzz_abi/include -ffreestanding -m$(if $(filter i686,$(ARCH)),32,64) \;
 	@$(LOG_DONE) "Userland linting complete"
 
 size: libc bins ## Display sizes of libc.a and all compiled userland ELF binaries
