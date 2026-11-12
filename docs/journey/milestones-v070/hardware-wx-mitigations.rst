@@ -78,7 +78,7 @@ The architecture layer provides freestanding feature detection using standard x8
 
 During early kernel architecture initialization (``crates/arch/src/init/sequence.rs``), ``enable_hardware_mitigations()`` executes before multitasking and memory virtualization:
 
-1. Enables ``CR0.WP`` (bit 16) by reading CR0, OR-ing ``1 << 16`` and writing back.
+1. Enables ``CR0.WP`` (bit 16) by reading CR0, applying bitwise OR with ``1 << 16`` and writing back.
 2. If NX is supported by CPUID, reads ``IA32_EFER`` MSR (``0xC0000080``), sets bit 11 (``NXE``) and writes back with ``wrmsr``.
 3. Evaluates SMEP and UMIP capabilities, setting their respective bits in ``CR4`` when hardware support is present.
 
