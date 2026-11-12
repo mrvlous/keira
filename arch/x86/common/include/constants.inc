@@ -15,7 +15,7 @@
 ;
 ; Architectural Role:
 ;   This include file defines foundational constants, physical memory offsets,
-;   CPU control register bitmasks, Model-Specific Register (MSR) addresses, and
+;   CPU control register bitmasks, Model-Specific Register (MSR) addresses and
 ;   segment selectors shared across all low-level x86/x86_64 bootstrap and
 ;   privilege transition assembly routines in Keira.
 ;
