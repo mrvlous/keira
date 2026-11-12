@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================================================
+
 Milestone 45: Dynamic Stack Canary & Cryptographic Hardware Entropy
 ===================================================================
 
@@ -115,7 +115,7 @@ The auxiliary vector table is positioned directly above the environment pointers
 B. Dynamic Userland C Runtime Canary Initialization
 ---------------------------------------------------
 
-In ``userland/arch/x86/x86_64/crt0.asm`` and ``userland/arch/x86/i686/crt0.asm``, the initial entry point traverses the auxiliary vector table looking for ``AT_RANDOM`` (type 25). Once found:
+In ``userland/libc/arch/x86/x86_64/crt0.asm`` and ``userland/libc/arch/x86/i686/crt0.asm``, the initial entry point traverses the auxiliary vector table looking for ``AT_RANDOM`` (type 25). Once found:
 
 .. code-block:: text
 
@@ -141,8 +141,8 @@ D. Userland C Library Support (<sys/random.h>)
 
 Added standard headers and libc wrappers:
 
-- ``userland/include/sys/random.h``: Defines ``GRND_NONBLOCK``, ``GRND_RANDOM``, ``GRND_INSECURE`` and prototype ``ssize_t getrandom(void *buf, size_t buflen, unsigned int flags);``.
-- ``userland/lib/syscall/sys/random.c``: Freestanding C wrapper invoking ``syscall3(SYS_GETRANDOM, ...)``, managing ``errno`` translation.
+- ``userland/libc/include/sys/random.h``: Defines ``GRND_NONBLOCK``, ``GRND_RANDOM``, ``GRND_INSECURE`` and prototype ``ssize_t getrandom(void *buf, size_t buflen, unsigned int flags);``.
+- ``userland/libc/src/syscall/sys/random.c``: Freestanding C wrapper invoking ``syscall3(SYS_GETRANDOM, ...)``, managing ``errno`` translation.
 
 E. Ring 0 Supervisor rnginfo Command
 ------------------------------------

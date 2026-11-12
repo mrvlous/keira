@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-====================================
+
 whoami.elf Freestanding Core Utility
 ====================================
 
@@ -48,7 +48,7 @@ In accordance with Keira's freestanding pure-kernel architecture:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/whoami/main.c``
+- **Source Path**: ``userland/apps/system/whoami.c``
 - **Binary Locations**: ``/bin/whoami.elf``, ``/bin/whoami``
 - **System Call Invocations**: ``SYS_GETEUID`` (Vector 90)
 - **Privilege Level**: Ring 3 unprivileged

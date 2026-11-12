@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===========================================================================================================
+
 Milestone 27: Kernel Socket Telemetry Subsystem, ProcFS Telemetry & Netstat Utility - Full Linux/BSD Parity
 ===========================================================================================================
 
@@ -21,7 +21,7 @@ Milestone 27 achieves four core engineering objectives:
    - ``/proc/net/sockstat``: Synthesizes global socket allocation summaries, reporting total allocated sockets, TCP active and orphaned socket counts, UDP allocation metrics and memory page utilization.
 
 2. **Freestanding Core Network Inspection Utility (``/bin/netstat.elf``)**:
-   A native freestanding Ring 3 C executable implemented in ``userland/bin/netstat/main.c``:
+   A native freestanding Ring 3 C executable implemented in ``userland/apps/net/netstat.c``:
 
    - Active connection monitoring: Displays protocol, receive queue, send queue, local address, foreign address and TCP state.
    - Granular filtering: Supports ``-t`` (TCP only), ``-u`` (UDP only), ``-w`` (RAW only), ``-l`` (listening sockets) and the standard compound flag ``-tuln``.
@@ -143,11 +143,11 @@ Verification & Parity Matrix
      - Complete
    * - ``/bin/netstat.elf`` Core Utility
      - ``userland``
-     - ``userland/bin/netstat/main.c``
+     - ``userland/apps/net/netstat.c``
      - Complete
    * - Shell Built-in Manual Update
      - ``userland``
-     - ``userland/bin/sh/main.c``
+     - ``userland/apps/system/sh.c``
      - Complete
    * - Multi-Arch Verification
      - Makefile

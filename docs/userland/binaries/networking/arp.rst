@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=================================
+
 arp.elf Freestanding Core Utility
 =================================
 
@@ -49,7 +49,7 @@ ARP neighbor table inspection in Keira adheres to strict separation of concerns 
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/arp/main.c``
+- **Source Path**: ``userland/apps/net/arp.c``
 - **Binary Locations**: ``/bin/arp.elf``, ``/bin/arp``
 - **Telemetry Source**: ``/proc/net/arp`` virtual filesystem node
 - **Privilege Level**: Ring 3 unprivileged

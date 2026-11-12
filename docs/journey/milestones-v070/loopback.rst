@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================================================
+
 Journey Milestone 18: Linux-Grade Loopback (lo) Interface & Sockets
 ===================================================================
 

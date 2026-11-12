@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=====================================
+
 netstat.elf Freestanding Core Utility
 =====================================
 
@@ -89,7 +89,7 @@ Socket and connection inspection in the Keira pure kernel strictly decouples unp
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/netstat/main.c``
+- **Source Path**: ``userland/apps/net/netstat.c``
 - **Binary Locations**: ``/bin/netstat.elf``, ``/bin/netstat``
 - **Telemetry Sources**: ``/proc/net/tcp``, ``/proc/net/udp``, ``/proc/net/raw``, ``/proc/net/sockstat``, ``/proc/net/route``
 - **Privilege Level**: Ring 3 unprivileged

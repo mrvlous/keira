@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================
+
 Administrator's Guide & System Telemetry
 ========================================
 

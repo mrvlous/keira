@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================================================================
+
 Milestone 29: Bare-Metal Freestanding Purity & Canonical Numerical Credential Model
 ===================================================================================
 

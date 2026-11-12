@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================
+
 dmesg.elf Freestanding Core Utility
 ===================================
 
@@ -48,7 +48,7 @@ Kernel event logs and boot traces are queried through live kernel memory:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/dmesg/main.c``
+- **Source Path**: ``userland/apps/system/dmesg.c``
 - **Binary Locations**: ``/bin/dmesg.elf``, ``/bin/dmesg``
 - **Privilege Level**: Ring 3 unprivileged
 - **Telemetry Vector**: Syscall 44 (``SYS_SYSLOG``)

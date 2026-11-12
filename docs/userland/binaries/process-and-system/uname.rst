@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================
+
 uname.elf Freestanding Core Utility
 ===================================
 
@@ -67,7 +67,7 @@ System identity reporting is handled cleanly in userspace:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/uname/main.c``
+- **Source Path**: ``userland/apps/system/uname.c``
 - **Binary Locations**: ``/bin/uname.elf``, ``/bin/uname``
 - **System Call**: Vector 108 (``SYS_UNAME``) via ``uname()``
 - **C Header**: ``<sys/utsname.h>`` (``struct utsname``)

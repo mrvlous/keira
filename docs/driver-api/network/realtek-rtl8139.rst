@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-====================================
+
 Realtek RTL8139 Fast Ethernet Driver
 ====================================
 

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-============================================================
+
 Journey Milestone 17: Unified Page Cache & Buffer Management
 ============================================================
 

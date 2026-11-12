@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================================================================================================
+
 Milestone 56: POSIX System Power Management Subsystem, Century-Plus Syscall 109 (SYS_REBOOT) & Core Utilities Expansion
 =======================================================================================================================
 
@@ -16,7 +16,7 @@ Through Milestone 56, Keira delivers:
 3. **Privilege Boundary Enforcement**: Syscall access is restricted strictly to root processes (``uid == 0``). Invocations from unprivileged accounts return ``-EPERM``.
 4. **Ring 0 Power Dispatch Engine**: Seamlessly transitions execution into ``keira_arch::power::acpi::reboot()`` or ``keira_arch::power::acpi::poweroff()`` based on the command argument (``RB_AUTOBOOT`` vs ``RB_POWER_OFF``), performing platform register sequencing across ACPI sleep state S5 and 8042/PCI reset ports.
 5. **C Runtime Header ``<sys/reboot.h>``**: Provides standard POSIX definitions for reboot magic numbers, command flags (``RB_AUTOBOOT``, ``RB_HALT_SYSTEM``, ``RB_POWER_OFF``) and function prototypes (``reboot()`` and ``sys_reboot()``).
-6. **Freestanding C Library ``reboot()`` Wrapper**: Implemented in ``userland/lib/syscall/sys/reboot.c`` for ``libc.a``, translating errno returns and standardizing userland system calls.
+6. **Freestanding C Library ``reboot()`` Wrapper**: Implemented in ``userland/libc/src/syscall/sys/reboot.c`` for ``libc.a``, translating errno returns and standardizing userland system calls.
 7. **Standalone Core Utilities (``/bin/reboot.elf`` & ``/bin/poweroff.elf``)**: Implementation of ``/bin/reboot.elf`` and ``/bin/poweroff.elf``, expanding Keira's core standalone utility inventory to 46 native binaries. Both utilities support clean disk cache flushing (``sync()``) and forceful immediate termination (``-f``/``--force``).
 8. **ABI Compliance Test Suite 41**: Expanded ``/bin/test_abi.elf`` with Test 41, verifying magic number containment, invalid command rejection and privilege boundary isolation.
 

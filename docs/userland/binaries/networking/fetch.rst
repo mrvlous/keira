@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==========================================
+
 fetch.elf Freestanding HTTP Client Utility
 ==========================================
 
@@ -83,7 +83,7 @@ Verbose Network Diagnostics
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/fetch/main.c``
+- **Source Path**: ``userland/apps/net/fetch.c``
 - **Binary Locations**: ``/bin/fetch.elf``, ``/bin/fetch``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<arpa/inet.h>``, ``<sys/socket.h>``, ``<fcntl.h>``, ``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``)

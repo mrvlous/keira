@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================
+
 FAT12 / FAT16 / FAT32 Filesystem Driver
 =======================================
 

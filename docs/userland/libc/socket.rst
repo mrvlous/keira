@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-============================================
-BSD Sockets Interface (userland/lib/socket/)
-============================================
 
-Standard POSIX socket API for network and local IPC communication (``userland/include/socket.h``).
+BSD Sockets Interface (userland/libc/src/socket/)
+=================================================
+
+Standard POSIX socket API for network and local IPC communication (``userland/libc/include/socket.h``).
 
 Supported APIs
 ==============

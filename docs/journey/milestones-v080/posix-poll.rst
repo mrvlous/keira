@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================================================================================
+
 Milestone 52: POSIX Synchronous I/O Multiplexing, SYS_POLL (Vector 106) & File Descriptor Polling Engine
 ========================================================================================================
 

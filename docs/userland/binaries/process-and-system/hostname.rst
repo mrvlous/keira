@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================
+
 hostname.elf Freestanding Core Utility
 ======================================
 
@@ -49,7 +49,7 @@ System hostname management is separated from Ring 0 supervisor space:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/hostname/main.c``
+- **Source Path**: ``userland/apps/system/hostname.c``
 - **Binary Locations**: ``/bin/hostname.elf``, ``/bin/hostname``
 - **Privilege Level**: Ring 3 unprivileged
 - **Configuration Path**: ``/etc/hostname``

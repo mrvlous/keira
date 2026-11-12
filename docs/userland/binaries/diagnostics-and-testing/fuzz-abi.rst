@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-====================================
+
 fuzz_abi.elf System Call Fuzz Tester
 ====================================
 

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-============================
+
 C Runtime Startup (crt0.asm)
 ============================
 
@@ -16,8 +16,8 @@ When the kernel loader (``crates/fs/src/elf/loader/``) parses an ELF binary and 
 3. ``crt0.asm`` retrieves arguments from the stack, initializes the global ``environ`` pointer, extracts ``AT_RANDOM`` to seed ``__stack_chk_guard``, aligns the stack to a 16-byte boundary and calls ``main(argc, argv, envp)``.
 4. Upon return from ``main()``, ``crt0.asm`` invokes ``exit(retval)`` via the ``SYS_exit`` system call.
 
-i686 Implementation (userland/arch/x86/i686/crt0.asm)
-=====================================================
+i686 Implementation (userland/libc/arch/x86/i686/crt0.asm)
+==========================================================
 
 .. code-block:: text
 
@@ -52,8 +52,8 @@ i686 Implementation (userland/arch/x86/i686/crt0.asm)
        hlt
        jmp .halt
 
-x86_64 Implementation (userland/arch/x86/x86_64/crt0.asm)
-=========================================================
+x86_64 Implementation (userland/libc/arch/x86/x86_64/crt0.asm)
+==============================================================
 
 .. code-block:: text
 

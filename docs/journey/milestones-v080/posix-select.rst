@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================================================================================================
+
 Milestone 53: POSIX Synchronous I/O Multiplexing Triad Completion, SYS_SELECT (Vector 107) & Descriptor Bitmask Engine
 ======================================================================================================================
 

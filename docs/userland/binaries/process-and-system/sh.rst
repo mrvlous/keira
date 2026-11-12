@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================
+
 sh.elf Canonical Ring 3 Userspace Shell
 =======================================
 
@@ -174,7 +174,7 @@ Users can invoke ``sh`` or ``sh.elf`` directly from the supervisor prompt withou
 5. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/sh/main.c``
+- **Source Path**: ``userland/apps/system/sh.c``
 - **Binary Locations**: ``/bin/sh.elf``, ``/bin/sh``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``, ``<sys/wait.h>``)

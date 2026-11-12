@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================================
+
 Hierarchical Per-CPU Magazine-Style Slab Allocator
 ==================================================
 

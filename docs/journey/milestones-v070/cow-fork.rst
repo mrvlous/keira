@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================================================================
+
 Milestone 49: Copy-on-Write (CoW) Fork Engine & Virtual Memory Fault Paging Architecture
 ========================================================================================
 

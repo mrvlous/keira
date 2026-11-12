@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=================================================================================
+
 Milestone 35: Dynamic VFS Mount Subsystem & Mount Points (SYS_MOUNT & SYS_UMOUNT)
 =================================================================================
 

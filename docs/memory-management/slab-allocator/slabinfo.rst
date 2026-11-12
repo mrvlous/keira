@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=========================================================================================================
+
 Milestone 40: Pure Kernel Memory Introspection (/proc/slabinfo, /proc/vmstat) & Supervisor Slab Telemetry
 =========================================================================================================
 

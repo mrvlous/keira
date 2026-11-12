@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================
+
 chown.elf Freestanding Core Utility
 ===================================
 
@@ -67,7 +67,7 @@ File ownership assignment is handled via Syscall 98 (``SYS_CHOWN``):
 5. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/chown/main.c``
+- **Source Path**: ``userland/apps/core/chown.c``
 - **Binary Locations**: ``/bin/chown.elf``, ``/bin/chown``
 - **System Call**: Syscall 98 (``SYS_CHOWN``)
 - **Privilege Level**: Ring 3 unprivileged interface (kernel requires EUID 0)

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================
+
 poweroff.elf Freestanding Core Utility
 ======================================
 
@@ -46,7 +46,7 @@ Machine poweroff operations adhere to standard POSIX conventions:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/poweroff/main.c``
+- **Source Path**: ``userland/apps/system/poweroff.c``
 - **Binary Locations**: ``/bin/poweroff.elf``, ``/bin/poweroff``
 - **System Call**: Vector 109 (``SYS_REBOOT``)
 - **C Header**: ``<sys/reboot.h>``

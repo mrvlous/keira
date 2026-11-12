@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=============================================================================================
+
 Milestone 26: In-Kernel Routing Engine FIB & ProcFS Network Telemetry - Full Linux/BSD Parity
 =============================================================================================
 
@@ -113,7 +113,7 @@ Following standard Linux ``/proc/net/`` semantics:
 3. Freestanding Userland Utilities
 ----------------------------------
 
-The new userland binaries adhere strictly to ``userland/include`` headers and freestanding ``libc.a``:
+The new userland binaries adhere strictly to ``userland/libc/include`` headers and freestanding ``libc.a``:
 
 - **``route``**: Parses column-delimited ``/proc/net/route``, converts hex numbers to dotted-quad IPs, decodes flags (``U``, ``UG``, ``H``) and displays the routing table identical to Linux ``route -n``.
 - **``arp``**: Reads ``/proc/net/arp`` and prints the resolved hardware MAC table identical to Linux ``arp -n``.
@@ -151,11 +151,11 @@ Verification & Parity Matrix
      - Complete
    * - ``/bin/route.elf`` Core Utility
      - ``userland``
-     - ``userland/bin/route/main.c``
+     - ``userland/apps/net/route.c``
      - Complete
    * - ``/bin/arp.elf`` Core Utility
      - ``userland``
-     - ``userland/bin/arp/main.c``
+     - ``userland/apps/net/arp.c``
      - Complete
    * - Multi-Arch Verification
      - Makefile

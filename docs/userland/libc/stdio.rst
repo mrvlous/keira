@@ -1,13 +1,13 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==========================================
-Standard I/O Library (userland/lib/stdio/)
-==========================================
+
+Standard I/O Library (userland/libc/src/stdio/)
+===============================================
 
 The Keira ``stdio`` implementation provides buffered I/O streams and formatting utilities adhering to standard C specifications.
 
-Header Definition (userland/include/stdio.h)
-============================================
+Header Definition (userland/libc/include/stdio.h)
+=================================================
 
 * Standard streams: ``stdin``, ``stdout``, ``stderr``.
 * File descriptors mapped: 0 (``STDIN_FILENO``), 1 (``STDOUT_FILENO``), 2 (``STDERR_FILENO``).

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================================
+
 Milestones v0.8.0: POSIX Parity & Pure Demarcation
 ==================================================
 

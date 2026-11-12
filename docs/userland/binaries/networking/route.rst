@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================
+
 route.elf Freestanding Core Utility
 ===================================
 
@@ -52,7 +52,7 @@ Routing table telemetry in the Keira pure kernel follows UNIX/Linux architectura
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/route/main.c``
+- **Source Path**: ``userland/apps/net/route.c``
 - **Binary Locations**: ``/bin/route.elf``, ``/bin/route``
 - **Telemetry Source**: ``/proc/net/route`` virtual filesystem node
 - **Privilege Level**: Ring 3 unprivileged

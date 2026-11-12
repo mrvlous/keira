@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-================================
+
 rm.elf Freestanding Core Utility
 ================================
 
@@ -62,7 +62,7 @@ Filesystem cleanup is handled cleanly from userspace via Syscall 87 (``SYS_UNLIN
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/rm/main.c``
+- **Source Path**: ``userland/apps/core/rm.c``
 - **Binary Locations**: ``/bin/rm.elf``, ``/bin/rm``
 - **System Call**: Syscall 87 (``SYS_UNLINK``)
 - **Privilege Level**: Ring 3 unprivileged

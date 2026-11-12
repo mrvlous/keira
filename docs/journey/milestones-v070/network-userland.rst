@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-====================================================================================================
+
 Milestone 25: Network Diagnostic Toolset, ProcFS Telemetry & System Identity - Full Linux/BSD Parity
 ====================================================================================================
 

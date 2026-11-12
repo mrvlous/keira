@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================
+
 test_poll.elf Freestanding Core Utility
 =======================================
 
@@ -75,7 +75,7 @@ Executing Via Canonical Symlink
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/test_poll/main.c``
+- **Source Path**: ``userland/apps/tests/test_poll.c``
 - **Binary Locations**: ``/bin/test_poll.elf``, ``/bin/test_poll``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<poll.h>``, ``<unistd.h>``, ``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<errno.h>``)

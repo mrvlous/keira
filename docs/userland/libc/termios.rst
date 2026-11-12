@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==========================================
-Terminal Interface (userland/lib/termios/)
-==========================================
 
-Controls terminal line disciplines and character attributes (``userland/include/termios.h``).
+Terminal Interface (userland/libc/src/termios/)
+===============================================
+
+Controls terminal line disciplines and character attributes (``userland/libc/include/termios.h``).
 
 Terminal Modes
 ==============

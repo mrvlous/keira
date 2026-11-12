@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=====================================================
-Standard POSIX System Services (userland/lib/unistd/)
-=====================================================
+
+Standard POSIX System Services (userland/libc/src/unistd/)
+==========================================================
 
 The ``unistd`` module wraps fundamental POSIX system services into standard C function prototypes.
 

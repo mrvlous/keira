@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===========================================
-Time & Clock Functions (userland/lib/time/)
-===========================================
 
-Provides POSIX time representations and timer utilities (``userland/include/time.h``).
+Time & Clock Functions (userland/libc/src/time/)
+================================================
+
+Provides POSIX time representations and timer utilities (``userland/libc/include/time.h``).
 
 Key Routines
 ============

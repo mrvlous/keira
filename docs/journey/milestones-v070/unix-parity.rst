@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================================================
+
 Milestone 22: Pure Kernel Slimming & Ring 3 Shell Maturity (UNIX Parity)
 ========================================================================
 
@@ -15,7 +15,7 @@ Milestone 22 implements this architectural separation through five coordinated a
 
 1. **Ring 3 Shell Maturity (``/bin/sh.elf``)**: Advanced shell execution semantics including standard output redirection (``>`` and ``>>``), standard input redirection (``<``), conditional command chaining (``&&`` and ``||``), sequential execution (``;``), inter-process communication pipelines (``|``) and navigation aliases (``cd`` and ``go``).
 2. **Directory & Filesystem Syscalls (``sys_getdents`` and ``sys_unlink``)**: Two foundational POSIX system calls added to the kernel vector table (Vector 86 for directory enumeration and Vector 87 for file unlinking), accompanied by ``ENOTDIR`` error propagation.
-3. **Freestanding C Library Directory API**: Standard POSIX directory stream abstractions (``opendir``, ``readdir`` and ``closedir``) and ``unlink()`` implemented in ``userland/lib/`` using a 280-byte dual-architecture ``struct dirent`` contract.
+3. **Freestanding C Library Directory API**: Standard POSIX directory stream abstractions (``opendir``, ``readdir`` and ``closedir``) and ``unlink()`` implemented in ``userland/libc/src/`` using a 280-byte dual-architecture ``struct dirent`` contract.
 4. **Standalone Freestanding Core Utilities (``/bin/cat.elf`` and ``/bin/ls.elf``)**: Native Ring 3 C executables installed to FAT16 root disk images as ``/bin/cat.elf``, ``/bin/cat``, ``/bin/ls.elf`` and ``/bin/ls``, enabling unprivileged text streaming and directory inspection.
 5. **Supervisor Console Modernization & Slimming Roadmap**: Unification of supervisor navigation (``cd`` canonical alias for ``go``), inherited file descriptor propagation in process spawning (``spawn_user``) and formal documentation of the Ring 0 slimming roadmap for future distribution construction.
 
@@ -131,7 +131,7 @@ A crucial prerequisite for UNIX pipelines and I/O redirection is descriptor inhe
 3. Ring 3 Userspace Shell Upgrades (/bin/sh.elf)
 ------------------------------------------------
 
-The freestanding userspace shell (``userland/bin/sh/main.c``) was upgraded with comprehensive pipeline and redirection mechanics:
+The freestanding userspace shell (``userland/apps/system/sh.c``) was upgraded with comprehensive pipeline and redirection mechanics:
 
 A. Command Chaining
 ~~~~~~~~~~~~~~~~~~~
@@ -162,15 +162,15 @@ D. Navigation Aliases
 
 Two native C utilities were implemented in ``userland/bin/`` and integrated into the build pipeline:
 
-/bin/cat.elf (userland/bin/cat/main.c)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/bin/cat.elf (userland/apps/core/cat.c)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Reads and prints file contents sequentially to standard output.
 - If no files are specified or if ``-`` is passed, reads continuously from standard input (enabling pipelines such as ``echo text | cat``).
 - Uses raw ``open()``, ``read()``, ``write()``, ``close()`` and ``exit()``.
 
-/bin/ls.elf (userland/bin/ls/main.c)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/bin/ls.elf (userland/apps/core/ls.c)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Formats and displays directory entries using ``opendir()`` and ``readdir()``.
 - Supports the ``-a`` flag (display all entries including hidden files) and the ``-l`` flag (long listing format showing file size and file type).

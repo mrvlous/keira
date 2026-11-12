@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-================================
+
 df.elf Freestanding Core Utility
 ================================
 
@@ -46,6 +46,6 @@ Filesystem telemetry is accessed from userspace without embedding complex format
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/df/main.c``
+- **Source Path**: ``userland/apps/system/df.c``
 - **Binary Locations**: ``/bin/df.elf``, ``/bin/df``
 - **Privilege Level**: Ring 3 unprivileged

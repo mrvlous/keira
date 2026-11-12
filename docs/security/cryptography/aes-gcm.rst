@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-================================================
+
 Advanced Encryption Standard (AES-128 / AES-256)
 ================================================
 

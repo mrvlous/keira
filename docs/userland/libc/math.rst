@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===========================================
-Mathematical Functions (userland/lib/math/)
-===========================================
 
-The ``math`` module implements floating-point and integer mathematical routines (``userland/include/math.h``).
+Mathematical Functions (userland/libc/src/math/)
+================================================
+
+The ``math`` module implements floating-point and integer mathematical routines (``userland/libc/include/math.h``).
 
 Supported Operations
 ====================

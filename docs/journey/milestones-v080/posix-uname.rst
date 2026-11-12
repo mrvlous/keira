@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================================================================================================
+
 Milestone 55: POSIX System Identity Subsystem, Century-Plus Syscall 108 (SYS_UNAME) & Native uname Utility Refactoring
 ======================================================================================================================
 
@@ -15,8 +15,8 @@ Through Milestone 55, Keira delivers:
 2. **Ring 0 System Identity Engine**: Implemented in ``crates/syscall/src/dispatcher/handlers/system.rs``. The handler dynamically detects target architecture (``x86_64`` vs ``i686``), synchronizes the system node name with ``/etc/hostname`` (falling back to ``"keira"`` if unconfigured) and formats release (``"0.8.0"``) and build version metadata with zero dynamic allocations.
 3. **Memory Safety & Pointer Validation**: Strict user pointer validation through ``validate_user_ptr`` ensuring destination memory buffers reside strictly within userland address space, returning ``-EFAULT`` on invalid or null pointers.
 4. **C Runtime Header ``<sys/utsname.h>``**: Standard POSIX definitions for ``struct utsname`` (65 bytes per field, matching standard Linux and System V ABI conventions) and ``uname(struct utsname *buf)`` function prototype.
-5. **Freestanding C Library ``uname()`` Wrapper**: Implemented in ``userland/lib/syscall/sys/utsname.c`` for ``libc.a``, translating POSIX errno returns and standardizing system call vector 108.
-6. **Core Utility ``/bin/uname.elf`` Refactoring**: Refactored ``userland/bin/uname/main.c`` to directly invoke ``uname(&u)`` rather than reading procfs and etc files, reducing binary complexity while adhering strictly to POSIX coreutils architecture.
+5. **Freestanding C Library ``uname()`` Wrapper**: Implemented in ``userland/libc/src/syscall/sys/utsname.c`` for ``libc.a``, translating POSIX errno returns and standardizing system call vector 108.
+6. **Core Utility ``/bin/uname.elf`` Refactoring**: Refactored ``userland/apps/system/uname.c`` to directly invoke ``uname(&u)`` rather than reading procfs and etc files, reducing binary complexity while adhering strictly to POSIX coreutils architecture.
 7. **ABI Compliance Test Suite 40**: Expanded ``/bin/test_abi.elf`` with Test 40, validating null pointer rejection (``EFAULT``), memory boundary isolation, sysname (``"Keira"``), release (``"0.8.0"``), version substring (``"SMP"``) and architecture parity across ``x86_64`` and ``i686``.
 
 2. Architecture & Design

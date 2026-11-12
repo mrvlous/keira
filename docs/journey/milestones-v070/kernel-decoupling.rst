@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===========================================================================
+
 Milestone 33: Modular Userland Decoupling & Pure Ring 0 Kernel Architecture
 ===========================================================================
 

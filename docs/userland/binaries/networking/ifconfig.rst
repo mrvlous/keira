@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================
+
 ifconfig.elf Freestanding Core Utility
 ======================================
 
@@ -58,7 +58,7 @@ Network interface telemetry and configuration inspection is decoupled from Ring 
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/ifconfig/main.c``
+- **Source Path**: ``userland/apps/net/ifconfig.c``
 - **Binary Locations**: ``/bin/ifconfig.elf``, ``/bin/ifconfig``
 - **Telemetry Source**: ``/proc/net/dev`` virtual filesystem node
 - **Privilege Level**: Ring 3 unprivileged

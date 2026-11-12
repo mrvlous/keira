@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=================================
+
 cat.elf Freestanding Core Utility
 =================================
 
@@ -64,7 +64,7 @@ Streaming Standard Input
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/cat/main.c``
+- **Source Path**: ``userland/apps/core/cat.c``
 - **Binary Locations**: ``/bin/cat.elf``, ``/bin/cat``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<fcntl.h>``, ``<unistd.h>``)

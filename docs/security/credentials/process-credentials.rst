@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=========================================================================================
+
 Milestone 30: POSIX Multi-User Security, Kernel Credential Subsystem & Session Management
 =========================================================================================
 

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-================================
+
 ls.elf Freestanding Core Utility
 ================================
 
@@ -84,7 +84,7 @@ All Entries Listing (-a)
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/ls/main.c``
+- **Source Path**: ``userland/apps/core/ls.c``
 - **Binary Locations**: ``/bin/ls.elf``, ``/bin/ls``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<dirent.h>``, ``<stdio.h>``, ``<string.h>``, ``<unistd.h>``)

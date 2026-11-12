@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=================================================
-String & Memory Operations (userland/lib/string/)
-=================================================
+
+String & Memory Operations (userland/libc/src/string/)
+======================================================
 
 High-performance memory manipulation and string inspection routines.
 

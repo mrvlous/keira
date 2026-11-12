@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==========================================================================================================
+
 Milestone 38: POSIX Discretionary Access Control (DAC), File Permissions, Ownership and Real Stat Metadata
 ==========================================================================================================
 
@@ -38,12 +38,12 @@ Key accomplishments of Milestone 38 include:
    - Integrated execute DAC permission validation in ``handle_exec`` to reject execution of files lacking ``X_OK``.
    - Wired router dispatch and validated user copying with comprehensive unit tests across both 32-bit and 64-bit architectures.
 
-3. **Freestanding C Library Integration (``userland/lib/`` and ``userland/include/``)**:
+3. **Freestanding C Library Integration (``userland/libc/src/`` and ``userland/libc/include/``)**:
 
    - Defined ``SYS_CHMOD``, ``SYS_CHOWN`` and ``SYS_STAT`` in ``<sys/syscall.h>``.
-   - Implemented raw system call wrappers ``sys_chmod``, ``sys_chown`` and ``sys_stat`` in ``userland/lib/syscall/fs/file.c``.
-   - Replaced dummy stubs in ``userland/lib/stat/mode/chmod.c`` and ``userland/lib/stat/query/stat.c`` with live system call invocations and standard errno translation.
-   - Created ``userland/lib/unistd/fs/chown.c`` providing the POSIX ``chown()`` function.
+   - Implemented raw system call wrappers ``sys_chmod``, ``sys_chown`` and ``sys_stat`` in ``userland/libc/src/syscall/fs/file.c``.
+   - Replaced dummy stubs in ``userland/libc/src/stat/mode/chmod.c`` and ``userland/libc/src/stat/query/stat.c`` with live system call invocations and standard errno translation.
+   - Created ``userland/libc/src/unistd/fs/chown.c`` providing the POSIX ``chown()`` function.
    - Added ``S_ISLNK``, ``S_ISFIFO`` and ``S_ISSOCK`` macros to ``<sys/stat.h>``.
 
 4. **New Ring 3 Core Utilities (``/bin/chmod`` and ``/bin/chown``)**:
@@ -77,8 +77,8 @@ Technical Specifications
 ========================
 
 - **Kernel Crates Modified**: ``crates/fs``, ``crates/syscall``
-- **Userland Components Added**: ``userland/bin/chmod/main.c``, ``userland/bin/chown/main.c``, ``userland/lib/unistd/fs/chown.c``
-- **Userland Components Updated**: ``userland/bin/ls/main.c``, ``userland/bin/sh/main.c``, ``userland/lib/stat/mode/chmod.c``, ``userland/lib/stat/query/stat.c``, ``userland/lib/syscall/fs/file.c``, ``userland/include/sys/stat.h``, ``userland/include/sys/syscall.h``, ``userland/include/unistd.h``, ``userland/Makefile``
+- **Userland Components Added**: ``userland/apps/core/chmod.c``, ``userland/apps/core/chown.c``, ``userland/libc/src/unistd/fs/chown.c``
+- **Userland Components Updated**: ``userland/apps/core/ls.c``, ``userland/apps/system/sh.c``, ``userland/libc/src/stat/mode/chmod.c``, ``userland/libc/src/stat/query/stat.c``, ``userland/libc/src/syscall/fs/file.c``, ``userland/libc/include/sys/stat.h``, ``userland/libc/include/sys/syscall.h``, ``userland/libc/include/unistd.h``, ``userland/Makefile``
 - **Total Registered System Calls**: 99 system call vectors
 - **Total Userland Core Utilities**: 41 native ELF executables
 - **Hardware Architecture Parity**: 100% verified on both ``x86_64`` and ``i686``

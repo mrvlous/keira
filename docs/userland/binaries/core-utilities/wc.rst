@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-================================
+
 wc.elf Freestanding Core Utility
 ================================
 
@@ -73,7 +73,7 @@ Pipeline Metrics
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/wc/main.c``
+- **Source Path**: ``userland/apps/core/wc.c``
 - **Binary Locations**: ``/bin/wc.elf``, ``/bin/wc``
 - **Privilege Level**: Ring 3 unprivileged
 - **Supported Architectures**: ``x86_64`` (64-bit Long Mode), ``i686`` (32-bit Protected Mode)

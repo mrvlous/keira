@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=============================================================================
+
 Milestone 41: Pure Kernel VFS Inode Cache (icache) & Cache Trinity Completion
 =============================================================================
 

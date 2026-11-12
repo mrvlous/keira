@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================================================================
+
 Milestone 34: Torvalds-Grade Pure Kernel Demarcation & Autonomous Userland Architecture
 =======================================================================================
 
@@ -65,8 +65,8 @@ Architectural Interaction & Build Pipeline
        end
 
        subgraph Autonomous Userland [userland/Makefile]
-           UserCrt["userland/arch/x86/<arch>/crt0.asm"] --> UserCrtObj["crt0.o"]
-           UserLibc["userland/lib/*.c"] --> UserLibcObj["libc.a"]
+           UserCrt["userland/libc/arch/x86/<arch>/crt0.asm"] --> UserCrtObj["crt0.o"]
+           UserLibc["userland/libc/src/*.c"] --> UserLibcObj["libc.a"]
            UserBins["userland/bin/*/*.c (30 Utilities)"] --> UserBinElfs["30 Core Utility Binaries"]
            UserCrtObj --> UserBinElfs
            UserLibcObj --> UserBinElfs

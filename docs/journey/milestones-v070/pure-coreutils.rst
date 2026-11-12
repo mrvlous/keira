@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===============================================================================================
+
 Milestone 24: Pure Kernel Demarcation & Complete Userspace Coreutils - The True BSD/Linux Model
 ===============================================================================================
 
@@ -81,7 +81,7 @@ Technical Implementations
 1. Process Telemetry Utility (/bin/ps.elf)
 ------------------------------------------
 
-Located at ``userland/bin/ps/main.c``, the process inspection utility traverses ``/proc/<pid>/status`` for PID 0 through 64:
+Located at ``userland/apps/system/ps.c``, the process inspection utility traverses ``/proc/<pid>/status`` for PID 0 through 64:
 
 .. code-block:: c
 
@@ -111,7 +111,7 @@ The tool supports ``-h``/``--help`` flags and formats process states (``R`` for 
 2. POSIX Signal Utility (/bin/kill.elf)
 ---------------------------------------
 
-Located at ``userland/bin/kill/main.c``, the signal utility parses target PIDs and signal numbers or names:
+Located at ``userland/apps/system/kill.c``, the signal utility parses target PIDs and signal numbers or names:
 
 .. code-block:: c
 
@@ -130,7 +130,7 @@ Signals supported include ``SIGHUP`` (1), ``SIGINT`` (2), ``SIGQUIT`` (3), ``SIG
 3. Persistent Hostname Utility (/bin/hostname.elf)
 --------------------------------------------------
 
-Located at ``userland/bin/hostname/main.c``, the hostname utility queries or updates ``/etc/hostname``:
+Located at ``userland/apps/system/hostname.c``, the hostname utility queries or updates ``/etc/hostname``:
 
 .. code-block:: c
 
@@ -158,7 +158,7 @@ Located at ``userland/bin/hostname/main.c``, the hostname utility queries or upd
 4. ANSI Clear Screen Utility (/bin/clear.elf)
 ---------------------------------------------
 
-Located at ``userland/bin/clear/main.c``, this utility issues the ANSI ED2 (erase in display) and CUP (cursor position) control sequence:
+Located at ``userland/apps/core/clear.c``, this utility issues the ANSI ED2 (erase in display) and CUP (cursor position) control sequence:
 
 .. code-block:: c
 
@@ -171,12 +171,12 @@ Located at ``userland/bin/clear/main.c``, this utility issues the ANSI ED2 (eras
 5. Kernel Log Streamer (/bin/dmesg.elf)
 ---------------------------------------
 
-Located at ``userland/bin/dmesg/main.c``, the dmesg utility opens ``/var/log/system.log`` and ``/var/log/boot.log`` and streams kernel log records to standard output in 512-byte chunks.
+Located at ``userland/apps/system/dmesg.c``, the dmesg utility opens ``/var/log/system.log`` and ``/var/log/boot.log`` and streams kernel log records to standard output in 512-byte chunks.
 
 6. Filesystem Telemetry Utility (/bin/df.elf)
 ---------------------------------------------
 
-Located at ``userland/bin/df/main.c``, the disk free utility displays active filesystem mount points, total 1K-blocks, used space, available space and capacity percentages.
+Located at ``userland/apps/system/df.c``, the disk free utility displays active filesystem mount points, total 1K-blocks, used space, available space and capacity percentages.
 
 Ring 0 Emergency Debugger Slimming
 ==================================
@@ -275,7 +275,7 @@ Verification & Parity Matrix
      - Dual Arch
      - **PASS**
      - Fetches live HTTP REST endpoints with HTTP 200 OK
-   * - ``userland/bin/kcc``
+   * - ``userland/apps/devel/kcc``
      - Dual Arch
      - **PASS**
      - Compiles C source files to executable ELF binaries

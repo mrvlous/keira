@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================================
+
 Milestone 43: Hardware W^X & Kernel Exploit Mitigations
 =======================================================
 
@@ -99,8 +99,8 @@ All dynamic and static user memory mapping paths enforce ``PAGE_NO_EXECUTE`` (``
 
   Both ``sys_mmap_file`` and ``sys_mprotect`` reject attempts to set both ``PROT_WRITE`` and ``PROT_EXEC`` simultaneously, returning explicit errors.
 
-C. Ring 3 Userland ABI & Syscall Validation (userland/bin/test_abi/mem/tests.c)
--------------------------------------------------------------------------------
+C. Ring 3 Userland ABI & Syscall Validation (userland/apps/tests/test_abi/mem/tests.c)
+--------------------------------------------------------------------------------------
 
 Test 32 in ``test_abi`` verifies hardware W^X enforcement:
 

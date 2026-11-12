@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=================================================================================================
+
 Milestone 51: Pure Kernel Demarcation, Application-Layer Bloat Purge & Canonical Rootfs Hardening
 =================================================================================================
 

@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================
-General Utilities (userland/lib/stdlib/)
-========================================
+
+General Utilities (userland/libc/src/stdlib/)
+=============================================
 
 The ``stdlib`` module implements dynamic memory management, process termination, environment queries and number conversion.
 

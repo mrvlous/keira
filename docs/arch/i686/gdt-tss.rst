@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================================
+
 Global Descriptor Table (GDT) & Task State Segment (TSS)
 ========================================================
 

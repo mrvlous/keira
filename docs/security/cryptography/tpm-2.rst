@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==============================
+
 TPM 2.0 TIS MMIO Driver & PCRs
 ==============================
 

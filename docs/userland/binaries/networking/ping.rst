@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================
+
 ping.elf Freestanding Core Utility
 ==================================
 
@@ -58,7 +58,7 @@ Network reachability verification is managed entirely in unprivileged userspace:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/ping/main.c``
+- **Source Path**: ``userland/apps/net/ping.c``
 - **Binary Locations**: ``/bin/ping.elf``, ``/bin/ping``
 - **System Call**: Vector 89 (``SYS_PING``) via ``sys_ping(const char *target, int timeout_ms)``
 - **Privilege Level**: Ring 3 unprivileged

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================================================================
+
 Milestone 42: Pure Kernel Dynamic ProcFS Process Hierarchy & Per-Process Telemetry
 ==================================================================================
 

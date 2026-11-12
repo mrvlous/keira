@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================================
+
 test_threads.elf Freestanding Multithreading Test Suite
 =======================================================
 
@@ -45,6 +45,6 @@ Thread verification is exercised in Ring 3 against the work-stealing APIC kernel
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/test_threads/main.c``
+- **Source Path**: ``userland/apps/tests/test_threads.c``
 - **Binary Locations**: ``/bin/test_threads.elf``, ``/bin/test_threads``
 - **Privilege Level**: Ring 3 unprivileged

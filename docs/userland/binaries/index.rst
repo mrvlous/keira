@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================
+
 Ring 3 Userland Utilities (46 Binaries)
 =======================================
 

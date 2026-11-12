@@ -1,13 +1,13 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===============================================================================
+
 Milestone 20: Standalone Userspace Shell (/bin/sh.elf) & Direct $PATH Execution
 ===============================================================================
 
 Overview
 ========
 
-Milestone 20 advances the Keira monolithic kernel architecture along the **Road to v0.8.0** by delivering a canonical standalone Ring 3 userspace shell binary (``userland/bin/sh/main.c``) and establishing direct binary execution semantics across the entire kernel runtime.
+Milestone 20 advances the Keira monolithic kernel architecture along the **Road to v0.8.0** by delivering a canonical standalone Ring 3 userspace shell binary (``userland/apps/system/sh.c``) and establishing direct binary execution semantics across the entire kernel runtime.
 
 In earlier milestones, running userland ELF executables required prefixing commands with ``run`` (e.g. ``run /bin/sysinfo.elf``). With Milestone 20, Keira adopts Linux-grade execution semantics:
 
@@ -56,8 +56,8 @@ Milestone 20 resolves this architectural challenge through a dual-layer approach
 Technical Implementation
 ========================
 
-1. Standalone Userspace Shell (userland/bin/sh/main.c)
-------------------------------------------------------
+1. Standalone Userspace Shell (userland/apps/system/sh.c)
+---------------------------------------------------------
 
 The userspace shell is written in freestanding C and links against the kernel's freestanding C standard library (``libc.a``).
 
@@ -76,10 +76,10 @@ Key features include:
 
 - **Binary Resolution & Execution**: Commands that are not built-ins are resolved against ``/bin/<cmd>`` and ``/bin/<cmd>.elf``. The shell forks a child process with ``fork()``, invokes ``execve()`` and awaits completion via ``waitpid()``.
 
-2. Standard C Library Enhancements (userland/include/unistd.h and userland/lib/unistd/fs/fs.c)
-----------------------------------------------------------------------------------------------
+2. Standard C Library Enhancements (userland/libc/include/unistd.h and userland/libc/src/unistd/fs/fs.c)
+--------------------------------------------------------------------------------------------------------
 
-To support binary resolution in the userspace shell, the ``access()`` POSIX system call wrapper was declared in ``userland/include/unistd.h`` and implemented in ``userland/lib/unistd/fs/fs.c``:
+To support binary resolution in the userspace shell, the ``access()`` POSIX system call wrapper was declared in ``userland/libc/include/unistd.h`` and implemented in ``userland/libc/src/unistd/fs/fs.c``:
 
 .. code-block:: c
 

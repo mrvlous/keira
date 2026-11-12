@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===========================================================
+
 Keira Userland Runtime, Native C Compiler & POSIX C Library
 ===========================================================
 

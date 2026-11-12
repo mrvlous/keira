@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=================================================================================
+
 Journey Milestone 19: Pure Kernel Architecture & Canonical Userspace Init (PID 1)
 =================================================================================
 
@@ -56,8 +56,8 @@ All internal structures and test harnesses were audited and refactored to enforc
 3. Canonical Userspace Init Implementation
 ==========================================
 
-Ring 3 Init Binary (userland/bin/init/main.c)
----------------------------------------------
+Ring 3 Init Binary (userland/apps/system/init.c)
+------------------------------------------------
 
 The canonical userspace init executable is compiled with Keira's freestanding libc (``<stdio.h>`` and ``<unistd.h>``), linking against ``crt0.o``:
 

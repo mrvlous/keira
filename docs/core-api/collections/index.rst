@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================
+
 Core Collections & Data Structures
 ==================================
 

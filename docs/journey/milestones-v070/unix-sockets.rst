@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===========================================================================================================================================
+
 Milestone 47: UNIX Domain Sockets (AF_UNIX & SYS_SOCKETPAIR), /proc/net/unix Telemetry, Supervisor unixsock Diagnostics & Kernel Decoupling
 ===========================================================================================================================================
 
@@ -43,9 +43,9 @@ Milestone 47 delivers five primary achievements:
 
 5. **Autonomous Userland Verification & UAPI Header Export**:
 
-   - Introduces ``userland/include/sys/un.h`` declaring ``struct sockaddr_un`` and ``AF_UNIX``.
+   - Introduces ``userland/libc/include/sys/un.h`` declaring ``struct sockaddr_un`` and ``AF_UNIX``.
    - Exports UAPI headers via ``make headers_install`` to ``include/uapi/sys/un.h``.
-   - Adds Test 36 to ``userland/bin/test_abi/ipc/tests.c`` validating bidirectional ``socketpair`` communication, buffer isolation, peer closure EOF semantics and invalid domain error handling.
+   - Adds Test 36 to ``userland/apps/tests/test_abi/ipc/tests.c`` validating bidirectional ``socketpair`` communication, buffer isolation, peer closure EOF semantics and invalid domain error handling.
 
 2. Technical Architecture & Component Interaction
 =================================================

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-========================================
+
 Architecture Constants and Hardware MMIO
 ========================================
 

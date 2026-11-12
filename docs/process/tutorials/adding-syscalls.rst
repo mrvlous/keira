@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=============================
+
 Tutorial: Adding System Calls
 =============================
 
@@ -17,7 +17,7 @@ Keira provides dual-architecture system call trapping:
 .. code-block:: text
 
    graph TD
-       App["Ring 3 Userland Application"] --> LibC["userland/include/sys/syscall.h"]
+       App["Ring 3 Userland Application"] --> LibC["userland/libc/include/sys/syscall.h"]
        LibC --> Trap["x86 Trap (syscall / int 0x80)"]
        Trap --> LowLevelASM["arch/x86/*/kernel/syscall.asm (Switch to Kernel Stack)"]
        LowLevelASM --> Router["crates/syscall/src/dispatcher/router/entry.rs"]
@@ -92,7 +92,7 @@ Add the match arm to ``crates/syscall/src/dispatcher/router/entry.rs``:
 5. Step 4: Expose in Userland C Headers & Libc
 ==============================================
 
-1. **Add to C Header (``userland/include/sys/syscall.h``)**:
+1. **Add to C Header (``userland/libc/include/sys/syscall.h``)**:
 
 .. code-block:: c
 
@@ -100,7 +100,7 @@ Add the match arm to ``crates/syscall/src/dispatcher/router/entry.rs``:
 
       int getuptime(uint64_t *uptime_ms);
 
-2. **Add Libc Wrapper (``userland/lib/syscall/time/time.c``)**:
+2. **Add Libc Wrapper (``userland/libc/src/syscall/time/time.c``)**:
 
 .. code-block:: c
 
@@ -121,7 +121,7 @@ Add the match arm to ``crates/syscall/src/dispatcher/router/entry.rs``:
 6. Step 5: Test and Fuzz
 ========================
 
-* Add test case to ``userland/bin/test_abi/main.c``:
+* Add test case to ``userland/apps/tests/test_abi/main.c``:
 
 .. code-block:: c
 

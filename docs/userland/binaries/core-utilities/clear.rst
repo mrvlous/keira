@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================
+
 clear.elf Freestanding Core Utility
 ===================================
 
@@ -43,7 +43,7 @@ Terminal display manipulation adheres to standard ANSI escape sequence protocols
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/clear/main.c``
+- **Source Path**: ``userland/apps/core/clear.c``
 - **Binary Locations**: ``/bin/clear.elf``, ``/bin/clear``
 - **Privilege Level**: Ring 3 unprivileged
 - **Escape Sequence**: ``\033[2J\033[H``

@@ -1,13 +1,13 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==============================
+
 ELF Linker Scripts (linker.ld)
 ==============================
 
 Linker scripts dictate the virtual memory placement of userland binaries, ensuring compatibility with the kernel's virtual memory manager and demand paging.
 
-i686 Virtual Memory Layout (userland/arch/x86/i686/linker.ld)
-=============================================================
+i686 Virtual Memory Layout (userland/libc/arch/x86/i686/linker.ld)
+==================================================================
 
 Userland binaries for 32-bit x86 are linked to load at virtual base ``0x08048000``:
 
@@ -42,8 +42,8 @@ Userland binaries for 32-bit x86 are linked to load at virtual base ``0x08048000
        }
    }
 
-x86_64 Virtual Memory Layout (userland/arch/x86/x86_64/linker.ld)
-=================================================================
+x86_64 Virtual Memory Layout (userland/libc/arch/x86/x86_64/linker.ld)
+======================================================================
 
 Userland binaries for 64-bit x86_64 are linked to load at virtual base ``0x00400000``:
 

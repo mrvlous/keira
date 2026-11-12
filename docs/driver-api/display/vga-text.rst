@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=============================
+
 VGA Text Mode Console (80x25)
 =============================
 

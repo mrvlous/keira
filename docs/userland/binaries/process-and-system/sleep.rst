@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===================================
+
 sleep.elf Freestanding Core Utility
 ===================================
 
@@ -57,7 +57,7 @@ Script Timing
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/sleep/main.c``
+- **Source Path**: ``userland/apps/system/sleep.c``
 - **Binary Locations**: ``/bin/sleep.elf``, ``/bin/sleep``
 - **Privilege Level**: Ring 3 unprivileged
 - **Supported Architectures**: ``x86_64`` (64-bit Long Mode), ``i686`` (32-bit Protected Mode)

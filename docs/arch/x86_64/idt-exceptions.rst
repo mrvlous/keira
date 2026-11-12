@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================================
+
 Interrupt Descriptor Table (IDT) & Hardware Exceptions
 ======================================================
 

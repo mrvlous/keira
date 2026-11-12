@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================
+
 kill.elf Freestanding Core Utility
 ==================================
 
@@ -59,7 +59,7 @@ Signal transmission is delegated to userspace, utilizing the standard ``sys_kill
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/kill/main.c``
+- **Source Path**: ``userland/apps/system/kill.c``
 - **Binary Locations**: ``/bin/kill.elf``, ``/bin/kill``
 - **Privilege Level**: Ring 3 unprivileged
 - **System Call**: ``sys_kill`` (vector 18)

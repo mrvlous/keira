@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================================
-System Call Trapping Interface (userland/lib/syscall/)
-======================================================
+
+System Call Trapping Interface (userland/libc/src/syscall/)
+===========================================================
 
 The syscall wrapper module bridges standard C function calls to kernel system call dispatchers via architecture-specific trap instructions.
 

@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-================================
+
 id.elf Freestanding Core Utility
 ================================
 
@@ -68,7 +68,7 @@ In accordance with Keira's freestanding pure-kernel architecture:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/bin/id/main.c``
+- **Source Path**: ``userland/apps/system/id.c``
 - **Binary Locations**: ``/bin/id.elf``, ``/bin/id``
 - **System Call Invocations**: ``SYS_GETUID`` (Vector 24), ``SYS_GETEUID`` (Vector 90), ``SYS_GETGID`` (Vector 47), ``SYS_GETEGID`` (Vector 91)
 - **Privilege Level**: Ring 3 unprivileged

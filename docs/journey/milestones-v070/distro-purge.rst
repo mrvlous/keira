@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-======================================================================================================
+
 Milestone 31: Distro Bloat Eradication, Pure Rootfs Architecture & Comprehensive Hardware Verification
 ======================================================================================================
 
@@ -13,7 +13,7 @@ Milestone 31 delivers five primary achievements:
 
 1. **Root Filesystem Source Purge (``Makefile``)**:
 
-   - Purged the recursive copying of raw C library source trees (``userland/lib/*``) into the root filesystem directory ``/lib/``.
+   - Purged the recursive copying of raw C library source trees (``userland/libc/src/*``) into the root filesystem directory ``/lib/``.
    - The ``/lib/`` filesystem directory now strictly contains the compiled static runtime library archive ``libc.a``.
    - Enforces a clean separation between development source trees on the host and the freestanding monolithic runtime environment on the target disk image.
 
@@ -48,8 +48,8 @@ Architectural Interaction
 
    graph TD
        subgraph HostBuild["Host Build System (Makefile)"]
-           UserLib["userland/lib/*.c<br/><i>POSIX Libc Sources</i>"]
-           UserAr["userland/lib/libc.a<br/><i>Compiled Static Archive</i>"]
+           UserLib["userland/libc/src/*.c<br/><i>POSIX Libc Sources</i>"]
+           UserAr["userland/libc/src/libc.a<br/><i>Compiled Static Archive</i>"]
            FsRoot["build/x86/*/fs/lib/<br/><i>Target Rootfs: ONLY libc.a</i>"]
        end
 

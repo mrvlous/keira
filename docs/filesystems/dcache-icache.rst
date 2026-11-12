@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===============================================================================================
+
 Milestone 39: Pure Kernel VFS Dentry Cache (dcache) & Century Milestone Syscall 100 (SYS_FSTAT)
 ===============================================================================================
 
@@ -75,8 +75,8 @@ Century Syscall 100 (SYS_FSTAT)
 - Registered in ``crates/syscall/src/table/numbers/io.rs``: ``pub const SYS_FSTAT: u64 = 100;``.
 - Implemented in ``crates/syscall/src/dispatcher/handlers/fs.rs``: ``handle_fstat(arg1, arg2)``.
 - Dispatched via ``crates/syscall/src/dispatcher/router/entry.rs``: Vector 100.
-- C standard library wrapper in ``userland/lib/stat/query/stat.c`` invoking ``sys_fstat()``.
-- Validated via userland test harness ``userland/bin/test_abi/fs/tests.c`` (Section 38).
+- C standard library wrapper in ``userland/libc/src/stat/query/stat.c`` invoking ``sys_fstat()``.
+- Validated via userland test harness ``userland/apps/tests/test_abi/fs/tests.c`` (Section 38).
 
 Ring 0 Supervisor Telemetry (crates/shell/src/cmds/fs/mount/dcache.rs)
 ----------------------------------------------------------------------

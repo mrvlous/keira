@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-=======================================
+
 Type-Safe Epoch-Based Reclamation (EBR)
 =======================================
 

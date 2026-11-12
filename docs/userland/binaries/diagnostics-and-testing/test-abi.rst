@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================
+
 test_abi.elf Kernel ABI Test Suite
 ==================================
 

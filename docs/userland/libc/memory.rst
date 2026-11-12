@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-===============================================
-Low-Level Memory Management (userland/lib/mem/)
-===============================================
+
+Low-Level Memory Management (userland/libc/src/mem/)
+====================================================
 
 Direct virtual memory manipulation interfaces interacting with the kernel VMM.
 

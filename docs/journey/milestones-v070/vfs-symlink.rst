@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-==================================================================================
+
 Milestone 32: VFS Symbolic Links, POSIX Traversal & Freestanding Core Link Utility
 ==================================================================================
 
@@ -29,13 +29,13 @@ Milestone 32 delivers five primary achievements:
 
    - Added standard POSIX error codes: ``ENAMETOOLONG`` (36) and ``ELOOP`` (40).
 
-3. **Freestanding C Library Integration (``userland/include`` & ``userland/lib``)**:
+3. **Freestanding C Library Integration (``userland/libc/include`` & ``userland/lib``)**:
 
    - Defined ``SYS_SYMLINK 92``, ``SYS_READLINK 93``, ``ENAMETOOLONG 36`` and ``ELOOP 40`` across userland headers (``sys/syscall.h``, ``unistd.h``, ``errno.h``).
-   - Implemented assembly traps ``sys_symlink()`` and ``sys_readlink()`` in ``userland/lib/syscall/fs/file.c``.
-   - Implemented POSIX-compliant wrappers ``symlink()`` and ``readlink()`` in ``userland/lib/unistd/fs/fs.c`` with standard ``errno`` translation.
+   - Implemented assembly traps ``sys_symlink()`` and ``sys_readlink()`` in ``userland/libc/src/syscall/fs/file.c``.
+   - Implemented POSIX-compliant wrappers ``symlink()`` and ``readlink()`` in ``userland/libc/src/unistd/fs/fs.c`` with standard ``errno`` translation.
 
-4. **Freestanding Ring 3 Core Utility ``/bin/ln`` (``userland/bin/ln/``)**:
+4. **Freestanding Ring 3 Core Utility ``/bin/ln`` (``userland/apps/core/``)**:
 
    - Developed freestanding ``/bin/ln`` utility supporting standard POSIX options:
 

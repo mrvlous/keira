@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-============================================
-POSIX Signal Handling (userland/lib/signal/)
-============================================
 
-Manages asynchronous process notifications and signal handler registration (``userland/include/signal.h``).
+POSIX Signal Handling (userland/libc/src/signal/)
+=================================================
+
+Manages asynchronous process notifications and signal handler registration (``userland/libc/include/signal.h``).
 
 Signal Interfaces
 =================

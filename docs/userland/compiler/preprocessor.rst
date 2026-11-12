@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
-============================================
-KCC Preprocessor (userland/bin/kcc/preproc/)
-============================================
+
+KCC Preprocessor (userland/apps/devel/kcc/preproc/)
+===================================================
 
 The preprocessor handles macro expansion, header file inclusion and conditional directives prior to lexical analysis.
 
