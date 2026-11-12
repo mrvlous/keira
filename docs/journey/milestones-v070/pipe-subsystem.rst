@@ -35,13 +35,13 @@ Key accomplishments of Milestone 36 include:
 
 3. **In-Kernel Streaming Pipelines in Standalone Shell (``/bin/sh``)**:
 
-   - Eliminates the legacy ``/tmp/.sh_p*`` temporary scratch file workaround in ``userland/apps/system/sh.c``.
+   - Eliminates the legacy ``/tmp/.sh_p*`` temporary scratch file workaround in ``userland/sysutils/sh.c``.
    - Constructs true in-memory streaming pipelines using ``pipe()``, ``dup2()``, standard stream redirection and process chaining.
    - Allows commands like ``cat /proc/version | grep Keira`` and ``sysinfo | cat`` to stream data directly through kernel memory without touching storage or disk filesystems.
 
 4. **Ring 3 Autonomous C Test Suite (``/bin/test_pipe``)**:
 
-   - Delivers a dedicated verification binary (``userland/apps/tests/test_pipe.c``) covering five automated test phases:
+   - Delivers a dedicated verification binary (``userland/tests/test_pipe.c``) covering five automated test phases:
 
      - Phase 1: Basic pipe creation and byte streaming roundtrip.
      - Phase 2: Multi-channel concurrent isolation across separate pipes.

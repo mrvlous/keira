@@ -13,7 +13,7 @@ Prior to Milestone 21, Keira's program execution subsystem operated exclusively 
 
 1. **Kernel Shebang (``#!``) Parser**: A freestanding ``#![no_std]`` interpreter header parser (``crates/fs/src/elf/loader/shebang.rs``) that identifies shebang magic bytes (``#!``), extracts the interpreter path (e.g. ``/bin/sh`` or ``/bin/sh.elf``) and parses optional interpreter arguments.
 2. **``sys_execve`` Shebang Delegation**: The kernel process dispatcher (``crates/syscall/src/dispatcher/handlers/process.rs``) inspects file headers upon ``execve``. When a shebang script is detected, the kernel re-routes execution to the specified interpreter, prepending interpreter flags and the script path to the argument vector.
-3. **Userspace Shell Script Engine**: The standalone Ring 3 shell (``userland/apps/system/sh.c``) gains script execution capabilities (``sh <script_file>``), file comment stripping (``#``), blank line filtering and sequential command execution via standard ``execve()`` and ``waitpid()`` system calls.
+3. **Userspace Shell Script Engine**: The standalone Ring 3 shell (``userland/sysutils/sh.c``) gains script execution capabilities (``sh <script_file>``), file comment stripping (``#``), blank line filtering and sequential command execution via standard ``execve()`` and ``waitpid()`` system calls.
 4. **Direct Supervisor ``.sh`` Invocation**: Users can invoke ``.sh`` scripts directly from the supervisor root console (``keira:/# demo.sh`` or ``keira:/# /etc/init.sh``) without manual ``sh`` prefixes, matching direct binary execution ergonomics.
 5. **System Bootstrap Scripts**: Canonical system scripts (``/etc/init.sh`` and ``/bin/demo.sh``) are integrated into the FAT16 disk image, providing initial configuration automation and verified shebang demonstration.
 
@@ -112,8 +112,8 @@ When ``sys_execve`` (Syscall 5) is invoked, the handler reads the initial 128 by
 
 This ensures any userland process calling ``execve()`` on a script file automatically delegates to the configured interpreter transparently.
 
-3. Userspace Shell Script Runner (userland/apps/system/sh.c)
-------------------------------------------------------------
+3. Userspace Shell Script Runner (userland/sysutils/sh.c)
+---------------------------------------------------------
 
 The standalone shell was enhanced to support script execution mode:
 

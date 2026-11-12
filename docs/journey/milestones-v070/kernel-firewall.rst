@@ -21,7 +21,7 @@ Milestone 28 achieves four core engineering objectives:
    - ``/proc/net/iptables`` (and alias ``/proc/net/ip_tables_rules``): Synthesizes active filtering chains and rules in standard canonical ``iptables-save`` format with match counters.
 
 2. **Freestanding Core Firewall Utility (``/bin/iptables.elf``)**:
-   A native freestanding Ring 3 C executable implemented in ``userland/apps/net/iptables.c``:
+   A native freestanding Ring 3 C executable implemented in ``userland/netutils/iptables.c``:
 
    - Rule enumeration (``-L``, ``--list``): Formats active rules in standard tabular format displaying Target, Protocol, Source, Destination and Options.
    - Rule specification format (``-S``, ``--list-rules``): Outputs rules in reproducible CLI command syntax.

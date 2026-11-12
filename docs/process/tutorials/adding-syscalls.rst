@@ -121,7 +121,7 @@ Add the match arm to ``crates/syscall/src/dispatcher/router/entry.rs``:
 6. Step 5: Test and Fuzz
 ========================
 
-* Add test case to ``userland/apps/tests/test_abi/main.c``:
+* Add test case to ``userland/tests/test_abi/main.c``:
 
 .. code-block:: c
 

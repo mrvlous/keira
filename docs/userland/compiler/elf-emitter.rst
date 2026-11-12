@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-KCC ELF Binary Generation (userland/apps/devel/kcc/elf/)
-========================================================
+KCC ELF Binary Generation (userland/toolchain/kcc/elf/)
+=======================================================
 
 Directly produces valid executable ELF files without requiring external assemblers or linkers.
 

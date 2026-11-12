@@ -14,7 +14,7 @@ In accordance with classical UNIX architecture, the Ring 0 kernel acts exclusive
 Milestone 23 introduces four pivotal advancements:
 
 1. **In-Kernel Compiler Elimination**: The embedded Ring 0 C compiler (``kcc``) was decommissioned from the supervisor command router. Invocations of ``kcc`` now route dynamically to the freestanding Ring 3 compiler binary ``/bin/kcc.elf`` via the kernel binary execution fallback path.
-2. **Freestanding Ring 3 HTTP Fetch Utility (``/bin/fetch.elf``)**: High-level web clients (``download``, ``fetch`` and ``https``) were removed from Ring 0 supervisor mode. In their place, a freestanding Ring 3 network utility was engineered at ``userland/apps/net/fetch.c``, providing a lightweight curl and wget equivalent supporting URL retrieval, ``-o <file>`` disk streaming, ``-I``/``--head`` response inspections and verbose telemetry.
+2. **Freestanding Ring 3 HTTP Fetch Utility (``/bin/fetch.elf``)**: High-level web clients (``download``, ``fetch`` and ``https``) were removed from Ring 0 supervisor mode. In their place, a freestanding Ring 3 network utility was engineered at ``userland/netutils/fetch.c``, providing a lightweight curl and wget equivalent supporting URL retrieval, ``-o <file>`` disk streaming, ``-I``/``--head`` response inspections and verbose telemetry.
 3. **Supervisor Console Modernization (Hardware & Kernel Diagnostic Monitor)**: Redundant job control (``jobs``, ``fg``, ``bg``) and filesystem inspection (``list``, ``fileinfo``, ``search``) commands were pruned from Ring 0. The supervisor console is now standardized to 51 primary diagnostic commands (58 including canonical aliases) covering CPU, SMP, memory, tasks, eBPF, TPM, block devices, VFS mounts, network link diagnostics, filesystem sync and machine reset.
 4. **Kernel TTY Line Discipline & FAT16 Path Resolution Fixes**:
 
@@ -73,7 +73,7 @@ The legacy in-kernel compiler source ``crates/shell/src/cmds/proc/tools/kcc.rs``
 2. Freestanding Ring 3 Fetch Utility (/bin/fetch.elf)
 -----------------------------------------------------
 
-A new freestanding C network client was implemented in ``userland/apps/net/fetch.c``:
+A new freestanding C network client was implemented in ``userland/netutils/fetch.c``:
 
 .. code-block:: c
 

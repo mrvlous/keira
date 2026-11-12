@@ -71,7 +71,7 @@ Escape Sequences & Pipeline Sourcing
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/echo.c``
+- **Source Path**: ``userland/coreutils/echo.c``
 - **Binary Locations**: ``/bin/echo.elf``, ``/bin/echo``
 - **Privilege Level**: Ring 3 unprivileged
 - **Supported Architectures**: ``x86_64`` (64-bit Long Mode), ``i686`` (32-bit Protected Mode)

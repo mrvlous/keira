@@ -46,6 +46,6 @@ Filesystem telemetry is accessed from userspace without embedding complex format
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/df.c``
+- **Source Path**: ``userland/sysutils/df.c``
 - **Binary Locations**: ``/bin/df.elf``, ``/bin/df``
 - **Privilege Level**: Ring 3 unprivileged

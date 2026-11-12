@@ -151,11 +151,11 @@ Verification & Parity Matrix
      - Complete
    * - ``/bin/route.elf`` Core Utility
      - ``userland``
-     - ``userland/apps/net/route.c``
+     - ``userland/netutils/route.c``
      - Complete
    * - ``/bin/arp.elf`` Core Utility
      - ``userland``
-     - ``userland/apps/net/arp.c``
+     - ``userland/netutils/arp.c``
      - Complete
    * - Multi-Arch Verification
      - Makefile

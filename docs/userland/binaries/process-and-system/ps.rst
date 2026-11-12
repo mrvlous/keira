@@ -51,7 +51,7 @@ In accordance with pure kernel design and UNIX standards, process enumeration is
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/ps.c``
+- **Source Path**: ``userland/sysutils/ps.c``
 - **Binary Locations**: ``/bin/ps.elf``, ``/bin/ps``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a``, ``sys_open``, ``sys_read``, ``sys_close``, ``sys_write``

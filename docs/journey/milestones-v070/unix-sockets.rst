@@ -45,7 +45,7 @@ Milestone 47 delivers five primary achievements:
 
    - Introduces ``userland/libc/include/sys/un.h`` declaring ``struct sockaddr_un`` and ``AF_UNIX``.
    - Exports UAPI headers via ``make headers_install`` to ``include/uapi/sys/un.h``.
-   - Adds Test 36 to ``userland/apps/tests/test_abi/ipc/tests.c`` validating bidirectional ``socketpair`` communication, buffer isolation, peer closure EOF semantics and invalid domain error handling.
+   - Adds Test 36 to ``userland/tests/test_abi/ipc/tests.c`` validating bidirectional ``socketpair`` communication, buffer isolation, peer closure EOF semantics and invalid domain error handling.
 
 2. Technical Architecture & Component Interaction
 =================================================

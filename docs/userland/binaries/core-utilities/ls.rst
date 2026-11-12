@@ -84,7 +84,7 @@ All Entries Listing (-a)
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/ls.c``
+- **Source Path**: ``userland/coreutils/ls.c``
 - **Binary Locations**: ``/bin/ls.elf``, ``/bin/ls``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<dirent.h>``, ``<stdio.h>``, ``<string.h>``, ``<unistd.h>``)

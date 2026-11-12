@@ -60,7 +60,7 @@ Pipe verification exercises the dynamic IPC subsystem (``crates/ipc``) from user
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/tests/test_pipe.c``
+- **Source Path**: ``userland/tests/test_pipe.c``
 - **Binary Locations**: ``/bin/test_pipe.elf``, ``/bin/test_pipe``
 - **Privilege Level**: Ring 3 unprivileged
 - **System Calls Invoked**: ``SYS_PIPE`` (23), ``SYS_PIPE2`` (96), ``SYS_READ`` (7), ``SYS_WRITE`` (8), ``SYS_CLOSE`` (9)

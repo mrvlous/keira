@@ -56,8 +56,8 @@ All internal structures and test harnesses were audited and refactored to enforc
 3. Canonical Userspace Init Implementation
 ==========================================
 
-Ring 3 Init Binary (userland/apps/system/init.c)
-------------------------------------------------
+Ring 3 Init Binary (userland/sysutils/init.c)
+---------------------------------------------
 
 The canonical userspace init executable is compiled with Keira's freestanding libc (``<stdio.h>`` and ``<unistd.h>``), linking against ``crt0.o``:
 

@@ -66,7 +66,7 @@ In accordance with Keira's freestanding pure-kernel architecture:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/ln.c``
+- **Source Path**: ``userland/coreutils/ln.c``
 - **Binary Locations**: ``/bin/ln.elf``, ``/bin/ln``
 - **System Call Invocations**: ``SYS_SYMLINK`` (Vector 92) and ``SYS_READLINK`` (Vector 93)
 - **Privilege Level**: Ring 3 unprivileged

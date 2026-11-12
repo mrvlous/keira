@@ -77,8 +77,8 @@ Technical Specifications
 ========================
 
 - **Kernel Crates Modified**: ``crates/fs``, ``crates/syscall``
-- **Userland Components Added**: ``userland/apps/core/chmod.c``, ``userland/apps/core/chown.c``, ``userland/libc/src/unistd/fs/chown.c``
-- **Userland Components Updated**: ``userland/apps/core/ls.c``, ``userland/apps/system/sh.c``, ``userland/libc/src/stat/mode/chmod.c``, ``userland/libc/src/stat/query/stat.c``, ``userland/libc/src/syscall/fs/file.c``, ``userland/libc/include/sys/stat.h``, ``userland/libc/include/sys/syscall.h``, ``userland/libc/include/unistd.h``, ``userland/Makefile``
+- **Userland Components Added**: ``userland/coreutils/chmod.c``, ``userland/coreutils/chown.c``, ``userland/libc/src/unistd/fs/chown.c``
+- **Userland Components Updated**: ``userland/coreutils/ls.c``, ``userland/sysutils/sh.c``, ``userland/libc/src/stat/mode/chmod.c``, ``userland/libc/src/stat/query/stat.c``, ``userland/libc/src/syscall/fs/file.c``, ``userland/libc/include/sys/stat.h``, ``userland/libc/include/sys/syscall.h``, ``userland/libc/include/unistd.h``, ``userland/Makefile``
 - **Total Registered System Calls**: 99 system call vectors
 - **Total Userland Core Utilities**: 41 native ELF executables
 - **Hardware Architecture Parity**: 100% verified on both ``x86_64`` and ``i686``

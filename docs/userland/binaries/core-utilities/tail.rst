@@ -70,7 +70,7 @@ Log Inspection
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/tail.c``
+- **Source Path**: ``userland/coreutils/tail.c``
 - **Binary Locations**: ``/bin/tail.elf``, ``/bin/tail``
 - **Privilege Level**: Ring 3 unprivileged
 - **Supported Architectures**: ``x86_64`` (64-bit Long Mode), ``i686`` (32-bit Protected Mode)

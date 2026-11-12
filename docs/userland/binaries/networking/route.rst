@@ -52,7 +52,7 @@ Routing table telemetry in the Keira pure kernel follows UNIX/Linux architectura
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/net/route.c``
+- **Source Path**: ``userland/netutils/route.c``
 - **Binary Locations**: ``/bin/route.elf``, ``/bin/route``
 - **Telemetry Source**: ``/proc/net/route`` virtual filesystem node
 - **Privilege Level**: Ring 3 unprivileged

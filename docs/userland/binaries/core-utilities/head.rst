@@ -72,7 +72,7 @@ Pipeline Truncation
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/head.c``
+- **Source Path**: ``userland/coreutils/head.c``
 - **Binary Locations**: ``/bin/head.elf``, ``/bin/head``
 - **Privilege Level**: Ring 3 unprivileged
 - **Supported Architectures**: ``x86_64`` (64-bit Long Mode), ``i686`` (32-bit Protected Mode)

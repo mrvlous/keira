@@ -7,7 +7,7 @@ Milestone 20: Standalone Userspace Shell (/bin/sh.elf) & Direct $PATH Execution
 Overview
 ========
 
-Milestone 20 advances the Keira monolithic kernel architecture along the **Road to v0.8.0** by delivering a canonical standalone Ring 3 userspace shell binary (``userland/apps/system/sh.c``) and establishing direct binary execution semantics across the entire kernel runtime.
+Milestone 20 advances the Keira monolithic kernel architecture along the **Road to v0.8.0** by delivering a canonical standalone Ring 3 userspace shell binary (``userland/sysutils/sh.c``) and establishing direct binary execution semantics across the entire kernel runtime.
 
 In earlier milestones, running userland ELF executables required prefixing commands with ``run`` (e.g. ``run /bin/sysinfo.elf``). With Milestone 20, Keira adopts Linux-grade execution semantics:
 
@@ -56,8 +56,8 @@ Milestone 20 resolves this architectural challenge through a dual-layer approach
 Technical Implementation
 ========================
 
-1. Standalone Userspace Shell (userland/apps/system/sh.c)
----------------------------------------------------------
+1. Standalone Userspace Shell (userland/sysutils/sh.c)
+------------------------------------------------------
 
 The userspace shell is written in freestanding C and links against the kernel's freestanding C standard library (``libc.a``).
 

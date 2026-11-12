@@ -67,7 +67,7 @@ System identity reporting is handled cleanly in userspace:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/uname.c``
+- **Source Path**: ``userland/sysutils/uname.c``
 - **Binary Locations**: ``/bin/uname.elf``, ``/bin/uname``
 - **System Call**: Vector 108 (``SYS_UNAME``) via ``uname()``
 - **C Header**: ``<sys/utsname.h>`` (``struct utsname``)

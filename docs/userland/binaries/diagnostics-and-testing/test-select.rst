@@ -75,7 +75,7 @@ Executing Via Canonical Symlink
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/tests/test_select.c``
+- **Source Path**: ``userland/tests/test_select.c``
 - **Binary Locations**: ``/bin/test_select.elf``, ``/bin/test_select``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<sys/select.h>``, ``<unistd.h>``, ``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<errno.h>``)

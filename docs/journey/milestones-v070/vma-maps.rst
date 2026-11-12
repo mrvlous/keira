@@ -77,7 +77,7 @@ The synthesis engine in ``crates/task/src/scheduler/core/hooks.rs`` produces can
 2.3 Freestanding pmap.elf Core Utility
 --------------------------------------
 
-The ``pmap`` utility (``userland/apps/system/pmap.c``) is implemented in freestanding C without external dependencies:
+The ``pmap`` utility (``userland/sysutils/pmap.c``) is implemented in freestanding C without external dependencies:
 
 * Opens and parses ``/proc/[pid]/maps`` using raw system calls.
 * Parses hexadecimal start and end boundaries to compute the exact mapping size in KiB.

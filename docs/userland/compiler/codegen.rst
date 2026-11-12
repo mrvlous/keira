@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-KCC Machine Code Generator (userland/apps/devel/kcc/codegen/)
-=============================================================
+KCC Machine Code Generator (userland/toolchain/kcc/codegen/)
+============================================================
 
 Translates the AST into native x86 machine instructions.
 

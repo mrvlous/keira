@@ -73,7 +73,7 @@ Pipeline Metrics
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/wc.c``
+- **Source Path**: ``userland/coreutils/wc.c``
 - **Binary Locations**: ``/bin/wc.elf``, ``/bin/wc``
 - **Privilege Level**: Ring 3 unprivileged
 - **Supported Architectures**: ``x86_64`` (64-bit Long Mode), ``i686`` (32-bit Protected Mode)

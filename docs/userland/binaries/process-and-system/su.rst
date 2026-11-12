@@ -63,7 +63,7 @@ In Keira's monolithic design:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/su.c``
+- **Source Path**: ``userland/sysutils/su.c``
 - **Binary Locations**: ``/bin/su.elf``, ``/bin/su``
 - **System Call Invocations**: ``SYS_SETGID`` (Vector 46), ``SYS_SETUID`` (Vector 23), ``SYS_EXECVE`` (Vector 11), ``SYS_WAITPID`` (Vector 7)
 - **Privilege Level**: Superuser (UID 0) required for arbitrary switching; demoted execution once switched

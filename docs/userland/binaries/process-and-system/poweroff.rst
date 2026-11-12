@@ -46,7 +46,7 @@ Machine poweroff operations adhere to standard POSIX conventions:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/poweroff.c``
+- **Source Path**: ``userland/sysutils/poweroff.c``
 - **Binary Locations**: ``/bin/poweroff.elf``, ``/bin/poweroff``
 - **System Call**: Vector 109 (``SYS_REBOOT``)
 - **C Header**: ``<sys/reboot.h>``

@@ -83,7 +83,7 @@ Verbose Network Diagnostics
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/net/fetch.c``
+- **Source Path**: ``userland/netutils/fetch.c``
 - **Binary Locations**: ``/bin/fetch.elf``, ``/bin/fetch``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<arpa/inet.h>``, ``<sys/socket.h>``, ``<fcntl.h>``, ``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``)

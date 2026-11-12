@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-KCC Lexical Analyzer (userland/apps/devel/kcc/lexer/)
-=====================================================
+KCC Lexical Analyzer (userland/toolchain/kcc/lexer/)
+====================================================
 
 Converts preprocessed C source text into a stream of typed tokens.
 

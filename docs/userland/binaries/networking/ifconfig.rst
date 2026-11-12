@@ -58,7 +58,7 @@ Network interface telemetry and configuration inspection is decoupled from Ring 
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/net/ifconfig.c``
+- **Source Path**: ``userland/netutils/ifconfig.c``
 - **Binary Locations**: ``/bin/ifconfig.elf``, ``/bin/ifconfig``
 - **Telemetry Source**: ``/proc/net/dev`` virtual filesystem node
 - **Privilege Level**: Ring 3 unprivileged

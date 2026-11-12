@@ -1,8 +1,8 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-KCC Recursive Descent Parser (userland/apps/devel/kcc/parser/)
-==============================================================
+KCC Recursive Descent Parser (userland/toolchain/kcc/parser/)
+=============================================================
 
 Transforms token streams into an Abstract Syntax Tree (AST) representing functions, control structures and expressions.
 

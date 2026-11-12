@@ -49,7 +49,7 @@ ARP neighbor table inspection in Keira adheres to strict separation of concerns 
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/net/arp.c``
+- **Source Path**: ``userland/netutils/arp.c``
 - **Binary Locations**: ``/bin/arp.elf``, ``/bin/arp``
 - **Telemetry Source**: ``/proc/net/arp`` virtual filesystem node
 - **Privilege Level**: Ring 3 unprivileged

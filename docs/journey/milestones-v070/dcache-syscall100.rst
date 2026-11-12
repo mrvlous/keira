@@ -76,7 +76,7 @@ Century Syscall 100 (SYS_FSTAT)
 - Implemented in ``crates/syscall/src/dispatcher/handlers/fs.rs``: ``handle_fstat(arg1, arg2)``.
 - Dispatched via ``crates/syscall/src/dispatcher/router/entry.rs``: Vector 100.
 - C standard library wrapper in ``userland/libc/src/stat/query/stat.c`` invoking ``sys_fstat()``.
-- Validated via userland test harness ``userland/apps/tests/test_abi/fs/tests.c`` (Section 38).
+- Validated via userland test harness ``userland/tests/test_abi/fs/tests.c`` (Section 38).
 
 Ring 0 Supervisor Telemetry (crates/shell/src/cmds/fs/mount/dcache.rs)
 ----------------------------------------------------------------------

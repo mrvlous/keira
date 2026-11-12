@@ -49,7 +49,7 @@ System hostname management is separated from Ring 0 supervisor space:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/hostname.c``
+- **Source Path**: ``userland/sysutils/hostname.c``
 - **Binary Locations**: ``/bin/hostname.elf``, ``/bin/hostname``
 - **Privilege Level**: Ring 3 unprivileged
 - **Configuration Path**: ``/etc/hostname``

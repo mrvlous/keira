@@ -89,7 +89,7 @@ Socket and connection inspection in the Keira pure kernel strictly decouples unp
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/net/netstat.c``
+- **Source Path**: ``userland/netutils/netstat.c``
 - **Binary Locations**: ``/bin/netstat.elf``, ``/bin/netstat``
 - **Telemetry Sources**: ``/proc/net/tcp``, ``/proc/net/udp``, ``/proc/net/raw``, ``/proc/net/sockstat``, ``/proc/net/route``
 - **Privilege Level**: Ring 3 unprivileged

@@ -77,7 +77,7 @@ File permission management is handled in userspace via Syscall 97 (``SYS_CHMOD``
 5. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/chmod.c``
+- **Source Path**: ``userland/coreutils/chmod.c``
 - **Binary Locations**: ``/bin/chmod.elf``, ``/bin/chmod``
 - **System Call**: Syscall 97 (``SYS_CHMOD``)
 - **Privilege Level**: Ring 3 unprivileged (kernel enforces owner/root check)

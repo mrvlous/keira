@@ -35,7 +35,7 @@ Milestone 32 delivers five primary achievements:
    - Implemented assembly traps ``sys_symlink()`` and ``sys_readlink()`` in ``userland/libc/src/syscall/fs/file.c``.
    - Implemented POSIX-compliant wrappers ``symlink()`` and ``readlink()`` in ``userland/libc/src/unistd/fs/fs.c`` with standard ``errno`` translation.
 
-4. **Freestanding Ring 3 Core Utility ``/bin/ln`` (``userland/apps/core/``)**:
+4. **Freestanding Ring 3 Core Utility ``/bin/ln`` (``userland/coreutils/``)**:
 
    - Developed freestanding ``/bin/ln`` utility supporting standard POSIX options:
 

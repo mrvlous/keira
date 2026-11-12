@@ -131,7 +131,7 @@ A crucial prerequisite for UNIX pipelines and I/O redirection is descriptor inhe
 3. Ring 3 Userspace Shell Upgrades (/bin/sh.elf)
 ------------------------------------------------
 
-The freestanding userspace shell (``userland/apps/system/sh.c``) was upgraded with comprehensive pipeline and redirection mechanics:
+The freestanding userspace shell (``userland/sysutils/sh.c``) was upgraded with comprehensive pipeline and redirection mechanics:
 
 A. Command Chaining
 ~~~~~~~~~~~~~~~~~~~
@@ -162,14 +162,14 @@ D. Navigation Aliases
 
 Two native C utilities were implemented in ``userland/bin/`` and integrated into the build pipeline:
 
-/bin/cat.elf (userland/apps/core/cat.c)
+/bin/cat.elf (userland/coreutils/cat.c)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Reads and prints file contents sequentially to standard output.
 - If no files are specified or if ``-`` is passed, reads continuously from standard input (enabling pipelines such as ``echo text | cat``).
 - Uses raw ``open()``, ``read()``, ``write()``, ``close()`` and ``exit()``.
 
-/bin/ls.elf (userland/apps/core/ls.c)
+/bin/ls.elf (userland/coreutils/ls.c)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Formats and displays directory entries using ``opendir()`` and ``readdir()``.

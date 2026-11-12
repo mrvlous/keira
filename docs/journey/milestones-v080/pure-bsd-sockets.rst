@@ -9,7 +9,7 @@ Milestone 54: Pure Freestanding Monolithic Kernel Demarcation, Layer 7 HTTP Ring
 
 Milestone 54 purges residual distribution-level preconceptions from Keira Kernel, aligning Ring 0 strictly with the classical monolithic kernel architecture exemplified by Linux (``torvalds/linux``). Under this model, Ring 0 is restricted strictly to an austere hardware supervisor, memory manager, process scheduler, Virtual File System (VFS) and low-level protocol engine (Layers 2-4: Ethernet, ARP, IPv4, ICMP, UDP, TCP and UNIX domain sockets).
 
-All Layer 7 application protocols (specifically HTTP/1.1 client request generation, URL parsing, header inspection, user agent constants and response dechunking) are permanently purged from Ring 0. The BSD socket subsystem in ``crates/net`` is expanded so ``socket()``, ``connect()``, ``write()`` and ``read()`` handle external TCP networking natively. The userspace ``fetch`` core utility (``userland/apps/net/fetch.c``) is re-engineered as a freestanding Ring 3 client using standard POSIX sockets and ``<arpa/inet.h>``. Rootfs distribution artifacts (such as ``/src``) are purged in favor of canonical Filesystem Hierarchy Standard (FHS) paths (``/usr/src``).
+All Layer 7 application protocols (specifically HTTP/1.1 client request generation, URL parsing, header inspection, user agent constants and response dechunking) are permanently purged from Ring 0. The BSD socket subsystem in ``crates/net`` is expanded so ``socket()``, ``connect()``, ``write()`` and ``read()`` handle external TCP networking natively. The userspace ``fetch`` core utility (``userland/netutils/fetch.c``) is re-engineered as a freestanding Ring 3 client using standard POSIX sockets and ``<arpa/inet.h>``. Rootfs distribution artifacts (such as ``/src``) are purged in favor of canonical Filesystem Hierarchy Standard (FHS) paths (``/usr/src``).
 
 Through Milestone 54, Keira achieves:
 
@@ -17,7 +17,7 @@ Through Milestone 54, Keira achieves:
 2. **Syscall 17 Deprecation**: Vector 17 (``SYS_HTTP`` / ``SYS_HTTP_GET``) is deprecated and mapped directly to ``ENOSYS``, enforcing the invariant that kernels do not expose application protocol system calls.
 3. **Pure L4 BSD Socket TCP Transport**: ``crates/net/src/socket/manager/table.rs`` routes non-loopback ``AF_INET`` stream socket payloads through Layer 4 ``tcp_send_and_receive``, queuing received network payloads directly into socket descriptor buffers for transparent ``read()`` retrieval.
 4. **Freestanding ``<arpa/inet.h>`` C Standard Library**: Integration of ``<arpa/inet.h>`` with freestanding implementations of ``htons``, ``ntohs``, ``htonl``, ``ntohl``, ``inet_addr``, ``inet_aton`` and ``inet_ntoa`` in ``userland/libc/src/socket/inet/inet.c``.
-5. **Freestanding Ring 3 HTTP Fetch Utility**: Re-engineering of ``userland/apps/net/fetch.c`` as a pure userspace client constructing HTTP/1.1 requests, connecting via standard BSD stream sockets, receiving response payloads and writing to disk or standard output.
+5. **Freestanding Ring 3 HTTP Fetch Utility**: Re-engineering of ``userland/netutils/fetch.c`` as a pure userspace client constructing HTTP/1.1 requests, connecting via standard BSD stream sockets, receiving response payloads and writing to disk or standard output.
 6. **Canonical FHS Rootfs Purification**: Removal of ad-hoc ``/src`` directory at rootfs root. Sample compiler programs are placed in canonical ``/usr/src/main.c`` and ``userland/etc/init.sh`` copies from ``/usr/src/main.c`` to ``/tmp/main.c``.
 7. **VFS Decoupling in Shell Startup**: ``crates/shell/src/terminal/boot/script.rs`` utilizes ``keira_fs::vfs::read_file`` rather than direct FAT driver calls, preserving filesystem abstraction boundaries.
 
@@ -94,7 +94,7 @@ To support standard networking in C userland:
 
 - ``<arpa/inet.h>`` was introduced in ``userland/libc/include/arpa/inet.h`` with definitions for ``in_addr_t``, ``htons``, ``ntohs``, ``htonl``, ``ntohl``, ``inet_addr``, ``inet_aton`` and ``inet_ntoa``.
 - ``userland/libc/src/socket/inet/inet.c`` provides freestanding byte swapping and IPv4 address string parsing.
-- ``userland/apps/net/fetch.c`` was completely re-architected to create an ``AF_INET`` stream socket, connect to the target host and port, format an HTTP/1.1 request in userspace memory, transmit via ``write()``, receive via ``read()`` and handle output files or headers.
+- ``userland/netutils/fetch.c`` was completely re-architected to create an ``AF_INET`` stream socket, connect to the target host and port, format an HTTP/1.1 request in userspace memory, transmit via ``write()``, receive via ``read()`` and handle output files or headers.
 
 3.4 Canonical FHS Rootfs Standardization
 ----------------------------------------

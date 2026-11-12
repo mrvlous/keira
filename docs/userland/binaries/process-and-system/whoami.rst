@@ -48,7 +48,7 @@ In accordance with Keira's freestanding pure-kernel architecture:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/system/whoami.c``
+- **Source Path**: ``userland/sysutils/whoami.c``
 - **Binary Locations**: ``/bin/whoami.elf``, ``/bin/whoami``
 - **System Call Invocations**: ``SYS_GETEUID`` (Vector 90)
 - **Privilege Level**: Ring 3 unprivileged

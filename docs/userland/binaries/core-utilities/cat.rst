@@ -64,7 +64,7 @@ Streaming Standard Input
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/cat.c``
+- **Source Path**: ``userland/coreutils/cat.c``
 - **Binary Locations**: ``/bin/cat.elf``, ``/bin/cat``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<fcntl.h>``, ``<unistd.h>``)

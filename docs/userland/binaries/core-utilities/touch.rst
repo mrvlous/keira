@@ -53,7 +53,7 @@ File node creation is handled with minimal kernel overhead via ``open(path, O_WR
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/touch.c``
+- **Source Path**: ``userland/coreutils/touch.c``
 - **Binary Locations**: ``/bin/touch.elf``, ``/bin/touch``
 - **System Call**: Syscall 6 (``SYS_OPEN``) with ``O_CREAT``
 - **Privilege Level**: Ring 3 unprivileged

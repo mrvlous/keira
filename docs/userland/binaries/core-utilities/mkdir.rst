@@ -56,7 +56,7 @@ Directory node instantiation is delegated cleanly to userspace via Syscall 88 (`
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/apps/core/mkdir.c``
+- **Source Path**: ``userland/coreutils/mkdir.c``
 - **Binary Locations**: ``/bin/mkdir.elf``, ``/bin/mkdir``
 - **System Call**: Syscall 88 (``SYS_MKDIR``)
 - **Privilege Level**: Ring 3 unprivileged
