@@ -31,8 +31,7 @@ static void print_usage(void) {
     puts("");
     puts("Description:");
     puts("  Print newline, word and byte counts for each FILE and a total line if");
-    puts(
-        "  more than one FILE is specified. With no FILE or when FILE is -, read standard input.");
+    puts("  more than one FILE is specified. With no FILE or when FILE is -, read standard input.");
     puts("");
     puts("Options:");
     puts("  -l             Print the newline counts");
