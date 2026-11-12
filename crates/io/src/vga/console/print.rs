@@ -24,8 +24,6 @@ use super::pipe::{REDIRECT_BUFFER, REDIRECT_LEN, REDIRECT_TO_FILE};
 use crate::vga::color::Color;
 use crate::vga::cursor::{CURSOR_BLINK_STATE, CURSOR_X, CURSOR_Y};
 
-static mut SERIAL_MIRROR: bool = true;
-
 /// Initializes and clears the active screen display.
 pub fn init() {
     unsafe {
@@ -270,12 +268,6 @@ fn handle_ansi_byte(c: u8) -> bool {
 
 /// Emits a single ASCII character to console.
 pub fn putchar(c: u8) {
-    if unsafe { SERIAL_MIRROR } {
-        if c == b'\n' {
-            crate::serial::uart::putchar(b'\r');
-        }
-        crate::serial::uart::putchar(c);
-    }
     if handle_ansi_byte(c) {
         return;
     }
@@ -412,13 +404,7 @@ pub fn kernel_log_sink(level: u8, _tag: &str, formatted: &str) {
         _ => Color::DarkGrey,
     };
     set_color(fg, Color::Black);
-    unsafe {
-        SERIAL_MIRROR = false;
-    }
     print_str(formatted);
-    unsafe {
-        SERIAL_MIRROR = true;
-    }
     set_color(Color::LightGrey, Color::Black);
 }
 
