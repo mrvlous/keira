@@ -46,10 +46,13 @@ else
     Q           := @
 endif
 
-# Professional userland package directories
+# Modular BusyBox-style userland package domains
 LIBC_DIR        := libc
 CORE_DIR        := coreutils
+PROC_DIR        := procutils
 SYS_DIR         := sysutils
+INIT_DIR        := init
+SHELL_DIR       := shell
 NET_DIR         := netutils
 TOOLCHAIN_DIR   := toolchain
 TESTS_DIR       := tests
@@ -99,12 +102,15 @@ LIB_OBJS        := $(patsubst $(LIBC_DIR)/src/%.c,$(OBJ_DIR)/libc/%.o,$(LIB_SRCS
 
 # Canonical list of 46 userland executables organized by professional domain
 CORE_BINS       := cat chmod chown clear echo grep head ln ls mkdir rm tail touch wc
-SYSTEM_BINS     := df dmesg hostname id init kill mount pmap poweroff ps reboot sh sleep su umount uname whoami
+PROC_BINS       := kill pmap ps
+SYS_BINS        := df dmesg hostname id mount sleep su umount uname whoami
+INIT_BINS       := init poweroff reboot
+SHELL_BINS      := sh
 NET_BINS        := arp fetch ifconfig iptables netstat ping route
 TESTS_BINS      := test_pipe test_poll test_select test_threads
 MULTI_BINS      := sysinfo kcc test_abi fuzz_abi
 
-BINS            := $(sort $(CORE_BINS) $(SYSTEM_BINS) $(NET_BINS) $(TESTS_BINS) $(MULTI_BINS))
+BINS            := $(sort $(CORE_BINS) $(PROC_BINS) $(SYS_BINS) $(INIT_BINS) $(SHELL_BINS) $(NET_BINS) $(TESTS_BINS) $(MULTI_BINS))
 BIN_ELFS        := $(patsubst %,$(BIN_DIR)/%.elf,$(BINS))
 
 # Uniform logging definitions matching kernel master build system
@@ -159,7 +165,10 @@ $$(BIN_DIR)/$(2).elf: $$(CRT_OBJ) $$(OBJ_DIR)/$(1)/$(2).o $$(LIBC_A) $$(LINKER_S
 endef
 
 $(foreach b,$(CORE_BINS),$(eval $(call SINGLE_BIN_RULE,$(CORE_DIR),$(b))))
-$(foreach b,$(SYSTEM_BINS),$(eval $(call SINGLE_BIN_RULE,$(SYS_DIR),$(b))))
+$(foreach b,$(PROC_BINS),$(eval $(call SINGLE_BIN_RULE,$(PROC_DIR),$(b))))
+$(foreach b,$(SYS_BINS),$(eval $(call SINGLE_BIN_RULE,$(SYS_DIR),$(b))))
+$(foreach b,$(INIT_BINS),$(eval $(call SINGLE_BIN_RULE,$(INIT_DIR),$(b))))
+$(foreach b,$(SHELL_BINS),$(eval $(call SINGLE_BIN_RULE,$(SHELL_DIR),$(b))))
 $(foreach b,$(NET_BINS),$(eval $(call SINGLE_BIN_RULE,$(NET_DIR),$(b))))
 $(foreach b,$(TESTS_BINS),$(eval $(call SINGLE_BIN_RULE,$(TESTS_DIR),$(b))))
 
@@ -192,7 +201,9 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	$(Q)cp $(LIBC_A) $(DESTDIR)/lib/libc.a
 	$(Q)cp -r $(LIBC_DIR)/include/* $(DESTDIR)/include/
 	$(Q)cp $(TOOLCHAIN_DIR)/kcc/include/common.h $(DESTDIR)/include/common.h
-	$(Q)cp $(ETC_DIR)/init.sh $(DESTDIR)/etc/init.sh
+	$(Q)for f in $$(find $(ETC_DIR) -maxdepth 1 -type f); do \
+	    cp $$f $(DESTDIR)/etc/$$(basename $$f); \
+	done
 	$(Q)for b in $(BINS); do \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b.elf; \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b; \

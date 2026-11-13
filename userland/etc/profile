@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
+#
+# /etc/profile: System-wide environment configuration for Keira POSIX shell
+#
+export PATH="/bin:/usr/bin"
+export HOME="/root"
+export TERM="xterm-256color"
+export USER="root"
+export LOGNAME="root"
+export PS1="\u@\h:\w\$ "
+umask 022
+
