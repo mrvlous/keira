@@ -70,8 +70,8 @@ The ``userland/`` tree is partitioned into specialized domains to maximize maint
      - Static Library
      - Freestanding ISO C and POSIX runtime routines, CRT0 startup stubs (``arch/``) and 44 standard headers (``include/``).
    * - ``etc/``
-     - Source Scripts
-     - Canonical bootstrap scripts: ``init.sh``, ``profile`` and ``inittab``.
+     - Bootstrap Script
+     - Canonical system bootstrap script: ``init.sh``.
 
 3. Dynamic Configuration Auto-Generation
 ========================================

@@ -17,7 +17,7 @@
 # the native compiler toolchain (kcc) and categorized system binaries for Keira Kernel:
 #   1. CRT0 (Assembly) : Compiles Ring 3 architecture startup entry stubs.
 #   2. LIBC (C Lib)    : Archives freestanding standard library into libc.a.
-#   3. Executables     : Compiles and links 46 userland binaries across core, sys, net, toolchain and test suites.
+#   3. Executables     : Compiles and links 46 userland binaries across core, proc, sys, init, shell, net, toolchain and test suites.
 #   4. Install         : Exports runtime binaries and headers to destination root.
 
 SHELL           := /bin/bash
@@ -201,9 +201,7 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	$(Q)cp $(LIBC_A) $(DESTDIR)/lib/libc.a
 	$(Q)cp -r $(LIBC_DIR)/include/* $(DESTDIR)/include/
 	$(Q)cp $(TOOLCHAIN_DIR)/kcc/include/common.h $(DESTDIR)/include/common.h
-	$(Q)for f in $$(find $(ETC_DIR) -maxdepth 1 -type f); do \
-	    cp $$f $(DESTDIR)/etc/$$(basename $$f); \
-	done
+	$(Q)cp $(ETC_DIR)/init.sh $(DESTDIR)/etc/init.sh
 	$(Q)for b in $(BINS); do \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b.elf; \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b; \

@@ -13,11 +13,24 @@
 # GNU General Public License for more details.
 
 echo "[INIT] Initializing canonical userland system environment..."
+
+# Configure network node hostname
 hostname keira
+
+# Mount ephemeral in-memory scratch volume on /tmp and apply sticky permissions
 mount -t tmpfs none /tmp
 chmod 1777 /tmp
+
+# Stage default C compiler demonstration source
 cat /usr/src/main.c > /tmp/main.c
+
+# Create standard runtime tracking directories
 mkdir -p /var/run /var/log
+
+# Initialize loopback network interface
 ifconfig lo
+
+# Display system identification banner
 uname -a
+
 echo "[INIT] Userland system initialization sequence completed."
