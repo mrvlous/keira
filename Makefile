@@ -452,6 +452,9 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)mkdir -p $(FS_ROOT)/var/log
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=0\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
+	$(Q)printf "NAME=\"Keira\"\nID=keira\nVERSION=\"$(VERSION)\"\nARCH=\"$(ARCH)\"\n" > $(FS_ROOT)/etc/os-release
+	$(Q)printf "Keira Kernel $(VERSION) ($(ARCH))\n" > $(FS_ROOT)/etc/issue
+	$(Q)printf "127.0.0.1\tlocalhost\n::1\t\tlocalhost\n10.0.2.15\tkeira\n" > $(FS_ROOT)/etc/hosts
 	$(Q)touch $(FS_ROOT)/tmp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Minimal root filesystem ready ($(ARCH))"
@@ -473,6 +476,9 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)$(MAKE) -C $(USER_DIR) install DESTDIR=$(CURDIR)/$(FS_ROOT) ARCH=$(ARCH) BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
 	$(Q)printf "KERNEL_NAME=keira\nKERNEL_VERSION=$(VERSION)\nKERNEL_ARCH=$(ARCH)\nUSERLAND=1\n" > $(FS_ROOT)/etc/kernel.cfg
 	$(Q)printf "keira\n" > $(FS_ROOT)/etc/hostname
+	$(Q)printf "NAME=\"Keira\"\nID=keira\nVERSION=\"$(VERSION)\"\nARCH=\"$(ARCH)\"\n" > $(FS_ROOT)/etc/os-release
+	$(Q)printf "Keira Kernel $(VERSION) ($(ARCH))\n" > $(FS_ROOT)/etc/issue
+	$(Q)printf "127.0.0.1\tlocalhost\n::1\t\tlocalhost\n10.0.2.15\tkeira\n" > $(FS_ROOT)/etc/hosts
 	$(Q)printf '/* Keira Comprehensive KCC Sample Program */\n\nint compute(int x, int y) {\n    int res = (x * y) + (x %% y);\n    return res ^ (x >> 1);\n}\n\nvoid main(void) {\n    printf("Keira KCC Compiler Execution\\n");\n    int i = 0, total = 0;\n    while (i < 10) {\n        i++;\n        if (i == 5) continue;\n        if (i > 8) break;\n        total += compute(i, 3);\n    }\n    printf("KCC compilation & execution complete!\\n");\n}\n' > $(FS_ROOT)/usr/src/main.c
 	$(Q)touch $(FS_ROOT)/tmp/.keep
 	$(Q)touch $(FS_ROOT_STAMP)
