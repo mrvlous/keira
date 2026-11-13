@@ -174,7 +174,7 @@ Users can invoke ``sh`` or ``sh.elf`` directly from the supervisor prompt withou
 5. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/sysutils/sh.c``
+- **Source Path**: ``userland/shell/sh.c``
 - **Binary Locations**: ``/bin/sh.elf``, ``/bin/sh``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``, ``<sys/wait.h>``)

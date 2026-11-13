@@ -46,7 +46,7 @@ System restart operations adhere to standard POSIX conventions:
 4. Technical Specifications
 ===========================
 
-- **Source Path**: ``userland/sysutils/reboot.c``
+- **Source Path**: ``userland/init/reboot.c``
 - **Binary Locations**: ``/bin/reboot.elf``, ``/bin/reboot``
 - **System Call**: Vector 109 (``SYS_REBOOT``)
 - **C Header**: ``<sys/reboot.h>``

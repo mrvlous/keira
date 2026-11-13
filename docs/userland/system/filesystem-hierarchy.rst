@@ -57,7 +57,7 @@ Milestone 16 refactors the entire VFS router, pseudo-filesystems (ProcFS and Dev
      - Hardware topology and kernel subsystem state nodes
    * - ``/etc``
      - FAT16 / Ext4
-     - Host configuration files (``/etc/hostname``, ``/etc/kernel.cfg``)
+     - System configuration and bootstrap files (``/etc/hostname``, ``/etc/kernel.cfg``, ``/etc/os-release``, ``/etc/issue``, ``/etc/hosts``, ``/etc/init.sh``, ``/etc/profile``, ``/etc/inittab``)
    * - ``/include``
      - FAT16 / Ext4
      - Freestanding C standard library headers (``stdio.h``, ``stdlib.h``, ``string.h``)
