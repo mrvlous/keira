@@ -46,7 +46,7 @@ else
     Q           := @
 endif
 
-# Modular BusyBox-style userland package domains
+# Ring 3 userspace modular package domains
 LIBC_DIR        := libc
 CORE_DIR        := coreutils
 PROC_DIR        := procutils

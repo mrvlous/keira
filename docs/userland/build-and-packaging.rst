@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-Keira Userland Architecture, Build System & Packaging
-=====================================================
+Keira Ring 3 Runtime Architecture, Build System & Packaging
+===========================================================
 
-The ``userland`` domain (KeiraBox) provides a freestanding, modular Ring 3 userspace environment hosted directly within the Keira monolithic kernel repository. Inspired by the applet design of BusyBox, KeiraBox delivers an ultra-compact, dependency-free collection of 46 system utilities, a freestanding C standard runtime library (``libc.a``), a native C compiler toolchain (``kcc``) and comprehensive ABI test suites.
+The ``userland`` domain provides the freestanding Ring 3 userspace runtime environment hosted directly within the Keira monolithic kernel repository. The Ring 3 runtime delivers an ultra-compact, dependency-free collection of 46 system utilities, a freestanding C standard runtime library (``libc.a``), a native C compiler toolchain (``kcc``) and comprehensive ABI test suites.
 
 1. Architectural Principles & Kernel Demarcation
 ================================================
@@ -12,7 +12,7 @@ The ``userland`` domain (KeiraBox) provides a freestanding, modular Ring 3 users
 Keira enforces a strict separation between Ring 0 supervisor execution and Ring 3 userspace runtime:
 
 - **Freestanding Kernel Independence (USERLAND=0)**: The kernel compiles and boots completely self-contained in pure Ring 0 supervisor mode. It features an in-kernel rescue shell and a minimal root filesystem without any userland binaries.
-- **Integrated Userland Suite (USERLAND=1)**: When enabled, the build system compiles the full KeiraBox suite and installs utilities into ``/bin``, headers into ``/include``, libraries into ``/lib`` and system scripts into ``/etc``.
+- **Integrated Userland Suite (USERLAND=1)**: When enabled, the build system compiles the full Ring 3 userspace runtime suite and installs utilities into ``/bin``, headers into ``/include``, libraries into ``/lib`` and system scripts into ``/etc``.
 - **Zero Bloat Model**: Keira operates strictly with 32-bit numerical credentials in Ring 0 (UID 0 for superuser, UID 1000 for regular user contexts). The system omits traditional distribution bloat such as ``/etc/passwd``, ``/etc/shadow``, ``/etc/group`` and PAM modules.
 
 .. code-block:: text
