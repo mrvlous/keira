@@ -413,13 +413,20 @@ pub mod state {
         main_cwd[0] = b'/';
         let boot_pml4 = vmm::active_pml4();
         let main_stack = pmm::alloc_contiguous_frames(TASK_STACK_PAGES).unwrap_or(0);
+        let mut main_fds = [FileDescriptor::new(); MAX_FDS];
+        for (fd, item) in main_fds.iter_mut().enumerate().take(3) {
+            item.is_open = true;
+            item.write_mode = fd != 0;
+            item.path[..8].copy_from_slice(b"/dev/tty");
+            item.path_len = 8;
+        }
         let main_task = Task {
             id: 0,
             name: "kernel_shell",
             rsp: 0,
             stack_addr: main_stack,
             state: TaskState::Running,
-            fds: [FileDescriptor::new(); MAX_FDS],
+            fds: main_fds,
             program_break: 0,
             program_break_start: 0,
             cwd: main_cwd,

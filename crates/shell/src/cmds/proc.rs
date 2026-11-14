@@ -348,6 +348,14 @@ pub mod task {
                     task.program_break = USER_DEFAULT_BRK;
                     task.program_break_start = USER_DEFAULT_BRK;
                     task.is_user = true;
+                    for (fd, item) in task.fds.iter_mut().enumerate().take(3) {
+                        if !item.is_open {
+                            item.is_open = true;
+                            item.write_mode = fd != 0;
+                            item.path[..8].copy_from_slice(b"/dev/tty");
+                            item.path_len = 8;
+                        }
+                    }
                 }
 
                 let entry_point = load_elf(filename)?;
@@ -385,6 +393,14 @@ pub mod task {
                 if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
                     task.pml4_phys = child_pml4;
                     task.state = keira_task::TaskState::Running;
+                    for (fd, item) in task.fds.iter_mut().enumerate().take(3) {
+                        if !item.is_open {
+                            item.is_open = true;
+                            item.write_mode = fd != 0;
+                            item.path[..8].copy_from_slice(b"/dev/tty");
+                            item.path_len = 8;
+                        }
+                    }
                 }
 
                 vmm::switch_address_space(child_pml4);
@@ -396,7 +412,7 @@ pub mod task {
                         task.saved_sigcontext = None;
                         task.signal_mask = 0;
                         task.pending_signals = 0;
-                        for fd in 0..keira_task::MAX_FDS {
+                        for fd in 3..keira_task::MAX_FDS {
                             if task.fds[fd].is_open {
                                 if task.fds[fd].write_mode {
                                     if let Ok(path_str) = core::str::from_utf8(
@@ -407,6 +423,12 @@ pub mod task {
                                 }
                                 task.fds[fd].is_open = false;
                             }
+                        }
+                        for (fd, item) in task.fds.iter_mut().enumerate().take(3) {
+                            item.is_open = true;
+                            item.write_mode = fd != 0;
+                            item.path[..8].copy_from_slice(b"/dev/tty");
+                            item.path_len = 8;
                         }
                     }
                     vmm::switch_address_space(parent_pml4);
