@@ -271,8 +271,8 @@ static int execute_single_command(int argc, char **argv) {
         return 0;
     }
 
-    int redir_stdout = 0;
-    int redir_stdin = 0;
+    int saved_stdout = -1;
+    int saved_stdin = -1;
 
     if (out_file) {
         int flags = O_WRONLY | O_CREAT | (out_append ? O_APPEND : O_TRUNC);
@@ -281,23 +281,24 @@ static int execute_single_command(int argc, char **argv) {
             printf("sh: cannot create %s\n", out_file);
             return 1;
         }
+        saved_stdout = dup(STDOUT_FILENO);
         dup2(fd_out, STDOUT_FILENO);
         close(fd_out);
-        redir_stdout = 1;
     }
 
     if (in_file) {
         int fd_in = open(in_file, O_RDONLY, 0);
         if (fd_in < 0) {
             printf("sh: %s: No such file or directory\n", in_file);
-            if (redir_stdout) {
-                close(STDOUT_FILENO);
+            if (saved_stdout >= 0) {
+                dup2(saved_stdout, STDOUT_FILENO);
+                close(saved_stdout);
             }
             return 1;
         }
+        saved_stdin = dup(STDIN_FILENO);
         dup2(fd_in, STDIN_FILENO);
         close(fd_in);
-        redir_stdin = 1;
     }
 
     int ret_status = 0;
@@ -344,11 +345,13 @@ static int execute_single_command(int argc, char **argv) {
     fflush(stdout);
     fflush(stderr);
 
-    if (redir_stdout) {
-        close(STDOUT_FILENO);
+    if (saved_stdout >= 0) {
+        dup2(saved_stdout, STDOUT_FILENO);
+        close(saved_stdout);
     }
-    if (redir_stdin) {
-        close(STDIN_FILENO);
+    if (saved_stdin >= 0) {
+        dup2(saved_stdin, STDIN_FILENO);
+        close(saved_stdin);
     }
 
     return ret_status;
