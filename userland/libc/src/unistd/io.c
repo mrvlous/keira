@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <syscall.h>
 #include <unistd.h>
 
@@ -101,8 +102,18 @@ int fsync(int fd) {
 }
 
 int isatty(int fd) {
-    if (fd >= 0 && fd <= 2)
+    if (fd < 0) {
+        errno = EBADF;
+        return 0;
+    }
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        return 0;
+    }
+    if (S_ISCHR(st.st_mode)) {
         return 1;
+    }
+    errno = ENOTTY;
     return 0;
 }
 
