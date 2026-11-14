@@ -15,6 +15,7 @@
 //! x86_64 CPU instructions, registers, timers, APIC, power and virtualization for Keira Kernel.
 
 #![no_std]
+#![allow(static_mut_refs)]
 
 pub mod cpu;
 pub mod debug;
