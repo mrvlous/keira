@@ -21,39 +21,39 @@ pub mod buffer {
         MOUSE_CURSOR_OUTLINE, MOUSE_VISIBLE, MOUSE_X, MOUSE_Y, SAVED_MOUSE_PIXELS,
     };
     use crate::vga::font::FONT_DATA;
-    
+
     pub static mut TEXT_CURSOR_X: u16 = 0;
-    
+
     pub static mut TEXT_CURSOR_Y: u16 = 0;
-    
+
     pub static mut TEXT_COLOR: u8 = 0x0F;
-    
+
     pub static mut FRAMEBUFFER_ADDR: u64 = 0;
-    
+
     pub static mut FRAMEBUFFER_PITCH: u32 = 0;
-    
+
     pub static mut FRAMEBUFFER_WIDTH: u32 = 0;
-    
+
     pub static mut FRAMEBUFFER_HEIGHT: u32 = 0;
-    
+
     pub static mut FRAMEBUFFER_BPP: u8 = 0;
-    
+
     pub static mut FRAMEBUFFER_MAPPED: bool = false;
-    
+
     pub static mut ACTIVE_FG_COLOR: u32 = 0xFFFFFF;
-    
+
     pub static mut ACTIVE_BG_COLOR: u32 = 0x000000;
-    
+
     pub static mut VGA_BUSY: bool = false;
-    
+
     static mut TIMER_TICKS: u64 = 0;
-    
+
     #[inline(always)]
     pub fn fb_active() -> bool {
         // Reading static muts safely via unsafe block with clear bounds.
         unsafe { FRAMEBUFFER_ADDR != 0 && FRAMEBUFFER_MAPPED }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_init() {
         unsafe {
@@ -70,14 +70,14 @@ pub mod buffer {
             vga_set_hardware_cursor(0, 0);
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_set_color(fg: u8, bg: u8) {
         unsafe {
             TEXT_COLOR = ((bg & 0x0F) << 4) | (fg & 0x0F);
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_set_cursor_pos(row: u16, col: u16) {
         unsafe {
@@ -86,17 +86,17 @@ pub mod buffer {
             vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_get_cursor_col() -> u16 {
         unsafe { TEXT_CURSOR_X }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_get_cursor_row() -> u16 {
         unsafe { TEXT_CURSOR_Y }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_putchar(c: core::ffi::c_char) {
         let byte = c as u8;
@@ -130,7 +130,7 @@ pub mod buffer {
                     TEXT_CURSOR_Y += 1;
                 }
             }
-    
+
             while TEXT_CURSOR_Y >= 25 {
                 #[cfg(target_os = "none")]
                 {
@@ -145,7 +145,7 @@ pub mod buffer {
             vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
         }
     }
-    
+
     #[no_mangle]
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub extern "C" fn vga_print_n(str: *const core::ffi::c_char, len: u64) {
@@ -155,12 +155,12 @@ pub mod buffer {
             }
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_backspace() {
         vga_putchar(0x08 as core::ffi::c_char);
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_clear_line_from(col: u16) {
         unsafe {
@@ -176,21 +176,21 @@ pub mod buffer {
             vga_set_hardware_cursor(TEXT_CURSOR_X, TEXT_CURSOR_Y);
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_draw_mouse_text(_x: u16, _y: u16) {}
-    
+
     #[no_mangle]
     pub extern "C" fn vga_clear_mouse_text(_x: u16, _y: u16) {}
-    
+
     #[cfg(not(test))]
     extern "C" {
         fn shell_handle_keypress(c: u8);
     }
-    
+
     #[cfg(test)]
     unsafe fn shell_handle_keypress(_c: u8) {}
-    
+
     pub fn handle_timer_tick() {
         while crate::serial::has_byte() {
             let mut b = crate::serial::read_byte();
@@ -205,7 +205,7 @@ pub mod buffer {
                 shell_handle_keypress(b);
             }
         }
-    
+
         unsafe {
             if !fb_active() {
                 return;
@@ -219,14 +219,14 @@ pub mod buffer {
             }
         }
     }
-    
+
     pub unsafe fn draw_mouse_graphics(px: u32, py: u32) {
         if !fb_active() {
             return;
         }
         let fb = FRAMEBUFFER_ADDR as *mut u32;
         let pitch_pixels = FRAMEBUFFER_PITCH / 4;
-    
+
         for y in 0..16 {
             let target_y = py + y;
             if target_y >= FRAMEBUFFER_HEIGHT {
@@ -239,11 +239,11 @@ pub mod buffer {
                 }
                 let pixel_idx = (target_y * pitch_pixels + target_x) as isize;
                 SAVED_MOUSE_PIXELS[(y * 12 + x) as usize] = *fb.offset(pixel_idx);
-    
+
                 let bit_pos = 15 - x;
                 let is_body = (MOUSE_CURSOR_BODY[y as usize] & (1 << bit_pos)) != 0;
                 let is_outline = (MOUSE_CURSOR_OUTLINE[y as usize] & (1 << bit_pos)) != 0;
-    
+
                 if is_body {
                     *fb.offset(pixel_idx) = 0xFFFFFF;
                 } else if is_outline {
@@ -252,14 +252,14 @@ pub mod buffer {
             }
         }
     }
-    
+
     pub unsafe fn restore_mouse_graphics(px: u32, py: u32) {
         if !fb_active() {
             return;
         }
         let fb = FRAMEBUFFER_ADDR as *mut u32;
         let pitch_pixels = FRAMEBUFFER_PITCH / 4;
-    
+
         for y in 0..16 {
             let target_y = py + y;
             if target_y >= FRAMEBUFFER_HEIGHT {
@@ -275,19 +275,19 @@ pub mod buffer {
             }
         }
     }
-    
+
     pub unsafe fn hide_mouse_graphics() {
         if MOUSE_VISIBLE {
             restore_mouse_graphics(MOUSE_X, MOUSE_Y);
         }
     }
-    
+
     pub unsafe fn show_mouse_graphics() {
         if MOUSE_VISIBLE {
             draw_mouse_graphics(MOUSE_X, MOUSE_Y);
         }
     }
-    
+
     pub unsafe fn draw_char(c: u8, char_col: u32, char_row: u32, fg: u32, bg: u32) {
         if !fb_active() {
             return;
@@ -298,17 +298,17 @@ pub mod buffer {
             return;
         }
         let glyph = &FONT_DATA[offset..offset + 16];
-    
+
         let fb = FRAMEBUFFER_ADDR as *mut u32;
         let pitch_pixels = FRAMEBUFFER_PITCH / 4;
-    
+
         let start_x = char_col * 8;
         let start_y = char_row * 16;
-    
+
         if start_x + 8 > FRAMEBUFFER_WIDTH || start_y + 16 > FRAMEBUFFER_HEIGHT {
             return;
         }
-    
+
         for (y, &row_byte) in glyph.iter().enumerate() {
             let py = start_y + y as u32;
             for x in 0..8 {
@@ -319,7 +319,7 @@ pub mod buffer {
             }
         }
     }
-    
+
     pub unsafe fn draw_cursor(visible: bool) {
         if !fb_active() {
             return;
@@ -329,17 +329,17 @@ pub mod buffer {
         } else {
             ACTIVE_BG_COLOR
         };
-    
+
         let start_x = CURSOR_X * 8;
         let start_y = CURSOR_Y * 16;
-    
+
         if start_x + 8 > FRAMEBUFFER_WIDTH || start_y + 16 > FRAMEBUFFER_HEIGHT {
             return;
         }
-    
+
         let fb = FRAMEBUFFER_ADDR as *mut u32;
         let pitch_pixels = FRAMEBUFFER_PITCH / 4;
-    
+
         for y in 14..16 {
             let py = start_y + y;
             for x in 0..8 {
@@ -348,30 +348,30 @@ pub mod buffer {
             }
         }
     }
-    
+
     pub unsafe fn scroll_up() {
         if !fb_active() {
             return;
         }
         let pitch_pixels = FRAMEBUFFER_PITCH / 4;
         let fb = FRAMEBUFFER_ADDR as *mut u32;
-    
+
         let src_offset = 16 * pitch_pixels;
         let total_pixels_to_move = (FRAMEBUFFER_HEIGHT - 16) * pitch_pixels;
-    
+
         core::ptr::copy(
             fb.offset(src_offset as isize),
             fb,
             total_pixels_to_move as usize,
         );
-    
+
         let bottom_row_start = (FRAMEBUFFER_HEIGHT - 16) * pitch_pixels;
         let bottom_pixels = (16 * pitch_pixels) as usize;
         let bottom_slice =
             core::slice::from_raw_parts_mut(fb.offset(bottom_row_start as isize), bottom_pixels);
         bottom_slice.fill(ACTIVE_BG_COLOR);
     }
-    
+
     pub fn draw_cell(row: u16, col: u16, ch: u8, fg: Color, bg: Color) {
         unsafe {
             if fb_active() {
@@ -391,7 +391,7 @@ pub mod buffer {
             }
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_draw_mouse(x: u16, y: u16) {
         unsafe {
@@ -410,7 +410,7 @@ pub mod buffer {
             VGA_BUSY = false;
         }
     }
-    
+
     #[no_mangle]
     pub extern "C" fn vga_clear_mouse(x: u16, y: u16) {
         unsafe {
@@ -432,17 +432,17 @@ pub mod buffer {
 
 pub mod pipe {
     pub static mut REDIRECT_TO_FILE: bool = false;
-    
+
     pub static mut REDIRECT_BUFFER: [u8; 4096] = [0; 4096];
-    
+
     pub static mut REDIRECT_LEN: usize = 0;
-    
+
     pub static mut PIPE_BUFFER: [u8; 4096] = [0; 4096];
-    
+
     pub static mut PIPE_LEN: usize = 0;
-    
+
     pub static mut PIPE_ACTIVE: bool = false;
-    
+
     pub static mut PIPE_READ_INDEX: usize = 0;
 }
 
@@ -456,7 +456,7 @@ pub mod print {
     use super::pipe::{REDIRECT_BUFFER, REDIRECT_LEN, REDIRECT_TO_FILE};
     use crate::vga::color::Color;
     use crate::vga::cursor::{CURSOR_BLINK_STATE, CURSOR_X, CURSOR_Y};
-    
+
     pub fn init() {
         unsafe {
             VGA_BUSY = true;
@@ -466,7 +466,7 @@ pub mod print {
                 draw_cursor(false);
                 CURSOR_X = 0;
                 CURSOR_Y = 0;
-    
+
                 let fb = FRAMEBUFFER_ADDR as *mut u32;
                 let pitch_pixels = FRAMEBUFFER_PITCH / 4;
                 let total_pixels = FRAMEBUFFER_HEIGHT * pitch_pixels;
@@ -481,7 +481,7 @@ pub mod print {
             VGA_BUSY = false;
         }
     }
-    
+
     pub fn set_cursor_pos(row: u16, col: u16) {
         unsafe {
             VGA_BUSY = true;
@@ -491,13 +491,13 @@ pub mod print {
                 draw_cursor(false);
                 CURSOR_Y = row as u32;
                 CURSOR_X = col as u32;
-    
+
                 let max_rows = FRAMEBUFFER_HEIGHT / 16;
                 while CURSOR_Y >= max_rows {
                     scroll_up();
                     CURSOR_Y -= 1;
                 }
-    
+
                 draw_cursor(true);
                 show_mouse_graphics();
             } else {
@@ -506,7 +506,7 @@ pub mod print {
             VGA_BUSY = false;
         }
     }
-    
+
     pub fn get_cursor_col() -> u16 {
         unsafe {
             if fb_active() {
@@ -516,7 +516,7 @@ pub mod print {
             }
         }
     }
-    
+
     pub fn get_cursor_row() -> u16 {
         unsafe {
             if fb_active() {
@@ -526,7 +526,7 @@ pub mod print {
             }
         }
     }
-    
+
     pub fn get_text_cols() -> u16 {
         unsafe {
             if fb_active() {
@@ -536,7 +536,7 @@ pub mod print {
             }
         }
     }
-    
+
     pub fn get_text_rows() -> u16 {
         unsafe {
             if fb_active() {
@@ -546,7 +546,7 @@ pub mod print {
             }
         }
     }
-    
+
     pub fn backspace() {
         unsafe {
             VGA_BUSY = true;
@@ -566,7 +566,7 @@ pub mod print {
             VGA_BUSY = false;
         }
     }
-    
+
     pub fn clear_line_from(col: u16) {
         unsafe {
             VGA_BUSY = true;
@@ -586,13 +586,13 @@ pub mod print {
             VGA_BUSY = false;
         }
     }
-    
+
     static mut ANSI_STATE: u8 = 0;
     static mut ANSI_PARAM_0: u16 = 0;
     static mut ANSI_PARAM_1: u16 = 0;
     static mut ANSI_HAS_PARAM: bool = false;
     static mut ANSI_PARAM_IDX: u8 = 0;
-    
+
     fn handle_ansi_byte(c: u8) -> bool {
         unsafe {
             match ANSI_STATE {
@@ -690,7 +690,7 @@ pub mod print {
             }
         }
     }
-    
+
     pub fn putchar(c: u8) {
         if handle_ansi_byte(c) {
             return;
@@ -706,7 +706,7 @@ pub mod print {
             } else if fb_active() {
                 hide_mouse_graphics();
                 draw_cursor(false);
-    
+
                 if c == b'\n' {
                     CURSOR_X = 0;
                     CURSOR_Y += 1;
@@ -726,13 +726,13 @@ pub mod print {
                         CURSOR_Y += 1;
                     }
                 }
-    
+
                 let max_rows = FRAMEBUFFER_HEIGHT / 16;
                 while CURSOR_Y >= max_rows {
                     scroll_up();
                     CURSOR_Y -= 1;
                 }
-    
+
                 draw_cursor(true);
                 show_mouse_graphics();
             } else {
@@ -741,17 +741,17 @@ pub mod print {
             VGA_BUSY = false;
         }
     }
-    
+
     pub fn print(s: &[u8]) {
         for &c in s {
             putchar(c);
         }
     }
-    
+
     pub fn print_str(s: &str) {
         print(s.as_bytes());
     }
-    
+
     pub fn print_u64(mut n: u64) {
         if n == 0 {
             putchar(b'0');
@@ -769,7 +769,7 @@ pub mod print {
         }
         print(&buf[(i + 1)..=19]);
     }
-    
+
     pub fn print_hex(mut n: u64) {
         if n == 0 {
             print_str("0x0");
@@ -789,7 +789,7 @@ pub mod print {
         }
         print(&buf[(i + 1)..=15]);
     }
-    
+
     pub fn set_color(fg: Color, bg: Color) {
         unsafe {
             if fb_active() {
@@ -800,7 +800,7 @@ pub mod print {
             }
         }
     }
-    
+
     pub fn kernel_log_sink(level: u8, _tag: &str, formatted: &str) {
         // 1. Output to COM1 Serial (converting \n to \r\n for terminal formatting)
         for &b in formatted.as_bytes() {
@@ -809,7 +809,7 @@ pub mod print {
             }
             crate::serial::uart::putchar(b);
         }
-    
+
         // 2. Render to active VGA display
         let fg = match level {
             keira_core::KERN_EMERG
@@ -825,7 +825,7 @@ pub mod print {
         print_str(formatted);
         set_color(Color::LightGrey, Color::Black);
     }
-    
+
     fn kernel_uptime_us() -> u64 {
         let nanos = keira_arch::timers::hpet_get_elapsed_nanos();
         if nanos > 0 {
@@ -834,12 +834,12 @@ pub mod print {
             keira_arch::timers::uptime_ms() * 1_000
         }
     }
-    
+
     pub fn init_logging_sink() {
         keira_core::set_log_sink(kernel_log_sink);
         keira_core::set_uptime_provider(kernel_uptime_us);
     }
-    
+
     pub fn print_boot_log(msg: &str, status: u8) {
         let level = match status {
             0 => keira_core::KERN_INFO,
@@ -858,7 +858,7 @@ pub use self::print::*;
 mod tests {
     use crate::vga::color::Color;
     use crate::vga::font::get_glyph;
-    
+
     #[test]
     fn test_color_to_rgb() {
         assert_eq!(Color::Black.to_rgb(), 0x000000);
@@ -867,53 +867,53 @@ mod tests {
         assert_eq!(Color::LightGreen.to_rgb(), 0x55FF55);
         assert_eq!(Color::Yellow.to_rgb(), 0xFFFF55);
     }
-    
+
     #[test]
     fn test_glyph_lookup() {
         let glyph_a = get_glyph(b'A');
         assert_eq!(glyph_a.len(), 16);
-    
+
         let glyph_null = get_glyph(0);
         assert_eq!(glyph_null.len(), 16);
-    
+
         // Verify non-empty glyph for printable character
         let has_set_bits = glyph_a.iter().any(|&row| row != 0);
         assert!(has_set_bits);
     }
-    
+
     #[test]
     fn test_text_mode_cursor_bounds() {
         super::print::set_cursor_pos(10, 20);
         assert_eq!(super::print::get_cursor_row(), 10);
         assert_eq!(super::print::get_cursor_col(), 20);
-    
+
         super::print::set_cursor_pos(0, 0);
         assert_eq!(super::print::get_cursor_row(), 0);
         assert_eq!(super::print::get_cursor_col(), 0);
     }
-    
+
     #[test]
     fn test_ansi_clear_and_cursor_home() {
         super::print::set_cursor_pos(12, 34);
         assert_eq!(super::print::get_cursor_row(), 12);
         assert_eq!(super::print::get_cursor_col(), 34);
-    
+
         // Emit ANSI clear screen and cursor home sequences
         super::print::print_str("\x1b[2J\x1b[H");
-    
+
         assert_eq!(super::print::get_cursor_row(), 0);
         assert_eq!(super::print::get_cursor_col(), 0);
-    
+
         // Test CUP with specific coordinates
         super::print::print_str("\x1b[5;10H");
         assert_eq!(super::print::get_cursor_row(), 4);
         assert_eq!(super::print::get_cursor_col(), 9);
-    
+
         super::print::print_str("\x1b[2J\x1b[H");
         assert_eq!(super::print::get_cursor_row(), 0);
         assert_eq!(super::print::get_cursor_col(), 0);
     }
-    
+
     #[test]
     fn test_ansi_sgr_color_handling() {
         // Emit ANSI color and reset sequences

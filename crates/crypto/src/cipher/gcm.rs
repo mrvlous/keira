@@ -183,14 +183,14 @@ pub fn aes128_gcm_decrypt(
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_aes128_gcm_roundtrip() {
         let key = [0x55u8; 16];
         let iv = [0xAAu8; 12];
         let plaintext = b"Keira Kernel Security Subsystem Payload 2026";
         let aad = b"AUTH_HEADER_METADATA";
-    
+
         let mut ciphertext = [0u8; 64];
         let tag = aes128_gcm_encrypt(
             &key,
@@ -199,7 +199,7 @@ mod tests {
             aad,
             &mut ciphertext[..plaintext.len()],
         );
-    
+
         let mut decrypted = [0u8; 64];
         let ok = aes128_gcm_decrypt(
             &key,
@@ -209,10 +209,10 @@ mod tests {
             &tag,
             &mut decrypted[..plaintext.len()],
         );
-    
+
         assert!(ok, "Authentication tag verification must succeed");
         assert_eq!(&decrypted[..plaintext.len()], plaintext);
-    
+
         // Verify tamper detection on ciphertext
         ciphertext[0] ^= 0x01;
         let corrupted = aes128_gcm_decrypt(

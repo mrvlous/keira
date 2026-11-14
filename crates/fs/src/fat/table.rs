@@ -26,27 +26,27 @@ pub mod cache {
         /// Monotonic timestamp of last read/write access.
         pub last_used: u64,
     }
-    
+
     pub static mut SECTOR_CACHE: [CacheEntry; 16] = [CacheEntry {
         sector: 0,
         data: [0; 512],
         valid: false,
         last_used: 0,
     }; 16];
-    
+
     pub static mut CACHE_CLOCK: u64 = 0;
-    
+
     pub static mut CACHE_HITS: u64 = 0;
     pub static mut CACHE_MISSES: u64 = 0;
     pub static mut CACHE_EVICTIONS: u64 = 0;
-    
+
     pub fn get_sector_cache_stats() -> (u64, u64, u64, usize) {
         unsafe {
             let active = SECTOR_CACHE.iter().filter(|e| e.valid).count();
             (CACHE_HITS, CACHE_MISSES, CACHE_EVICTIONS, active)
         }
     }
-    
+
     pub unsafe fn clear_cache() {
         for entry in SECTOR_CACHE.iter_mut() {
             entry.valid = false;
@@ -59,7 +59,7 @@ pub mod io {
         CacheEntry, CACHE_CLOCK, CACHE_EVICTIONS, CACHE_HITS, CACHE_MISSES, SECTOR_CACHE,
     };
     use keira_io::storage::block::get_mounted_device;
-    
+
     pub unsafe fn read_sector(sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'static str> {
         for entry in SECTOR_CACHE.iter_mut() {
             if entry.valid && entry.sector == sector {
@@ -70,7 +70,7 @@ pub mod io {
                 return Ok(());
             }
         }
-    
+
         CACHE_MISSES += 1;
         let mut dev_data = [0u8; 512];
         if let Some(dev) = get_mounted_device() {
@@ -78,10 +78,10 @@ pub mod io {
         } else {
             return Err("FAT16 Error: No block device mounted");
         }
-    
+
         let mut best_index = 0;
         let mut min_lru = u64::MAX;
-    
+
         for (i, entry) in SECTOR_CACHE.iter().enumerate() {
             if !entry.valid {
                 best_index = i;
@@ -92,11 +92,11 @@ pub mod io {
                 best_index = i;
             }
         }
-    
+
         if SECTOR_CACHE[best_index].valid {
             CACHE_EVICTIONS += 1;
         }
-    
+
         SECTOR_CACHE[best_index] = CacheEntry {
             sector,
             data: dev_data,
@@ -104,11 +104,11 @@ pub mod io {
             last_used: CACHE_CLOCK,
         };
         CACHE_CLOCK += 1;
-    
+
         buffer.copy_from_slice(&dev_data);
         Ok(())
     }
-    
+
     pub unsafe fn write_sector(sector: u32, buffer: &[u8; 512]) -> Result<(), &'static str> {
         for entry in SECTOR_CACHE.iter_mut() {
             if entry.valid && entry.sector == sector {
@@ -117,16 +117,16 @@ pub mod io {
                 CACHE_CLOCK += 1;
             }
         }
-    
+
         if let Some(dev) = get_mounted_device() {
             dev.write_sector(sector, buffer)?;
         } else {
             return Err("FAT16 Error: No block device mounted");
         }
-    
+
         Ok(())
     }
-    
+
     pub unsafe fn flush_dirty_sectors() -> Result<usize, &'static str> {
         let mut count = 0usize;
         if let Some(dev) = get_mounted_device() {

@@ -16,7 +16,7 @@
 
 pub mod creds {
     use crate::scheduler::core::{CURRENT_TASK_IDX, TASKS};
-    
+
     pub unsafe fn get_current_uid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.uid
@@ -24,7 +24,7 @@ pub mod creds {
             0
         }
     }
-    
+
     pub unsafe fn get_current_euid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.euid
@@ -32,7 +32,7 @@ pub mod creds {
             0
         }
     }
-    
+
     pub unsafe fn set_current_uid(new_uid: u32) -> Result<(), &'static str> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             if task.euid == 0 {
@@ -49,7 +49,7 @@ pub mod creds {
             Err("No active task")
         }
     }
-    
+
     pub unsafe fn get_current_gid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.gid
@@ -57,7 +57,7 @@ pub mod creds {
             0
         }
     }
-    
+
     pub unsafe fn get_current_egid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.egid
@@ -65,7 +65,7 @@ pub mod creds {
             0
         }
     }
-    
+
     pub unsafe fn set_current_gid(new_gid: u32) -> Result<(), &'static str> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             if task.euid == 0 {

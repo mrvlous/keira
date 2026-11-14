@@ -90,13 +90,12 @@ impl Magazine {
     }
 }
 
-
 pub mod depot {
     use super::Magazine;
     use keira_core::sync::{IrqSpinLock, LockRank};
-    
+
     pub const DEPOT_CAPACITY: usize = 64;
-    
+
     pub struct GlobalDepot {
         full_stack: [Option<Magazine>; DEPOT_CAPACITY],
         full_count: usize,
@@ -104,16 +103,16 @@ pub mod depot {
         empty_count: usize,
         lock: IrqSpinLock,
     }
-    
+
     unsafe impl Send for GlobalDepot {}
     unsafe impl Sync for GlobalDepot {}
-    
+
     impl Default for GlobalDepot {
         fn default() -> Self {
             Self::new()
         }
     }
-    
+
     impl GlobalDepot {
         /// Constructs a new empty global depot.
         pub const fn new() -> Self {
@@ -125,7 +124,7 @@ pub mod depot {
                 lock: IrqSpinLock::with_rank(LockRank::Heap),
             }
         }
-    
+
         /// Exchanges an empty magazine from a CPU core for a full magazine.
         ///
         /// If a full magazine is available, stores the empty magazine and returns `Some(full)`.
@@ -134,19 +133,19 @@ pub mod depot {
             let _guard = self.lock.lock();
             let _ebr = keira_core::sync::ebr::pin();
             let ptr = self as *const Self as *mut Self;
-    
+
             unsafe {
                 empty_mag.clear();
-    
+
                 if (*ptr).full_count > 0 {
                     (*ptr).full_count -= 1;
                     let full = (*ptr).full_stack[(*ptr).full_count].take();
-    
+
                     if (*ptr).empty_count < DEPOT_CAPACITY {
                         (*ptr).empty_stack[(*ptr).empty_count] = Some(empty_mag);
                         (*ptr).empty_count += 1;
                     }
-    
+
                     full
                 } else {
                     if (*ptr).empty_count < DEPOT_CAPACITY {
@@ -157,7 +156,7 @@ pub mod depot {
                 }
             }
         }
-    
+
         /// Exchanges a full magazine from a CPU core for an empty magazine.
         ///
         /// If an empty magazine is available, stores the full magazine and returns `Some(empty)`.
@@ -166,13 +165,13 @@ pub mod depot {
             let _guard = self.lock.lock();
             let _ebr = keira_core::sync::ebr::pin();
             let ptr = self as *const Self as *mut Self;
-    
+
             unsafe {
                 if (*ptr).full_count < DEPOT_CAPACITY {
                     (*ptr).full_stack[(*ptr).full_count] = Some(full_mag);
                     (*ptr).full_count += 1;
                 }
-    
+
                 if (*ptr).empty_count > 0 {
                     (*ptr).empty_count -= 1;
                     (*ptr).empty_stack[(*ptr).empty_count].take()
@@ -181,19 +180,19 @@ pub mod depot {
                 }
             }
         }
-    
+
         /// Retrieves the count of full magazines currently buffered in the depot.
         pub fn full_count(&self) -> usize {
             let _guard = self.lock.lock();
             self.full_count
         }
-    
+
         /// Retrieves the count of empty magazines currently buffered in the depot.
         pub fn empty_count(&self) -> usize {
             let _guard = self.lock.lock();
             self.empty_count
         }
-    
+
         /// Drains all full magazines from the depot for reclamation or reaping.
         pub fn drain_full(&self) -> ([Option<Magazine>; DEPOT_CAPACITY], usize) {
             let _guard = self.lock.lock();
@@ -214,9 +213,9 @@ pub mod depot {
 pub mod percpu {
     use super::{GlobalDepot, Magazine};
     use core::sync::atomic::{AtomicUsize, Ordering};
-    
+
     pub const MAX_CPU_CORES: usize = 16;
-    
+
     pub struct CpuDepot {
         active: Magazine,
         backup: Magazine,
@@ -224,16 +223,16 @@ pub mod percpu {
         free_hits: AtomicUsize,
         exchanges: AtomicUsize,
     }
-    
+
     unsafe impl Send for CpuDepot {}
     unsafe impl Sync for CpuDepot {}
-    
+
     impl Default for CpuDepot {
         fn default() -> Self {
             Self::new()
         }
     }
-    
+
     impl CpuDepot {
         /// Constructs a new per-CPU depot with empty active and backup magazines.
         pub const fn new() -> Self {
@@ -245,7 +244,7 @@ pub mod percpu {
                 exchanges: AtomicUsize::new(0),
             }
         }
-    
+
         /// Allocates an object pointer from the local CPU's magazines.
         ///
         /// 1. Tries active magazine: $O(1)$ pop, zero locks, zero atomics.
@@ -261,7 +260,7 @@ pub mod percpu {
                 self.alloc_hits.fetch_add(1, Ordering::Relaxed);
                 return Some(ptr);
             }
-    
+
             // 2. Active is empty; check backup magazine
             if !self.backup.is_empty() {
                 core::mem::swap(&mut self.active, &mut self.backup);
@@ -270,7 +269,7 @@ pub mod percpu {
                     return Some(ptr);
                 }
             }
-    
+
             // 3. Both active and backup are empty; exchange backup with global depot
             self.exchanges.fetch_add(1, Ordering::Relaxed);
             if let Some(full_mag) = global_depot.exchange_empty(self.backup) {
@@ -281,7 +280,7 @@ pub mod percpu {
                     return Some(ptr);
                 }
             }
-    
+
             // 4. Depot has no full magazines; refill active magazine via slab backend
             if refill_fn(&mut self.active) {
                 self.active.pop()
@@ -289,7 +288,7 @@ pub mod percpu {
                 None
             }
         }
-    
+
         /// Returns an object pointer back to the local CPU's magazines.
         ///
         /// 1. Tries active magazine: $O(1)$ push, zero locks, zero atomics.
@@ -299,13 +298,13 @@ pub mod percpu {
             if ptr.is_null() {
                 return;
             }
-    
+
             // 1. Fast path: push to active magazine
             if self.active.push(ptr).is_ok() {
                 self.free_hits.fetch_add(1, Ordering::Relaxed);
                 return;
             }
-    
+
             // 2. Active is full; check backup magazine
             if !self.backup.is_full() {
                 core::mem::swap(&mut self.active, &mut self.backup);
@@ -314,7 +313,7 @@ pub mod percpu {
                     return;
                 }
             }
-    
+
             // 3. Both active and backup are full; exchange backup with global depot
             self.exchanges.fetch_add(1, Ordering::Relaxed);
             if let Some(empty_mag) = global_depot.exchange_full(self.backup) {
@@ -323,7 +322,7 @@ pub mod percpu {
                 let _ = self.active.push(ptr);
             }
         }
-    
+
         /// Empties both active and backup magazines.
         pub fn drain(&mut self) -> (Magazine, Magazine) {
             let act = self.active;
@@ -332,22 +331,22 @@ pub mod percpu {
             self.backup.clear();
             (act, bkp)
         }
-    
+
         /// Retrieves local allocation hits.
         pub fn alloc_hits(&self) -> usize {
             self.alloc_hits.load(Ordering::Relaxed)
         }
-    
+
         /// Retrieves local free hits.
         pub fn free_hits(&self) -> usize {
             self.free_hits.load(Ordering::Relaxed)
         }
-    
+
         /// Retrieves count of depot exchanges.
         pub fn exchanges(&self) -> usize {
             self.exchanges.load(Ordering::Relaxed)
         }
-    
+
         /// Returns number of objects currently cached in this CPU's active and backup magazines.
         pub fn cached_count(&self) -> usize {
             self.active.rounds() + self.backup.rounds()

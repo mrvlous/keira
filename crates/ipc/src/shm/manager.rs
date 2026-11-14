@@ -16,7 +16,7 @@
 
 pub mod table {
     use crate::shm::segment::types::{Semaphore, ShmSegment};
-    
+
     pub static mut SHM_TABLE: [ShmSegment; 4] = [
         ShmSegment {
             id: 0,
@@ -55,7 +55,7 @@ pub mod table {
             in_use: false,
         },
     ];
-    
+
     pub static mut SEM_TABLE: [Semaphore; 4] = [
         Semaphore {
             id: 0,
@@ -86,15 +86,15 @@ pub mod table {
             in_use: false,
         },
     ];
-    
+
     pub unsafe fn get_shm_table() -> &'static [ShmSegment] {
         &SHM_TABLE
     }
-    
+
     pub unsafe fn get_sem_table() -> &'static [Semaphore] {
         &SEM_TABLE
     }
-    
+
     pub unsafe fn create_shm(size: usize) -> Result<usize, &'static str> {
         for seg in SHM_TABLE.iter_mut() {
             if !seg.in_use {
@@ -108,7 +108,7 @@ pub mod table {
         }
         Err("SHM table full")
     }
-    
+
     pub unsafe fn remove_shm(id: u32) -> Result<(), &'static str> {
         for seg in SHM_TABLE.iter_mut() {
             if seg.id == id && seg.in_use {
@@ -121,7 +121,7 @@ pub mod table {
         }
         Err("Shared memory segment not found or not in use")
     }
-    
+
     pub unsafe fn create_sem(key: u32, init_val: i32) -> Result<u32, &'static str> {
         for sem in SEM_TABLE.iter_mut() {
             if !sem.in_use {
@@ -134,7 +134,7 @@ pub mod table {
         }
         Err("Semaphore table full")
     }
-    
+
     pub unsafe fn remove_sem(id: u32) -> Result<(), &'static str> {
         for sem in SEM_TABLE.iter_mut() {
             if sem.id == id && sem.in_use {
@@ -146,7 +146,7 @@ pub mod table {
         }
         Err("Semaphore not found or not in use")
     }
-    
+
     pub unsafe fn get_shm_frame(shmid: usize) -> Option<u64> {
         if shmid < 4 && SHM_TABLE[shmid].in_use {
             SHM_TABLE[shmid].attach_count += 1;
@@ -159,12 +159,12 @@ pub mod table {
 
 pub mod ops {
     use keira_io::vga;
-    
+
     use crate::shm::manager::table::{remove_sem, remove_shm, SEM_TABLE, SHM_TABLE};
     use crate::shm::segment::types::{
         SEM_CMD_RM, SHM_CMD_AT, SHM_CMD_DT, SHM_CMD_GET, SHM_CMD_INFO, SHM_CMD_RM,
     };
-    
+
     pub unsafe fn sys_shm_sem(cmd: u32, arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
         match cmd {
             SHM_CMD_INFO => {
@@ -189,7 +189,7 @@ pub mod ops {
                     vga::print_u64(seg.owner_pid as u64);
                     vga::print_str("\n");
                 }
-    
+
                 vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Active POSIX Counting Semaphores:\n");
                 for sem in &SEM_TABLE {
@@ -207,7 +207,7 @@ pub mod ops {
                     vga::print_u64(sem.waiters as u64);
                     vga::print_str("\n");
                 }
-    
+
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 Ok(0)
             }
@@ -235,5 +235,5 @@ pub mod ops {
     }
 }
 
-pub use self::table::*;
 pub use self::ops::*;
+pub use self::table::*;

@@ -343,7 +343,6 @@ pub fn check_and_clear_status() -> Option<usize> {
     }
 }
 
-
 pub mod hw {
     pub use super::*;
 }

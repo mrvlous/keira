@@ -93,7 +93,6 @@ pub fn rdtsc() -> u64 {
     }
 }
 
-
 pub mod intrinsics {
     pub use super::*;
 }

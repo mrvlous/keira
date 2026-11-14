@@ -18,9 +18,9 @@ pub mod descriptor {
     use super::state::TaskState;
     use crate::types::context::InterruptContext;
     use crate::types::fd::{FileDescriptor, MAX_FDS};
-    
+
     pub const MAX_TASKS: usize = 64;
-    
+
     pub struct Task {
         pub id: usize,
         pub name: &'static str,

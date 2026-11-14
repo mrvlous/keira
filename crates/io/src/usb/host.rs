@@ -16,7 +16,7 @@
 
 pub mod discovery {
     use crate::bus::pci;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct UsbControllerInfo {
         /// PCI bus index.
@@ -34,18 +34,18 @@ pub mod discovery {
         /// Hardware device identifier.
         pub device_id: u16,
     }
-    
+
     pub static mut USB_CONTROLLERS: [Option<UsbControllerInfo>; 8] = [None; 8];
     pub static mut USB_CONTROLLER_COUNT: usize = 0;
     pub static mut USB_INITIALIZED: bool = false;
-    
+
     pub fn init() {
         unsafe {
             let controllers = &mut *core::ptr::addr_of_mut!(USB_CONTROLLERS);
             *controllers = [None; 8];
             USB_CONTROLLER_COUNT = 0;
             USB_INITIALIZED = true;
-    
+
             for bus in 0..16 {
                 for slot in 0..32 {
                     let func = 0;
@@ -54,16 +54,16 @@ pub mod discovery {
                     if vendor == 0xFFFF || vendor == 0x0000 {
                         continue;
                     }
-    
+
                     let class_reg = pci::pci_read_config_u32(bus, slot, func, 0x08);
                     let class_code = ((class_reg >> 24) & 0xFF) as u8;
                     let subclass_code = ((class_reg >> 16) & 0xFF) as u8;
-    
+
                     if class_code == 0x0C && subclass_code == 0x03 {
                         let prog_if = ((class_reg >> 8) & 0xFF) as u8;
                         let device_id = (reg0 >> 16) as u16;
                         let bar0 = pci::pci_read_config_u32(bus, slot, func, 0x10);
-    
+
                         if USB_CONTROLLER_COUNT < 8 {
                             controllers[USB_CONTROLLER_COUNT] = Some(UsbControllerInfo {
                                 bus,
@@ -88,7 +88,7 @@ pub use self::discovery::*;
 #[cfg(test)]
 mod tests {
     use super::discovery::UsbControllerInfo;
-    
+
     #[test]
     fn test_usb_controller_info() {
         let info = UsbControllerInfo {

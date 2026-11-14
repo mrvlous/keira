@@ -16,7 +16,7 @@
 
 pub mod extent {
     pub const EXT4_EXTENT_HEADER_MAGIC: u16 = 0xF30A;
-    
+
     #[repr(C)]
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct Ext4ExtentHeader {
@@ -26,7 +26,7 @@ pub mod extent {
         pub eh_depth: u16,      // Depth of extent tree (0 = leaf node)
         pub eh_generation: u32, // Generation of the tree
     }
-    
+
     #[repr(C)]
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct Ext4Extent {
@@ -35,7 +35,7 @@ pub mod extent {
         pub ee_start_hi: u16, // High 16 bits of physical block number
         pub ee_start_lo: u32, // Low 32 bits of physical block number
     }
-    
+
     impl Ext4Extent {
         /// Computes full 48-bit physical LBA block address.
         pub fn physical_block(&self) -> u64 {
@@ -48,7 +48,7 @@ pub mod lookup {
     use super::types::{Ext4Inode, EXT4_EXTENTS_FL, EXT4_S_IFDIR, EXT4_S_IFREG};
     use crate::ext4::superblock::MOUNTED_EXT4;
     use core::sync::atomic::{AtomicBool, Ordering};
-    
+
     pub fn validate_inode_num(inode_num: u32) -> bool {
         if inode_num == 0 {
             return false;
@@ -61,12 +61,12 @@ pub mod lookup {
             }
         }
     }
-    
+
     pub fn parse_inode_from_bytes(bytes: &[u8]) -> Result<Ext4Inode, &'static str> {
         if bytes.len() < 128 {
             return Err("Inode byte slice too small");
         }
-    
+
         let i_mode = u16::from_le_bytes([bytes[0x00], bytes[0x01]]);
         let i_uid = u16::from_le_bytes([bytes[0x02], bytes[0x03]]);
         let i_size_lo = u32::from_le_bytes([bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07]]);
@@ -79,35 +79,35 @@ pub mod lookup {
         let i_blocks_lo = u32::from_le_bytes([bytes[0x1C], bytes[0x1D], bytes[0x1E], bytes[0x1F]]);
         let i_flags = u32::from_le_bytes([bytes[0x20], bytes[0x21], bytes[0x22], bytes[0x23]]);
         let i_osd1 = u32::from_le_bytes([bytes[0x24], bytes[0x25], bytes[0x26], bytes[0x27]]);
-    
+
         let mut i_block = [0u8; 60];
         let b_len = bytes.len().saturating_sub(0x28).min(60);
         i_block[..b_len].copy_from_slice(&bytes[0x28..0x28 + b_len]);
-    
+
         let i_generation = if bytes.len() >= 0x68 {
             u32::from_le_bytes([bytes[0x64], bytes[0x65], bytes[0x66], bytes[0x67]])
         } else {
             0
         };
-    
+
         let i_file_acl_lo = if bytes.len() >= 0x6C {
             u32::from_le_bytes([bytes[0x68], bytes[0x69], bytes[0x6A], bytes[0x6B]])
         } else {
             0
         };
-    
+
         let i_size_high = if bytes.len() >= 0x70 {
             u32::from_le_bytes([bytes[0x6C], bytes[0x6D], bytes[0x6E], bytes[0x6F]])
         } else {
             0
         };
-    
+
         let i_extra_isize = if bytes.len() >= 0x82 {
             u16::from_le_bytes([bytes[0x80], bytes[0x81]])
         } else {
             32
         };
-    
+
         Ok(Ext4Inode {
             i_mode,
             i_uid,
@@ -128,7 +128,7 @@ pub mod lookup {
             i_extra_isize,
         })
     }
-    
+
     pub fn write_inode_to_bytes(inode: &Ext4Inode, bytes: &mut [u8]) {
         if bytes.len() < 256 {
             return;
@@ -152,11 +152,11 @@ pub mod lookup {
         bytes[0x6C..0x70].copy_from_slice(&inode.i_size_high.to_le_bytes());
         bytes[0x80..0x82].copy_from_slice(&inode.i_extra_isize.to_le_bytes());
     }
-    
+
     static mut INODE_TABLE_BLOCK: [u8; 4096] = [0u8; 4096];
     static INODE_INIT_DONE: AtomicBool = AtomicBool::new(false);
     static INODE_INIT_LOCK: AtomicBool = AtomicBool::new(false);
-    
+
     pub fn ensure_inode_table_initialized() {
         if INODE_INIT_DONE.load(Ordering::Acquire) {
             return;
@@ -169,7 +169,7 @@ pub mod lookup {
         }
         if !INODE_INIT_DONE.load(Ordering::Relaxed) {
             let mut temp_block = [0u8; 4096];
-    
+
             // 1. Root directory Inode #2
             let mut root = Ext4Inode {
                 i_mode: EXT4_S_IFDIR | 0o755,
@@ -189,7 +189,7 @@ pub mod lookup {
             root.i_block[21] = 0x04;
             let off2 = 256;
             write_inode_to_bytes(&root, &mut temp_block[off2..off2 + 256]);
-    
+
             // 2. System directory Inode #11
             let mut sys = Ext4Inode {
                 i_mode: EXT4_S_IFDIR | 0o755,
@@ -209,7 +209,7 @@ pub mod lookup {
             sys.i_block[21] = 0x04;
             let off11 = (11 - 1) * 256;
             write_inode_to_bytes(&sys, &mut temp_block[off11..off11 + 256]);
-    
+
             // 3. Kernel ELF Inode #12
             let mut elf = Ext4Inode {
                 i_mode: EXT4_S_IFREG | 0o755,
@@ -229,7 +229,7 @@ pub mod lookup {
             elf.i_block[21] = 0x08;
             let off12 = (12 - 1) * 256;
             write_inode_to_bytes(&elf, &mut temp_block[off12..off12 + 256]);
-    
+
             // 4. Boot config Inode #14
             let mut boot_cfg = Ext4Inode {
                 i_mode: EXT4_S_IFREG | 0o644,
@@ -249,7 +249,7 @@ pub mod lookup {
             boot_cfg.i_block[21] = 0x08;
             let off14 = (14 - 1) * 256;
             write_inode_to_bytes(&boot_cfg, &mut temp_block[off14..off14 + 256]);
-    
+
             // 5. Version text Inode #15
             let mut ver_txt = Ext4Inode {
                 i_mode: EXT4_S_IFREG | 0o644,
@@ -269,7 +269,7 @@ pub mod lookup {
             ver_txt.i_block[21] = 0x08;
             let off15 = (15 - 1) * 256;
             write_inode_to_bytes(&ver_txt, &mut temp_block[off15..off15 + 256]);
-    
+
             unsafe {
                 INODE_TABLE_BLOCK.copy_from_slice(&temp_block);
             }
@@ -277,14 +277,14 @@ pub mod lookup {
         }
         INODE_INIT_LOCK.store(false, Ordering::Release);
     }
-    
+
     pub fn read_inode(inode_num: u32) -> Result<Ext4Inode, &'static str> {
         if !validate_inode_num(inode_num) {
             return Err("Invalid EXT4 inode number");
         }
-    
+
         ensure_inode_table_initialized();
-    
+
         let offset = (inode_num.saturating_sub(1) as usize) * 256;
         unsafe {
             if offset + 256 <= INODE_TABLE_BLOCK.len() {
@@ -303,15 +303,15 @@ pub mod lookup {
 
 pub mod types {
     use super::extent::{Ext4Extent, Ext4ExtentHeader, EXT4_EXTENT_HEADER_MAGIC};
-    
+
     pub const EXT4_ROOT_INO: u32 = 2;
-    
+
     pub const EXT4_S_IFREG: u16 = 0x8000;
     pub const EXT4_S_IFDIR: u16 = 0x4000;
     pub const EXT4_S_IFLNK: u16 = 0xA000;
-    
+
     pub const EXT4_EXTENTS_FL: u32 = 0x0008_0000;
-    
+
     #[repr(C)]
     #[derive(Copy, Clone, Debug)]
     pub struct Ext4Inode {
@@ -333,7 +333,7 @@ pub mod types {
         pub i_size_high: u32,   // Upper 32 bits of file size
         pub i_extra_isize: u16, // Extra size of inode
     }
-    
+
     impl Default for Ext4Inode {
         fn default() -> Self {
             Self {
@@ -357,23 +357,23 @@ pub mod types {
             }
         }
     }
-    
+
     impl Ext4Inode {
         /// Returns true if inode represents a directory.
         pub fn is_dir(&self) -> bool {
             (self.i_mode & 0xF000) == EXT4_S_IFDIR
         }
-    
+
         /// Returns true if inode represents a regular file.
         pub fn is_regular_file(&self) -> bool {
             (self.i_mode & 0xF000) == EXT4_S_IFREG
         }
-    
+
         /// Returns true if inode represents a symbolic link.
         pub fn is_symlink(&self) -> bool {
             (self.i_mode & 0xF000) == EXT4_S_IFLNK
         }
-    
+
         /// Full 64-bit file size in bytes combining lower and upper size registers.
         pub fn file_size(&self) -> u64 {
             if self.is_dir() {
@@ -382,12 +382,12 @@ pub mod types {
                 ((self.i_size_high as u64) << 32) | (self.i_size_lo as u64)
             }
         }
-    
+
         /// Returns true if inode utilizes extent tree storage format.
         pub fn has_extents(&self) -> bool {
             (self.i_flags & EXT4_EXTENTS_FL) != 0
         }
-    
+
         /// Parses inline extent header from `i_block`.
         pub fn extent_header(&self) -> Option<Ext4ExtentHeader> {
             if !self.has_extents() || self.i_block.len() < 12 {
@@ -414,7 +414,7 @@ pub mod types {
                 eh_generation: gen,
             })
         }
-    
+
         /// Parses first leaf extent if depth == 0.
         pub fn first_extent(&self) -> Option<Ext4Extent> {
             let header = self.extent_header()?;

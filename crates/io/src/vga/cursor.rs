@@ -16,11 +16,11 @@
 
 pub mod hardware {
     use keira_arch::cpu::outb;
-    
+
     pub const CRTC_INDEX_PORT: u16 = 0x3D4;
-    
+
     pub const CRTC_DATA_PORT: u16 = 0x3D5;
-    
+
     pub unsafe fn vga_set_hardware_cursor(col: u16, row: u16) {
         let pos = row * 80 + col;
         outb(CRTC_INDEX_PORT, 0x0F);
@@ -49,7 +49,7 @@ pub mod state {
         0b0000011000000000,
         0b0000000000000000,
     ];
-    
+
     pub const MOUSE_CURSOR_OUTLINE: [u16; 16] = [
         0b1000000000000000,
         0b1010000000000000,
@@ -68,19 +68,19 @@ pub mod state {
         0b0000011000000000,
         0b0000011000000000,
     ];
-    
+
     pub static mut CURSOR_X: u32 = 0;
-    
+
     pub static mut CURSOR_Y: u32 = 0;
-    
+
     pub static mut CURSOR_BLINK_STATE: bool = true;
-    
+
     pub static mut MOUSE_X: u32 = 9999;
-    
+
     pub static mut MOUSE_Y: u32 = 9999;
-    
+
     pub static mut MOUSE_VISIBLE: bool = false;
-    
+
     pub static mut SAVED_MOUSE_PIXELS: [u32; 192] = [0; 192];
 }
 

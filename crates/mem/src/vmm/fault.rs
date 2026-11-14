@@ -16,8 +16,10 @@
 
 pub mod handler {
     use core::sync::atomic::{AtomicUsize, Ordering};
-    
-    use super::super::area::{find_active_vma, get_file_read_hook, PROT_EXEC, PROT_READ, PROT_WRITE};
+
+    use super::super::area::{
+        find_active_vma, get_file_read_hook, PROT_EXEC, PROT_READ, PROT_WRITE,
+    };
     use super::super::mapping::map_page;
     use super::super::table::{
         active_pml4, get_pte_mut_in_pml4, PAGE_COW, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
@@ -26,33 +28,33 @@ pub mod handler {
     use crate::pmm;
     use keira_arch::cpu::invlpg;
     use keira_arch::interrupts::smp::tlb_shootdown;
-    
+
     #[cfg(target_arch = "x86")]
     pub const USER_STACK_TOP: u64 = 0x07FFF000;
     #[cfg(target_arch = "x86")]
     pub const USER_STACK_BOTTOM: u64 = 0x07F80000;
-    
+
     #[cfg(target_arch = "x86_64")]
     pub const USER_STACK_TOP: u64 = 0x7FFFFFE00000;
     #[cfg(target_arch = "x86_64")]
     pub const USER_STACK_BOTTOM: u64 = 0x7FFFFFD80000;
-    
+
     pub static TOTAL_PAGE_FAULTS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static COW_FAULTS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static COW_IN_PLACE_PROMOTIONS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static COW_REPLICATIONS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static STACK_GROWTH_FAULTS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static DEMAND_PAGING_FAULTS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static PROTECTION_VIOLATIONS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static TLB_INVLPG_COUNT: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub fn vmm_get_fault_stats() -> (u64, u64, u64, u64, u64, u64) {
         (
             TOTAL_PAGE_FAULTS.load(Ordering::Relaxed) as u64,
@@ -63,7 +65,7 @@ pub mod handler {
             TLB_INVLPG_COUNT.load(Ordering::Relaxed) as u64,
         )
     }
-    
+
     pub fn vmm_get_cow_stats() -> (u64, u64, u64, u64) {
         (
             pmm::active_shared_frames() as u64,
@@ -72,21 +74,21 @@ pub mod handler {
             COW_IN_PLACE_PROMOTIONS.load(Ordering::Relaxed) as u64,
         )
     }
-    
+
     pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         TOTAL_PAGE_FAULTS.fetch_add(1, Ordering::Relaxed);
-    
+
         let pml4 = active_pml4();
         let is_present = (error_code & 1) != 0;
         let is_write = (error_code & 2) != 0;
         let is_instruction = (error_code & 16) != 0;
-    
+
         let fault_page = cr2 & !(pmm::PAGE_SIZE - 1);
         if fault_page == 0 {
             PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
-    
+
         if is_present && is_write {
             if let Some(pte_ptr) = get_pte_mut_in_pml4(pml4, fault_page) {
                 let pte = *pte_ptr;
@@ -103,13 +105,13 @@ pub mod handler {
                         let src_ptr = fault_page as *const u8;
                         let dst_ptr = new_frame as *mut u8;
                         core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, pmm::PAGE_SIZE as usize);
-    
+
                         *pte_ptr = (new_frame & PTE_ADDR_MASK)
                             | (pte & !(PTE_ADDR_MASK | PAGE_COW))
                             | PAGE_WRITABLE;
-    
+
                         pmm::release_frame(old_frame);
-    
+
                         COW_FAULTS.fetch_add(1, Ordering::Relaxed);
                         COW_REPLICATIONS.fetch_add(1, Ordering::Relaxed);
                         TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
@@ -121,19 +123,19 @@ pub mod handler {
             PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
-    
+
         if is_present {
             PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
-    
+
         let is_stack_fault = (USER_STACK_BOTTOM..USER_STACK_TOP).contains(&cr2)
             && (cr2 >= rsp.saturating_sub(256) || rsp >= USER_STACK_BOTTOM);
-    
+
         if is_stack_fault {
             if let Some(frame) = pmm::alloc_frame() {
                 core::ptr::write_bytes(frame as *mut u8, 0, pmm::PAGE_SIZE as usize);
-    
+
                 #[cfg(target_arch = "x86_64")]
                 let flags = PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_NO_EXECUTE;
                 #[cfg(not(target_arch = "x86_64"))]
@@ -150,7 +152,7 @@ pub mod handler {
             PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
             return false;
         }
-    
+
         if let Some(vma) = find_active_vma(pml4, cr2) {
             if is_write && (vma.prot & PROT_WRITE) == 0 {
                 PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
@@ -164,23 +166,26 @@ pub mod handler {
                 PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
                 return false;
             }
-    
+
             if let Some(frame) = pmm::alloc_frame() {
                 core::ptr::write_bytes(frame as *mut u8, 0, pmm::PAGE_SIZE as usize);
-    
+
                 if vma.file_backed {
-                    if let (Some(read_fn), Some(path)) = (get_file_read_hook(), vma.file_path_str()) {
+                    if let (Some(read_fn), Some(path)) = (get_file_read_hook(), vma.file_path_str())
+                    {
                         let page_delta = fault_page - vma.start;
                         let file_offset = vma.file_offset + page_delta;
                         if file_offset < vma.file_size {
                             let to_read =
-                                core::cmp::min(pmm::PAGE_SIZE, vma.file_size - file_offset) as usize;
-                            let dst_slice = core::slice::from_raw_parts_mut(frame as *mut u8, to_read);
+                                core::cmp::min(pmm::PAGE_SIZE, vma.file_size - file_offset)
+                                    as usize;
+                            let dst_slice =
+                                core::slice::from_raw_parts_mut(frame as *mut u8, to_read);
                             let _ = read_fn(path, file_offset, dst_slice);
                         }
                     }
                 }
-    
+
                 let mut flags = PAGE_PRESENT | PAGE_USER;
                 if (vma.prot & PROT_WRITE) != 0 {
                     flags |= PAGE_WRITABLE;
@@ -188,7 +193,7 @@ pub mod handler {
                 if (vma.prot & PROT_EXEC) == 0 {
                     flags |= PAGE_NO_EXECUTE;
                 }
-    
+
                 if map_page(fault_page, frame, flags).is_ok() {
                     DEMAND_PAGING_FAULTS.fetch_add(1, Ordering::Relaxed);
                     TLB_INVLPG_COUNT.fetch_add(1, Ordering::Relaxed);
@@ -199,7 +204,7 @@ pub mod handler {
                 }
             }
         }
-    
+
         PROTECTION_VIOLATIONS.fetch_add(1, Ordering::Relaxed);
         false
     }

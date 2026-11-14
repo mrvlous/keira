@@ -36,7 +36,6 @@ pub trait SerialPort {
     }
 }
 
-
 pub mod ops {
     pub use super::*;
 }

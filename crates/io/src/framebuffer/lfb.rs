@@ -16,7 +16,7 @@
 
 pub mod cursor {
     use super::draw::draw_pixel;
-    
+
     pub unsafe fn draw_mouse_cursor(x: u32, y: u32) {
         let cursor_shape: [[u8; 8]; 10] = [
             [1, 0, 0, 0, 0, 0, 0, 0],
@@ -30,7 +30,7 @@ pub mod cursor {
             [0, 0, 1, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
         ];
-    
+
         for cy in 0..10 {
             for cx in 0..8 {
                 let px = x + cx;
@@ -47,7 +47,7 @@ pub mod cursor {
 
 pub mod draw {
     use super::state::{FB_ADDR, FB_HEIGHT, FB_PITCH, FB_WIDTH};
-    
+
     pub unsafe fn draw_pixel(x: u32, y: u32, color: u32) {
         if x >= FB_WIDTH || y >= FB_HEIGHT {
             return;
@@ -56,7 +56,7 @@ pub mod draw {
         let ptr = FB_ADDR as *mut u32;
         *ptr.add(offset) = color;
     }
-    
+
     pub unsafe fn fill_screen(color: u32) {
         for y in 0..FB_HEIGHT {
             for x in 0..FB_WIDTH {
@@ -64,7 +64,7 @@ pub mod draw {
             }
         }
     }
-    
+
     pub unsafe fn draw_rect(x: u32, y: u32, w: u32, h: u32, color: u32) {
         for py in y..(y + h) {
             for px in x..(x + w) {
@@ -76,7 +76,7 @@ pub mod draw {
 
 pub mod driver {
     use super::state::{FB_ACTIVE, FB_ADDR, FB_HEIGHT, FB_PITCH, FB_WIDTH};
-    
+
     pub unsafe fn set_resolution(width: u32, height: u32, pitch: u32, addr: u64) {
         FB_WIDTH = width;
         FB_HEIGHT = height;
@@ -90,7 +90,7 @@ pub mod driver {
 
 pub mod font {
     use super::draw::draw_pixel;
-    
+
     pub const FONT_8X16: [[u8; 16]; 95] = [
         [0; 16],
         [0, 0, 0, 24, 24, 24, 24, 24, 24, 0, 24, 24, 0, 0, 0, 0],
@@ -188,7 +188,7 @@ pub mod font {
         [0, 0, 112, 24, 24, 14, 24, 24, 112, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 118, 220, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
-    
+
     pub unsafe fn draw_char(x: u32, y: u32, c: char, fg: u32, bg: u32) {
         let ascii = c as usize;
         if !(32..=126).contains(&ascii) {
@@ -196,7 +196,7 @@ pub mod font {
         }
         let font_idx = ascii - 32;
         let glyph = FONT_8X16[font_idx];
-    
+
         for (row, &bitmask) in glyph.iter().enumerate() {
             for col in 0..8 {
                 if (bitmask & (1 << (7 - col))) != 0 {
@@ -207,7 +207,7 @@ pub mod font {
             }
         }
     }
-    
+
     pub unsafe fn draw_string(x: u32, y: u32, text: &str, fg: u32, bg: u32) {
         let mut cur_x = x;
         for c in text.chars() {
@@ -223,15 +223,15 @@ pub mod font {
 
 pub mod state {
     pub static mut FB_ADDR: u64 = 0xFD000000;
-    
+
     pub static mut FB_WIDTH: u32 = 1024;
-    
+
     pub static mut FB_HEIGHT: u32 = 768;
-    
+
     pub static mut FB_PITCH: u32 = 4096;
-    
+
     pub static mut FB_BPP: u8 = 32;
-    
+
     pub static mut FB_ACTIVE: bool = false;
 }
 
@@ -244,7 +244,7 @@ pub use self::state::*;
 #[cfg(test)]
 mod tests {
     use super::font::FONT_8X16;
-    
+
     #[test]
     fn test_font_8x16_geometry() {
         assert_eq!(FONT_8X16.len(), 95);
@@ -252,7 +252,7 @@ mod tests {
             assert_eq!(glyph.len(), 16);
         }
     }
-    
+
     #[test]
     fn test_resolution_invariants() {
         unsafe {
@@ -261,13 +261,13 @@ mod tests {
             let height = *core::ptr::addr_of!(super::state::FB_HEIGHT);
             let pitch = *core::ptr::addr_of!(super::state::FB_PITCH);
             let addr = *core::ptr::addr_of!(super::state::FB_ADDR);
-    
+
             assert_eq!(width, 1920);
             assert_eq!(height, 1080);
             assert_eq!(pitch, 7680);
             assert_eq!(addr, 0x1_0000_0000);
             assert!(super::state::FB_ACTIVE);
-    
+
             // Reset to default
             super::driver::set_resolution(1024, 768, 4096, 0xFD000000);
         }

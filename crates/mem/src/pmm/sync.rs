@@ -16,27 +16,27 @@
 
 pub mod guard {
     use core::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
-    
+
     pub(crate) static PMM_LOCK: AtomicBool = AtomicBool::new(false);
     #[allow(dead_code)]
     pub(crate) static PMM_HOLDER_CORE: AtomicIsize = AtomicIsize::new(-1);
-    
+
     #[cfg(test)]
     thread_local! {
         pub(crate) static CURRENT_THREAD_HOLDS_PMM: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
         pub(crate) static TEST_CPU_ID: core::cell::Cell<Option<isize>> = const { core::cell::Cell::new(None) };
     }
-    
+
     #[cfg(test)]
     pub fn set_test_cpu_id(cpu_id: isize) {
         TEST_CPU_ID.with(|c| c.set(Some(cpu_id)));
     }
-    
+
     #[cfg(test)]
     pub fn clear_test_cpu_id() {
         TEST_CPU_ID.with(|c| c.set(None));
     }
-    
+
     #[inline(always)]
     pub fn get_current_cpu_id() -> isize {
         #[cfg(target_os = "none")]
@@ -52,12 +52,12 @@ pub mod guard {
             0
         }
     }
-    
+
     pub struct PmmGuard {
         #[allow(dead_code)]
         pub irq_state: bool,
     }
-    
+
     impl PmmGuard {
         /// Acquires the global physical memory allocator spinlock.
         ///
@@ -75,10 +75,10 @@ pub mod guard {
             };
             #[cfg(not(target_os = "none"))]
             let irq_state = false;
-    
+
             #[cfg(debug_assertions)]
             let cur_cpu = get_current_cpu_id();
-    
+
             #[cfg(debug_assertions)]
             {
                 if PMM_LOCK.load(Ordering::Relaxed)
@@ -90,14 +90,14 @@ pub mod guard {
                     );
                 }
             }
-    
+
             while PMM_LOCK
                 .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
                 .is_err()
             {
                 core::hint::spin_loop();
             }
-    
+
             #[cfg(debug_assertions)]
             {
                 #[cfg(test)]
@@ -106,11 +106,11 @@ pub mod guard {
                 }
                 PMM_HOLDER_CORE.store(cur_cpu, Ordering::Relaxed);
             }
-    
+
             PmmGuard { irq_state }
         }
     }
-    
+
     impl Drop for PmmGuard {
         fn drop(&mut self) {
             #[cfg(debug_assertions)]
@@ -122,14 +122,14 @@ pub mod guard {
                 PMM_HOLDER_CORE.store(-1, Ordering::Relaxed);
             }
             PMM_LOCK.store(false, Ordering::Release);
-    
+
             #[cfg(target_os = "none")]
             if self.irq_state {
                 keira_arch::cpu::sti();
             }
         }
     }
-    
+
     #[cfg(test)]
     pub static TEST_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 }

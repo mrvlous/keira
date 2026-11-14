@@ -16,12 +16,12 @@
 
 pub mod bot {
     pub static mut USB_STORAGE_MOUNTED: bool = false;
-    
+
     pub const USB_CMD_SCAN: u32 = 1;
     pub const USB_CMD_MOUNT: u32 = 2;
     pub const USB_CMD_EJECT: u32 = 3;
     pub const USB_CMD_STATUS: u32 = 4;
-    
+
     #[repr(C, packed)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct CommandBlockWrapper {
@@ -33,7 +33,7 @@ pub mod bot {
         pub cb_length: u8,
         pub cb: [u8; 16],
     }
-    
+
     #[repr(C, packed)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct CommandStatusWrapper {
@@ -42,7 +42,7 @@ pub mod bot {
         pub data_residue: u32,
         pub status: u8,
     }
-    
+
     pub fn build_scsi_inquiry_cbw(tag: u32) -> CommandBlockWrapper {
         let mut cbw = CommandBlockWrapper {
             signature: 0x43425355,
@@ -57,7 +57,7 @@ pub mod bot {
         cbw.cb[4] = 36;
         cbw
     }
-    
+
     pub fn build_scsi_read_capacity_cbw(tag: u32) -> CommandBlockWrapper {
         let mut cbw = CommandBlockWrapper {
             signature: 0x43425355,
@@ -71,17 +71,17 @@ pub mod bot {
         cbw.cb[0] = 0x25;
         cbw
     }
-    
+
     pub unsafe fn mount_usb_storage() -> Result<(), &'static str> {
         USB_STORAGE_MOUNTED = true;
         Ok(())
     }
-    
+
     pub unsafe fn eject_usb_storage() -> Result<(), &'static str> {
         USB_STORAGE_MOUNTED = false;
         Ok(())
     }
-    
+
     pub fn sys_usb_device(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
         unsafe {
             match cmd {
@@ -103,15 +103,16 @@ pub use self::bot::*;
 #[cfg(test)]
 mod tests {
     use super::bot::{
-        build_scsi_inquiry_cbw, build_scsi_read_capacity_cbw, CommandBlockWrapper, CommandStatusWrapper,
+        build_scsi_inquiry_cbw, build_scsi_read_capacity_cbw, CommandBlockWrapper,
+        CommandStatusWrapper,
     };
-    
+
     #[test]
     fn test_usb_bot_struct_sizes() {
         assert_eq!(core::mem::size_of::<CommandBlockWrapper>(), 31);
         assert_eq!(core::mem::size_of::<CommandStatusWrapper>(), 13);
     }
-    
+
     #[test]
     fn test_scsi_cbw_construction() {
         let inq = build_scsi_inquiry_cbw(42);
@@ -122,7 +123,7 @@ mod tests {
         assert_eq!(inq_tag, 42);
         assert_eq!(inq_len, 36);
         assert_eq!(inq.cb[0], 0x12);
-    
+
         let cap = build_scsi_read_capacity_cbw(99);
         let cap_sig = cap.signature;
         let cap_tag = cap.tag;

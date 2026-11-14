@@ -49,7 +49,7 @@ pub mod types {
         pub prefix: [u8; 155],
         pub pad: [u8; 12],
     }
-    
+
     pub const TYPEFLAG_REGULAR: u8 = b'0';
     pub const TYPEFLAG_REGULAR_ALT: u8 = 0;
     pub const TYPEFLAG_DIRECTORY: u8 = b'5';

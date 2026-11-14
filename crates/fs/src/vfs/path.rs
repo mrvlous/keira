@@ -23,7 +23,7 @@ pub mod alias {
 pub mod router {
     use super::alias::resolve_alias_path;
     use crate::vfs::types::FilesystemType;
-    
+
     pub fn route_path(path: &str) -> (&str, FilesystemType) {
         let resolved = resolve_alias_path(path);
         if resolved.starts_with('/') {

@@ -15,191 +15,190 @@
 //! Subsystem module: table.
 
 pub mod engine {
-use keira_io::vga;
+    use keira_io::vga;
 
-use crate::autocomplete::word::matcher::find_last_word;
-use crate::state::session::{BUFFER_LEN, INPUT_BUFFER};
+    use crate::autocomplete::word::matcher::find_last_word;
+    use crate::state::session::{BUFFER_LEN, INPUT_BUFFER};
 
-pub const COMMANDS_LIST: &[&str] = &[
-    "aslr",
-    "aslrinfo",
-    "cpu",
-    "dcache",
-    "devices",
-    "disk",
-    "dmesg",
-    "drivers",
-    "entropy",
-    "help",
-    "icache",
-    "irq",
-    "limit",
-    "mem",
-    "memory",
-    "mitigations",
-    "mount",
-    "pci",
-    "pidinfo",
-    "pipes",
-    "poll",
-    "pollinfo",
-    "power",
-    "procs",
-    "regs",
-    "reset",
-    "rlimit",
-    "rnginfo",
-    "run",
-    "secinfo",
-    "select",
-    "selectinfo",
-    "sh",
-    "slab",
-    "slabinfo",
-    "smp",
-    "sync",
-    "syslog",
-    "system",
-    "unix",
-    "unixsock",
-    "unwind",
-    "vma",
-    "vmainfo",
-    "watchpoint",
-    "wipe",
-];
+    pub const COMMANDS_LIST: &[&str] = &[
+        "aslr",
+        "aslrinfo",
+        "cpu",
+        "dcache",
+        "devices",
+        "disk",
+        "dmesg",
+        "drivers",
+        "entropy",
+        "help",
+        "icache",
+        "irq",
+        "limit",
+        "mem",
+        "memory",
+        "mitigations",
+        "mount",
+        "pci",
+        "pidinfo",
+        "pipes",
+        "poll",
+        "pollinfo",
+        "power",
+        "procs",
+        "regs",
+        "reset",
+        "rlimit",
+        "rnginfo",
+        "run",
+        "secinfo",
+        "select",
+        "selectinfo",
+        "sh",
+        "slab",
+        "slabinfo",
+        "smp",
+        "sync",
+        "syslog",
+        "system",
+        "unix",
+        "unixsock",
+        "unwind",
+        "vma",
+        "vmainfo",
+        "watchpoint",
+        "wipe",
+    ];
 
-pub const STANDARD_PATHS: &[&str] = &[
-    "system/",
-    "apps/",
-    "config/",
-    "data/",
-    "temp/",
-    "system.cfg",
-];
+    pub const STANDARD_PATHS: &[&str] = &[
+        "system/",
+        "apps/",
+        "config/",
+        "data/",
+        "temp/",
+        "system.cfg",
+    ];
 
-/// Resolves tab completion against commands or files and updates the VGA console.
-///
-/// # Safety
-/// Accesses and modifies global static input buffer state and writes directly to VGA hardware.
-pub unsafe fn handle_autocomplete() {
-    let (prefix_start, word) = find_last_word(&INPUT_BUFFER[..BUFFER_LEN]);
-    if word.is_empty() {
-        return;
-    }
-
-    let mut match_count = 0;
-    let mut first_match = [0u8; 32];
-    let mut first_match_len = 0;
-
-    let is_command = prefix_start == 0;
-
-    if is_command {
-        for &cmd in COMMANDS_LIST {
-            if cmd.starts_with(word) {
-                if match_count == 0 {
-                    first_match_len = cmd.len();
-                    first_match[..first_match_len].copy_from_slice(cmd.as_bytes());
-                }
-                match_count += 1;
-            }
-        }
-    } else {
-        for &path in STANDARD_PATHS {
-            if path.starts_with(word) {
-                if match_count == 0 {
-                    first_match_len = path.len();
-                    first_match[..first_match_len].copy_from_slice(path.as_bytes());
-                }
-                match_count += 1;
-            }
+    /// Resolves tab completion against commands or files and updates the VGA console.
+    ///
+    /// # Safety
+    /// Accesses and modifies global static input buffer state and writes directly to VGA hardware.
+    pub unsafe fn handle_autocomplete() {
+        let (prefix_start, word) = find_last_word(&INPUT_BUFFER[..BUFFER_LEN]);
+        if word.is_empty() {
+            return;
         }
 
-        keira_fs::fat::find_matches(word, |filename| {
-            if match_count == 0 {
-                first_match_len = filename.len();
-                first_match[..first_match_len].copy_from_slice(filename.as_bytes());
-            }
-            match_count += 1;
-        });
-    }
+        let mut match_count = 0;
+        let mut first_match = [0u8; 32];
+        let mut first_match_len = 0;
 
-    if match_count == 1 {
-        let completed = if is_command {
-            let mut name = [0u8; 33];
-            let len = first_match_len;
-            name[..len].copy_from_slice(&first_match[..len]);
-            name[len] = b' ';
-            (len + 1, name)
-        } else {
-            let mut name = [0u8; 33];
-            let len = first_match_len;
-            name[..len].copy_from_slice(&first_match[..len]);
-            (len, name)
-        };
+        let is_command = prefix_start == 0;
 
-        let old_word_len = BUFFER_LEN - prefix_start;
-        for _ in 0..old_word_len {
-            vga::backspace();
-        }
-
-        BUFFER_LEN = prefix_start;
-        for i in 0..completed.0 {
-            INPUT_BUFFER[BUFFER_LEN] = completed.1[i];
-            BUFFER_LEN += 1;
-        }
-
-        let completion_slice = &INPUT_BUFFER[prefix_start..BUFFER_LEN];
-        if let Ok(s) = core::str::from_utf8(completion_slice) {
-            vga::print_str(s);
-        }
-    } else if match_count > 1 {
-        vga::print_str("\n");
-        let mut printed = 0;
         if is_command {
             for &cmd in COMMANDS_LIST {
                 if cmd.starts_with(word) {
-                    if printed < 10 {
-                        vga::print_str(cmd);
-                        vga::print_str("  ");
-                        printed += 1;
-                    } else {
-                        vga::print_str("... ");
-                        break;
+                    if match_count == 0 {
+                        first_match_len = cmd.len();
+                        first_match[..first_match_len].copy_from_slice(cmd.as_bytes());
                     }
+                    match_count += 1;
                 }
             }
         } else {
             for &path in STANDARD_PATHS {
-                if path.starts_with(word) && printed < 10 {
-                    vga::print_str(path);
-                    vga::print_str("  ");
-                    printed += 1;
+                if path.starts_with(word) {
+                    if match_count == 0 {
+                        first_match_len = path.len();
+                        first_match[..first_match_len].copy_from_slice(path.as_bytes());
+                    }
+                    match_count += 1;
                 }
             }
-            let mut exceeded = false;
+
             keira_fs::fat::find_matches(word, |filename| {
-                if printed < 10 {
-                    vga::print_str(filename);
-                    vga::print_str("  ");
-                    printed += 1;
-                } else {
-                    exceeded = true;
+                if match_count == 0 {
+                    first_match_len = filename.len();
+                    first_match[..first_match_len].copy_from_slice(filename.as_bytes());
                 }
+                match_count += 1;
             });
-            if exceeded {
-                vga::print_str("... (and more)");
-            }
         }
-        vga::print_str("\n");
-        crate::print_prompt();
-        let buffer_slice = &INPUT_BUFFER[..BUFFER_LEN];
-        if let Ok(s) = core::str::from_utf8(buffer_slice) {
-            vga::print_str(s);
+
+        if match_count == 1 {
+            let completed = if is_command {
+                let mut name = [0u8; 33];
+                let len = first_match_len;
+                name[..len].copy_from_slice(&first_match[..len]);
+                name[len] = b' ';
+                (len + 1, name)
+            } else {
+                let mut name = [0u8; 33];
+                let len = first_match_len;
+                name[..len].copy_from_slice(&first_match[..len]);
+                (len, name)
+            };
+
+            let old_word_len = BUFFER_LEN - prefix_start;
+            for _ in 0..old_word_len {
+                vga::backspace();
+            }
+
+            BUFFER_LEN = prefix_start;
+            for i in 0..completed.0 {
+                INPUT_BUFFER[BUFFER_LEN] = completed.1[i];
+                BUFFER_LEN += 1;
+            }
+
+            let completion_slice = &INPUT_BUFFER[prefix_start..BUFFER_LEN];
+            if let Ok(s) = core::str::from_utf8(completion_slice) {
+                vga::print_str(s);
+            }
+        } else if match_count > 1 {
+            vga::print_str("\n");
+            let mut printed = 0;
+            if is_command {
+                for &cmd in COMMANDS_LIST {
+                    if cmd.starts_with(word) {
+                        if printed < 10 {
+                            vga::print_str(cmd);
+                            vga::print_str("  ");
+                            printed += 1;
+                        } else {
+                            vga::print_str("... ");
+                            break;
+                        }
+                    }
+                }
+            } else {
+                for &path in STANDARD_PATHS {
+                    if path.starts_with(word) && printed < 10 {
+                        vga::print_str(path);
+                        vga::print_str("  ");
+                        printed += 1;
+                    }
+                }
+                let mut exceeded = false;
+                keira_fs::fat::find_matches(word, |filename| {
+                    if printed < 10 {
+                        vga::print_str(filename);
+                        vga::print_str("  ");
+                        printed += 1;
+                    } else {
+                        exceeded = true;
+                    }
+                });
+                if exceeded {
+                    vga::print_str("... (and more)");
+                }
+            }
+            vga::print_str("\n");
+            crate::print_prompt();
+            let buffer_slice = &INPUT_BUFFER[..BUFFER_LEN];
+            if let Ok(s) = core::str::from_utf8(buffer_slice) {
+                vga::print_str(s);
+            }
         }
     }
-}
-
 }
 
 pub use self::engine::*;

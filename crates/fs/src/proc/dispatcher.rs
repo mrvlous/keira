@@ -19,14 +19,15 @@ pub mod read {
         read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
         read_meminfo, read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route,
         read_net_tcp, read_net_udp, read_net_unix, read_nf_conntrack_stat, read_partitions,
-        read_randomize_va_space, read_slabinfo, read_sockstat, read_uptime, read_version, read_vmstat,
+        read_randomize_va_space, read_slabinfo, read_sockstat, read_uptime, read_version,
+        read_vmstat,
     };
     use crate::proc::task::hooks::CURRENT_PID_HOOK;
     use crate::proc::task::{
         get_active_pids, read_task_cmdline, read_task_limits, read_task_maps, read_task_stat,
         read_task_statm, read_task_status, task_exists,
     };
-    
+
     pub fn is_proc_dir(clean_node: &str) -> bool {
         let node = clean_node.trim_start_matches('/');
         if node.is_empty()
@@ -43,7 +44,7 @@ pub mod read {
         }
         false
     }
-    
+
     pub fn exists(clean_node: &str) -> bool {
         let node = clean_node.trim_start_matches('/');
         if matches!(
@@ -113,10 +114,10 @@ pub mod read {
         }
         false
     }
-    
+
     pub fn read_proc_file(clean_node: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         let node = clean_node.trim_start_matches('/');
-    
+
         match node {
             "" | "net" | "net/stat" | "sys" | "sys/kernel" => Ok(0),
             "uptime" => read_uptime(buf),
@@ -172,7 +173,7 @@ pub mod read {
                 } else {
                     return Err("Unknown proc node");
                 };
-    
+
                 match sub {
                     "status" => read_task_status(target_pid, buf),
                     "cmdline" => read_task_cmdline(target_pid, buf),
@@ -185,9 +186,9 @@ pub mod read {
             }
         }
     }
-    
+
     use crate::vfs::VirtualDirEntry;
-    
+
     pub static PROC_ENTRIES: [VirtualDirEntry; 12] = [
         VirtualDirEntry {
             name: ".",
@@ -250,14 +251,15 @@ pub mod read {
             ino: 20,
         },
     ];
-    
+
     const PID_STRS: [&str; 64] = [
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
-        "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32",
-        "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48",
-        "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63",
+        "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
+        "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46",
+        "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61",
+        "62", "63",
     ];
-    
+
     pub static PID_DIR_ENTRIES: [VirtualDirEntry; 9] = [
         VirtualDirEntry {
             name: ".",
@@ -305,11 +307,11 @@ pub mod read {
             ino: 8,
         },
     ];
-    
+
     pub fn get_pid_dir_entry(index: usize) -> Option<VirtualDirEntry> {
         PID_DIR_ENTRIES.get(index).copied()
     }
-    
+
     pub fn get_proc_entry(index: usize) -> Option<VirtualDirEntry> {
         if let Some(entry) = PROC_ENTRIES.get(index).copied() {
             return Some(entry);

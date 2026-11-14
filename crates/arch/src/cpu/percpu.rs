@@ -221,15 +221,15 @@ pub fn get_current_kernel_stack() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::context::{
-        get_current_kernel_stack, get_current_percpu, init_percpu, set_current_kernel_stack, PerCpu,
-        PER_CPU_DATA,
+        get_current_kernel_stack, get_current_percpu, init_percpu, set_current_kernel_stack,
+        PerCpu, PER_CPU_DATA,
     };
-    
+
     #[test]
     fn test_percpu_struct_layout_and_offsets() {
         assert_eq!(core::mem::size_of::<PerCpu>(), 128);
         assert_eq!(core::mem::align_of::<PerCpu>(), 64);
-    
+
         assert_eq!(core::mem::offset_of!(PerCpu, self_ptr), 0x00);
         assert_eq!(core::mem::offset_of!(PerCpu, user_rsp_scratch), 0x08);
         assert_eq!(core::mem::offset_of!(PerCpu, kernel_stack), 0x10);
@@ -247,7 +247,7 @@ mod tests {
         assert_eq!(core::mem::offset_of!(PerCpu, user_rsp), 0x68);
         assert_eq!(core::mem::offset_of!(PerCpu, current_task_id), 0x70);
     }
-    
+
     #[test]
     fn test_percpu_initialization_and_stack() {
         unsafe {
@@ -257,7 +257,7 @@ mod tests {
             assert_ne!(percpu.kernel_stack, 0);
             assert_eq!(percpu.kernel_stack, percpu.main_stack);
             assert_eq!(percpu.self_ptr, &raw const PER_CPU_DATA[0] as u64);
-    
+
             set_current_kernel_stack(0x1234_5678_0000);
             assert_eq!(get_current_kernel_stack(), 0x1234_5678_0000);
         }

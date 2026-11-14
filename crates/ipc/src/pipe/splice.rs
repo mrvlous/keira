@@ -26,7 +26,7 @@ pub mod splice {
         }
         Ok(len)
     }
-    
+
     pub fn sys_vmsplice(
         _fd: u64,
         _iov_ptr: u64,

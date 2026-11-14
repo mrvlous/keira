@@ -17,13 +17,13 @@
 pub mod context {
     use crate::scheduler::core::{CURRENT_TASK_IDX, TASKS};
     use crate::types::InterruptContext;
-    
+
     pub unsafe fn set_saved_sigcontext(ctx: InterruptContext) {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             task.saved_sigcontext = Some(ctx);
         }
     }
-    
+
     pub unsafe fn take_saved_sigcontext() -> Option<InterruptContext> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             task.saved_sigcontext.take()
@@ -38,7 +38,7 @@ pub mod delivery {
     use crate::signal::action::get_signal_handler;
     pub use crate::signal::posix::{SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK};
     use crate::types::{InterruptContext, TaskState};
-    
+
     pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
         if pid >= MAX_TASKS {
             return Err("Target PID out of scheduler table range");
@@ -49,7 +49,7 @@ pub mod delivery {
                 task.pending_signals |= 1 << sig;
                 return Ok(());
             }
-    
+
             let handler = get_signal_handler(pid, sig);
             if handler != 0 {
                 if task.saved_sigcontext.is_none() {
@@ -67,11 +67,11 @@ pub mod delivery {
                 }
                 return Ok(());
             }
-    
+
             if pid == 0 {
                 return Err("Signal delivery to bootstrap kernel shell is restricted");
             }
-    
+
             match sig {
                 1..=15 => {
                     task.state = TaskState::Zombie(-(sig as i32));
@@ -93,7 +93,7 @@ pub mod delivery {
             Err("Process with specified PID does not exist")
         }
     }
-    
+
     pub unsafe fn get_current_signal_mask() -> u32 {
         if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
             t.signal_mask
@@ -101,7 +101,7 @@ pub mod delivery {
             0
         }
     }
-    
+
     pub unsafe fn get_current_pending_signals() -> u32 {
         if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
             t.pending_signals
@@ -109,16 +109,20 @@ pub mod delivery {
             0
         }
     }
-    
-    pub unsafe fn sys_sigprocmask(how: i32, set: u32, old_set: *mut u32) -> Result<u32, &'static str> {
+
+    pub unsafe fn sys_sigprocmask(
+        how: i32,
+        set: u32,
+        old_set: *mut u32,
+    ) -> Result<u32, &'static str> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             if !old_set.is_null() {
                 *old_set = task.signal_mask;
             }
-    
+
             let unblockable = (1 << 9) | (1 << 19);
             let clean_set = set & !unblockable;
-    
+
             match how {
                 SIG_BLOCK => {
                     task.signal_mask |= clean_set;
@@ -131,7 +135,7 @@ pub mod delivery {
                 }
                 _ => return Err("Invalid how parameter for sigprocmask"),
             }
-    
+
             let unmasked_pending = task.pending_signals & !task.signal_mask;
             if unmasked_pending != 0 {
                 for s in 1..32 {

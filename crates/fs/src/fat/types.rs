@@ -66,7 +66,7 @@ pub mod lfn {
         /// Characters 12 through 13 of the long-name sub-component (UTF-16LE).
         pub name_part3: [u16; 2],
     }
-    
+
     pub struct LfnAccumulator {
         /// Buffer holding up to 260 UTF-16 code units.
         pub chars: [u16; 260],
@@ -75,13 +75,13 @@ pub mod lfn {
         /// Highest LFN sequence index encountered in the current chain.
         pub max_index: usize,
     }
-    
+
     impl Default for LfnAccumulator {
         fn default() -> Self {
             Self::new()
         }
     }
-    
+
     impl LfnAccumulator {
         /// Constructs a clean, inactive LFN accumulator instance.
         pub const fn new() -> Self {
@@ -91,7 +91,7 @@ pub mod lfn {
                 max_index: 0,
             }
         }
-    
+
         /// Resets the accumulator state for the next directory record sequence.
         pub fn reset(&mut self) {
             self.chars = [0u16; 260];
@@ -103,7 +103,7 @@ pub mod lfn {
 
 pub mod volume {
     use super::entry::DirectoryEntry;
-    
+
     #[derive(Clone, Copy, Debug)]
     pub struct Fat16Volume {
         /// Number of bytes in each logical sector (typically 512).
@@ -127,7 +127,7 @@ pub mod volume {
         /// Starting LBA sector of the cluster data region (Cluster 2).
         pub data_start_sector: u32,
     }
-    
+
     #[derive(Clone, Copy, Debug)]
     pub struct FoundEntry {
         /// Absolute LBA sector on block device containing this record.

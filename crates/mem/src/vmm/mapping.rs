@@ -16,11 +16,12 @@
 
 pub mod map {
     use super::super::table::{
-        active_pml4, PAGE_HUGE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK, PTE_ADDR_MASK_2M,
+        active_pml4, PAGE_HUGE, PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE, PTE_ADDR_MASK,
+        PTE_ADDR_MASK_2M,
     };
     use crate::pmm;
     use keira_arch::cpu::invlpg;
-    
+
     pub unsafe fn map_page(
         virtual_addr: u64,
         physical_addr: u64,
@@ -28,7 +29,7 @@ pub mod map {
     ) -> Result<(), &'static str> {
         map_page_in_pml4(active_pml4(), virtual_addr, physical_addr, flags)
     }
-    
+
     pub unsafe fn map_page_in_pml4(
         pml4_phys: u64,
         virtual_addr: u64,
@@ -38,18 +39,19 @@ pub mod map {
         if pml4_phys == 0 {
             return Ok(());
         }
-        if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) || !physical_addr.is_multiple_of(pmm::PAGE_SIZE)
+        if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE)
+            || !physical_addr.is_multiple_of(pmm::PAGE_SIZE)
         {
             return Err("Virtual or Physical address is not page-aligned");
         }
-    
+
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
         let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
         let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
-    
+
         let pml4 = pml4_phys as *mut u64;
-    
+
         let pdpt_entry = *pml4.add(pml4_idx);
         let mut newly_allocated_pdpt: Option<u64> = None;
         let pdpt_addr = if (pdpt_entry & PAGE_PRESENT) == 0 {
@@ -65,7 +67,7 @@ pub mod map {
             pdpt_entry & PTE_ADDR_MASK
         };
         let pdpt = pdpt_addr as *mut u64;
-    
+
         let pd_entry = *pdpt.add(pdpt_idx);
         let mut newly_allocated_pd: Option<u64> = None;
         let pd_addr = if (pd_entry & PAGE_PRESENT) == 0 {
@@ -92,7 +94,7 @@ pub mod map {
             pd_entry & PTE_ADDR_MASK
         };
         let pd = pd_addr as *mut u64;
-    
+
         let pt_entry = *pd.add(pd_idx);
         let pt_addr = if (pt_entry & PAGE_PRESENT) == 0 {
             let frame = match pmm::alloc_frame() {
@@ -121,16 +123,16 @@ pub mod map {
             pt_entry & PTE_ADDR_MASK
         };
         let pt = pt_addr as *mut u64;
-    
+
         *pt.add(pt_idx) = (physical_addr & PTE_ADDR_MASK) | flags | PAGE_PRESENT;
-    
+
         if pml4_phys == active_pml4() {
             invlpg(virtual_addr as usize);
         }
-    
+
         Ok(())
     }
-    
+
     pub unsafe fn map_huge_2m_page(
         virtual_addr: u64,
         physical_addr: u64,
@@ -142,14 +144,14 @@ pub mod map {
         if !physical_addr.is_multiple_of(0x20_0000) {
             return Err("Physical address is not 2MB aligned");
         }
-    
+
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
         let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
-    
+
         let pml4_phys = active_pml4();
         let pml4 = pml4_phys as *mut u64;
-    
+
         let pml4_entry = *pml4.add(pml4_idx);
         let pdpt_addr = if (pml4_entry & PAGE_PRESENT) == 0 {
             let frame = pmm::alloc_frame().ok_or("Out of physical memory for PDPT")?;
@@ -160,7 +162,7 @@ pub mod map {
             pml4_entry & PTE_ADDR_MASK
         };
         let pdpt = pdpt_addr as *mut u64;
-    
+
         let pdpt_entry = *pdpt.add(pdpt_idx);
         let pd_addr = if (pdpt_entry & PAGE_PRESENT) == 0 {
             let frame = pmm::alloc_frame().ok_or("Out of physical memory for PD")?;
@@ -171,9 +173,9 @@ pub mod map {
             pdpt_entry & PTE_ADDR_MASK
         };
         let pd = pd_addr as *mut u64;
-    
+
         *pd.add(pd_idx) = (physical_addr & PTE_ADDR_MASK_2M) | flags | PAGE_PRESENT | PAGE_HUGE;
-    
+
         invlpg(virtual_addr as usize);
         Ok(())
     }
@@ -186,26 +188,26 @@ pub mod protect {
     };
     use crate::pmm;
     use keira_arch::interrupts::smp::tlb_shootdown;
-    
+
     pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'static str> {
         if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err("Virtual address is not page-aligned");
         }
-    
+
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
         let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
         let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
-    
+
         let pml4_addr = active_pml4();
         let pml4 = pml4_addr as *mut u64;
-    
+
         let pml4_entry = *pml4.add(pml4_idx);
         if (pml4_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PDPT missing)");
         }
         let pdpt = (pml4_entry & PTE_ADDR_MASK) as *mut u64;
-    
+
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PD missing)");
@@ -220,7 +222,7 @@ pub mod protect {
             return Err("Cannot mprotect sub-page of 1GB huge page without splitting");
         }
         let pd = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
-    
+
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PT missing)");
@@ -235,43 +237,44 @@ pub mod protect {
             return Err("Cannot mprotect sub-page of 2MB huge page without splitting");
         }
         let pt = (pd_entry & PTE_ADDR_MASK) as *mut u64;
-    
+
         let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped");
         }
-    
+
         let phys_frame = pt_entry & PTE_ADDR_MASK;
         *pt.add(pt_idx) = phys_frame | new_flags | PAGE_PRESENT | PAGE_USER;
-    
+
         tlb_shootdown(virtual_addr);
         Ok(())
     }
-    
+
     pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> bool {
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
         let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
         let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
-    
+
         let pml4 = active_pml4() as *const u64;
         let pml4_entry = *pml4.add(pml4_idx);
         if (pml4_entry & PAGE_PRESENT) == 0 || (pml4_entry & PAGE_USER) == 0 {
             return false;
         }
-    
+
         let pdpt = (pml4_entry & PTE_ADDR_MASK) as *const u64;
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 || (pdpt_entry & PAGE_USER) == 0 {
             return false;
         }
         if (pdpt_entry & PAGE_HUGE) != 0 {
-            if require_writable && (pdpt_entry & PAGE_WRITABLE) == 0 && (pdpt_entry & PAGE_COW) == 0 {
+            if require_writable && (pdpt_entry & PAGE_WRITABLE) == 0 && (pdpt_entry & PAGE_COW) == 0
+            {
                 return false;
             }
             return true;
         }
-    
+
         let pd = (pdpt_entry & PTE_ADDR_MASK) as *const u64;
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_USER) == 0 {
@@ -283,17 +286,17 @@ pub mod protect {
             }
             return true;
         }
-    
+
         let pt = (pd_entry & PTE_ADDR_MASK) as *const u64;
         let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 || (pt_entry & PAGE_USER) == 0 {
             return false;
         }
-    
+
         if require_writable && (pt_entry & PAGE_WRITABLE) == 0 && (pt_entry & PAGE_COW) == 0 {
             return false;
         }
-    
+
         true
     }
 }
@@ -305,26 +308,26 @@ pub mod unmap {
     };
     use crate::pmm;
     use keira_arch::interrupts::smp::tlb_shootdown;
-    
+
     pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
         if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err("Virtual address is not page-aligned");
         }
-    
+
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
         let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
         let pt_idx = ((virtual_addr >> 12) & 0x1FF) as usize;
-    
+
         let pml4_addr = active_pml4();
         let pml4 = pml4_addr as *mut u64;
-    
+
         let pml4_entry = *pml4.add(pml4_idx);
         if (pml4_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PDPT missing)");
         }
         let pdpt = (pml4_entry & PTE_ADDR_MASK) as *mut u64;
-    
+
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PD missing)");
@@ -337,7 +340,7 @@ pub mod unmap {
             }
             return Err("Cannot unmap sub-page of 1GB huge page without splitting");
         }
-    
+
         let pd = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 {
@@ -351,53 +354,53 @@ pub mod unmap {
             }
             return Err("Cannot unmap sub-page of 2MB huge page without splitting");
         }
-    
+
         let pt = (pd_entry & PTE_ADDR_MASK) as *mut u64;
         let pt_entry = *pt.add(pt_idx);
         if (pt_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped");
         }
-    
+
         *pt.add(pt_idx) = 0;
         tlb_shootdown(virtual_addr);
-    
+
         Ok(())
     }
-    
+
     pub unsafe fn unmap_huge_2m_page(virtual_addr: u64) -> Result<(), &'static str> {
         if !virtual_addr.is_multiple_of(0x20_0000) {
             return Err("Virtual address is not 2MB aligned");
         }
-    
+
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
         let pd_idx = ((virtual_addr >> 21) & 0x1FF) as usize;
-    
+
         let pml4_phys = active_pml4();
         let pml4 = pml4_phys as *mut u64;
-    
+
         let pml4_entry = *pml4.add(pml4_idx);
         if (pml4_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PDPT missing)");
         }
         let pdpt = (pml4_entry & PTE_ADDR_MASK) as *mut u64;
-    
+
         let pdpt_entry = *pdpt.add(pdpt_idx);
         if (pdpt_entry & PAGE_PRESENT) == 0 {
             return Err("Page not mapped (PD missing)");
         }
         let pd = (pdpt_entry & PTE_ADDR_MASK) as *mut u64;
-    
+
         let pd_entry = *pd.add(pd_idx);
         if (pd_entry & PAGE_PRESENT) == 0 || (pd_entry & PAGE_HUGE) == 0 {
             return Err("2MB huge page not mapped");
         }
-    
+
         *pd.add(pd_idx) = 0;
         tlb_shootdown(virtual_addr);
         Ok(())
     }
-    
+
     pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
         if let Some(entry) = get_pte_in_pml4(active_pml4(), virtual_addr) {
             if (entry & PAGE_HUGE) != 0 {

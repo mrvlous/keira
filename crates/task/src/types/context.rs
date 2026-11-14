@@ -40,7 +40,7 @@ pub mod cpu {
         pub rsp: u64,
         pub ss: u64,
     }
-    
+
     #[cfg(target_arch = "x86")]
     #[repr(C, packed)]
     #[derive(Clone, Copy, Debug, Default)]

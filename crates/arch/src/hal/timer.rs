@@ -32,7 +32,6 @@ pub trait Timer {
     fn sleep_ms(&self, ms: u64);
 }
 
-
 pub mod ops {
     pub use super::*;
 }

@@ -18,11 +18,11 @@ pub mod counter {
     pub const EFD_SEMAPHORE: u32 = 1;
     pub const EFD_CLOEXEC: u32 = 0o2000000;
     pub const EFD_NONBLOCK: u32 = 0o4000;
-    
+
     pub const MAX_EVENTFDS: usize = 16;
-    
+
     pub type EventFd = EventFdEntry;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct EventFdEntry {
         pub id: u32,
@@ -30,7 +30,7 @@ pub mod counter {
         pub flags: u32,
         pub in_use: bool,
     }
-    
+
     impl EventFdEntry {
         pub const fn empty() -> Self {
             Self {
@@ -41,7 +41,7 @@ pub mod counter {
             }
         }
     }
-    
+
     pub static mut EVENTFD_TABLE: [EventFdEntry; MAX_EVENTFDS] = [
         EventFdEntry {
             id: 0,
@@ -65,15 +65,15 @@ pub mod counter {
         EventFdEntry::empty(),
         EventFdEntry::empty(),
     ];
-    
+
     pub static mut NEXT_EFD_ID: u32 = 1;
     pub static mut TOTAL_EVENTFD_WRITES: u64 = 1;
     pub static mut TOTAL_EVENTFD_READS: u64 = 0;
-    
+
     pub unsafe fn get_eventfd_table() -> &'static [EventFdEntry] {
         &EVENTFD_TABLE
     }
-    
+
     pub unsafe fn get_eventfd_stats() -> (usize, u64, u64) {
         let mut active = 0;
         for slot in EVENTFD_TABLE.iter() {
@@ -83,7 +83,7 @@ pub mod counter {
         }
         (active, TOTAL_EVENTFD_WRITES, TOTAL_EVENTFD_READS)
     }
-    
+
     pub unsafe fn create_eventfd(init_val: u64, flags: u32) -> Result<u32, &'static str> {
         for slot in EVENTFD_TABLE.iter_mut() {
             if !slot.in_use {
@@ -101,7 +101,7 @@ pub mod counter {
         }
         Err("EventFD table capacity exhausted")
     }
-    
+
     pub unsafe fn read_eventfd(id: u32) -> Result<u64, &'static str> {
         for slot in EVENTFD_TABLE.iter_mut() {
             if slot.in_use && slot.id == id {
@@ -121,7 +121,7 @@ pub mod counter {
         }
         Err("Invalid EventFD descriptor")
     }
-    
+
     pub unsafe fn write_eventfd(id: u32, val: u64) -> Result<(), &'static str> {
         if val == 0 {
             return Ok(());
@@ -138,7 +138,7 @@ pub mod counter {
         }
         Err("Invalid EventFD descriptor")
     }
-    
+
     pub unsafe fn close_eventfd(id: u32) -> Result<(), &'static str> {
         for slot in EVENTFD_TABLE.iter_mut() {
             if slot.in_use && slot.id == id {
@@ -152,11 +152,11 @@ pub mod counter {
 
 pub mod ops {
     use crate::event::eventfd::counter::create_eventfd;
-    
+
     pub unsafe fn sys_eventfd(init_val: u32, flags: u32) -> Result<u64, &'static str> {
         create_eventfd(init_val as u64, flags).map(|id| id as u64)
     }
-    
+
     pub unsafe fn sys_signalfd(_fd: i32, _mask: u64, _flags: u32) -> Result<u64, &'static str> {
         create_eventfd(1, 0).map(|id| id as u64)
     }

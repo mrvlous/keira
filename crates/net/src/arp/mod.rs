@@ -17,8 +17,8 @@
 pub mod cache;
 pub mod packet;
 
-pub use packet as protocol;
 pub use cache::*;
+pub use packet as protocol;
 pub use packet::*;
 
 pub mod table {

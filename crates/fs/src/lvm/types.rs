@@ -70,7 +70,7 @@ pub mod raid {
 
 pub mod vg {
     use super::lv::LogicalVolume;
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct VolumeGroup {
         /// Volume Group identifier (e.g. `vg_keira0`).

@@ -17,7 +17,7 @@
 pub mod cr {
     #[cfg(target_os = "none")]
     use core::arch::asm;
-    
+
     #[inline(always)]
     pub unsafe fn read_cr0() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -31,7 +31,7 @@ pub mod cr {
             cr0
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn write_cr0(val: usize) {
         #[cfg(not(target_os = "none"))]
@@ -43,7 +43,7 @@ pub mod cr {
             asm!("mov cr0, {}", in(reg) val, options(nomem, nostack, preserves_flags));
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn read_cr2() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -57,7 +57,7 @@ pub mod cr {
             cr2
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn read_cr3() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -71,7 +71,7 @@ pub mod cr {
             cr3
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn write_cr3(val: usize) {
         #[cfg(not(target_os = "none"))]
@@ -83,7 +83,7 @@ pub mod cr {
             asm!("mov cr3, {}", in(reg) val, options(nomem, nostack, preserves_flags));
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn read_cr4() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -97,7 +97,7 @@ pub mod cr {
             cr4
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn write_cr4(val: usize) {
         #[cfg(not(target_os = "none"))]
@@ -109,7 +109,7 @@ pub mod cr {
             asm!("mov cr4, {}", in(reg) val, options(nomem, nostack, preserves_flags));
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn read_rflags() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -136,7 +136,7 @@ pub use self::cr::*;
 pub mod msr {
     #[cfg(target_os = "none")]
     use core::arch::asm;
-    
+
     pub const IA32_APIC_BASE_MSR: u32 = 0x1B;
     pub const IA32_EFER_MSR: u32 = 0xC0000080;
     pub const IA32_STAR_MSR: u32 = 0xC0000081;
@@ -149,7 +149,7 @@ pub mod msr {
     pub const IA32_TEMPERATURE_TARGET_MSR: u32 = 0x1A2;
     pub const AMD_HARDWARE_THERMAL_STATUS_MSR: u32 = 0xC0010064;
     pub const IA32_PERF_STATUS_MSR: u32 = 0x198;
-    
+
     #[inline(always)]
     pub unsafe fn rdmsr(msr: u32) -> u64 {
         #[cfg(not(target_os = "none"))]
@@ -165,7 +165,7 @@ pub mod msr {
             ((high as u64) << 32) | (low as u64)
         }
     }
-    
+
     #[inline(always)]
     pub unsafe fn wrmsr(msr: u32, val: u64) {
         #[cfg(not(target_os = "none"))]

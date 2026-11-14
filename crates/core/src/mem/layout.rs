@@ -53,7 +53,6 @@ pub const PAGE_OFFSET_MASK_4K: usize = PAGE_SIZE_4K - 1;
 /// Mask extracting the 21-bit intra-page offset within a 2 MiB large page frame.
 pub const PAGE_OFFSET_MASK_2M: usize = PAGE_SIZE_2M - 1;
 
-
 pub mod constants {
     pub use super::*;
 }

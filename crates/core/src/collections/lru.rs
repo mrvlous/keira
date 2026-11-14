@@ -26,7 +26,7 @@ pub mod entry {
         /// Monotonic tick counter recorded at the most recent access or insertion.
         pub access_tick: u64,
     }
-    
+
     impl<K: Copy + PartialEq, V: Copy> LruEntry<K, V> {
         /// Constructs a vacant cache entry initialized with placeholder key and value.
         #[inline(always)]
@@ -38,7 +38,7 @@ pub mod entry {
                 access_tick: 0,
             }
         }
-    
+
         /// Constructs an active cache entry marked valid with the specified access tick.
         #[inline(always)]
         pub const fn active(key: K, value: V, access_tick: u64) -> Self {
@@ -49,7 +49,7 @@ pub mod entry {
                 access_tick,
             }
         }
-    
+
         /// Marks the cache slot as invalid and resets access tick metadata.
         #[inline(always)]
         pub fn invalidate(&mut self) {
@@ -63,14 +63,14 @@ pub use self::entry::LruEntry;
 
 pub mod cache {
     use super::entry::LruEntry;
-    
+
     pub struct LruCache<K: Copy + PartialEq, V: Copy, const CAP: usize> {
         /// Array of statically allocated cache entry slots.
         entries: [LruEntry<K, V>; CAP],
         /// Monotonically increasing tick counter incremented on every access and insertion.
         tick_counter: u64,
     }
-    
+
     impl<K: Copy + PartialEq, V: Copy, const CAP: usize> LruCache<K, V, CAP> {
         /// Constructs a new empty LRU cache table initialized with default templates.
         ///
@@ -84,7 +84,7 @@ pub mod cache {
                 tick_counter: 0,
             }
         }
-    
+
         /// Looks up a value by its key, refreshing its access timestamp on hit.
         ///
         /// # Returns
@@ -101,7 +101,7 @@ pub mod cache {
             }
             None
         }
-    
+
         /// Looks up a value by key without updating its LRU access timestamp.
         ///
         /// Useful for telemetry or debug inspections that must not alter eviction priority.
@@ -113,7 +113,7 @@ pub mod cache {
             }
             None
         }
-    
+
         /// Inserts or updates a key-value mapping in the cache table.
         ///
         /// If the key is already cached, its value and access tick are updated.
@@ -121,7 +121,7 @@ pub mod cache {
         /// If the cache is full, the least recently accessed slot is evicted.
         pub fn insert(&mut self, key: K, value: V) {
             self.tick_counter = self.tick_counter.wrapping_add(1);
-    
+
             // Check if key already exists in an active slot
             for entry in self.entries.iter_mut() {
                 if entry.valid && entry.key == key {
@@ -130,11 +130,11 @@ pub mod cache {
                     return;
                 }
             }
-    
+
             // Locate an invalid slot or identify the entry with the oldest access tick
             let mut lru_idx = 0;
             let mut min_tick = u64::MAX;
-    
+
             for (idx, entry) in self.entries.iter().enumerate() {
                 if !entry.valid {
                     lru_idx = idx;
@@ -145,7 +145,7 @@ pub mod cache {
                     lru_idx = idx;
                 }
             }
-    
+
             self.entries[lru_idx] = LruEntry {
                 key,
                 value,
@@ -153,13 +153,13 @@ pub mod cache {
                 access_tick: self.tick_counter,
             };
         }
-    
+
         /// Returns the maximum capacity of the cache table.
         #[inline(always)]
         pub const fn capacity(&self) -> usize {
             CAP
         }
-    
+
         /// Returns the count of valid entries currently resident in the cache.
         pub fn len(&self) -> usize {
             let mut count = 0;
@@ -170,12 +170,12 @@ pub mod cache {
             }
             count
         }
-    
+
         /// Returns true if the cache contains no valid entries.
         pub fn is_empty(&self) -> bool {
             self.len() == 0
         }
-    
+
         /// Invalidates all entries within the cache, resetting it to an empty state.
         pub fn clear(&mut self) {
             for entry in self.entries.iter_mut() {

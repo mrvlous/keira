@@ -22,44 +22,44 @@ pub mod driver {
     use core::sync::atomic::{AtomicBool, Ordering};
     use keira_arch::cpu::inb;
     use keira_arch::interrupts::pic;
-    
+
     pub const KBD_DATA_PORT: u16 = 0x60;
-    
+
     static SHIFT_PRESSED: AtomicBool = AtomicBool::new(false);
     static CTRL_PRESSED: AtomicBool = AtomicBool::new(false);
     static EXTENDED_SCANCODE: AtomicBool = AtomicBool::new(false);
-    
+
     #[cfg(not(test))]
     extern "C" {
         fn shell_handle_keypress(c: u8);
     }
-    
+
     #[cfg(test)]
     #[no_mangle]
     pub extern "C" fn shell_handle_keypress(_c: u8) {}
-    
+
     pub const KBD_QUEUE_SIZE: usize = 128;
     static mut KBD_QUEUE: [u8; KBD_QUEUE_SIZE] = [0u8; KBD_QUEUE_SIZE];
     static mut KBD_HEAD: usize = 0;
     static mut KBD_TAIL: usize = 0;
-    
+
     pub fn init() {
         pic::clear_mask(1);
     }
-    
+
     #[no_mangle]
     pub extern "C" fn keyboard_handler() {
         unsafe {
             let scancode = inb(KBD_DATA_PORT);
-    
+
             if scancode == 0xE0 {
                 EXTENDED_SCANCODE.store(true, Ordering::Relaxed);
                 pic::send_eoi(1);
                 return;
             }
-    
+
             let is_extended = EXTENDED_SCANCODE.swap(false, Ordering::Relaxed);
-    
+
             if (scancode & 0x80) != 0 {
                 // Key release event
                 if !is_extended {
@@ -78,7 +78,7 @@ pub mod driver {
                         CTRL_PRESSED.store(true, Ordering::Relaxed);
                     }
                 }
-    
+
                 let is_raw_tty = (crate::tty::get_termios().c_lflag & crate::tty::ICANON) == 0;
                 if scancode == KEY_UP {
                     if is_raw_tty {
@@ -119,7 +119,7 @@ pub mod driver {
                     } else {
                         KBD_US_LAYOUT[scancode as usize]
                     };
-    
+
                     if c != 0 {
                         push_input_char(c);
                         let input_ch = if CTRL_PRESSED.load(Ordering::Relaxed) {
@@ -138,11 +138,11 @@ pub mod driver {
                     }
                 }
             }
-    
+
             pic::send_eoi(1);
         }
     }
-    
+
     pub unsafe fn push_input_char(c: u8) {
         let next_head = (KBD_HEAD + 1) % KBD_QUEUE_SIZE;
         if next_head != KBD_TAIL {
@@ -150,7 +150,7 @@ pub mod driver {
             KBD_HEAD = next_head;
         }
     }
-    
+
     pub unsafe fn pop_input_char() -> Option<u8> {
         if KBD_HEAD == KBD_TAIL {
             None
@@ -160,7 +160,7 @@ pub mod driver {
             Some(c)
         }
     }
-    
+
     pub unsafe fn input_queue_len() -> usize {
         if KBD_HEAD >= KBD_TAIL {
             KBD_HEAD - KBD_TAIL
@@ -168,7 +168,7 @@ pub mod driver {
             KBD_QUEUE_SIZE - (KBD_TAIL - KBD_HEAD)
         }
     }
-    
+
     pub unsafe fn flush_input_queue() {
         KBD_HEAD = 0;
         KBD_TAIL = 0;
@@ -177,23 +177,23 @@ pub mod driver {
 
 pub mod scancode {
     pub const KEY_LSHIFT: u8 = 0x2A;
-    
+
     pub const KEY_RSHIFT: u8 = 0x36;
-    
+
     pub const KEY_LCTRL: u8 = 0x1D;
-    
+
     pub const KEY_UP: u8 = 0x48;
-    
+
     pub const KEY_DOWN: u8 = 0x50;
-    
+
     pub const KEY_LEFT: u8 = 0x4B;
-    
+
     pub const KEY_RIGHT: u8 = 0x4D;
-    
+
     pub const KEY_F3: u8 = 0x3D;
-    
+
     pub const KEY_F10: u8 = 0x44;
-    
+
     pub const KBD_US_LAYOUT: [u8; 128] = {
         let mut table = [0u8; 128];
         table[0x01] = 27;
@@ -251,7 +251,7 @@ pub mod scancode {
         table[0x39] = b' ';
         table
     };
-    
+
     pub const KBD_US_SHIFTED_LAYOUT: [u8; 128] = {
         let mut table = [0u8; 128];
         table[0x01] = 27;
@@ -318,39 +318,39 @@ pub use self::scancode::*;
 mod tests {
     use super::driver::{input_queue_len, pop_input_char, push_input_char};
     use super::scancode::{KBD_US_LAYOUT, KBD_US_SHIFTED_LAYOUT};
-    
+
     #[test]
     fn test_scancode_ascii_mapping() {
         // 0x1E is 'a'
         assert_eq!(KBD_US_LAYOUT[0x1E], b'a');
         assert_eq!(KBD_US_SHIFTED_LAYOUT[0x1E], b'A');
-    
+
         // 0x10 is 'q'
         assert_eq!(KBD_US_LAYOUT[0x10], b'q');
         assert_eq!(KBD_US_SHIFTED_LAYOUT[0x10], b'Q');
-    
+
         // 0x02 is '1' / '!'
         assert_eq!(KBD_US_LAYOUT[0x02], b'1');
         assert_eq!(KBD_US_SHIFTED_LAYOUT[0x02], b'!');
-    
+
         // 0x1C is Enter ('\n')
         assert_eq!(KBD_US_LAYOUT[0x1C], b'\n');
         assert_eq!(KBD_US_SHIFTED_LAYOUT[0x1C], b'\n');
     }
-    
+
     #[test]
     fn test_keyboard_input_queue() {
         unsafe {
             // Drain any preexisting elements
             while pop_input_char().is_some() {}
             assert_eq!(input_queue_len(), 0);
-    
+
             push_input_char(b'H');
             push_input_char(b'e');
             push_input_char(b'l');
             push_input_char(b'l');
             push_input_char(b'o');
-    
+
             assert_eq!(input_queue_len(), 5);
             assert_eq!(pop_input_char(), Some(b'H'));
             assert_eq!(pop_input_char(), Some(b'e'));

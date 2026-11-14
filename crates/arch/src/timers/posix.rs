@@ -166,7 +166,6 @@ pub unsafe fn sys_timer_settime(
     Err("Invalid timer ID")
 }
 
-
 pub mod emulation {
     pub use super::*;
 }

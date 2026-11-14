@@ -15,34 +15,33 @@
 //! Subsystem module: virtio.
 
 pub mod device {
-pub const VIRTIO_NET_VENDOR_ID: u16 = 0x1AF4;
-pub const VIRTIO_NET_DEVICE_ID: u16 = 0x1000;
+    pub const VIRTIO_NET_VENDOR_ID: u16 = 0x1AF4;
+    pub const VIRTIO_NET_DEVICE_ID: u16 = 0x1000;
 
-/// VirtIO-Net device descriptor.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct VirtioNetDevice {
-    pub io_base: u16,
-    pub mac: [u8; 6],
-    pub active: bool,
-}
+    /// VirtIO-Net device descriptor.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct VirtioNetDevice {
+        pub io_base: u16,
+        pub mac: [u8; 6],
+        pub active: bool,
+    }
 
-impl VirtioNetDevice {
-    /// Construct a new default VirtIO-Net device descriptor.
-    pub const fn new() -> Self {
-        Self {
-            io_base: 0,
-            mac: [0x52, 0x54, 0x00, 0x12, 0x34, 0x58],
-            active: false,
+    impl VirtioNetDevice {
+        /// Construct a new default VirtIO-Net device descriptor.
+        pub const fn new() -> Self {
+            Self {
+                io_base: 0,
+                mac: [0x52, 0x54, 0x00, 0x12, 0x34, 0x58],
+                active: false,
+            }
         }
     }
-}
 
-impl Default for VirtioNetDevice {
-    fn default() -> Self {
-        Self::new()
+    impl Default for VirtioNetDevice {
+        fn default() -> Self {
+            Self::new()
+        }
     }
-}
-
 }
 
 pub use self::device::*;

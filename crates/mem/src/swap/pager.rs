@@ -16,9 +16,9 @@
 
 pub mod manager {
     pub const MAX_SWAP_SLOTS: usize = 16384;
-    
+
     pub const SWAP_BITMAP_WORDS: usize = MAX_SWAP_SLOTS / 64;
-    
+
     static mut SWAP_ACTIVE: bool = false;
     static mut SWAP_DEVICE: [u8; 64] = [0u8; 64];
     static mut SWAP_DEVICE_LEN: usize = 0;
@@ -27,7 +27,7 @@ pub mod manager {
     static mut SWAP_USED_PAGES: u64 = 0;
     static mut SWAP_IN_COUNT: u64 = 0;
     static mut SWAP_OUT_COUNT: u64 = 0;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct SwapStats {
         pub active: bool,
@@ -39,19 +39,19 @@ pub mod manager {
         pub swap_in_count: u64,
         pub swap_out_count: u64,
     }
-    
+
     pub fn swapon(path: &str, _swapflags: i32) -> Result<(), &'static str> {
         unsafe {
             if SWAP_ACTIVE {
                 return Err("Swap space is already active");
             }
-    
+
             let bytes = path.as_bytes();
             let copy_len = core::cmp::min(bytes.len(), 63);
             SWAP_DEVICE = [0u8; 64];
             SWAP_DEVICE[..copy_len].copy_from_slice(&bytes[..copy_len]);
             SWAP_DEVICE_LEN = copy_len;
-    
+
             SWAP_BITMAP = [0u64; SWAP_BITMAP_WORDS];
             SWAP_TOTAL_PAGES = MAX_SWAP_SLOTS as u64;
             SWAP_USED_PAGES = 0;
@@ -61,7 +61,7 @@ pub mod manager {
         }
         Ok(())
     }
-    
+
     pub unsafe fn sys_swapon(path_ptr: *const u8, swapflags: i32) -> Result<u64, &'static str> {
         let path = if !path_ptr.is_null() {
             let mut len = 0;
@@ -72,16 +72,16 @@ pub mod manager {
         } else {
             "/swapfile"
         };
-    
+
         swapon(path, swapflags).map(|_| 0)
     }
-    
+
     pub fn swapoff(_path: Option<&str>) -> Result<(), &'static str> {
         unsafe {
             if !SWAP_ACTIVE {
                 return Err("Swap space is not active");
             }
-    
+
             SWAP_ACTIVE = false;
             SWAP_BITMAP = [0u64; SWAP_BITMAP_WORDS];
             SWAP_USED_PAGES = 0;
@@ -89,7 +89,7 @@ pub mod manager {
         }
         Ok(())
     }
-    
+
     pub unsafe fn sys_swapoff(path_ptr: *const u8) -> Result<u64, &'static str> {
         let path = if !path_ptr.is_null() {
             let mut len = 0;
@@ -100,20 +100,20 @@ pub mod manager {
         } else {
             None
         };
-    
+
         swapoff(path).map(|_| 0)
     }
-    
+
     pub fn is_active() -> bool {
         unsafe { SWAP_ACTIVE }
     }
-    
+
     pub fn alloc_swap_slot() -> Option<usize> {
         unsafe {
             if !SWAP_ACTIVE || SWAP_USED_PAGES >= SWAP_TOTAL_PAGES {
                 return None;
             }
-    
+
             for (word_idx, word_ref) in SWAP_BITMAP.iter_mut().enumerate() {
                 let word = *word_ref;
                 if word != u64::MAX {
@@ -127,7 +127,7 @@ pub mod manager {
         }
         None
     }
-    
+
     pub fn free_swap_slot(slot: usize) -> Result<(), &'static str> {
         unsafe {
             if !SWAP_ACTIVE {
@@ -136,22 +136,22 @@ pub mod manager {
             if slot >= MAX_SWAP_SLOTS {
                 return Err("Invalid swap slot index");
             }
-    
+
             let word_idx = slot / 64;
             let bit_idx = slot % 64;
             let mask = 1u64 << bit_idx;
-    
+
             if (SWAP_BITMAP[word_idx] & mask) == 0 {
                 return Err("Swap slot was not allocated");
             }
-    
+
             SWAP_BITMAP[word_idx] &= !mask;
             SWAP_USED_PAGES = SWAP_USED_PAGES.saturating_sub(1);
             SWAP_IN_COUNT += 1;
             Ok(())
         }
     }
-    
+
     pub fn swap_stats() -> SwapStats {
         unsafe {
             let free = SWAP_TOTAL_PAGES.saturating_sub(SWAP_USED_PAGES);

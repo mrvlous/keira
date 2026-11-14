@@ -16,14 +16,16 @@
 
 pub mod limits {
     use crate::cgroups::namespace::table::{parse_u32, CGROUP_TABLE};
-    
+
     pub unsafe fn set_cgroup_limits(
         name_or_id: &str,
         max_mem: Option<u64>,
         cpu_shares: Option<u32>,
     ) -> Result<(), &'static str> {
         for slot in CGROUP_TABLE.iter_mut() {
-            if slot.in_use && (slot.name_str() == name_or_id || parse_u32(name_or_id) == Ok(slot.id)) {
+            if slot.in_use
+                && (slot.name_str() == name_or_id || parse_u32(name_or_id) == Ok(slot.id))
+            {
                 if let Some(mem) = max_mem {
                     slot.max_memory_bytes = mem;
                 }
@@ -39,9 +41,9 @@ pub mod limits {
 
 pub mod memory {
     use keira_io::vga;
-    
+
     use crate::cgroups::namespace::table::CGROUP_TABLE;
-    
+
     pub fn check_memory_limit(requested_bytes: u64) -> bool {
         unsafe {
             let root_cg = &CGROUP_TABLE[0];

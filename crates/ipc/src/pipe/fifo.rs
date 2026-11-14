@@ -16,29 +16,29 @@
 
 pub mod buffer {
     pub const MAX_PIPES: usize = 32;
-    
+
     pub const PIPE_BUFFER_CAPACITY: usize = 4096;
-    
+
     pub const PIPE_BUFFER_SIZE: usize = PIPE_BUFFER_CAPACITY;
-    
+
     pub const O_NONBLOCK: u32 = 0x800;
-    
+
     pub const O_CLOEXEC: u32 = 0x80000;
-    
+
     pub struct PipeBuffer {
         pub data: [u8; 1024],
         pub read_pos: usize,
         pub write_pos: usize,
         pub count: usize,
     }
-    
+
     pub static mut SYSTEM_PIPE: PipeBuffer = PipeBuffer {
         data: [0; 1024],
         read_pos: 0,
         write_pos: 0,
         count: 0,
     };
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct PipeChannel {
         pub id: u32,
@@ -51,7 +51,7 @@ pub mod buffer {
         pub writers_count: u32,
         pub flags: u32,
     }
-    
+
     impl PipeChannel {
         /// Const constructor for an unallocated pipe channel slot.
         pub const fn empty() -> Self {
@@ -68,22 +68,23 @@ pub mod buffer {
             }
         }
     }
-    
+
     pub static mut PIPE_TABLE: [PipeChannel; MAX_PIPES] = [PipeChannel::empty(); MAX_PIPES];
-    
+
     pub static mut NEXT_PIPE_ID: u32 = 1;
 }
 
 pub mod ops {
     use crate::pipe::fifo::buffer::{
-        PipeChannel, MAX_PIPES, NEXT_PIPE_ID, O_NONBLOCK, PIPE_BUFFER_CAPACITY, PIPE_TABLE, SYSTEM_PIPE,
+        PipeChannel, MAX_PIPES, NEXT_PIPE_ID, O_NONBLOCK, PIPE_BUFFER_CAPACITY, PIPE_TABLE,
+        SYSTEM_PIPE,
     };
-    
+
     pub unsafe fn write_pipe(buf: &[u8]) -> usize {
         let pipe_ptr = &raw mut SYSTEM_PIPE;
         let pipe = &mut *pipe_ptr;
         let mut written = 0usize;
-    
+
         for &b in buf {
             if pipe.count >= 1024 {
                 break;
@@ -93,15 +94,15 @@ pub mod ops {
             pipe.count += 1;
             written += 1;
         }
-    
+
         written
     }
-    
+
     pub unsafe fn read_pipe(buf: &mut [u8]) -> usize {
         let pipe_ptr = &raw mut SYSTEM_PIPE;
         let pipe = &mut *pipe_ptr;
         let mut read_bytes = 0usize;
-    
+
         for slot in buf.iter_mut() {
             if pipe.count == 0 {
                 break;
@@ -111,10 +112,10 @@ pub mod ops {
             pipe.count -= 1;
             read_bytes += 1;
         }
-    
+
         read_bytes
     }
-    
+
     pub unsafe fn create_pipe() -> Result<(usize, usize), &'static str> {
         let pipe_ptr = &raw mut SYSTEM_PIPE;
         let pipe = &mut *pipe_ptr;
@@ -123,7 +124,7 @@ pub mod ops {
         pipe.count = 0;
         Ok((3, 4))
     }
-    
+
     pub unsafe fn create_pipe_channel(flags: u32) -> Result<u32, &'static str> {
         for slot in PIPE_TABLE.iter_mut() {
             if !slot.in_use {
@@ -132,7 +133,7 @@ pub mod ops {
                 if NEXT_PIPE_ID == 0 {
                     NEXT_PIPE_ID = 1;
                 }
-    
+
                 *slot = PipeChannel {
                     id,
                     in_use: true,
@@ -149,7 +150,7 @@ pub mod ops {
         }
         Err("Pipe table capacity exhausted")
     }
-    
+
     pub unsafe fn read_pipe_channel(pipe_id: u32, buf: &mut [u8]) -> Result<usize, i64> {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -162,22 +163,22 @@ pub mod ops {
                     }
                     return Ok(to_read);
                 }
-    
+
                 // Buffer is empty: check if writer endpoints remain open
                 if slot.writers_count == 0 {
                     return Ok(0); // POSIX EOF
                 }
-    
+
                 if (slot.flags & O_NONBLOCK) != 0 {
                     return Err(-11); // -EAGAIN
                 }
-    
+
                 return Ok(0);
             }
         }
         Err(-9) // -EBADF
     }
-    
+
     pub unsafe fn write_pipe_channel(pipe_id: u32, buf: &[u8]) -> Result<usize, i64> {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -185,7 +186,7 @@ pub mod ops {
                 if slot.readers_count == 0 {
                     return Err(-32); // -EPIPE
                 }
-    
+
                 let available = PIPE_BUFFER_CAPACITY - slot.count;
                 if available == 0 {
                     if (slot.flags & O_NONBLOCK) != 0 {
@@ -193,7 +194,7 @@ pub mod ops {
                     }
                     return Ok(0);
                 }
-    
+
                 let to_write = buf.len().min(available);
                 for &byte in buf.iter().take(to_write) {
                     slot.data[slot.tail] = byte;
@@ -205,7 +206,7 @@ pub mod ops {
         }
         Err(-9) // -EBADF
     }
-    
+
     pub unsafe fn close_pipe_read(pipe_id: u32) {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -219,7 +220,7 @@ pub mod ops {
             }
         }
     }
-    
+
     pub unsafe fn close_pipe_write(pipe_id: u32) {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -233,7 +234,7 @@ pub mod ops {
             }
         }
     }
-    
+
     pub unsafe fn dup_pipe_endpoint(pipe_id: u32, is_write: bool) {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -246,7 +247,7 @@ pub mod ops {
             }
         }
     }
-    
+
     pub unsafe fn get_pipe_stats() -> (usize, usize) {
         let mut active = 0usize;
         let mut buffered = 0usize;
@@ -258,18 +259,18 @@ pub mod ops {
         }
         (active, buffered)
     }
-    
+
     pub unsafe fn get_pipe_table() -> &'static [PipeChannel; MAX_PIPES] {
         &*core::ptr::addr_of!(PIPE_TABLE)
     }
-    
+
     pub unsafe fn pipe_table_reset() {
         for slot in PIPE_TABLE.iter_mut() {
             *slot = PipeChannel::empty();
         }
         NEXT_PIPE_ID = 1;
     }
-    
+
     pub unsafe fn query_pipe_readiness(pipe_id: u32, is_write: bool) -> (bool, bool, bool, bool) {
         for slot in PIPE_TABLE.iter() {
             if slot.in_use && slot.id == pipe_id {

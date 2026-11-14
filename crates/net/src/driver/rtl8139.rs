@@ -15,34 +15,33 @@
 //! Subsystem module: rtl8139.
 
 pub mod device {
-pub const RTL8139_VENDOR_ID: u16 = 0x10EC;
-pub const RTL8139_DEVICE_ID: u16 = 0x8139;
+    pub const RTL8139_VENDOR_ID: u16 = 0x10EC;
+    pub const RTL8139_DEVICE_ID: u16 = 0x8139;
 
-/// Realtek RTL8139 device state descriptor.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Rtl8139Device {
-    pub io_base: u16,
-    pub mac: [u8; 6],
-    pub active: bool,
-}
+    /// Realtek RTL8139 device state descriptor.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct Rtl8139Device {
+        pub io_base: u16,
+        pub mac: [u8; 6],
+        pub active: bool,
+    }
 
-impl Rtl8139Device {
-    /// Construct a new default RTL8139 device state descriptor.
-    pub const fn new() -> Self {
-        Self {
-            io_base: 0,
-            mac: [0x52, 0x54, 0x00, 0x12, 0x34, 0x57],
-            active: false,
+    impl Rtl8139Device {
+        /// Construct a new default RTL8139 device state descriptor.
+        pub const fn new() -> Self {
+            Self {
+                io_base: 0,
+                mac: [0x52, 0x54, 0x00, 0x12, 0x34, 0x57],
+                active: false,
+            }
         }
     }
-}
 
-impl Default for Rtl8139Device {
-    fn default() -> Self {
-        Self::new()
+    impl Default for Rtl8139Device {
+        fn default() -> Self {
+            Self::new()
+        }
     }
-}
-
 }
 
 pub use self::device::*;

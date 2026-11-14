@@ -18,7 +18,7 @@ pub mod table {
     use crate::futex::wait::waiter::{
         FutexWaiter, FUTEX_REQUEUE, FUTEX_WAIT, FUTEX_WAKE, MAX_FUTEX_WAITERS,
     };
-    
+
     pub static mut FUTEX_TABLE: [FutexWaiter; MAX_FUTEX_WAITERS] = [
         FutexWaiter {
             uaddr: 0x400000,
@@ -43,15 +43,15 @@ pub mod table {
         FutexWaiter::empty(),
         FutexWaiter::empty(),
     ];
-    
+
     pub static mut TOTAL_FUTEX_WAITS: u64 = 1;
     pub static mut TOTAL_FUTEX_WAKES: u64 = 0;
     pub static mut TOTAL_FUTEX_REQUEUES: u64 = 0;
-    
+
     pub unsafe fn get_futex_table() -> &'static [FutexWaiter] {
         &FUTEX_TABLE
     }
-    
+
     pub unsafe fn get_futex_stats() -> (u64, u64, u64, usize) {
         let mut active = 0;
         for slot in FUTEX_TABLE.iter() {
@@ -66,7 +66,7 @@ pub mod table {
             active,
         )
     }
-    
+
     pub unsafe fn futex_reset() {
         for slot in FUTEX_TABLE.iter_mut() {
             *slot = FutexWaiter::empty();
@@ -75,7 +75,7 @@ pub mod table {
         TOTAL_FUTEX_WAKES = 0;
         TOTAL_FUTEX_REQUEUES = 0;
     }
-    
+
     pub unsafe fn sys_futex(
         uaddr: *mut u32,
         futex_op: u32,

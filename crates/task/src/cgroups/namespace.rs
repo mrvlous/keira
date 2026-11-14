@@ -26,7 +26,7 @@ pub mod pid {
 
 pub mod table {
     use crate::cgroups::model::{Cgroup, MAX_CGROUPS};
-    
+
     pub static mut CGROUP_TABLE: [Cgroup; MAX_CGROUPS] = [
         // 0: root
         Cgroup {
@@ -71,18 +71,18 @@ pub mod table {
         Cgroup::empty(),
         Cgroup::empty(),
     ];
-    
+
     pub static mut NEXT_CGROUP_ID: u32 = 3;
-    
+
     pub fn init() {
         keira_core::pr_info!("cgroup", "resource control groups subsystem initialized");
         keira_core::pr_info!("namespace", "isolated PID container namespaces mapped");
     }
-    
+
     pub unsafe fn get_cgroup_table() -> &'static [Cgroup] {
         &CGROUP_TABLE
     }
-    
+
     pub unsafe fn get_cgroup_stats() -> (usize, u64, u64) {
         let mut active = 0;
         let mut total_used = 0;
@@ -96,7 +96,7 @@ pub mod table {
         }
         (active, total_used, total_max)
     }
-    
+
     pub unsafe fn create_cgroup(
         name: &str,
         max_mem: u64,
@@ -129,10 +129,12 @@ pub mod table {
         }
         Err("Cgroup table capacity full")
     }
-    
+
     pub unsafe fn delete_cgroup(name_or_id: &str) -> Result<(), &'static str> {
         for slot in CGROUP_TABLE.iter_mut() {
-            if slot.in_use && (slot.name_str() == name_or_id || parse_u32(name_or_id) == Ok(slot.id)) {
+            if slot.in_use
+                && (slot.name_str() == name_or_id || parse_u32(name_or_id) == Ok(slot.id))
+            {
                 if slot.id == 0 {
                     return Err("Cannot delete root cgroup");
                 }
@@ -142,7 +144,7 @@ pub mod table {
         }
         Err("Cgroup not found")
     }
-    
+
     pub(crate) fn parse_u32(s: &str) -> Result<u32, ()> {
         if s.is_empty() {
             return Err(());

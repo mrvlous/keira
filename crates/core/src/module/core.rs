@@ -26,7 +26,7 @@ pub mod state {
         /// Module cleanup routine is active, preparing for unregistration and removal.
         Unloading,
     }
-    
+
     impl ModuleState {
         /// Returns the textual representation of the module state.
         pub const fn as_str(&self) -> &'static str {
@@ -44,9 +44,9 @@ pub use self::state::ModuleState;
 
 pub mod descriptor {
     use super::state::ModuleState;
-    
+
     pub const MAX_MODULE_NAME: usize = 32;
-    
+
     #[derive(Debug, Clone, Copy)]
     pub struct KernelModule {
         /// Module ASCII identifier stored in a fixed-size byte buffer.
@@ -64,7 +64,7 @@ pub mod descriptor {
         /// Human-readable module description.
         pub description: &'static str,
     }
-    
+
     impl KernelModule {
         /// Constructs an uninitialized, vacant module descriptor.
         pub const fn empty() -> Self {
@@ -78,7 +78,7 @@ pub mod descriptor {
                 description: "",
             }
         }
-    
+
         /// Retrieves the module name as a UTF-8 string slice.
         pub fn name_str(&self) -> &str {
             if self.name_len == 0 || self.name_len > MAX_MODULE_NAME {
@@ -86,7 +86,7 @@ pub mod descriptor {
             }
             core::str::from_utf8(&self.name[..self.name_len]).unwrap_or("")
         }
-    
+
         /// Checks if this module matches the queried name string.
         pub fn matches_name(&self, query: &str) -> bool {
             self.name_str() == query

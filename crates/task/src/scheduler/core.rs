@@ -16,24 +16,24 @@
 
 pub mod hooks {
     use core::fmt::Write;
-    
+
     use super::state::{CURRENT_TASK_IDX, TASKS};
     use crate::types::{TaskState, MAX_TASKS};
-    
+
     pub type TaskResourceCleanupHook = fn(pid: usize);
     pub static mut TASK_CLEANUP_HOOK: Option<TaskResourceCleanupHook> = None;
-    
+
     pub fn register_task_cleanup_hook(hook: TaskResourceCleanupHook) {
         unsafe {
             TASK_CLEANUP_HOOK = Some(hook);
         }
     }
-    
+
     struct SliceWriter<'a> {
         buf: &'a mut [u8],
         offset: usize,
     }
-    
+
     impl<'a> Write for SliceWriter<'a> {
         fn write_str(&mut self, s: &str) -> core::fmt::Result {
             let bytes = s.as_bytes();
@@ -44,7 +44,7 @@ pub mod hooks {
             Ok(())
         }
     }
-    
+
     pub fn task_status_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if pid >= MAX_TASKS {
@@ -72,7 +72,7 @@ pub mod hooks {
                 super::state::TASK_STACK_SIZE / 1024
             };
             let rss_kb = vsize_kb;
-    
+
             let mut writer = SliceWriter { buf, offset: 0 };
             let _ = core::write!(
                 writer,
@@ -109,7 +109,7 @@ pub mod hooks {
             Some(writer.offset)
         }
     }
-    
+
     pub fn task_cmdline_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if pid >= MAX_TASKS {
@@ -122,7 +122,7 @@ pub mod hooks {
             Some(to_copy)
         }
     }
-    
+
     pub fn task_stat_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if pid >= MAX_TASKS {
@@ -144,7 +144,7 @@ pub mod hooks {
                 super::state::TASK_STACK_SIZE
             };
             let rss = (vsize + 4095) / 4096;
-    
+
             let mut writer = SliceWriter { buf, offset: 0 };
             let _ = core::write!(
                 writer,
@@ -170,7 +170,7 @@ pub mod hooks {
             Some(writer.offset)
         }
     }
-    
+
     pub fn task_statm_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if pid >= MAX_TASKS {
@@ -191,7 +191,7 @@ pub mod hooks {
             let data_pages =
                 (task.program_break.saturating_sub(task.program_break_start) + 4095) / 4096;
             let dt_pages = 0;
-    
+
             let mut writer = SliceWriter { buf, offset: 0 };
             let _ = core::write!(
                 writer,
@@ -207,7 +207,7 @@ pub mod hooks {
             Some(writer.offset)
         }
     }
-    
+
     pub fn task_exists_provider(pid: usize) -> bool {
         unsafe {
             if pid >= MAX_TASKS {
@@ -216,7 +216,7 @@ pub mod hooks {
             TASKS[pid].is_some()
         }
     }
-    
+
     pub fn task_list_provider(out_pids: &mut [usize]) -> usize {
         unsafe {
             let mut count = 0;
@@ -231,11 +231,11 @@ pub mod hooks {
             count
         }
     }
-    
+
     pub fn current_pid_provider() -> usize {
         unsafe { CURRENT_TASK_IDX }
     }
-    
+
     pub fn task_limits_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if pid >= MAX_TASKS {
@@ -245,7 +245,7 @@ pub mod hooks {
             Some(crate::rlimit::format_task_limits(&task.rlimits, buf))
         }
     }
-    
+
     fn write_vaddr_range(writer: &mut SliceWriter, start: u64, end: u64) {
         if end <= 0xFFFF_FFFF {
             let _ = core::write!(writer, "{:08x}-{:08x}", start, end);
@@ -253,7 +253,7 @@ pub mod hooks {
             let _ = core::write!(writer, "{:012x}-{:012x}", start, end);
         }
     }
-    
+
     pub fn task_maps_provider(pid: usize, buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if pid >= MAX_TASKS {
@@ -261,7 +261,7 @@ pub mod hooks {
             }
             let task = TASKS[pid].as_ref()?;
             let mut writer = SliceWriter { buf, offset: 0 };
-    
+
             if !task.is_user {
                 // Kernel thread: emit kernel stack mapping
                 let stack_top = task.stack_addr + super::state::TASK_STACK_SIZE;
@@ -269,7 +269,7 @@ pub mod hooks {
                 let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [kstack]\n");
                 return Some(writer.offset);
             }
-    
+
             // 1. Text segment (ELF executable)
             let text_start: u64 = 0x0040_0000;
             let text_end: u64 = text_start + 0x5000;
@@ -279,7 +279,7 @@ pub mod hooks {
                 " r-xp 00000000 00:00 0                  {}\n",
                 task.name
             );
-    
+
             // 2. Data / BSS segment
             let data_start: u64 = text_end;
             let data_end: u64 = data_start + 0x1000;
@@ -289,19 +289,19 @@ pub mod hooks {
                 " rw-p 00005000 00:00 0                  {}\n",
                 task.name
             );
-    
+
             // 3. Heap segment (if active)
             if task.program_break > task.program_break_start {
                 write_vaddr_range(&mut writer, task.program_break_start, task.program_break);
                 let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [heap]\n");
             }
-    
+
             // 4. Dynamic VMAs from VMA_TABLE (anonymous mmap or file-backed mmap)
             #[cfg(target_arch = "x86")]
             let has_vma_root = true;
             #[cfg(not(target_arch = "x86"))]
             let has_vma_root = task.pml4_phys != 0;
-    
+
             if has_vma_root {
                 let mut vmas = [keira_mem::Vma::empty(); keira_mem::MAX_VMAS];
                 let count = keira_mem::get_vmas_for_pml4(task.pml4_phys, &mut vmas);
@@ -344,7 +344,7 @@ pub mod hooks {
                     );
                 }
             }
-    
+
             // 5. User Stack segment
             #[cfg(target_arch = "x86")]
             {
@@ -360,7 +360,7 @@ pub mod hooks {
                 write_vaddr_range(&mut writer, stack_bottom, stack_top);
                 let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [stack]\n");
             }
-    
+
             Some(writer.offset)
         }
     }
@@ -370,7 +370,7 @@ pub mod state {
     use core::sync::atomic::{AtomicUsize, Ordering};
     use keira_core::sync::{IrqSpinLock, LockRank};
     use keira_mem::{pmm, vmm};
-    
+
     use super::hooks::{
         current_pid_provider, task_cmdline_provider, task_exists_provider, task_limits_provider,
         task_list_provider, task_maps_provider, task_stat_provider, task_statm_provider,
@@ -378,36 +378,36 @@ pub mod state {
     };
     pub use crate::types::MAX_TASKS;
     use crate::types::{FileDescriptor, Task, TaskState, MAX_FDS};
-    
+
     extern "C" {
         pub static mut main_kernel_stack: u64;
         pub fn set_kernel_stack(sp0: usize);
         pub fn get_boot_kernel_stack() -> usize;
     }
-    
+
     #[cfg(target_arch = "x86_64")]
     pub const TASK_STACK_PAGES: usize = 4;
     #[cfg(not(target_arch = "x86_64"))]
     pub const TASK_STACK_PAGES: usize = 2;
-    
+
     pub const TASK_STACK_SIZE: u64 = (TASK_STACK_PAGES as u64) * keira_mem::pmm::PAGE_SIZE;
-    
+
     pub static SCHEDULER_LOCK: IrqSpinLock = IrqSpinLock::with_rank(LockRank::Scheduler);
     pub static mut TASKS: [Option<Task>; MAX_TASKS] = [const { None }; MAX_TASKS];
     pub static mut CURRENT_TASK_IDX: usize = 0;
     pub static mut SCHEDULER_INITIALIZED: bool = false;
-    
+
     pub static TOTAL_CONTEXT_SWITCHES: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub static TOTAL_SCHEDULER_TICKS: AtomicUsize = AtomicUsize::new(0);
-    
+
     pub fn scheduler_get_stats() -> (u64, u64, usize) {
         let switches = TOTAL_CONTEXT_SWITCHES.load(Ordering::Relaxed) as u64;
         let ticks = TOTAL_SCHEDULER_TICKS.load(Ordering::Relaxed) as u64;
         let active = unsafe { TASKS.iter().filter(|t| t.is_some()).count() };
         (switches, ticks, active)
     }
-    
+
     pub unsafe fn init() {
         let mut main_cwd = [0u8; 128];
         main_cwd[0] = b'/';
@@ -466,7 +466,7 @@ pub mod state {
         keira_mem::register_mmap_aslr_hook(mmap_aslr_offset_provider);
         keira_fs::proc::register_aslr_hook(Some(crate::aslr::get_aslr_policy));
     }
-    
+
     fn mmap_aslr_offset_provider() -> u64 {
         unsafe {
             let idx = CURRENT_TASK_IDX;

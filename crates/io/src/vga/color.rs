@@ -35,7 +35,7 @@ pub mod types {
         Yellow = 14,
         White = 15,
     }
-    
+
     impl Color {
         /// Converts a VGA 16-color palette index to 32-bpp RGB integer representation.
         pub const fn to_rgb(self) -> u32 {

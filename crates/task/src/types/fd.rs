@@ -16,7 +16,7 @@
 
 pub mod descriptor {
     pub const MAX_FDS: usize = 32;
-    
+
     #[derive(Clone, Copy, Debug)]
     pub struct FileDescriptor {
         pub is_open: bool,
@@ -31,7 +31,7 @@ pub mod descriptor {
         pub pipe_write: bool,
         pub pipe_id: u32,
     }
-    
+
     impl FileDescriptor {
         /// Allocate an empty, closed file descriptor descriptor.
         pub const fn new() -> Self {
@@ -49,7 +49,7 @@ pub mod descriptor {
                 pipe_id: 0,
             }
         }
-    
+
         /// Construct an open socket file descriptor.
         pub fn new_socket(socket_id: u32, nonblocking: bool) -> Self {
             Self {
@@ -66,7 +66,7 @@ pub mod descriptor {
                 pipe_id: 0,
             }
         }
-    
+
         /// Construct an open pipe file descriptor with designated pipe channel identifier.
         pub fn new_pipe(pipe_id: u32, write_mode: bool) -> Self {
             Self {
@@ -84,7 +84,7 @@ pub mod descriptor {
             }
         }
     }
-    
+
     impl Default for FileDescriptor {
         fn default() -> Self {
             Self::new()

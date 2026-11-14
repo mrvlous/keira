@@ -21,7 +21,7 @@ pub mod types {
     pub const SHM_CMD_DT: u32 = 4;
     pub const SHM_CMD_RM: u32 = 5;
     pub const SEM_CMD_RM: u32 = 6;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct ShmSegment {
         pub id: u32,
@@ -32,7 +32,7 @@ pub mod types {
         pub owner_pid: u32,
         pub in_use: bool,
     }
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct Semaphore {
         pub id: u32,

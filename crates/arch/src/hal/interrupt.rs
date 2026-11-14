@@ -32,7 +32,6 @@ pub trait InterruptController {
     fn unmask_irq(&mut self, irq: u8);
 }
 
-
 pub mod ops {
     pub use super::*;
 }

@@ -96,7 +96,6 @@ mod tests {
     }
 }
 
-
 pub mod arithmetic {
     pub use super::*;
 }

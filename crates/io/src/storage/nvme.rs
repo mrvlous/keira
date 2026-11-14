@@ -16,7 +16,7 @@
 
 pub mod controller {
     pub const NVME_VERSION_1_4: u32 = 0x0001_0400;
-    
+
     pub const NVME_REG_CAP: u32 = 0x00;
     pub const NVME_REG_VS: u32 = 0x08;
     pub const NVME_REG_INTMS: u32 = 0x0C;
@@ -25,7 +25,7 @@ pub mod controller {
     pub const NVME_REG_AQA: u32 = 0x24;
     pub const NVME_REG_ASQ: u32 = 0x28;
     pub const NVME_REG_ACQ: u32 = 0x30;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct NvmeNamespace {
         /// Namespace Identifier (1-based).
@@ -39,7 +39,7 @@ pub mod controller {
         /// Flag indicating whether namespace is active and formatted.
         pub active: bool,
     }
-    
+
     impl Default for NvmeNamespace {
         fn default() -> Self {
             Self {
@@ -51,7 +51,7 @@ pub mod controller {
             }
         }
     }
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct NvmeController {
         /// PCI bus number.
@@ -75,16 +75,16 @@ pub mod controller {
         /// Controller operational readiness flag.
         pub ready: bool,
     }
-    
+
     pub static mut NVME_CONTROLLER: Option<NvmeController> = None;
-    
+
     pub fn ensure_initialized() {
         unsafe {
             if (*core::ptr::addr_of!(NVME_CONTROLLER)).is_none() {
                 let mut ns0_model = [0u8; 20];
                 let name_bytes = b"KEIRA_NVME_SSD_001\0";
                 ns0_model[..name_bytes.len()].copy_from_slice(name_bytes);
-    
+
                 let ns0 = NvmeNamespace {
                     nsid: 1,
                     size_blocks: 2_097_152, // 1024 MB (1 GB)
@@ -92,7 +92,7 @@ pub mod controller {
                     model: ns0_model,
                     active: true,
                 };
-    
+
                 NVME_CONTROLLER = Some(NvmeController {
                     bus: 0,
                     dev: 4,
@@ -108,13 +108,13 @@ pub mod controller {
             }
         }
     }
-    
+
     pub fn init(bus: u8, dev: u8, func: u8, mmio_base: u64) -> Result<(), &'static str> {
         unsafe {
             let mut ns0_model = [0u8; 20];
             let name_bytes = b"KEIRA_NVME_SSD_001\0";
             ns0_model[..name_bytes.len()].copy_from_slice(name_bytes);
-    
+
             let ns0 = NvmeNamespace {
                 nsid: 1,
                 size_blocks: 2_097_152, // 1024 MB (1 GB)
@@ -122,7 +122,7 @@ pub mod controller {
                 model: ns0_model,
                 active: true,
             };
-    
+
             NVME_CONTROLLER = Some(NvmeController {
                 bus,
                 dev,
@@ -138,12 +138,12 @@ pub mod controller {
         }
         Ok(())
     }
-    
+
     pub fn get_nvme_controller() -> Option<NvmeController> {
         ensure_initialized();
         unsafe { NVME_CONTROLLER }
     }
-    
+
     pub fn get_nvme_stats() -> (bool, u32, u64) {
         ensure_initialized();
         unsafe {
@@ -168,7 +168,7 @@ pub use self::controller::*;
 #[cfg(test)]
 mod tests {
     use super::controller::{ensure_initialized, get_nvme_controller, get_nvme_stats};
-    
+
     #[test]
     fn test_nvme_controller_initialization_and_stats() {
         ensure_initialized();
@@ -176,7 +176,7 @@ mod tests {
         assert!(ctrl.ready);
         assert_eq!(ctrl.num_namespaces, 1);
         assert_eq!(ctrl.namespaces[0].size_blocks, 2_097_152);
-    
+
         let (ready, ns_count, cap_mb) = get_nvme_stats();
         assert!(ready);
         assert_eq!(ns_count, 1);

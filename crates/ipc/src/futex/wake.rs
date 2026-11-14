@@ -16,11 +16,11 @@
 
 pub mod requeue {
     use crate::futex::hash::table::{FUTEX_TABLE, TOTAL_FUTEX_REQUEUES, TOTAL_FUTEX_WAKES};
-    
+
     pub unsafe fn futex_wake(uaddr: usize, count: u32, bitset: u32) -> Result<u32, &'static str> {
         let mut woken = 0u32;
         let mask = if bitset == 0 { 0xFFFFFFFF } else { bitset };
-    
+
         for slot in FUTEX_TABLE.iter_mut() {
             if slot.in_use && slot.uaddr == uaddr && (slot.bitset & mask) != 0 {
                 slot.in_use = false;
@@ -33,10 +33,14 @@ pub mod requeue {
         }
         Ok(woken)
     }
-    
-    pub unsafe fn futex_requeue(uaddr: usize, uaddr2: usize, count: u32) -> Result<u32, &'static str> {
+
+    pub unsafe fn futex_requeue(
+        uaddr: usize,
+        uaddr2: usize,
+        count: u32,
+    ) -> Result<u32, &'static str> {
         let mut requeued = 0u32;
-    
+
         for slot in FUTEX_TABLE.iter_mut() {
             if slot.in_use && slot.uaddr == uaddr {
                 slot.uaddr = uaddr2;

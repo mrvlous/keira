@@ -16,7 +16,7 @@
 
 pub mod dispatcher {
     use super::{null, random, tty, zero};
-    
+
     pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         match node_name {
             "null" => null::read(buf),
@@ -27,7 +27,7 @@ pub mod dispatcher {
             _ => Err("Unknown device node"),
         }
     }
-    
+
     pub unsafe fn write_dev_node(node_name: &str, buf: &[u8]) -> Result<usize, &'static str> {
         match node_name {
             "null" => null::write(buf),
@@ -38,7 +38,7 @@ pub mod dispatcher {
             _ => Err("Unknown device node"),
         }
     }
-    
+
     pub fn exists(node_name: &str) -> bool {
         let clean = node_name.trim_start_matches('/');
         matches!(
@@ -46,9 +46,9 @@ pub mod dispatcher {
             "null" | "zero" | "random" | "urandom" | "tty" | "ptmx"
         )
     }
-    
+
     use crate::vfs::VirtualDirEntry;
-    
+
     pub static DEV_ENTRIES: [VirtualDirEntry; 9] = [
         VirtualDirEntry {
             name: ".",
@@ -96,7 +96,7 @@ pub mod dispatcher {
             ino: 8,
         },
     ];
-    
+
     pub fn get_dev_entry(index: usize) -> Option<VirtualDirEntry> {
         DEV_ENTRIES.get(index).copied()
     }
@@ -106,7 +106,7 @@ pub mod null {
     pub fn read(_buf: &mut [u8]) -> Result<usize, &'static str> {
         Ok(0)
     }
-    
+
     pub fn write(buf: &[u8]) -> Result<usize, &'static str> {
         Ok(buf.len())
     }
@@ -124,7 +124,7 @@ pub mod random {
         }
         Ok(buf.len())
     }
-    
+
     pub fn write(buf: &[u8]) -> Result<usize, &'static str> {
         Ok(buf.len())
     }
@@ -132,12 +132,12 @@ pub mod random {
 
 pub mod tty {
     use keira_io::vga;
-    
+
     pub unsafe fn read(buf: &mut [u8]) -> Result<usize, &'static str> {
         let n = keira_io::tty::read_tty(buf);
         Ok(n)
     }
-    
+
     pub fn write(buf: &[u8]) -> Result<usize, &'static str> {
         if let Ok(s) = core::str::from_utf8(buf) {
             vga::print_str(s);
@@ -151,7 +151,7 @@ pub mod zero {
         buf.fill(0);
         Ok(buf.len())
     }
-    
+
     pub fn write(buf: &[u8]) -> Result<usize, &'static str> {
         Ok(buf.len())
     }

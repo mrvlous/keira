@@ -19,7 +19,7 @@ pub mod node {
     use crate::tar;
     use crate::vfs::path::router::route_path;
     use crate::vfs::types::FilesystemType;
-    
+
     pub fn create_file(path: &str) -> Result<(), &'static str> {
         let (clean_path, fs_type) = route_path(path);
         let res = match fs_type {
@@ -36,7 +36,7 @@ pub mod node {
         }
         res
     }
-    
+
     pub fn remove_entry(path: &str) -> Result<(), &'static str> {
         crate::cache::dcache_invalidate(path);
         if crate::vfs::ops::symlink::remove_symlink(path) {
@@ -52,7 +52,7 @@ pub mod node {
             FilesystemType::Fat => unsafe { fat::remove_entry(clean_path) },
         }
     }
-    
+
     pub fn create_dir(path: &str) -> Result<(), &'static str> {
         let (clean_path, fs_type) = route_path(path);
         let res = match fs_type {
@@ -69,7 +69,7 @@ pub mod node {
         }
         res
     }
-    
+
     pub fn exists(path: &str) -> bool {
         if let Some(res) = crate::cache::dcache_lookup(path) {
             return match res {
@@ -77,7 +77,7 @@ pub mod node {
                 crate::cache::DentryLookupResult::Negative => false,
             };
         }
-    
+
         if crate::vfs::ops::symlink::is_symlink(path) {
             crate::cache::dcache_add(path, false, 0, FilesystemType::Tmpfs, 0);
             return true;
@@ -105,16 +105,16 @@ pub mod node {
                 fat::find_entry(name, dir_cluster).is_ok()
             },
         };
-    
+
         if found {
             crate::cache::dcache_add(path, clean_path.is_empty(), 0, fs_type, 0);
         } else {
             crate::cache::dcache_add_negative(path);
         }
-    
+
         found
     }
-    
+
     pub fn is_dir(path: &str) -> bool {
         let mut sym_buf = [0u8; 128];
         let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
@@ -158,7 +158,7 @@ pub mod node {
         }
         dir
     }
-    
+
     pub fn get_file_size(path: &str) -> Result<usize, &'static str> {
         let mut sym_buf = [0u8; 128];
         let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
@@ -185,11 +185,11 @@ pub mod node {
 
 pub mod perm {
     use keira_core::sync::SpinMutex;
-    
+
     pub const MAX_PERM_PATH: usize = 128;
-    
+
     pub const MAX_PERM_ENTRIES: usize = 128;
-    
+
     pub const S_IFMT: u32 = 0o170000;
     pub const S_IFREG: u32 = 0o100000;
     pub const S_IFDIR: u32 = 0o040000;
@@ -197,11 +197,11 @@ pub mod perm {
     pub const S_IFCHR: u32 = 0o020000;
     pub const S_IFBLK: u32 = 0o060000;
     pub const S_IFIFO: u32 = 0o010000;
-    
+
     pub const R_OK: u32 = 4;
     pub const W_OK: u32 = 2;
     pub const X_OK: u32 = 1;
-    
+
     #[derive(Clone, Copy)]
     pub struct PermEntry {
         /// Active entry allocation flag.
@@ -217,7 +217,7 @@ pub mod perm {
         /// POSIX file mode bits (type + permissions).
         pub mode: u32,
     }
-    
+
     impl PermEntry {
         /// Constructs a blank inactive permission entry descriptor.
         pub const fn empty() -> Self {
@@ -231,10 +231,10 @@ pub mod perm {
             }
         }
     }
-    
+
     static PERM_TABLE: SpinMutex<[PermEntry; MAX_PERM_ENTRIES]> =
         SpinMutex::new([PermEntry::empty(); MAX_PERM_ENTRIES]);
-    
+
     fn sanitize_perm_path(path: &str) -> &str {
         if path.len() > 1 && path.ends_with('/') {
             path.trim_end_matches('/')
@@ -242,15 +242,15 @@ pub mod perm {
             path
         }
     }
-    
+
     pub fn set_permissions(path: &str, mode: u32) -> Result<(), &'static str> {
         let clean = sanitize_perm_path(path);
         if clean.is_empty() || clean.len() >= MAX_PERM_PATH {
             return Err("Path length out of bounds");
         }
-    
+
         let mut table = PERM_TABLE.lock();
-    
+
         // Check if entry already exists in the table
         for entry in table.iter_mut() {
             if entry.is_active && entry.path_len == clean.len() {
@@ -263,7 +263,7 @@ pub mod perm {
                 }
             }
         }
-    
+
         // Allocate a new entry slot
         let mut free_slot = None;
         for (idx, entry) in table.iter().enumerate() {
@@ -272,7 +272,7 @@ pub mod perm {
                 break;
             }
         }
-    
+
         let idx = free_slot.ok_or("Permission table capacity exhausted")?;
         let entry = &mut table[idx];
         entry.is_active = true;
@@ -280,22 +280,22 @@ pub mod perm {
         entry.path_len = clean.len();
         entry.uid = 0;
         entry.gid = 0;
-    
+
         let is_dir = super::node::is_dir(clean);
         let file_type = if is_dir { S_IFDIR } else { S_IFREG };
         entry.mode = file_type | (mode & 0o7777);
-    
+
         Ok(())
     }
-    
+
     pub fn set_ownership(path: &str, uid: u32, gid: u32) -> Result<(), &'static str> {
         let clean = sanitize_perm_path(path);
         if clean.is_empty() || clean.len() >= MAX_PERM_PATH {
             return Err("Path length out of bounds");
         }
-    
+
         let mut table = PERM_TABLE.lock();
-    
+
         // Check if entry already exists in the table
         for entry in table.iter_mut() {
             if entry.is_active && entry.path_len == clean.len() {
@@ -312,7 +312,7 @@ pub mod perm {
                 }
             }
         }
-    
+
         // Allocate a new entry slot
         let mut free_slot = None;
         for (idx, entry) in table.iter().enumerate() {
@@ -321,7 +321,7 @@ pub mod perm {
                 break;
             }
         }
-    
+
         let idx = free_slot.ok_or("Permission table capacity exhausted")?;
         let entry = &mut table[idx];
         entry.is_active = true;
@@ -329,7 +329,7 @@ pub mod perm {
         entry.path_len = clean.len();
         entry.uid = if uid != 0xFFFF_FFFF { uid } else { 0 };
         entry.gid = if gid != 0xFFFF_FFFF { gid } else { 0 };
-    
+
         let is_dir = super::node::is_dir(clean);
         let default_mode = if is_dir {
             S_IFDIR | 0o755
@@ -339,14 +339,14 @@ pub mod perm {
             S_IFREG | 0o644
         };
         entry.mode = default_mode;
-    
+
         Ok(())
     }
-    
+
     pub fn get_metadata(path: &str) -> (u32, u32, u32) {
         let clean = sanitize_perm_path(path);
         let table = PERM_TABLE.lock();
-    
+
         for entry in table.iter() {
             if entry.is_active && entry.path_len == clean.len() {
                 if let Ok(entry_path) = core::str::from_utf8(&entry.path[..entry.path_len]) {
@@ -356,7 +356,7 @@ pub mod perm {
                 }
             }
         }
-    
+
         // Default canonical permission heuristics
         let is_dir = super::node::is_dir(clean);
         if is_dir {
@@ -373,7 +373,7 @@ pub mod perm {
             (0, 0, S_IFREG | 0o644)
         }
     }
-    
+
     pub fn check_access(
         path: &str,
         desired_access: u32,
@@ -382,7 +382,7 @@ pub mod perm {
     ) -> Result<(), &'static str> {
         let clean = sanitize_perm_path(path);
         let (uid, gid, mode) = get_metadata(clean);
-    
+
         // Root user (EUID 0) bypasses read and write access restrictions
         if current_euid == 0 {
             if (desired_access & X_OK) != 0 {
@@ -394,7 +394,7 @@ pub mod perm {
             }
             return Ok(());
         }
-    
+
         // Calculate granted permission bits based on caller identity
         let granted = if current_euid == uid {
             (mode >> 6) & 0o7
@@ -403,46 +403,46 @@ pub mod perm {
         } else {
             mode & 0o7
         };
-    
+
         if (granted & desired_access) == desired_access {
             Ok(())
         } else {
             Err("Permission denied")
         }
     }
-    
+
     #[cfg(test)]
     mod tests {
         use super::*;
-    
+
         #[test]
         fn test_perm_table_lifecycle() {
             let test_path = "/tmp/test_dac.txt";
             let res = set_permissions(test_path, 0o600);
             assert!(res.is_ok());
-    
+
             let (uid, gid, mode) = get_metadata(test_path);
             assert_eq!(uid, 0);
             assert_eq!(gid, 0);
             assert_eq!(mode & 0o777, 0o600);
-    
+
             // Root access check
             assert!(check_access(test_path, R_OK | W_OK, 0, 0).is_ok());
-    
+
             // Unprivileged user (UID 1000) check
             assert!(check_access(test_path, R_OK, 1000, 1000).is_err());
-    
+
             // Transfer ownership to UID 1000
             let own_res = set_ownership(test_path, 1000, 1000);
             assert!(own_res.is_ok());
-    
+
             let (new_uid, new_gid, _) = get_metadata(test_path);
             assert_eq!(new_uid, 1000);
             assert_eq!(new_gid, 1000);
-    
+
             // Now UID 1000 should have read & write access as owner
             assert!(check_access(test_path, R_OK | W_OK, 1000, 1000).is_ok());
-    
+
             // User 2000 should still be denied
             assert!(check_access(test_path, R_OK, 2000, 2000).is_err());
         }
@@ -454,7 +454,7 @@ pub mod read {
     use crate::tar;
     use crate::vfs::path::router::route_path;
     use crate::vfs::types::FilesystemType;
-    
+
     pub fn read_file(path: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         let mut sym_buf = [0u8; 128];
         let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
@@ -477,8 +477,12 @@ pub mod read {
             FilesystemType::Dev => unsafe { crate::dev::read_dev_node(clean_path, buf) },
         }
     }
-    
-    pub fn read_file_offset(path: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
+
+    pub fn read_file_offset(
+        path: &str,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<usize, &'static str> {
         let mut sym_buf = [0u8; 128];
         let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
             Ok(p) => p,
@@ -506,13 +510,13 @@ pub mod read {
 
 pub mod symlink {
     use keira_core::sync::SpinMutex;
-    
+
     pub const MAX_SYMLINK_PATH: usize = 128;
-    
+
     pub const MAX_SYMLINKS: usize = 64;
-    
+
     pub const MAX_SYMLINK_DEPTH: usize = 8;
-    
+
     #[derive(Clone, Copy)]
     pub struct SymlinkEntry {
         /// Active allocation marker.
@@ -526,7 +530,7 @@ pub mod symlink {
         /// Length of the target path in bytes.
         pub target_len: usize,
     }
-    
+
     impl SymlinkEntry {
         /// Creates an empty inactive symlink entry.
         pub const fn empty() -> Self {
@@ -539,10 +543,10 @@ pub mod symlink {
             }
         }
     }
-    
+
     static SYMLINK_TABLE: SpinMutex<[SymlinkEntry; MAX_SYMLINKS]> =
         SpinMutex::new([SymlinkEntry::empty(); MAX_SYMLINKS]);
-    
+
     fn sanitize_link_path(path: &str) -> &str {
         if path.len() > 1 && path.ends_with('/') {
             path.trim_end_matches('/')
@@ -550,18 +554,18 @@ pub mod symlink {
             path
         }
     }
-    
+
     pub fn create_symlink(target: &str, linkpath: &str) -> Result<(), &'static str> {
         let clean_link = sanitize_link_path(linkpath);
         let clean_target = sanitize_link_path(target);
-    
+
         if clean_link.is_empty() || clean_target.is_empty() {
             return Err("Invalid argument: empty path");
         }
         if clean_link.len() >= MAX_SYMLINK_PATH || clean_target.len() >= MAX_SYMLINK_PATH {
             return Err("File name too long");
         }
-    
+
         // Check if linkpath already exists as regular file or directory in VFS before acquiring lock
         let (routed_path, fs_type) = crate::vfs::path::router::route_path(clean_link);
         let regular_exists = match fs_type {
@@ -570,9 +574,13 @@ pub mod symlink {
             }
             crate::vfs::types::FilesystemType::Proc => crate::proc::exists(routed_path),
             crate::vfs::types::FilesystemType::Dev => {
-                routed_path.is_empty() || crate::dev::char::exists(routed_path) || routed_path == "sda"
+                routed_path.is_empty()
+                    || crate::dev::char::exists(routed_path)
+                    || routed_path == "sda"
             }
-            crate::vfs::types::FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::exists(routed_path),
+            crate::vfs::types::FilesystemType::Tmpfs => {
+                crate::vfs::mount::tmpfs::exists(routed_path)
+            }
             crate::vfs::types::FilesystemType::Ext4 => false,
             crate::vfs::types::FilesystemType::Fat => unsafe {
                 if let Ok((dir_cluster, name)) = crate::fat::resolve_path(routed_path) {
@@ -589,9 +597,9 @@ pub mod symlink {
         if regular_exists {
             return Err("File exists: regular file or directory present");
         }
-    
+
         let mut table = SYMLINK_TABLE.lock();
-    
+
         // Check if linkpath already exists as an active symlink
         for entry in table.iter() {
             if entry.is_active
@@ -601,7 +609,7 @@ pub mod symlink {
                 return Err("File exists: symlink already present");
             }
         }
-    
+
         // Find free slot
         for entry in table.iter_mut() {
             if !entry.is_active {
@@ -613,14 +621,14 @@ pub mod symlink {
                 return Ok(());
             }
         }
-    
+
         Err("Symlink table is full")
     }
-    
+
     pub fn read_symlink(linkpath: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         let clean_link = sanitize_link_path(linkpath);
         let table = SYMLINK_TABLE.lock();
-    
+
         for entry in table.iter() {
             if entry.is_active
                 && entry.link_len == clean_link.len()
@@ -631,14 +639,14 @@ pub mod symlink {
                 return Ok(copy_len);
             }
         }
-    
+
         Err("Invalid argument: not a symbolic link")
     }
-    
+
     pub fn remove_symlink(linkpath: &str) -> bool {
         let clean_link = sanitize_link_path(linkpath);
         let mut table = SYMLINK_TABLE.lock();
-    
+
         for entry in table.iter_mut() {
             if entry.is_active
                 && entry.link_len == clean_link.len()
@@ -648,14 +656,14 @@ pub mod symlink {
                 return true;
             }
         }
-    
+
         false
     }
-    
+
     pub fn is_symlink(path: &str) -> bool {
         let clean_link = sanitize_link_path(path);
         let table = SYMLINK_TABLE.lock();
-    
+
         for entry in table.iter() {
             if entry.is_active
                 && entry.link_len == clean_link.len()
@@ -664,14 +672,14 @@ pub mod symlink {
                 return true;
             }
         }
-    
+
         false
     }
-    
+
     pub fn resolve_symlink_step(path: &str) -> Option<([u8; MAX_SYMLINK_PATH], usize)> {
         let clean_link = sanitize_link_path(path);
         let table = SYMLINK_TABLE.lock();
-    
+
         for entry in table.iter() {
             if entry.is_active
                 && entry.link_len == clean_link.len()
@@ -682,29 +690,29 @@ pub mod symlink {
                 return Some((out, entry.target_len));
             }
         }
-    
+
         None
     }
-    
+
     pub fn resolve_symlinks<'a>(
         path: &'a str,
         out_buf: &'a mut [u8; MAX_SYMLINK_PATH],
     ) -> Result<&'a str, &'static str> {
         let mut current_buf = [0u8; MAX_SYMLINK_PATH];
         let mut current_len = path.len();
-    
+
         if current_len >= MAX_SYMLINK_PATH {
             return Err("File name too long");
         }
         current_buf[..current_len].copy_from_slice(path.as_bytes());
-    
+
         let mut depth = 0;
         while depth < MAX_SYMLINK_DEPTH {
             let cur_str = match core::str::from_utf8(&current_buf[..current_len]) {
                 Ok(s) => s,
                 Err(_) => return Err("Invalid UTF-8 in path"),
             };
-    
+
             if let Some((target_buf, target_len)) = resolve_symlink_step(cur_str) {
                 current_buf = target_buf;
                 current_len = target_len;
@@ -713,11 +721,11 @@ pub mod symlink {
                 break;
             }
         }
-    
+
         if depth >= MAX_SYMLINK_DEPTH {
             return Err("Too many levels of symbolic links");
         }
-    
+
         out_buf[..current_len].copy_from_slice(&current_buf[..current_len]);
         match core::str::from_utf8(&out_buf[..current_len]) {
             Ok(s) => Ok(s),
@@ -730,7 +738,7 @@ pub mod write {
     use crate::fat;
     use crate::vfs::path::router::route_path;
     use crate::vfs::types::FilesystemType;
-    
+
     pub fn write_file(path: &str, content: &[u8]) -> Result<usize, &'static str> {
         let mut sym_buf = [0u8; 128];
         let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
@@ -751,8 +759,12 @@ pub mod write {
             },
         }
     }
-    
-    pub fn write_file_offset(path: &str, offset: u64, content: &[u8]) -> Result<usize, &'static str> {
+
+    pub fn write_file_offset(
+        path: &str,
+        offset: u64,
+        content: &[u8],
+    ) -> Result<usize, &'static str> {
         let mut sym_buf = [0u8; 128];
         let actual_path = match crate::vfs::ops::symlink::resolve_symlinks(path, &mut sym_buf) {
             Ok(p) => p,

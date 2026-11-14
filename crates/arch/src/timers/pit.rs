@@ -60,7 +60,6 @@ pub extern "C" fn get_uptime_ms() -> u64 {
     uptime_ms()
 }
 
-
 pub mod i8254 {
     pub use super::*;
 }

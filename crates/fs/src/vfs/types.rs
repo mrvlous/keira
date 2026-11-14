@@ -30,7 +30,7 @@ pub mod fs_type {
         /// Linux Ext4 filesystem partition.
         Ext4,
     }
-    
+
     impl FilesystemType {
         /// Returns canonical filesystem type name as a string slice.
         pub const fn as_str(&self) -> &'static str {
@@ -43,7 +43,7 @@ pub mod fs_type {
                 Self::Ext4 => "ext4",
             }
         }
-    
+
         /// Parses a filesystem type string into a recognized enum variant.
         pub fn from_str(s: &str) -> Option<Self> {
             match s {
@@ -73,7 +73,7 @@ pub mod node {
         /// Symbolic link to target path.
         Symlink,
     }
-    
+
     #[derive(Clone, Copy, Debug, Default)]
     pub struct FileStat {
         /// File size in bytes.
@@ -85,7 +85,7 @@ pub mod node {
         /// Read-only access restriction.
         pub is_readonly: bool,
     }
-    
+
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct VirtualDirEntry {
         /// Entry file or directory name.

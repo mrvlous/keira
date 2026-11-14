@@ -16,7 +16,7 @@
 
 pub mod types {
     pub const MAX_FILE_LOCKS: usize = 16;
-    
+
     #[derive(Clone, Copy, Debug)]
     pub struct FileLock {
         /// Indicates whether this lock slot is actively acquired.
@@ -28,13 +28,13 @@ pub mod types {
         /// Task identifier of the process holding the lock.
         pub holder_task_id: usize,
     }
-    
+
     impl Default for FileLock {
         fn default() -> Self {
             Self::new()
         }
     }
-    
+
     impl FileLock {
         /// Creates a new uninitialized, unlocked file lock descriptor.
         pub const fn new() -> Self {
@@ -50,15 +50,15 @@ pub mod types {
 
 pub mod table {
     use super::types::{FileLock, MAX_FILE_LOCKS};
-    
+
     pub static mut FILE_LOCKS: [FileLock; MAX_FILE_LOCKS] = [FileLock::new(); MAX_FILE_LOCKS];
-    
+
     pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static str> {
         let path_bytes = path.as_bytes();
         if path_bytes.len() > 127 {
             return Err("File lock path is too long");
         }
-    
+
         for lock in FILE_LOCKS.iter() {
             if lock.is_locked
                 && lock.path_len == path_bytes.len()
@@ -71,7 +71,7 @@ pub mod table {
                 }
             }
         }
-    
+
         for lock in FILE_LOCKS.iter_mut() {
             if !lock.is_locked {
                 lock.is_locked = true;
@@ -81,10 +81,10 @@ pub mod table {
                 return Ok(());
             }
         }
-    
+
         Err("File lock table is full")
     }
-    
+
     pub unsafe fn release_lock(path: &str, task_id: usize) {
         let path_bytes = path.as_bytes();
         for lock in FILE_LOCKS.iter_mut() {
@@ -98,7 +98,7 @@ pub mod table {
             }
         }
     }
-    
+
     pub unsafe fn release_all_locks_for_task(task_id: usize) {
         for lock in FILE_LOCKS.iter_mut() {
             if lock.is_locked && lock.holder_task_id == task_id {
@@ -109,5 +109,5 @@ pub mod table {
     }
 }
 
-pub use self::types::*;
 pub use self::table::*;
+pub use self::types::*;

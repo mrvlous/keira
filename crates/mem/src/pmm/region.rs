@@ -15,25 +15,27 @@
 //! Physical memory region descriptors and early boot memory map parsing.
 
 pub mod descriptor {
-    use super::super::frame::types::{KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, PAGE_SIZE};
-    
+    use super::super::frame::types::{
+        KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, PAGE_SIZE,
+    };
+
     #[derive(Clone, Copy, Debug)]
     pub struct UsableRegion {
         pub start: u64,
         pub end: u64,
         pub current: u64,
     }
-    
+
     pub(crate) static mut REGIONS: [UsableRegion; MAX_REGIONS] = [UsableRegion {
         start: 0,
         end: 0,
         current: 0,
     }; MAX_REGIONS];
-    
+
     pub(crate) static mut REGION_COUNT: usize = 0;
     pub(crate) static mut CURRENT_REGION_IDX: usize = 0;
     pub(crate) static mut MAX_PHYS_ADDR: u64 = 0;
-    
+
     pub fn is_valid_ram_range(start: u64, size: u64) -> bool {
         if size == 0 || !start.is_multiple_of(PAGE_SIZE) {
             return false;
@@ -67,18 +69,18 @@ pub mod boot {
     use super::super::frame::types::{MAX_PHYS_ADDR_LIMIT, MAX_REGIONS, PAGE_SIZE};
     use super::super::sync::PmmGuard;
     use super::descriptor::{UsableRegion, MAX_PHYS_ADDR, REGIONS, REGION_COUNT};
-    
+
     pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
         let _guard = PmmGuard::lock();
         let mut mmap_tag_ptr: u64 = 0;
-    
+
         let aligned_kernel_end = (kernel_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
         let mut kaddr = 0u64;
         while kaddr < aligned_kernel_end {
             mark_frame_allocated(kaddr);
             kaddr += PAGE_SIZE;
         }
-    
+
         let mut addr = multiboot_info_ptr + 8;
         loop {
             let tag_type = *(addr as *const u32);
@@ -92,7 +94,7 @@ pub mod boot {
             }
             addr += ((tag_size as u64) + 7) & !7;
         }
-    
+
         if mmap_tag_ptr == 0 {
             let start = aligned_kernel_end;
             let size = 32 * 1024 * 1024;
@@ -107,27 +109,27 @@ pub mod boot {
             MAX_PHYS_ADDR = capped_end;
             return;
         }
-    
+
         let entry_size = *((mmap_tag_ptr + 8) as *const u32) as u64;
         let tag_size = *((mmap_tag_ptr + 4) as *const u32) as u64;
-    
+
         let entries_start = mmap_tag_ptr + 16;
         let entries_end = mmap_tag_ptr + tag_size;
-    
+
         let mut entry_ptr = entries_start;
         while entry_ptr < entries_end {
             let base_addr = *(entry_ptr as *const u64);
             let length = *((entry_ptr + 8) as *const u64);
             let entry_type = *((entry_ptr + 16) as *const u32);
-    
+
             let seg_end = base_addr.saturating_add(length);
             if seg_end > MAX_PHYS_ADDR {
                 MAX_PHYS_ADDR = seg_end.min(MAX_PHYS_ADDR_LIMIT);
             }
-    
+
             if entry_type == 1 && length >= PAGE_SIZE && base_addr < MAX_PHYS_ADDR_LIMIT {
                 let capped_seg_end = seg_end.min(MAX_PHYS_ADDR_LIMIT);
-    
+
                 let safe_start = if base_addr < aligned_kernel_end {
                     aligned_kernel_end
                 } else if base_addr < 0x100000 {
@@ -135,7 +137,7 @@ pub mod boot {
                 } else {
                     (base_addr + PAGE_SIZE - 1) & !(PAGE_SIZE - 1)
                 };
-    
+
                 if capped_seg_end > safe_start && (capped_seg_end - safe_start) >= PAGE_SIZE {
                     let aligned_end = capped_seg_end & !(PAGE_SIZE - 1);
                     TOTAL_USABLE_RAM += aligned_end - safe_start;
@@ -149,11 +151,11 @@ pub mod boot {
                     }
                 }
             }
-    
+
             entry_ptr += entry_size;
         }
     }
 }
 
-pub use self::descriptor::*;
 pub use self::boot::*;
+pub use self::descriptor::*;

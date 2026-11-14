@@ -16,20 +16,20 @@
 
 pub mod allocator {
     use crate::pmm;
-    
+
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct ScatterGatherEntry {
         pub phys_addr: u64,
         pub length: u32,
     }
-    
+
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub struct DmaBuffer {
         pub vaddr: u64,
         pub paddr: u64,
         pub size: usize,
     }
-    
+
     pub fn alloc_dma_buffer(size: usize) -> Result<DmaBuffer, &'static str> {
         let frame = pmm::alloc_frame().ok_or("Out of physical frames for DMA buffer")?;
         Ok(DmaBuffer {

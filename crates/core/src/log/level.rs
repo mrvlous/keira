@@ -108,7 +108,6 @@ impl LogLevel {
     }
 }
 
-
 pub mod severity {
     pub use super::*;
 }

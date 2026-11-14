@@ -45,7 +45,6 @@ pub unsafe fn sys_syslog_read(buf_ptr: *mut u8, len: usize) -> Result<usize, &'s
     Ok(read_bytes)
 }
 
-
 pub mod syslog {
     pub use super::*;
 }

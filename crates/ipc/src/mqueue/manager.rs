@@ -18,7 +18,7 @@ pub mod table {
     use crate::mqueue::queue::message::{
         MQueueMessage, PosixMessageQueue, MAX_MQUEUES, MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE,
     };
-    
+
     pub static mut MQUEUE_TABLE: [PosixMessageQueue; MAX_MQUEUES] = [
         PosixMessageQueue {
             id: 0,
@@ -66,11 +66,11 @@ pub mod table {
         PosixMessageQueue::empty(6),
         PosixMessageQueue::empty(7),
     ];
-    
+
     pub unsafe fn get_mqueue_table() -> &'static [PosixMessageQueue] {
         &MQUEUE_TABLE
     }
-    
+
     pub unsafe fn get_mqueue_stats() -> (usize, usize) {
         let mut queues = 0;
         let mut total_msgs = 0;
@@ -82,7 +82,7 @@ pub mod table {
         }
         (queues, total_msgs)
     }
-    
+
     pub unsafe fn mq_open(
         name: &str,
         flags: u32,
@@ -92,14 +92,14 @@ pub mod table {
         if name.is_empty() || name.len() > 31 {
             return Err("Invalid queue name length (must be 1-31 characters)");
         }
-    
+
         // Check if queue already exists
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.name_as_str() == name {
                 return Ok(q.id);
             }
         }
-    
+
         // Find free slot
         for q in MQUEUE_TABLE.iter_mut() {
             if !q.in_use {
@@ -123,20 +123,20 @@ pub mod table {
                 return Ok(q.id);
             }
         }
-    
+
         Err("POSIX Message Queue table capacity reached")
     }
-    
+
     pub unsafe fn mq_send(name_or_id: &str, payload: &[u8], prio: u32) -> Result<(), &'static str> {
         if payload.len() > MQUEUE_MSG_SIZE {
             return Err("Payload size exceeds maximum queue message capacity (128 bytes)");
         }
-    
+
         let q = find_queue_mut(name_or_id)?;
         if q.cur_msgs >= q.max_msg {
             return Err("Message queue capacity full");
         }
-    
+
         // Find empty slot
         for slot in q.messages.iter_mut() {
             if !slot.in_use {
@@ -149,10 +149,10 @@ pub mod table {
                 return Ok(());
             }
         }
-    
+
         Err("No free message slot")
     }
-    
+
     pub unsafe fn mq_receive(
         name_or_id: &str,
         out_buf: &mut [u8],
@@ -161,18 +161,18 @@ pub mod table {
         if q.cur_msgs == 0 {
             return Err("Message queue is empty");
         }
-    
+
         // Find slot with highest priority
         let mut best_idx: Option<usize> = None;
         let mut highest_prio: u32 = 0;
-    
+
         for (idx, slot) in q.messages.iter().enumerate() {
             if slot.in_use && (best_idx.is_none() || slot.prio > highest_prio) {
                 highest_prio = slot.prio;
                 best_idx = Some(idx);
             }
         }
-    
+
         if let Some(idx) = best_idx {
             let slot = &mut q.messages[idx];
             let copy_len = slot.len.min(out_buf.len());
@@ -187,7 +187,7 @@ pub mod table {
             Err("No active message found")
         }
     }
-    
+
     pub unsafe fn mq_unlink(name: &str) -> Result<(), &'static str> {
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.name_as_str() == name {
@@ -201,7 +201,7 @@ pub mod table {
         }
         Err("Message queue not found")
     }
-    
+
     pub unsafe fn mq_unlink_by_id(id: u32) -> Result<(), &'static str> {
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.id == id {
@@ -215,7 +215,7 @@ pub mod table {
         }
         Err("Message queue not found")
     }
-    
+
     pub unsafe fn find_queue_mut(
         name_or_id: &str,
     ) -> Result<&'static mut PosixMessageQueue, &'static str> {
@@ -226,16 +226,16 @@ pub mod table {
                 }
             }
         }
-    
+
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.name_as_str() == name_or_id {
                 return Ok(q);
             }
         }
-    
+
         Err("Specified message queue does not exist")
     }
-    
+
     #[allow(clippy::result_unit_err)]
     pub fn parse_u32(s: &str) -> Result<u32, ()> {
         if s.is_empty() {
@@ -255,15 +255,19 @@ pub mod table {
 
 pub mod ops {
     use keira_io::vga;
-    
+
     use crate::mqueue::manager::table::mq_open;
     use crate::mqueue::queue::message::{MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE};
-    
-    pub unsafe fn sys_mq_open(name_ptr: *const u8, oflag: i32, mode: u32) -> Result<u64, &'static str> {
+
+    pub unsafe fn sys_mq_open(
+        name_ptr: *const u8,
+        oflag: i32,
+        mode: u32,
+    ) -> Result<u64, &'static str> {
         if name_ptr.is_null() {
             return Ok(58);
         }
-    
+
         let mut name_buf = [0u8; 32];
         let mut len = 0;
         while len < 31 {
@@ -276,7 +280,7 @@ pub mod ops {
         }
         let name_str = core::str::from_utf8(&name_buf[..len]).unwrap_or("/mq_unnamed");
         let mqid = mq_open(name_str, oflag as u32, MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE)?;
-    
+
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("[MQUEUE] Opened POSIX Message Queue (MQFD #");
         vga::print_u64(mqid as u64);
@@ -284,10 +288,10 @@ pub mod ops {
         vga::print_u64(mode as u64);
         vga::print_str(")\n");
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    
+
         Ok(mqid as u64)
     }
 }
 
-pub use self::table::*;
 pub use self::ops::*;
+pub use self::table::*;

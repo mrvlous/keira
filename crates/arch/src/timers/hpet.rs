@@ -299,9 +299,9 @@ pub fn delay_millis(millis: u64) {
 mod tests {
     use super::*;
     use keira_core::sync::mutex::SpinMutex;
-    
+
     static HPET_TEST_LOCK: SpinMutex<()> = SpinMutex::new(());
-    
+
     unsafe fn reset_mock_hpet() {
         HPET_INITIALIZED = false;
         MOCK_HPET_MEM = [0u8; 1024];
@@ -313,14 +313,14 @@ mod tests {
             | 1u64;
         write_reg64(HPET_REG_GCAP_ID, mock_gcap);
     }
-    
+
     #[test]
     fn test_hpet_init_and_capabilities() {
         let _guard = HPET_TEST_LOCK.lock();
         unsafe {
             reset_mock_hpet();
         }
-    
+
         let info = init_at(0xFED0_0000).expect("HPET initialization failed");
         assert!(is_initialized());
         assert_eq!(info.base_address, 0xFED0_0000);
@@ -331,11 +331,11 @@ mod tests {
         assert!(info.legacy_route_capable);
         assert_eq!(info.period_fs, 10_000_000);
         assert_eq!(info.frequency_hz, 100_000_000);
-    
+
         let retrieved = get_info();
         assert_eq!(retrieved, Some(info));
     }
-    
+
     #[test]
     fn test_hpet_counter_monotonic_advance() {
         let _guard = HPET_TEST_LOCK.lock();
@@ -346,11 +346,11 @@ mod tests {
         let c1 = read_counter();
         let c2 = read_counter();
         let c3 = read_counter();
-    
+
         assert!(c2 > c1, "Counter must advance monotonically");
         assert!(c3 > c2, "Counter must advance monotonically");
     }
-    
+
     #[test]
     fn test_hpet_ticks_to_nanos_math() {
         let _guard = HPET_TEST_LOCK.lock();
@@ -360,11 +360,11 @@ mod tests {
         let _ = init_at(0xFED0_0000);
         let nanos100 = ticks_to_nanos(100);
         assert_eq!(nanos100, 1_000);
-    
+
         let nanos1sec = ticks_to_nanos(100_000_000);
         assert_eq!(nanos1sec, 1_000_000_000);
     }
-    
+
     #[test]
     fn test_hpet_invalid_period_rejection() {
         let _guard = HPET_TEST_LOCK.lock();
@@ -374,14 +374,14 @@ mod tests {
             let invalid_gcap = (0x8086u64 << 16) | 1u64;
             write_reg64(HPET_REG_GCAP_ID, invalid_gcap);
         }
-    
+
         let res = init_at(0xFED0_0000);
         assert!(res.is_err());
         unsafe {
             reset_mock_hpet();
         }
     }
-    
+
     #[test]
     fn test_hpet_delay_routines() {
         let _guard = HPET_TEST_LOCK.lock();

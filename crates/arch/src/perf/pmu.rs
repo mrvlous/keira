@@ -181,7 +181,6 @@ pub fn sys_perf_event_open(event_type: u32, config: u64, pid: u64) -> Result<u64
     open_counter(event_type, config, pid)
 }
 
-
 pub mod counters {
     pub use super::*;
 }

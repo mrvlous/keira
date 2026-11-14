@@ -114,7 +114,6 @@ fn validate_ptr(ptr: u64) -> bool {
     (0x100000..0x7FFFFFFFFFFF).contains(&ptr) && (ptr & (ptr_size - 1) == 0)
 }
 
-
 pub mod unwind {
     pub use super::*;
 }

@@ -15,33 +15,32 @@
 //! Subsystem module: record.
 
 pub mod types {
-pub const TLS_CONTENT_HANDSHAKE: u8 = 22;
-pub const TLS_CONTENT_APPLICATION_DATA: u8 = 23;
-pub const TLS_VERSION_12: [u8; 2] = [0x03, 0x03];
-pub const TLS_VERSION_13: [u8; 2] = [0x03, 0x04];
-pub const TLS_AES_128_GCM_SHA256: [u8; 2] = [0x13, 0x01];
+    pub const TLS_CONTENT_HANDSHAKE: u8 = 22;
+    pub const TLS_CONTENT_APPLICATION_DATA: u8 = 23;
+    pub const TLS_VERSION_12: [u8; 2] = [0x03, 0x03];
+    pub const TLS_VERSION_13: [u8; 2] = [0x03, 0x04];
+    pub const TLS_AES_128_GCM_SHA256: [u8; 2] = [0x13, 0x01];
 
-/// TLS 1.3 protocol handshake state machine stages.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TlsState {
-    Init,
-    ClientHelloSent,
-    HandshakeKeys,
-    Connected,
-    Closed,
-}
+    /// TLS 1.3 protocol handshake state machine stages.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum TlsState {
+        Init,
+        ClientHelloSent,
+        HandshakeKeys,
+        Connected,
+        Closed,
+    }
 
-/// Active TLS 1.3 cryptographic session state.
-pub struct TlsSession {
-    pub state: TlsState,
-    pub client_random: [u8; 32],
-    pub client_private_key: [u8; 32],
-    pub client_public_key: [u8; 32],
-    pub traffic_key: [u8; 16],
-    pub traffic_iv: [u8; 12],
-    pub transcript_hash: [u8; 32],
-}
-
+    /// Active TLS 1.3 cryptographic session state.
+    pub struct TlsSession {
+        pub state: TlsState,
+        pub client_random: [u8; 32],
+        pub client_private_key: [u8; 32],
+        pub client_public_key: [u8; 32],
+        pub traffic_key: [u8; 16],
+        pub traffic_iv: [u8; 12],
+        pub transcript_hash: [u8; 32],
+    }
 }
 
 pub use self::types::*;

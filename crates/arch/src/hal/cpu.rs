@@ -38,7 +38,6 @@ pub trait Cpu {
     fn pause(&self);
 }
 
-
 pub mod ops {
     pub use super::*;
 }

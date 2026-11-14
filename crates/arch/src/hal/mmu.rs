@@ -43,7 +43,6 @@ pub trait Mmu {
     unsafe fn switch_table_root(&self, root_phys: u64);
 }
 
-
 pub mod ops {
     pub use super::*;
 }

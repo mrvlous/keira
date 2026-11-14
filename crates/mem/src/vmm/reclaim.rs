@@ -20,7 +20,7 @@ pub mod tree {
         PAGE_HUGE, PAGE_PRESENT, PAGE_USER, PTE_ADDR_MASK, PTE_ADDR_MASK_1G, PTE_ADDR_MASK_2M,
     };
     use crate::pmm;
-    
+
     #[inline]
     fn is_valid_page_table_frame(phys: u64) -> bool {
         #[cfg(test)]
@@ -36,25 +36,25 @@ pub mod tree {
                 && pmm::is_valid_ram_range(phys, pmm::PAGE_SIZE)
         }
     }
-    
+
     pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
         if !is_valid_page_table_frame(pml4_phys) {
             return;
         }
-    
+
         let pml4 = pml4_phys as *const u64;
-    
+
         let pml4_0 = *pml4;
         if (pml4_0 & PAGE_PRESENT) != 0 {
             let pdpt_phys = pml4_0 & PTE_ADDR_MASK;
             if is_valid_page_table_frame(pdpt_phys) {
                 let pdpt = pdpt_phys as *const u64;
-    
+
                 for i in 0..512 {
                     if i == 0 || i == 3 {
                         continue;
                     }
-    
+
                     let pdpt_entry = *pdpt.add(i);
                     if (pdpt_entry & PAGE_PRESENT) != 0 && (pdpt_entry & PAGE_USER) != 0 {
                         if (pdpt_entry & PAGE_HUGE) != 0 {
@@ -73,13 +73,13 @@ pub mod tree {
                         }
                     }
                 }
-    
+
                 if pdpt_phys >= pmm::KERNEL_BASE_1MB {
                     pmm::free_frame(pdpt_phys);
                 }
             }
         }
-    
+
         for i in 1..256 {
             let entry = *pml4.add(i);
             if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
@@ -89,27 +89,29 @@ pub mod tree {
                 }
             }
         }
-    
+
         cleanup_vmas_for_pml4(pml4_phys);
-    
+
         if pml4_phys >= pmm::KERNEL_BASE_1MB {
             pmm::free_frame(pml4_phys);
         }
     }
-    
+
     unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
         if !is_valid_page_table_frame(table_phys) {
             return;
         }
-    
+
         let table = table_phys as *const u64;
-    
+
         if level == 1 {
             for i in 0..512 {
                 let entry = *table.add(i);
                 if (entry & PAGE_PRESENT) != 0 && (entry & PAGE_USER) != 0 {
                     let frame = entry & PTE_ADDR_MASK;
-                    if frame >= pmm::KERNEL_BASE_1MB && pmm::is_valid_ram_range(frame, pmm::PAGE_SIZE) {
+                    if frame >= pmm::KERNEL_BASE_1MB
+                        && pmm::is_valid_ram_range(frame, pmm::PAGE_SIZE)
+                    {
                         pmm::release_frame(frame);
                     }
                 }
@@ -136,7 +138,7 @@ pub mod tree {
                 }
             }
         }
-    
+
         if table_phys >= pmm::KERNEL_BASE_1MB {
             pmm::free_frame(table_phys);
         }

@@ -16,12 +16,12 @@
 
 pub mod exit {
     use keira_fs::lock::flock::release_all_locks_for_task;
-    
+
     use crate::scheduler::core::{
         CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK,
     };
     use crate::types::{FileDescriptor, TaskState, MAX_FDS};
-    
+
     pub unsafe fn exit_current(exit_code: i32) {
         let parent_id = {
             let _guard = SCHEDULER_LOCK.lock();
@@ -30,33 +30,33 @@ pub mod exit {
                 let pid = if let Some(ref mut task) = TASKS[idx] {
                     task.exit_code = exit_code;
                     task.state = TaskState::Zombie(exit_code);
-    
+
                     // Auto-reclaim open file descriptors and flock write locks
                     for fd in 0..MAX_FDS {
                         if task.fds[fd].is_open {
                             if task.fds[fd].write_mode {
-                                if let Ok(path_str) =
-                                    core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
-                                {
+                                if let Ok(path_str) = core::str::from_utf8(
+                                    &task.fds[fd].path[..task.fds[fd].path_len],
+                                ) {
                                     keira_fs::lock::flock::release_lock(path_str, idx);
                                 }
                             }
                             task.fds[fd] = FileDescriptor::new();
                         }
                     }
-    
+
                     task.parent_id
                 } else {
                     0
                 };
-    
+
                 release_all_locks_for_task(idx);
                 crate::scheduler::work_stealing::mark_task_dequeued(idx);
-    
+
                 if let Some(hook) = TASK_CLEANUP_HOOK {
                     hook(idx);
                 }
-    
+
                 // Reparent any child tasks to PID 0 (kernel_shell / Init)
                 for child in TASKS.iter_mut().take(MAX_TASKS).skip(1).flatten() {
                     if child.parent_id == idx {
@@ -64,7 +64,7 @@ pub mod exit {
                         child.is_orphan = true;
                     }
                 }
-    
+
                 // Wake up parent if blocked
                 if pid < MAX_TASKS {
                     if let Some(ref mut parent) = TASKS[pid] {
@@ -77,13 +77,13 @@ pub mod exit {
                         }
                     }
                 }
-    
+
                 pid
             } else {
                 0
             }
         };
-    
+
         if parent_id != 0 || CURRENT_TASK_IDX != 0 {
             core::arch::asm!("sti; int 32");
             loop {
@@ -93,7 +93,7 @@ pub mod exit {
             core::arch::asm!("sti");
         }
     }
-    
+
     pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str> {
         if pid == 0 {
             return Err("Cannot stop the kernel shell (Task 0)");
@@ -112,12 +112,12 @@ pub mod exit {
 pub mod reap {
     use keira_fs::lock::flock::release_all_locks_for_task;
     use keira_mem::{pmm, vmm};
-    
+
     use crate::scheduler::core::{
         CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK, TASK_STACK_PAGES,
     };
     use crate::types::TaskState;
-    
+
     pub unsafe fn reap_orphaned_zombies_locked() {
         let curr = CURRENT_TASK_IDX;
         for (i, child_slot) in TASKS.iter_mut().enumerate().take(MAX_TASKS).skip(1) {
@@ -151,7 +151,7 @@ pub mod reap {
             }
         }
     }
-    
+
     pub unsafe fn reap_orphaned_zombies() {
         let _guard = SCHEDULER_LOCK.lock();
         reap_orphaned_zombies_locked();
@@ -161,24 +161,24 @@ pub mod reap {
 pub mod wait {
     use keira_fs::lock::flock::release_all_locks_for_task;
     use keira_mem::{pmm, vmm};
-    
+
     use crate::scheduler::core::{
         CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_CLEANUP_HOOK, TASK_STACK_PAGES,
     };
     use crate::signal::action::reset_signal_handlers;
     use crate::types::TaskState;
-    
+
     pub unsafe fn sys_waitpid(
         target_pid: i64,
         status_ptr: *mut i32,
         options: i32,
     ) -> Result<usize, &'static str> {
         let parent_idx = CURRENT_TASK_IDX;
-    
+
         loop {
             let (reaped_id, status_val, has_living_child) = {
                 let _guard = SCHEDULER_LOCK.lock();
-    
+
                 // 1. Check if child already exited (Zombie)
                 let mut reaped = None;
                 for child_slot in TASKS.iter_mut().take(MAX_TASKS).skip(1) {
@@ -218,7 +218,7 @@ pub mod wait {
                         }
                     }
                 }
-    
+
                 if let Some((id, st)) = reaped {
                     (Some(id), st, true)
                 } else {
@@ -235,23 +235,23 @@ pub mod wait {
                     (None, 0, living)
                 }
             };
-    
+
             if let Some(id) = reaped_id {
                 if !status_ptr.is_null() {
                     *status_ptr = status_val;
                 }
                 return Ok(id);
             }
-    
+
             if !has_living_child {
                 return Err("No child processes");
             }
-    
+
             // Non-blocking wait if WNOHANG is set
             if (options & 1) != 0 {
                 return Ok(0);
             }
-    
+
             // 3. Block parent until a child exits
             {
                 let _guard = SCHEDULER_LOCK.lock();
@@ -260,11 +260,11 @@ pub mod wait {
                     crate::scheduler::work_stealing::mark_task_dequeued(parent_idx);
                 }
             }
-    
+
             core::arch::asm!("sti; int 32; cli");
         }
     }
-    
+
     pub unsafe fn wait_for_task(child_id: usize) {
         let _ = sys_waitpid(child_id as i64, core::ptr::null_mut(), 0);
     }

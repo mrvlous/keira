@@ -16,9 +16,9 @@
 
 pub mod device {
     use crate::storage::block::BlockDevice;
-    
+
     pub const MAX_RAMDISK_FRAMES: usize = 1024;
-    
+
     pub struct RamBlockDevice {
         /// Device identifier string.
         pub name: &'static str,
@@ -29,13 +29,13 @@ pub mod device {
         /// Count of populated physical frames in `frames`.
         pub frame_count: usize,
     }
-    
+
     impl Default for RamBlockDevice {
         fn default() -> Self {
             Self::new()
         }
     }
-    
+
     impl RamBlockDevice {
         /// Constructs a blank, unallocated RAM disk device descriptor.
         pub const fn new() -> Self {
@@ -46,78 +46,78 @@ pub mod device {
                 frame_count: 0,
             }
         }
-    
+
         /// Block size in bytes.
         pub const fn block_size(&self) -> u32 {
             512
         }
-    
+
         /// Block count.
         pub const fn block_count(&self) -> u32 {
             self.size_sectors
         }
     }
-    
+
     impl BlockDevice for RamBlockDevice {
         fn read_sector(&self, sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'static str> {
             if sector >= self.size_sectors {
                 return Err("Ramdisk Read: Out of bounds");
             }
-    
+
             let frame_idx = (sector / 8) as usize;
             let sector_offset = ((sector % 8) * 512) as usize;
-    
+
             if frame_idx >= self.frame_count {
                 return Err("Ramdisk Read: Internal frame index error");
             }
-    
+
             let frame_addr = self.frames[frame_idx];
             if frame_addr == 0 {
                 return Err("Ramdisk Read: Invalid frame address");
             }
-    
+
             unsafe {
                 let src = (frame_addr + sector_offset as u64) as *const u8;
                 core::ptr::copy_nonoverlapping(src, buffer.as_mut_ptr(), 512);
             }
-    
+
             Ok(())
         }
-    
+
         fn write_sector(&self, sector: u32, buffer: &[u8; 512]) -> Result<(), &'static str> {
             if sector >= self.size_sectors {
                 return Err("Ramdisk Write: Out of bounds");
             }
-    
+
             let frame_idx = (sector / 8) as usize;
             let sector_offset = ((sector % 8) * 512) as usize;
-    
+
             if frame_idx >= self.frame_count {
                 return Err("Ramdisk Write: Internal frame index error");
             }
-    
+
             let frame_addr = self.frames[frame_idx];
             if frame_addr == 0 {
                 return Err("Ramdisk Write: Invalid frame address");
             }
-    
+
             unsafe {
                 let dst = (frame_addr + sector_offset as u64) as *mut u8;
                 core::ptr::copy_nonoverlapping(buffer.as_ptr(), dst, 512);
             }
-    
+
             Ok(())
         }
-    
+
         fn get_size_sectors(&self) -> u32 {
             self.size_sectors
         }
-    
+
         fn get_name(&self) -> &'static str {
             self.name
         }
     }
-    
+
     pub static mut RAM_DEVICE: RamBlockDevice = RamBlockDevice::new();
 }
 
@@ -125,15 +125,15 @@ pub mod format {
     use super::device::{MAX_RAMDISK_FRAMES, RAM_DEVICE};
     use crate::storage::block::{register_device, BlockDevice};
     use keira_mem::pmm;
-    
+
     pub fn create_ramdisk(size_kb: usize) -> Result<(), &'static str> {
         let frames_needed = (size_kb * 1024).div_ceil(4096);
         if frames_needed == 0 || frames_needed > MAX_RAMDISK_FRAMES {
             return Err("Ramdisk: Invalid size or exceeds MAX_RAMDISK_FRAMES");
         }
-    
+
         free_current_ramdisk();
-    
+
         unsafe {
             RAM_DEVICE.frame_count = 0;
             for _ in 0..frames_needed {
@@ -142,17 +142,17 @@ pub mod format {
                 RAM_DEVICE.frames[RAM_DEVICE.frame_count] = frame;
                 RAM_DEVICE.frame_count += 1;
             }
-    
+
             RAM_DEVICE.size_sectors = (frames_needed * 8) as u32;
-    
+
             format_fat16(&*core::ptr::addr_of!(RAM_DEVICE))?;
-    
+
             let _ = register_device(&*core::ptr::addr_of!(RAM_DEVICE));
         }
-    
+
         Ok(())
     }
-    
+
     pub fn free_current_ramdisk() {
         unsafe {
             for i in 0..RAM_DEVICE.frame_count {
@@ -165,7 +165,7 @@ pub mod format {
             RAM_DEVICE.size_sectors = 0;
         }
     }
-    
+
     fn format_fat16(device: &dyn BlockDevice) -> Result<(), &'static str> {
         let total_sectors = device.get_size_sectors();
         let sectors_per_cluster: u8 = if total_sectors < 8192 {
@@ -175,20 +175,20 @@ pub mod format {
         } else {
             16
         };
-    
+
         let reserved_sectors: u16 = 4;
         let num_fats: u8 = 2;
         let root_entries: u16 = 512;
         let root_dir_sectors = (root_entries * 32).div_ceil(512);
-    
+
         let data_sectors = total_sectors
             .saturating_sub(reserved_sectors as u32)
             .saturating_sub(root_dir_sectors as u32);
         let total_clusters = data_sectors / (sectors_per_cluster as u32);
-    
+
         let bytes_per_fat = total_clusters * 2;
         let sectors_per_fat = bytes_per_fat.div_ceil(512) as u16;
-    
+
         let mut boot_sec = [0u8; 512];
         boot_sec[0] = 0xEB;
         boot_sec[1] = 0x3C;
@@ -219,7 +219,7 @@ pub mod format {
         boot_sec[33] = 0;
         boot_sec[34] = 0;
         boot_sec[35] = 0;
-    
+
         boot_sec[36] = 0x80;
         boot_sec[37] = 0x00;
         boot_sec[38] = 0x29;
@@ -229,23 +229,23 @@ pub mod format {
         boot_sec[42] = 0x12;
         boot_sec[43..54].copy_from_slice(b"KEIRA RAM  ");
         boot_sec[54..62].copy_from_slice(b"FAT16   ");
-    
+
         boot_sec[510] = 0x55;
         boot_sec[511] = 0xAA;
-    
+
         device.write_sector(0, &boot_sec)?;
-    
+
         let zero_sec = [0u8; 512];
         for s in 1..reserved_sectors {
             device.write_sector(s as u32, &zero_sec)?;
         }
-    
+
         let mut fat_start_sec = [0u8; 512];
         fat_start_sec[0] = 0xF8;
         fat_start_sec[1] = 0xFF;
         fat_start_sec[2] = 0xFF;
         fat_start_sec[3] = 0xFF;
-    
+
         for fat in 0..num_fats as u32 {
             let base = reserved_sectors as u32 + (fat * sectors_per_fat as u32);
             device.write_sector(base, &fat_start_sec)?;
@@ -253,12 +253,12 @@ pub mod format {
                 device.write_sector(base + s as u32, &zero_sec)?;
             }
         }
-    
+
         let root_start = reserved_sectors as u32 + (num_fats as u32 * sectors_per_fat as u32);
         for s in 0..root_dir_sectors {
             device.write_sector(root_start + s as u32, &zero_sec)?;
         }
-    
+
         Ok(())
     }
 }
@@ -270,7 +270,7 @@ pub use self::format::*;
 mod tests {
     use super::device::RamBlockDevice;
     use crate::storage::block::BlockDevice;
-    
+
     #[test]
     fn test_ramdisk_device_properties() {
         let dev = RamBlockDevice::new();
@@ -278,7 +278,7 @@ mod tests {
         assert_eq!(dev.get_size_sectors(), 0);
         assert_eq!(dev.block_size(), 512);
         assert_eq!(dev.block_count(), 0);
-    
+
         let mut buf = [0u8; 512];
         assert!(dev.read_sector(0, &mut buf).is_err());
         assert!(dev.write_sector(0, &buf).is_err());

@@ -33,7 +33,7 @@ pub mod header {
         pub shnum: u16,
         pub shstrndx: u16,
     }
-    
+
     #[repr(C)]
     #[derive(Debug, Clone, Copy)]
     pub struct Elf32Header {
@@ -56,7 +56,7 @@ pub mod header {
 
 pub mod program {
     pub use keira_mem::vmm::{USER_MAX_VADDR, USER_MIN_VADDR};
-    
+
     #[repr(C)]
     #[derive(Debug, Clone, Copy)]
     pub struct ProgramHeader {
@@ -69,7 +69,7 @@ pub mod program {
         pub p_memsz: u64,
         pub p_align: u64,
     }
-    
+
     #[repr(C)]
     #[derive(Debug, Clone, Copy)]
     pub struct Program32Header {
@@ -82,13 +82,13 @@ pub mod program {
         pub p_flags: u32,
         pub p_align: u32,
     }
-    
+
     pub const PT_LOAD: u32 = 1;
-    
+
     pub const PF_X: u32 = 1 << 0;
-    
+
     pub const PF_W: u32 = 1 << 1;
-    
+
     pub const PF_R: u32 = 1 << 2;
 }
 

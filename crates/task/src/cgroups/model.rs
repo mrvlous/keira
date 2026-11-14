@@ -16,7 +16,7 @@
 
 pub mod types {
     pub const MAX_CGROUPS: usize = 8;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct Cgroup {
         pub id: u32,
@@ -28,7 +28,7 @@ pub mod types {
         pub task_count: u32,
         pub in_use: bool,
     }
-    
+
     impl Cgroup {
         /// Allocate an empty, unused control group slot.
         pub const fn empty() -> Self {
@@ -43,7 +43,7 @@ pub mod types {
                 in_use: false,
             }
         }
-    
+
         /// Retrieve control group name string slice.
         pub fn name_str(&self) -> &str {
             core::str::from_utf8(&self.name[..self.name_len]).unwrap_or("unknown")

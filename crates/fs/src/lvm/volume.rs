@@ -22,7 +22,7 @@ pub mod dispatcher {
         LVM_CMD_RAID_SYNC,
     };
     use keira_io::vga;
-    
+
     pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
         ensure_lvm_initialized();
         match cmd {
@@ -46,7 +46,7 @@ pub mod dispatcher {
                     vga::print_str("MB | PVs: ");
                     vga::print_u64(vg.pv_count as u64);
                     vga::print_str(")\n");
-    
+
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                     for lv in vg.lvs.iter() {
                         if !lv.active {
@@ -140,7 +140,7 @@ pub mod dispatcher {
 
 pub mod manager {
     use crate::lvm::types::{LogicalVolume, VolumeGroup};
-    
+
     pub static mut VOL_GROUPS: [VolumeGroup; 2] = [
         VolumeGroup {
             name: [0; 16],
@@ -171,31 +171,31 @@ pub mod manager {
             active: false,
         },
     ];
-    
+
     pub static mut LVM_INITIALIZED: bool = false;
-    
+
     pub fn ensure_lvm_initialized() {
         unsafe {
             if LVM_INITIALIZED {
                 return;
             }
-    
+
             let mut dev_count: u8 = 0;
             let mut total_sectors: u64 = 0;
-    
+
             keira_io::storage::block::for_each_device(|dev, _is_mounted| {
                 dev_count = dev_count.saturating_add(1);
                 total_sectors = total_sectors.saturating_add(dev.get_size_sectors() as u64);
             });
-    
+
             let total_mb = if total_sectors > 0 {
                 ((total_sectors * 512) / (1024 * 1024)).max(32) as u32
             } else {
                 64
             };
-    
+
             let free_mb = total_mb.saturating_sub(32);
-    
+
             VOL_GROUPS[0] = VolumeGroup {
                 name: *b"vg_keira0\0\0\0\0\0\0\0",
                 total_mb,
@@ -230,10 +230,10 @@ pub mod manager {
                 ],
                 active: true,
             };
-    
+
             let raid_disks = if dev_count >= 2 { dev_count } else { 2 };
             let raid_size = total_mb / 2;
-    
+
             crate::lvm::volume::raid::RAID_ARRAYS[0] = crate::lvm::types::RaidArray {
                 name: *b"md0\0\0\0\0\0\0\0\0\0\0\0\0\0",
                 level: 1, // RAID-1 Mirroring
@@ -242,7 +242,7 @@ pub mod manager {
                 size_mb: raid_size.max(16),
                 active: true,
             };
-    
+
             crate::lvm::volume::raid::RAID_ARRAYS[1] = crate::lvm::types::RaidArray {
                 name: *b"md1\0\0\0\0\0\0\0\0\0\0\0\0\0",
                 level: 0, // RAID-0 Striping
@@ -251,16 +251,16 @@ pub mod manager {
                 size_mb: total_mb.max(32),
                 active: true,
             };
-    
+
             LVM_INITIALIZED = true;
         }
     }
-    
+
     pub fn get_vol_groups() -> &'static [VolumeGroup; 2] {
         ensure_lvm_initialized();
         unsafe { &VOL_GROUPS }
     }
-    
+
     pub fn create_vg_named(name: &str, total_mb: u32) -> Result<(), &'static str> {
         ensure_lvm_initialized();
         unsafe {
@@ -290,7 +290,7 @@ pub mod manager {
         }
         Err("Volume group table full")
     }
-    
+
     pub fn create_lv_named(
         vg_name: &str,
         lv_name: &str,
@@ -316,12 +316,12 @@ pub mod manager {
                         let name_bytes = lv_name.as_bytes();
                         let n_len = name_bytes.len().min(15);
                         name_buf[..n_len].copy_from_slice(&name_bytes[..n_len]);
-    
+
                         let mut fs_buf = [0u8; 8];
                         let fs_bytes = fstype.as_bytes();
                         let f_len = fs_bytes.len().min(7);
                         fs_buf[..f_len].copy_from_slice(&fs_bytes[..f_len]);
-    
+
                         vg.lvs[idx] = LogicalVolume {
                             name: name_buf,
                             size_mb,
@@ -337,7 +337,7 @@ pub mod manager {
         }
         Err("Volume Group not found")
     }
-    
+
     pub fn get_lvm_stats() -> (usize, usize, usize, usize) {
         ensure_lvm_initialized();
         let mut vgs = 0;
@@ -361,7 +361,7 @@ pub mod manager {
 pub mod raid {
     use super::manager::ensure_lvm_initialized;
     use crate::lvm::types::RaidArray;
-    
+
     pub static mut RAID_ARRAYS: [RaidArray; 2] = [
         RaidArray {
             name: [0; 16],
@@ -380,12 +380,12 @@ pub mod raid {
             active: false,
         },
     ];
-    
+
     pub fn get_raid_arrays() -> &'static [RaidArray; 2] {
         ensure_lvm_initialized();
         unsafe { &RAID_ARRAYS }
     }
-    
+
     pub fn sync_raid_array(md_name: &str) -> Result<(), &'static str> {
         ensure_lvm_initialized();
         unsafe {
@@ -403,7 +403,7 @@ pub mod raid {
         }
         Err("RAID device not found")
     }
-    
+
     pub fn get_raid_stats() -> (usize, usize) {
         ensure_lvm_initialized();
         let mut active = 0;

@@ -21,21 +21,21 @@ pub mod types {
     pub const EPOLLERR: u32 = 0x0008;
     pub const EPOLLHUP: u32 = 0x0010;
     pub const EPOLLET: u32 = 1 << 31;
-    
+
     pub const EPOLL_CTL_ADD: i32 = 1;
     pub const EPOLL_CTL_DEL: i32 = 2;
     pub const EPOLL_CTL_MOD: i32 = 3;
-    
+
     pub const MAX_EPOLL_INSTANCES: usize = 16;
     pub const MAX_EPOLL_ITEMS: usize = 32;
-    
+
     #[repr(C)]
     #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
     pub struct EpollEvent {
         pub events: u32,
         pub data: u64,
     }
-    
+
     #[derive(Copy, Clone, Debug, Default)]
     pub struct EpollItem {
         pub fd: i32,
@@ -43,7 +43,7 @@ pub mod types {
         pub ready_events: u32,
         pub in_use: bool,
     }
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct EpollInstance {
         pub epfd: i32,
@@ -56,16 +56,16 @@ pub mod types {
 
 pub mod engine {
     use crate::event::epoll::types::*;
-    
+
     pub static mut EPOLL_TABLE: [Option<EpollInstance>; MAX_EPOLL_INSTANCES] =
         [None; MAX_EPOLL_INSTANCES];
     pub static mut NEXT_EPFD: i32 = 100;
-    
+
     pub fn sys_epoll_create(size: i32) -> Result<u64, &'static str> {
         if size <= 0 {
             return Err("Invalid size parameter");
         }
-    
+
         unsafe {
             for slot in EPOLL_TABLE.iter_mut() {
                 if slot.is_none() {
@@ -84,21 +84,21 @@ pub mod engine {
         }
         Err("Max epoll instances reached")
     }
-    
+
     pub fn sys_epoll_ctl(epfd: i32, op: i32, fd: i32, event_ptr: u64) -> Result<u64, &'static str> {
         if event_ptr == 0 && op != EPOLL_CTL_DEL {
             return Err("Null event pointer");
         }
-    
+
         let event = if event_ptr != 0 {
             unsafe { *(event_ptr as *const EpollEvent) }
         } else {
             EpollEvent::default()
         };
-    
+
         epoll_ctl_internal(epfd, op, fd, event)
     }
-    
+
     pub fn epoll_ctl_internal(
         epfd: i32,
         op: i32,
@@ -158,13 +158,13 @@ pub mod engine {
         }
         Err("Epoll descriptor not found")
     }
-    
+
     pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
         let mut ready = 0u32;
         if fd < 0 {
             return 0;
         }
-    
+
         let task_idx = keira_task::scheduler::CURRENT_TASK_IDX;
         if let Some(ref t) = keira_task::scheduler::TASKS[task_idx] {
             if (fd as usize) < keira_task::types::MAX_FDS {
@@ -211,11 +211,11 @@ pub mod engine {
                 }
             }
         }
-    
+
         // Readiness state for simulated file descriptors and test harnesses
         requested_events & (EPOLLIN | EPOLLOUT)
     }
-    
+
     pub fn sys_epoll_wait(
         epfd: i32,
         events_out_ptr: u64,
@@ -228,13 +228,13 @@ pub mod engine {
         if events_out_ptr != 0 && !events_out_ptr.is_multiple_of(8) {
             return Err("Unaligned events_out_ptr");
         }
-    
+
         unsafe {
             for inst in EPOLL_TABLE.iter_mut().flatten() {
                 if inst.epfd == epfd && inst.active {
                     inst.total_polls += 1;
                     let mut count: u32 = 0;
-    
+
                     for item in inst.items.iter_mut() {
                         if item.in_use {
                             let ready_now = check_fd_readiness(item.fd, item.event.events);
@@ -261,7 +261,7 @@ pub mod engine {
         }
         Err("Epoll descriptor not found")
     }
-    
+
     pub fn get_epoll_stats() -> (usize, usize) {
         let mut total_instances = 0;
         let mut total_items = 0;
@@ -275,11 +275,11 @@ pub mod engine {
         }
         (total_instances, total_items)
     }
-    
+
     pub fn get_epoll_instances() -> [Option<EpollInstance>; MAX_EPOLL_INSTANCES] {
         unsafe { EPOLL_TABLE }
     }
-    
+
     pub fn epoll_reset() {
         unsafe {
             EPOLL_TABLE = [None; MAX_EPOLL_INSTANCES];
@@ -288,5 +288,5 @@ pub mod engine {
     }
 }
 
-pub use self::types::*;
 pub use self::engine::*;
+pub use self::types::*;

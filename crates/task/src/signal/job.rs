@@ -21,7 +21,7 @@ pub mod state {
         Stopped,
         Terminated,
     }
-    
+
     #[derive(Debug, Clone, Copy)]
     pub struct JobInfo {
         pub job_id: u32,
@@ -31,21 +31,21 @@ pub mod state {
         pub state: JobState,
         pub is_foreground: bool,
     }
-    
+
     pub const MAX_JOBS: usize = 64;
 }
 
 pub mod table {
     use super::state::{JobInfo, JobState, MAX_JOBS};
-    
+
     pub static mut JOB_TABLE: [Option<JobInfo>; MAX_JOBS] = [const { None }; MAX_JOBS];
     pub static mut JOB_COUNT: usize = 0;
-    
+
     pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
         let job_id = (JOB_COUNT + 1) as u32;
         let nbytes = name.as_bytes();
         let len = if nbytes.len() > 32 { 32 } else { nbytes.len() };
-    
+
         let mut info = JobInfo {
             job_id,
             pid,
@@ -55,7 +55,7 @@ pub mod table {
             is_foreground: is_fg,
         };
         info.name[..len].copy_from_slice(&nbytes[..len]);
-    
+
         if JOB_COUNT < MAX_JOBS {
             JOB_TABLE[JOB_COUNT] = Some(info);
             JOB_COUNT += 1;
@@ -64,7 +64,7 @@ pub mod table {
         }
         job_id
     }
-    
+
     pub unsafe fn get_foreground_job_pid() -> Option<u32> {
         for job in JOB_TABLE.iter().take(JOB_COUNT).flatten() {
             if job.is_foreground && job.state == JobState::Running {
@@ -73,7 +73,7 @@ pub mod table {
         }
         None
     }
-    
+
     pub unsafe fn remove_job_by_pid(pid: u32) {
         for (i, job_slot) in JOB_TABLE.iter_mut().enumerate().take(JOB_COUNT) {
             if let Some(ref job) = job_slot {

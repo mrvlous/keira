@@ -16,7 +16,7 @@
 
 pub mod amd64 {
     use crate::stack::auxv::*;
-    
+
     pub unsafe fn setup_user_stack_64(
         page_ptr: *mut u8,
         top_page_vaddr: u64,
@@ -30,7 +30,7 @@ pub mod amd64 {
         } else {
             args.len().min(16)
         };
-    
+
         for (i, &arg) in args[..argc].iter().enumerate() {
             let bytes = arg.as_bytes();
             let len = bytes.len() + 1;
@@ -42,7 +42,7 @@ pub mod amd64 {
             *page_ptr.add(offset + bytes.len()) = 0;
             arg_vaddrs[i] = top_page_vaddr + offset as u64;
         }
-    
+
         // Allocate 16 random entropy bytes for AT_RANDOM stack canary seed
         offset = offset.saturating_sub(16);
         let mut random_entropy = [0u8; 16];
@@ -55,10 +55,10 @@ pub mod amd64 {
         }
         core::ptr::copy_nonoverlapping(random_entropy.as_ptr(), page_ptr.add(offset), 16);
         let random_vaddr = top_page_vaddr + offset as u64;
-    
+
         // 16-byte align before pointer words
         offset &= !15;
-    
+
         let auxv: [(u64, u64); 8] = [
             (AT_PAGESZ, 4096),
             (AT_ENTRY, entry_point),
@@ -70,35 +70,35 @@ pub mod amd64 {
             (AT_RANDOM, random_vaddr),
         ];
         let auxv_words = (auxv.len() + 1) * 2;
-    
+
         // Total words: argc(1) + argv pointers(argc) + argv_null(1) + envp_null(1) + auxv_words
         let total_words = 1 + argc + 1 + 1 + auxv_words;
         if !total_words.is_multiple_of(2) {
             offset = offset.saturating_sub(8);
         }
         offset = offset.saturating_sub(total_words * 8);
-    
+
         let stack_u64 = page_ptr.add(offset) as *mut u64;
         let mut w_idx = 0;
-    
+
         // 1. argc
         *stack_u64.add(w_idx) = argc as u64;
         w_idx += 1;
-    
+
         // 2. argv[0..argc]
         for &addr in arg_vaddrs.iter().take(argc) {
             *stack_u64.add(w_idx) = addr;
             w_idx += 1;
         }
-    
+
         // 3. argv NULL terminator
         *stack_u64.add(w_idx) = 0;
         w_idx += 1;
-    
+
         // 4. envp NULL terminator
         *stack_u64.add(w_idx) = 0;
         w_idx += 1;
-    
+
         // 5. auxv table
         for (tag, val) in auxv.iter() {
             *stack_u64.add(w_idx) = *tag;
@@ -107,14 +107,14 @@ pub mod amd64 {
         }
         *stack_u64.add(w_idx) = AT_NULL;
         *stack_u64.add(w_idx + 1) = 0;
-    
+
         top_page_vaddr + offset as u64
     }
 }
 
 pub mod i386 {
     use crate::stack::auxv::*;
-    
+
     pub unsafe fn setup_user_stack_32(
         page_ptr: *mut u8,
         top_page_vaddr: u64,
@@ -128,7 +128,7 @@ pub mod i386 {
         } else {
             args.len().min(16)
         };
-    
+
         for (i, &arg) in args[..argc].iter().enumerate() {
             let bytes = arg.as_bytes();
             let len = bytes.len() + 1;
@@ -140,7 +140,7 @@ pub mod i386 {
             *page_ptr.add(offset + bytes.len()) = 0;
             arg_vaddrs[i] = (top_page_vaddr + offset as u64) as u32;
         }
-    
+
         // Allocate 16 random entropy bytes for AT_RANDOM stack canary seed
         offset = offset.saturating_sub(16);
         let mut random_entropy = [0u8; 16];
@@ -157,9 +157,9 @@ pub mod i386 {
         }
         core::ptr::copy_nonoverlapping(random_entropy.as_ptr(), page_ptr.add(offset), 16);
         let random_vaddr = (top_page_vaddr + offset as u64) as u32;
-    
+
         offset &= !15;
-    
+
         let auxv: [(u32, u32); 8] = [
             (AT_PAGESZ as u32, 4096),
             (AT_ENTRY as u32, entry_point as u32),
@@ -171,13 +171,13 @@ pub mod i386 {
             (AT_RANDOM as u32, random_vaddr),
         ];
         let auxv_words = (auxv.len() + 1) * 2;
-    
+
         // Allocate argv vector array [argv[0], ..., argv[argc-1], NULL, envp_null(1), auxv]
         let table_words = (argc + 1) + 1 + auxv_words;
         offset = offset.saturating_sub(table_words * 4);
         let argv_table_offset = offset;
         let argv_table_ptr = page_ptr.add(argv_table_offset) as *mut u32;
-    
+
         let mut w_idx = 0;
         for &addr in arg_vaddrs.iter().take(argc) {
             *argv_table_ptr.add(w_idx) = addr;
@@ -194,7 +194,7 @@ pub mod i386 {
         }
         *argv_table_ptr.add(w_idx) = AT_NULL as u32;
         *argv_table_ptr.add(w_idx + 1) = 0;
-    
+
         // Stack pointer for i686 CDECL initial entry
         offset = offset.saturating_sub(16);
         let call_args = page_ptr.add(offset) as *mut u32;
@@ -202,7 +202,7 @@ pub mod i386 {
         *call_args.add(1) = argc as u32;
         *call_args.add(2) = (top_page_vaddr + argv_table_offset as u64) as u32;
         *call_args.add(3) = (top_page_vaddr + (argv_table_offset + (argc + 1) * 4) as u64) as u32;
-    
+
         top_page_vaddr + offset as u64
     }
 }

@@ -101,7 +101,6 @@ pub fn irq_restore(state: IrqState) {
     }
 }
 
-
 pub mod state {
     pub use super::*;
 }

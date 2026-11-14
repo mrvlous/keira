@@ -131,7 +131,6 @@ pub unsafe fn wait_icr_idle() {
     }
 }
 
-
 pub mod lapic {
     pub use super::*;
 }

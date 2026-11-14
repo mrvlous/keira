@@ -598,7 +598,6 @@ pub fn init_smp() {
     }
 }
 
-
 pub mod ipi {
     pub use super::*;
 }

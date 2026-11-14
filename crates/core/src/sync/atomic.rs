@@ -45,7 +45,6 @@ pub fn memory_barrier_hardware(order: Ordering) {
     fence(order);
 }
 
-
 pub mod barrier {
     pub use super::*;
 }

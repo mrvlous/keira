@@ -15,137 +15,138 @@
 //! Subsystem module: input.
 
 pub mod keyboard {
-use keira_io::vga;
+    use keira_io::vga;
 
-use super::keys::{KEY_DOWN, KEY_UP};
-use crate::autocomplete::handle_autocomplete;
-use crate::editor::editor_handle_keypress;
-use crate::history::history_load;
-use crate::state::session::{
-    BUFFER_LEN, BUFFER_SIZE, COMMAND_READY, HISTORY_COUNT, HISTORY_INDEX, HISTORY_SIZE,
-    INPUT_BUFFER, IN_EDITOR_MODE, PROMPT_COL, PROMPT_ROW,
-};
-use crate::terminal::prompt::display::print_prompt;
+    use super::keys::{KEY_DOWN, KEY_UP};
+    use crate::autocomplete::handle_autocomplete;
+    use crate::editor::editor_handle_keypress;
+    use crate::history::history_load;
+    use crate::state::session::{
+        BUFFER_LEN, BUFFER_SIZE, COMMAND_READY, HISTORY_COUNT, HISTORY_INDEX, HISTORY_SIZE,
+        INPUT_BUFFER, IN_EDITOR_MODE, PROMPT_COL, PROMPT_ROW,
+    };
+    use crate::terminal::prompt::display::print_prompt;
 
-/// Handle a keypress from the C keyboard driver.
-#[no_mangle]
-pub extern "C" fn shell_handle_keypress(c: u8) {
-    unsafe {
-        if IN_EDITOR_MODE {
-            editor_handle_keypress(c);
-            return;
-        }
+    /// Handle a keypress from the C keyboard driver.
+    #[no_mangle]
+    pub extern "C" fn shell_handle_keypress(c: u8) {
+        unsafe {
+            if IN_EDITOR_MODE {
+                editor_handle_keypress(c);
+                return;
+            }
 
-        if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
-            let termios = keira_io::tty::get_termios();
-            let is_canon = (termios.c_lflag & keira_io::tty::ICANON) != 0;
-            let is_echo = (termios.c_lflag & keira_io::tty::ECHO) != 0;
+            if let Some(fg_pid) = keira_task::signal::get_foreground_job_pid() {
+                let termios = keira_io::tty::get_termios();
+                let is_canon = (termios.c_lflag & keira_io::tty::ICANON) != 0;
+                let is_echo = (termios.c_lflag & keira_io::tty::ECHO) != 0;
+
+                match c {
+                    3 => {
+                        vga::print_str("^C\n");
+                        let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGINT);
+                    }
+                    26 => {
+                        vga::print_str("^Z\n");
+                        let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
+                    }
+                    8 | 127 => {
+                        if is_canon && is_echo && keira_io::tty::last_erase_succeeded() {
+                            vga::backspace();
+                        }
+                    }
+                    10 | 13 => {
+                        if is_echo {
+                            vga::print_str("\n");
+                        }
+                    }
+                    _ if (32..127).contains(&c) => {
+                        if is_echo {
+                            let s = [c];
+                            if let Ok(c_str) = core::str::from_utf8(&s) {
+                                vga::print_str(c_str);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+                return;
+            }
 
             match c {
                 3 => {
                     vga::print_str("^C\n");
-                    let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGINT);
+                    BUFFER_LEN = 0;
+                    INPUT_BUFFER = [0u8; BUFFER_SIZE];
+                    print_prompt();
                 }
-                26 => {
-                    vga::print_str("^Z\n");
-                    let _ = keira_task::signal::sys_kill(fg_pid, keira_task::signal::SIGSTOP);
+                26 => {}
+                12 => {
+                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    vga::init();
+                    print_prompt();
+                    let typed = &INPUT_BUFFER[..BUFFER_LEN];
+                    if let Ok(s) = core::str::from_utf8(typed) {
+                        vga::print_str(s);
+                    }
+                }
+                9 => {
+                    handle_autocomplete();
                 }
                 8 | 127 => {
-                    if is_canon && is_echo && keira_io::tty::last_erase_succeeded() {
+                    if BUFFER_LEN > 0 {
+                        BUFFER_LEN -= 1;
+                        INPUT_BUFFER[BUFFER_LEN] = 0;
                         vga::backspace();
                     }
                 }
                 10 | 13 => {
-                    if is_echo {
-                        vga::print_str("\n");
+                    vga::print_str("\n");
+                    COMMAND_READY = true;
+                }
+                KEY_UP => {
+                    if HISTORY_COUNT == 0 {
+                        return;
+                    }
+                    if HISTORY_INDEX < 0 {
+                        HISTORY_INDEX = (HISTORY_COUNT as isize) - 1;
+                    } else if HISTORY_INDEX > 0 {
+                        let oldest = if HISTORY_COUNT > HISTORY_SIZE {
+                            (HISTORY_COUNT - HISTORY_SIZE) as isize
+                        } else {
+                            0
+                        };
+                        if HISTORY_INDEX > oldest {
+                            HISTORY_INDEX -= 1;
+                        }
+                    }
+                    let idx = (HISTORY_INDEX as usize) % HISTORY_SIZE;
+                    history_load(idx);
+                }
+                KEY_DOWN => {
+                    if HISTORY_INDEX < 0 {
+                        return;
+                    }
+                    if HISTORY_INDEX < (HISTORY_COUNT as isize) - 1 {
+                        HISTORY_INDEX += 1;
+                        let idx = (HISTORY_INDEX as usize) % HISTORY_SIZE;
+                        history_load(idx);
+                    } else {
+                        HISTORY_INDEX = -1;
+                        vga::set_cursor_pos(PROMPT_ROW, PROMPT_COL);
+                        vga::clear_line_from(PROMPT_COL);
+                        BUFFER_LEN = 0;
                     }
                 }
-                _ if (32..127).contains(&c) => {
-                    if is_echo {
+                _ => {
+                    if BUFFER_LEN < BUFFER_SIZE - 1 {
+                        INPUT_BUFFER[BUFFER_LEN] = c;
+                        BUFFER_LEN += 1;
+
                         let s = [c];
                         if let Ok(c_str) = core::str::from_utf8(&s) {
                             vga::print_str(c_str);
                         }
-                    }
-                }
-                _ => {}
-            }
-            return;
-        }
-
-        match c {
-            3 => {
-                vga::print_str("^C\n");
-                BUFFER_LEN = 0;
-                INPUT_BUFFER = [0u8; BUFFER_SIZE];
-                print_prompt();
-            }
-            26 => {}
-            12 => {
-                vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::init();
-                print_prompt();
-                let typed = &INPUT_BUFFER[..BUFFER_LEN];
-                if let Ok(s) = core::str::from_utf8(typed) {
-                    vga::print_str(s);
-                }
-            }
-            9 => {
-                handle_autocomplete();
-            }
-            8 | 127 => {
-                if BUFFER_LEN > 0 {
-                    BUFFER_LEN -= 1;
-                    INPUT_BUFFER[BUFFER_LEN] = 0;
-                    vga::backspace();
-                }
-            }
-            10 | 13 => {
-                vga::print_str("\n");
-                COMMAND_READY = true;
-            }
-            KEY_UP => {
-                if HISTORY_COUNT == 0 {
-                    return;
-                }
-                if HISTORY_INDEX < 0 {
-                    HISTORY_INDEX = (HISTORY_COUNT as isize) - 1;
-                } else if HISTORY_INDEX > 0 {
-                    let oldest = if HISTORY_COUNT > HISTORY_SIZE {
-                        (HISTORY_COUNT - HISTORY_SIZE) as isize
-                    } else {
-                        0
-                    };
-                    if HISTORY_INDEX > oldest {
-                        HISTORY_INDEX -= 1;
-                    }
-                }
-                let idx = (HISTORY_INDEX as usize) % HISTORY_SIZE;
-                history_load(idx);
-            }
-            KEY_DOWN => {
-                if HISTORY_INDEX < 0 {
-                    return;
-                }
-                if HISTORY_INDEX < (HISTORY_COUNT as isize) - 1 {
-                    HISTORY_INDEX += 1;
-                    let idx = (HISTORY_INDEX as usize) % HISTORY_SIZE;
-                    history_load(idx);
-                } else {
-                    HISTORY_INDEX = -1;
-                    vga::set_cursor_pos(PROMPT_ROW, PROMPT_COL);
-                    vga::clear_line_from(PROMPT_COL);
-                    BUFFER_LEN = 0;
-                }
-            }
-            _ => {
-                if BUFFER_LEN < BUFFER_SIZE - 1 {
-                    INPUT_BUFFER[BUFFER_LEN] = c;
-                    BUFFER_LEN += 1;
-
-                    let s = [c];
-                    if let Ok(c_str) = core::str::from_utf8(&s) {
-                        vga::print_str(c_str);
                     }
                 }
             }
@@ -153,17 +154,14 @@ pub extern "C" fn shell_handle_keypress(c: u8) {
     }
 }
 
-}
-
 pub use self::keyboard::*;
 pub mod keys {
-pub const KEY_UP: u8 = 0x80;
-pub const KEY_DOWN: u8 = 0x81;
-pub const KEY_LEFT: u8 = 0x82;
-pub const KEY_RIGHT: u8 = 0x83;
-pub const KEY_F3: u8 = 0x84;
-pub const KEY_F10: u8 = 0x85;
-
+    pub const KEY_UP: u8 = 0x80;
+    pub const KEY_DOWN: u8 = 0x81;
+    pub const KEY_LEFT: u8 = 0x82;
+    pub const KEY_RIGHT: u8 = 0x83;
+    pub const KEY_F3: u8 = 0x84;
+    pub const KEY_F10: u8 = 0x85;
 }
 
 pub use self::keys::*;

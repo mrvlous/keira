@@ -126,7 +126,6 @@ pub extern "C" fn pic_set_mask(irq: u8) {
     set_mask(irq);
 }
 
-
 pub mod i8259 {
     pub use super::*;
 }

@@ -28,9 +28,9 @@ pub mod waiter {
     pub const FUTEX_WAKE_BITSET: u32 = 10;
     pub const FUTEX_WAIT_REQUEUE_PI: u32 = 11;
     pub const FUTEX_CMP_REQUEUE_PI: u32 = 12;
-    
+
     pub const MAX_FUTEX_WAITERS: usize = 16;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct FutexWaiter {
         pub uaddr: usize,
@@ -39,7 +39,7 @@ pub mod waiter {
         pub bitset: u32,
         pub in_use: bool,
     }
-    
+
     impl FutexWaiter {
         pub const fn empty() -> Self {
             Self {
@@ -56,7 +56,7 @@ pub mod waiter {
 pub mod ops {
     use crate::futex::hash::table::{FUTEX_TABLE, TOTAL_FUTEX_WAITS};
     use crate::futex::wait::waiter::FutexWaiter;
-    
+
     pub unsafe fn futex_wait(
         uaddr: usize,
         val: u32,
@@ -76,7 +76,7 @@ pub mod ops {
         }
         Err("Futex wait queue capacity full")
     }
-    
+
     pub unsafe fn cleanup_futex_waiters_for_pid(pid: u32) {
         for slot in FUTEX_TABLE.iter_mut() {
             if slot.in_use && slot.pid == pid {
@@ -86,5 +86,5 @@ pub mod ops {
     }
 }
 
-pub use self::waiter::*;
 pub use self::ops::*;
+pub use self::waiter::*;

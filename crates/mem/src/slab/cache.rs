@@ -16,10 +16,12 @@
 
 pub mod manager {
     use crate::heap::{kfree, kmalloc};
-    use crate::slab::magazine::{CpuDepot, GlobalDepot, Magazine, MAGAZINE_CAPACITY, MAX_CPU_CORES};
+    use crate::slab::magazine::{
+        CpuDepot, GlobalDepot, Magazine, MAGAZINE_CAPACITY, MAX_CPU_CORES,
+    };
     use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
     use keira_core::sync::{IrqSpinLock, LockRank};
-    
+
     pub struct KmemCache {
         name: &'static str,
         obj_size: usize,
@@ -32,10 +34,10 @@ pub mod manager {
         allocated_count: AtomicUsize,
         total_count: AtomicUsize,
     }
-    
+
     unsafe impl Send for KmemCache {}
     unsafe impl Sync for KmemCache {}
-    
+
     impl KmemCache {
         /// Constructs a new hierarchical magazine object cache for descriptors of `obj_size` bytes.
         pub const fn new(name: &'static str, obj_size: usize, align: usize) -> Self {
@@ -58,7 +60,7 @@ pub mod manager {
                 total_count: AtomicUsize::new(0),
             }
         }
-    
+
         /// Allocates an object from the cache, prioritizing local per-CPU magazines.
         ///
         /// 1. Fast Path: Pops from local CPU active magazine ($O(1)$, zero cross-CPU contention).
@@ -67,18 +69,19 @@ pub mod manager {
         pub fn alloc(&self) -> *mut u8 {
             let core_id = keira_arch::cpu::get_current_core_id() % MAX_CPU_CORES;
             let cache_ptr = self as *const Self as *mut Self;
-    
+
             // 1. Lock only the local core's depot (zero contention across different cores)
             {
                 let _guard = self.cpu_locks[core_id].lock();
                 let depot = unsafe { &mut (*cache_ptr).cpu_depots[core_id] };
-    
-                if let Some(obj) = depot.alloc(&self.global_depot, |mag| self.refill_magazine(mag)) {
+
+                if let Some(obj) = depot.alloc(&self.global_depot, |mag| self.refill_magazine(mag))
+                {
                     self.allocated_count.fetch_add(1, Ordering::Relaxed);
                     return obj;
                 }
             }
-    
+
             // 2. Direct fallback if magazine and slab refill failed
             let obj = kmalloc(self.obj_size);
             if !obj.is_null() {
@@ -87,7 +90,7 @@ pub mod manager {
             }
             obj
         }
-    
+
         /// Returns an allocated object back to the local per-CPU magazine cache.
         ///
         /// Transparently handles cross-CPU deallocation: the object is absorbed
@@ -96,24 +99,24 @@ pub mod manager {
             if ptr.is_null() {
                 return;
             }
-    
+
             let core_id = keira_arch::cpu::get_current_core_id() % MAX_CPU_CORES;
             let cache_ptr = self as *const Self as *mut Self;
-    
+
             {
                 let _guard = self.cpu_locks[core_id].lock();
                 let depot = unsafe { &mut (*cache_ptr).cpu_depots[core_id] };
                 depot.free(ptr, &self.global_depot);
             }
-    
+
             self.allocated_count.fetch_sub(1, Ordering::Relaxed);
         }
-    
+
         /// Refills a magazine from the slab backend when all depots are empty.
         fn refill_magazine(&self, mag: &mut Magazine) -> bool {
             let _guard = self.slab_lock.lock();
             let _ebr = keira_core::sync::ebr::pin();
-    
+
             // 1. Check pre-carved objects in slab_free_list
             let mut head = self.slab_free_list.load(Ordering::Relaxed);
             while !head.is_null() && !mag.is_full() {
@@ -124,7 +127,7 @@ pub mod manager {
                 }
             }
             self.slab_free_list.store(head, Ordering::Relaxed);
-    
+
             // 2. If magazine still needs objects, allocate a batch from kernel heap
             let needed = MAGAZINE_CAPACITY.saturating_sub(mag.rounds());
             if needed > 0 {
@@ -138,15 +141,15 @@ pub mod manager {
                     let _ = mag.push(obj);
                 }
             }
-    
+
             !mag.is_empty()
         }
-    
+
         /// Frees all currently cached, unused objects back to the kernel heap.
         pub fn reap(&self) {
             let _ebr = keira_core::sync::ebr::pin();
             let cache_ptr = self as *const Self as *mut Self;
-    
+
             // 1. Drain all CPU depots
             for core_id in 0..MAX_CPU_CORES {
                 let _guard = self.cpu_locks[core_id].lock();
@@ -160,7 +163,7 @@ pub mod manager {
                     self.total_count.fetch_sub(1, Ordering::Relaxed);
                 }
             }
-    
+
             // 2. Drain global depot
             let (full_mags, count) = self.global_depot.drain_full();
             for mut mag in full_mags.into_iter().take(count).flatten() {
@@ -169,7 +172,7 @@ pub mod manager {
                     self.total_count.fetch_sub(1, Ordering::Relaxed);
                 }
             }
-    
+
             // 3. Drain slab free list
             let mut head = {
                 let _guard = self.slab_lock.lock();
@@ -178,7 +181,7 @@ pub mod manager {
                     .store(core::ptr::null_mut(), Ordering::Relaxed);
                 h
             };
-    
+
             while !head.is_null() {
                 let next = unsafe { *(head as *mut *mut u8) };
                 kfree(head);
@@ -186,80 +189,80 @@ pub mod manager {
                 head = next;
             }
         }
-    
+
         /// Retrieves the cache name string.
         #[inline]
         pub fn name(&self) -> &'static str {
             self.name
         }
-    
+
         /// Retrieves the cached object size in bytes.
         #[inline]
         pub fn obj_size(&self) -> usize {
             self.obj_size
         }
-    
+
         /// Retrieves the object alignment in bytes.
         #[inline]
         pub fn align(&self) -> usize {
             self.align
         }
-    
+
         /// Retrieves the count of currently allocated (active) objects.
         #[inline]
         pub fn allocated_count(&self) -> usize {
             self.allocated_count.load(Ordering::Relaxed)
         }
-    
+
         /// Retrieves the total number of objects created by this cache.
         #[inline]
         pub fn total_count(&self) -> usize {
             self.total_count.load(Ordering::Relaxed)
         }
-    
+
         /// Retrieves the number of cached free objects ready for immediate reuse.
         #[inline]
         pub fn free_count(&self) -> usize {
             self.total_count().saturating_sub(self.allocated_count())
         }
-    
+
         /// Retrieves total local magazine allocation hits across all cores.
         pub fn total_alloc_hits(&self) -> usize {
             self.cpu_depots.iter().map(|d| d.alloc_hits()).sum()
         }
-    
+
         /// Retrieves total local magazine free hits across all cores.
         pub fn total_free_hits(&self) -> usize {
             self.cpu_depots.iter().map(|d| d.free_hits()).sum()
         }
-    
+
         /// Retrieves total depot exchanges across all cores.
         pub fn total_exchanges(&self) -> usize {
             self.cpu_depots.iter().map(|d| d.exchanges()).sum()
         }
-    
+
         /// Retrieves count of objects currently cached across per-CPU magazines.
         pub fn total_cpu_cached(&self) -> usize {
             self.cpu_depots.iter().map(|d| d.cached_count()).sum()
         }
-    
+
         /// Retrieves count of objects currently cached in the central global depot.
         pub fn total_depot_cached(&self) -> usize {
             self.global_depot.full_count() * MAGAZINE_CAPACITY
         }
-    
+
         /// Retrieves count of objects contained in one slab.
         #[inline]
         pub const fn objs_per_slab(&self) -> usize {
             MAGAZINE_CAPACITY
         }
-    
+
         /// Retrieves count of physical pages allocated per slab.
         #[inline]
         pub const fn pages_per_slab(&self) -> usize {
             1
         }
-    
+
         /// Retrieves count of active slabs containing allocated objects.
         #[inline]
         pub fn active_slabs(&self) -> usize {
@@ -270,7 +273,7 @@ pub mod manager {
                 (active + MAGAZINE_CAPACITY - 1) / MAGAZINE_CAPACITY
             }
         }
-    
+
         /// Retrieves total count of allocated slabs.
         #[inline]
         pub fn num_slabs(&self) -> usize {
@@ -281,25 +284,25 @@ pub mod manager {
                 (total + MAGAZINE_CAPACITY - 1) / MAGAZINE_CAPACITY
             }
         }
-    
+
         /// Retrieves magazine capacity tunable limit.
         #[inline]
         pub const fn limit_tunable(&self) -> usize {
             MAGAZINE_CAPACITY
         }
-    
+
         /// Retrieves magazine refill batch count tunable.
         #[inline]
         pub const fn batchcount_tunable(&self) -> usize {
             MAGAZINE_CAPACITY / 2
         }
-    
+
         /// Retrieves central depot shared factor tunable.
         #[inline]
         pub const fn sharedfactor_tunable(&self) -> usize {
             8
         }
-    
+
         /// Retrieves per-CPU core allocation metrics: (cached_count, alloc_hits, free_hits, exchanges).
         pub fn cpu_stats(&self, core_id: usize) -> Option<(usize, usize, usize, usize)> {
             if core_id < MAX_CPU_CORES {
@@ -315,17 +318,17 @@ pub mod manager {
             }
         }
     }
-    
+
     pub static TASK_CACHE: KmemCache = KmemCache::new("task_struct", 512, 16);
-    
+
     pub static INODE_CACHE: KmemCache = KmemCache::new("inode_cache", 256, 16);
-    
+
     pub static FD_CACHE: KmemCache = KmemCache::new("file_desc_cache", 64, 16);
-    
+
     pub static VMA_CACHE: KmemCache = KmemCache::new("vma_cache", 128, 16);
-    
+
     pub static DENTRY_CACHE: KmemCache = KmemCache::new("dentry_cache", 128, 16);
-    
+
     pub static ALL_KMEM_CACHES: [&KmemCache; 5] = [
         &TASK_CACHE,
         &INODE_CACHE,
@@ -333,16 +336,16 @@ pub mod manager {
         &VMA_CACHE,
         &DENTRY_CACHE,
     ];
-    
+
     #[inline]
     pub fn get_all_kmem_caches() -> &'static [&'static KmemCache] {
         &ALL_KMEM_CACHES
     }
-    
+
     pub fn kmem_cache_create(name: &'static str, obj_size: usize, align: usize) -> KmemCache {
         KmemCache::new(name, obj_size, align)
     }
-    
+
     #[no_mangle]
     pub unsafe extern "C" fn kmem_cache_alloc(cache: *const KmemCache) -> *mut u8 {
         if cache.is_null() {
@@ -350,7 +353,7 @@ pub mod manager {
         }
         (*cache).alloc()
     }
-    
+
     #[no_mangle]
     pub unsafe extern "C" fn kmem_cache_free(cache: *const KmemCache, ptr: *mut u8) {
         if cache.is_null() || ptr.is_null() {

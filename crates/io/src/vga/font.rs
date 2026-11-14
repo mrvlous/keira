@@ -16,7 +16,7 @@
 
 pub mod glyph {
     pub static FONT_DATA: &[u8] = include_bytes!("vga_font.bin");
-    
+
     #[inline(always)]
     pub fn get_glyph(ascii: u8) -> &'static [u8] {
         let offset = (ascii as usize) * 16;

@@ -109,7 +109,6 @@ impl<const WORDS: usize> Bitmap<WORDS> {
     }
 }
 
-
 pub mod bitset {
     pub use super::*;
 }

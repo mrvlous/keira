@@ -16,9 +16,9 @@
 
 pub mod descriptor {
     pub const VECTOR_TLB_SHOOTDOWN: usize = 0xFD;
-    
+
     pub const VECTOR_RESCHEDULE: usize = 0xFE;
-    
+
     #[cfg(target_arch = "x86_64")]
     #[repr(C, packed)]
     #[derive(Copy, Clone, Default)]
@@ -31,7 +31,7 @@ pub mod descriptor {
         pub offset_high: u32,
         pub zero: u32,
     }
-    
+
     #[cfg(target_arch = "x86")]
     #[repr(C, packed)]
     #[derive(Copy, Clone, Default)]
@@ -42,7 +42,7 @@ pub mod descriptor {
         pub type_attr: u8,
         pub offset_high: u16,
     }
-    
+
     #[cfg(target_arch = "x86_64")]
     #[repr(C, packed)]
     #[derive(Copy, Clone)]
@@ -50,7 +50,7 @@ pub mod descriptor {
         pub limit: u16,
         pub base: u64,
     }
-    
+
     #[cfg(target_arch = "x86")]
     #[repr(C, packed)]
     #[derive(Copy, Clone)]
@@ -58,7 +58,7 @@ pub mod descriptor {
         pub limit: u16,
         pub base: u32,
     }
-    
+
     #[cfg(target_arch = "x86_64")]
     static mut IDT: [IdtEntry; 256] = [IdtEntry {
         offset_low: 0,
@@ -69,7 +69,7 @@ pub mod descriptor {
         offset_high: 0,
         zero: 0,
     }; 256];
-    
+
     #[cfg(target_arch = "x86")]
     static mut IDT: [IdtEntry; 256] = [IdtEntry {
         offset_low: 0,
@@ -78,21 +78,21 @@ pub mod descriptor {
         type_attr: 0,
         offset_high: 0,
     }; 256];
-    
+
     static mut IDTR: IdtPtr = IdtPtr { limit: 0, base: 0 };
-    
+
     extern "C" {
         fn idt_load(ptr: usize);
-    
+
         fn isr32();
         fn isr33();
         fn isr44();
         fn isr_tlb_shootdown();
         fn isr_reschedule();
-    
+
         #[cfg(target_arch = "x86")]
         fn isr128();
-    
+
         fn exception0();
         fn exception1();
         fn exception2();
@@ -126,7 +126,7 @@ pub mod descriptor {
         fn exception30();
         fn exception31();
     }
-    
+
     pub fn set_gate(num: usize, base: usize, selector: u16, flags: u8, ist: u8) {
         if num < 256 {
             unsafe {
@@ -152,7 +152,7 @@ pub mod descriptor {
             }
         }
     }
-    
+
     pub fn init() {
         unsafe {
             IDTR.limit = (core::mem::size_of::<[IdtEntry; 256]>() - 1) as u16;
@@ -164,11 +164,11 @@ pub mod descriptor {
             {
                 IDTR.base = core::ptr::addr_of!(IDT) as u32;
             }
-    
+
             for i in 0..256 {
                 set_gate(i, 0, 0, 0, 0);
             }
-    
+
             let exceptions: [unsafe extern "C" fn(); 32] = [
                 exception0,
                 exception1,
@@ -203,16 +203,16 @@ pub mod descriptor {
                 exception30,
                 exception31,
             ];
-    
+
             for (i, &handler) in exceptions.iter().enumerate() {
                 set_gate(i, handler as usize, 0x08, 0x8E, 0);
             }
-    
+
             // Hardware IRQ gates (Code selector 0x08, Interrupt Gate 0x8E)
             set_gate(32, isr32 as *const () as usize, 0x08, 0x8E, 0);
             set_gate(33, isr33 as *const () as usize, 0x08, 0x8E, 0);
             set_gate(44, isr44 as *const () as usize, 0x08, 0x8E, 0);
-    
+
             // SMP Cross-Core TLB Shootdown IPI gate
             set_gate(
                 VECTOR_TLB_SHOOTDOWN,
@@ -221,7 +221,7 @@ pub mod descriptor {
                 0x8E,
                 0,
             );
-    
+
             // SMP Cross-Core Reschedule IPI gate
             set_gate(
                 VECTOR_RESCHEDULE,
@@ -230,14 +230,14 @@ pub mod descriptor {
                 0x8E,
                 0,
             );
-    
+
             #[cfg(target_arch = "x86")]
             set_gate(128, isr128 as *const () as usize, 0x08, 0xEE, 0);
-    
+
             idt_load(core::ptr::addr_of!(IDTR) as usize);
         }
     }
-    
+
     pub unsafe fn load_current_idt() {
         #[cfg(target_os = "none")]
         idt_load(core::ptr::addr_of!(IDTR) as usize);
@@ -248,11 +248,11 @@ pub use self::descriptor::*;
 
 pub mod handlers {
     use core::sync::atomic::{AtomicUsize, Ordering};
-    
+
     use crate::interrupts::pic;
-    
+
     pub static IRQ_HIT_COUNTERS: [AtomicUsize; 256] = [const { AtomicUsize::new(0) }; 256];
-    
+
     pub fn irq_get_counter(vector: usize) -> u64 {
         if vector < 256 {
             IRQ_HIT_COUNTERS[vector].load(Ordering::Relaxed) as u64
@@ -260,7 +260,7 @@ pub mod handlers {
             0
         }
     }
-    
+
     pub fn irq_get_total() -> u64 {
         let mut total = 0u64;
         for counter in &IRQ_HIT_COUNTERS {
@@ -268,13 +268,13 @@ pub mod handlers {
         }
         total
     }
-    
+
     #[no_mangle]
     pub extern "C" fn isr_handler(vector: usize) {
         if vector < 256 {
             IRQ_HIT_COUNTERS[vector].fetch_add(1, Ordering::Relaxed);
         }
-    
+
         if vector == 32 {
             crate::timers::pit::pit_handler();
         } else if vector >= 40 {

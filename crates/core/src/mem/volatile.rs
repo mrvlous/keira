@@ -72,7 +72,6 @@ mod tests {
     }
 }
 
-
 pub mod cell {
     pub use super::*;
 }

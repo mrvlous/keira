@@ -16,11 +16,11 @@
 
 pub mod disposition {
     use crate::signal::posix::{SIGKILL, SIGSTOP};
-    
+
     pub const MAX_SIGNAL_TASKS: usize = 64;
-    
+
     pub static mut SIGNAL_HANDLERS: [[u64; 32]; MAX_SIGNAL_TASKS] = [[0; 32]; MAX_SIGNAL_TASKS];
-    
+
     pub unsafe fn sys_sigaction(
         pid: usize,
         sig: u32,
@@ -40,7 +40,7 @@ pub mod disposition {
         SIGNAL_HANDLERS[p_idx][sig as usize] = handler;
         Ok(0)
     }
-    
+
     pub unsafe fn get_signal_handler(pid: usize, sig: u32) -> u64 {
         if sig == 0 || sig >= 32 {
             return 0;
@@ -48,7 +48,7 @@ pub mod disposition {
         let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
         SIGNAL_HANDLERS[p_idx][sig as usize]
     }
-    
+
     pub unsafe fn reset_signal_handlers(pid: usize) {
         let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
         SIGNAL_HANDLERS[p_idx] = [0; 32];

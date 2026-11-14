@@ -16,7 +16,7 @@
 
 pub mod lfn {
     use crate::fat::types::{DirectoryEntry, LfnAccumulator, LfnEntry};
-    
+
     pub unsafe fn accumulate_lfn(entry: &DirectoryEntry, accum: &mut LfnAccumulator) {
         let lfn = &*(entry as *const DirectoryEntry as *const LfnEntry);
         let seq = lfn.sequence;
@@ -24,9 +24,9 @@ pub mod lfn {
         if index == 0 || index > 20 {
             return;
         }
-    
+
         let char_offset = (index - 1) * 13;
-    
+
         for i in 0..5 {
             accum.chars[char_offset + i] = lfn.name_part1[i];
         }
@@ -36,27 +36,27 @@ pub mod lfn {
         for i in 0..2 {
             accum.chars[char_offset + 11 + i] = lfn.name_part3[i];
         }
-    
+
         accum.active = true;
         if index > accum.max_index {
             accum.max_index = index;
         }
     }
-    
+
     pub fn get_lfn_utf8(accum: &LfnAccumulator, buf: &mut [u8]) -> Option<usize> {
         if !accum.active || accum.max_index == 0 {
             return None;
         }
-    
+
         let total_chars = accum.max_index * 13;
         let mut utf8_len = 0;
-    
+
         for i in 0..total_chars {
             let c = accum.chars[i];
             if c == 0x0000 || c == 0xFFFF {
                 break;
             }
-    
+
             if c < 0x80 {
                 if utf8_len < buf.len() {
                     buf[utf8_len] = c as u8;
@@ -75,7 +75,7 @@ pub mod lfn {
                 utf8_len += 3;
             }
         }
-    
+
         if utf8_len > 0 {
             Some(utf8_len)
         } else {
@@ -90,7 +90,7 @@ pub mod resolver {
     use crate::fat::table::read_sector;
     use crate::fat::types::{DirectoryEntry, FoundEntry};
     use crate::fat::volume::{cluster_to_sector, CURRENT_DIR_CLUSTER, VOLUME};
-    
+
     pub fn sanitize_path(path: &str) -> &str {
         let mut trimmed = path.trim();
         while trimmed.starts_with('/') {
@@ -101,20 +101,20 @@ pub mod resolver {
         }
         trimmed
     }
-    
+
     pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
         let is_absolute = path.trim().starts_with('/');
         let mut current_cluster = if is_absolute { 0 } else { CURRENT_DIR_CLUSTER };
-    
+
         let path_trimmed = sanitize_path(path);
-    
+
         if path_trimmed.is_empty() || path_trimmed == "." {
             return Ok((current_cluster, ""));
         }
-    
+
         let mut segments = path_trimmed.split('/');
         let mut current_segment = segments.next().ok_or("Invalid empty path")?;
-    
+
         for next_segment in segments {
             if current_segment == "." || current_segment.is_empty() {
                 current_segment = next_segment;
@@ -137,7 +137,7 @@ pub mod resolver {
                 current_segment = next_segment;
                 continue;
             }
-    
+
             let found = find_entry(current_segment, current_cluster)?;
             if (found.entry.attr & 0x10) == 0 {
                 return Err("Path segment is not a directory");
@@ -145,18 +145,18 @@ pub mod resolver {
             current_cluster = found.entry.first_cluster_lo;
             current_segment = next_segment;
         }
-    
+
         if current_segment == "." {
             Ok((current_cluster, ""))
         } else {
             Ok((current_cluster, current_segment))
         }
     }
-    
+
     pub unsafe fn find_entry(filename: &str, dir_cluster: u16) -> Result<FoundEntry, &'static str> {
         let mut found: Option<FoundEntry> = None;
         let target_8_3 = filename_to_8_3(filename).ok();
-    
+
         for_each_directory_entry(dir_cluster, |parsed| {
             let mut matched = false;
             if let Ok(name_str) = core::str::from_utf8(&parsed.name[..parsed.name_len]) {
@@ -171,7 +171,7 @@ pub mod resolver {
                     }
                 }
             }
-    
+
             if matched {
                 found = Some(FoundEntry {
                     sector: parsed.sector,
@@ -182,7 +182,7 @@ pub mod resolver {
             }
             Ok(true)
         })?;
-    
+
         found.ok_or("File not found")
     }
 }
@@ -190,22 +190,22 @@ pub mod resolver {
 pub mod sfn {
     pub fn format_filename(name: &[u8; 11], dest: &mut [u8; 12]) -> usize {
         let mut len = 0;
-    
+
         let mut base_end = 8;
         while base_end > 0 && name[base_end - 1] == b' ' {
             base_end -= 1;
         }
-    
+
         for b in name.iter().take(base_end) {
             dest[len] = b.to_ascii_lowercase();
             len += 1;
         }
-    
+
         let mut ext_end = 3;
         while ext_end > 0 && name[8 + ext_end - 1] == b' ' {
             ext_end -= 1;
         }
-    
+
         if ext_end > 0 {
             dest[len] = b'.';
             len += 1;
@@ -214,21 +214,21 @@ pub mod sfn {
                 len += 1;
             }
         }
-    
+
         len
     }
-    
+
     pub fn filename_to_8_3(input: &str) -> Result<[u8; 11], &'static str> {
         let mut name_bytes = [b' '; 11];
         let mut parts = input.split('.');
-    
+
         let base = parts.next().ok_or("Invalid filename")?;
         let ext = parts.next();
-    
+
         if base.is_empty() {
             return Err("Filename base must not be empty");
         }
-    
+
         let base_len = core::cmp::min(base.len(), 8);
         for (i, &b) in base.as_bytes()[..base_len].iter().enumerate() {
             let upper = b.to_ascii_uppercase();
@@ -237,7 +237,7 @@ pub mod sfn {
             }
             name_bytes[i] = upper;
         }
-    
+
         if let Some(e) = ext {
             if !e.is_empty() {
                 let ext_len = core::cmp::min(e.len(), 3);
@@ -250,7 +250,7 @@ pub mod sfn {
                 }
             }
         }
-    
+
         Ok(name_bytes)
     }
 }

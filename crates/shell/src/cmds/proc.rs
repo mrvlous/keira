@@ -15,672 +15,672 @@
 //! Process and task execution shell commands.
 
 pub mod pidinfo {
-use keira_io::vga;
-use keira_task::scheduler::TASKS;
-use keira_task::types::{TaskState, MAX_FDS, MAX_TASKS};
+    use keira_io::vga;
+    use keira_task::scheduler::TASKS;
+    use keira_task::types::{TaskState, MAX_FDS, MAX_TASKS};
 
-/// Executes the 'pidinfo' supervisor diagnostic command.
-pub fn run(parts: &mut core::str::SplitWhitespace) {
-    let bg = vga::Color::Black;
-    let fg = vga::Color::White;
+    /// Executes the 'pidinfo' supervisor diagnostic command.
+    pub fn run(parts: &mut core::str::SplitWhitespace) {
+        let bg = vga::Color::Black;
+        let fg = vga::Color::White;
 
-    if let Some(arg) = parts.next() {
-        if arg == "-h" || arg == "--help" {
-            vga::set_color(fg, bg);
-            vga::print_str("Usage: pidinfo [-h] [pid]\n\n");
-            vga::print_str(
+        if let Some(arg) = parts.next() {
+            if arg == "-h" || arg == "--help" {
+                vga::set_color(fg, bg);
+                vga::print_str("Usage: pidinfo [-h] [pid]\n\n");
+                vga::print_str(
                 "Description:\n  Inspect active process hierarchy, memory metrics and kernel task descriptors.\n\n",
             );
-            vga::print_str("Options:\n");
-            vga::print_str("  [pid]         Inspect specific process by numerical identifier\n");
-            vga::print_str("  -h, --help    Show this help reference and exit\n");
+                vga::print_str("Options:\n");
+                vga::print_str(
+                    "  [pid]         Inspect specific process by numerical identifier\n",
+                );
+                vga::print_str("  -h, --help    Show this help reference and exit\n");
+                vga::set_color(vga::Color::LightGrey, bg);
+                return;
+            }
+
+            if let Ok(pid) = parse_usize(arg) {
+                inspect_single_pid(pid, fg, bg);
+                return;
+            }
+
+            vga::set_color(vga::Color::LightRed, bg);
+            vga::print_str("Error: Invalid process identifier '");
+            vga::print_str(arg);
+            vga::print_str("'\n");
             vga::set_color(vga::Color::LightGrey, bg);
             return;
         }
 
-        if let Ok(pid) = parse_usize(arg) {
-            inspect_single_pid(pid, fg, bg);
+        list_all_tasks(fg, bg);
+    }
+
+    /// Lists all active processes in a concise summary table.
+    fn list_all_tasks(fg: vga::Color, bg: vga::Color) {
+        vga::set_color(fg, bg);
+        vga::print_str("Active Process Table:\n");
+        vga::print_str("  PID   PPID  STATE        NAME             VMSIZE   RSS     SWITCHES\n");
+
+        unsafe {
+            let mut found = 0usize;
+            for (i, slot) in TASKS.iter().enumerate() {
+                if let Some(ref task) = slot {
+                    found += 1;
+                    vga::print_str("  ");
+                    print_padded_num(task.id as u64, 5);
+                    vga::print_str(" ");
+                    print_padded_num(task.parent_id as u64, 5);
+                    vga::print_str(" ");
+
+                    let state_str = match task.state {
+                        TaskState::Running => "Running     ",
+                        TaskState::Ready => "Sleeping    ",
+                        TaskState::Blocked => "DiskSleep   ",
+                        TaskState::Zombie(_) | TaskState::Exited(_) => "Zombie      ",
+                        TaskState::Created => "Idle        ",
+                    };
+                    vga::print_str(state_str);
+                    vga::print_str(" ");
+
+                    print_padded_str(task.name, 16);
+                    vga::print_str(" ");
+
+                    let vsize_kb = if task.program_break > task.program_break_start {
+                        (task.program_break.saturating_sub(task.program_break_start) + 16384) / 1024
+                    } else {
+                        16
+                    };
+                    print_padded_num(vsize_kb, 6);
+                    vga::print_str("kB  ");
+
+                    print_padded_num(vsize_kb, 5);
+                    vga::print_str("kB  ");
+
+                    vga::print_u64(task.switches);
+                    vga::print_str("\n");
+                }
+                if i >= MAX_TASKS {
+                    break;
+                }
+            }
+
+            vga::print_str("\nTotal active tasks: ");
+            vga::print_u64(found as u64);
+            vga::print_str("\n");
+        }
+
+        vga::set_color(vga::Color::LightGrey, bg);
+    }
+
+    /// Inspects detailed kernel descriptors for a specific process ID.
+    fn inspect_single_pid(pid: usize, fg: vga::Color, bg: vga::Color) {
+        if pid >= MAX_TASKS {
+            vga::set_color(vga::Color::LightRed, bg);
+            vga::print_str("Error: Process ID exceeds maximum task capacity.\n");
+            vga::set_color(vga::Color::LightGrey, bg);
             return;
         }
 
-        vga::set_color(vga::Color::LightRed, bg);
-        vga::print_str("Error: Invalid process identifier '");
-        vga::print_str(arg);
-        vga::print_str("'\n");
-        vga::set_color(vga::Color::LightGrey, bg);
-        return;
-    }
+        unsafe {
+            if let Some(ref task) = TASKS[pid] {
+                vga::set_color(fg, bg);
+                vga::print_str("Process Information (PID ");
+                vga::print_u64(task.id as u64);
+                vga::print_str("):\n");
 
-    list_all_tasks(fg, bg);
-}
+                vga::print_str("  Command Name:     ");
+                vga::print_str(task.name);
+                vga::print_str("\n");
 
-/// Lists all active processes in a concise summary table.
-fn list_all_tasks(fg: vga::Color, bg: vga::Color) {
-    vga::set_color(fg, bg);
-    vga::print_str("Active Process Table:\n");
-    vga::print_str("  PID   PPID  STATE        NAME             VMSIZE   RSS     SWITCHES\n");
-
-    unsafe {
-        let mut found = 0usize;
-        for (i, slot) in TASKS.iter().enumerate() {
-            if let Some(ref task) = slot {
-                found += 1;
-                vga::print_str("  ");
-                print_padded_num(task.id as u64, 5);
-                vga::print_str(" ");
-                print_padded_num(task.parent_id as u64, 5);
-                vga::print_str(" ");
-
-                let state_str = match task.state {
-                    TaskState::Running => "Running     ",
-                    TaskState::Ready => "Sleeping    ",
-                    TaskState::Blocked => "DiskSleep   ",
-                    TaskState::Zombie(_) | TaskState::Exited(_) => "Zombie      ",
-                    TaskState::Created => "Idle        ",
+                vga::print_str("  Process State:    ");
+                let state_desc = match task.state {
+                    TaskState::Running => "Running on CPU",
+                    TaskState::Ready => "Sleeping (Runnable)",
+                    TaskState::Blocked => "Blocked on I/O or sleep timer",
+                    TaskState::Zombie(code) => {
+                        vga::print_str("Zombie (exit code: ");
+                        vga::print_u64(code as u64);
+                        vga::print_str(")");
+                        ""
+                    }
+                    TaskState::Exited(code) => {
+                        vga::print_str("Exited (code: ");
+                        vga::print_u64(code as u64);
+                        vga::print_str(")");
+                        ""
+                    }
+                    TaskState::Created => "Created (not scheduled)",
                 };
-                vga::print_str(state_str);
-                vga::print_str(" ");
+                if !state_desc.is_empty() {
+                    vga::print_str(state_desc);
+                }
+                vga::print_str("\n");
 
-                print_padded_str(task.name, 16);
-                vga::print_str(" ");
+                vga::print_str("  Thread Group ID:  ");
+                vga::print_u64(task.tgid as u64);
+                vga::print_str("\n");
+
+                vga::print_str("  Parent PID:       ");
+                vga::print_u64(task.parent_id as u64);
+                vga::print_str("\n");
+
+                vga::print_str("  Credentials:      UID: ");
+                vga::print_u64(task.uid as u64);
+                vga::print_str(", GID: ");
+                vga::print_u64(task.gid as u64);
+                vga::print_str(" (euid: ");
+                vga::print_u64(task.euid as u64);
+                vga::print_str(", egid: ");
+                vga::print_u64(task.egid as u64);
+                vga::print_str(")\n");
 
                 let vsize_kb = if task.program_break > task.program_break_start {
                     (task.program_break.saturating_sub(task.program_break_start) + 16384) / 1024
                 } else {
                     16
                 };
-                print_padded_num(vsize_kb, 6);
-                vga::print_str("kB  ");
+                vga::print_str("  Virtual Memory:   ");
+                vga::print_u64(vsize_kb);
+                vga::print_str(" kB (RSS: ");
+                vga::print_u64(vsize_kb);
+                vga::print_str(" kB)\n");
 
-                print_padded_num(vsize_kb, 5);
-                vga::print_str("kB  ");
+                vga::print_str("  Program Break:    ");
+                vga::print_hex(task.program_break_start);
+                vga::print_str(" -> ");
+                vga::print_hex(task.program_break);
+                vga::print_str("\n");
 
+                let mut open_fds = 0usize;
+                for fd in 0..MAX_FDS {
+                    if task.fds[fd].is_open {
+                        open_fds += 1;
+                    }
+                }
+                vga::print_str("  Open Descriptors: ");
+                vga::print_u64(open_fds as u64);
+                vga::print_str(" / ");
+                vga::print_u64(MAX_FDS as u64);
+                vga::print_str("\n");
+
+                vga::print_str("  CPU Context:      Ticks: ");
+                vga::print_u64(task.cpu_ticks);
+                vga::print_str(", Switches: ");
                 vga::print_u64(task.switches);
                 vga::print_str("\n");
-            }
-            if i >= MAX_TASKS {
-                break;
+
+                vga::print_str("  Signal Bitmask:   Mask: ");
+                vga::print_hex(task.signal_mask as u64);
+                vga::print_str(", Pending: ");
+                vga::print_hex(task.pending_signals as u64);
+                vga::print_str("\n");
+
+                vga::set_color(vga::Color::LightGrey, bg);
+                return;
             }
         }
 
-        vga::print_str("\nTotal active tasks: ");
-        vga::print_u64(found as u64);
-        vga::print_str("\n");
-    }
-
-    vga::set_color(vga::Color::LightGrey, bg);
-}
-
-/// Inspects detailed kernel descriptors for a specific process ID.
-fn inspect_single_pid(pid: usize, fg: vga::Color, bg: vga::Color) {
-    if pid >= MAX_TASKS {
         vga::set_color(vga::Color::LightRed, bg);
-        vga::print_str("Error: Process ID exceeds maximum task capacity.\n");
+        vga::print_str("Error: Process ID ");
+        vga::print_u64(pid as u64);
+        vga::print_str(" not found in active task table.\n");
         vga::set_color(vga::Color::LightGrey, bg);
-        return;
     }
 
-    unsafe {
-        if let Some(ref task) = TASKS[pid] {
-            vga::set_color(fg, bg);
-            vga::print_str("Process Information (PID ");
-            vga::print_u64(task.id as u64);
-            vga::print_str("):\n");
-
-            vga::print_str("  Command Name:     ");
-            vga::print_str(task.name);
-            vga::print_str("\n");
-
-            vga::print_str("  Process State:    ");
-            let state_desc = match task.state {
-                TaskState::Running => "Running on CPU",
-                TaskState::Ready => "Sleeping (Runnable)",
-                TaskState::Blocked => "Blocked on I/O or sleep timer",
-                TaskState::Zombie(code) => {
-                    vga::print_str("Zombie (exit code: ");
-                    vga::print_u64(code as u64);
-                    vga::print_str(")");
-                    ""
-                }
-                TaskState::Exited(code) => {
-                    vga::print_str("Exited (code: ");
-                    vga::print_u64(code as u64);
-                    vga::print_str(")");
-                    ""
-                }
-                TaskState::Created => "Created (not scheduled)",
-            };
-            if !state_desc.is_empty() {
-                vga::print_str(state_desc);
-            }
-            vga::print_str("\n");
-
-            vga::print_str("  Thread Group ID:  ");
-            vga::print_u64(task.tgid as u64);
-            vga::print_str("\n");
-
-            vga::print_str("  Parent PID:       ");
-            vga::print_u64(task.parent_id as u64);
-            vga::print_str("\n");
-
-            vga::print_str("  Credentials:      UID: ");
-            vga::print_u64(task.uid as u64);
-            vga::print_str(", GID: ");
-            vga::print_u64(task.gid as u64);
-            vga::print_str(" (euid: ");
-            vga::print_u64(task.euid as u64);
-            vga::print_str(", egid: ");
-            vga::print_u64(task.egid as u64);
-            vga::print_str(")\n");
-
-            let vsize_kb = if task.program_break > task.program_break_start {
-                (task.program_break.saturating_sub(task.program_break_start) + 16384) / 1024
-            } else {
-                16
-            };
-            vga::print_str("  Virtual Memory:   ");
-            vga::print_u64(vsize_kb);
-            vga::print_str(" kB (RSS: ");
-            vga::print_u64(vsize_kb);
-            vga::print_str(" kB)\n");
-
-            vga::print_str("  Program Break:    ");
-            vga::print_hex(task.program_break_start);
-            vga::print_str(" -> ");
-            vga::print_hex(task.program_break);
-            vga::print_str("\n");
-
-            let mut open_fds = 0usize;
-            for fd in 0..MAX_FDS {
-                if task.fds[fd].is_open {
-                    open_fds += 1;
-                }
-            }
-            vga::print_str("  Open Descriptors: ");
-            vga::print_u64(open_fds as u64);
-            vga::print_str(" / ");
-            vga::print_u64(MAX_FDS as u64);
-            vga::print_str("\n");
-
-            vga::print_str("  CPU Context:      Ticks: ");
-            vga::print_u64(task.cpu_ticks);
-            vga::print_str(", Switches: ");
-            vga::print_u64(task.switches);
-            vga::print_str("\n");
-
-            vga::print_str("  Signal Bitmask:   Mask: ");
-            vga::print_hex(task.signal_mask as u64);
-            vga::print_str(", Pending: ");
-            vga::print_hex(task.pending_signals as u64);
-            vga::print_str("\n");
-
-            vga::set_color(vga::Color::LightGrey, bg);
-            return;
-        }
-    }
-
-    vga::set_color(vga::Color::LightRed, bg);
-    vga::print_str("Error: Process ID ");
-    vga::print_u64(pid as u64);
-    vga::print_str(" not found in active task table.\n");
-    vga::set_color(vga::Color::LightGrey, bg);
-}
-
-fn parse_usize(s: &str) -> Result<usize, ()> {
-    let mut val = 0usize;
-    if s.is_empty() {
-        return Err(());
-    }
-    for b in s.bytes() {
-        if !b.is_ascii_digit() {
+    fn parse_usize(s: &str) -> Result<usize, ()> {
+        let mut val = 0usize;
+        if s.is_empty() {
             return Err(());
         }
-        val = val.checked_mul(10).ok_or(())?;
-        val = val.checked_add((b - b'0') as usize).ok_or(())?;
+        for b in s.bytes() {
+            if !b.is_ascii_digit() {
+                return Err(());
+            }
+            val = val.checked_mul(10).ok_or(())?;
+            val = val.checked_add((b - b'0') as usize).ok_or(())?;
+        }
+        Ok(val)
     }
-    Ok(val)
-}
 
-fn print_padded_num(val: u64, width: usize) {
-    let mut digits = 1usize;
-    let mut tmp = val;
-    while tmp >= 10 {
-        tmp /= 10;
-        digits += 1;
-    }
-    let pad = width.saturating_sub(digits);
-    for _ in 0..pad {
-        vga::print_str(" ");
-    }
-    vga::print_u64(val);
-}
-
-fn print_padded_str(s: &str, width: usize) {
-    let len = s.len();
-    if len > width {
-        vga::print_str(&s[..width]);
-    } else {
-        vga::print_str(s);
-        for _ in 0..width.saturating_sub(len) {
+    fn print_padded_num(val: u64, width: usize) {
+        let mut digits = 1usize;
+        let mut tmp = val;
+        while tmp >= 10 {
+            tmp /= 10;
+            digits += 1;
+        }
+        let pad = width.saturating_sub(digits);
+        for _ in 0..pad {
             vga::print_str(" ");
         }
+        vga::print_u64(val);
     }
-}
 
+    fn print_padded_str(s: &str, width: usize) {
+        let len = s.len();
+        if len > width {
+            vga::print_str(&s[..width]);
+        } else {
+            vga::print_str(s);
+            for _ in 0..width.saturating_sub(len) {
+                vga::print_str(" ");
+            }
+        }
+    }
 }
 
 pub mod task {
     pub mod run {
-use keira_fs::elf::loader::load_elf;
-use keira_io::vga;
-use keira_mem::pmm;
-#[cfg(target_arch = "x86_64")]
-use keira_mem::vmm;
+        use keira_fs::elf::loader::load_elf;
+        use keira_io::vga;
+        use keira_mem::pmm;
+        #[cfg(target_arch = "x86_64")]
+        use keira_mem::vmm;
 
-#[cfg(not(test))]
-extern "C" {
-    fn jump_to_user(entry: u64, stack: u64);
-}
+        #[cfg(not(test))]
+        extern "C" {
+            fn jump_to_user(entry: u64, stack: u64);
+        }
 
+        #[cfg(test)]
+        unsafe fn jump_to_user(_entry: u64, _stack: u64) {}
 
-#[cfg(test)]
-unsafe fn jump_to_user(_entry: u64, _stack: u64) {}
+        #[cfg(target_arch = "x86")]
+        const USER_DEFAULT_BRK: u64 = 0x0200_0000;
+        #[cfg(target_arch = "x86")]
+        const USER_STACK_TOP: u64 = 0x07FFF000 - 16;
 
-#[cfg(target_arch = "x86")]
-const USER_DEFAULT_BRK: u64 = 0x0200_0000;
-#[cfg(target_arch = "x86")]
-const USER_STACK_TOP: u64 = 0x07FFF000 - 16;
+        #[cfg(target_arch = "x86_64")]
+        const USER_DEFAULT_BRK: u64 = 0x600000000000;
+        #[cfg(target_arch = "x86_64")]
+        const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
 
-#[cfg(target_arch = "x86_64")]
-const USER_DEFAULT_BRK: u64 = 0x600000000000;
-#[cfg(target_arch = "x86_64")]
-const USER_STACK_TOP: u64 = 0x7FFFFFE00000 - 16;
+        use keira_task::stack::*;
 
-use keira_task::stack::*;
+        /// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
+        ///
+        /// # Safety
+        /// Loads binary into userland pages, alters task break, sets up stack and drops privilege to Ring 3.
+        pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
+            let mut shebang_hdr = [0u8; 128];
+            if let Ok(hdr_len) = keira_fs::vfs::read_file_offset(filename, 0, &mut shebang_hdr) {
+                if hdr_len >= 2 && shebang_hdr[0] == b'#' && shebang_hdr[1] == b'!' {
+                    if let Some((interpreter, opt_arg)) =
+                        keira_fs::elf::parse_shebang(&shebang_hdr[..hdr_len])
+                    {
+                        let resolved_interp = if keira_fs::vfs::exists(interpreter) {
+                            interpreter
+                        } else if interpreter == "/bin/sh" && keira_fs::vfs::exists("/bin/sh.elf") {
+                            "/bin/sh.elf"
+                        } else {
+                            interpreter
+                        };
 
-/// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
-///
-/// # Safety
-/// Loads binary into userland pages, alters task break, sets up stack and drops privilege to Ring 3.
-pub unsafe fn run_user_program(filename: &str, args: &[&str]) -> Result<(), &'static str> {
-    let mut shebang_hdr = [0u8; 128];
-    if let Ok(hdr_len) = keira_fs::vfs::read_file_offset(filename, 0, &mut shebang_hdr) {
-        if hdr_len >= 2 && shebang_hdr[0] == b'#' && shebang_hdr[1] == b'!' {
-            if let Some((interpreter, opt_arg)) =
-                keira_fs::elf::parse_shebang(&shebang_hdr[..hdr_len])
-            {
-                let resolved_interp = if keira_fs::vfs::exists(interpreter) {
-                    interpreter
-                } else if interpreter == "/bin/sh" && keira_fs::vfs::exists("/bin/sh.elf") {
-                    "/bin/sh.elf"
-                } else {
-                    interpreter
-                };
-
-                let mut new_args: [&str; 16] = [""; 16];
-                let mut count = 0;
-                new_args[count] = resolved_interp;
-                count += 1;
-                if let Some(arg) = opt_arg {
-                    new_args[count] = arg;
-                    count += 1;
-                }
-                new_args[count] = filename;
-                count += 1;
-                for &arg in &args[1..] {
-                    if count < 16 && !arg.is_empty() {
-                        new_args[count] = arg;
+                        let mut new_args: [&str; 16] = [""; 16];
+                        let mut count = 0;
+                        new_args[count] = resolved_interp;
                         count += 1;
-                    }
-                }
-
-                return run_user_program(resolved_interp, &new_args[..count]);
-            }
-        }
-    }
-
-    #[cfg(target_arch = "x86")]
-    {
-        let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
-        keira_task::scheduler::SCHEDULER_INITIALIZED = false;
-
-        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            task.program_break = USER_DEFAULT_BRK;
-            task.program_break_start = USER_DEFAULT_BRK;
-            task.is_user = true;
-        }
-
-        let entry_point = load_elf(filename)?;
-        let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
-        let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
-        let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
-        let ptr = top_stack_page as *mut u8;
-        let initial_user_rsp = setup_user_stack_32(ptr, top_stack_page, args, entry_point);
-
-        keira_io::tty::flush_tty();
-        keira_io::ps2::flush_input_queue();
-
-        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
-        let _job_id = keira_task::signal::add_job(1, filename, true);
-        jump_to_user(entry_point, initial_user_rsp);
-        keira_task::signal::remove_job_by_pid(1);
-        keira_task::signal::reset_signal_handlers(0);
-        keira_task::security::seccomp_reset();
-
-        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            task.is_user = false;
-        }
-
-        keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
-        core::arch::asm!("sti");
-
-        return Ok(());
-    }
-
-    #[cfg(target_arch = "x86_64")]
-    {
-        let parent_pml4 = vmm::active_pml4();
-        let child_pml4 = vmm::clone_kernel_pml4()?;
-
-        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            task.pml4_phys = child_pml4;
-            task.state = keira_task::TaskState::Running;
-        }
-
-        vmm::switch_address_space(child_pml4);
-
-        let cleanup_and_restore = |child: u64, brk: u64| {
-            if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-                task.pml4_phys = parent_pml4;
-                task.state = keira_task::TaskState::Running;
-                task.saved_sigcontext = None;
-                task.signal_mask = 0;
-                task.pending_signals = 0;
-                for fd in 0..keira_task::MAX_FDS {
-                    if task.fds[fd].is_open {
-                        if task.fds[fd].write_mode {
-                            if let Ok(path_str) =
-                                core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
-                            {
-                                keira_fs::lock::release_lock(path_str, 0);
+                        if let Some(arg) = opt_arg {
+                            new_args[count] = arg;
+                            count += 1;
+                        }
+                        new_args[count] = filename;
+                        count += 1;
+                        for &arg in &args[1..] {
+                            if count < 16 && !arg.is_empty() {
+                                new_args[count] = arg;
+                                count += 1;
                             }
                         }
-                        task.fds[fd].is_open = false;
+
+                        return run_user_program(resolved_interp, &new_args[..count]);
                     }
                 }
             }
-            vmm::switch_address_space(parent_pml4);
-            vmm::free_user_pages(child, brk);
-            keira_task::signal::reset_signal_handlers(0);
-            keira_task::security::seccomp_reset();
-        };
 
-        let entry_point = match load_elf(filename) {
-            Ok(ep) => {
+            #[cfg(target_arch = "x86")]
+            {
+                let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
+                keira_task::scheduler::SCHEDULER_INITIALIZED = false;
+
+                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                    task.program_break = USER_DEFAULT_BRK;
+                    task.program_break_start = USER_DEFAULT_BRK;
+                    task.is_user = true;
+                }
+
+                let entry_point = load_elf(filename)?;
                 let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
                 let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
-                ep
+                let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
+                let ptr = top_stack_page as *mut u8;
+                let initial_user_rsp = setup_user_stack_32(ptr, top_stack_page, args, entry_point);
+
+                keira_io::tty::flush_tty();
+                keira_io::ps2::flush_input_queue();
+
+                keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
+                let _job_id = keira_task::signal::add_job(1, filename, true);
+                jump_to_user(entry_point, initial_user_rsp);
+                keira_task::signal::remove_job_by_pid(1);
+                keira_task::signal::reset_signal_handlers(0);
+                keira_task::security::seccomp_reset();
+
+                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                    task.is_user = false;
+                }
+
+                keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+                core::arch::asm!("sti");
+
+                return Ok(());
             }
-            Err(e) => {
-                cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
-                return Err(e);
+
+            #[cfg(target_arch = "x86_64")]
+            {
+                let parent_pml4 = vmm::active_pml4();
+                let child_pml4 = vmm::clone_kernel_pml4()?;
+
+                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                    task.pml4_phys = child_pml4;
+                    task.state = keira_task::TaskState::Running;
+                }
+
+                vmm::switch_address_space(child_pml4);
+
+                let cleanup_and_restore = |child: u64, brk: u64| {
+                    if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                        task.pml4_phys = parent_pml4;
+                        task.state = keira_task::TaskState::Running;
+                        task.saved_sigcontext = None;
+                        task.signal_mask = 0;
+                        task.pending_signals = 0;
+                        for fd in 0..keira_task::MAX_FDS {
+                            if task.fds[fd].is_open {
+                                if task.fds[fd].write_mode {
+                                    if let Ok(path_str) = core::str::from_utf8(
+                                        &task.fds[fd].path[..task.fds[fd].path_len],
+                                    ) {
+                                        keira_fs::lock::release_lock(path_str, 0);
+                                    }
+                                }
+                                task.fds[fd].is_open = false;
+                            }
+                        }
+                    }
+                    vmm::switch_address_space(parent_pml4);
+                    vmm::free_user_pages(child, brk);
+                    keira_task::signal::reset_signal_handlers(0);
+                    keira_task::security::seccomp_reset();
+                };
+
+                let entry_point = match load_elf(filename) {
+                    Ok(ep) => {
+                        let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
+                        let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
+                        ep
+                    }
+                    Err(e) => {
+                        cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+                        return Err(e);
+                    }
+                };
+
+                let (stack_aslr, mmap_aslr, brk_aslr) = keira_task::generate_task_aslr_offsets();
+
+                // Allocate initial top stack frame (4KB); further stack frames are allocated on-demand via #PF
+                let top_stack_page = (USER_STACK_TOP - stack_aslr) & !(pmm::PAGE_SIZE - 1);
+                let stack_frame = match pmm::alloc_frame() {
+                    Some(f) => f,
+                    None => {
+                        cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+                        return Err("Out of memory for user stack frame");
+                    }
+                };
+                let stack_flags =
+                    vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT | vmm::PAGE_NO_EXECUTE;
+                if let Err(e) = vmm::map_page(top_stack_page, stack_frame, stack_flags) {
+                    pmm::free_frame(stack_frame);
+                    cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
+                    return Err(e);
+                }
+                let ptr = top_stack_page as *mut u8;
+                core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
+                let initial_user_rsp = setup_user_stack_64(ptr, top_stack_page, args, entry_point);
+
+                let mut brk_end = USER_DEFAULT_BRK + brk_aslr;
+                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                    task.stack_aslr_offset = stack_aslr;
+                    task.mmap_aslr_offset = mmap_aslr;
+                    task.brk_aslr_offset = brk_aslr;
+                    task.program_break = brk_end;
+                    task.program_break_start = brk_end;
+                    task.pml4_phys = child_pml4;
+                }
+
+                keira_io::tty::flush_tty();
+                keira_io::ps2::flush_input_queue();
+
+                keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
+                let _job_id = keira_task::signal::add_job(1, filename, true);
+                jump_to_user(entry_point, initial_user_rsp);
+                keira_task::signal::remove_job_by_pid(1);
+
+                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                    brk_end = task.program_break;
+                }
+
+                cleanup_and_restore(child_pml4, brk_end);
+
+                core::arch::asm!("sti");
+
+                Ok(())
             }
-        };
+        }
 
-        let (stack_aslr, mmap_aslr, brk_aslr) = keira_task::generate_task_aslr_offsets();
+        /// Backward compatible run_direct helper.
+        pub fn run_direct(arg: &str) -> bool {
+            let args = [arg];
+            run_direct_with_args_mode(arg, &args, false)
+        }
 
-        // Allocate initial top stack frame (4KB); further stack frames are allocated on-demand via #PF
-        let top_stack_page = (USER_STACK_TOP - stack_aslr) & !(pmm::PAGE_SIZE - 1);
-        let stack_frame = match pmm::alloc_frame() {
-            Some(f) => f,
-            None => {
-                cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
-                return Err("Out of memory for user stack frame");
+        /// Execute a binary directly with argument tokens passed from the shell command line.
+        pub fn run_direct_with_parts(
+            command: &str,
+            parts: &mut core::str::SplitWhitespace,
+        ) -> bool {
+            let mut args_buf: [&str; 16] = [""; 16];
+            args_buf[0] = command;
+            let mut arg_count = 1;
+
+            for part in parts {
+                if arg_count < 16 {
+                    args_buf[arg_count] = part;
+                    arg_count += 1;
+                }
             }
-        };
-        let stack_flags =
-            vmm::PAGE_USER | vmm::PAGE_WRITABLE | vmm::PAGE_PRESENT | vmm::PAGE_NO_EXECUTE;
-        if let Err(e) = vmm::map_page(top_stack_page, stack_frame, stack_flags) {
-            pmm::free_frame(stack_frame);
-            cleanup_and_restore(child_pml4, USER_DEFAULT_BRK);
-            return Err(e);
-        }
-        let ptr = top_stack_page as *mut u8;
-        core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
-        let initial_user_rsp = setup_user_stack_64(ptr, top_stack_page, args, entry_point);
 
-        let mut brk_end = USER_DEFAULT_BRK + brk_aslr;
-        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            task.stack_aslr_offset = stack_aslr;
-            task.mmap_aslr_offset = mmap_aslr;
-            task.brk_aslr_offset = brk_aslr;
-            task.program_break = brk_end;
-            task.program_break_start = brk_end;
-            task.pml4_phys = child_pml4;
+            run_direct_with_args_mode(command, &args_buf[..arg_count], false)
         }
 
-        keira_io::tty::flush_tty();
-        keira_io::ps2::flush_input_queue();
-
-        keira_io::vga::set_color(keira_io::vga::Color::White, keira_io::vga::Color::Black);
-        let _job_id = keira_task::signal::add_job(1, filename, true);
-        jump_to_user(entry_point, initial_user_rsp);
-        keira_task::signal::remove_job_by_pid(1);
-
-        if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-            brk_end = task.program_break;
+        /// Backward compatible run_direct_with_args helper (defaults to quiet mode).
+        pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
+            run_direct_with_args_mode(arg, args, false)
         }
 
-        cleanup_and_restore(child_pml4, brk_end);
-
-        core::arch::asm!("sti");
-
-        Ok(())
-    }
-}
-
-/// Backward compatible run_direct helper.
-pub fn run_direct(arg: &str) -> bool {
-    let args = [arg];
-    run_direct_with_args_mode(arg, &args, false)
-}
-
-/// Execute a binary directly with argument tokens passed from the shell command line.
-pub fn run_direct_with_parts(command: &str, parts: &mut core::str::SplitWhitespace) -> bool {
-    let mut args_buf: [&str; 16] = [""; 16];
-    args_buf[0] = command;
-    let mut arg_count = 1;
-
-    for part in parts {
-        if arg_count < 16 {
-            args_buf[arg_count] = part;
-            arg_count += 1;
+        /// Resolve an ELF binary path and execute it with CLI arguments and configurable verbosity.
+        pub fn run_direct_with_args_mode(arg: &str, args: &[&str], verbose: bool) -> bool {
+            run_direct_with_args_inner(arg, args, verbose)
         }
-    }
 
-    run_direct_with_args_mode(command, &args_buf[..arg_count], false)
-}
-
-/// Backward compatible run_direct_with_args helper (defaults to quiet mode).
-pub fn run_direct_with_args(arg: &str, args: &[&str]) -> bool {
-    run_direct_with_args_mode(arg, args, false)
-}
-
-/// Resolve an ELF binary path and execute it with CLI arguments and configurable verbosity.
-pub fn run_direct_with_args_mode(arg: &str, args: &[&str], verbose: bool) -> bool {
-    run_direct_with_args_inner(arg, args, verbose)
-}
-
-fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
-    if arg == "clear" {
-        return false;
-    }
-    unsafe {
-        let mut path_buf = [0u8; 128];
-        let mut resolved_str = "";
-        let mut found = false;
-
-        let mut write_path = |pref: &str, name: &str, suff: &str| -> Option<&'static str> {
-            let pref_bytes = pref.as_bytes();
-            let name_bytes = name.as_bytes();
-            let suff_bytes = suff.as_bytes();
-            let total_len = pref_bytes.len() + name_bytes.len() + suff_bytes.len();
-            if total_len > 127 {
-                return None;
+        fn run_direct_with_args_inner(arg: &str, args: &[&str], verbose: bool) -> bool {
+            if arg == "clear" {
+                return false;
             }
-            let ptr = &mut path_buf[0] as *mut u8;
-            core::ptr::copy_nonoverlapping(pref_bytes.as_ptr(), ptr, pref_bytes.len());
-            core::ptr::copy_nonoverlapping(
-                name_bytes.as_ptr(),
-                ptr.add(pref_bytes.len()),
-                name_bytes.len(),
-            );
-            core::ptr::copy_nonoverlapping(
-                suff_bytes.as_ptr(),
-                ptr.add(pref_bytes.len() + name_bytes.len()),
-                suff_bytes.len(),
-            );
+            unsafe {
+                let mut path_buf = [0u8; 128];
+                let mut resolved_str = "";
+                let mut found = false;
 
-            core::str::from_utf8(core::slice::from_raw_parts(ptr, total_len)).ok()
-        };
+                let mut write_path = |pref: &str, name: &str, suff: &str| -> Option<&'static str> {
+                    let pref_bytes = pref.as_bytes();
+                    let name_bytes = name.as_bytes();
+                    let suff_bytes = suff.as_bytes();
+                    let total_len = pref_bytes.len() + name_bytes.len() + suff_bytes.len();
+                    if total_len > 127 {
+                        return None;
+                    }
+                    let ptr = &mut path_buf[0] as *mut u8;
+                    core::ptr::copy_nonoverlapping(pref_bytes.as_ptr(), ptr, pref_bytes.len());
+                    core::ptr::copy_nonoverlapping(
+                        name_bytes.as_ptr(),
+                        ptr.add(pref_bytes.len()),
+                        name_bytes.len(),
+                    );
+                    core::ptr::copy_nonoverlapping(
+                        suff_bytes.as_ptr(),
+                        ptr.add(pref_bytes.len() + name_bytes.len()),
+                        suff_bytes.len(),
+                    );
 
-        if keira_fs::vfs::exists(arg) {
-            resolved_str = arg;
-            found = true;
-        }
+                    core::str::from_utf8(core::slice::from_raw_parts(ptr, total_len)).ok()
+                };
 
-        if !found && !arg.ends_with(".elf") && !arg.ends_with(".sh") {
-            if let Some(p) = write_path("", arg, ".elf") {
-                if keira_fs::vfs::exists(p) {
-                    resolved_str = p;
+                if keira_fs::vfs::exists(arg) {
+                    resolved_str = arg;
                     found = true;
                 }
-            }
-            if !found {
-                if let Some(p) = write_path("", arg, ".sh") {
-                    if keira_fs::vfs::exists(p) {
-                        resolved_str = p;
-                        found = true;
-                    }
-                }
-            }
-        }
 
-        let prefixes = ["/bin/", "/"];
-        let suffixes = ["", ".elf", ".sh"];
-
-        if !found {
-            'outer: for &pref in &prefixes {
-                for &suff in &suffixes {
-                    if let Some(p) = write_path(pref, arg, suff) {
+                if !found && !arg.ends_with(".elf") && !arg.ends_with(".sh") {
+                    if let Some(p) = write_path("", arg, ".elf") {
                         if keira_fs::vfs::exists(p) {
                             resolved_str = p;
                             found = true;
-                            break 'outer;
+                        }
+                    }
+                    if !found {
+                        if let Some(p) = write_path("", arg, ".sh") {
+                            if keira_fs::vfs::exists(p) {
+                                resolved_str = p;
+                                found = true;
+                            }
                         }
                     }
                 }
-            }
-        }
 
-        if !found {
-            return false;
-        }
+                let prefixes = ["/bin/", "/"];
+                let suffixes = ["", ".elf", ".sh"];
 
-        if verbose {
-            if resolved_str.ends_with(".sh") {
-                vga::print_str("Executing script: ");
-            } else {
-                vga::print_str("Loading ELF binary: ");
-            }
-            vga::print_str(resolved_str);
-            vga::print_str("\n");
-        }
+                if !found {
+                    'outer: for &pref in &prefixes {
+                        for &suff in &suffixes {
+                            if let Some(p) = write_path(pref, arg, suff) {
+                                if keira_fs::vfs::exists(p) {
+                                    resolved_str = p;
+                                    found = true;
+                                    break 'outer;
+                                }
+                            }
+                        }
+                    }
+                }
 
-        match run_user_program(resolved_str, args) {
-            Ok(_) => {
+                if !found {
+                    return false;
+                }
+
                 if verbose {
-                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-                    vga::print_str("Program exited normally.\n");
-                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    if resolved_str.ends_with(".sh") {
+                        vga::print_str("Executing script: ");
+                    } else {
+                        vga::print_str("Loading ELF binary: ");
+                    }
+                    vga::print_str(resolved_str);
+                    vga::print_str("\n");
+                }
+
+                match run_user_program(resolved_str, args) {
+                    Ok(_) => {
+                        if verbose {
+                            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                            vga::print_str("Program exited normally.\n");
+                            vga::set_color(vga::Color::White, vga::Color::Black);
+                        }
+                    }
+                    Err(e) => {
+                        vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                        vga::print_str("Error executing program: ");
+                        vga::print_str(e);
+                        vga::print_str("\n");
+                        vga::set_color(vga::Color::White, vga::Color::Black);
+                    }
+                }
+
+                true
+            }
+        }
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let mut args_buf: [&str; 16] = [""; 16];
+            let mut arg_count = 0;
+
+            for part in parts.by_ref() {
+                if arg_count == 0 && (part == "-h" || part == "--help") {
+                    vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n\n");
+                    vga::print_str("Description:\n  Load and execute a freestanding user mode ELF binary program in Ring 3 user space with CLI arguments.\n\n");
+                    vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
+                    vga::print_str("Examples:\n  run hello.elf\n  run /bin/calc.elf\n  run kcc /tmp/main.c -o /bin/app.elf\n");
+                    return;
+                }
+                if arg_count < 16 {
+                    args_buf[arg_count] = part;
+                    arg_count += 1;
                 }
             }
-            Err(e) => {
+
+            if arg_count == 0 {
+                vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n");
+                return;
+            }
+
+            let prog_arg = args_buf[0];
+            if !run_direct_with_args_mode(prog_arg, &args_buf[..arg_count], true) {
                 vga::set_color(vga::Color::LightRed, vga::Color::Black);
-                vga::print_str("Error executing program: ");
-                vga::print_str(e);
-                vga::print_str("\n");
+                vga::print_str("Error executing program: file not found\n");
                 vga::set_color(vga::Color::White, vga::Color::Black);
             }
         }
-
-        true
-    }
-}
-
-pub fn run(parts: &mut core::str::SplitWhitespace) {
-    let mut args_buf: [&str; 16] = [""; 16];
-    let mut arg_count = 0;
-
-    for part in parts.by_ref() {
-        if arg_count == 0 && (part == "-h" || part == "--help") {
-            vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n\n");
-            vga::print_str("Description:\n  Load and execute a freestanding user mode ELF binary program in Ring 3 user space with CLI arguments.\n\n");
-            vga::print_str("Options:\n  -h, --help    Show this help message and exit\n\n");
-            vga::print_str("Examples:\n  run hello.elf\n  run /bin/calc.elf\n  run kcc /tmp/main.c -o /bin/app.elf\n");
-            return;
-        }
-        if arg_count < 16 {
-            args_buf[arg_count] = part;
-            arg_count += 1;
-        }
-    }
-
-    if arg_count == 0 {
-        vga::print_str("Usage: run <program.elf> [arg1] [arg2] ...\n");
-        return;
-    }
-
-    let prog_arg = args_buf[0];
-    if !run_direct_with_args_mode(prog_arg, &args_buf[..arg_count], true) {
-        vga::set_color(vga::Color::LightRed, vga::Color::Black);
-        vga::print_str("Error executing program: file not found\n");
-        vga::set_color(vga::Color::White, vga::Color::Black);
-    }
-}
-
     }
     pub use self::run::*;
 }
-
 
 pub use self::task::run;
 
 #[cfg(test)]
 mod tests {
-use super::*;
+    use super::*;
 
-#[test]
-fn test_proc_commands_help_invocation() {
-    let mut args = "run --help".split_whitespace();
-    args.next();
-    run::run(&mut args);
-}
+    #[test]
+    fn test_proc_commands_help_invocation() {
+        let mut args = "run --help".split_whitespace();
+        args.next();
+        run::run(&mut args);
+    }
 
-#[test]
-fn test_pidinfo_command_invocation() {
-    let mut args = "pidinfo --help".split_whitespace();
-    args.next();
-    pidinfo::run(&mut args);
+    #[test]
+    fn test_pidinfo_command_invocation() {
+        let mut args = "pidinfo --help".split_whitespace();
+        args.next();
+        pidinfo::run(&mut args);
 
-    let mut args_empty = "".split_whitespace();
-    pidinfo::run(&mut args_empty);
+        let mut args_empty = "".split_whitespace();
+        pidinfo::run(&mut args_empty);
 
-    let mut args_pid = "0".split_whitespace();
-    pidinfo::run(&mut args_pid);
+        let mut args_pid = "0".split_whitespace();
+        pidinfo::run(&mut args_pid);
 
-    let mut args_invalid = "999".split_whitespace();
-    pidinfo::run(&mut args_invalid);
-}
-
+        let mut args_invalid = "999".split_whitespace();
+        pidinfo::run(&mut args_invalid);
+    }
 }

@@ -16,29 +16,29 @@
 
 pub mod buf {
     use core::fmt::Write;
-    
+
     pub struct BufWriter<'a> {
         buf: &'a mut [u8],
         offset: usize,
     }
-    
+
     impl<'a> BufWriter<'a> {
         /// Creates a new buffer writer around the specified mutable byte slice.
         pub fn new(buf: &'a mut [u8]) -> Self {
             Self { buf, offset: 0 }
         }
-    
+
         /// Returns the number of bytes written so far into the underlying slice.
         pub fn len(&self) -> usize {
             self.offset
         }
-    
+
         /// Checks whether the buffer writer has written zero bytes.
         pub fn is_empty(&self) -> bool {
             self.offset == 0
         }
     }
-    
+
     impl<'a> Write for BufWriter<'a> {
         fn write_str(&mut self, s: &str) -> core::fmt::Result {
             let bytes = s.as_bytes();

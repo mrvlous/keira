@@ -17,7 +17,7 @@
 pub mod clone {
     #[cfg(not(target_arch = "x86"))]
     use keira_mem::{pmm, vmm};
-    
+
     #[cfg(not(target_arch = "x86"))]
     use crate::scheduler::core::{
         CURRENT_TASK_IDX, MAX_TASKS, SCHEDULER_LOCK, TASKS, TASK_STACK_PAGES, TASK_STACK_SIZE,
@@ -26,7 +26,7 @@ pub mod clone {
     use crate::scheduler::lifecycle::reap_orphaned_zombies_locked;
     #[cfg(not(target_arch = "x86"))]
     use crate::types::{InterruptContext, Task, TaskState};
-    
+
     pub const CLONE_VM: u64 = 0x0000_0100;
     pub const CLONE_FS: u64 = 0x0000_0200;
     pub const CLONE_FILES: u64 = 0x0000_0400;
@@ -36,7 +36,7 @@ pub mod clone {
     pub const CLONE_PARENT_SETTID: u64 = 0x0010_0000;
     pub const CLONE_CHILD_CLEARTID: u64 = 0x0020_0000;
     pub const CLONE_CHILD_SETTID: u64 = 0x0100_0000;
-    
+
     pub unsafe fn clone_current_task(
         flags: u64,
         child_stack: u64,
@@ -51,12 +51,12 @@ pub mod clone {
                 "Scheduler: Fork/Clone is unsupported on 32-bit architecture without MMU paging",
             );
         }
-    
+
         #[cfg(not(target_arch = "x86"))]
         {
             let _guard = SCHEDULER_LOCK.lock();
             let parent_idx = CURRENT_TASK_IDX;
-    
+
             let mut slot_idx = 0;
             let mut found = false;
             for (i, slot) in TASKS.iter().enumerate().take(MAX_TASKS).skip(1) {
@@ -66,7 +66,7 @@ pub mod clone {
                     break;
                 }
             }
-    
+
             if !found {
                 reap_orphaned_zombies_locked();
                 for (i, slot) in TASKS.iter().enumerate().take(MAX_TASKS).skip(1) {
@@ -77,17 +77,17 @@ pub mod clone {
                     }
                 }
             }
-    
+
             if !found {
                 return Err("Scheduler Error: Max tasks reached");
             }
-    
+
             let ptr = &raw const TASKS;
             if let Some(ref parent) = (*ptr)[parent_idx] {
                 let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
                     .ok_or("Out of memory for child stack")?;
                 let stack_top = stack_frame + TASK_STACK_SIZE;
-    
+
                 let pml4_phys = if (flags & CLONE_VM) != 0 {
                     parent.pml4_phys
                 } else {
@@ -99,12 +99,12 @@ pub mod clone {
                         }
                     }
                 };
-    
+
                 let context_size = core::mem::size_of::<InterruptContext>() as u64;
                 let child_context_ptr = (stack_top - context_size) as *mut InterruptContext;
-    
+
                 let percpu = keira_arch::cpu::get_current_percpu();
-    
+
                 #[cfg(target_arch = "x86_64")]
                 {
                     (*child_context_ptr).r15 = percpu.user_r15;
@@ -122,29 +122,30 @@ pub mod clone {
                     (*child_context_ptr).rdx = 0;
                     (*child_context_ptr).rcx = 0;
                     (*child_context_ptr).rax = 0;
-    
+
                     let child_rip =
                         if percpu.user_rip >= 0x10000 && percpu.user_rip < 0x0000_8000_0000_0000 {
                             percpu.user_rip
                         } else {
                             0x0000_0000_4000_0000
                         };
-    
+
                     let child_rsp = if child_stack != 0 {
                         child_stack
-                    } else if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0x0000_8000_0000_0000 {
+                    } else if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0x0000_8000_0000_0000
+                    {
                         percpu.user_rsp
                     } else {
                         0x0000_7FFF_FFFF_F000
                     };
-    
+
                     (*child_context_ptr).rip = child_rip;
                     (*child_context_ptr).cs = 0x2B;
                     (*child_context_ptr).rflags = (percpu.user_rflags | 0x202) & !0x100;
                     (*child_context_ptr).rsp = child_rsp;
                     (*child_context_ptr).ss = 0x23;
                 }
-    
+
                 #[cfg(target_arch = "x86")]
                 {
                     (*child_context_ptr).rdi = 0;
@@ -155,13 +156,13 @@ pub mod clone {
                     (*child_context_ptr).rdx = 0;
                     (*child_context_ptr).rcx = 0;
                     (*child_context_ptr).rax = 0;
-    
+
                     let child_rip = if percpu.user_rip >= 0x10000 && percpu.user_rip < 0xC000_0000 {
                         percpu.user_rip as u32
                     } else {
                         0x0100_0000
                     };
-    
+
                     let child_rsp = if child_stack != 0 {
                         child_stack as u32
                     } else if percpu.user_rsp >= 0x10000 && percpu.user_rsp < 0xC000_0000 {
@@ -169,14 +170,14 @@ pub mod clone {
                     } else {
                         0x07FF_E000
                     };
-    
+
                     (*child_context_ptr).rip = child_rip;
                     (*child_context_ptr).cs = 0x1B;
                     (*child_context_ptr).rflags = ((percpu.user_rflags as u32) | 0x202) & !0x100;
                     (*child_context_ptr).rsp = child_rsp;
                     (*child_context_ptr).ss = 0x23;
                 }
-    
+
                 let is_thread = (flags & CLONE_THREAD) != 0;
                 let tgid = if is_thread { parent.tgid } else { slot_idx };
                 let parent_id = if is_thread {
@@ -194,7 +195,7 @@ pub mod clone {
                 } else {
                     parent.tls
                 };
-    
+
                 if (flags & CLONE_PARENT_SETTID) != 0
                     && ptid != 0
                     && ptid.is_multiple_of(4)
@@ -203,7 +204,7 @@ pub mod clone {
                     let uptr = ptid as *mut u32;
                     core::ptr::write(uptr, slot_idx as u32);
                 }
-    
+
                 if (flags & CLONE_CHILD_SETTID) != 0
                     && ctid != 0
                     && ctid.is_multiple_of(4)
@@ -212,7 +213,7 @@ pub mod clone {
                     let uptr = ctid as *mut u32;
                     core::ptr::write(uptr, slot_idx as u32);
                 }
-    
+
                 let child_task = Task {
                     id: slot_idx,
                     name: if is_thread {
@@ -251,7 +252,7 @@ pub mod clone {
                     brk_aslr_offset: parent.brk_aslr_offset,
                     rlimits: parent.rlimits,
                 };
-    
+
                 TASKS[slot_idx] = Some(child_task);
                 let core_id = keira_arch::cpu::get_current_core_id();
                 crate::scheduler::work_stealing::push_local(core_id, slot_idx);
@@ -265,7 +266,7 @@ pub mod clone {
 
 pub mod fork {
     use crate::scheduler::process::clone::clone_current_task;
-    
+
     pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
         clone_current_task(0, 0, 0, 0, 0)
     }
@@ -273,13 +274,13 @@ pub mod fork {
 
 pub mod spawn {
     use keira_mem::{pmm, vmm};
-    
+
     use crate::scheduler::core::{
         CURRENT_TASK_IDX, MAX_TASKS, TASKS, TASK_STACK_PAGES, TASK_STACK_SIZE,
     };
     use crate::scheduler::lifecycle::reap_orphaned_zombies;
     use crate::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
-    
+
     pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'static str> {
         let mut slot = None;
         for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
@@ -288,7 +289,7 @@ pub mod spawn {
                 break;
             }
         }
-    
+
         if slot.is_none() {
             reap_orphaned_zombies();
             for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
@@ -298,16 +299,16 @@ pub mod spawn {
                 }
             }
         }
-    
+
         let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
-    
+
         let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
             .ok_or("Scheduler: Out of memory for task stack")?;
         let stack_top = stack_frame + TASK_STACK_SIZE;
-    
+
         let context_ptr =
             (stack_top - core::mem::size_of::<InterruptContext>() as u64) as *mut InterruptContext;
-    
+
         #[cfg(target_arch = "x86_64")]
         {
             (*context_ptr).r15 = 0;
@@ -325,14 +326,14 @@ pub mod spawn {
             (*context_ptr).rdx = 0;
             (*context_ptr).rcx = 0;
             (*context_ptr).rax = 0;
-    
+
             (*context_ptr).rip = entry_point as usize as u64;
             (*context_ptr).cs = 0x08;
             (*context_ptr).rflags = 0x202;
             (*context_ptr).rsp = stack_top;
             (*context_ptr).ss = 0x10;
         }
-    
+
         #[cfg(target_arch = "x86")]
         {
             (*context_ptr).rdi = 0;
@@ -343,14 +344,14 @@ pub mod spawn {
             (*context_ptr).rdx = 0;
             (*context_ptr).rcx = 0;
             (*context_ptr).rax = 0;
-    
+
             (*context_ptr).rip = entry_point as usize as u32;
             (*context_ptr).cs = 0x08;
             (*context_ptr).rflags = 0x202;
             (*context_ptr).rsp = stack_top as u32;
             (*context_ptr).ss = 0x10;
         }
-    
+
         let mut child_cwd = [0u8; 128];
         child_cwd[0] = b'/';
         let mut parent_cwd_len = 1usize;
@@ -395,14 +396,14 @@ pub mod spawn {
             brk_aslr_offset: 0,
             rlimits: crate::rlimit::default_rlimits(),
         };
-    
+
         TASKS[slot_idx] = Some(new_task);
         let core_id = keira_arch::cpu::get_current_core_id();
         crate::scheduler::work_stealing::push_local(core_id, slot_idx);
-    
+
         Ok(slot_idx)
     }
-    
+
     pub unsafe fn spawn_user(
         name: &'static str,
         entry_point: u64,
@@ -416,7 +417,7 @@ pub mod spawn {
                 break;
             }
         }
-    
+
         if slot.is_none() {
             reap_orphaned_zombies();
             for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
@@ -426,16 +427,16 @@ pub mod spawn {
                 }
             }
         }
-    
+
         let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
-    
+
         let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
             .ok_or("Scheduler: Out of memory for task stack")?;
         let stack_top = stack_frame + TASK_STACK_SIZE;
-    
+
         let context_ptr =
             (stack_top - core::mem::size_of::<InterruptContext>() as u64) as *mut InterruptContext;
-    
+
         #[cfg(target_arch = "x86_64")]
         {
             (*context_ptr).r15 = 0;
@@ -453,14 +454,14 @@ pub mod spawn {
             (*context_ptr).rdx = 0;
             (*context_ptr).rcx = 0;
             (*context_ptr).rax = 0;
-    
+
             (*context_ptr).rip = entry_point;
             (*context_ptr).cs = 0x2B;
             (*context_ptr).rflags = 0x202;
             (*context_ptr).rsp = user_rsp;
             (*context_ptr).ss = 0x23;
         }
-    
+
         #[cfg(target_arch = "x86")]
         {
             (*context_ptr).rdi = 0;
@@ -471,14 +472,14 @@ pub mod spawn {
             (*context_ptr).rdx = 0;
             (*context_ptr).rcx = 0;
             (*context_ptr).rax = 0;
-    
+
             (*context_ptr).rip = entry_point as u32;
             (*context_ptr).cs = 0x1B;
             (*context_ptr).rflags = 0x202;
             (*context_ptr).rsp = user_rsp as u32;
             (*context_ptr).ss = 0x23;
         }
-    
+
         let mut child_cwd = [0u8; 128];
         child_cwd[0] = b'/';
         let mut parent_cwd_len = 1usize;
@@ -489,7 +490,7 @@ pub mod spawn {
         let mut parent_euid = 0u32;
         let mut parent_egid = 0u32;
         let mut parent_rlimits = crate::rlimit::default_rlimits();
-    
+
         if let Some(ref parent) = TASKS[parent_id] {
             child_cwd[..parent.cwd_len].copy_from_slice(&parent.cwd[..parent.cwd_len]);
             parent_cwd_len = parent.cwd_len;
@@ -500,7 +501,7 @@ pub mod spawn {
             parent_egid = parent.egid;
             parent_rlimits = parent.rlimits;
         }
-    
+
         for (fd, item) in child_fds.iter_mut().enumerate().take(3) {
             if !item.is_open {
                 item.is_open = true;
@@ -509,14 +510,14 @@ pub mod spawn {
                 item.path_len = 8;
             }
         }
-    
+
         #[cfg(target_arch = "x86_64")]
         let default_brk = 0x600000000000;
         #[cfg(target_arch = "x86")]
         let default_brk = 0x0200_0000;
-    
+
         let (stack_aslr, mmap_aslr, brk_aslr) = crate::aslr::generate_task_aslr_offsets();
-    
+
         let new_task = Task {
             id: slot_idx,
             name,
@@ -551,11 +552,11 @@ pub mod spawn {
             brk_aslr_offset: brk_aslr,
             rlimits: parent_rlimits,
         };
-    
+
         TASKS[slot_idx] = Some(new_task);
         let core_id = keira_arch::cpu::get_current_core_id();
         crate::scheduler::work_stealing::push_local(core_id, slot_idx);
-    
+
         Ok(slot_idx)
     }
 }

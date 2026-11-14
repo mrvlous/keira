@@ -18,7 +18,7 @@ pub mod message {
     pub const MAX_MQUEUES: usize = 8;
     pub const MQUEUE_MAX_MSGS: usize = 16;
     pub const MQUEUE_MSG_SIZE: usize = 128;
-    
+
     #[derive(Copy, Clone, Debug, PartialEq, Eq)]
     pub struct MQueueMessage {
         pub data: [u8; MQUEUE_MSG_SIZE],
@@ -26,7 +26,7 @@ pub mod message {
         pub prio: u32,
         pub in_use: bool,
     }
-    
+
     impl MQueueMessage {
         pub const fn empty() -> Self {
             Self {
@@ -37,7 +37,7 @@ pub mod message {
             }
         }
     }
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct PosixMessageQueue {
         pub id: u32,
@@ -50,7 +50,7 @@ pub mod message {
         pub messages: [MQueueMessage; MQUEUE_MAX_MSGS],
         pub in_use: bool,
     }
-    
+
     impl PosixMessageQueue {
         pub const fn empty(id: u32) -> Self {
             Self {
@@ -65,7 +65,7 @@ pub mod message {
                 in_use: false,
             }
         }
-    
+
         pub fn name_as_str(&self) -> &str {
             core::str::from_utf8(&self.name[..self.name_len]).unwrap_or("")
         }

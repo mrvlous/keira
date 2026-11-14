@@ -21,7 +21,7 @@ pub mod entry {
     use crate::fat::table::{read_sector, write_sector};
     use crate::fat::types::{DirectoryEntry, Fat16Volume, LfnEntry};
     use crate::fat::volume::cluster_to_sector;
-    
+
     pub unsafe fn create_directory_entry(
         name: [u8; 11],
         attr: u8,
@@ -33,7 +33,7 @@ pub mod entry {
         let mut sector_data = [0u8; 512];
         let (fat_time, fat_date) = get_rtc_fat_time_date();
         let mut inserted = false;
-    
+
         for_each_directory_sector(dir_cluster, |sector| {
             read_sector(sector, &mut sector_data)?;
             let entries = sector_data.as_mut_ptr() as *mut DirectoryEntry;
@@ -52,7 +52,7 @@ pub mod entry {
                     entry.wrt_date = fat_date;
                     entry.first_cluster_lo = first_cluster;
                     entry.file_size = size;
-    
+
                     write_sector(sector, &sector_data)?;
                     inserted = true;
                     return Ok(false);
@@ -60,14 +60,14 @@ pub mod entry {
             }
             Ok(true)
         })?;
-    
+
         if inserted {
             Ok(())
         } else {
             Err("Directory is full")
         }
     }
-    
+
     pub unsafe fn create_directory_entry_with_name(
         sfn_name: [u8; 11],
         original_name: &str,
@@ -80,27 +80,27 @@ pub mod entry {
         let is_lfn = original_name.len() > 12
             || original_name.contains(".html")
             || original_name.chars().any(|c| c.is_lowercase());
-    
+
         if !is_lfn {
             return create_directory_entry(sfn_name, attr, first_cluster, size, dir_cluster, vol);
         }
-    
+
         let mut sector_data = [0u8; 512];
         let (fat_time, fat_date) = get_rtc_fat_time_date();
         let chk = lfn_checksum(&sfn_name);
         let name_utf8 = original_name.as_bytes();
-    
+
         let num_lfn = name_utf8.len().div_ceil(13);
         if num_lfn > 2 {
             return create_directory_entry(sfn_name, attr, first_cluster, size, dir_cluster, vol);
         }
-    
+
         let mut inserted = false;
         for_each_directory_sector(dir_cluster, |sector| {
             read_sector(sector, &mut sector_data)?;
             let entries = sector_data.as_mut_ptr() as *mut DirectoryEntry;
             let needed_slots = num_lfn + 1;
-    
+
             for i in 0..=(16 - needed_slots) {
                 let mut all_free = true;
                 for k in 0..needed_slots {
@@ -110,14 +110,14 @@ pub mod entry {
                         break;
                     }
                 }
-    
+
                 if all_free {
                     for lfn_idx in 0..num_lfn {
                         let seq_num = (num_lfn - lfn_idx) as u8;
                         let is_last = lfn_idx == 0;
                         let seq_byte = if is_last { 0x40 | seq_num } else { seq_num };
                         let char_start = (seq_num as usize - 1) * 13;
-    
+
                         let mut lfn_chars = [0xFFFFu16; 13];
                         for (c, lfn_char) in lfn_chars.iter_mut().enumerate() {
                             let src_idx = char_start + c;
@@ -127,7 +127,7 @@ pub mod entry {
                                 *lfn_char = 0x0000;
                             }
                         }
-    
+
                         let lfn = LfnEntry {
                             sequence: seq_byte,
                             name_part1: [
@@ -151,11 +151,11 @@ pub mod entry {
                             first_cluster: 0,
                             name_part3: [lfn_chars[11], lfn_chars[12]],
                         };
-    
+
                         let lfn_ptr = entries.add(i + lfn_idx) as *mut LfnEntry;
                         *lfn_ptr = lfn;
                     }
-    
+
                     let sfn_entry = &mut *entries.add(i + num_lfn);
                     sfn_entry.name = sfn_name;
                     sfn_entry.attr = attr;
@@ -169,7 +169,7 @@ pub mod entry {
                     sfn_entry.wrt_date = fat_date;
                     sfn_entry.first_cluster_lo = first_cluster;
                     sfn_entry.file_size = size;
-    
+
                     write_sector(sector, &sector_data)?;
                     inserted = true;
                     return Ok(false);
@@ -177,14 +177,14 @@ pub mod entry {
             }
             Ok(true)
         })?;
-    
+
         if inserted {
             Ok(())
         } else {
             create_directory_entry(sfn_name, attr, first_cluster, size, dir_cluster, vol)
         }
     }
-    
+
     pub unsafe fn init_dir_cluster(
         cluster: u16,
         parent_cluster: u16,
@@ -192,7 +192,7 @@ pub mod entry {
     ) -> Result<(), &'static str> {
         let mut sector_data = [0u8; 512];
         let (fat_time, fat_date) = get_rtc_fat_time_date();
-    
+
         let mut dot_entry = DirectoryEntry {
             name: [b' '; 11],
             attr: 0x10,
@@ -208,7 +208,7 @@ pub mod entry {
             file_size: 0,
         };
         dot_entry.name[0] = b'.';
-    
+
         let mut dotdot_entry = DirectoryEntry {
             name: [b' '; 11],
             attr: 0x10,
@@ -225,22 +225,22 @@ pub mod entry {
         };
         dotdot_entry.name[0] = b'.';
         dotdot_entry.name[1] = b'.';
-    
+
         let entries = sector_data.as_mut_ptr() as *mut DirectoryEntry;
         *entries.add(0) = dot_entry;
         *entries.add(1) = dotdot_entry;
-    
+
         let first_sector = cluster_to_sector(cluster, vol);
         write_sector(first_sector, &sector_data)?;
-    
+
         let zero_buf = [0u8; 512];
         for cs in 1..vol.sectors_per_cluster as u32 {
             write_sector(first_sector + cs, &zero_buf)?;
         }
-    
+
         Ok(())
     }
-    
+
     pub unsafe fn is_dir_empty(cluster: u16, _vol: &Fat16Volume) -> Result<bool, &'static str> {
         if cluster < 2 {
             return Ok(true);
@@ -265,7 +265,7 @@ pub mod iterator {
     use crate::fat::table::read_sector;
     use crate::fat::types::{DirectoryEntry, LfnAccumulator};
     use crate::fat::volume::{cluster_to_sector, VOLUME};
-    
+
     pub unsafe fn for_each_directory_sector<F>(
         dir_cluster: u16,
         mut callback: F,
@@ -275,7 +275,7 @@ pub mod iterator {
     {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr).as_ref().ok_or("FAT16: Volume not initialized")?;
-    
+
         if dir_cluster == 0 {
             for s in 0..vol.root_dir_size_sectors {
                 let sector = vol.root_dir_start_sector + s;
@@ -298,7 +298,7 @@ pub mod iterator {
         }
         Ok(())
     }
-    
+
     #[derive(Clone, Copy)]
     pub struct ParsedDirectoryEntry {
         /// On-disk 32-byte directory entry record.
@@ -312,7 +312,7 @@ pub mod iterator {
         /// Length in bytes of the valid UTF-8 filename in `name`.
         pub name_len: usize,
     }
-    
+
     pub unsafe fn for_each_directory_entry<F>(
         dir_cluster: u16,
         mut callback: F,
@@ -322,7 +322,7 @@ pub mod iterator {
     {
         let mut sector_data = [0u8; 512];
         let mut lfn_accum = LfnAccumulator::new();
-    
+
         for_each_directory_sector(dir_cluster, |sector| {
             read_sector(sector, &mut sector_data)?;
             let entries = sector_data.as_ptr() as *const DirectoryEntry;
@@ -340,7 +340,7 @@ pub mod iterator {
                     lfn_accum.reset();
                     continue;
                 }
-    
+
                 let mut lfn_buf = [0u8; 260];
                 let name_len = if let Some(len) = get_lfn_utf8(&lfn_accum, &mut lfn_buf) {
                     len
@@ -350,9 +350,9 @@ pub mod iterator {
                     lfn_buf[..len].copy_from_slice(&name83[..len]);
                     len
                 };
-    
+
                 lfn_accum.reset();
-    
+
                 let parsed = ParsedDirectoryEntry {
                     entry: *entry,
                     sector,
@@ -360,7 +360,7 @@ pub mod iterator {
                     name: lfn_buf,
                     name_len,
                 };
-    
+
                 if !callback(&parsed)? {
                     return Ok(false);
                 }
@@ -389,11 +389,11 @@ pub mod listing {
     use crate::fat::types::DirectoryEntry;
     use crate::fat::volume::{cluster_to_sector, CURRENT_DIR_CLUSTER, VOLUME};
     use keira_io::vga;
-    
+
     pub unsafe fn list_files_in_dir(dir_cluster: u16, show_all: bool) -> Result<(), &'static str> {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Directory of IDE disk:\n");
-    
+
         let mut count = 0;
         let res = for_each_directory_entry(dir_cluster, |parsed| {
             if let Ok(name_str) = core::str::from_utf8(&parsed.name[..parsed.name_len]) {
@@ -405,7 +405,7 @@ pub mod listing {
                         return Ok(true);
                     }
                 }
-    
+
                 if (parsed.entry.attr & 0x10) != 0 {
                     vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str("  [dir]  ");
@@ -423,22 +423,22 @@ pub mod listing {
             }
             Ok(true)
         });
-    
+
         if res.is_err() {
             return Err("Error reading directory.");
         }
-    
+
         if count == 0 {
             vga::print_str("  No files found.\n");
         }
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         Ok(())
     }
-    
+
     pub unsafe fn list_files() {
         let _ = list_files_in_dir(CURRENT_DIR_CLUSTER, false);
     }
-    
+
     pub unsafe fn find_matches<F>(prefix: &str, mut callback: F)
     where
         F: FnMut(&str),
@@ -452,44 +452,44 @@ pub mod listing {
             Ok(true)
         });
     }
-    
+
     pub unsafe fn create_dir(dirname: &str) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr)
             .as_ref()
             .ok_or("FAT16 filesystem is not initialized")?;
-    
+
         let (dir_cluster, name) = resolve_path(dirname)?;
         let name_8_3 = filename_to_8_3(name)?;
         if find_entry(name, dir_cluster).is_ok() {
             return Err("File or directory already exists");
         }
-    
+
         let cluster = alloc_cluster(vol)?;
-    
+
         if let Err(e) = init_dir_cluster(cluster, dir_cluster, vol) {
             let _ = free_cluster_chain(cluster, vol);
             return Err(e);
         }
-    
+
         if let Err(e) = create_directory_entry(name_8_3, 0x10, cluster, 0, dir_cluster, vol) {
             let _ = free_cluster_chain(cluster, vol);
             return Err(e);
         }
-    
+
         Ok(())
     }
-    
+
     pub unsafe fn get_dir_cluster(path: &str) -> Result<u16, &'static str> {
         let mut clean_path = path;
         if clean_path.ends_with('/') && clean_path.len() > 1 {
             clean_path = &clean_path[..clean_path.len() - 1];
         }
-    
+
         if clean_path.is_empty() || clean_path == "." {
             return Ok(CURRENT_DIR_CLUSTER);
         }
-    
+
         if clean_path == ".." {
             if CURRENT_DIR_CLUSTER == 0 {
                 return Ok(0);
@@ -499,38 +499,38 @@ pub mod listing {
             let sector = cluster_to_sector(CURRENT_DIR_CLUSTER, vol);
             let mut sector_data = [0u8; 512];
             read_sector(sector, &mut sector_data)?;
-    
+
             let entries = sector_data.as_ptr() as *const DirectoryEntry;
             let dotdot = &*entries.add(1);
-    
+
             if dotdot.name[0] == b'.' && dotdot.name[1] == b'.' {
                 return Ok(dotdot.first_cluster_lo);
             } else {
                 return Err("Corrupted directory structure (missing ..)");
             }
         }
-    
+
         let (dir_cluster, name) = resolve_path(clean_path)?;
         if name.is_empty() {
             return Ok(0);
         }
-    
+
         let found = find_entry(name, dir_cluster)?;
         if (found.entry.attr & 0x10) == 0 {
             return Err("Not a directory");
         }
-    
+
         Ok(found.entry.first_cluster_lo)
     }
-    
+
     pub unsafe fn change_directory(path: &str) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr).as_ref().ok_or("FAT16: Volume not initialized")?;
-    
+
         if path == "." {
             return Ok(());
         }
-    
+
         if path == ".." {
             if CURRENT_DIR_CLUSTER == 0 {
                 return Ok(());
@@ -538,10 +538,10 @@ pub mod listing {
             let sector = cluster_to_sector(CURRENT_DIR_CLUSTER, vol);
             let mut sector_data = [0u8; 512];
             read_sector(sector, &mut sector_data)?;
-    
+
             let entries = sector_data.as_ptr() as *const DirectoryEntry;
             let dotdot = &*entries.add(1);
-    
+
             if dotdot.name[0] == b'.' && dotdot.name[1] == b'.' {
                 CURRENT_DIR_CLUSTER = dotdot.first_cluster_lo;
                 return Ok(());
@@ -549,18 +549,18 @@ pub mod listing {
                 return Err("Corrupted directory structure (missing ..)");
             }
         }
-    
+
         let (dir_cluster, name) = resolve_path(path)?;
         if name.is_empty() {
             CURRENT_DIR_CLUSTER = 0;
             return Ok(());
         }
-    
+
         let found = find_entry(name, dir_cluster)?;
         if (found.entry.attr & 0x10) == 0 {
             return Err("Not a directory");
         }
-    
+
         CURRENT_DIR_CLUSTER = found.entry.first_cluster_lo;
         Ok(())
     }

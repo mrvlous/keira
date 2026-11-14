@@ -257,7 +257,6 @@ pub fn klog_clear() {
     }
 }
 
-
 pub mod ring {
     pub use super::*;
 }

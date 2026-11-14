@@ -16,10 +16,10 @@
 
 pub mod kill {
     use keira_io::vga;
-    
+
     use crate::signal::job::{JobState, JOB_COUNT, JOB_TABLE};
     use crate::signal::posix::*;
-    
+
     pub fn sys_kill(pid: u32, sig: u32) -> Result<u64, &'static str> {
         unsafe {
             vga::set_color(vga::Color::White, vga::Color::Black);
@@ -28,12 +28,12 @@ pub mod kill {
             vga::print_str(" -> PID ");
             vga::print_u64(pid as u64);
             vga::print_str(" (Syscall 22)\n");
-    
+
             for job in JOB_TABLE.iter_mut().take(JOB_COUNT).flatten() {
                 if job.pid == pid {
                     match sig {
-                        SIGKILL | SIGTERM | SIGINT | SIGQUIT | SIGABRT | SIGSEGV | SIGILL | SIGBUS
-                        | SIGFPE | SIGPIPE | SIGHUP | SIGUSR1 | SIGUSR2 | SIGALRM => {
+                        SIGKILL | SIGTERM | SIGINT | SIGQUIT | SIGABRT | SIGSEGV | SIGILL
+                        | SIGBUS | SIGFPE | SIGPIPE | SIGHUP | SIGUSR1 | SIGUSR2 | SIGALRM => {
                             job.state = JobState::Terminated;
                         }
                         SIGSTOP => {
@@ -47,7 +47,7 @@ pub mod kill {
                 }
             }
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    
+
             crate::scheduler::send_signal(pid as usize, sig)?;
         }
         Ok(0)

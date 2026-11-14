@@ -120,7 +120,6 @@ impl<T: Copy, const CAP: usize> RingBuffer<T, CAP> {
     }
 }
 
-
 pub mod buffer {
     pub use super::*;
 }

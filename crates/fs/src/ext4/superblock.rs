@@ -16,7 +16,7 @@
 
 pub mod parser {
     use super::types::Ext4Superblock;
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct Ext4MountState {
         pub device_id: usize,
@@ -24,14 +24,14 @@ pub mod parser {
         pub mounted: bool,
         pub total_reads: usize,
     }
-    
+
     pub static mut MOUNTED_EXT4: Option<Ext4MountState> = None;
-    
+
     pub fn init() -> Result<(), &'static str> {
         unsafe {
             let mut sb = Ext4Superblock::default();
             let mut total_reads = 0;
-    
+
             // Attempt genuine physical sector read from registered block storage device (LBA 2)
             if let Some(dev) = keira_io::storage::block::get_mounted_device() {
                 let mut sec2 = [0u8; 512];
@@ -41,28 +41,28 @@ pub mod parser {
                     let mut full_sb = [0u8; 1024];
                     full_sb[..512].copy_from_slice(&sec2);
                     full_sb[512..].copy_from_slice(&sec3);
-    
+
                     if let Ok(parsed) = Ext4Superblock::parse_from_bytes(&full_sb) {
                         sb = parsed;
                     }
                 }
             }
-    
+
             MOUNTED_EXT4 = Some(Ext4MountState {
                 device_id: 1, // Partition /dev/sda2
                 superblock: sb,
                 mounted: true,
                 total_reads,
             });
-    
+
             Ok(())
         }
     }
-    
+
     pub fn get_ext4_superblock() -> Option<Ext4Superblock> {
         unsafe { MOUNTED_EXT4.as_ref().map(|m| m.superblock) }
     }
-    
+
     pub fn get_ext4_stats() -> (bool, u32, u32, u64, u64) {
         let _ = init();
         unsafe {
@@ -82,10 +82,10 @@ pub mod parser {
 
 pub mod types {
     pub const EXT4_SUPER_MAGIC: u16 = 0xEF53;
-    
+
     pub const EXT4_STATE_CLEAN: u16 = 0x0001;
     pub const EXT4_STATE_ERRORS: u16 = 0x0002;
-    
+
     pub const EXT4_FEATURE_COMPAT_DIR_INDEX: u32 = 0x0020;
     pub const EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER: u32 = 0x0001;
     pub const EXT4_FEATURE_RO_COMPAT_LARGE_FILE: u32 = 0x0002;
@@ -94,7 +94,7 @@ pub mod types {
     pub const EXT4_FEATURE_INCOMPAT_EXTENTS: u32 = 0x0040;
     pub const EXT4_FEATURE_INCOMPAT_64BIT: u32 = 0x0080;
     pub const EXT4_FEATURE_INCOMPAT_FLEX_BG: u32 = 0x0200;
-    
+
     #[derive(Copy, Clone, Debug)]
     pub struct Ext4Superblock {
         pub inodes_count: u32,
@@ -123,7 +123,7 @@ pub mod types {
         pub max_mount_count: i16,
         pub last_mounted: [u8; 64],
     }
-    
+
     impl Default for Ext4Superblock {
         fn default() -> Self {
             let mut uuid = [0u8; 16];
@@ -131,15 +131,15 @@ pub mod types {
                 0x4a, 0x9b, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x11, 0x22, 0x33, 0x44,
                 0x55, 0x66,
             ]);
-    
+
             let mut vol_name = [0u8; 16];
             let name = b"KEIRA_EXT4_ROOT\0";
             vol_name[..name.len()].copy_from_slice(name);
-    
+
             let mut last_mnt = [0u8; 64];
             let path = b"/\0";
             last_mnt[..path.len()].copy_from_slice(path);
-    
+
             Self {
                 inodes_count: 65536,
                 blocks_count_lo: 262144, // 1024 MB @ 4KB block size
@@ -173,13 +173,13 @@ pub mod types {
             }
         }
     }
-    
+
     impl Ext4Superblock {
         /// Calculate block size in bytes ($1024 \times 2^{\text{log\_block\_size}}$).
         pub fn block_size(&self) -> u32 {
             1024 << self.log_block_size
         }
-    
+
         /// Calculate total number of Block Groups in filesystem.
         pub fn block_groups_count(&self) -> u32 {
             if self.blocks_per_group == 0 {
@@ -187,27 +187,27 @@ pub mod types {
             }
             self.blocks_count_lo.div_ceil(self.blocks_per_group)
         }
-    
+
         /// Total filesystem capacity in Megabytes.
         pub fn total_capacity_mb(&self) -> u64 {
             ((self.blocks_count_lo as u64) * (self.block_size() as u64)) / (1024 * 1024)
         }
-    
+
         /// Free storage space in Megabytes.
         pub fn free_capacity_mb(&self) -> u64 {
             ((self.free_blocks_count_lo as u64) * (self.block_size() as u64)) / (1024 * 1024)
         }
-    
+
         /// Check if filesystem features extents tree storage.
         pub fn has_extents(&self) -> bool {
             (self.feature_incompat & EXT4_FEATURE_INCOMPAT_EXTENTS) != 0
         }
-    
+
         /// Check if directory entries store 1-byte file type.
         pub fn has_filetype(&self) -> bool {
             (self.feature_incompat & EXT4_FEATURE_INCOMPAT_FILETYPE) != 0
         }
-    
+
         /// Parse on-disk superblock directly from binary bytes (offset 1024 / LBA 2).
         pub fn parse_from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
             if bytes.len() < 1024 {
@@ -217,8 +217,9 @@ pub mod types {
             if magic != EXT4_SUPER_MAGIC {
                 return Err("Invalid EXT4 superblock magic");
             }
-    
-            let inodes_count = u32::from_le_bytes([bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03]]);
+
+            let inodes_count =
+                u32::from_le_bytes([bytes[0x00], bytes[0x01], bytes[0x02], bytes[0x03]]);
             let blocks_count_lo =
                 u32::from_le_bytes([bytes[0x04], bytes[0x05], bytes[0x06], bytes[0x07]]);
             let r_blocks_count_lo =
@@ -241,7 +242,8 @@ pub mod types {
                 u32::from_le_bytes([bytes[0x28], bytes[0x29], bytes[0x2A], bytes[0x2B]]);
             let state = u16::from_le_bytes([bytes[0x3A], bytes[0x3B]]);
             let errors = u16::from_le_bytes([bytes[0x3C], bytes[0x3D]]);
-            let rev_level = u32::from_le_bytes([bytes[0x4C], bytes[0x4D], bytes[0x4E], bytes[0x4F]]);
+            let rev_level =
+                u32::from_le_bytes([bytes[0x4C], bytes[0x4D], bytes[0x4E], bytes[0x4F]]);
             let inode_size = u16::from_le_bytes([bytes[0x58], bytes[0x59]]);
             let block_group_nr = u16::from_le_bytes([bytes[0x5A], bytes[0x5B]]);
             let feature_compat =
@@ -250,20 +252,20 @@ pub mod types {
                 u32::from_le_bytes([bytes[0x64], bytes[0x65], bytes[0x66], bytes[0x67]]);
             let feature_ro_compat =
                 u32::from_le_bytes([bytes[0x68], bytes[0x69], bytes[0x6A], bytes[0x6B]]);
-    
+
             let mut uuid = [0u8; 16];
             uuid.copy_from_slice(&bytes[0x68..0x78]);
-    
+
             let mut volume_name = [0u8; 16];
             volume_name.copy_from_slice(&bytes[0x78..0x88]);
-    
+
             let mount_count = u16::from_le_bytes([bytes[0x34], bytes[0x35]]);
             let max_mount_count = i16::from_le_bytes([bytes[0x36], bytes[0x37]]);
-    
+
             let mut last_mounted = [0u8; 64];
             let copy_len = bytes.len().saturating_sub(0x40).min(64);
             last_mounted[..copy_len].copy_from_slice(&bytes[0x40..0x40 + copy_len]);
-    
+
             Ok(Self {
                 inodes_count,
                 blocks_count_lo,
@@ -292,7 +294,7 @@ pub mod types {
                 last_mounted,
             })
         }
-    
+
         /// Serialize superblock structure into binary bytes for on-disk write.
         pub fn write_to_bytes(&self, buffer: &mut [u8; 1024]) {
             buffer.fill(0);
@@ -319,7 +321,7 @@ pub mod types {
             buffer[0x68..0x78].copy_from_slice(&self.uuid);
             buffer[0x78..0x88].copy_from_slice(&self.volume_name);
         }
-    
+
         /// Get null-terminated volume name as str.
         pub fn volume_name_str(&self) -> &str {
             let len = self

@@ -16,33 +16,33 @@
 
 pub mod config {
     use keira_arch::cpu::{inl, outl};
-    
+
     pub const PCI_CONFIG_ADDR: u16 = 0xCF8;
-    
+
     pub const PCI_CONFIG_DATA: u16 = 0xCFC;
-    
+
     pub unsafe fn pci_read_config_u32(bus: u8, slot: u8, func: u8, offset: u8) -> u32 {
         let address = ((bus as u32) << 16)
             | ((slot as u32) << 11)
             | ((func as u32) << 8)
             | ((offset as u32) & 0xFC)
             | 0x8000_0000;
-    
+
         outl(PCI_CONFIG_ADDR, address);
         inl(PCI_CONFIG_DATA)
     }
-    
+
     pub unsafe fn pci_write_config_u32(bus: u8, slot: u8, func: u8, offset: u8, val: u32) {
         let address = ((bus as u32) << 16)
             | ((slot as u32) << 11)
             | ((func as u32) << 8)
             | ((offset as u32) & 0xFC)
             | 0x8000_0000;
-    
+
         outl(PCI_CONFIG_ADDR, address);
         outl(PCI_CONFIG_DATA, val);
     }
-    
+
     pub unsafe fn get_vendor_id(bus: u8, slot: u8, func: u8) -> u16 {
         let val = pci_read_config_u32(bus, slot, func, 0);
         (val & 0xFFFF) as u16
@@ -71,11 +71,11 @@ pub mod device {
         /// Base Address Register 5 (typically AHCI or memory-mapped I/O base).
         pub bar5: u32,
     }
-    
+
     pub static mut PCI_DEVICES: [Option<PciDevice>; 32] = [None; 32];
-    
+
     pub static mut PCI_DEVICE_COUNT: usize = 0;
-    
+
     pub fn pci_class_to_str(class: u8, subclass: u8) -> &'static str {
         match class {
             0x00 => "Unclassified",
@@ -115,41 +115,41 @@ pub mod device {
 pub mod scanner {
     use super::config::{get_vendor_id, pci_read_config_u32};
     use super::device::{PciDevice, PCI_DEVICES, PCI_DEVICE_COUNT};
-    
+
     pub fn init() {
         unsafe {
             PCI_DEVICE_COUNT = 0;
             PCI_DEVICES = [None; 32];
-    
+
             for bus in 0..8 {
                 for slot in 0..32 {
                     let vendor_id = get_vendor_id(bus, slot, 0);
                     if vendor_id == 0xFFFF || vendor_id == 0x0000 {
                         continue;
                     }
-    
+
                     let header_type_reg = pci_read_config_u32(bus, slot, 0, 0x0C);
                     let header_type = ((header_type_reg >> 16) & 0xFF) as u8;
                     let multi_func = (header_type & 0x80) != 0;
-    
+
                     let functions_to_scan = if multi_func { 8 } else { 1 };
-    
+
                     for func in 0..functions_to_scan {
                         let v_id = get_vendor_id(bus, slot, func);
                         if v_id == 0xFFFF || v_id == 0x0000 {
                             continue;
                         }
-    
+
                         let dev_id_reg = pci_read_config_u32(bus, slot, func, 0);
                         let device_id = (dev_id_reg >> 16) as u16;
-    
+
                         let class_reg = pci_read_config_u32(bus, slot, func, 8);
                         let class_code = ((class_reg >> 24) & 0xFF) as u8;
                         let subclass = ((class_reg >> 16) & 0xFF) as u8;
                         let prog_if = ((class_reg >> 8) & 0xFF) as u8;
-    
+
                         let bar5 = pci_read_config_u32(bus, slot, func, 0x24);
-    
+
                         if PCI_DEVICE_COUNT < 32 {
                             PCI_DEVICES[PCI_DEVICE_COUNT] = Some(PciDevice {
                                 bus,
@@ -178,7 +178,7 @@ pub use self::scanner::*;
 #[cfg(test)]
 mod tests {
     use super::device::{pci_class_to_str, PciDevice};
-    
+
     #[test]
     fn test_pci_class_description() {
         assert_eq!(pci_class_to_str(0x01, 0x06), "SATA Controller (AHCI)");
@@ -188,7 +188,7 @@ mod tests {
         assert_eq!(pci_class_to_str(0x0C, 0x03), "Serial Bus (USB/SMBus)");
         assert_eq!(pci_class_to_str(0xFF, 0xFF), "Unknown Device Class");
     }
-    
+
     #[test]
     fn test_pci_device_instantiation() {
         let dev = PciDevice {

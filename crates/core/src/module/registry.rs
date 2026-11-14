@@ -17,9 +17,9 @@
 pub mod table {
     use crate::module::core::{KernelModule, ModuleState, MAX_MODULE_NAME};
     use crate::sync::mutex::SpinMutex;
-    
+
     pub const MAX_MODULES: usize = 16;
-    
+
     pub static MODULE_TABLE: SpinMutex<[Option<KernelModule>; MAX_MODULES]> = {
         const EMPTY: Option<KernelModule> = None;
         SpinMutex::new([
@@ -104,10 +104,10 @@ pub mod table {
 pub use self::table::{MAX_MODULES, MODULE_TABLE};
 
 pub mod manager {
+    use crate::error::KernelError;
     use crate::module::core::{KernelModule, ModuleState, MAX_MODULE_NAME};
     use crate::module::registry::table::{MAX_MODULES, MODULE_TABLE};
-    use crate::error::KernelError;
-    
+
     pub fn get_modules_snapshot() -> ([Option<KernelModule>; MAX_MODULES], usize) {
         let table = MODULE_TABLE.lock();
         let mut count = 0;
@@ -118,7 +118,7 @@ pub mod manager {
         }
         (*table, count)
     }
-    
+
     pub fn get_module(name: &str) -> Option<KernelModule> {
         let table = MODULE_TABLE.lock();
         for m in table.iter().flatten() {
@@ -128,7 +128,7 @@ pub mod manager {
         }
         None
     }
-    
+
     pub fn register_module(
         name: &str,
         size: usize,
@@ -138,22 +138,22 @@ pub mod manager {
         if name.is_empty() || name.len() > MAX_MODULE_NAME {
             return Err(KernelError::InvalidArgument);
         }
-    
+
         let mut table = MODULE_TABLE.lock();
-    
+
         // Verify duplicate registration
         for m in table.iter().flatten() {
             if m.matches_name(name) {
                 return Err(KernelError::Generic("Module already registered"));
             }
         }
-    
+
         // Locate vacant slot
         for (idx, slot) in table.iter_mut().enumerate() {
             if slot.is_none() {
                 let mut name_buf = [0u8; MAX_MODULE_NAME];
                 name_buf[..name.len()].copy_from_slice(name.as_bytes());
-    
+
                 *slot = Some(KernelModule {
                     name: name_buf,
                     name_len: name.len(),
@@ -166,13 +166,13 @@ pub mod manager {
                 return Ok(idx);
             }
         }
-    
+
         Err(KernelError::OutOfMemory)
     }
-    
+
     pub fn unregister_module(name: &str) -> Result<(), KernelError> {
         let mut table = MODULE_TABLE.lock();
-    
+
         for slot in table.iter_mut() {
             if let Some(m) = slot {
                 if m.matches_name(name) {
@@ -184,7 +184,7 @@ pub mod manager {
                 }
             }
         }
-    
+
         Err(KernelError::NotFound)
     }
 }

@@ -87,7 +87,6 @@ pub fn record_lock_release(prior: LockRank) {
     CURRENT_HELD_RANK.store(prior as u8, Ordering::Relaxed);
 }
 
-
 pub mod rank {
     pub use super::*;
 }

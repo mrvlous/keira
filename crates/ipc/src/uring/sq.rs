@@ -21,7 +21,7 @@ pub mod entry {
     pub const IOSQE_IO_HARDLINK: u8 = 1 << 3;
     pub const IOSQE_ASYNC: u8 = 1 << 4;
     pub const IOSQE_BUFFER_SELECT: u8 = 1 << 5;
-    
+
     #[repr(C)]
     #[derive(Copy, Clone, Debug)]
     pub struct SubmissionQueueEntry {
@@ -39,7 +39,7 @@ pub mod entry {
         pub splice_fd_in: i32,
         pub pad2: [u64; 2],
     }
-    
+
     impl Default for SubmissionQueueEntry {
         fn default() -> Self {
             Self {

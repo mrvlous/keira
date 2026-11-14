@@ -16,9 +16,9 @@
 
 pub mod table {
     use crate::sync::mutex::SpinMutex;
-    
+
     pub const MAX_DYNAMIC_SYMBOLS: usize = 32;
-    
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct KernelSymbol {
         /// ASCII symbol identifier.
@@ -28,7 +28,7 @@ pub mod table {
         /// Indicates whether symbol requires GPL-compatible module licensing.
         pub is_gpl_only: bool,
     }
-    
+
     #[derive(Debug, Clone, Copy)]
     pub struct DynamicSymbol {
         /// Exported symbol name.
@@ -38,7 +38,7 @@ pub mod table {
         /// Indicates whether symbol requires GPL-compatible licensing.
         pub is_gpl_only: bool,
     }
-    
+
     pub static BASE_KALLSYMS: [KernelSymbol; 10] = [
         KernelSymbol {
             name: "vga_print_str",
@@ -91,32 +91,34 @@ pub mod table {
             is_gpl_only: true,
         },
     ];
-    
+
     pub static DYNAMIC_SYMBOLS: SpinMutex<[Option<DynamicSymbol>; MAX_DYNAMIC_SYMBOLS]> = {
         const EMPTY: Option<DynamicSymbol> = None;
         SpinMutex::new([EMPTY; MAX_DYNAMIC_SYMBOLS])
     };
 }
 
-pub use self::table::{DynamicSymbol, KernelSymbol, BASE_KALLSYMS, DYNAMIC_SYMBOLS, MAX_DYNAMIC_SYMBOLS};
+pub use self::table::{
+    DynamicSymbol, KernelSymbol, BASE_KALLSYMS, DYNAMIC_SYMBOLS, MAX_DYNAMIC_SYMBOLS,
+};
 
 pub mod resolve {
-    use crate::module::symbol::table::{DynamicSymbol, BASE_KALLSYMS, DYNAMIC_SYMBOLS};
     use crate::error::KernelError;
-    
+    use crate::module::symbol::table::{DynamicSymbol, BASE_KALLSYMS, DYNAMIC_SYMBOLS};
+
     pub fn register_symbol(
         name: &'static str,
         addr: u64,
         is_gpl_only: bool,
     ) -> Result<(), KernelError> {
         let mut symbols = DYNAMIC_SYMBOLS.lock();
-    
+
         for sym in symbols.iter().flatten() {
             if sym.name == name {
                 return Err(KernelError::Generic("Symbol already exported"));
             }
         }
-    
+
         for slot in symbols.iter_mut() {
             if slot.is_none() {
                 *slot = Some(DynamicSymbol {
@@ -127,41 +129,41 @@ pub mod resolve {
                 return Ok(());
             }
         }
-    
+
         Err(KernelError::OutOfMemory)
     }
-    
+
     pub fn resolve_symbol(name: &str) -> Option<u64> {
         for sym in BASE_KALLSYMS.iter() {
             if sym.name == name {
                 return Some(sym.addr);
             }
         }
-    
+
         let symbols = DYNAMIC_SYMBOLS.lock();
         for sym in symbols.iter().flatten() {
             if sym.name == name {
                 return Some(sym.addr);
             }
         }
-    
+
         None
     }
-    
+
     pub fn lookup_symbol_by_addr(addr: u64) -> Option<&'static str> {
         for sym in BASE_KALLSYMS.iter() {
             if sym.addr == addr {
                 return Some(sym.name);
             }
         }
-    
+
         let symbols = DYNAMIC_SYMBOLS.lock();
         for sym in symbols.iter().flatten() {
             if sym.addr == addr {
                 return Some(sym.name);
             }
         }
-    
+
         None
     }
 }

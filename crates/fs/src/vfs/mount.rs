@@ -17,11 +17,11 @@
 pub mod entry {
     use super::flags::*;
     use crate::vfs::types::FilesystemType;
-    
+
     pub const MAX_MOUNT_DEV: usize = 64;
-    
+
     pub const MAX_MOUNT_PATH: usize = 128;
-    
+
     #[derive(Clone, Copy)]
     pub struct MountEntry {
         /// Active allocation marker.
@@ -39,7 +39,7 @@ pub mod entry {
         /// Mount flags (MS_RDONLY, MS_NOSUID, MS_NODEV, MS_NOEXEC).
         pub flags: u32,
     }
-    
+
     impl MountEntry {
         /// Creates an empty inactive mount entry.
         pub const fn empty() -> Self {
@@ -53,7 +53,7 @@ pub mod entry {
                 flags: 0,
             }
         }
-    
+
         /// Returns source device identifier string.
         pub fn source_str(&self) -> &str {
             if !self.is_active || self.source_len == 0 {
@@ -61,7 +61,7 @@ pub mod entry {
             }
             core::str::from_utf8(&self.source[..self.source_len]).unwrap_or("")
         }
-    
+
         /// Returns target mount point directory path string.
         pub fn target_str(&self) -> &str {
             if !self.is_active || self.target_len == 0 {
@@ -69,11 +69,11 @@ pub mod entry {
             }
             core::str::from_utf8(&self.target[..self.target_len]).unwrap_or("")
         }
-    
+
         /// Formats mount option flags into comma-separated text representation.
         pub fn format_flags(&self, buf: &mut [u8]) -> usize {
             let mut offset = 0;
-    
+
             macro_rules! append_str {
                 ($s:expr) => {
                     let bytes = $s.as_bytes();
@@ -83,13 +83,13 @@ pub mod entry {
                     }
                 };
             }
-    
+
             if (self.flags & MS_RDONLY) != 0 {
                 append_str!("ro");
             } else {
                 append_str!("rw");
             }
-    
+
             if (self.flags & MS_NOSUID) != 0 {
                 append_str!(",nosuid");
             }
@@ -107,7 +107,7 @@ pub mod entry {
             } else {
                 append_str!(",relatime");
             }
-    
+
             offset
         }
     }
@@ -115,25 +115,25 @@ pub mod entry {
 
 pub mod flags {
     pub const MS_RDONLY: u32 = 1;
-    
+
     pub const MS_NOSUID: u32 = 2;
-    
+
     pub const MS_NODEV: u32 = 4;
-    
+
     pub const MS_NOEXEC: u32 = 8;
-    
+
     pub const MS_SYNCHRONOUS: u32 = 16;
-    
+
     pub const MS_REMOUNT: u32 = 32;
-    
+
     pub const MS_MANDLOCK: u32 = 64;
-    
+
     pub const MS_DIRSYNC: u32 = 128;
-    
+
     pub const MS_NOATIME: u32 = 1024;
-    
+
     pub const MS_NODIRATIME: u32 = 2048;
-    
+
     pub const MS_BIND: u32 = 4096;
 }
 
@@ -142,14 +142,14 @@ pub mod table {
     use super::flags::*;
     use crate::vfs::types::FilesystemType;
     use keira_core::sync::SpinMutex;
-    
+
     pub const MAX_MOUNTS: usize = 32;
-    
+
     pub struct MountTable {
         pub entries: [MountEntry; MAX_MOUNTS],
         pub is_initialized: bool,
     }
-    
+
     impl MountTable {
         /// Creates an empty uninitialized mount table.
         pub const fn new() -> Self {
@@ -159,9 +159,9 @@ pub mod table {
             }
         }
     }
-    
+
     static MOUNT_TABLE: SpinMutex<MountTable> = SpinMutex::new(MountTable::new());
-    
+
     fn sanitize_mount_path(path: &str) -> &str {
         if path.len() > 1 && path.ends_with('/') {
             path.trim_end_matches('/')
@@ -169,13 +169,13 @@ pub mod table {
             path
         }
     }
-    
+
     pub fn ensure_mount_table_initialized() {
         let mut table = MOUNT_TABLE.lock();
         if table.is_initialized {
             return;
         }
-    
+
         // 1. Root filesystem (/)
         let mut root_entry = MountEntry::empty();
         root_entry.is_active = true;
@@ -198,7 +198,7 @@ pub mod table {
         root_entry.fs_type = FilesystemType::Fat;
         root_entry.flags = 0;
         table.entries[0] = root_entry;
-    
+
         // 2. ProcFS (/proc)
         let mut proc_entry = MountEntry::empty();
         proc_entry.is_active = true;
@@ -211,7 +211,7 @@ pub mod table {
         proc_entry.fs_type = FilesystemType::Proc;
         proc_entry.flags = MS_RDONLY | MS_NOSUID | MS_NODEV | MS_NOEXEC;
         table.entries[1] = proc_entry;
-    
+
         // 3. DevFS (/dev)
         let mut dev_entry = MountEntry::empty();
         dev_entry.is_active = true;
@@ -224,7 +224,7 @@ pub mod table {
         dev_entry.fs_type = FilesystemType::Dev;
         dev_entry.flags = MS_NOSUID;
         table.entries[2] = dev_entry;
-    
+
         // 4. Initrd (/initrd)
         let mut initrd_entry = MountEntry::empty();
         initrd_entry.is_active = true;
@@ -237,10 +237,10 @@ pub mod table {
         initrd_entry.fs_type = FilesystemType::Initrd;
         initrd_entry.flags = MS_RDONLY;
         table.entries[3] = initrd_entry;
-    
+
         table.is_initialized = true;
     }
-    
+
     pub fn mount(
         source: &str,
         target: &str,
@@ -248,7 +248,7 @@ pub mod table {
         flags: u32,
     ) -> Result<(), &'static str> {
         ensure_mount_table_initialized();
-    
+
         let clean_target = sanitize_mount_path(target);
         if !clean_target.starts_with('/') {
             return Err("Mount target must be an absolute path");
@@ -259,9 +259,9 @@ pub mod table {
         if source.len() > MAX_MOUNT_DEV {
             return Err("Mount source device exceeds maximum length");
         }
-    
+
         let mut table = MOUNT_TABLE.lock();
-    
+
         // Check if target is already mounted
         for entry in table.entries.iter_mut() {
             if entry.is_active && entry.target_str() == clean_target {
@@ -273,7 +273,7 @@ pub mod table {
                 return Err("Target directory is already mounted");
             }
         }
-    
+
         // Allocate an empty slot
         for entry in table.entries.iter_mut() {
             if !entry.is_active {
@@ -287,18 +287,18 @@ pub mod table {
                 return Ok(());
             }
         }
-    
+
         Err("Mount table full: maximum concurrent mounts reached")
     }
-    
+
     pub fn umount(target: &str, _flags: u32) -> Result<(), &'static str> {
         ensure_mount_table_initialized();
-    
+
         let clean_target = sanitize_mount_path(target);
         if clean_target == "/" {
             return Err("Device or resource busy: root filesystem cannot be unmounted");
         }
-    
+
         let mut table = MOUNT_TABLE.lock();
         for entry in table.entries.iter_mut() {
             if entry.is_active
@@ -311,24 +311,24 @@ pub mod table {
                 return Ok(());
             }
         }
-    
+
         Err("No such file or directory: mount point not found")
     }
-    
+
     pub fn lookup_mount(path: &str) -> (&str, FilesystemType) {
         ensure_mount_table_initialized();
-    
+
         let clean_path = sanitize_mount_path(path);
         let table = MOUNT_TABLE.lock();
-    
+
         let mut best_match_len = 0;
         let mut best_match_entry: Option<MountEntry> = None;
-    
+
         for entry in table.entries.iter() {
             if !entry.is_active {
                 continue;
             }
-    
+
             let tgt = entry.target_str();
             if tgt == "/" {
                 if best_match_len == 0 {
@@ -337,11 +337,11 @@ pub mod table {
                 }
                 continue;
             }
-    
+
             if clean_path == tgt {
                 return ("", entry.fs_type);
             }
-    
+
             if clean_path.starts_with(tgt) {
                 let next_byte = clean_path.as_bytes().get(tgt.len());
                 if next_byte == Some(&b'/') && tgt.len() > best_match_len {
@@ -350,32 +350,33 @@ pub mod table {
                 }
             }
         }
-    
+
         if let Some(entry) = best_match_entry {
             let tgt = entry.target_str();
             if tgt == "/" {
                 (clean_path, entry.fs_type)
             } else {
-                let sub = if clean_path.len() > tgt.len() && clean_path.as_bytes()[tgt.len()] == b'/' {
-                    &clean_path[tgt.len() + 1..]
-                } else if clean_path.len() > tgt.len() {
-                    &clean_path[tgt.len()..]
-                } else {
-                    ""
-                };
+                let sub =
+                    if clean_path.len() > tgt.len() && clean_path.as_bytes()[tgt.len()] == b'/' {
+                        &clean_path[tgt.len() + 1..]
+                    } else if clean_path.len() > tgt.len() {
+                        &clean_path[tgt.len()..]
+                    } else {
+                        ""
+                    };
                 (sub, entry.fs_type)
             }
         } else {
             (clean_path, FilesystemType::Fat)
         }
     }
-    
+
     pub fn format_proc_mounts(buf: &mut [u8]) -> usize {
         ensure_mount_table_initialized();
-    
+
         let table = MOUNT_TABLE.lock();
         let mut offset = 0;
-    
+
         macro_rules! append_str {
             ($s:expr) => {
                 let bytes = $s.as_bytes();
@@ -385,19 +386,19 @@ pub mod table {
                 }
             };
         }
-    
+
         for entry in table.entries.iter() {
             if !entry.is_active {
                 continue;
             }
-    
+
             append_str!(entry.source_str());
             append_str!(" ");
             append_str!(entry.target_str());
             append_str!(" ");
             append_str!(entry.fs_type.as_str());
             append_str!(" ");
-    
+
             let mut flags_buf = [0u8; 64];
             let flags_len = entry.format_flags(&mut flags_buf);
             if let Ok(flags_str) = core::str::from_utf8(&flags_buf[..flags_len]) {
@@ -405,39 +406,39 @@ pub mod table {
             } else {
                 append_str!("rw");
             }
-    
+
             append_str!(" 0 0\n");
         }
-    
+
         offset
     }
-    
+
     pub fn get_active_mounts() -> ([MountEntry; MAX_MOUNTS], usize) {
         ensure_mount_table_initialized();
         let table = MOUNT_TABLE.lock();
         let mut copies = [MountEntry::empty(); MAX_MOUNTS];
         let mut count = 0;
-    
+
         for entry in table.entries.iter() {
             if entry.is_active {
                 copies[count] = *entry;
                 count += 1;
             }
         }
-    
+
         (copies, count)
     }
 }
 
 pub mod tmpfs {
     use keira_core::sync::SpinMutex;
-    
+
     pub const MAX_TMPFS_FILES: usize = 16;
-    
+
     pub const MAX_TMPFS_FILE_SIZE: usize = 8192;
-    
+
     pub const MAX_TMPFS_NAME: usize = 64;
-    
+
     #[derive(Clone, Copy)]
     pub struct TmpfsNode {
         pub is_active: bool,
@@ -447,7 +448,7 @@ pub mod tmpfs {
         pub data: [u8; MAX_TMPFS_FILE_SIZE],
         pub size: usize,
     }
-    
+
     impl TmpfsNode {
         pub const fn empty() -> Self {
             Self {
@@ -459,7 +460,7 @@ pub mod tmpfs {
                 size: 0,
             }
         }
-    
+
         pub fn name_str(&self) -> &str {
             if !self.is_active || self.name_len == 0 {
                 return "";
@@ -467,10 +468,10 @@ pub mod tmpfs {
             core::str::from_utf8(&self.name[..self.name_len]).unwrap_or("")
         }
     }
-    
+
     static TMPFS_NODES: SpinMutex<[TmpfsNode; MAX_TMPFS_FILES]> =
         SpinMutex::new([TmpfsNode::empty(); MAX_TMPFS_FILES]);
-    
+
     fn sanitize_name(name: &str) -> &str {
         let clean = name.trim_matches('/');
         if clean.is_empty() {
@@ -479,17 +480,17 @@ pub mod tmpfs {
             clean
         }
     }
-    
+
     pub fn create_file(name: &str) -> Result<(), &'static str> {
         let clean = sanitize_name(name);
         let mut nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter() {
             if node.is_active && node.name_str() == clean {
                 return Err("File already exists");
             }
         }
-    
+
         for node in nodes.iter_mut() {
             if !node.is_active {
                 node.is_active = true;
@@ -500,20 +501,20 @@ pub mod tmpfs {
                 return Ok(());
             }
         }
-    
+
         Err("TmpFS out of directory space")
     }
-    
+
     pub fn create_dir(name: &str) -> Result<(), &'static str> {
         let clean = sanitize_name(name);
         let mut nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter() {
             if node.is_active && node.name_str() == clean {
                 return Err("Directory already exists");
             }
         }
-    
+
         for node in nodes.iter_mut() {
             if !node.is_active {
                 node.is_active = true;
@@ -524,14 +525,14 @@ pub mod tmpfs {
                 return Ok(());
             }
         }
-    
+
         Err("TmpFS out of directory space")
     }
-    
+
     pub fn write_file(name: &str, content: &[u8]) -> Result<usize, &'static str> {
         let clean = sanitize_name(name);
         let mut nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter_mut() {
             if node.is_active && node.name_str() == clean {
                 if node.is_dir {
@@ -543,7 +544,7 @@ pub mod tmpfs {
                 return Ok(to_write);
             }
         }
-    
+
         // If file doesn't exist, create and write
         for node in nodes.iter_mut() {
             if !node.is_active {
@@ -557,14 +558,14 @@ pub mod tmpfs {
                 return Ok(to_write);
             }
         }
-    
+
         Err("TmpFS full")
     }
-    
+
     pub fn append_file(name: &str, content: &[u8]) -> Result<usize, &'static str> {
         let clean = sanitize_name(name);
         let mut nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter_mut() {
             if node.is_active && node.name_str() == clean {
                 if node.is_dir {
@@ -577,14 +578,14 @@ pub mod tmpfs {
                 return Ok(to_write);
             }
         }
-    
+
         Err("No such file in TmpFS")
     }
-    
+
     pub fn read_file(name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         let clean = sanitize_name(name);
         let nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter() {
             if node.is_active && node.name_str() == clean {
                 if node.is_dir {
@@ -595,14 +596,18 @@ pub mod tmpfs {
                 return Ok(to_read);
             }
         }
-    
+
         Err("No such file in TmpFS")
     }
-    
-    pub fn read_file_offset(name: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
+
+    pub fn read_file_offset(
+        name: &str,
+        offset: u64,
+        buf: &mut [u8],
+    ) -> Result<usize, &'static str> {
         let clean = sanitize_name(name);
         let nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter() {
             if node.is_active && node.name_str() == clean {
                 if node.is_dir {
@@ -618,23 +623,23 @@ pub mod tmpfs {
                 return Ok(to_read);
             }
         }
-    
+
         Err("No such file in TmpFS")
     }
-    
+
     pub fn get_file_size(name: &str) -> Result<usize, &'static str> {
         let clean = sanitize_name(name);
         let nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter() {
             if node.is_active && node.name_str() == clean {
                 return Ok(node.size);
             }
         }
-    
+
         Err("No such file in TmpFS")
     }
-    
+
     pub fn exists(name: &str) -> bool {
         let clean = sanitize_name(name);
         if clean == "." || clean.is_empty() {
@@ -643,7 +648,7 @@ pub mod tmpfs {
         let nodes = TMPFS_NODES.lock();
         nodes.iter().any(|n| n.is_active && n.name_str() == clean)
     }
-    
+
     pub fn is_dir(name: &str) -> bool {
         let clean = sanitize_name(name);
         if clean == "." || clean.is_empty() {
@@ -654,21 +659,21 @@ pub mod tmpfs {
             .iter()
             .any(|n| n.is_active && n.name_str() == clean && n.is_dir)
     }
-    
+
     pub fn remove_entry(name: &str) -> Result<(), &'static str> {
         let clean = sanitize_name(name);
         let mut nodes = TMPFS_NODES.lock();
-    
+
         for node in nodes.iter_mut() {
             if node.is_active && node.name_str() == clean {
                 node.is_active = false;
                 return Ok(());
             }
         }
-    
+
         Err("No such file in TmpFS")
     }
-    
+
     pub fn get_tmpfs_entry(index: usize) -> Option<([u8; MAX_TMPFS_NAME], usize, u8, u64)> {
         if index == 0 {
             let mut name = [0u8; MAX_TMPFS_NAME];
@@ -681,7 +686,7 @@ pub mod tmpfs {
             name[1] = b'.';
             return Some((name, 2, 4, 2));
         }
-    
+
         let target_idx = index - 2;
         let nodes = TMPFS_NODES.lock();
         let mut current_idx = 0;
@@ -697,7 +702,7 @@ pub mod tmpfs {
         }
         None
     }
-    
+
     pub fn clear_all() {
         let mut nodes = TMPFS_NODES.lock();
         for node in nodes.iter_mut() {
@@ -709,20 +714,20 @@ pub mod tmpfs {
 pub use self::entry::*;
 pub use self::flags::*;
 pub use self::table::*;
-pub use self::tmpfs::*;
 pub use self::tmpfs::clear_all as clear_tmpfs;
+pub use self::tmpfs::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::vfs::types::FilesystemType;
-    
+
     #[test]
     fn test_default_mounts_initialization() {
         ensure_mount_table_initialized();
         let (mounts, count) = get_active_mounts();
         assert!(count >= 3);
-    
+
         let has_root = mounts[..count]
             .iter()
             .any(|m| m.target_str() == "/" && m.fs_type == FilesystemType::Fat);
@@ -732,62 +737,62 @@ mod tests {
         let has_dev = mounts[..count]
             .iter()
             .any(|m| m.target_str() == "/dev" && m.fs_type == FilesystemType::Dev);
-    
+
         assert!(has_root);
         assert!(has_proc);
         assert!(has_dev);
     }
-    
+
     #[test]
     fn test_mount_lookup_routing() {
         ensure_mount_table_initialized();
-    
+
         let (sub, fs) = lookup_mount("/proc/cpuinfo");
         assert_eq!(sub, "cpuinfo");
         assert_eq!(fs, FilesystemType::Proc);
-    
+
         let (sub, fs) = lookup_mount("/dev/tty");
         assert_eq!(sub, "tty");
         assert_eq!(fs, FilesystemType::Dev);
-    
+
         let (sub, fs) = lookup_mount("/bin/sh");
         assert_eq!(sub, "/bin/sh");
         assert_eq!(fs, FilesystemType::Fat);
     }
-    
+
     #[test]
     fn test_dynamic_mount_and_umount() {
         ensure_mount_table_initialized();
-    
+
         let res = mount("tmpfs", "/mnt", FilesystemType::Tmpfs, MS_NOSUID);
         assert!(res.is_ok());
-    
+
         let (sub, fs) = lookup_mount("/mnt/data.txt");
         assert_eq!(sub, "data.txt");
         assert_eq!(fs, FilesystemType::Tmpfs);
-    
+
         let unmount_res = umount("/mnt", 0);
         assert!(unmount_res.is_ok());
-    
+
         let (sub, fs) = lookup_mount("/mnt/data.txt");
         assert_eq!(sub, "/mnt/data.txt");
         assert_eq!(fs, FilesystemType::Fat);
     }
-    
+
     #[test]
     fn test_root_cannot_be_unmounted() {
         ensure_mount_table_initialized();
         let res = umount("/", 0);
         assert!(res.is_err());
     }
-    
+
     #[test]
     fn test_proc_mounts_format() {
         ensure_mount_table_initialized();
         let mut buf = [0u8; 1024];
         let len = format_proc_mounts(&mut buf);
         assert!(len > 0);
-    
+
         let output = core::str::from_utf8(&buf[..len]).unwrap();
         assert!(output.contains("/proc procfs"));
         assert!(output.contains("/dev devfs"));
