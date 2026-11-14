@@ -225,6 +225,15 @@ static int resolve_binary_path(const char *cmd, char *out_path, size_t out_size)
     return -1;
 }
 
+static int is_sh_binary(const char *cmd) {
+    if (!cmd) {
+        return 0;
+    }
+    const char *base = strrchr(cmd, '/');
+    const char *name = base ? base + 1 : cmd;
+    return (strcmp(name, "sh") == 0 || strcmp(name, "sh.elf") == 0);
+}
+
 static int execute_single_command(int argc, char **argv) {
     if (argc == 0 || !argv[0]) {
         return 0;
@@ -319,6 +328,8 @@ static int execute_single_command(int argc, char **argv) {
     } else if (strcmp(clean_argv[0], "exit") == 0) {
         int code = (clean_argc > 1) ? atoi(clean_argv[1]) : 0;
         exit(code);
+    } else if (is_sh_binary(clean_argv[0]) && clean_argc == 1 && isatty(STDIN_FILENO)) {
+        ret_status = 0;
     } else {
         char resolved_path[256];
         if (resolve_binary_path(clean_argv[0], resolved_path, sizeof(resolved_path)) != 0) {
@@ -337,6 +348,9 @@ static int execute_single_command(int argc, char **argv) {
                     ret_status = WEXITSTATUS(status);
                 } else {
                     ret_status = 0;
+                }
+                if (is_sh_binary(resolved_path) && clean_argc == 1 && isatty(STDIN_FILENO)) {
+                    exit(ret_status);
                 }
             }
         }
