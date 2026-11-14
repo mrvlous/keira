@@ -81,6 +81,9 @@ static int grep_fd(int fd, const char *display_name, const char *pattern, int pr
     ssize_t bytes_read;
 
     while ((bytes_read = read(fd, buf, sizeof(buf))) > 0) {
+        if (bytes_read == 1 && (buf[0] == 0x04 || buf[0] == 0x03)) {
+            break;
+        }
         for (ssize_t i = 0; i < bytes_read; i++) {
             char c = buf[i];
             if (c == '\n') {
@@ -187,6 +190,10 @@ int main(int argc, char **argv) {
     int exit_status = 1;
 
     if (files_count == 0) {
+        if (isatty(STDIN_FILENO)) {
+            print_usage();
+            return 2;
+        }
         int m = grep_fd(STDIN_FILENO, "(standard input)", pattern, 0);
         if (m > 0) {
             exit_status = 0;

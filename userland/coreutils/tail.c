@@ -59,6 +59,9 @@ static int tail_fd(int fd, long max_lines) {
     ssize_t n;
 
     while ((n = read(fd, buf, sizeof(buf))) > 0) {
+        if (n == 1 && (buf[0] == 0x04 || buf[0] == 0x03)) {
+            break;
+        }
         for (ssize_t i = 0; i < n; i++) {
             char c = buf[i];
             if (c == '\n') {
@@ -145,6 +148,11 @@ int main(int argc, char **argv) {
     int exit_status = 0;
 
     if (files_count == 0) {
+        if (isatty(STDIN_FILENO)) {
+            puts("Usage: tail [OPTIONS] [FILE...]");
+            puts("Try 'tail --help' for more information.");
+            return 1;
+        }
         tail_fd(STDIN_FILENO, max_lines);
     } else {
         int first = 1;

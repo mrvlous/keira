@@ -73,6 +73,9 @@ static int wc_fd(int fd, const char *display_name, long *out_lines, long *out_wo
     ssize_t n;
 
     while ((n = read(fd, buf, sizeof(buf))) > 0) {
+        if (n == 1 && (buf[0] == 0x04 || buf[0] == 0x03)) {
+            break;
+        }
         bytes += n;
         for (ssize_t i = 0; i < n; i++) {
             char c = buf[i];
@@ -137,6 +140,11 @@ int main(int argc, char **argv) {
     int exit_status = 0;
 
     if (files_count == 0) {
+        if (isatty(STDIN_FILENO)) {
+            puts("Usage: wc [OPTIONS] [FILE...]");
+            puts("Try 'wc --help' for more information.");
+            return 1;
+        }
         long l = 0, w = 0, b = 0;
         if (wc_fd(STDIN_FILENO, NULL, &l, &w, &b) != 0) {
             exit_status = 1;

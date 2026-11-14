@@ -33,6 +33,9 @@ static int cat_fd(int fd, const char *name) {
         if (n == 0) {
             break;
         }
+        if (n == 1 && (buf[0] == 0x04 || buf[0] == 0x03)) {
+            break;
+        }
 
         ssize_t written = 0;
         while (written < n) {
@@ -61,6 +64,11 @@ int main(int argc, char **argv) {
     }
 
     if (argc == 1) {
+        if (isatty(STDIN_FILENO)) {
+            puts("Usage: cat [FILE...]");
+            puts("Try 'cat --help' for more information.");
+            return 1;
+        }
         return cat_fd(STDIN_FILENO, "standard input");
     }
 

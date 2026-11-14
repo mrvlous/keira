@@ -41,6 +41,9 @@ static int head_fd(int fd, long max_lines) {
     ssize_t bytes_read;
 
     while (lines_printed < max_lines && (bytes_read = read(fd, buf, sizeof(buf))) > 0) {
+        if (bytes_read == 1 && (buf[0] == 0x04 || buf[0] == 0x03)) {
+            return 0;
+        }
         ssize_t chunk_start = 0;
         for (ssize_t i = 0; i < bytes_read; i++) {
             if (buf[i] == '\n') {
@@ -93,6 +96,11 @@ int main(int argc, char **argv) {
     int exit_status = 0;
 
     if (files_count == 0) {
+        if (isatty(STDIN_FILENO)) {
+            puts("Usage: head [OPTIONS] [FILE...]");
+            puts("Try 'head --help' for more information.");
+            return 1;
+        }
         head_fd(STDIN_FILENO, max_lines);
     } else {
         int first = 1;
