@@ -294,6 +294,9 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                                     }
                                     return errno_to_ret(EFAULT);
                                 }
+                                if keira_io::tty::take_eof_pending() {
+                                    return 0;
+                                }
                                 if t.fds[fd].nonblocking {
                                     return errno_to_ret(EAGAIN);
                                 }
@@ -379,6 +382,9 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                                 return bytes as u64;
                             }
                             return errno_to_ret(EFAULT);
+                        }
+                        if keira_io::tty::take_eof_pending() {
+                            return 0;
                         }
                     } else {
                         return errno_to_ret(EIO);
