@@ -17,7 +17,7 @@
 use crate::tcp::state::TcpState;
 
 pub const MAX_SOCKETS: usize = 32;
-pub const SOCKET_BUF_SIZE: usize = 2048;
+pub const SOCKET_BUF_SIZE: usize = 4096;
 pub const UNIX_PATH_MAX: usize = 108;
 
 /// Legacy TCP socket structure maintained for backward compatibility.
@@ -59,6 +59,9 @@ pub struct SocketEntry {
     pub remote_ip: [u8; 4],
     pub local_port: u16,
     pub remote_port: u16,
+    pub local_seq: u32,
+    pub remote_seq: u32,
+    pub fin_received: bool,
     pub rx_buf: [u8; SOCKET_BUF_SIZE],
     pub rx_len: usize,
     pub tx_buf: [u8; SOCKET_BUF_SIZE],
@@ -84,6 +87,9 @@ impl SocketEntry {
             remote_ip: [0; 4],
             local_port: 0,
             remote_port: 0,
+            local_seq: 0,
+            remote_seq: 0,
+            fin_received: false,
             rx_buf: [0; SOCKET_BUF_SIZE],
             rx_len: 0,
             tx_buf: [0; SOCKET_BUF_SIZE],

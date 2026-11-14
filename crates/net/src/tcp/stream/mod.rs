@@ -16,4 +16,7 @@
 
 pub mod client;
 
-pub use client::{parse_tcp_payload, tcp_send_and_receive};
+pub use client::{
+    get_next_client_seq, parse_tcp_payload, tcp_connect, tcp_receive_segment, tcp_send_ack,
+    tcp_send_and_receive, tcp_send_fin, tcp_send_segment,
+};
