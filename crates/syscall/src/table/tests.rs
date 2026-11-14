@@ -46,6 +46,7 @@ pub mod test {
         assert_eq!(SYS_PRLIMIT64, 104);
         assert_eq!(SYS_SOCKETPAIR, 105);
         assert_eq!(SYS_POLL, 106);
+        assert_eq!(SYS_DNS_RESOLVE, 110);
     }
 
     #[test]
@@ -75,6 +76,7 @@ pub mod test {
         assert_eq!(syscall_name(SYS_SOCKETPAIR), "sys_socketpair");
         assert_eq!(syscall_name(SYS_POLL), "sys_poll");
         assert_eq!(syscall_name(SYS_SELECT), "sys_select");
+        assert_eq!(syscall_name(SYS_DNS_RESOLVE), "sys_dns_resolve");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 

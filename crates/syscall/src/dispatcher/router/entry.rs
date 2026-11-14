@@ -159,6 +159,7 @@ fn syscall_dispatcher_inner(
         107 => handle_select(arg1, arg2, arg3, arg4, arg5),
         108 => handle_uname(arg1),
         109 | 169 => handle_reboot(arg1, arg2, arg3, arg4),
+        110 => handle_dns_resolve(arg1, arg2),
         _ => errno_to_ret(ENOSYS),
     }
 }

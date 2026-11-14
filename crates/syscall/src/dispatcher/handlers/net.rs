@@ -212,3 +212,35 @@ pub fn handle_socketpair(domain: u64, socket_type: u64, protocol: u64, sv_ptr: u
         }
     }
 }
+
+/// Syscall 110: Resolve a domain name to IPv4 address via UDP 53 DNS.
+pub fn handle_dns_resolve(arg1: u64, arg2: u64) -> u64 {
+    let host_ptr = arg1 as *const u8;
+    let mut host_buf = [0u8; 128];
+    let len = match unsafe { read_user_string(host_ptr, &mut host_buf) } {
+        Ok(l) => l,
+        Err(e) => return errno_to_ret(e),
+    };
+    if len == 0 {
+        return errno_to_ret(EINVAL);
+    }
+    if let Err(e) = unsafe { validate_user_ptr(arg2, 4, true) } {
+        return errno_to_ret(e);
+    }
+    if let Ok(host_str) = core::str::from_utf8(&host_buf[..len]) {
+        unsafe {
+            match keira_net::dns::resolve_domain(host_str) {
+                Ok(ip) => {
+                    if copy_to_user(arg2, &ip).is_ok() {
+                        0
+                    } else {
+                        errno_to_ret(EFAULT)
+                    }
+                }
+                Err(_) => errno_to_ret(EIO),
+            }
+        }
+    } else {
+        errno_to_ret(EINVAL)
+    }
+}

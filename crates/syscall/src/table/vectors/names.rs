@@ -123,6 +123,7 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_SELECT => "sys_select",
         SYS_UNAME => "sys_uname",
         SYS_REBOOT => "sys_reboot",
+        SYS_DNS_RESOLVE => "sys_dns_resolve",
         _ => "sys_unknown",
     }
 }

@@ -24,3 +24,4 @@ pub const SYS_LISTEN: u64 = 43;
 pub const SYS_NETFILTER: u64 = 76;
 pub const SYS_PING: u64 = 89;
 pub const SYS_SOCKETPAIR: u64 = 105;
+pub const SYS_DNS_RESOLVE: u64 = 110;

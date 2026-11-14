@@ -92,6 +92,15 @@ fn test_socketpair_syscall_mapping() {
 }
 
 #[test]
+fn test_dns_resolve_syscall_mapping_and_handling() {
+    assert_eq!(table::syscall_name(SYS_DNS_RESOLVE), "sys_dns_resolve");
+    assert_eq!(
+        dispatcher::syscall_dispatcher(SYS_DNS_RESOLVE, 0, 0, 0, 0, 0, 0),
+        errno_to_ret(EFAULT)
+    );
+}
+
+#[test]
 fn test_uname_syscall_mapping_and_handling() {
     assert_eq!(table::syscall_name(SYS_UNAME), "sys_uname");
     assert_eq!(
