@@ -206,6 +206,8 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b.elf; \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b; \
 	done
+	$(Q)cp $(DESTDIR)/bin/fetch.elf $(DESTDIR)/bin/curl.elf
+	$(Q)cp $(DESTDIR)/bin/fetch $(DESTDIR)/bin/curl
 	@$(LOG_DONE) "Userland installation complete ($(ARCH))"
 
 format: ## Format all userland C source and header files with clang-format
