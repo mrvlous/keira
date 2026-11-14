@@ -66,7 +66,6 @@ pub fn enter_main_loop() -> ! {
         if let Some(path) = sh_path {
             vga::set_color(vga::Color::White, vga::Color::Black);
             let _ = shell::run_user_program(path, &[path]);
-            vga::print_str("logout\n");
         } else {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str(

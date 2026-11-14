@@ -198,7 +198,6 @@ pub mod router {
 
                 unsafe {
                     let _ = crate::cmds::proc::task::run::run_user_program(sh_path, &[sh_path]);
-                    vga::print_str("logout\n");
                 }
             }
             "reset" | "reboot" => crate::cmds::reset::run(&mut parts),
