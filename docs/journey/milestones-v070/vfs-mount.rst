@@ -13,14 +13,14 @@ Prior to Milestone 35, path routing between FAT16, DevFS, ProcFS and Initrd reli
 
 Key accomplishments of Milestone 35 include:
 
-1. **VFS Mount Point Table & Registry (``crates/fs/src/vfs/mount/``)**:
+1. **VFS Mount Point Table & Registry (``crates/fs/src/vfs/mount.rs``)**:
 
    - Manages a thread-safe static table of active filesystem mount points protected by ``SpinMutex<MountTable>``.
    - Boots with canonical standard mount points: ``/`` (FAT16 root filesystem), ``/proc`` (ProcFS), ``/dev`` (DevFS) and ``/initrd`` (Initrd USTAR archive).
    - Implements longest-prefix matching path resolution (``lookup_mount``) that transparently strips the mount target prefix and routes the relative subpath to the appropriate filesystem driver.
    - Enforces POSIX mount flags: ``MS_RDONLY``, ``MS_NOSUID``, ``MS_NODEV``, ``MS_NOEXEC``, ``MS_REMOUNT`` and ``MS_BIND``.
 
-2. **In-Memory Volatile TmpFS Filesystem (``crates/fs/src/vfs/mount/tmpfs.rs``)**:
+2. **In-Memory Volatile TmpFS Filesystem (``crates/fs/src/vfs/mount.rs``)**:
 
    - Delivers a pure in-memory, zero-allocation volatile scratch filesystem driver (``TmpfsNode`` table).
    - Supports file creation, directory creation, read, write, append, directory enumeration (``get_tmpfs_entry``) and deletion.

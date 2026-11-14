@@ -9,7 +9,7 @@ The C runtime initialization stub provides the entry point for all userland ELF 
 Process Startup Protocol
 ========================
 
-When the kernel loader (``crates/fs/src/elf/loader/``) parses an ELF binary and creates a new Ring 3 task:
+When the kernel loader (``crates/fs/src/elf/loader.rs``) parses an ELF binary and creates a new Ring 3 task:
 
 1. The kernel pushes ``argc``, ``argv``, ``envp`` and the ``auxv`` vector onto the userland stack.
 2. The instruction pointer is set to the ELF entry address (``_start``).

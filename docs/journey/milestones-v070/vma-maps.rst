@@ -53,7 +53,7 @@ Through Milestone 50, Keira introduces:
 2.1 VMA Table Operations & Fork Inheritance
 -------------------------------------------
 
-Dynamic virtual memory allocations made via ``sys_mmap`` (vector 9) are recorded in ``VMA_TABLE`` located in ``crates/mem/src/vmm/area/table.rs``. Milestone 50 introduces query and inheritance routines:
+Dynamic virtual memory allocations made via ``sys_mmap`` (vector 9) are recorded in ``VMA_TABLE`` located in ``crates/mem/src/vmm/area.rs``. Milestone 50 introduces query and inheritance routines:
 
 * **``get_vmas_for_pml4(pml4: u64, out: &mut [VirtualMemoryArea]) -> usize``**: Scans the VMA table under spinlock protection and copies active VMAs belonging to the specified page directory into the caller-provided buffer.
 * **``clone_vmas_for_pml4(parent_pml4: u64, child_pml4: u64)``**: Called during ``clone_user_address_space`` and ``clone_user_address_space_cow``. Duplicates all active VMAs from the parent to the child address space, ensuring dynamic mappings survive process branching.
@@ -62,7 +62,7 @@ Dynamic virtual memory allocations made via ``sys_mmap`` (vector 9) are recorded
 2.2 Canonical Linux /proc/[pid]/maps Formatting
 -----------------------------------------------
 
-The synthesis engine in ``crates/task/src/scheduler/core/hooks.rs`` produces canonical Linux format lines:
+The synthesis engine in ``crates/task/src/scheduler/core.rs`` produces canonical Linux format lines:
 
 .. math::
 

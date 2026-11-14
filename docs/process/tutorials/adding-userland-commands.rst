@@ -14,9 +14,9 @@ Commands in Keira execute directly in kernel context within the shell subsystem 
 .. code-block:: text
 
    graph TD
-       Input["Terminal Input: 'sysinfo --all'"] --> Parser["crates/shell/src/terminal/input/keyboard.rs"]
-       Parser --> Dispatch["crates/shell/src/executor/dispatch/router.rs"]
-       Dispatch --> CliArgs["crates/shell/src/args/parser/cli.rs"]
+       Input["Terminal Input: 'sysinfo --all'"] --> Parser["crates/shell/src/terminal/input.rs"]
+       Parser --> Dispatch["crates/shell/src/executor/dispatch.rs"]
+       Dispatch --> CliArgs["crates/shell/src/args/parser.rs"]
        CliArgs --> Handler["crates/shell/src/cmds/<category>/sysinfo.rs"]
        Handler --> VGA["keira_io::vga (Standard 3 Monochrome Palette)"]
 
@@ -108,14 +108,14 @@ Create ``crates/shell/src/cmds/<category>/<cmd_name>.rs``:
       pub mod banner;
 
 2. **Add to Dispatch Router**:
-   In ``crates/shell/src/executor/dispatch/router.rs``, add the match arm:
+   In ``crates/shell/src/executor/dispatch.rs``, add the match arm:
 
    .. code-block:: rust
 
       "banner" => crate::cmds::util::banner::run(&mut parts),
 
 3. **Register in Autocomplete Table & Help**:
-   In ``crates/shell/src/autocomplete/table/engine.rs``, append ``"banner"`` to ``COMMANDS_LIST``:
+   In ``crates/shell/src/autocomplete/table.rs``, append ``"banner"`` to ``COMMANDS_LIST``:
 
    .. code-block:: rust
 
@@ -124,7 +124,7 @@ Create ``crates/shell/src/cmds/<category>/<cmd_name>.rs``:
           "banner",
       ];
 
-   Optionally, add ``"banner"`` to the appropriate category in ``crates/shell/src/cmds/util/misc/help.rs``.
+   Optionally, add ``"banner"`` to the appropriate category in ``crates/shell/src/cmds/util.rs``.
 
 4. Verification in QEMU
 =======================

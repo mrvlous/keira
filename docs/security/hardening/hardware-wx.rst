@@ -87,15 +87,15 @@ B. Memory Subsystem NX/DEP Bit 63 Enforcement
 
 All dynamic and static user memory mapping paths enforce ``PAGE_NO_EXECUTE`` (``1 << 63``) on 64-bit architectures:
 
-- **User Stack (``crates/syscall/src/dispatcher/handlers/process.rs`` & ``crates/shell/src/cmds/proc/task/run.rs``)**:
+- **User Stack (``crates/syscall/src/dispatcher/handlers/process.rs`` & ``crates/shell/src/cmds/proc.rs``)**:
 
   Allocated stack frames map with ``PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_NO_EXECUTE``.
 
-- **User Heap Demand Paging (``crates/syscall/src/exception/handler/dispatch.rs``)**:
+- **User Heap Demand Paging (``crates/syscall/src/exception/handler.rs``)**:
 
   Heap growth frames dispatched during ``#PF`` demand-paging map with ``PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER | PAGE_NO_EXECUTE``.
 
-- **W^X Policy Checks (``crates/mem/src/vmm/area/ops.rs``)**:
+- **W^X Policy Checks (``crates/mem/src/vmm/area.rs``)**:
 
   Both ``sys_mmap_file`` and ``sys_mprotect`` reject attempts to set both ``PROT_WRITE`` and ``PROT_EXEC`` simultaneously, returning explicit errors.
 
@@ -107,7 +107,7 @@ Test 32 in ``test_abi`` verifies hardware W^X enforcement:
 1. Issues ``mmap(NULL, 4096, PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)`` and asserts that ``MAP_FAILED`` is returned.
 2. Allocates a valid ``PROT_READ | PROT_WRITE`` page, invokes ``mprotect(ptr, 4096, PROT_WRITE | PROT_EXEC)`` and asserts non-zero rejection.
 
-D. Ring 0 Supervisor secinfo Command (crates/shell/src/cmds/sys/info/secinfo.rs)
+D. Ring 0 Supervisor secinfo Command (crates/shell/src/cmds/sys.rs)
 --------------------------------------------------------------------------------
 
 The supervisor command displays:

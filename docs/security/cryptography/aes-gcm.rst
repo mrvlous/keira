@@ -4,7 +4,7 @@
 Advanced Encryption Standard (AES-128 / AES-256)
 ================================================
 
-The cryptographic subsystem (``crates/crypto/src/cipher/aes/``) implements standard AES symmetric block encryption conforming to FIPS 197.
+The cryptographic subsystem (``crates/crypto/src/cipher/aes.rs``) implements standard AES symmetric block encryption conforming to FIPS 197.
 
 1. AES Round Transformations
 ============================

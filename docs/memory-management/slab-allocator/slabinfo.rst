@@ -58,7 +58,7 @@ Milestone 40 advances Keira's kernel observability and memory accounting without
 3. Implementation Details
 =========================
 
-A. Memory Subsystem Registry (crates/mem/src/slab/cache/manager.rs)
+A. Memory Subsystem Registry (crates/mem/src/slab/cache.rs)
 -------------------------------------------------------------------
 
 - ``DENTRY_CACHE``: Pre-allocated 128-byte cache for VFS directory entry descriptors.
@@ -79,7 +79,7 @@ B. ProcFS Telemetry Endpoints (crates/fs/src/proc/system/)
 
   Outputs key-value telemetry pairs: ``nr_free_pages``, ``nr_alloc_pages``, ``nr_page_table_pages``, ``nr_dirty``, ``nr_writeback``, ``nr_slab_reclaimable``, ``nr_slab_unreclaimable``, ``pgpgin``, ``pgpgout``, ``pgfault``, ``pgmajfault``, ``pgfault_cow``, ``pgfault_stack``, ``pgfault_demand``, ``tlb_flushes``.
 
-C. Ring 0 Supervisor Command (crates/shell/src/cmds/sys/info/slabinfo.rs)
+C. Ring 0 Supervisor Command (crates/shell/src/cmds/sys.rs)
 -------------------------------------------------------------------------
 
 - ``slabinfo`` (alias ``slab``):
@@ -89,4 +89,4 @@ C. Ring 0 Supervisor Command (crates/shell/src/cmds/sys/info/slabinfo.rs)
   - ``-c`` flag isolates per-core magazine depot allocation hits, free hits and cross-depot exchanges.
   - ``-v`` flag reveals slab tunables, depot cache buffers and active versus total object ratios.
 
-- Integrated into ``crates/shell/src/executor/dispatch/router.rs`` and ``crates/shell/src/cmds/util/misc/help.rs``.
+- Integrated into ``crates/shell/src/executor/dispatch.rs`` and ``crates/shell/src/cmds/util.rs``.

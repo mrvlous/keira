@@ -74,11 +74,11 @@ Century Syscall 100 (SYS_FSTAT)
 
 - Registered in ``crates/syscall/src/table/numbers/io.rs``: ``pub const SYS_FSTAT: u64 = 100;``.
 - Implemented in ``crates/syscall/src/dispatcher/handlers/fs.rs``: ``handle_fstat(arg1, arg2)``.
-- Dispatched via ``crates/syscall/src/dispatcher/router/entry.rs``: Vector 100.
+- Dispatched via ``crates/syscall/src/dispatcher/router.rs``: Vector 100.
 - C standard library wrapper in ``userland/libc/src/stat/query/stat.c`` invoking ``sys_fstat()``.
 - Validated via userland test harness ``userland/tests/test_abi/fs/tests.c`` (Section 38).
 
-Ring 0 Supervisor Telemetry (crates/shell/src/cmds/fs/mount/dcache.rs)
+Ring 0 Supervisor Telemetry (crates/shell/src/cmds/fs.rs)
 ----------------------------------------------------------------------
 
 - ``dcache`` command displaying total slots, active positive and negative dentries, cache hits, misses, LRU evictions and lookup hit ratio percentage.

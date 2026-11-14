@@ -21,7 +21,7 @@ Milestone 29 achieves three core architectural objectives:
 
 2. **freestanding Numerical Identity Model**:
 
-   - The kernel's credentials engine (``crates/task/src/scheduler/identity/creds.rs``) serves as the sole ground truth for identity management.
+   - The kernel's credentials engine (``crates/task/src/scheduler/identity.rs``) serves as the sole ground truth for identity management.
    - All processes operate under explicit numerical tuples: ``(uid, gid, euid, egid)``.
    - Special handling is preserved only for UID 0 (canonical superuser ``root``), while all other identities are represented by their exact numerical values.
 

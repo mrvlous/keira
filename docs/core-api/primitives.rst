@@ -4,7 +4,7 @@
 Type-Safe Epoch-Based Reclamation (EBR)
 =======================================
 
-Epoch-Based Reclamation (EBR) provides lock-free, zero-contention memory reclamation across multicore SMP CPUs with compile-time safety guarantees (``crates/core/src/sync/ebr/``).
+Epoch-Based Reclamation (EBR) provides lock-free, zero-contention memory reclamation across multicore SMP CPUs with compile-time safety guarantees (``crates/core/src/sync/ebr.rs``).
 
 1. Architectural Motivation
 ===========================

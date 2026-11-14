@@ -56,14 +56,14 @@ Calculates the 16-bit one's complement of the one's complement sum of all 16-bit
 
 Based on the ``Protocol`` byte:
 
-* ``1``: **ICMP** -> Sent to ``crates/net/src/icmp/echo/``.
-* ``6``: **TCP** -> Sent to ``crates/net/src/tcp/state/``.
-* ``17``: **UDP** -> Sent to ``crates/net/src/udp/packet/``.
+* ``1``: **ICMP** -> Sent to ``crates/net/src/icmp/ping.rs``.
+* ``6``: **TCP** -> Sent to ``crates/net/src/tcp/state.rs``.
+* ``17``: **UDP** -> Sent to ``crates/net/src/udp/packet.rs``.
 
 4. In-Kernel IPv4 Routing Engine (FIB)
 ======================================
 
-The IPv4 subsystem includes a deterministic Forwarding Information Base (``crates/net/src/ip/v4/route.rs``) that resolves egress network interfaces and next-hop gateway addresses for outgoing IP datagrams:
+The IPv4 subsystem includes a deterministic Forwarding Information Base (``crates/net/src/ip/v4.rs``) that resolves egress network interfaces and next-hop gateway addresses for outgoing IP datagrams:
 
 Route Lookup Semantics
 ----------------------

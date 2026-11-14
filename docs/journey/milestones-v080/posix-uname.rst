@@ -11,7 +11,7 @@ Milestone 55 introduces the POSIX System Identity Subsystem to the Keira Kernel 
 
 Through Milestone 55, Keira delivers:
 
-1. **Century-Plus Syscall 108 (``SYS_UNAME``)**: Registered across kernel vector routing tables (``crates/syscall/src/table/numbers/system.rs`` and ``crates/syscall/src/table/vectors/names.rs``).
+1. **Century-Plus Syscall 108 (``SYS_UNAME``)**: Registered across kernel vector routing tables (``crates/syscall/src/table/numbers/system.rs`` and ``crates/syscall/src/table/vectors.rs``).
 2. **Ring 0 System Identity Engine**: Implemented in ``crates/syscall/src/dispatcher/handlers/system.rs``. The handler dynamically detects target architecture (``x86_64`` vs ``i686``), synchronizes the system node name with ``/etc/hostname`` (falling back to ``"keira"`` if unconfigured) and formats release (``"0.8.0"``) and build version metadata with zero dynamic allocations.
 3. **Memory Safety & Pointer Validation**: Strict user pointer validation through ``validate_user_ptr`` ensuring destination memory buffers reside strictly within userland address space, returning ``-EFAULT`` on invalid or null pointers.
 4. **C Runtime Header ``<sys/utsname.h>``**: Standard POSIX definitions for ``struct utsname`` (65 bytes per field, matching standard Linux and System V ABI conventions) and ``uname(struct utsname *buf)`` function prototype.

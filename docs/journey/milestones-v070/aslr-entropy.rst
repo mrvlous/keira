@@ -108,7 +108,7 @@ Address offsets are generated per process during initial spawn and binary execut
 - **Mmap Offset**: Up to 4096 pages (16 MiB) added to the base mmap allocation window (``0x0000700000000000`` on x86_64).
 - **Heap Break Offset**: Up to 32 pages (128 KiB) added to the initial user heap break (``USER_DEFAULT_BRK``).
 
-C. CoW Coherence & Fork Semantics (crates/task/src/scheduler/process/clone.rs)
+C. CoW Coherence & Fork Semantics (crates/task/src/scheduler/process.rs)
 ------------------------------------------------------------------------------
 
 In accordance with UNIX standards:
@@ -121,7 +121,7 @@ D. ProcFS Virtual Node (crates/fs/src/proc/system/aslr.rs)
 
 Exposes ``/proc/sys/kernel/randomize_va_space`` reflecting the active system policy. Reading the node returns ``"2\n"``, ``"1\n"`` or ``"0\n"`` matching Linux kernel conventions.
 
-E. Ring 0 Supervisor aslrinfo Command (crates/shell/src/cmds/sys/info/aslrinfo.rs)
+E. Ring 0 Supervisor aslrinfo Command (crates/shell/src/cmds/sys.rs)
 ----------------------------------------------------------------------------------
 
 Enables kernel administrators to inspect and reconfigure ASLR settings from the supervisor console:

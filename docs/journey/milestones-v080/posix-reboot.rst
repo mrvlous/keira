@@ -11,7 +11,7 @@ Milestone 56 introduces the POSIX System Power Management and Control Subsystem 
 
 Through Milestone 56, Keira delivers:
 
-1. **Century-Plus Syscall 109 (``SYS_REBOOT``)**: System call number ``SYS_REBOOT = 109`` registered across kernel vector routing tables (``crates/syscall/src/table/numbers/system.rs`` and ``crates/syscall/src/table/vectors/names.rs``).
+1. **Century-Plus Syscall 109 (``SYS_REBOOT``)**: System call number ``SYS_REBOOT = 109`` registered across kernel vector routing tables (``crates/syscall/src/table/numbers/system.rs`` and ``crates/syscall/src/table/vectors.rs``).
 2. **Linux-Compatible Security & Magic Number Protection**: Enforces cryptographic magic parameters (``LINUX_REBOOT_MAGIC1 = 0xfee1dead`` and ``LINUX_REBOOT_MAGIC2 = 672274793``) to prevent accidental or malicious triggering by corrupted memory addresses, returning ``-EINVAL`` on parameter mismatch.
 3. **Privilege Boundary Enforcement**: Syscall access is restricted strictly to root processes (``uid == 0``). Invocations from unprivileged accounts return ``-EPERM``.
 4. **Ring 0 Power Dispatch Engine**: Seamlessly transitions execution into ``keira_arch::power::acpi::reboot()`` or ``keira_arch::power::acpi::poweroff()`` based on the command argument (``RB_AUTOBOOT`` vs ``RB_POWER_OFF``), performing platform register sequencing across ACPI sleep state S5 and 8042/PCI reset ports.

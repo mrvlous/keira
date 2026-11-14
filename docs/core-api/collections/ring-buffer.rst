@@ -6,7 +6,7 @@ Anonymous Pipes & Dynamic Multi-Channel FIFO Subsystem
 
 Anonymous pipes provide unidirectional byte-stream inter-process communication between related processes across parent and child task boundaries.
 
-1. Multi-Channel Ring Buffer Architecture (crates/ipc/src/pipe/fifo/)
+1. Multi-Channel Ring Buffer Architecture (crates/ipc/src/pipe/fifo.rs)
 =====================================================================
 
 Each pipe is managed inside ``PIPE_TABLE`` (supporting up to 32 concurrent channels) and backed by a 4096-byte kernel ring buffer:

@@ -51,4 +51,4 @@ Conforming to the AMD64 ABI:
 3. Subsystem Handler Dispatch
 =============================
 
-Upon entering Ring 0, ``syscall_entry`` validates user pointers, saves user context, switches to the kernel stack and branches into ``sys_call_table`` in ``crates/kernel/src/syscall/mod.rs``.
+Upon entering Ring 0, ``syscall_entry`` validates user pointers, saves user context, switches to the kernel stack and branches into ``sys_call_table`` in ``crates/syscall/src/dispatcher/router.rs``.

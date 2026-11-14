@@ -11,7 +11,7 @@ Milestone 45 introduces dynamic, silicon-seeded stack canary protection and dire
 
 Prior to Milestone 45, userland stack protection relied on a compile-time static sentinel (``0x595e9fbd94fda766ULL``), which left processes vulnerable to brute-force or precomputed memory overwrite attacks once discovered. Milestone 45 resolves this security gap by integrating silicon hardware entropy into the process startup pipeline:
 
-1. **Hardware Entropy Auxiliary Vector Seeding (``crates/task/src/stack/user/``)**:
+1. **Hardware Entropy Auxiliary Vector Seeding (``crates/task/src/stack/user.rs``)**:
 
    - During task execution stack initialization (``setup_user_stack``), the kernel harvests 16 bytes of true cryptographic hardware entropy via ``keira_arch::cpu::get_entropy_u64()`` (on ``x86_64``) or ``keira_arch::cpu::get_entropy_u32()`` (on ``i686``).
    - The 16 random bytes are written directly onto the user stack buffer and an auxiliary vector entry (``AT_RANDOM = 25``) is placed pointing directly to this silicon-generated entropy block.
@@ -31,7 +31,7 @@ Prior to Milestone 45, userland stack protection relied on a compile-time static
 
 4. **Silicon-Backed Character Devices (``crates/fs``)**:
 
-   - Upgrades ``/dev/random`` and ``/dev/urandom`` character device nodes in ``crates/fs/src/dev/char/random.rs``.
+   - Upgrades ``/dev/random`` and ``/dev/urandom`` character device nodes in ``crates/fs/src/dev/char.rs``.
    - Replaces makeshift cycle loops with direct chunked reads from ``keira_arch::cpu::get_entropy_u32()``.
 
 5. **Supervisor Command Suite Integration (``crates/shell``)**:
@@ -101,7 +101,7 @@ Prior to Milestone 45, userland stack protection relied on a compile-time static
 A. True Silicon Hardware Entropy Seeding for User Execution Stacks
 ------------------------------------------------------------------
 
-In ``crates/task/src/stack/user/amd64.rs`` and ``crates/task/src/stack/user/i386.rs``, the execution stack allocation routine creates a dedicated 16-byte random seed buffer:
+In ``crates/task/src/stack/user.rs`` and ``crates/task/src/stack/user.rs``, the execution stack allocation routine creates a dedicated 16-byte random seed buffer:
 
 - On ``x86_64``: Two 64-bit entropy words are harvested via ``keira_arch::cpu::get_entropy_u64()``.
 - On ``i686``: Four 32-bit entropy words are harvested via ``keira_arch::cpu::get_entropy_u32()``.
@@ -147,7 +147,7 @@ Added standard headers and libc wrappers:
 E. Ring 0 Supervisor rnginfo Command
 ------------------------------------
 
-Added ``rnginfo`` (alias: ``entropy``) to ``crates/shell/src/cmds/sys/info/rnginfo.rs``:
+Added ``rnginfo`` (alias: ``entropy``) to ``crates/shell/src/cmds/sys.rs``:
 
 - Default invocation displays entropy hardware source, entropy quality level and kernel subsystem integration status.
 - Verbose mode (``-v``) harvests and prints a live 16-byte silicon entropy sample and queries CPUID feature flags for ``RDRAND``, ``RDSEED`` and ``RDTSC``.

@@ -40,11 +40,11 @@ All internal structures and test harnesses were audited and refactored to enforc
      - Previous Value
      - Updated Pure Kernel Value
      - Architectural Rationale
-   * - ``crates/io/src/storage/ramdisk/format.rs``
+   * - ``crates/io/src/storage/ramdisk.rs``
      - ``b"KEIRAOS "``
      - ``b"KEIRAKRN"``
      - Standard 8-byte FAT16 OEM identifier representing the Keira Kernel
-   * - ``crates/arch/src/power/acpi/tests.rs``
+   * - ``crates/arch/src/power/acpi.rs``
      - ``b"KEIRAOS "``
      - ``b"KEIRAKRN"``
      - 8-byte ACPI Table Header OEM ID reflecting pure kernel identity
@@ -77,7 +77,7 @@ The canonical userspace init executable is compiled with Keira's freestanding li
        return 0;
    }
 
-Kernel Boot Dispatcher (crates/kernel/src/runtime/main_loop/loop_runner.rs)
+Kernel Boot Dispatcher (crates/kernel/src/runtime/main_loop.rs)
 ---------------------------------------------------------------------------
 
 Before launching the interactive console loop, the kernel inspects the root filesystem and dispatches the canonical init binary cleanly into Ring 3:

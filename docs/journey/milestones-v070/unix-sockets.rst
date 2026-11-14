@@ -88,7 +88,7 @@ Milestone 47 delivers five primary achievements:
 3.1 Socket Descriptor Extension
 -------------------------------
 
-In ```crates/net/src/socket/handle/descriptor.rs```, ``SocketEntry`` is enhanced with peer coupling and pathname metadata:
+In ```crates/net/src/socket/handle.rs```, ``SocketEntry`` is enhanced with peer coupling and pathname metadata:
 
 .. code-block:: rust
 
@@ -150,7 +150,7 @@ When a process writes data into a connected UNIX domain socket descriptor, ``sen
 4. System Call Vector 105: SYS_SOCKETPAIR
 =========================================
 
-Native system call vector 105 is registered in ```crates/syscall/src/table/numbers/net.rs``` and mapped in ```crates/syscall/src/dispatcher/router/entry.rs```:
+Native system call vector 105 is registered in ```crates/syscall/src/table/numbers/net.rs``` and mapped in ```crates/syscall/src/dispatcher/router.rs```:
 
 .. code-block:: rust
 

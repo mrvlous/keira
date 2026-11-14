@@ -20,8 +20,8 @@ Keira provides dual-architecture system call trapping:
        App["Ring 3 Userland Application"] --> LibC["userland/libc/include/sys/syscall.h"]
        LibC --> Trap["x86 Trap (syscall / int 0x80)"]
        Trap --> LowLevelASM["arch/x86/*/kernel/syscall.asm (Switch to Kernel Stack)"]
-       LowLevelASM --> Router["crates/syscall/src/dispatcher/router/entry.rs"]
-       Router --> BoundsCheck["crates/syscall/src/user_copy/validate/checker.rs"]
+       LowLevelASM --> Router["crates/syscall/src/dispatcher/router.rs"]
+       Router --> BoundsCheck["crates/syscall/src/user_copy/validate.rs"]
        BoundsCheck --> Handler["crates/syscall/src/dispatcher/handlers/<subsystem>.rs"]
        Handler --> KernelSubsystem["Kernel Subsystem (VFS, Task, Net, etc.)"]
        KernelSubsystem --> Ret["Return Result / Errno to %rax / %eax"]
@@ -81,7 +81,7 @@ Create or update the handler in ``crates/syscall/src/dispatcher/handlers/system.
 4. Step 3: Wire into Dispatcher Router
 ======================================
 
-Add the match arm to ``crates/syscall/src/dispatcher/router/entry.rs``:
+Add the match arm to ``crates/syscall/src/dispatcher/router.rs``:
 
 .. code-block:: rust
 

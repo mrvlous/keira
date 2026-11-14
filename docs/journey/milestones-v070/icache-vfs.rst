@@ -73,9 +73,9 @@ B. Storage Synchronization Integration
 --------------------------------------
 
 - In ``crates/syscall/src/dispatcher/handlers/fs.rs``: ``handle_sync()`` invokes ``icache_flush_dirty()`` before flushing disk sectors and AHCI DMA buffers.
-- In ``crates/shell/src/cmds/sys/control/sync.rs``: The supervisor ``sync`` command reports flushed dirty inode counts alongside storage sectors.
+- In ``crates/shell/src/cmds/sys.rs``: The supervisor ``sync`` command reports flushed dirty inode counts alongside storage sectors.
 
-C. Ring 0 Supervisor Command (crates/shell/src/cmds/fs/mount/icache.rs)
+C. Ring 0 Supervisor Command (crates/shell/src/cmds/fs.rs)
 -----------------------------------------------------------------------
 
 - ``icache``:

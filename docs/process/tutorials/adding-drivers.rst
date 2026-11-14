@@ -30,7 +30,7 @@ PCI devices report standard configuration headers. Identify your hardware:
 * **Device ID**: 16-bit hardware identifier.
 * **Base Address Registers (BARs)**: Indicate port I/O ranges or physical MMIO addresses.
 
-In ``crates/io/src/bus/pci/scanner.rs``:
+In ``crates/io/src/bus/pci.rs``:
 
 .. code-block:: rust
 

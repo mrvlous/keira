@@ -13,7 +13,7 @@ In earlier milestones, running userland ELF executables required prefixing comma
 
 1. **Direct ``$PATH`` Execution**: Users can type binary names directly (e.g. ``sysinfo``, ``sysinfo.elf``, ``/bin/sysinfo.elf``, ``sh -c "echo hello"``) along with arbitrary command-line arguments. The kernel command router automatically resolves binary paths against ``/bin`` and the root filesystem, launches them in unprivileged Ring 3 and forwards argument tokens seamlessly.
 2. **Canonical Standalone Userspace Shell (``/bin/sh.elf``)**: A pure userspace POSIX-compliant shell running as PID 2 in Ring 3 unprivileged mode, providing interactive and script execution capabilities independent of the supervisor control plane.
-3. **Supervisor Bridge Command (``sh``)**: The supervisor shell gains a first-class ``sh`` command (``crates/shell/src/cmds/sys/control/sh.rs``) that transitions execution directly into ``/bin/sh.elf``.
+3. **Supervisor Bridge Command (``sh``)**: The supervisor shell gains a first-class ``sh`` command (``crates/shell/src/cmds/sys.rs``) that transitions execution directly into ``/bin/sh.elf``.
 
 Architectural Motivation: Linux Parity in Userspace
 ===================================================
@@ -97,7 +97,7 @@ To support binary resolution in the userspace shell, the ``access()`` POSIX syst
        return 0;
    }
 
-3. Direct $PATH Execution in Supervisor Shell (crates/shell/src/cmds/proc/task/run.rs)
+3. Direct $PATH Execution in Supervisor Shell (crates/shell/src/cmds/proc.rs)
 --------------------------------------------------------------------------------------
 
 To enable Linux-style command execution without typing ``run``, the shell executor router was enhanced with ``run_direct_with_parts``:
@@ -121,9 +121,9 @@ To enable Linux-style command execution without typing ``run``, the shell execut
        run_direct_with_args(command, &args_buf[..arg_count])
    }
 
-In ``crates/shell/src/executor/dispatch/router.rs``, if a command does not match any registered supervisor command keyword, the router automatically attempts resolution against ``/bin`` and the root filesystem before reporting an unknown command error.
+In ``crates/shell/src/executor/dispatch.rs``, if a command does not match any registered supervisor command keyword, the router automatically attempts resolution against ``/bin`` and the root filesystem before reporting an unknown command error.
 
-4. Supervisor sh Command (crates/shell/src/cmds/sys/control/sh.rs)
+4. Supervisor sh Command (crates/shell/src/cmds/sys.rs)
 ------------------------------------------------------------------
 
 A first-class ``sh`` command was integrated into the system control group (``sys``), bringing the total shell command count to **78 commands** (26 ``sys`` commands).

@@ -13,7 +13,7 @@ Prior to Milestone 36, the kernel provided a single global 1024-byte buffer that
 
 Key accomplishments of Milestone 36 include:
 
-1. **Multi-Channel Dynamic Pipe Subsystem (``crates/ipc/src/pipe/fifo/``)**:
+1. **Multi-Channel Dynamic Pipe Subsystem (``crates/ipc/src/pipe/fifo.rs``)**:
 
    - Manages an array of concurrent pipe channels (``PIPE_TABLE``) protected by interrupt-safe spinlocks and supporting up to 32 independent pipelines.
    - Provides 4096-byte (4 KiB) circular ring buffer capacity per pipe channel.

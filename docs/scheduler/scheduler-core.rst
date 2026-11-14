@@ -23,7 +23,7 @@ Keira features a preemptive multitasking engine with round-robin time slicing an
 2. Task Control Block (TCB / Task)
 ==================================
 
-Every thread or process is tracked by ``Task`` in ``crates/task/src/types/task/descriptor.rs``:
+Every thread or process is tracked by ``Task`` in ``crates/task/src/types/task.rs``:
 
 .. code-block:: rust
 

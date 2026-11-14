@@ -4,7 +4,7 @@
 Segregated Free-List Heap Allocator
 ===================================
 
-General dynamic allocation (``crates/mem/src/heap/pool/``) uses segregated power-of-two free-lists.
+General dynamic allocation (``crates/mem/src/heap/pool.rs``) uses segregated power-of-two free-lists.
 
 Size Classes
 ============
@@ -16,7 +16,7 @@ Size Classes
 Telemetry & Capacity Accounting
 ===============================
 
-The kernel heap metrics engine (``crates/mem/src/heap/pool/stats.rs``) tracks allocation patterns and fragmentation:
+The kernel heap metrics engine (``crates/mem/src/heap/pool.rs``) tracks allocation patterns and fragmentation:
 
 * ``heap_get_telemetry()``: Computes total capacity, active allocated bytes, unallocated free bytes, peak usage watermark, active block count and fragmentation percentage against arena allocations.
 * Displayed in userspace via the ``memory`` shell command.

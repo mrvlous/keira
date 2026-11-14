@@ -4,7 +4,7 @@
 Virtual Memory Areas (VMAs) & Memory Mapping
 ============================================
 
-Each process address space maintains an organized collection of Virtual Memory Areas (``crates/mem/src/vmm/area/``).
+Each process address space maintains an organized collection of Virtual Memory Areas (``crates/mem/src/vmm/area.rs``).
 
 VMA Attributes
 ==============

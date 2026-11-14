@@ -49,7 +49,7 @@ Upon transferring control to ``_start``, the bootloader guarantees:
 3. Parsing Multiboot2 Tags
 ==========================
 
-The kernel parses the MBI sequentially in ``crates/kernel/src/boot/multiboot/``. Each tag begins with:
+The kernel parses the MBI sequentially in ``crates/kernel/src/boot/multiboot.rs.rs``. Each tag begins with:
 
 .. code-block:: rust
 

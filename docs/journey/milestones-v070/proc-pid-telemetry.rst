@@ -88,7 +88,7 @@ In order to maintain strict modularity between ``keira-fs`` and ``keira-task``, 
 - ``TaskExistsProvider``: ``fn(pid: usize) -> bool``
 - ``TaskListProvider``: ``fn(pids: &mut [usize]) -> usize``
 
-During scheduler initialization (``crates/task/src/scheduler/core/state.rs``), ``keira-task`` registers concrete implementations with ``keira-fs`` via ``register_extended_task_hooks``. When running under unit tests where ``keira-task`` is unlinked, a fallback allows valid PIDs (``< 64``) to satisfy synthetic existence checks.
+During scheduler initialization (``crates/task/src/scheduler/core.rs``), ``keira-task`` registers concrete implementations with ``keira-fs`` via ``register_extended_task_hooks``. When running under unit tests where ``keira-task`` is unlinked, a fallback allows valid PIDs (``< 64``) to satisfy synthetic existence checks.
 
 B. Linux-Grade Telemetry Synthesis (crates/fs/src/proc/task/)
 -------------------------------------------------------------
@@ -96,7 +96,7 @@ B. Linux-Grade Telemetry Synthesis (crates/fs/src/proc/task/)
 - **``stat.rs`` (``read_task_stat``)**: Synthesizes the standard Linux 52-field ``/proc/[pid]/stat`` line. Fields include PID, executable comm in parentheses, task state character (``R``, ``S``, ``D``, ``Z``), PPID, pgrp, session, tty, utime, stime, priority (20), nice (0), num_threads, starttime, vsize in bytes and RSS in memory pages.
 - **``statm.rs`` (``read_task_statm``)**: Formats 7 page-metric integers: total program size, resident set size, shared pages, text size, library size, data + stack size and dirty pages.
 
-C. Zero-Allocation Dynamic Directory Dispatching (crates/fs/src/proc/dispatcher/read.rs)
+C. Zero-Allocation Dynamic Directory Dispatching (crates/fs/src/proc/dispatcher.rs)
 ----------------------------------------------------------------------------------------
 
 To satisfy ``#![no_std]`` constraints where ``VirtualDirEntry`` requires ``'static`` name references, a pre-computed array of static decimal strings (``PID_STRS: [&'static str; 64] = ["0", "1", ..., "63"]``) allows :math:`O(1)` zero-allocation conversion of numeric PIDs to directory names.
@@ -104,7 +104,7 @@ To satisfy ``#![no_std]`` constraints where ``VirtualDirEntry`` requires ``'stat
 - ``is_proc_dir(clean_path)``: Identifies whether a path represents ``/proc``, ``/proc/[pid]`` or ``/proc/self``.
 - ``get_pid_dir_entry(index)``: Yields directory entries for ``/proc/[pid]/`` (``status``, ``cmdline``, ``stat``, ``statm``, ``mounts``).
 
-D. Ring 0 Supervisor pidinfo Command (crates/shell/src/cmds/proc/pidinfo.rs)
+D. Ring 0 Supervisor pidinfo Command (crates/shell/src/cmds/proc.rs)
 ----------------------------------------------------------------------------
 
 - Without arguments: Renders a compact, monochrome table of all active tasks across the system showing PID, PPID, execution state, process name, virtual memory size, resident set size and voluntary context switch counts.

@@ -13,7 +13,7 @@ Prior to Milestone 38, file permissions and ownership were evaluated strictly un
 
 Key accomplishments of Milestone 38 include:
 
-1. **In-Kernel Permission and Ownership Registry (``crates/fs/src/vfs/ops/perm.rs``)**:
+1. **In-Kernel Permission and Ownership Registry (``crates/fs/src/vfs/ops.rs``)**:
 
    - Designed and implemented ``PERM_TABLE``, a synchronized global table tracking up to 128 active file permission and ownership descriptors.
    - Implemented ``set_permissions(path, mode)`` and ``set_ownership(path, uid, gid)`` with canonical path sanitization.
@@ -60,7 +60,7 @@ Architectural Data Flow: POSIX DAC Security Model
 
    graph TD
        Userland["Ring 3 Userland Process<br/>(EUID, EGID)"] -->|"sys_open / sys_chmod / sys_chown / sys_stat"| Dispatcher["System Call Dispatcher<br/>(Vectors 6, 97, 98, 99)"]
-       Dispatcher -->|"check_access(path, desired, euid, egid)"| DAC["In-Kernel DAC Engine<br/>(crates/fs/src/vfs/ops/perm.rs)"]
+       Dispatcher -->|"check_access(path, desired, euid, egid)"| DAC["In-Kernel DAC Engine<br/>(crates/fs/src/vfs/ops.rs)"]
        DAC -->|"Lookup Metadata"| PermTable["Global PERM_TABLE<br/>(128 PermEntry Descriptors)"]
        DAC -->|"EUID == 0"| GrantRoot["Bypass Read/Write Restrictions"]
        DAC -->|"EUID == File.UID"| CheckOwner["Evaluate Owner Mode Bits (0o700)"]

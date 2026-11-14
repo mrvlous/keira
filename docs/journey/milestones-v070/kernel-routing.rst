@@ -14,7 +14,7 @@ Following Keira's core philosophy—where the kernel acts purely as an austere h
 Milestone 26 achieves four primary engineering milestones:
 
 1. **In-Kernel IPv4 Forwarding Information Base (FIB)**:
-   In ``crates/net/src/ip/v4/route.rs``, Keira establishes a deterministic, thread-safe in-kernel routing table. The engine supports longest-prefix matching with CIDR netmasks, route metric prioritization and standard routing flags (``RTF_UP``, ``RTF_GATEWAY``, ``RTF_HOST``). Default entries include:
+   In ``crates/net/src/ip/v4.rs``, Keira establishes a deterministic, thread-safe in-kernel routing table. The engine supports longest-prefix matching with CIDR netmasks, route metric prioritization and standard routing flags (``RTF_UP``, ``RTF_GATEWAY``, ``RTF_HOST``). Default entries include:
 
    - Loopback route (``127.0.0.0/8`` on ``lo``)
    - Local link subnet route (``10.0.2.0/24`` on ``eth0``)
@@ -80,7 +80,7 @@ Technical Details
 1. In-Kernel Forwarding Information Base (FIB)
 ----------------------------------------------
 
-The routing engine in ``crates/net/src/ip/v4/route.rs`` encapsulates routing rules within a thread-safe ``SpinLock<RoutingTable>``:
+The routing engine in ``crates/net/src/ip/v4.rs`` encapsulates routing rules within a thread-safe ``SpinLock<RoutingTable>``:
 
 .. code-block:: rust
 
@@ -131,11 +131,11 @@ Verification & Parity Matrix
      - Status
    * - In-Kernel FIB Engine
      - ``keira-net``
-     - ``crates/net/src/ip/v4/route.rs``
+     - ``crates/net/src/ip/v4.rs``
      - Complete
    * - Longest-Prefix Match
      - ``keira-net``
-     - ``crates/net/src/ip/v4/route.rs``
+     - ``crates/net/src/ip/v4.rs``
      - Verified
    * - ``/proc/net/route`` Telemetry
      - ``keira-fs``

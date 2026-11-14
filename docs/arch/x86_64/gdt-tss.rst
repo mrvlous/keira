@@ -4,7 +4,7 @@
 Global Descriptor Table (GDT) & Task State Segment (TSS)
 ========================================================
 
-Privilege domains and segment descriptors in IA-32e Long Mode are handled in ``arch/x86/x86_64/kernel/gdt.asm`` and ``crates/kernel/src/arch/x86_64/gdt.rs``.
+Privilege domains and segment descriptors in IA-32e Long Mode are handled in ``arch/x86/x86_64/kernel/gdt.asm`` and ``crates/syscall/src/tss/segment.rs``.
 
 In 64-bit mode, hardware segmentation base and limit enforcement is disabled for code and data segments (treating bases as ``0``), but descriptors remain mandatory for Ring privilege transitions (Ring 0 vs Ring 3) and ``sysret`` alignment.
 

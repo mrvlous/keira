@@ -86,7 +86,7 @@ Two new system calls were registered in the vector dispatch table:
 Error Code Addition
 ~~~~~~~~~~~~~~~~~~~
 
-The kernel POSIX errno table (``crates/syscall/src/user_copy/errno/codes.rs``) was expanded with ``ENOTDIR = 20`` to signal directory operations attempted on non-directory inodes.
+The kernel POSIX errno table (``crates/syscall/src/user_copy/errno.rs``) was expanded with ``ENOTDIR = 20`` to signal directory operations attempted on non-directory inodes.
 
 Dual-Architecture struct dirent Binary Layout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,7 +126,7 @@ The system call handler reads directory entries from the underlying FAT16 filesy
 A crucial prerequisite for UNIX pipelines and I/O redirection is descriptor inheritance across ``execve()``:
 
 1. **Console Fallback Reordering**: The kernel write handler (``handle_write``) previously defaulted to VGA and serial console output whenever ``fd == 1 || fd == 2``. The logic was refactored to verify whether the descriptor is open in write mode (``t.fds[fd].is_open && t.fds[fd].write_mode``). If open, the output streams to the backing file or pipe; only if unallocated does the kernel fall back to standard console output.
-2. **Descriptor Inheritance**: When creating a process via ``spawn_user`` (``crates/task/src/scheduler/process/spawn.rs``), the child process descriptor table now inherits open descriptors from the parent (``fds: child_fds``). When the shell redirects descriptor 1 to a file and executes ``/bin/cat.elf``, the child writes directly to that file without kernel-space awareness of the redirection.
+2. **Descriptor Inheritance**: When creating a process via ``spawn_user`` (``crates/task/src/scheduler/process.rs``), the child process descriptor table now inherits open descriptors from the parent (``fds: child_fds``). When the shell redirects descriptor 1 to a file and executes ``/bin/cat.elf``, the child writes directly to that file without kernel-space awareness of the redirection.
 
 3. Ring 3 Userspace Shell Upgrades (/bin/sh.elf)
 ------------------------------------------------

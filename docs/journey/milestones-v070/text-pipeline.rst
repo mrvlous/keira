@@ -25,9 +25,9 @@ Key accomplishments of Milestone 37 include:
 
 2. **Kernel Privilege Stack Hardening & Collision Prevention**:
 
-   - Discovered that an initial single 4 KiB allocation for ``BOOT_KERNEL_STACK_TOP`` in ``crates/syscall/src/tss/privilege/init.rs`` caused nested VFS and sector caching call chains in ``sh.elf`` to expand down into adjacent physical memory frames (specifically colliding with frame ``0x6a6000``, the e1000 network driver Page Table).
+   - Discovered that an initial single 4 KiB allocation for ``BOOT_KERNEL_STACK_TOP`` in ``crates/syscall/src/tss/privilege.rs`` caused nested VFS and sector caching call chains in ``sh.elf`` to expand down into adjacent physical memory frames (specifically colliding with frame ``0x6a6000``, the e1000 network driver Page Table).
    - Expanded ``BOOT_KERNEL_STACK_TOP`` to 8 contiguous pages (32 KiB) via ``pmm::alloc_contiguous_frames(8)``.
-   - Allocated a dedicated 16 KiB kernel stack (``TASK_STACK_PAGES = 4``) for Task 0 (``kernel_shell``) in ``crates/task/src/scheduler/core/state.rs``.
+   - Allocated a dedicated 16 KiB kernel stack (``TASK_STACK_PAGES = 4``) for Task 0 (``kernel_shell``) in ``crates/task/src/scheduler/core.rs``.
 
 3. **VMM Page Table Zeroing & Canonical Boot PML4 Root**:
 

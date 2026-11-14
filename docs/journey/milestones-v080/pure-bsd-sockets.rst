@@ -15,11 +15,11 @@ Through Milestone 54, Keira achieves:
 
 1. **Layer 7 HTTP Ring 0 Eradication**: Complete removal of ``crates/net/src/tcp/stream/http.rs``, ``HTTP_USER_AGENT`` constants, ``fetch_http``, ``fetch_http_stream`` and ``dechunk_in_place``. Over 262 KB of kernel BSS memory (``STREAM_DOWNLOAD_BUFFER``) was permanently reclaimed.
 2. **Syscall 17 Deprecation**: Vector 17 (``SYS_HTTP`` / ``SYS_HTTP_GET``) is deprecated and mapped directly to ``ENOSYS``, enforcing the invariant that kernels do not expose application protocol system calls.
-3. **Pure L4 BSD Socket TCP Transport**: ``crates/net/src/socket/manager/table.rs`` routes non-loopback ``AF_INET`` stream socket payloads through Layer 4 ``tcp_send_and_receive``, queuing received network payloads directly into socket descriptor buffers for transparent ``read()`` retrieval.
+3. **Pure L4 BSD Socket TCP Transport**: ``crates/net/src/socket/table.rs`` routes non-loopback ``AF_INET`` stream socket payloads through Layer 4 ``tcp_send_and_receive``, queuing received network payloads directly into socket descriptor buffers for transparent ``read()`` retrieval.
 4. **Freestanding ``<arpa/inet.h>`` C Standard Library**: Integration of ``<arpa/inet.h>`` with freestanding implementations of ``htons``, ``ntohs``, ``htonl``, ``ntohl``, ``inet_addr``, ``inet_aton`` and ``inet_ntoa`` in ``userland/libc/src/socket/inet/inet.c``.
 5. **Freestanding Ring 3 HTTP Fetch Utility**: Re-engineering of ``userland/netutils/fetch.c`` as a pure userspace client constructing HTTP/1.1 requests, connecting via standard BSD stream sockets, receiving response payloads and writing to disk or standard output.
 6. **Canonical FHS Rootfs Purification**: Removal of ad-hoc ``/src`` directory at rootfs root. Sample compiler programs are placed in canonical ``/usr/src/main.c`` and ``userland/etc/init.sh`` copies from ``/usr/src/main.c`` to ``/tmp/main.c``.
-7. **VFS Decoupling in Shell Startup**: ``crates/shell/src/terminal/boot/script.rs`` utilizes ``keira_fs::vfs::read_file`` rather than direct FAT driver calls, preserving filesystem abstraction boundaries.
+7. **VFS Decoupling in Shell Startup**: ``crates/shell/src/terminal/boot.rs`` utilizes ``keira_fs::vfs::read_file`` rather than direct FAT driver calls, preserving filesystem abstraction boundaries.
 
 2. Architecture & Design
 ========================
@@ -75,13 +75,13 @@ Prior versions embedded an HTTP client inside ``crates/net/src/tcp/stream/http.r
 
 - ``crates/net/src/tcp/stream/http.rs`` was deleted.
 - ``HTTP_USER_AGENT`` constants in ``crates/net/src/lib.rs`` were eliminated.
-- ``fetch_stream_download``, ``dechunk_in_place`` and ``STREAM_DOWNLOAD_BUFFER`` were purged from ``crates/net/src/tcp/stream/client.rs``.
+- ``fetch_stream_download``, ``dechunk_in_place`` and ``STREAM_DOWNLOAD_BUFFER`` were purged from ``crates/net/src/tcp/stream.rs``.
 - ``handle_http_get`` was removed from ``crates/syscall/src/dispatcher/handlers/net.rs`` and syscall vector 17 was mapped directly to ``errno_to_ret(ENOSYS)``.
 
 3.2 Pure L4 TCP Socket Transport
 --------------------------------
 
-To enable userspace network applications to perform HTTP, HTTPS, DNS and custom protocol transactions without in-kernel application helpers, ``crates/net/src/socket/manager/table.rs`` was upgraded:
+To enable userspace network applications to perform HTTP, HTTPS, DNS and custom protocol transactions without in-kernel application helpers, ``crates/net/src/socket/table.rs`` was upgraded:
 
 - When ``send_socket`` receives data for an ``AF_INET`` stream socket where ``!is_loopback_addr(&slot.remote_ip)``, it delegates transmission to Layer 4 ``tcp_send_and_receive``.
 - Response data frames received via the NIC DMA engine are copied into ``slot.rx_buf``, updating ``slot.rx_len``.
@@ -104,7 +104,7 @@ Rootfs generation in ``Makefile`` and ``userland/etc/init.sh`` was purified:
 - The artificial ``/src`` directory was purged from root ``/``.
 - Source code is placed in canonical ``/usr/src/main.c``.
 - ``userland/etc/init.sh`` populates ``/tmp/main.c`` from ``/usr/src/main.c``.
-- ``crates/shell/src/terminal/boot/script.rs`` reads ``/etc/hostname`` through the VFS router rather than directly calling the FAT driver.
+- ``crates/shell/src/terminal/boot.rs`` reads ``/etc/hostname`` through the VFS router rather than directly calling the FAT driver.
 
 4. Verification and Telemetry Validation
 ========================================

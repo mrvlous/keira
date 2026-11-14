@@ -98,7 +98,7 @@ Syscall 44 translates userland ``klogctl`` / ``syslog`` requests:
 * ``action == 3`` (``SYSLOG_ACTION_READ_ALL``): Copies the entire active chronological log from ``KLOG_RING_BUFFER`` into user memory after validating user pointers via ``validate_user_ptr``.
 * ``action == 10`` (``SYSLOG_ACTION_SIZE_BUFFER``): Returns the capacity of the kernel log buffer (``32768`` bytes).
 * ``userland/sysutils/dmesg.c`` invokes Syscall 44 to display live boot and runtime messages.
-* ``crates/shell/src/cmds/sys/daemon/syslog.rs`` directly streams ring buffer records to the VGA console in Ring 0 supervisor mode.
+* ``crates/shell/src/cmds/sys.rs`` directly streams ring buffer records to the VGA console in Ring 0 supervisor mode.
 
 3. Verification & Test Battery
 ==============================

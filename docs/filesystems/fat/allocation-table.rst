@@ -9,7 +9,7 @@ Creates, reads, writes and removes 8.3 and Long File Name (LFN) directory entrie
 Sector LRU Cache & I/O Buffering
 ================================
 
-The FAT table and sector layer (``crates/fs/src/fat/table/cache.rs``) incorporates an LRU sector cache to accelerate sector I/O across storage blocks:
+The FAT table and sector layer (``crates/fs/src/fat/table.rs``) incorporates an LRU sector cache to accelerate sector I/O across storage blocks:
 
 * **Cache Architecture**: Fixed-capacity 16-slot sector cache buffering active 512-byte sectors in memory.
 * **Dirty Sector Writeback**: Dirty cache lines are tracked and flushed back to underlying block devices during sync or eviction.

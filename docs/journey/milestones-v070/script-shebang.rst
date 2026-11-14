@@ -11,7 +11,7 @@ Milestone 21 advances Keira's monolithic kernel architecture along the **Road to
 
 Prior to Milestone 21, Keira's program execution subsystem operated exclusively on compiled ELF executables (such as ``sysinfo.elf`` or ``kcc.elf``). Attempting to execute a script file resulted in an invalid ELF header format error. With Milestone 21, Keira bridges this gap by introducing:
 
-1. **Kernel Shebang (``#!``) Parser**: A freestanding ``#![no_std]`` interpreter header parser (``crates/fs/src/elf/loader/shebang.rs``) that identifies shebang magic bytes (``#!``), extracts the interpreter path (e.g. ``/bin/sh`` or ``/bin/sh.elf``) and parses optional interpreter arguments.
+1. **Kernel Shebang (``#!``) Parser**: A freestanding ``#![no_std]`` interpreter header parser (``crates/fs/src/elf/loader.rs``) that identifies shebang magic bytes (``#!``), extracts the interpreter path (e.g. ``/bin/sh`` or ``/bin/sh.elf``) and parses optional interpreter arguments.
 2. **``sys_execve`` Shebang Delegation**: The kernel process dispatcher (``crates/syscall/src/dispatcher/handlers/process.rs``) inspects file headers upon ``execve``. When a shebang script is detected, the kernel re-routes execution to the specified interpreter, prepending interpreter flags and the script path to the argument vector.
 3. **Userspace Shell Script Engine**: The standalone Ring 3 shell (``userland/sysutils/sh.c``) gains script execution capabilities (``sh <script_file>``), file comment stripping (``#``), blank line filtering and sequential command execution via standard ``execve()`` and ``waitpid()`` system calls.
 4. **Direct Supervisor ``.sh`` Invocation**: Users can invoke ``.sh`` scripts directly from the supervisor root console (``keira:/# demo.sh`` or ``keira:/# /etc/init.sh``) without manual ``sh`` prefixes, matching direct binary execution ergonomics.
@@ -58,7 +58,7 @@ Without this mechanism, automating system startup sequences, running test harnes
 Technical Implementation
 ========================
 
-1. Freestanding Shebang Parser (crates/fs/src/elf/loader/shebang.rs)
+1. Freestanding Shebang Parser (crates/fs/src/elf/loader.rs)
 --------------------------------------------------------------------
 
 The shebang parser operates entirely in ``#![no_std]`` without dynamic heap allocation, analyzing the raw leading bytes of candidate executables:
@@ -121,7 +121,7 @@ The standalone shell was enhanced to support script execution mode:
 - **Script File Reading (``run_script_file``)**: Opens the target file via standard C file I/O (``fopen``), reads lines sequentially via ``fgets``, strips line terminators and feeds non-empty lines into ``run_command_string``.
 - **Process Replacement**: Built-ins (``cd``, ``pwd``, ``echo``, ``export``) execute inline, while external commands invoke ``execve()`` directly followed by ``waitpid()``, ensuring predictable serial execution without orphaned child processes.
 
-4. Direct .sh Execution in Supervisor Console (crates/shell/src/cmds/proc/task/run.rs)
+4. Direct .sh Execution in Supervisor Console (crates/shell/src/cmds/proc.rs)
 --------------------------------------------------------------------------------------
 
 The supervisor program runner identifies ``.sh`` files during command dispatch:

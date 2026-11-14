@@ -48,14 +48,14 @@ B. Assembly Entry Stubs (arch/x86//kernel/isr.asm)
 3. Kernel API & Subsystem Integration
 =====================================
 
-A. Core Dispatch Functions (crates/arch/src/interrupts/smp/ipi.rs)
+A. Core Dispatch Functions (crates/arch/src/interrupts/smp.rs)
 ------------------------------------------------------------------
 
 - ``smp_send_reschedule(target_cpu_id: usize)``: Sends a targeted unicast Reschedule IPI to the APIC ID corresponding to ``target_cpu_id``.
 - ``smp_send_reschedule_all_excluding_self()``: Broadcasts Reschedule IPIs to all online remote processors using APIC shorthand ``3 << 18``.
 - ``get_resched_ipi_stats() -> (u64, u64)``: Returns ``(sent_count, received_count)`` tracked via atomic counters.
 
-B. Work-Stealing Runqueue Integration (crates/task/src/scheduler/work_stealing/percpu.rs)
+B. Work-Stealing Runqueue Integration (crates/task/src/scheduler/work_stealing.rs)
 -----------------------------------------------------------------------------------------
 
 Whenever ``enqueue_task(core_id, task_idx)`` succeeds in pushing a task onto a target CPU's Chase-Lev deque:

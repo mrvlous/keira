@@ -4,7 +4,7 @@
 Process Control Block (PCB) Layout
 ==================================
 
-Each task is defined by a ``Task`` struct (``crates/task/src/types/task/``):
+Each task is defined by a ``Task`` struct (``crates/task/src/types/task.rs``):
 
 * Process ID (``pid``) and Parent PID (``ppid``).
 * CPU Registers (``Context``).

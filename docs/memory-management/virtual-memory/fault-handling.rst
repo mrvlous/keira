@@ -18,7 +18,7 @@ Fault Resolution
 Page Fault & Paging Telemetry
 =============================
 
-The VMM telemetry engine (``crates/mem/src/vmm/fault/handler.rs``) tracks hardware page fault occurrences:
+The VMM telemetry engine (``crates/mem/src/vmm/fault.rs``) tracks hardware page fault occurrences:
 
 * ``vmm_get_fault_stats()``: Computes ``(total_faults, cow_faults, stack_growths, demand_pages, violations, tlb_flushes)``.
 * Tracks Copy-on-Write (COW) duplications, stack expansions, demand paging allocations, protection faults (SIGSEGV) and TLB page invalidations via ``invlpg``.

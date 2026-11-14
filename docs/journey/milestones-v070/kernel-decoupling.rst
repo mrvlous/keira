@@ -35,7 +35,7 @@ Milestone 33 delivers five primary architectural achievements:
 
 2. **Kernel Runtime Adaptation (``crates/kernel``)**:
 
-   - In ``crates/kernel/src/runtime/main_loop/loop_runner.rs``:
+   - In ``crates/kernel/src/runtime/main_loop.rs``:
 
      - Gracefully recognizes the absence of ``/bin/sh`` without throwing red warnings or errors on both ``x86_64`` and ``i686``.
      - Announces pure kernel execution in green text: ``[kernel] Pure freestanding Ring 0 mode: No userland /bin/sh attached.`` followed by ``[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.``
@@ -43,12 +43,12 @@ Milestone 33 delivers five primary architectural achievements:
 
 3. **Storage Controller & VFS Fallback (``crates/kernel`` & ``crates/fs``)**:
 
-   - In ``crates/kernel/src/init/storage/mount.rs``:
+   - In ``crates/kernel/src/init/storage.rs``:
 
      - Checks active block device attachment before attempting FAT16 volume mounting.
      - If no hard disk is attached (``mounted == false``), logs clean status messages: ``Probing primary storage controller (no block drive attached)`` and ``Mounting and initializing RAM Disk (Initrd) file system`` with status 0 (no warnings or failures).
 
-   - In ``crates/fs/src/vfs/ops/node.rs`` and ``crates/fs/src/vfs/ops/read.rs``:
+   - In ``crates/fs/src/vfs/ops.rs`` and ``crates/fs/src/vfs/ops.rs``:
 
      - Implemented transparent fallback to ``tar`` (initrd) when ``fat::VOLUME.is_none()``.
      - Enables reading system configurations (``/etc/kernel.cfg``, ``/etc/hostname``) directly from initrd in pure freestanding kernel mode.

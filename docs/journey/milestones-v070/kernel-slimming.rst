@@ -63,7 +63,7 @@ Technical Implementation
 1. In-Kernel Compiler Elimination
 ---------------------------------
 
-The legacy in-kernel compiler source ``crates/shell/src/cmds/proc/tools/kcc.rs`` and its associated supervisor router mappings were deleted. When a user or script invokes ``kcc`` at the supervisor prompt:
+The legacy in-kernel compiler source ``crates/shell/src/cmds/proc.rs`` and its associated supervisor router mappings were deleted. When a user or script invokes ``kcc`` at the supervisor prompt:
 
 1. The supervisor router fails to find an internal command named ``kcc``.
 2. Execution falls through to ``run_direct_with_parts``.
@@ -106,9 +106,9 @@ When users entered ``sh`` at the supervisor prompt, keystrokes were concurrently
 Resolution
 ~~~~~~~~~~
 
-1. Implemented ``flush_tty()`` in ``crates/io/src/tty/ldisc/discipline.rs`` to purge cooked line discipline buffers.
-2. Implemented ``flush_input_queue()`` in ``crates/io/src/ps2/keyboard/driver.rs`` to clear pending hardware scan codes.
-3. Updated ``crates/shell/src/terminal/boot/pending.rs`` and ``crates/shell/src/cmds/proc/task/run.rs`` to flush both queues before and after command dispatch and prior to ``jump_to_user``.
+1. Implemented ``flush_tty()`` in ``crates/io/src/tty/ldisc.rs`` to purge cooked line discipline buffers.
+2. Implemented ``flush_input_queue()`` in ``crates/io/src/ps2/keyboard.rs`` to clear pending hardware scan codes.
+3. Updated ``crates/shell/src/terminal/boot.rs`` and ``crates/shell/src/cmds/proc.rs`` to flush both queues before and after command dispatch and prior to ``jump_to_user``.
 
 4. FAT16 Dot Path Resolution (Ring 3 ls Fix)
 --------------------------------------------
@@ -121,7 +121,7 @@ Invoking ``/bin/ls.elf`` without arguments defaults to reading the current direc
 Resolution
 ~~~~~~~~~~
 
-1. In ``crates/fs/src/fat/path/resolver.rs``, trimmed path checks for ``"."`` now directly return ``Ok((current_cluster, ""))``.
+1. In ``crates/fs/src/fat/path.rs``, trimmed path checks for ``"."`` now directly return ``Ok((current_cluster, ""))``.
 2. In ``crates/syscall/src/dispatcher/handlers/fs.rs``, ``handle_open`` resolves relative references (``.`` and ``./``) to the calling process's current working directory (``task.cwd``), ensuring that directory file descriptors point to valid canonical paths.
 
 Command Reference: Ring 0 Diagnostic Monitor

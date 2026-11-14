@@ -78,9 +78,9 @@ Milestone 51 eliminates the ``/etc/main.c`` duplication in ``Makefile``:
 
 To prevent confusion between a general-purpose distribution and a pure monolithic kernel, references across the codebase were refined:
 
-* ``crates/shell/src/cmds/util/misc/help.rs``: Updated system version command description from "OS version" to "kernel version".
-* ``crates/arch/src/cpu/control/cr.rs``: Refined CR4 documentation to describe "processor architecture features" rather than "OS features".
-* ``crates/core/src/sync/mutex/spin.rs``: Refined concurrency documentation from "OS scheduler" to "scheduler".
+* ``crates/shell/src/cmds/util.rs``: Updated system version command description from "OS version" to "kernel version".
+* ``crates/arch/src/cpu/control.rs``: Refined CR4 documentation to describe "processor architecture features" rather than "OS features".
+* ``crates/core/src/sync/mutex.rs``: Refined concurrency documentation from "OS scheduler" to "scheduler".
 * ``.config`` and ``.example.config``: Standardized the project descriptor to "freestanding monolithic kernel from scratch".
 * Userland documentation (``docs/userland/binaries/`` and ``docs/contributing/``): Standardized documentation to emphasize pure kernel interfaces and POSIX kernel abstractions.
 

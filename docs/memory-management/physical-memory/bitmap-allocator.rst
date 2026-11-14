@@ -84,7 +84,7 @@ For high-performance hardware drivers (DMA ring buffers, AHCI PRDT, NVMe submiss
 5. Physical Frame Reference Counting
 ====================================
 
-For Copy-on-Write (COW) address space replication, physical frames support reference counting (``crates/mem/src/pmm/frame/refcount.rs``):
+For Copy-on-Write (COW) address space replication, physical frames support reference counting (``crates/mem/src/pmm/frame.rs``):
 
 * ``retain_frame(paddr: u64) -> u32``: Increments the reference count of an allocated physical frame when shared across processes.
 * ``release_frame(paddr: u64) -> bool``: Decrements the reference count. If the reference count drops to zero, automatically frees the frame back into the PMM pool.

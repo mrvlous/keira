@@ -39,7 +39,7 @@ The Keira Kernel Slab subsystem (``crates/mem/src/slab/``) provides a high-perfo
 2. Core Architectural Layers
 ============================
 
-A. Jeff Bonwick's Magazine Container (crates/mem/src/slab/magazine/mod.rs)
+A. Jeff Bonwick's Magazine Container (crates/mem/src/slab/magazine.rs)
 --------------------------------------------------------------------------
 
 A ``Magazine`` represents a contiguous array of pre-allocated raw object pointers:
@@ -56,7 +56,7 @@ A ``Magazine`` represents a contiguous array of pre-allocated raw object pointer
 * **LIFO Discipline**: Pushing and popping pointers operates in Last-In First-Out order. The most recently deallocated object is the first to be reallocated, maximizing L1 data cache warmth.
 * **:math:`O(1)` Complexity**: A single array index modification without atomic CAS or memory bus barriers.
 
-B. Per-CPU Depot (crates/mem/src/slab/magazine/percpu.rs)
+B. Per-CPU Depot (crates/mem/src/slab/magazine.rs)
 ---------------------------------------------------------
 
 Each processor core manages private ``active`` and ``backup`` magazines:
@@ -86,7 +86,7 @@ Each processor core manages private ``active`` and ``backup`` magazines:
 
 * **Transparent Cross-CPU Deallocation**: If Core :math:`A` frees an object originally allocated by Core :math:`B`, Core :math:`A` pushes the object directly into its own local active magazine. No remote inter-processor interrupts (IPIs) or remote spinlocks are required.
 
-C. Central Global Depot (crates/mem/src/slab/magazine/depot.rs)
+C. Central Global Depot (crates/mem/src/slab/magazine.rs)
 ---------------------------------------------------------------
 
 The ``GlobalDepot`` mediates magazine exchanges between CPU cores:
@@ -106,7 +106,7 @@ The ``GlobalDepot`` mediates magazine exchanges between CPU cores:
 * **Amortized Lock Contention**: The central depot lock is acquired only once every 32 allocations or deallocations, reducing SMP lock contention by 32x.
 * **EBR Protection**: All depot exchanges are executed within an active epoch pin (``keira_core::sync::ebr::pin()``).
 
-D. Hierarchical Cache Manager (crates/mem/src/slab/cache/manager.rs)
+D. Hierarchical Cache Manager (crates/mem/src/slab/cache.rs)
 --------------------------------------------------------------------
 
 The ``KmemCache`` orchestrates per-CPU depots, global depot pools and heap refills:

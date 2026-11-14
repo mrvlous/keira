@@ -4,7 +4,7 @@
 Per-CPU Lock-Free Work-Stealing Scheduler
 =========================================
 
-This document details the architecture and operational mechanics of Keira's decentralized per-CPU work-stealing scheduler (``crates/task/src/scheduler/work_stealing/``).
+This document details the architecture and operational mechanics of Keira's decentralized per-CPU work-stealing scheduler (``crates/task/src/scheduler/work_stealing.rs``).
 
 1. Overview & Design Rationale
 ==============================
@@ -55,7 +55,7 @@ The function ``pick_next_task(core_id, current_task)`` selects the next runnable
 3. Preemptive Tick Dispatch & Task 0 Pinning
 ============================================
 
-In ``crates/task/src/scheduler/dispatch/tick.rs``:
+In ``crates/task/src/scheduler/dispatch.rs``:
 
 * **Task 0 (Bootstrap / Shell)**: Pinned strictly to Core 0 (BSP) to protect the bootstrap stack.
 * **Fair Preemptive Alternation**: When a userland worker task yields or exhausts its time quantum on Core 0, the scheduler alternates execution with Task 0 if Task 0 is ready. The outgoing worker task is placed back onto the local runqueue (``push_local``), ensuring fair time-slicing between user processes and the shell.

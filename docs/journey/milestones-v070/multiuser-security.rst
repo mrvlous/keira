@@ -19,7 +19,7 @@ Milestone 30 achieves five primary milestones:
 
 2. **Process Credential Inheritance (``spawn_user``)**:
 
-   - Enhanced ``spawn_user()`` in ``crates/task/src/scheduler/process/spawn.rs`` to inherit credentials from the parent task (``parent.uid``, ``parent.gid``, ``parent.euid``, ``parent.egid``) rather than defaulting to UID 0.
+   - Enhanced ``spawn_user()`` in ``crates/task/src/scheduler/process.rs`` to inherit credentials from the parent task (``parent.uid``, ``parent.gid``, ``parent.euid``, ``parent.egid``) rather than defaulting to UID 0.
    - Ensures that processes executed via ``execve`` strictly honor the calling process's security context and privilege boundaries.
 
 3. **Freestanding Core Identity Utilities (``/bin/whoami``, ``/bin/id``, ``/bin/su``)**:
@@ -104,5 +104,5 @@ Technical Specifications
   - ``SYS_GETEGID`` (Vector 91): Returns calling task's effective group ID (``egid``).
 
 - **Coreutilities Added**: ``/bin/whoami``, ``/bin/id``, ``/bin/su``.
-- **Credential Inheritance**: Enforced in ``crates/task/src/scheduler/process/spawn.rs:spawn_user``.
+- **Credential Inheritance**: Enforced in ``crates/task/src/scheduler/process.rs:spawn_user``.
 - **Security Invariant**: Strictly zero privilege escalation from non-zero UID processes without capability tokens.
