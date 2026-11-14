@@ -236,11 +236,15 @@ int main(int argc, char **argv) {
         }
 
         if (!headers_parsed) {
-            size_t space = sizeof(header_buf) - 1 - header_buf_len;
-            size_t to_copy = (size_t)n < space ? (size_t)n : space;
-            memcpy(header_buf + header_buf_len, chunk, to_copy);
-            header_buf_len += to_copy;
-            header_buf[header_buf_len] = '\0';
+            if (header_buf_len < sizeof(header_buf) - 1) {
+                size_t space = sizeof(header_buf) - 1 - header_buf_len;
+                size_t to_copy = (size_t)n < space ? (size_t)n : space;
+                memcpy(header_buf + header_buf_len, chunk, to_copy);
+                header_buf_len += to_copy;
+                if (header_buf_len < sizeof(header_buf)) {
+                    header_buf[header_buf_len] = '\0';
+                }
+            }
 
             char *delim = strstr(header_buf, "\r\n\r\n");
             if (!delim) {
