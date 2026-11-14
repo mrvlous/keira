@@ -215,4 +215,3 @@ pub fn is_ipc_syscall(num: u64) -> bool {
             | SYS_SHM_SEM
     )
 }
-

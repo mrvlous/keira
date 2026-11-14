@@ -43,4 +43,3 @@ pub fn syscall_task_cleanup_hook(pid: usize) {
         keira_ipc::cleanup_futex_waiters_for_pid(pid as u32);
     }
 }
-

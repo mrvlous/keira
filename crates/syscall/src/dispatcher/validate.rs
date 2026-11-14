@@ -32,4 +32,3 @@ pub fn validate_fd(fd: i32) -> Result<(), i64> {
         Err(EBADF)
     }
 }
-

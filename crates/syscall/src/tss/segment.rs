@@ -144,4 +144,3 @@ pub unsafe extern "C" fn set_kernel_stack(sp0: usize) {
 pub unsafe extern "C" fn get_boot_kernel_stack() -> usize {
     BOOT_KERNEL_STACK_TOP
 }
-

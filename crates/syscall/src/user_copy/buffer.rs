@@ -65,4 +65,3 @@ pub unsafe fn copy_val_from_user<T: Copy>(src_user_ptr: u64) -> Result<T, i64> {
     copy_from_user(slice, src_user_ptr)?;
     Ok(val.assume_init())
 }
-

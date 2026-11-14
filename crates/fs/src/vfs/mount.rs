@@ -714,8 +714,8 @@ pub mod tmpfs {
 pub use self::entry::*;
 pub use self::flags::*;
 pub use self::table::*;
-pub use self::tmpfs::*;
 pub use self::tmpfs::clear_all as clear_tmpfs;
+pub use self::tmpfs::*;
 
 #[cfg(test)]
 mod tests {
