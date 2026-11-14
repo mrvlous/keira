@@ -205,10 +205,6 @@ pub mod router {
             "power" | "poweroff" | "shutdown" => crate::cmds::power::run(&mut parts),
             "help" => crate::cmds::help::run(&mut parts),
             _ => {
-                if crate::cmds::run::run_direct_with_parts(command, &mut parts) {
-                    return;
-                }
-
                 let found_in_path = unsafe {
                     let mut path_buf = [0u8; 64];
                     let cmd_bytes = command.as_bytes();
