@@ -31,7 +31,7 @@ Milestone 20 resolves this architectural challenge through a dual-layer approach
    |                     (Root Shell: keira:/#, Ring 0)                      |
    |                                                                         |
    |   Direct Dispatch: [sysinfo.elf] / [kcc /tmp/main.c] / [sh -c "..."]    |
-   |   Fallback Resolver: run_direct_with_parts() -> $PATH Search (/bin)    |
+   |   Rescue Boundary: Explicit run /bin/<cmd> Execution Isolation          |
    +------------------------------------+------------------------------------+
                                         |
                                         | jump_to_user()
@@ -121,7 +121,7 @@ To enable Linux-style command execution without typing ``run``, the shell execut
        run_direct_with_args(command, &args_buf[..arg_count])
    }
 
-In ``crates/shell/src/executor/dispatch.rs``, if a command does not match any registered supervisor command keyword, the router automatically attempts resolution against ``/bin`` and the root filesystem before reporting an unknown command error.
+In ``crates/shell/src/executor/dispatch.rs``, if a command does not match any registered supervisor command keyword, the router automatically attempts resolution against ``/bin`` and guides execution via ``run /bin/<cmd>`` before reporting an unknown command error, preserving supervisor rescue isolation.
 
 4. Supervisor sh Command (crates/shell/src/cmds/sys.rs)
 ------------------------------------------------------------------

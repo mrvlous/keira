@@ -24,8 +24,8 @@ Milestone 24 achieves five primary architectural milestones:
 2. **Ring 0 Supervisor Console Slimming (Emergency Kernel Debugger)**:
    All high-level user utilities (``tasks``, ``kill``, ``stop``, ``hostname``, ``wipe``) were completely removed from the Ring 0 shell dispatch table and autocomplete index. The supervisor console (``keira:/#`` ) is now focused exclusively on emergency kernel debugging, crash diagnostics, hardware enumeration, memory inspection and low-level control.
 
-3. **Transparent PATH Execution Fallthrough**:
-   The kernel command router automatically falls through to execute ``/bin/<cmd>.elf`` and ``/bin/<cmd>`` in Ring 3 whenever a command is not a low-level supervisor diagnostic. Invoking ``ps``, ``kill``, ``hostname``, ``dmesg`` or ``df`` executes unprivileged userspace binaries seamlessly. Display reset in Ring 0 is handled via native ``wipe``.
+3. **Supervisor Rescue Console Boundary & PATH Routing**:
+   The supervisor console enforces a strict separation boundary where unprivileged userspace utilities in ``/bin`` require explicit ``run /bin/<cmd>`` invocation. When a command matches an executable in ``/bin``, the router guides the operator to use ``run /bin/<cmd>``. Full autonomous PATH execution and pipelines are handled within the canonical Ring 3 userspace shell (``/bin/sh``). Display reset in Ring 0 is handled via native ``wipe``.
 
 4. **ProcFS Telemetry Integration**:
    The ``/bin/ps`` utility demonstrates complete integration with Keira's dynamic procfs subsystem (``/proc/<pid>/status``), parsing standard Linux-compatible telemetry fields (``Name:``, ``State:``, ``Pid:``, ``PPid:``) without requiring kernel-level hooks.

@@ -66,8 +66,8 @@ Technical Implementation
 The legacy in-kernel compiler source ``crates/shell/src/cmds/proc.rs`` and its associated supervisor router mappings were deleted. When a user or script invokes ``kcc`` at the supervisor prompt:
 
 1. The supervisor router fails to find an internal command named ``kcc``.
-2. Execution falls through to ``run_direct_with_parts``.
-3. The kernel binary launcher searches the canonical ``$PATH`` (``/bin:/usr/bin``) and locates ``/bin/kcc.elf``.
+2. The router detects ``kcc`` in ``/bin`` and directs execution via ``run /bin/kcc`` or interactive launch from the canonical Ring 3 userspace shell (``/bin/sh``).
+3. The binary launcher resolves the path and locates ``/bin/kcc.elf``.
 4. The kernel loads the ELF executable into a fresh Ring 3 address space and transfers control to the unprivileged process.
 
 2. Freestanding Ring 3 Fetch Utility (/bin/fetch.elf)
