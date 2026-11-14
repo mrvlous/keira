@@ -47,6 +47,9 @@ The userspace shell implements essential built-in commands natively within the b
    * - ``history``
      - ``history``
      - Displays command execution history ring buffer
+   * - ``sh``
+     - ``sh``
+     - Refreshes interactive shell in place without spawning redundant nested subshells
    * - ``exit``
      - ``exit [code]``
      - Terminates the shell process with the specified exit status
@@ -113,6 +116,13 @@ D. Interactive Line Editing & Command History Navigation
 - **Arrow Navigation**: Pressing **Up Arrow** (``\x1b[A``) scrolls backwards through previous commands stored in the 32-slot history ring buffer. Pressing **Down Arrow** (``\x1b[B``) scrolls forward or restores the uncommitted draft command line.
 - **Raw Mode Line Discipline**: Interactive input uses POSIX ``termios`` raw mode (``~ICANON`` and ``~ECHO``) to process keystrokes, inline backspacing and escape sequences in real time. Canonical terminal mode is automatically restored whenever child processes execute.
 - **Session History Inspection**: The ``history`` built-in prints all retained history entries indexed sequentially.
+
+E. Interactive Shell Idempotency & Clean Exit Semantics
+-------------------------------------------------------
+
+- **Subshell Nesting Prevention**: When running interactively inside ``/bin/sh``, invoking ``sh``, ``sh.elf`` or ``/bin/sh`` with no arguments does not spawn a redundant child process. The shell resets its exit status and displays a fresh prompt in place without consuming scheduler task slots or memory.
+- **Immediate Supervisor Console Return**: Because interactive shells do not nest redundantly when spamming ``sh``, issuing a single ``exit`` command immediately terminates the Ring 3 shell and returns execution directly to the Ring 0 supervisor rescue console.
+- **Child Exit Propagation**: If a nested interactive shell process terminates, the parent shell propagates the exit code and terminates synchronously, ensuring operators never encounter trapped subshell loops.
 
 4. Invocation & Execution Examples
 ==================================
