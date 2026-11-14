@@ -12,16 +12,16 @@
  * GNU General Public License for more details.
  */
 
-//! Pipe streaming and zero-copy splice IPC.
+//! Unidirectional data channels and zero-copy pipe operations.
 
 pub mod fifo;
-pub mod zero_copy;
+pub mod splice;
 
 pub use fifo::*;
-pub use zero_copy::*;
+pub use splice::*;
 
-pub mod splice {
-    pub use super::zero_copy::*;
+pub mod zero_copy {
+    pub use super::splice::*;
 }
 
 #[cfg(test)]

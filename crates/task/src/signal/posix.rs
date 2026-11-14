@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+//! POSIX signal numbers, constants and signal masks.
+
+pub mod mask {
+    pub const SIG_BLOCK: i32 = 0;
+    pub const SIG_UNBLOCK: i32 = 1;
+    pub const SIG_SETMASK: i32 = 2;
+}
+
+pub mod numbers {
+    pub const SIGHUP: u32 = 1;
+    pub const SIGINT: u32 = 2;
+    pub const SIGQUIT: u32 = 3;
+    pub const SIGILL: u32 = 4;
+    pub const SIGTRAP: u32 = 5;
+    pub const SIGABRT: u32 = 6;
+    pub const SIGBUS: u32 = 7;
+    pub const SIGFPE: u32 = 8;
+    pub const SIGKILL: u32 = 9;
+    pub const SIGUSR1: u32 = 10;
+    pub const SIGSEGV: u32 = 11;
+    pub const SIGUSR2: u32 = 12;
+    pub const SIGPIPE: u32 = 13;
+    pub const SIGALRM: u32 = 14;
+    pub const SIGTERM: u32 = 15;
+    pub const SIGCHLD: u32 = 17;
+    pub const SIGCONT: u32 = 18;
+    pub const SIGSTOP: u32 = 19;
+}
+
+pub use self::mask::*;
+pub use self::numbers::*;
