@@ -787,7 +787,7 @@ int main(int argc, char **argv) {
 
         int n = sh_readline(line_buf, sizeof(line_buf));
         if (n < 0) {
-            putchar('\n');
+            puts("exit");
             break;
         }
         if (n == 0) {
