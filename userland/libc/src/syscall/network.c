@@ -41,3 +41,7 @@ long sys_ping(const char *target_ip, int timeout_ms) {
 long sys_netfilter(uint32_t cmd, uint64_t arg1, uint64_t arg2) {
     return (long)syscall3(SYS_NETFILTER, (uint64_t)cmd, arg1, arg2);
 }
+
+int sys_dns_resolve(const char *name, uint8_t *ip_out) {
+    return (int)syscall2(SYS_DNS_RESOLVE, (uint64_t)(uintptr_t)name, (uint64_t)(uintptr_t)ip_out);
+}

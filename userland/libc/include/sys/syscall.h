@@ -127,6 +127,7 @@
 #define SYS_SELECT 107
 #define SYS_UNAME 108
 #define SYS_REBOOT 109
+#define SYS_DNS_RESOLVE 110
 
 struct stat;
 struct rlimit;
@@ -200,6 +201,7 @@ int sys_poll(void *fds, unsigned int nfds, int timeout);
 int sys_select(int nfds, void *readfds, void *writefds, void *exceptfds, void *timeout);
 int sys_uname(void *buf);
 int sys_reboot(int magic1, int magic2, int cmd, void *arg);
+int sys_dns_resolve(const char *name, uint8_t *ip_out);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2
