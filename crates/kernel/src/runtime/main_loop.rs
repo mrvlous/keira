@@ -66,12 +66,7 @@ pub fn enter_main_loop() -> ! {
         if let Some(path) = sh_path {
             vga::set_color(vga::Color::White, vga::Color::Black);
             let _ = shell::run_user_program(path, &[path]);
-            vga::set_color(vga::Color::Yellow, vga::Color::Black);
-            vga::print_str("\n[kernel] Userspace session terminated.\n");
-            vga::print_str(
-                "[kernel] Dropping to supervisor console (Ring 0). Type 'help' or 'sh'.\n\n",
-            );
-            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("logout\n");
         } else {
             vga::set_color(vga::Color::LightGreen, vga::Color::Black);
             vga::print_str(
