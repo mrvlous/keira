@@ -14,6 +14,16 @@
 
 //! Trusted Platform Module (TPM 2.0) hardware enclave and PCR measurement banks.
 
-pub mod tpm2;
+pub mod hardware;
+pub mod pcr;
+pub mod sealed;
 
-pub use tpm2::*;
+pub use self::hardware::*;
+pub use self::pcr::*;
+pub use self::sealed::*;
+
+pub mod tpm2 {
+    pub use super::hardware::*;
+    pub use super::pcr::*;
+    pub use super::sealed::*;
+}

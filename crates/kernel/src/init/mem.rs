@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+//! Memory management, paging, heap and linear framebuffer initialization.
+
+use keira_io::ps2::mouse as ps2_mouse;
+use keira_io::vga;
+use keira_mem::vmm;
+
+#[cfg(target_os = "none")]
+extern "C" {
+    static __bss_end: u8;
+    static stack_top: u8;
+    static __heap_start: u8;
+    static __heap_end: u8;
+}
+
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals)]
+static __bss_end: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals)]
+static stack_top: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals)]
+static __heap_start: u8 = 0;
+#[cfg(not(target_os = "none"))]
+#[allow(non_upper_case_globals)]
+static __heap_end: u8 = 0;
+
+/// Initialize Physical Frame Allocator (PMM), Paging (VMM) and Segregated Free-List Heap.
+///
+/// # Safety
+/// Caller must ensure `multiboot_info_ptr` is valid and mapped.
+pub unsafe fn init_memory(multiboot_info_ptr: usize, initrd_end: u64) {
+    let bss_end_addr = core::ptr::addr_of!(__bss_end) as u64;
+    let stack_top_addr = core::ptr::addr_of!(stack_top) as u64;
+    let heap_start_addr = core::ptr::addr_of!(__heap_start) as u64;
+    let heap_end_addr = core::ptr::addr_of!(__heap_end) as u64;
+
+    let kernel_limit = core::cmp::max(core::cmp::max(bss_end_addr, stack_top_addr), heap_end_addr);
+
+    keira_mem::init(multiboot_info_ptr as u64, initrd_end, kernel_limit);
+
+    if heap_end_addr > heap_start_addr {
+        let heap_size = (heap_end_addr - heap_start_addr) as usize;
+        keira_mem::heap_init(heap_start_addr as *mut u8, heap_size);
+    }
+
+    let fb_addr = vga::FRAMEBUFFER_ADDR;
+    let fb_pitch = vga::FRAMEBUFFER_PITCH;
+    let fb_height = vga::FRAMEBUFFER_HEIGHT;
+    if fb_addr != 0 {
+        let fb_size = fb_height as u64 * fb_pitch as u64;
+        let page_count = fb_size.div_ceil(4096);
+        for i in 0..page_count {
+            let offset = i * 4096;
+            let phys = fb_addr + offset;
+            let _ = vmm::map_page(phys, phys, vmm::PAGE_WRITABLE);
+        }
+        let fb_width = vga::FRAMEBUFFER_WIDTH;
+        ps2_mouse::set_resolution(fb_width as i32, fb_height as i32);
+        vga::FRAMEBUFFER_MAPPED = true;
+        vga::init();
+    }
+
+    keira_core::pr_info!("pmm", "physical memory frame allocator active");
+    keira_core::pr_info!("vmm", "4-level paging memory manager initialized");
+    keira_core::pr_info!("slab", "segregated magazine slab kernel heap ready");
+}
+
+pub mod setup {
+    pub use super::init_memory;
+}
