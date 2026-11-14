@@ -146,3 +146,4 @@ pub unsafe fn init_user_mode() {
     configure_gdt_tss();
     configure_syscall_msrs(BOOT_KERNEL_STACK_TOP);
 }
+

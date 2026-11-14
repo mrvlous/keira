@@ -127,3 +127,4 @@ pub unsafe fn validate_user_ptr(ptr: u64, len: u64, require_writable: bool) -> R
 
     Ok(())
 }
+
