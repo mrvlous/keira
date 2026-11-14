@@ -14,36 +14,23 @@
 
 //! POSIX socket abstractions and kernel table management.
 
-pub mod family;
+pub mod domain;
 pub mod handle;
-pub mod manager;
+pub mod table;
+
+pub use domain as family;
+pub use handle as descriptor;
+pub use table as manager;
+
+pub mod sock {
+    pub use super::domain::*;
+    pub use super::handle::*;
+    pub use super::table::*;
+}
 
 #[cfg(test)]
 mod tests;
 
-pub use family::{
-    validate_socket_port, AF_INET, AF_INET6, AF_UNIX, AF_UNSPEC, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
-};
-pub use handle::{SocketEntry, TcpSocket, MAX_SOCKETS, SOCKET_BUF_SIZE};
-pub use manager::{
-    bind_socket, close_socket, connect_socket, create_socket, create_socketpair,
-    for_each_unix_socket, format_proc_raw, format_proc_sockstat, format_proc_tcp, format_proc_udp,
-    format_proc_unix, is_socket_nonblocking, queue_rx_data, recv_socket, send_socket,
-    set_socket_nonblocking, socket_is_readable, socket_is_writable, socket_table_reset,
-    NEXT_SOCKET_ID, SOCKET_TABLE,
-};
-
-pub mod sock {
-    pub use super::family::{
-        validate_socket_port, AF_INET, AF_INET6, AF_UNIX, AF_UNSPEC, SOCK_DGRAM, SOCK_RAW,
-        SOCK_STREAM,
-    };
-    pub use super::handle::{SocketEntry, TcpSocket, MAX_SOCKETS, SOCKET_BUF_SIZE};
-    pub use super::manager::{
-        bind_socket, close_socket, connect_socket, create_socket, create_socketpair,
-        for_each_unix_socket, format_proc_raw, format_proc_sockstat, format_proc_tcp,
-        format_proc_udp, format_proc_unix, is_socket_nonblocking, queue_rx_data, recv_socket,
-        send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
-        socket_table_reset, NEXT_SOCKET_ID, SOCKET_TABLE,
-    };
-}
+pub use domain::*;
+pub use handle::*;
+pub use table::*;

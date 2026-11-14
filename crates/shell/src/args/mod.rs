@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-//! Command-line argument parsing and flag handling.
+//! Command-line argument parsing and flag decoding.
 
 pub mod flags;
 pub mod parser;
@@ -20,4 +20,5 @@ pub mod parser;
 #[cfg(test)]
 mod tests;
 
-pub use flags::{CliArgs, MAX_ARG_TOKENS};
+pub use flags::*;
+pub use parser::*;

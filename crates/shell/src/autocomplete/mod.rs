@@ -12,13 +12,15 @@
  * GNU General Public License for more details.
  */
 
-//! Autocomplete subsystem providing tab completion for commands and file paths.
+//! Interactive tab-completion engine for shell commands and filesystem paths.
 
+pub mod matcher;
 pub mod table;
-pub mod word;
+
+pub use matcher as word;
 
 #[cfg(test)]
 mod tests;
 
-pub use table::{handle_autocomplete, COMMANDS_LIST, STANDARD_PATHS};
-pub use word::find_last_word;
+pub use matcher::*;
+pub use table::*;

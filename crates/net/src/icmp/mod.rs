@@ -14,13 +14,11 @@
 
 //! Internet Control Message Protocol (ICMP) network diagnostics.
 
-pub mod echo;
+pub mod ping;
+
+pub use ping as echo;
 
 #[cfg(test)]
 mod tests;
 
-pub use echo::send_ping;
-
-pub mod ping {
-    pub use super::echo::send_ping;
-}
+pub use ping::send_ping;

@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+//! Subsystem module: virtio.
+
+pub mod device {
+pub const VIRTIO_NET_VENDOR_ID: u16 = 0x1AF4;
+pub const VIRTIO_NET_DEVICE_ID: u16 = 0x1000;
+
+/// VirtIO-Net device descriptor.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VirtioNetDevice {
+    pub io_base: u16,
+    pub mac: [u8; 6],
+    pub active: bool,
+}
+
+impl VirtioNetDevice {
+    /// Construct a new default VirtIO-Net device descriptor.
+    pub const fn new() -> Self {
+        Self {
+            io_base: 0,
+            mac: [0x52, 0x54, 0x00, 0x12, 0x34, 0x58],
+            active: false,
+        }
+    }
+}
+
+impl Default for VirtioNetDevice {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+}
+
+pub use self::device::*;

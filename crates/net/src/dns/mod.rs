@@ -15,12 +15,14 @@
 //! Domain Name System (DNS) protocol and client resolver.
 
 pub mod cache;
+pub mod client;
 pub mod header;
-pub mod resolver;
+
+pub use client as resolver;
 
 #[cfg(test)]
 mod tests;
 
 pub use cache::{print_dns_cache, DnsCacheEntry, DNS_CACHE, DNS_CACHE_COUNT};
+pub use client::{encode_qname, resolve_domain};
 pub use header::DnsHeader;
-pub use resolver::{encode_qname, resolve_domain};

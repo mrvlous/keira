@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-//! Terminal text editor (`kvi`) subsystem.
+//! In-kernel text editor with syntax highlighting, viewport rendering and buffer editing.
 
 pub mod buffer;
 pub mod input;
@@ -21,6 +21,6 @@ pub mod render;
 #[cfg(test)]
 mod tests;
 
-pub use buffer::{editor_save_file, editor_start};
-pub use input::handler::editor_handle_keypress;
-pub use render::view::editor_redraw;
+pub use buffer::*;
+pub use input::*;
+pub use render::*;

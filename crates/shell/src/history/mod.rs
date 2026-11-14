@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 
-//! Command history ring buffer and arrow navigation subsystem.
+//! Command history ring buffer, navigation and persistent storage.
 
 pub mod nav;
 pub mod storage;
@@ -20,5 +20,5 @@ pub mod storage;
 #[cfg(test)]
 mod tests;
 
-pub use nav::history_load;
-pub use storage::history_push;
+pub use nav::*;
+pub use storage::*;

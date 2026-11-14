@@ -15,6 +15,7 @@
 //! Dynamic Host Configuration Protocol (DHCP) client.
 
 pub mod client;
+pub mod config;
 
 #[cfg(test)]
 mod tests;

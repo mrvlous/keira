@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
+//! Subsystem module: env.
+
+mod vars {
+pub static mut ENV_PATH: [u8; 64] = [
+    b'/', b'b', b'i', b'n', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0,
+];
+pub static mut ENV_PATH_LEN: usize = 4;
+pub static mut ENV_SHELL: [u8; 32] = *b"/bin/keira                      ";
+pub static mut ENV_SHELL_LEN: usize = 10;
+
+/// Retrieves the string value of an environment variable.
+///
+/// # Safety
+/// Reads from static mutable environment storage buffers without atomic locks.
+pub unsafe fn get_env_var(name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
+    match name {
+        "PATH" => {
+            let len = ENV_PATH_LEN;
+            if buf.len() < len {
+                return Err("Buffer too small");
+            }
+            buf[..len].copy_from_slice(&ENV_PATH[..len]);
+            Ok(len)
+        }
+        "SHELL" => {
+            let len = ENV_SHELL_LEN;
+            if buf.len() < len {
+                return Err("Buffer too small");
+            }
+            buf[..len].copy_from_slice(&ENV_SHELL[..len]);
+            Ok(len)
+        }
+        _ => Err("Environment variable not found"),
+    }
+}
+
+/// Sets or updates the string value of an environment variable.
+///
+/// # Safety
+/// Writes directly to static mutable environment storage buffers.
+pub unsafe fn set_env_var(name: &str, value: &str) -> Result<(), &'static str> {
+    let val_bytes = value.as_bytes();
+    match name {
+        "PATH" => {
+            if val_bytes.len() > 64 {
+                return Err("Value too long");
+            }
+            ENV_PATH[..val_bytes.len()].copy_from_slice(val_bytes);
+            ENV_PATH_LEN = val_bytes.len();
+            Ok(())
+        }
+        "SHELL" => {
+            if val_bytes.len() > 32 {
+                return Err("Value too long");
+            }
+            ENV_SHELL[..val_bytes.len()].copy_from_slice(val_bytes);
+            ENV_SHELL_LEN = val_bytes.len();
+            Ok(())
+        }
+        _ => Err("Invalid environment variable key"),
+    }
+}
+
+}
+
+pub use self::vars::*;
