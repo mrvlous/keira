@@ -578,3 +578,8 @@ Keira implements a robust, secure and standardized system call vector table prov
      - System
      - ``int sys_reboot(int magic1, int magic2, int cmd, void *arg)``
      - Reboots system, powers off platform or halts CPU
+   * - ``110``
+     - ``SYS_DNS_RESOLVE``
+     - Networking
+     - ``int sys_dns_resolve(const char *name, uint8_t *ip_out)``
+     - Resolves domain hostname to IPv4 address via UDP 53 DNS query
