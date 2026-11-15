@@ -245,7 +245,7 @@ pub fn handle_poll(fds_ptr: u64, nfds: u64, timeout: u64) -> u64 {
         }
 
         iterations += 1;
-        if timeout_ms > 0 && iterations >= max_iterations {
+        if (timeout_ms > 0 || cfg!(test)) && iterations >= max_iterations {
             unsafe {
                 POLL_TELEMETRY.total_timeouts = POLL_TELEMETRY.total_timeouts.saturating_add(1);
             }
@@ -258,9 +258,6 @@ pub fn handle_poll(fds_ptr: u64, nfds: u64, timeout: u64) -> u64 {
         } else {
             core::hint::spin_loop();
         }
-
-        #[cfg(test)]
-        break;
     }
 
     unsafe {
