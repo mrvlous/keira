@@ -26,26 +26,9 @@ of computer systems across 56 chronological engineering milestones:
 * Milestones 16-24: Canonical FHS, Page Cache, Loopback, Pure Kernel, Shell and Complete Coreutils.
 * Milestones 25-30: Network Diagnostics, Routing FIB, Netstat, Iptables and Multi-User Security.
 * Milestones 31-36: Distro Purge, VFS Symlinks, Modular Decoupling, Pure Kernel Demarcation, Dynamic VFS Mounts and Dynamic Anonymous Pipes.
-* Milestone 37: Text Processing Pipeline Suite (grep, wc, head, tail, echo, sleep), Kernel Stack Hardening and VMM Table Zeroing.
-* Milestone 38: POSIX Discretionary Access Control (DAC), File Permissions (chmod), Ownership (chown) and Real Stat Metadata.
-* Milestone 39: VFS Dentry Cache (dcache), Century Syscall 100 (fstat), Telemetry and Ring 0 Inspection.
-* Milestone 40: Pure Kernel Memory Introspection (/proc/slabinfo, /proc/vmstat), Slab Cache Registry and Supervisor Telemetry.
-* Milestone 41: VFS Inode Cache (icache), Cache Trinity Completion (page_cache, dcache, icache) and Ring 0 Inspection.
-* Milestone 42: Pure Kernel Dynamic ProcFS Process Hierarchy (/proc/[pid]/stat, /proc/[pid]/statm), Dynamic PID Enumeration and Ring 0 pidinfo Command.
-* Milestone 43: Hardware W^X & Kernel Exploit Mitigations (NX/DEP Bit 63, CR0.WP, CR4.SMEP/SMAP/UMIP Detection and Ring 0 secinfo Command).
-* Milestone 44: Kernel ASLR (KASLR) & Userland Randomization (CPU RDRAND/RDSEED, SplitMix64 Mixer, Stack/Mmap/Brk ASLR and Ring 0 aslrinfo Command).
-* Milestone 45: Dynamic Stack Canary & Cryptographic Hardware Entropy (AT_RANDOM Auxv, __stack_chk_guard, Century Syscall 101 SYS_GETRANDOM, /dev/urandom Silicon Integration and Ring 0 rnginfo Command).
-* Milestone 46: Process Resource Limits (RLIMIT), Memory/FD Quota Enforcement & Process Sandboxing (SYS_GETRLIMIT, SYS_SETRLIMIT, SYS_PRLIMIT64, /proc/[pid]/limits and Ring 0 rlimit Command).
-* Milestone 47: In-Kernel UNIX Domain Sockets (AF_UNIX), Zero-Copy Streaming, Century-Plus Syscall 105 (SYS_SOCKETPAIR), /proc/net/unix and Ring 0 unixsock Command.
-* Milestone 48: Industrial-Grade Kernel Logging & Telemetry (32 KiB Ring Buffer, pr_* Macros, Syscall 44, Live dmesg).
-* Milestone 49: CoW Fork Engine & Virtual Memory Fault Paging (O(1) Hash Table, Knuth Shift Deletion, In-Place Promotion, Ring 0 memory -c).
-* Milestone 50: Virtual Memory Areas (VMA) Address Space Inspection & pmap Utility (VMA Table, /proc/[pid]/maps, Canonical Formatting, /bin/pmap, Ring 0 vmainfo).
-* Milestone 51: Pure Kernel Demarcation, Application-Layer Bloat Purge & Canonical Rootfs Hardening (Ring 0 HTTPS Client Purge, Rootfs FHS Hardening, Freestanding Monolithic Kernel Purity).
-* Milestone 52: POSIX Synchronous I/O Multiplexing & SYS_POLL (Century-Plus Syscall 106, /bin/test_poll, ABI Test 38, Ring 0 pollinfo).
-* Milestone 53: POSIX Synchronous I/O Multiplexing Triad & SYS_SELECT (Century-Plus Syscall 107, /bin/test_select, ABI Test 39, Ring 0 selectinfo).
-* Milestone 54: Pure Freestanding Monolithic Kernel Demarcation, Layer 7 HTTP Ring 0 Purge, BSD Socket Networking Engine & Canonical FHS Purification (Pure L4 TCP Transport, <arpa/inet.h>, /usr/src FHS Standardization).
-* Milestone 55: POSIX System Identity Subsystem & SYS_UNAME (Century-Plus Syscall 108, struct utsname, <sys/utsname.h>, ABI Test 40, Pure uname).
-* Milestone 56: POSIX System Power Management Subsystem & SYS_REBOOT (Century-Plus Syscall 109, <sys/reboot.h>, /bin/reboot, /bin/poweroff, ABI Test 41).
+* Milestones 37-42: Text Pipelines, POSIX DAC Permissions, VFS Cache Trinity (dcache/icache), Memory Introspection and Dynamic ProcFS.
+* Milestones 43-48: Hardware Mitigations (W^X/ASLR), Cryptographic Entropy, Process RLIMIT Sandboxing, UNIX Sockets and Ring Buffer Logging.
+* Milestones 49-56: CoW Fork Engine, VMA Address Spaces, POSIX Multiplexing (poll/select), BSD Sockets, System Identity and Power Management.
 
 Read the detailed engineering journal: docs/journey/index.rst
 System architecture overview: docs/arch/index.rst
