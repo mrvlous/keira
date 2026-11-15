@@ -25,6 +25,30 @@ Command Reference
      - ``cpu``
      - Display processor model, feature flags, APIC clock, context switches and ticks
      - ``-h, --help``
+   * - ``dcache``
+     - ``dcache``
+     - Display VFS dentry cache lookup metrics, positive/negative hits and capacity
+     - ``-h, --help``
+   * - ``devices``
+     - ``devices``
+     - Probe and display PCI device bus topology and configuration space (alias: ``pci``)
+     - ``-h, --help``
+   * - ``disk``
+     - ``disk``
+     - Inspect physical ATA/SATA block devices, geometry and partition layout
+     - ``-h, --help``
+   * - ``drivers``
+     - ``drivers``
+     - Display registered kernel device drivers and subsystem controller bindings
+     - ``-h, --help``
+   * - ``help``
+     - ``help``
+     - List all available Ring 0 supervisor console commands and interactive usage
+     - None
+   * - ``icache``
+     - ``icache``
+     - Display VFS inode cache telemetry, active entries and allocation statistics
+     - ``-h, --help``
    * - ``irq``
      - ``irq``
      - Display IDT interrupt vector routing and processed hit counters
@@ -33,6 +57,14 @@ Command Reference
      - ``memory [-t|-p|-c|-l]``
      - Display physical memory (PMM) frames, kernel heap and Copy-On-Write statistics (alias: ``mem``)
      - ``-c, --cow``: Copy-On-Write sharing and fault metrics ``-p, --paging``: Paging, COW and #PF telemetry ``-l, --slab``: Magazine slab cache stats ``-t, --test``: Heap stress test ``-h, --help``: Usage info
+   * - ``mount``
+     - ``mount``
+     - Display Virtual Filesystem mount table, filesystem types and root bindings
+     - ``-h, --help``
+   * - ``pidinfo``
+     - ``pidinfo``
+     - Display process hierarchy, task states, scheduling metrics and PID table (alias: ``procs``)
+     - ``-h, --help``
    * - ``pipes``
      - ``pipes``
      - Display anonymous pipe buffer queues, active reader/writer counts and throughput metrics
@@ -61,6 +93,10 @@ Command Reference
      - ``rnginfo [-v]``
      - Display silicon hardware entropy source, random generator subsystems and live entropy sample (alias: ``entropy``)
      - ``-v, --verbose``: Harvest and display 16-byte silicon entropy sample and CPU RNG features ``-h, --help``: Usage info
+   * - ``run``
+     - ``run <path> [args...]``
+     - Load and execute a Ring 3 ELF binary or shell script from the filesystem
+     - None
    * - ``secinfo``
      - ``secinfo [-v]``
      - Display hardware exploit mitigations, memory boundary protections and #PF telemetry (alias: ``mitigations``)
@@ -69,6 +105,10 @@ Command Reference
      - ``selectinfo``
      - Display live fd_set bitmask multiplexing telemetry and event status (alias: ``select``)
      - ``-h, --help``
+   * - ``sh``
+     - ``sh``
+     - Launch an interactive Ring 3 userspace shell session
+     - None
    * - ``slabinfo``
      - ``slabinfo``
      - Display kernel slab allocator caches, object sizes and active memory allocations (alias: ``slab``)
