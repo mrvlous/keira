@@ -27,6 +27,7 @@
 /docs/_static/
 /docs/_templates/
 /docs/.doctrees/
+/docs/screenshots/
 
 # Python virtual environment and bytecode caches
 /.venv/
