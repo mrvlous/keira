@@ -169,7 +169,7 @@ A. Release Commits:
 
    Keira <version>
 
-*Example: ``Keira 0.8.0``*
+*Example: ``Keira 0.9.0``*
 
 B. Standard Conventional Commits:
 ---------------------------------

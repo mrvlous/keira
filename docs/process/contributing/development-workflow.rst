@@ -12,7 +12,7 @@ Branching Strategy
 .. code-block:: text
 
    gitGraph
-       commit id: "v0.8.0"
+       commit id: "v0.9.0"
        branch feat/ext4-extent
        checkout feat/ext4-extent
        commit id: "feat(fs): add extent tree traversal"
