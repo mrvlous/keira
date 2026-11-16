@@ -168,8 +168,8 @@ Users can invoke ``sh`` or ``sh.elf`` directly from the supervisor prompt withou
 .. code-block:: bash
 
    # Direct binary execution:
-   ring0@keira:/# sh.elf -c 'echo "Keira Standalone Userspace Shell (sh v0.8.0)"'
-   Keira Standalone Userspace Shell (sh v0.8.0)
+   ring0@keira:/# sh.elf -c 'echo "Keira Standalone Userspace Shell (sh v0.9.0)"'
+   Keira Standalone Userspace Shell (sh v0.9.0)
 
    # Direct shebang script execution:
    keira:/$ /etc/init.sh

@@ -49,7 +49,7 @@ In accordance with Keira's freestanding pure-kernel architecture:
    # Verify transparent target resolution:
    keira:/# cat /tmp/cfg_link
    KERNEL_NAME=keira
-   KERNEL_VERSION=0.8.0
+   KERNEL_VERSION=0.9.0
    KERNEL_ARCH=x86_64
 
    # Force overwrite of an existing destination link with verbose output:

@@ -52,7 +52,7 @@ Slicing File Prefixes
    # Outputting the first 2 lines of a file:
    keira:/# head -n 2 /etc/kernel.cfg
    KERNEL_NAME=keira
-   KERNEL_VERSION=0.8.0
+   KERNEL_VERSION=0.9.0
 
    # Reading the first 16 bytes:
    keira:/# head -c 16 /tmp/main.c

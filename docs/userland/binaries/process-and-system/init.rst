@@ -42,6 +42,6 @@ While automatically executed at boot time as PID 1, ``init.elf`` can also be ins
    mount: successfully mounted none on /tmp (type tmpfs)
    lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
            inet 127.0.0.1  netmask 255.0.0.0
-   Keira keira 0.8.0 #1 SMP 2026 x86_64
+   Keira keira 0.9.0 #1 SMP 2026 x86_64
    [INIT] Userland system initialization sequence completed.
    [INIT] System bootstrap sequence complete.
