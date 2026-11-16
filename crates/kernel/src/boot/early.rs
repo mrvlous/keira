@@ -29,7 +29,11 @@ pub fn early_bringup() {
 
     pr_info!(
         "x86/boot",
-        "Keira Kernel v0.8.0 booting (pure freestanding Ring 0)"
+        concat!(
+            "Keira Kernel v",
+            env!("CARGO_PKG_VERSION"),
+            " booting (pure freestanding Ring 0)"
+        )
     );
 
     #[cfg(target_os = "none")]

@@ -23,7 +23,11 @@ pub mod misc {
             let fg = vga::Color::White;
 
             vga::set_color(fg, bg);
-            vga::print_str("Keira Kernel Diagnostic & Emergency Debugger (Ring 0 v0.8.0)\n");
+            vga::print_str(concat!(
+                "Keira Kernel Diagnostic & Emergency Debugger (Ring 0 v",
+                env!("CARGO_PKG_VERSION"),
+                ")\n"
+            ));
             vga::print_str("Built-in Commands:\n");
             vga::print_str("  system         Display system summary, kernel version and uptime\n");
             vga::print_str("  cpu            Display CPU model, features and cache topology\n");

@@ -7,10 +7,10 @@
 
 [package]
 name = "keira-syscall"
-version = "0.8.0"
-edition = "2021"
-authors = ["Moh. Ananda Firmansyah Putra"]
-license = "GPL-2.0-only"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
 description = "System call vector dispatchers, safe user copying and exception handlers for Keira Kernel"
 
 [dependencies]

@@ -15,6 +15,7 @@
 #include "fuzz_abi.h"
 
 #include <stdio.h>
+#include <sys/version.h>
 #include <syscall.h>
 
 int main(int argc, char **argv) {
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
            total_calls + num_opened + churn_iterations + signal_bursts);
     printf("Execution Duration: %ld ms | Kernel Status: ROCK SOLID / ZERO PANIC\n",
            (long)elapsed_ms);
-    puts("Keira Kernel v0.8.0 Production Stability Criteria: 100% MET [OK]");
+    puts("Keira Kernel v" KEIRA_VERSION " Production Stability Criteria: 100% MET [OK]");
 
     return 0;
 }

@@ -7,10 +7,10 @@
 
 [package]
 name = "keira-net"
-version = "0.8.0"
-edition = "2021"
-authors = ["Moh. Ananda Firmansyah Putra"]
-license = "GPL-2.0-only"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
 description = "Intel e1000 NIC driver, TCP/IP stack, DHCP, DNS, TLS 1.3, Netfilter and BPF for Keira Kernel"
 
 [dependencies]

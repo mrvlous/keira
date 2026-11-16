@@ -20,6 +20,7 @@
 #include "symbols.h"
 
 #include <stdio.h>
+#include <sys/version.h>
 #include <syscall.h>
 
 int main(int argc, char **argv) {
@@ -38,7 +39,7 @@ int main(int argc, char **argv) {
                 return 1;
             }
         } else if (k_strcmp(argv[arg_i], "-v") == 0 || k_strcmp(argv[arg_i], "--version") == 0) {
-            print_str("kcc (Keira C Compiler) 0.8.0\n");
+            print_str("kcc (Keira C Compiler) " KEIRA_VERSION "\n");
             return 0;
         } else if (k_strcmp(argv[arg_i], "-h") == 0 || k_strcmp(argv[arg_i], "--help") == 0) {
             print_str("Usage: kcc [options] <source.c>\n\n");

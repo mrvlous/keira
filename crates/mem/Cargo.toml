@@ -7,10 +7,10 @@
 
 [package]
 name = "keira-mem"
-version = "0.8.0"
-edition = "2021"
-authors = ["Moh. Ananda Firmansyah Putra"]
-license = "GPL-2.0-only"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
 description = "Physical memory allocator, 4-level virtual paging, DMA and swap pager for Keira Kernel"
 
 [dependencies]

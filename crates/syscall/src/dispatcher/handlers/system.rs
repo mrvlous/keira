@@ -515,7 +515,7 @@ pub fn handle_uname(buf_ptr: u64) -> u64 {
         uts.nodename[..default_host.len()].copy_from_slice(default_host);
     }
 
-    let release_src = b"0.8.0";
+    let release_src = env!("CARGO_PKG_VERSION").as_bytes();
     uts.release[..release_src.len()].copy_from_slice(release_src);
 
     let version_src = b"#1 SMP 2026";

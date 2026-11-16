@@ -269,3 +269,12 @@ fn test_klog_lifecycle() {
         unsafe { sys_syslog_read(sys_buf.as_mut_ptr(), sys_buf.len()) }.expect("syslog read");
     assert_eq!(sys_len, 512);
 }
+
+#[test]
+fn test_kernel_version_metadata() {
+    assert!(!KERNEL_VERSION.is_empty());
+    assert_eq!(KERNEL_VERSION, env!("CARGO_PKG_VERSION"));
+    assert_eq!(KERNEL_VERSION_MAJOR, env!("CARGO_PKG_VERSION_MAJOR"));
+    assert_eq!(KERNEL_VERSION_MINOR, env!("CARGO_PKG_VERSION_MINOR"));
+    assert_eq!(KERNEL_VERSION_PATCH, env!("CARGO_PKG_VERSION_PATCH"));
+}

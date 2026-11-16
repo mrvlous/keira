@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/version.h>
 #include <unistd.h>
 
 static void print_usage(void) {
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
             return 0;
         }
         if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
-            puts("whoami (Keira Coreutils) 0.8.0");
+            puts("whoami (Keira Coreutils) " KEIRA_VERSION);
             return 0;
         }
         fprintf(stderr, "whoami: unrecognized option '%s'\n", argv[i]);

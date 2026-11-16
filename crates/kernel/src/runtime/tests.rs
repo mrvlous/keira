@@ -16,12 +16,13 @@
 
 #[test]
 fn test_runtime_version_format() {
-    assert_eq!(env!("CARGO_PKG_VERSION"), "0.8.0");
+    assert_eq!(env!("CARGO_PKG_VERSION"), keira_core::KERNEL_VERSION);
+    assert!(!env!("CARGO_PKG_VERSION").is_empty());
 }
 
 #[test]
 fn test_kernel_purity_invariants() {
     assert_eq!(env!("CARGO_PKG_NAME"), "keira-kernel");
-    assert_eq!(env!("CARGO_PKG_VERSION"), "0.8.0");
+    assert_eq!(env!("CARGO_PKG_VERSION"), keira_core::KERNEL_VERSION);
     assert!(env!("CARGO_PKG_DESCRIPTION").contains("Keira Kernel"));
 }

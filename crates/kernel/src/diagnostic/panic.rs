@@ -34,7 +34,11 @@ fn panic(info: &PanicInfo) -> ! {
     }
     serial::print_str("\r\n");
 
-    serial::print_str("CPU: 0 PID: 1 Comm: init 0.8.0 #1\r\n");
+    serial::print_str(concat!(
+        "CPU: 0 PID: 1 Comm: init ",
+        env!("CARGO_PKG_VERSION"),
+        " #1\r\n"
+    ));
     if let Some(location) = info.location() {
         serial::print_str("Location: ");
         serial::print_str(location.file());
@@ -55,7 +59,11 @@ fn panic(info: &PanicInfo) -> ! {
     vga::print_str("\n");
 
     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-    vga::print_str("CPU: 0 PID: 1 Comm: init 0.8.0 #1\n");
+    vga::print_str(concat!(
+        "CPU: 0 PID: 1 Comm: init ",
+        env!("CARGO_PKG_VERSION"),
+        " #1\n"
+    ));
     if let Some(location) = info.location() {
         vga::print_str("Location: ");
         vga::print_str(location.file());

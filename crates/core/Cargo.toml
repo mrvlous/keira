@@ -7,10 +7,10 @@
 
 [package]
 name = "keira-core"
-version = "0.8.0"
-edition = "2021"
-authors = ["Moh. Ananda Firmansyah Putra"]
-license = "GPL-2.0-only"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
 description = "Core primitives, atomic synchronizations and freestanding memory utilities for Keira Kernel"
 
 [dependencies]

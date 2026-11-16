@@ -60,5 +60,11 @@ pub use sync::lock_order::{check_lock_order, record_lock_acquire, record_lock_re
 pub use sync::mutex::{SpinMutex, SpinMutexGuard};
 pub use sync::spinlock::SpinLock;
 
+/// Canonical kernel version metadata extracted at compile time from Cargo workspace manifest.
+pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const KERNEL_VERSION_MAJOR: &str = env!("CARGO_PKG_VERSION_MAJOR");
+pub const KERNEL_VERSION_MINOR: &str = env!("CARGO_PKG_VERSION_MINOR");
+pub const KERNEL_VERSION_PATCH: &str = env!("CARGO_PKG_VERSION_PATCH");
+
 #[cfg(test)]
 mod tests;

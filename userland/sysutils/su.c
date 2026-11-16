@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/version.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
             return 0;
         }
         if (strcmp(argv[arg_idx], "-v") == 0 || strcmp(argv[arg_idx], "--version") == 0) {
-            puts("su (Keira Coreutils) 0.8.0");
+            puts("su (Keira Coreutils) " KEIRA_VERSION);
             return 0;
         }
         if (strcmp(argv[arg_idx], "-") == 0 || strcmp(argv[arg_idx], "-l") == 0 ||

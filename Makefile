@@ -43,7 +43,7 @@ GRUB_MKRESCUE   := $(shell command -v grub-mkrescue 2>/dev/null || command -v gr
 
 # Project naming & version metadata
 KERNEL_NAME     := keira
-VERSION         := $(shell grep -m 1 '^version = ' crates/kernel/Cargo.toml | cut -d '"' -f 2)
+VERSION         := $(shell grep -m 1 '^version = ' Cargo.toml | cut -d '"' -f 2)
 DATE_SUFFIX     := $(shell date +%Y-%m-%d)
 
 # Architecture-isolated build directory hierarchy

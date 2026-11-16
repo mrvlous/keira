@@ -34,6 +34,9 @@ else
     ARCH        ?= x86_64
 endif
 
+# Single source of truth: extract kernel release version from root Cargo.toml
+VERSION         := $(shell grep -m 1 '^version = ' ../Cargo.toml | cut -d '"' -f 2)
+
 # Toolchain executables
 CC              ?= gcc
 ASM             ?= nasm
@@ -63,6 +66,7 @@ ifeq ($(ARCH),i686)
     ASM_FLAGS   := -f elf32
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx \
+                   -DKEIRA_VERSION=\"$(VERSION)\" \
                    -I$(LIBC_DIR)/include \
                    -I$(TOOLCHAIN_DIR)/kcc/include \
                    -I$(SYS_DIR)/sysinfo/include \
@@ -76,6 +80,7 @@ else
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
                    -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
+                   -DKEIRA_VERSION=\"$(VERSION)\" \
                    -I$(LIBC_DIR)/include \
                    -I$(TOOLCHAIN_DIR)/kcc/include \
                    -I$(SYS_DIR)/sysinfo/include \
@@ -217,7 +222,7 @@ format: ## Format all userland C source and header files with clang-format
 
 lint: ## Perform static analysis on userland C code using clang-tidy
 	@$(LOG_INFO) "Linting userland C code ($(ARCH))..."
-	$(Q)find . -path "./build" -prune -o -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I $(LIBC_DIR)/include -I $(TOOLCHAIN_DIR)/kcc/include -I $(SYS_DIR)/sysinfo/include -I $(TESTS_DIR)/test_abi/include -I $(TESTS_DIR)/fuzz_abi/include -ffreestanding -m$(if $(filter i686,$(ARCH)),32,64) \;
+	$(Q)find . -path "./build" -prune -o -type f -name "*.c" -exec clang-tidy --checks='-*,clang-analyzer-*,-clang-analyzer-core.FixedAddressDereference,-clang-analyzer-core.DivideZero,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling' {} -- -I $(LIBC_DIR)/include -I $(TOOLCHAIN_DIR)/kcc/include -I $(SYS_DIR)/sysinfo/include -I $(TESTS_DIR)/test_abi/include -I $(TESTS_DIR)/fuzz_abi/include -DKEIRA_VERSION=\"$(VERSION)\" -ffreestanding -m$(if $(filter i686,$(ARCH)),32,64) \;
 	@$(LOG_DONE) "Userland linting complete"
 
 size: libc bins ## Display sizes of libc.a and all compiled userland ELF binaries

@@ -274,8 +274,9 @@ int run_test_abi_proc(void) {
         return 1;
     }
 
-    if (strcmp(u.release, "0.8.0") != 0) {
-        printf("  [FAIL] uname release mismatch: expected '0.8.0', got '%s'\n", u.release);
+    if (strcmp(u.release, KEIRA_VERSION) != 0) {
+        printf("  [FAIL] uname release mismatch: expected '" KEIRA_VERSION "', got '%s'\n",
+               u.release);
         return 1;
     }
 
