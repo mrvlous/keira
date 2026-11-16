@@ -8,7 +8,7 @@
 #define _SYS_VERSION_H
 
 #ifndef KEIRA_VERSION
-#define KEIRA_VERSION "0.8.0"
+#define KEIRA_VERSION "0.9.0"
 #endif
 
 #endif /* _SYS_VERSION_H */
