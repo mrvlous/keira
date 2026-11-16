@@ -9,11 +9,13 @@ This document establishes the official coding, documentation, licensing and comm
 1. License Header Policy & SPDX Architecture
 ============================================
 
-Every source file (``.rs``, ``.c``, ``.h``, ``.asm``, ``.inc``), build script (``Makefile``), configuration file (``.toml``, ``.json``) and documentation file (``.md``) **MUST** begin with a standard machine-readable SPDX license identifier mapping to the canonical texts in ```LICENSES/```.
+Every source file (``.rs``, ``.c``, ``.h``, ``.asm``, ``.inc``), build script (``Makefile``), configuration file (``.toml``, ``.json``) and documentation file (``.md``) **MUST** begin with a standard machine-readable SPDX license identifier mapping to the canonical texts in ``LICENSES/``.
+
+The repository's master licensing terms are maintained in the root ``COPYING`` file, matching the canonical Linux Kernel distribution model.
 
 > [!IMPORTANT]
 > **License Header Rules:**
-> 1. **Canonical Texts**: Full legal texts for all supported SPDX identifiers are maintained in ```LICENSES/preferred/``` and ```LICENSES/exceptions/```.
+> 1. **Canonical Texts & COPYING**: Full legal texts for all supported SPDX identifiers are maintained in ``LICENSES/preferred/`` and ``LICENSES/exceptions/``. The root ``COPYING`` file defines the default kernel license and userland syscall boundary exception.
 > 2. **Name Only (No Email Addresses)**: Always use the author's full name without email addresses (e.g. ``Copyright (C) 2026 Moh. Ananda Firmansyah Putra``). Email addresses are maintained exclusively in ``MAINTAINERS`` and ``CREDITS``.
 > 3. **Original Author vs. Contributors**:
 >    - For files authored by the primary creator, use ``Copyright (C) 2026 Moh. Ananda Firmansyah Putra``.

@@ -52,3 +52,12 @@ The SPDX tag must use the language-appropriate comment syntax for the target fil
 2. **Empty Line Following**: Line 2 must be an empty line separating the license tag from file contents.
 3. **Valid Identifiers**: Only identifiers registered in the SPDX License List (e.g. ``GPL-2.0-only``, ``MIT``, ``BSD-2-Clause``) are permissible.
 4. **Automated Enforcement**: All pull requests are verified via ``make check-licenses`` or automated CI linters to guarantee zero missing headers.
+
+4. Repository COPYING Policy
+============================
+
+The master legal terms governing distribution and contribution to the Keira Kernel are declared in the root ``COPYING`` file. In alignment with upstream Linux:
+
+1. **Default Kernel License**: Kernel sources are licensed under ``GPL-2.0-only`` with canonical text located at ``LICENSES/preferred/GPL-2.0``.
+2. **User Space Syscall Exception**: User space header boundaries are protected under ``Linux-syscall-note`` with text located at ``LICENSES/exceptions/Linux-syscall-note``.
+3. **Applicability**: All code, documentation and binary assets submitted to the repository are subject to the terms of the root ``COPYING`` file.

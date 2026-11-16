@@ -68,7 +68,7 @@ The ``userland/`` tree is partitioned into specialized domains to maximize maint
      - ABI conformance and fuzzing harnesses: ``test_abi``, ``fuzz_abi``, ``test_pipe``, ``test_poll``, ``test_select`` and ``test_threads``.
    * - ``libc/``
      - Static Library
-     - Freestanding ISO C and POSIX runtime routines, CRT0 startup stubs (``arch/``) and 44 standard headers (``include/``).
+     - Freestanding ISO C and POSIX runtime routines, CRT0 startup stubs (``arch/``) and 46 standard headers (``include/``).
    * - ``etc/``
      - Bootstrap Script
      - Canonical system bootstrap script: ``init.sh``.

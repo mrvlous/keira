@@ -27,7 +27,7 @@ Complete Compilation Pipeline
 
        subgraph Autonomous Userland Runtime
            USER_MAKE["userland/Makefile (Autonomous Orchestrator)"] --> USER_CRT["crt0.o & libc.a"]
-           USER_MAKE --> USER_BINS["44 Core Utility Binaries"]
+           USER_MAKE --> USER_BINS["46 Core Utility Binaries"]
            USER_BINS --> USER_ELFS["build/x86/<arch>/staging/fs_root/bin/*.elf"]
        end
 
@@ -81,6 +81,17 @@ Key Compiler Flags (.cargo/config.toml & Make invocations):
 * ``-Zbuild-std-features=compiler-builtins-mem``: Enables optimized memory primitives (``memcpy``, ``memset``, ``memmove``) implemented directly in the core compiler intrinsics.
 * ``panic = "abort"``: Disables complex stack unwinding tables and landing pads, keeping binary footprints compact and deterministic.
 * ``lto = true``: Link-Time Optimization performs cross-crate dead code elimination and aggressive function inlining across all 12 kernel crates.
+
+Centralized Kernel Versioning Architecture
+==========================================
+
+Following the architectural pattern of the upstream Linux Kernel (where the root build system and version headers define the authoritative release), Keira centralizes all version metadata into a single source of truth at the repository root:
+
+1. **Root Workspace Package**: The root ``Cargo.toml`` declares authoritative package metadata within ``[workspace.package]`` (such as ``version = "0.8.0"``, ``edition = "2021"``, ``authors`` and ``license``).
+2. **Workspace Inheritance**: All 12 modular kernel crates (``crates/*/Cargo.toml``) inherit their version and package properties dynamically via ``version.workspace = true``, eliminating redundant or drifting version declarations across crates.
+3. **Compile-Time Rust Kernel Exposure**: The core crate (``crates/core/src/lib.rs``) exports canonical constants (``KERNEL_VERSION``, ``KERNEL_VERSION_MAJOR``, ``KERNEL_VERSION_MINOR`` and ``KERNEL_VERSION_PATCH``) extracted directly at compile time via ``env!("CARGO_PKG_VERSION*")``. Ring 0 boot banners, panic containment routines, the supervisor shell and system calls (``uname``) query these constants with zero runtime overhead and zero dynamic allocations.
+4. **Autonomous Userland Integration**: The root ``Makefile`` and autonomous ``userland/Makefile`` query the root ``Cargo.toml`` dynamically and inject ``-DKEIRA_VERSION=\"$(VERSION)\"`` into C compilation flags and ``clang-tidy`` linters. Userland C binaries include ``<sys/version.h>`` to format help banners and version telemetry.
+5. **Technical Documentation Integration**: The Sphinx documentation builder (``docs/sphinx/load_config.py`` and ``docs/conf.py``) dynamically inspects root ``Cargo.toml``, ensuring that generated documentation releases and search indices stay synchronized with kernel releases.
 
 Comprehensive Make Targets Inventory
 ====================================

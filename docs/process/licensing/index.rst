@@ -4,7 +4,7 @@
 Licensing & Legal Compliance
 ============================
 
-SPDX tags, REUSE 3.0 specification and Linux syscall exception.
+SPDX tags, REUSE 3.0 specification, root COPYING rules and Linux syscall exception.
 
 Subtopics & Specifications
 ==========================
