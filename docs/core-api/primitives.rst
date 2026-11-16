@@ -57,7 +57,7 @@ The core crate (``crates/core/src/lib.rs``) exposes canonical kernel release ver
      - Description
    * - ``KERNEL_VERSION``
      - ``&'static str``
-     - Complete SemVer string (e.g. ``"0.8.0"``) from ``env!("CARGO_PKG_VERSION")``.
+     - Complete SemVer string (e.g. ``"0.9.0"``) from ``env!("CARGO_PKG_VERSION")``.
    * - ``KERNEL_VERSION_MAJOR``
      - ``&'static str``
      - Major version number from ``env!("CARGO_PKG_VERSION_MAJOR")``.
