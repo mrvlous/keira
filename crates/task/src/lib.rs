@@ -42,16 +42,17 @@ pub use rlimit::{
 };
 pub use scheduler::{
     clone_current_task, enqueue_task, exit_current, fork_current_task, get_current_egid,
-    get_current_euid, get_current_gid, get_current_pending_signals, get_current_signal_mask,
-    get_current_uid, init as scheduler_init, is_task_queued, is_task_ready, list_tasks,
-    mark_task_dequeued, pick_next_task, pop_local, push_local, reap_orphaned_zombies,
-    register_task_cleanup_hook, runqueue_len, schedule_tick, scheduler_get_stats, send_signal,
-    set_current_gid, set_current_uid, set_saved_sigcontext, spawn, spawn_user, steal_from,
-    stop_task, sys_sigprocmask, sys_waitpid, take_saved_sigcontext, wait_for_task, ChaseLevDeque,
-    TaskResourceCleanupHook, CLONE_CHILD_CLEARTID, CLONE_CHILD_SETTID, CLONE_FILES, CLONE_FS,
-    CLONE_PARENT_SETTID, CLONE_SETTLS, CLONE_SIGHAND, CLONE_THREAD, CLONE_VM, CPU_RUNQUEUES,
-    CURRENT_TASK_IDX, MAX_CPU_CORES, MAX_TASKS, SCHEDULER_INITIALIZED, SIG_BLOCK, SIG_SETMASK,
-    SIG_UNBLOCK, TASKS, TASK_QUEUED, TASK_STACK_PAGES, TASK_STACK_SIZE,
+    get_current_euid, get_current_gid, get_current_pending_signals, get_current_pgid,
+    get_current_sid, get_current_signal_mask, get_current_uid, get_task_pgid, get_task_sid,
+    init as scheduler_init, is_task_queued, is_task_ready, list_tasks, mark_task_dequeued,
+    pick_next_task, pop_local, push_local, reap_orphaned_zombies, register_task_cleanup_hook,
+    runqueue_len, schedule_tick, scheduler_get_stats, send_signal, set_current_gid,
+    set_current_uid, set_saved_sigcontext, set_task_pgid, setsid_current, spawn, spawn_user,
+    steal_from, stop_task, sys_sigprocmask, sys_waitpid, take_saved_sigcontext, wait_for_task,
+    ChaseLevDeque, TaskResourceCleanupHook, CLONE_CHILD_CLEARTID, CLONE_CHILD_SETTID, CLONE_FILES,
+    CLONE_FS, CLONE_PARENT_SETTID, CLONE_SETTLS, CLONE_SIGHAND, CLONE_THREAD, CLONE_VM,
+    CPU_RUNQUEUES, CURRENT_TASK_IDX, MAX_CPU_CORES, MAX_TASKS, SCHEDULER_INITIALIZED, SIG_BLOCK,
+    SIG_SETMASK, SIG_UNBLOCK, TASKS, TASK_QUEUED, TASK_STACK_PAGES, TASK_STACK_SIZE,
 };
 pub use security as seccomp;
 pub use security::{

@@ -251,6 +251,8 @@ pub mod clone {
                     mmap_aslr_offset: parent.mmap_aslr_offset,
                     brk_aslr_offset: parent.brk_aslr_offset,
                     rlimits: parent.rlimits,
+                    pgid: parent.pgid,
+                    sid: parent.sid,
                 };
 
                 TASKS[slot_idx] = Some(child_task);
@@ -357,10 +359,14 @@ pub mod spawn {
         let mut parent_cwd_len = 1usize;
         let mut parent_pml4 = vmm::active_pml4();
         let parent_id = CURRENT_TASK_IDX;
+        let mut parent_pgid = slot_idx;
+        let mut parent_sid = slot_idx;
         if let Some(ref parent) = TASKS[parent_id] {
             child_cwd[..parent.cwd_len].copy_from_slice(&parent.cwd[..parent.cwd_len]);
             parent_cwd_len = parent.cwd_len;
             parent_pml4 = parent.pml4_phys;
+            parent_pgid = parent.pgid;
+            parent_sid = parent.sid;
         }
         let new_task = Task {
             id: slot_idx,
@@ -395,6 +401,8 @@ pub mod spawn {
             mmap_aslr_offset: 0,
             brk_aslr_offset: 0,
             rlimits: crate::rlimit::default_rlimits(),
+            pgid: parent_pgid,
+            sid: parent_sid,
         };
 
         TASKS[slot_idx] = Some(new_task);
@@ -490,6 +498,8 @@ pub mod spawn {
         let mut parent_euid = 0u32;
         let mut parent_egid = 0u32;
         let mut parent_rlimits = crate::rlimit::default_rlimits();
+        let mut parent_pgid = slot_idx;
+        let mut parent_sid = slot_idx;
 
         if let Some(ref parent) = TASKS[parent_id] {
             child_cwd[..parent.cwd_len].copy_from_slice(&parent.cwd[..parent.cwd_len]);
@@ -500,6 +510,8 @@ pub mod spawn {
             parent_euid = parent.euid;
             parent_egid = parent.egid;
             parent_rlimits = parent.rlimits;
+            parent_pgid = parent.pgid;
+            parent_sid = parent.sid;
         }
 
         for (fd, item) in child_fds.iter_mut().enumerate().take(3) {
@@ -551,6 +563,8 @@ pub mod spawn {
             mmap_aslr_offset: mmap_aslr,
             brk_aslr_offset: brk_aslr,
             rlimits: parent_rlimits,
+            pgid: parent_pgid,
+            sid: parent_sid,
         };
 
         TASKS[slot_idx] = Some(new_task);

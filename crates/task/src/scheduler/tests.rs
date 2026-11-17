@@ -78,6 +78,98 @@ fn test_task_credentials_and_sigcontext() {
 }
 
 #[test]
+fn test_task_process_groups_and_sessions() {
+    let _lock = TestLock::acquire();
+    unsafe {
+        init();
+        assert_eq!(get_current_pgid(), 0);
+        assert_eq!(get_current_sid(), 0);
+        assert_eq!(get_task_pgid(0), Ok(0));
+        assert_eq!(get_task_sid(0), Ok(0));
+
+        // Process 0 is session leader (sid == 0, id == 0), cannot change pgid to 10
+        assert!(set_task_pgid(0, 10).is_err());
+        assert_eq!(get_current_pgid(), 0);
+
+        // Setting pgid to own PID (0) succeeds
+        assert!(set_task_pgid(0, 0).is_ok());
+        assert_eq!(get_current_pgid(), 0);
+
+        // Process group leader cannot call setsid
+        assert!(setsid_current().is_err());
+
+        // Create child process 1 in session 0
+        let child_task = Task {
+            id: 1,
+            name: "child_proc",
+            rsp: 0,
+            stack_addr: 0,
+            state: TaskState::Ready,
+            fds: [FileDescriptor::new(); MAX_FDS],
+            program_break: 0,
+            program_break_start: 0,
+            cwd: [0u8; 128],
+            cwd_len: 1,
+            parent_id: 0,
+            pml4_phys: 0,
+            exit_code: 0,
+            is_user: true,
+            uid: 0,
+            gid: 0,
+            euid: 0,
+            egid: 0,
+            saved_sigcontext: None,
+            signal_mask: 0,
+            pending_signals: 0,
+            is_orphan: false,
+            tgid: 1,
+            is_thread: false,
+            clear_child_tid: 0,
+            tls: 0,
+            cpu_ticks: 0,
+            switches: 0,
+            stack_aslr_offset: 0,
+            mmap_aslr_offset: 0,
+            brk_aslr_offset: 0,
+            rlimits: crate::rlimit::default_rlimits(),
+            pgid: 0,
+            sid: 0,
+        };
+        TASKS[1] = Some(child_task);
+
+        // Parent (0) can set child (1) to be process group leader of PGID 1
+        assert!(set_task_pgid(1, 1).is_ok());
+        assert_eq!(get_task_pgid(1), Ok(1));
+
+        // Parent can change child's PGID to 10
+        assert!(set_task_pgid(1, 10).is_ok());
+        assert_eq!(get_task_pgid(1), Ok(10));
+
+        // Passing 0 sets PGID to child's own PID (1)
+        assert!(set_task_pgid(1, 0).is_ok());
+        assert_eq!(get_task_pgid(1), Ok(1));
+
+        // When child is current task and not group leader, setsid succeeds
+        CURRENT_TASK_IDX = 1;
+        assert!(set_task_pgid(1, 0).is_ok()); // pgid is 1 (group leader)
+        assert!(setsid_current().is_err()); // group leader cannot setsid
+
+        // Set child pgid to 0 (inherited from parent), then setsid succeeds
+        if let Some(ref mut t) = TASKS[1] {
+            t.pgid = 0;
+        }
+        let new_sid = setsid_current().expect("setsid should succeed");
+        assert_eq!(new_sid, 1);
+        assert_eq!(get_current_pgid(), 1);
+        assert_eq!(get_current_sid(), 1);
+
+        // Reset CURRENT_TASK_IDX back to 0 and clean up slot 1
+        CURRENT_TASK_IDX = 0;
+        TASKS[1] = None;
+    }
+}
+
+#[test]
 fn test_signal_masking_and_pending_signals() {
     let _lock = TestLock::acquire();
     unsafe {
@@ -148,6 +240,8 @@ fn test_orphan_reparenting_and_reap() {
             mmap_aslr_offset: 0,
             brk_aslr_offset: 0,
             rlimits: crate::rlimit::default_rlimits(),
+            pgid: 1,
+            sid: 1,
         };
         TASKS[1] = Some(dummy_task);
         assert!(TASKS[1].is_some());

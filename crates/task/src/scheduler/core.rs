@@ -453,6 +453,8 @@ pub mod state {
             mmap_aslr_offset: 0,
             brk_aslr_offset: 0,
             rlimits: crate::rlimit::default_rlimits(),
+            pgid: 0,
+            sid: 0,
         };
         TASKS[0] = Some(main_task);
         CURRENT_TASK_IDX = 0;
