@@ -98,6 +98,8 @@ pub mod creds {
         }
         if let Some(ref task) = TASKS[target_pid] {
             Ok(task.pgid)
+        } else if target_pid == CURRENT_TASK_IDX {
+            Ok(0)
         } else {
             Err("No such process")
         }
@@ -156,6 +158,8 @@ pub mod creds {
         }
         if let Some(ref task) = TASKS[target_pid] {
             Ok(task.sid)
+        } else if target_pid == CURRENT_TASK_IDX {
+            Ok(0)
         } else {
             Err("No such process")
         }

@@ -37,3 +37,7 @@ pub const SYS_GETEGID: u64 = 91;
 pub const SYS_GETRLIMIT: u64 = 102;
 pub const SYS_SETRLIMIT: u64 = 103;
 pub const SYS_PRLIMIT64: u64 = 104;
+pub const SYS_SETPGID: u64 = 111;
+pub const SYS_GETPGRP: u64 = 112;
+pub const SYS_GETPGID: u64 = 113;
+pub const SYS_SETSID: u64 = 114;

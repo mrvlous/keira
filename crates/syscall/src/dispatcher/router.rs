@@ -160,6 +160,10 @@ fn syscall_dispatcher_inner(
         108 => handle_uname(arg1),
         109 | 169 => handle_reboot(arg1, arg2, arg3, arg4),
         110 => handle_dns_resolve(arg1, arg2),
+        111 => handle_setpgid(arg1, arg2),
+        112 => handle_getpgrp(),
+        113 => handle_getpgid(arg1),
+        114 => handle_setsid(),
         _ => errno_to_ret(ENOSYS),
     }
 }

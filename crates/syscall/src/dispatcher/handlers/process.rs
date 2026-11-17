@@ -19,14 +19,14 @@ use keira_io::vga;
 use keira_mem::pmm;
 use keira_mem::vmm;
 use keira_task::scheduler::{
-    fork_current_task, get_current_egid, get_current_euid, get_current_gid, get_current_uid,
-    set_current_gid, set_current_uid, spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX,
-    TASKS,
+    fork_current_task, get_current_egid, get_current_euid, get_current_gid, get_current_pgid,
+    get_current_uid, get_task_pgid, set_current_gid, set_current_uid, set_task_pgid,
+    setsid_current, spawn_user, sys_waitpid, wait_for_task, CURRENT_TASK_IDX, TASKS,
 };
 
 use crate::user_copy::{
     copy_from_user, copy_to_user, errno_to_ret, read_user_string, validate_user_ptr, EACCES,
-    ECHILD, EFAULT, EINVAL, ENOENT, ENOMEM, ENOTDIR, EPERM,
+    ECHILD, EFAULT, EINVAL, ENOENT, ENOMEM, ENOTDIR, EPERM, ESRCH,
 };
 
 #[cfg(not(test))]
@@ -618,4 +618,45 @@ pub fn handle_geteuid() -> u64 {
 /// Syscall 91: Get effective group ID.
 pub fn handle_getegid() -> u64 {
     unsafe { get_current_egid() as u64 }
+}
+
+/// Syscall 111: Set process group ID.
+pub fn handle_setpgid(arg1: u64, arg2: u64) -> u64 {
+    unsafe {
+        match set_task_pgid(arg1 as usize, arg2 as usize) {
+            Ok(()) => 0,
+            Err("No such process") => errno_to_ret(ESRCH),
+            Err("Invalid process ID") | Err("Invalid process group ID") => errno_to_ret(EINVAL),
+            Err(_) => errno_to_ret(EPERM),
+        }
+    }
+}
+
+/// Syscall 112: Get process group ID of current process.
+pub fn handle_getpgrp() -> u64 {
+    unsafe { get_current_pgid() as u64 }
+}
+
+/// Syscall 113: Get process group ID of specified process.
+pub fn handle_getpgid(arg1: u64) -> u64 {
+    if arg1 == 0 {
+        return handle_getpgrp();
+    }
+    unsafe {
+        match get_task_pgid(arg1 as usize) {
+            Ok(pgid) => pgid as u64,
+            Err("Invalid process ID") => errno_to_ret(EINVAL),
+            Err(_) => errno_to_ret(ESRCH),
+        }
+    }
+}
+
+/// Syscall 114: Create a new session and set process group ID.
+pub fn handle_setsid() -> u64 {
+    unsafe {
+        match setsid_current() {
+            Ok(sid) => sid as u64,
+            Err(_) => errno_to_ret(EPERM),
+        }
+    }
 }

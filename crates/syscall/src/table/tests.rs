@@ -47,6 +47,10 @@ pub mod test {
         assert_eq!(SYS_SOCKETPAIR, 105);
         assert_eq!(SYS_POLL, 106);
         assert_eq!(SYS_DNS_RESOLVE, 110);
+        assert_eq!(SYS_SETPGID, 111);
+        assert_eq!(SYS_GETPGRP, 112);
+        assert_eq!(SYS_GETPGID, 113);
+        assert_eq!(SYS_SETSID, 114);
     }
 
     #[test]
@@ -77,6 +81,10 @@ pub mod test {
         assert_eq!(syscall_name(SYS_POLL), "sys_poll");
         assert_eq!(syscall_name(SYS_SELECT), "sys_select");
         assert_eq!(syscall_name(SYS_DNS_RESOLVE), "sys_dns_resolve");
+        assert_eq!(syscall_name(SYS_SETPGID), "sys_setpgid");
+        assert_eq!(syscall_name(SYS_GETPGRP), "sys_getpgrp");
+        assert_eq!(syscall_name(SYS_GETPGID), "sys_getpgid");
+        assert_eq!(syscall_name(SYS_SETSID), "sys_setsid");
         assert_eq!(syscall_name(999), "sys_unknown");
     }
 
@@ -113,6 +121,10 @@ pub mod test {
 
         assert!(is_process_syscall(SYS_FORK));
         assert!(is_process_syscall(SYS_EXIT));
+        assert!(is_process_syscall(SYS_SETPGID));
+        assert!(is_process_syscall(SYS_GETPGRP));
+        assert!(is_process_syscall(SYS_GETPGID));
+        assert!(is_process_syscall(SYS_SETSID));
         assert!(!is_process_syscall(SYS_READ));
 
         assert!(is_ipc_syscall(SYS_PIPE));

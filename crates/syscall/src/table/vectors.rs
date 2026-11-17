@@ -124,6 +124,10 @@ pub fn syscall_name(num: u64) -> &'static str {
         SYS_UNAME => "sys_uname",
         SYS_REBOOT => "sys_reboot",
         SYS_DNS_RESOLVE => "sys_dns_resolve",
+        SYS_SETPGID => "sys_setpgid",
+        SYS_GETPGRP => "sys_getpgrp",
+        SYS_GETPGID => "sys_getpgid",
+        SYS_SETSID => "sys_setsid",
         _ => "sys_unknown",
     }
 }
@@ -195,6 +199,10 @@ pub fn is_process_syscall(num: u64) -> bool {
             | SYS_GETRLIMIT
             | SYS_SETRLIMIT
             | SYS_PRLIMIT64
+            | SYS_SETPGID
+            | SYS_GETPGRP
+            | SYS_GETPGID
+            | SYS_SETSID
     )
 }
 

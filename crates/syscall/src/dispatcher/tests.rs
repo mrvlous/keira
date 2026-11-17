@@ -184,4 +184,23 @@ pub mod test {
         let stats = get_select_telemetry();
         assert_eq!(stats.total_selects, 0);
     }
+
+    #[test]
+    fn test_process_group_and_session_dispatch() {
+        // Test getpgrp (112)
+        let pgid = syscall_dispatcher(112, 0, 0, 0, 0, 0, 0);
+        assert_eq!(pgid, 0);
+
+        // Test getpgid(0) (113) returns current pgid
+        let pgid0 = syscall_dispatcher(113, 0, 0, 0, 0, 0, 0);
+        assert_eq!(pgid0, 0);
+
+        // Test getpgid with invalid PID returns EINVAL
+        let err_pgid = syscall_dispatcher(113, 99999, 0, 0, 0, 0, 0);
+        assert_eq!(err_pgid, errno_to_ret(EINVAL));
+
+        // Test setpgid with invalid PID returns EINVAL
+        let err_set = syscall_dispatcher(111, 99999, 0, 0, 0, 0, 0);
+        assert_eq!(err_set, errno_to_ret(EINVAL));
+    }
 }
