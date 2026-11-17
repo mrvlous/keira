@@ -80,6 +80,181 @@ static void print_shell_prompt(void) {
 
 static int last_exit_status = 0;
 
+#define SH_MAX_JOBS 32
+
+typedef enum { JOB_EMPTY = 0, JOB_RUNNING, JOB_STOPPED, JOB_DONE } job_state_t;
+
+typedef struct {
+    int id;
+    pid_t pid;
+    pid_t pgid;
+    job_state_t state;
+    int exit_status;
+    char cmd[SH_MAX_LINE];
+} job_t;
+
+static job_t job_table[SH_MAX_JOBS];
+
+static job_t *job_find_by_id(int id) {
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state != JOB_EMPTY && job_table[i].id == id) {
+            return &job_table[i];
+        }
+    }
+    return NULL;
+}
+
+static job_t *job_get_latest(void) {
+    job_t *latest = NULL;
+    int max_id = -1;
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state != JOB_EMPTY && job_table[i].id > max_id) {
+            max_id = job_table[i].id;
+            latest = &job_table[i];
+        }
+    }
+    return latest;
+}
+
+static job_t *job_add(pid_t pid, pid_t pgid, const char *cmd) {
+    int next_id = 1;
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state != JOB_EMPTY && job_table[i].id >= next_id) {
+            next_id = job_table[i].id + 1;
+        }
+    }
+
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state == JOB_EMPTY) {
+            job_table[i].id = next_id;
+            job_table[i].pid = pid;
+            job_table[i].pgid = pgid;
+            job_table[i].state = JOB_RUNNING;
+            job_table[i].exit_status = 0;
+            strncpy(job_table[i].cmd, cmd, sizeof(job_table[i].cmd) - 1);
+            job_table[i].cmd[sizeof(job_table[i].cmd) - 1] = '\0';
+            return &job_table[i];
+        }
+    }
+    return NULL;
+}
+
+static void job_reap(void) {
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state == JOB_RUNNING) {
+            int status = 0;
+            pid_t ret = waitpid(job_table[i].pid, &status, WNOHANG);
+            if (ret == job_table[i].pid) {
+                job_table[i].state = JOB_DONE;
+                job_table[i].exit_status = WIFEXITED(status) ? WEXITSTATUS(status) : 0;
+                printf("[%d]+  Done                    %s\n", job_table[i].id, job_table[i].cmd);
+                job_table[i].state = JOB_EMPTY;
+            } else if (ret < 0 && errno == ECHILD) {
+                job_table[i].state = JOB_DONE;
+                printf("[%d]+  Done                    %s\n", job_table[i].id, job_table[i].cmd);
+                job_table[i].state = JOB_EMPTY;
+            }
+        }
+    }
+    fflush(stdout);
+}
+
+static int builtin_jobs(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state == JOB_RUNNING) {
+            int status = 0;
+            pid_t ret = waitpid(job_table[i].pid, &status, WNOHANG);
+            if (ret == job_table[i].pid) {
+                job_table[i].state = JOB_DONE;
+                job_table[i].exit_status = WIFEXITED(status) ? WEXITSTATUS(status) : 0;
+            } else if (ret < 0 && errno == ECHILD) {
+                job_table[i].state = JOB_DONE;
+            }
+        }
+    }
+
+    job_t *latest = job_get_latest();
+    for (int i = 0; i < SH_MAX_JOBS; i++) {
+        if (job_table[i].state != JOB_EMPTY) {
+            char marker = (&job_table[i] == latest) ? '+' : '-';
+            const char *state_str = (job_table[i].state == JOB_RUNNING)   ? "Running"
+                                    : (job_table[i].state == JOB_STOPPED) ? "Stopped"
+                                                                          : "Done";
+            printf("[%d]%c  %-24s%s\n", job_table[i].id, marker, state_str, job_table[i].cmd);
+            if (job_table[i].state == JOB_DONE) {
+                job_table[i].state = JOB_EMPTY;
+            }
+        }
+    }
+    fflush(stdout);
+    return 0;
+}
+
+static int builtin_fg(int argc, char **argv) {
+    job_t *job = NULL;
+    if (argc > 1) {
+        const char *arg = argv[1];
+        if (arg[0] == '%') {
+            arg++;
+        }
+        int id = atoi(arg);
+        job = job_find_by_id(id);
+        if (!job) {
+            printf("sh: fg: %s: no such job\n", argv[1]);
+            return 1;
+        }
+    } else {
+        job = job_get_latest();
+        if (!job) {
+            printf("sh: fg: current: no such job\n");
+            return 1;
+        }
+    }
+
+    printf("%s\n", job->cmd);
+    fflush(stdout);
+
+    int status = 0;
+    pid_t target_pid = job->pid;
+    job->state = JOB_EMPTY;
+
+    pid_t ret = waitpid(target_pid, &status, 0);
+    if (ret > 0 && WIFEXITED(status)) {
+        last_exit_status = WEXITSTATUS(status);
+        return last_exit_status;
+    }
+    return 0;
+}
+
+static int builtin_bg(int argc, char **argv) {
+    job_t *job = NULL;
+    if (argc > 1) {
+        const char *arg = argv[1];
+        if (arg[0] == '%') {
+            arg++;
+        }
+        int id = atoi(arg);
+        job = job_find_by_id(id);
+        if (!job) {
+            printf("sh: bg: %s: no such job\n", argv[1]);
+            return 1;
+        }
+    } else {
+        job = job_get_latest();
+        if (!job) {
+            printf("sh: bg: current: no such job\n");
+            return 1;
+        }
+    }
+
+    job->state = JOB_RUNNING;
+    printf("[%d]+ %s\n", job->id, job->cmd);
+    fflush(stdout);
+    return 0;
+}
+
 static int is_space(char c) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
@@ -239,6 +414,19 @@ static int execute_single_command(int argc, char **argv) {
         return 0;
     }
 
+    int is_background = 0;
+    if (argc > 0 && strcmp(argv[argc - 1], "&") == 0) {
+        is_background = 1;
+        argv[argc - 1] = NULL;
+        argc--;
+    } else if (argc > 0) {
+        size_t last_len = strlen(argv[argc - 1]);
+        if (last_len > 1 && argv[argc - 1][last_len - 1] == '&') {
+            argv[argc - 1][last_len - 1] = '\0';
+            is_background = 1;
+        }
+    }
+
     char *out_file = NULL;
     int out_append = 0;
     char *in_file = NULL;
@@ -276,8 +464,26 @@ static int execute_single_command(int argc, char **argv) {
     }
     clean_argv[clean_argc] = NULL;
 
+    if (clean_argc > 0 && strcmp(clean_argv[clean_argc - 1], "&") == 0) {
+        is_background = 1;
+        clean_argv[clean_argc - 1] = NULL;
+        clean_argc--;
+    }
+
     if (clean_argc == 0) {
         return 0;
+    }
+
+    char full_cmd[SH_MAX_LINE];
+    full_cmd[0] = '\0';
+    for (int i = 0; i < clean_argc; i++) {
+        if (i > 0) {
+            strncat(full_cmd, " ", sizeof(full_cmd) - strlen(full_cmd) - 1);
+        }
+        strncat(full_cmd, clean_argv[i], sizeof(full_cmd) - strlen(full_cmd) - 1);
+    }
+    if (is_background) {
+        strncat(full_cmd, " &", sizeof(full_cmd) - strlen(full_cmd) - 1);
     }
 
     int saved_stdout = -1;
@@ -325,6 +531,12 @@ static int execute_single_command(int argc, char **argv) {
         ret_status = 0;
     } else if (strcmp(clean_argv[0], "history") == 0) {
         ret_status = builtin_history();
+    } else if (strcmp(clean_argv[0], "jobs") == 0) {
+        ret_status = builtin_jobs(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "fg") == 0) {
+        ret_status = builtin_fg(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "bg") == 0) {
+        ret_status = builtin_bg(clean_argc, clean_argv);
     } else if (strcmp(clean_argv[0], "exit") == 0) {
         int code = (clean_argc > 1) ? atoi(clean_argv[1]) : 0;
         exit(code);
@@ -342,15 +554,25 @@ static int execute_single_command(int argc, char **argv) {
                 printf("sh: %s: execution failed\n", resolved_path);
                 ret_status = 127;
             } else {
-                int status = 0;
-                waitpid(pid, &status, 0);
-                if (WIFEXITED(status)) {
-                    ret_status = WEXITSTATUS(status);
-                } else {
+                setpgid(pid, pid);
+                if (is_background) {
+                    job_t *job = job_add(pid, pid, full_cmd);
+                    if (job) {
+                        printf("[%d] %d\n", job->id, (int)pid);
+                        fflush(stdout);
+                    }
                     ret_status = 0;
-                }
-                if (is_sh_binary(resolved_path) && clean_argc == 1 && isatty(STDIN_FILENO)) {
-                    exit(ret_status);
+                } else {
+                    int status = 0;
+                    waitpid(pid, &status, 0);
+                    if (WIFEXITED(status)) {
+                        ret_status = WEXITSTATUS(status);
+                    } else {
+                        ret_status = 0;
+                    }
+                    if (is_sh_binary(resolved_path) && clean_argc == 1 && isatty(STDIN_FILENO)) {
+                        exit(ret_status);
+                    }
                 }
             }
         }
@@ -572,6 +794,18 @@ static int run_command_string(char *cmd_str) {
                 status = execute_chained_statement(stmt_start);
             }
             stmt_start = p + 1;
+        } else if (*p == '&' && in_quote == '\0' && *(p + 1) != '&' &&
+                   (p == cmd_str || *(p - 1) != '&')) {
+            char saved = *(p + 1);
+            *(p + 1) = '\0';
+            while (*stmt_start && is_space(*stmt_start)) {
+                stmt_start++;
+            }
+            if (*stmt_start) {
+                status = execute_chained_statement(stmt_start);
+            }
+            *(p + 1) = saved;
+            stmt_start = p + 1;
         }
         p++;
     }
@@ -596,6 +830,7 @@ static int run_script_file(const char *filename) {
     char line_buf[SH_MAX_LINE];
     int status = 0;
     while (fgets(line_buf, sizeof(line_buf), fp)) {
+        job_reap();
         size_t len = strlen(line_buf);
         while (len > 0 && (line_buf[len - 1] == '\n' || line_buf[len - 1] == '\r')) {
             line_buf[--len] = '\0';
@@ -797,6 +1032,7 @@ int main(int argc, char **argv) {
 
     char line_buf[SH_MAX_LINE];
     while (1) {
+        job_reap();
         print_shell_prompt();
 
         int n = sh_readline(line_buf, sizeof(line_buf));
