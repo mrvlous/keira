@@ -583,3 +583,23 @@ Keira implements a robust, secure and standardized system call vector table prov
      - Networking
      - ``int sys_dns_resolve(const char *name, uint8_t *ip_out)``
      - Resolves domain hostname to IPv4 address via UDP 53 DNS query
+   * - ``111``
+     - ``SYS_SETPGID``
+     - Process
+     - ``int setpgid(pid_t pid, pid_t pgid)``
+     - Sets the process group identifier of the specified task
+   * - ``112``
+     - ``SYS_GETPGRP``
+     - Process
+     - ``pid_t getpgrp(void)``
+     - Retrieves the process group identifier of the current task
+   * - ``113``
+     - ``SYS_GETPGID``
+     - Process
+     - ``pid_t getpgid(pid_t pid)``
+     - Retrieves the process group identifier of the target task
+   * - ``114``
+     - ``SYS_SETSID``
+     - Process
+     - ``pid_t setsid(void)``
+     - Establishes a new session and process group for the calling task

@@ -47,6 +47,15 @@ The userspace shell implements essential built-in commands natively within the b
    * - ``history``
      - ``history``
      - Displays command execution history ring buffer
+   * - ``jobs``
+     - ``jobs``
+     - Lists active background jobs and reaps completed asynchronous processes
+   * - ``fg``
+     - ``fg [job_id]``
+     - Promotes background job to foreground and awaits its synchronous completion
+   * - ``bg``
+     - ``bg [job_id]``
+     - Resumes stopped job or marks job as running in background
    * - ``sh``
      - ``sh``
      - Refreshes interactive shell in place without spawning redundant nested subshells
@@ -124,6 +133,24 @@ E. Interactive Shell Idempotency & Clean Exit Semantics
 - **Immediate Supervisor Console Return**: Because interactive shells do not nest redundantly when spamming ``sh``, issuing a single ``exit`` command immediately terminates the Ring 3 shell and returns execution directly to the Ring 0 supervisor rescue console.
 - **Child Exit Propagation**: If a nested interactive shell process terminates, the parent shell propagates the exit code and terminates synchronously, ensuring operators never encounter trapped subshell loops.
 
+F. Background Jobs (&) and Terminal Job Control
+-----------------------------------------------
+
+- **Background Dispatch (``&``)**: Appending ``&`` to a command detaches the process into its own process group via ``setpgid()`` and returns immediately to the prompt without waiting.
+- **Job Table Tracking**: The shell tracks background processes in a 32-slot job table, recording their PID, PGID and execution status.
+- **Asynchronous Child Reaping**: Before displaying each prompt or advancing command streams, the shell reaps terminated background tasks using non-blocking ``waitpid(-1, &status, WNOHANG)``, printing completion notifications (``[<id>]+ Done <cmd>``).
+- **Builtins (``jobs``, ``fg``, ``bg``)**: ``jobs`` lists active tasks, ``fg`` brings a background job to the foreground awaiting its completion and ``bg`` resumes background execution.
+
+.. code-block:: bash
+
+   keira:/# sleep 5 &
+   [1] 4
+   keira:/# jobs
+   [1]+  Running                 sleep 5 &
+   keira:/# fg 1
+   sleep 5 &
+   keira:/#
+
 4. Invocation & Execution Examples
 ==================================
 
@@ -188,5 +215,5 @@ Users can invoke ``sh`` or ``sh.elf`` directly from the supervisor prompt withou
 - **Binary Locations**: ``/bin/sh.elf``, ``/bin/sh``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``, ``<sys/wait.h>``)
-- **System Calls**: ``sys_open``, ``sys_close``, ``sys_read``, ``sys_write``, ``sys_pipe``, ``sys_dup2``, ``sys_fork``, ``sys_execve``, ``sys_waitpid``, ``sys_chdir``, ``sys_getcwd`` and ``sys_exit``
+- **System Calls**: ``sys_open``, ``sys_close``, ``sys_read``, ``sys_write``, ``sys_pipe``, ``sys_dup2``, ``sys_fork``, ``sys_execve``, ``sys_waitpid``, ``sys_setpgid``, ``sys_getpgrp``, ``sys_getpgid``, ``sys_setsid``, ``sys_chdir``, ``sys_getcwd`` and ``sys_exit``
 - **Script Engine**: Supports ``#!/bin/sh`` shebang headers, ``#`` comment filtering and line-by-line sequential command dispatch

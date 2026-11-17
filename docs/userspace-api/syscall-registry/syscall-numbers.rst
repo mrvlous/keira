@@ -167,3 +167,7 @@ The kernel exports canonical ``#define`` macros in ``<sys/syscall.h>`` matching 
    #define SYS_UNAME              108
    #define SYS_REBOOT             109
    #define SYS_DNS_RESOLVE        110
+   #define SYS_SETPGID            111
+   #define SYS_GETPGRP            112
+   #define SYS_GETPGID            113
+   #define SYS_SETSID             114
