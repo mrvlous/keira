@@ -55,6 +55,22 @@ int sys_setgid(gid_t gid) {
     return (int)syscall1(SYS_SETGID, (uint64_t)gid);
 }
 
+int sys_setpgid(pid_t pid, pid_t pgid) {
+    return (int)syscall2(SYS_SETPGID, (uint64_t)pid, (uint64_t)pgid);
+}
+
+pid_t sys_getpgrp(void) {
+    return (pid_t)syscall0(SYS_GETPGRP);
+}
+
+pid_t sys_getpgid(pid_t pid) {
+    return (pid_t)syscall1(SYS_GETPGID, (uint64_t)pid);
+}
+
+pid_t sys_setsid(void) {
+    return (pid_t)syscall0(SYS_SETSID);
+}
+
 pid_t sys_fork(void) {
     return (pid_t)syscall0(SYS_FORK);
 }

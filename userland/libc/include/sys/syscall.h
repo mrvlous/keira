@@ -128,6 +128,14 @@
 #define SYS_UNAME 108
 #define SYS_REBOOT 109
 #define SYS_DNS_RESOLVE 110
+#define SYS_SETPGID 111
+#define SYS_setpgid 111
+#define SYS_GETPGRP 112
+#define SYS_getpgrp 112
+#define SYS_GETPGID 113
+#define SYS_getpgid 113
+#define SYS_SETSID 114
+#define SYS_setsid 114
 
 struct stat;
 struct rlimit;
@@ -202,6 +210,10 @@ int sys_select(int nfds, void *readfds, void *writefds, void *exceptfds, void *t
 int sys_uname(void *buf);
 int sys_reboot(int magic1, int magic2, int cmd, void *arg);
 int sys_dns_resolve(const char *name, uint8_t *ip_out);
+int sys_setpgid(pid_t pid, pid_t pgid);
+pid_t sys_getpgrp(void);
+pid_t sys_getpgid(pid_t pid);
+pid_t sys_setsid(void);
 
 #define NETFILTER_CMD_STATUS 1
 #define NETFILTER_CMD_ADD_RULE 2

@@ -59,6 +59,11 @@ gid_t getgid(void);
 gid_t getegid(void);
 int setgid(gid_t gid);
 
+int setpgid(pid_t pid, pid_t pgid);
+pid_t getpgrp(void);
+pid_t getpgid(pid_t pid);
+pid_t setsid(void);
+
 pid_t fork(void);
 int execve(const char *pathname, char *const argv[], char *const envp[]);
 pid_t waitpid(pid_t pid, int *wstatus, int options);

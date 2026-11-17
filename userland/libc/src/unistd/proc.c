@@ -60,6 +60,42 @@ int setgid(gid_t gid) {
     return 0;
 }
 
+int setpgid(pid_t pid, pid_t pgid) {
+    int ret = sys_setpgid(pid, pgid);
+    if (ret < 0) {
+        errno = -ret;
+        return -1;
+    }
+    return 0;
+}
+
+pid_t getpgrp(void) {
+    int64_t ret = syscall0(SYS_GETPGRP);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return (pid_t)-1;
+    }
+    return (pid_t)ret;
+}
+
+pid_t getpgid(pid_t pid) {
+    int64_t ret = syscall1(SYS_GETPGID, (uint64_t)pid);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return (pid_t)-1;
+    }
+    return (pid_t)ret;
+}
+
+pid_t setsid(void) {
+    int64_t ret = syscall0(SYS_SETSID);
+    if (ret < 0) {
+        errno = (int)-ret;
+        return (pid_t)-1;
+    }
+    return (pid_t)ret;
+}
+
 pid_t fork(void) {
     int64_t ret = syscall0(SYS_FORK);
     if (ret < 0) {
