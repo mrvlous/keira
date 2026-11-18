@@ -365,6 +365,24 @@ static int builtin_export(int argc, char **argv) {
     return 0;
 }
 
+static int builtin_help(void) {
+    puts("Keira Shell (Ring 3 sh.elf)");
+    puts("Shell Built-ins:");
+    puts("  cd [dir]       Change current working directory");
+    puts("  pwd            Print working directory");
+    puts("  export [var]   Set environment variable");
+    puts("  jobs           List background jobs");
+    puts("  fg [id]        Bring background job to foreground");
+    puts("  bg [id]        Resume stopped job in background");
+    puts("  history        Display command execution history");
+    puts("  help           Display this built-in reference manual");
+    puts("  exit           Exit shell and return to Ring 0 supervisor\n");
+    puts("System Utilities:");
+    puts("  Type 'ls /bin' to inspect available system binaries.");
+    puts("  Type '<binary> --help' for individual program options.");
+    return 0;
+}
+
 static int resolve_binary_path(const char *cmd, char *out_path, size_t out_size) {
     if (strchr(cmd, '/')) {
         snprintf(out_path, out_size, "%s", cmd);
@@ -537,6 +555,8 @@ static int execute_single_command(int argc, char **argv) {
         ret_status = builtin_fg(clean_argc, clean_argv);
     } else if (strcmp(clean_argv[0], "bg") == 0) {
         ret_status = builtin_bg(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "help") == 0) {
+        ret_status = builtin_help();
     } else if (strcmp(clean_argv[0], "exit") == 0) {
         int code = (clean_argc > 1) ? atoi(clean_argv[1]) : 0;
         exit(code);
