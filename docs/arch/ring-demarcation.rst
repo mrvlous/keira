@@ -2,7 +2,7 @@
 
 
 Ring 0 Supervisor & Optional Ring 3 Userland Demarcation
-=======================================================
+========================================================
 
 Keira enforces an austere architectural demarcation between the Ring 0 supervisor kernel and the optional Ring 3 userspace environment. Following the classical monolithic design of Linux and Unix kernels, Ring 0 operates autonomously from first principles, managing physical hardware, memory paging, interrupt vectors and preemptive task scheduling. Ring 3 userspace is strictly an optional reference runtime and conformance test suite.
 

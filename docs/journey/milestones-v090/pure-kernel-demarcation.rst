@@ -27,7 +27,7 @@ The build system staging rules in ``Makefile`` were audited and cleaned:
 - **Zero Ring 0 Distro Assumptions**: All hardcoded assumptions about external userland binary counts were removed from the kernel supervisor crate.
 
 3. Streamlined Ring 0 Supervisor Help Matrix
-===========================================
+============================================
 
 In ``crates/shell/src/cmds/util.rs``, the ``help`` command was restructured into an ergonomic, categorized 9-line matrix that guarantees zero screen scrolling on 80x25 VGA consoles:
 
