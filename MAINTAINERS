@@ -35,6 +35,8 @@ F: Cargo.toml
 F: Cargo.lock
 F: rust-toolchain.toml
 F: rustfmt.toml
+F: Kconfig*
+F: scripts/
 F: .config*
 F: .example.config
 
