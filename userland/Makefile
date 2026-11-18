@@ -67,6 +67,7 @@ ifeq ($(ARCH),i686)
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx \
                    -DKEIRA_VERSION=\"$(VERSION)\" \
+                   -I../include \
                    -I$(LIBC_DIR)/include \
                    -I$(TOOLCHAIN_DIR)/kcc/include \
                    -I$(SYS_DIR)/sysinfo/include \
@@ -81,6 +82,7 @@ else
                    -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
                    -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
                    -DKEIRA_VERSION=\"$(VERSION)\" \
+                   -I../include \
                    -I$(LIBC_DIR)/include \
                    -I$(TOOLCHAIN_DIR)/kcc/include \
                    -I$(SYS_DIR)/sysinfo/include \
@@ -114,6 +116,15 @@ SHELL_BINS      := sh
 NET_BINS        := arp fetch ifconfig iptables netstat ping route
 TESTS_BINS      := test_job_control test_pipe test_poll test_select test_threads
 MULTI_BINS      := sysinfo kcc test_abi fuzz_abi
+
+# Conditional compilation based on Kconfig options
+ifeq ($(CONFIG_USERLAND_COMPILER_KCC),n)
+    MULTI_BINS := $(filter-out kcc,$(MULTI_BINS))
+endif
+ifeq ($(CONFIG_USERLAND_TESTS),n)
+    TESTS_BINS :=
+    MULTI_BINS := $(filter-out test_abi fuzz_abi,$(MULTI_BINS))
+endif
 
 BINS            := $(sort $(CORE_BINS) $(PROC_BINS) $(SYS_BINS) $(INIT_BINS) $(SHELL_BINS) $(NET_BINS) $(TESTS_BINS) $(MULTI_BINS))
 BIN_ELFS        := $(patsubst %,$(BIN_DIR)/%.elf,$(BINS))

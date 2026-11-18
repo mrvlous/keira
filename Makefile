@@ -185,7 +185,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
         format lint user libc docs htmldocs docs-clean docs-lint docs-check docs-linkcheck docs-info pdfdocs disk initrd help info check \
         size objdump qemu-net test test-all test-unit fs-root user-format user-lint user-size user-test user-info \
-        preflight preflight-qemu preflight-format preflight-lint defconfig full_defconfig pure_defconfig kernel_defconfig headers_install
+        preflight preflight-qemu preflight-format preflight-lint menuconfig defconfig full_defconfig pure_defconfig kernel_defconfig savedefconfig oldconfig headers_install
 
 .DEFAULT_GOAL   := all
 
@@ -377,8 +377,14 @@ rust: preflight | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
 	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
-dirs: preflight ## Create architecture-isolated build output directory hierarchy
-	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BUILD_DIR)/lib $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR)
+dirs: preflight include/generated/autoconf.h ## Create architecture-isolated build output directory hierarchy
+	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BUILD_DIR)/lib $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR) include/generated
+
+include/generated/autoconf.h:
+	@if [ ! -f .config ]; then \
+	    ARCH=$(ARCH) python3 scripts/kconfig/conf.py --defconfig Kconfig; \
+	fi
+	$(Q)python3 scripts/kconfig/genheader.py .config include/generated/autoconf.h
 
 # Binary & ISO construction rules
 $(KERNEL_ISO): $(KERNEL_BIN) $(INITRD_TAR) | dirs
@@ -412,21 +418,26 @@ $(OBJ_DIR)/%.asm.o: %.asm | dirs
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
 # Linux-style configuration generation targets
+menuconfig: ## Launch interactive ncurses configuration editor
+	$(Q)python3 scripts/kconfig/mconf.py Kconfig
+	$(Q)python3 scripts/kconfig/genheader.py .config include/generated/autoconf.h
+
 defconfig full_defconfig: ## Generate default configuration with userland enabled
-	@if [ -f .example.config ]; then \
-	    cp .example.config .config; \
-	else \
-	    printf "CONFIG_ARCH_$(shell echo $(ARCH) | tr a-z A-Z)=y\nCONFIG_USERLAND=y\nCONFIG_SMP=2\nCONFIG_DISK_SIZE=32\nCONFIG_QEMU_MEM=128M\n" > .config; \
-	fi
+	$(Q)ARCH=$(ARCH) python3 scripts/kconfig/conf.py --defconfig Kconfig
+	$(Q)python3 scripts/kconfig/genheader.py .config include/generated/autoconf.h
 	@$(LOG_DONE) "Generated default configuration (.config) with userland enabled ($(ARCH))"
 
 pure_defconfig kernel_defconfig: ## Generate pure freestanding Ring 0 configuration without userland
-	@if [ -f .example.config ]; then \
-	    sed -e 's/CONFIG_USERLAND=y/CONFIG_USERLAND=n/' .example.config > .config; \
-	else \
-	    printf "CONFIG_ARCH_$(shell echo $(ARCH) | tr a-z A-Z)=y\nCONFIG_USERLAND=n\nCONFIG_SMP=2\nCONFIG_DISK_SIZE=32\nCONFIG_QEMU_MEM=128M\n" > .config; \
-	fi
+	$(Q)ARCH=$(ARCH) python3 scripts/kconfig/conf.py --pure-defconfig Kconfig
+	$(Q)python3 scripts/kconfig/genheader.py .config include/generated/autoconf.h
 	@$(LOG_DONE) "Generated pure Ring 0 kernel configuration (.config) ($(ARCH))"
+
+savedefconfig: ## Save minimal configuration to defconfig
+	$(Q)python3 scripts/kconfig/conf.py --savedefconfig defconfig Kconfig
+
+oldconfig: ## Validate and refresh existing .config
+	$(Q)python3 scripts/kconfig/conf.py --oldconfig Kconfig
+	$(Q)python3 scripts/kconfig/genheader.py .config include/generated/autoconf.h
 
 INSTALL_HDR_PATH ?= include/uapi
 
@@ -553,7 +564,7 @@ clean: ## Remove build directory and compiled artifacts across all subsystems
 	$(Q)$(CARGO) clean
 	$(Q)$(MAKE) -C $(USER_DIR) clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/userland V=$(V)
 	$(Q)$(MAKE) -C docs clean V=$(V) 2>/dev/null || true
-	$(Q)rm -rf include
+	$(Q)rm -rf include/generated
 	$(Q)find . -type f \( -name "*~" -o -name "*.swp" -o -name "*.swo" -o -name "*.bak" -o -name "*.tmp" -o -name "*.pyc" \) -delete 2>/dev/null || true
 	$(Q)find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@$(LOG_DONE) "Clean complete"
@@ -561,8 +572,8 @@ clean: ## Remove build directory and compiled artifacts across all subsystems
 mrproper distclean: clean ## Restore repository to pristine state including userland, docs and .config
 	$(Q)$(MAKE) -C $(USER_DIR) distclean V=$(V) 2>/dev/null || true
 	$(Q)$(MAKE) -C docs distclean V=$(V) 2>/dev/null || true
-	$(Q)rm -f .config
-	$(Q)rm -rf include
+	$(Q)rm -f .config .config.old defconfig
+	$(Q)rm -rf include/generated
 	@$(LOG_DONE) "Repository cleaned to pristine state (.config removed)"
 
 format: preflight-format ## Format Rust workspace and C userland sources
