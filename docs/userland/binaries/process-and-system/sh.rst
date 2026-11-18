@@ -59,6 +59,9 @@ The userspace shell implements essential built-in commands natively within the b
    * - ``sh``
      - ``sh``
      - Refreshes interactive shell in place without spawning redundant nested subshells
+   * - ``help``
+     - ``help``
+     - Displays formatted reference manual of shell built-ins and utilities
    * - ``exit``
      - ``exit [code]``
      - Terminates the shell process with the specified exit status

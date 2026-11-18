@@ -53,21 +53,15 @@ In ``userland/shell/sh.c``, a native ``builtin_help()`` routine was implemented 
 
 .. code-block:: text
 
-   Keira Shell (Ring 3 sh.elf)
-   Shell Built-ins:
-     cd [dir]       Change current working directory
-     pwd            Print working directory
-     export [var]   Set environment variable
-     jobs           List background jobs
-     fg [id]        Bring background job to foreground
-     bg [id]        Resume stopped job in background
-     history        Display command execution history
-     help           Display this built-in reference manual
-     exit           Exit shell and return to Ring 0 supervisor
+   Keira Userspace Shell Console (Ring 3 v0.9.0)
 
-   System Utilities:
-     Type 'ls /bin' to inspect available system binaries.
-     Type '<binary> --help' for individual program options.
+   Navigation  : cd [dir]   pwd
+   Environment : export [var=val]
+   Job Control : jobs       fg [id]  bg [id]
+   Session     : history    clear    help     exit
+   Utilities   : cat, ls, ps, df, fetch, kcc (Type 'ls /bin' for all binaries)
+
+   Type '<binary> --help' for options. Type 'exit' to return to Ring 0.
 
 This built-in documentation clarifies the job control features introduced in Milestone 57, explains the privilege transition back to Ring 0 via ``exit`` and instructs users on navigating available system binaries.
 
