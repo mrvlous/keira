@@ -26,12 +26,14 @@ SHELL           := /bin/bash
 -include .config
 
 # Target Architecture: x86_64 (default) or i686 (pure 32-bit x86)
-ifeq ($(CONFIG_ARCH_I686),y)
-    ARCH        := i686
-else ifeq ($(CONFIG_ARCH_X86_64),y)
-    ARCH        := x86_64
-else
-    ARCH        ?= x86_64
+ifndef ARCH
+    ifeq ($(CONFIG_ARCH_I686),y)
+        ARCH    := i686
+    else ifeq ($(CONFIG_ARCH_X86_64),y)
+        ARCH    := x86_64
+    else
+        ARCH    := x86_64
+    endif
 endif
 
 # Toolchain executables
@@ -65,27 +67,37 @@ INITRD_TAR      := $(DISK_DIR)/initrd.tar
 
 # Configurable build parameters (with Kconfig-style override support)
 ifeq ($(CONFIG_USERLAND),y)
-    USERLAND    := 1
+    USERLAND    ?= 1
 else ifeq ($(CONFIG_USERLAND),n)
-    USERLAND    := 0
+    USERLAND    ?= 0
 else
     USERLAND    ?= 1
 endif
 
-ifdef CONFIG_SMP
-    SMP         := $(CONFIG_SMP)
+ifeq ($(CONFIG_SMP),y)
+    ifdef CONFIG_QEMU_CPUS
+        SMP     ?= $(CONFIG_QEMU_CPUS)
+    else ifdef CONFIG_MAX_CPUS
+        SMP     ?= $(CONFIG_MAX_CPUS)
+    else
+        SMP     ?= 2
+    endif
+else ifeq ($(CONFIG_SMP),n)
+    SMP         ?= 1
+else ifdef CONFIG_SMP
+    SMP         ?= $(CONFIG_SMP)
 else
     SMP         ?= 2
 endif
 
 ifdef CONFIG_DISK_SIZE
-    DISK_SIZE   := $(CONFIG_DISK_SIZE)
+    DISK_SIZE   ?= $(CONFIG_DISK_SIZE)
 else
     DISK_SIZE   ?= 32
 endif
 
 ifdef CONFIG_QEMU_MEM
-    QEMU_MEM    := $(CONFIG_QEMU_MEM)
+    QEMU_MEM    ?= $(subst ",,$(CONFIG_QEMU_MEM))
 else
     QEMU_MEM    ?= 128M
 endif
