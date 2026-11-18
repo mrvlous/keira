@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Layered Network Stack Configuration
+#
+
+menu "Networking Subsystem & Device Drivers"
+
+config NET_STACK
+	bool "Bare-Metal TCP/IP Protocol Stack"
+	default y
+	help
+	  Enable native Ethernet, ARP, IPv4, ICMP, UDP and TCP packet
+	  processing engines in Ring 0.
+
+config NET_E1000
+	bool "Intel 82540EM Gigabit Ethernet PCI Driver"
+	default y
+	depends on NET_STACK
+	help
+	  Driver support for the Intel 82540EM (e1000) PCI network interface
+	  controller commonly emulated in virtual machines.
+
+config NET_SOCKETS
+	bool "POSIX & BSD Socket Interface"
+	default y
+	depends on NET_STACK
+	help
+	  Provide standard socket, bind, listen, accept, connect, send and
+	  recv system call interfaces.
+
+endmenu

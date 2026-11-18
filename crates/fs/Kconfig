@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Virtual Filesystem & Storage Configuration
+#
+
+menu "Filesystems & Storage Subsystem"
+
+config FS_FAT
+	bool "FAT12, FAT16 and FAT32 Filesystem Support"
+	default y
+	help
+	  Support mounting and accessing FAT filesystems on block devices
+	  and memory images.
+
+config FS_EXT4
+	bool "EXT4 Filesystem Driver Support"
+	default y
+	help
+	  Enable read and write operations on second, third and fourth
+	  extended filesystems.
+
+config FS_PROCFS
+	bool "Dynamic Process Information Pseudo-Filesystem (/proc)"
+	default y
+	help
+	  Expose live kernel data structures, process statuses and memory
+	  statistics via the /proc virtual filesystem.
+
+endmenu

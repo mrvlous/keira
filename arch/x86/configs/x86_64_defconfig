@@ -1,0 +1,31 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# Keira Kernel Configuration
+#
+
+#
+# Processor Architecture & System Specifications
+#
+CONFIG_ARCH_X86_64=y
+# CONFIG_ARCH_I686 is not set
+CONFIG_SMP=y
+CONFIG_MAX_CPUS=2
+
+#
+# Privilege Separation & Userland Subsystem
+#
+CONFIG_USERLAND=y
+
+#
+# Memory Management & Security
+#
+CONFIG_ASLR=y
+CONFIG_W_XOR_X=y
+
+#
+# Storage, Disk & Emulation Parameters
+#
+CONFIG_DISK_SIZE=32
+CONFIG_QEMU_MEM="128M"
+CONFIG_QEMU_CPUS=2
+CONFIG_VERBOSE=0

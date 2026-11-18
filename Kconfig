@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Master Keira Kernel Kconfig Root
+#
+
+mainmenu "Keira Kernel Configuration"
+
+source "arch/x86/Kconfig"
+source "crates/Kconfig"
+source "userland/Kconfig"

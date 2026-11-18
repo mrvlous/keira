@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Process Management & Concurrency Configuration
+#
+
+menu "Scheduler & Task Concurrency"
+
+config SCHED_WORK_STEALING
+	bool "Multi-Core Work-Stealing Scheduling Algorithm"
+	default y
+	help
+	  Enable work-stealing queues across symmetric multiprocessing cores
+	  to balance thread execution loads.
+
+config IO_URING
+	bool "Asynchronous I/O Engine (io_uring)"
+	default y
+	help
+	  High-performance kernel ring buffer completion queue architecture
+	  for zero-syscall asynchronous operations.
+
+endmenu

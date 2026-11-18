@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Architecture-Specific Configuration for x86 / i686
+#
+
+menu "Processor Architecture & System Specifications"
+
+choice
+	prompt "Target CPU Architecture"
+	default ARCH_X86_64
+
+config ARCH_X86_64
+	bool "64-bit x86 (x86_64)"
+	help
+	  Build kernel for modern 64-bit x86_64 architecture with long mode
+	  paging and 64-bit register support.
+
+config ARCH_I686
+	bool "32-bit x86 (i686)"
+	help
+	  Build kernel for legacy 32-bit i686 architecture with 32-bit
+	  protected mode and physical address extension.
+
+endchoice
+
+config SMP
+	bool "Symmetric Multiprocessing (SMP) Support"
+	default y
+	help
+	  Enable multi-core symmetric multiprocessing with APIC and real-mode
+	  AP bootstrap trampolines.
+
+config MAX_CPUS
+	int "Maximum Number of Symmetric Multiprocessing CPUs"
+	default 2
+	range 1 16
+	depends on SMP
+	help
+	  Maximum number of logical and physical CPU cores initialized by AP
+	  bootstrap trampolines.
+
+endmenu

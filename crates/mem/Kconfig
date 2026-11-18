@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Memory Management Subsystem Configuration
+#
+
+menu "Memory Management & Protection"
+
+config ASLR
+	bool "Address Space Layout Randomization (ASLR)"
+	default y
+	help
+	  Enable randomized virtual memory base addresses for Ring 3 task
+	  stack, heap and memory mappings.
+
+config W_XOR_X
+	bool "Write XOR Execute (W^X) Page Mitigations"
+	default y
+	help
+	  Enforce strict W^X page table flags ensuring memory pages are
+	  never simultaneously writable and executable.
+
+endmenu

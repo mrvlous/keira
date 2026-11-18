@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Security & Enclave Subsystem Configuration
+#
+
+menu "Security, Hardening & Isolation"
+
+config RLIMIT
+	bool "POSIX Resource Limits (RLIMIT)"
+	default y
+	help
+	  Enforce task resource limits including stack size, open files
+	  and maximum address space boundaries.
+
+config CRYPTO_ENTROPY
+	bool "Cryptographic Entropy & Random Number Pool"
+	default y
+	help
+	  Enable kernel entropy pool seeded by hardware RDRAND, RDSEED
+	  and system timing jitter.
+
+endmenu

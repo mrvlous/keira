@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Privilege Separation & Userland Subsystem Configuration
+#
+
+menu "Privilege Separation & Userland Subsystem"
+
+config USERLAND
+	bool "Enable Ring 3 Userspace Subsystem & Coreutils"
+	default y
+	help
+	  Staging and packaging of Ring 3 userspace binaries, canonical init
+	  (PID 1), standalone shell (sh.elf) and core utilities. If disabled,
+	  produces a pure freestanding Ring 0 supervisor kernel image.
+
+config USERLAND_COMPILER_KCC
+	bool "Build Native Freestanding C Compiler (kcc.elf)"
+	default y
+	depends on USERLAND
+	help
+	  Build and bundle the native freestanding C compiler into the userspace
+	  disk image.
+
+config USERLAND_TESTS
+	bool "Include Ring 3 Master ABI Security Test Suites"
+	default y
+	depends on USERLAND
+	help
+	  Build and install the 41 automated POSIX ABI verification test binaries
+	  in /bin/tests.
+
+endmenu
+
+menu "Storage, Disk & Emulation Parameters"
+
+config DISK_SIZE
+	int "Root Filesystem Disk Size (MB)"
+	default 32
+	help
+	  Size of the generated ext4 root filesystem disk image in megabytes.
+
+config QEMU_MEM
+	string "QEMU Virtual Machine Memory Allocation"
+	default "128M"
+	help
+	  Memory allocation passed to QEMU via the -m parameter.
+
+config QEMU_CPUS
+	int "QEMU Virtual CPU Allocation"
+	default 2
+	help
+	  Number of virtual CPUs passed to QEMU via the -smp parameter.
+
+config VERBOSE
+	int "Kernel Diagnostic Log Verbosity"
+	default 0
+	help
+	  Initial log level verbosity for kernel serial output and console diagnostics.
+
+endmenu

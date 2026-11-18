@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel Core Subsystem Kconfig Index
+#
+
+menu "Kernel Core Subsystems & Features"
+
+source "mem/Kconfig"
+source "task/Kconfig"
+source "fs/Kconfig"
+source "net/Kconfig"
+source "security/Kconfig"
+
+endmenu
