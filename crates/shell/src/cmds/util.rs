@@ -28,16 +28,23 @@ pub mod misc {
                 env!("CARGO_PKG_VERSION"),
                 ")\n\n"
             ));
-            vga::print_str(
-                "Diagnostics : system   cpu      smp      memory   slabinfo  regs     irq\n",
-            );
-            vga::print_str("Hardware    : devices  drivers  disk     dcache   icache    pipes\n");
-            vga::print_str("Security    : secinfo  aslrinfo rnginfo  rlimit   unixsock  vmainfo\n");
-            vga::print_str("Multiplex   : pollinfo selectinfo\n");
-            vga::print_str(
-                "Control     : syslog   wipe     sync     unwind   sh        run <path>\n",
-            );
-            vga::print_str("Lifecycle   : reset    power\n\n");
+            vga::print_str("Diagnostics:\n");
+            vga::print_str("  system         Display system summary, version and uptime\n");
+            vga::print_str("  cpu, smp       Processor topology, features and SMP cores\n");
+            vga::print_str("  memory, slab   Physical, virtual and slab allocator metrics\n");
+            vga::print_str("  devices, pci   PCI hardware buses and peripheral devices\n");
+            vga::print_str("  drivers, disk  Storage block geometry and registered drivers\n");
+            vga::print_str("  regs, irq      CPU registers and interrupt request lines\n\n");
+            vga::print_str("Security & IPC:\n");
+            vga::print_str("  secinfo, aslr  Hardware mitigations and ASLR entropy engine\n");
+            vga::print_str("  rng, rlimit    Silicon entropy generator and resource quotas\n");
+            vga::print_str("  pipes, unix    IPC anonymous pipes and UNIX domain sockets\n");
+            vga::print_str("  vma, poll      Virtual memory areas and POSIX multiplexing\n\n");
+            vga::print_str("Control & Lifecycle:\n");
+            vga::print_str("  syslog, dmesg  Circular kernel logging buffer messages\n");
+            vga::print_str("  sync, wipe     Flush dirty cache buffers and reset display\n");
+            vga::print_str("  sh, run <elf>  Launch Ring 3 shell or execute ELF binary\n");
+            vga::print_str("  reset, power   ACPI reboot or power off system\n\n");
             vga::print_str("Type '<cmd> --help' for options. Press Tab for completion.\n");
         }
     }

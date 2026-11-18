@@ -29,22 +29,35 @@ The build system staging rules in ``Makefile`` were audited and cleaned:
 3. Streamlined Ring 0 Supervisor Help Matrix
 ============================================
 
-In ``crates/shell/src/cmds/util.rs``, the ``help`` command was restructured into an ergonomic, categorized 9-line matrix that guarantees zero screen scrolling on 80x25 VGA consoles:
+In ``crates/shell/src/cmds/util.rs``, the supervisor ``help`` command was restructured into an ergonomic 2-column categorized manual that guarantees zero screen scrolling on 80x25 VGA consoles:
 
 .. code-block:: text
 
    Keira Kernel Diagnostic Console (Ring 0 v0.9.0)
 
-   Diagnostics : system   cpu      smp      memory   slabinfo  regs     irq
-   Hardware    : devices  drivers  disk     dcache   icache    pipes
-   Security    : secinfo  aslrinfo rnginfo  rlimit   unixsock  vmainfo
-   Multiplex   : pollinfo selectinfo
-   Control     : syslog   wipe     sync     unwind   sh        run <path>
-   Lifecycle   : reset    power
+   Diagnostics:
+     system         Display system summary, version and uptime
+     cpu, smp       Processor topology, features and SMP cores
+     memory, slab   Physical, virtual and slab allocator metrics
+     devices, pci   PCI hardware buses and peripheral devices
+     drivers, disk  Storage block geometry and registered drivers
+     regs, irq      CPU registers and interrupt request lines
+
+   Security & IPC:
+     secinfo, aslr  Hardware mitigations and ASLR entropy engine
+     rng, rlimit    Silicon entropy generator and resource quotas
+     pipes, unix    IPC anonymous pipes and UNIX domain sockets
+     vma, poll      Virtual memory areas and POSIX multiplexing
+
+   Control & Lifecycle:
+     syslog, dmesg  Circular kernel logging buffer messages
+     sync, wipe     Flush dirty cache buffers and reset display
+     sh, run <elf>  Launch Ring 3 shell or execute ELF binary
+     reset, power   ACPI reboot or power off system
 
    Type '<cmd> --help' for options. Press Tab for completion.
 
-Subsystem commands are organized logically across Diagnostics, Hardware, Security, Multiplex, Control and Lifecycle. Detailed flag options are delegated to individual command help (``<cmd> --help``), and interactive discovery is supported via hardware Tab auto-completion.
+Subsystem commands are organized logically across Diagnostics, Security, IPC, Control and Lifecycle. Detailed flag options are delegated to individual command help (``<cmd> --help``), and interactive discovery is supported via hardware Tab auto-completion.
 
 4. Ring 3 Shell Native Built-in Help
 ====================================
@@ -55,13 +68,21 @@ In ``userland/shell/sh.c``, a native ``builtin_help()`` routine was implemented 
 
    Keira Userspace Shell Console (Ring 3 v0.9.0)
 
-   Navigation  : cd [dir]   pwd
-   Environment : export [var=val]
-   Job Control : jobs       fg [id]  bg [id]
-   Session     : history    clear    help     exit
-   Utilities   : cat, ls, ps, df, fetch, kcc (Type 'ls /bin' for all binaries)
+   Shell Built-ins:
+     cd [dir]       Change current working directory
+     pwd            Print working directory
+     export [var]   Set environment variable
+     jobs           List background jobs
+     fg [id]        Bring background job to foreground
+     bg [id]        Resume stopped job in background
+     history        Display command execution history
+     clear          Clear terminal display screen
+     help           Display this reference manual
+     exit           Exit shell and return to Ring 0 supervisor
 
-   Type '<binary> --help' for options. Type 'exit' to return to Ring 0.
+   System Utilities:
+     Type 'ls /bin' to inspect available system binaries.
+     Type '<binary> --help' for individual program options.
 
 This built-in documentation clarifies the job control features introduced in Milestone 57, explains the privilege transition back to Ring 0 via ``exit`` and instructs users on navigating available system binaries.
 

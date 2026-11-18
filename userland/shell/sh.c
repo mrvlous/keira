@@ -369,13 +369,20 @@ static int builtin_export(int argc, char **argv) {
 static int builtin_help(void) {
     puts("Keira Userspace Shell Console (Ring 3 v" KEIRA_VERSION ")");
     putchar('\n');
-    puts("Navigation  : cd [dir]   pwd");
-    puts("Environment : export [var=val]");
-    puts("Job Control : jobs       fg [id]  bg [id]");
-    puts("Session     : history    clear    help     exit");
-    puts("Utilities   : cat, ls, ps, df, fetch, kcc (Type 'ls /bin' for all binaries)");
-    putchar('\n');
-    puts("Type '<binary> --help' for options. Type 'exit' to return to Ring 0.");
+    puts("Shell Built-ins:");
+    puts("  cd [dir]       Change current working directory");
+    puts("  pwd            Print working directory");
+    puts("  export [var]   Set environment variable");
+    puts("  jobs           List background jobs");
+    puts("  fg [id]        Bring background job to foreground");
+    puts("  bg [id]        Resume stopped job in background");
+    puts("  history        Display command execution history");
+    puts("  clear          Clear terminal display screen");
+    puts("  help           Display this reference manual");
+    puts("  exit           Exit shell and return to Ring 0 supervisor\n");
+    puts("System Utilities:");
+    puts("  Type 'ls /bin' to inspect available system binaries.");
+    puts("  Type '<binary> --help' for individual program options.");
     return 0;
 }
 
