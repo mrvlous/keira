@@ -14,6 +14,7 @@ Architecture & Subsystems
 
    contributing/index
    build-system
+   kconfig-system
    coding-style
    documentation-system
    maintainers
