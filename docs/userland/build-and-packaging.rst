@@ -4,7 +4,7 @@
 Keira Ring 3 Runtime Architecture, Build System & Packaging
 ===========================================================
 
-The ``userland`` domain provides the freestanding Ring 3 userspace runtime environment hosted directly within the Keira monolithic kernel repository. The Ring 3 runtime delivers an ultra-compact, dependency-free collection of 46 system utilities, a freestanding C standard runtime library (``libc.a``), a native C compiler toolchain (``kcc``) and comprehensive ABI test suites.
+The ``userland`` domain provides the freestanding Ring 3 userspace runtime environment hosted directly within the Keira monolithic kernel repository. The Ring 3 runtime delivers an ultra-compact, dependency-free collection of 47 system utilities, a freestanding C standard runtime library (``libc.a``), a native C compiler toolchain (``kcc``) and comprehensive ABI test suites.
 
 1. Architectural Principles & Kernel Demarcation
 ================================================
@@ -92,7 +92,7 @@ The ``userland/Makefile`` provides targeted build recipes for cross-compilation,
 
 .. code-block:: bash
 
-   # Compile C library and all 46 userland binaries
+   # Compile C library and all 47 userland binaries
    make -C userland ARCH=x86_64 bins
 
    # Format all source files according to clang-format rules

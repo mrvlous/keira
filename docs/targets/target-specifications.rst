@@ -27,7 +27,7 @@ Complete Compilation Pipeline
 
        subgraph Autonomous Userland Runtime
            USER_MAKE["userland/Makefile (Autonomous Orchestrator)"] --> USER_CRT["crt0.o & libc.a"]
-           USER_MAKE --> USER_BINS["46 Core Utility Binaries"]
+           USER_MAKE --> USER_BINS["47 Core Utility Binaries"]
            USER_BINS --> USER_ELFS["build/x86/<arch>/staging/fs_root/bin/*.elf"]
        end
 

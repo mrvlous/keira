@@ -16,7 +16,7 @@ Inspired by the Linux kernel repository structure (``torvalds/linux``), Keira st
    +-------------------------------------------------------------------------+
    |                              RING 3 USERLAND                            |
    |  +---------------------+   +---------------------+   +---------------+  |
-   |  | Core Utilities (46) |   | Native Compiler     |   | User Runtimes |  |
+   |  | Core Utilities (47) |   | Native Compiler     |   | User Runtimes |  |
    |  | sh, cat, ls, fetch  |   | (kcc.elf)           |   | & POSIX Apps  |  |
    |  +----------+----------+   +----------+----------+   +-------+-------+  |
    |             \                         |                     /           |

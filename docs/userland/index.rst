@@ -4,7 +4,7 @@
 Userland C SDK & Utilities (userland/)
 ======================================
 
-Complete Ring 3 userspace environment, 46 core utilities, libc.a and KCC compiler.
+Complete Ring 3 userspace environment, 47 core utilities, libc.a and KCC compiler.
 
 Architecture & Subsystems
 =========================
