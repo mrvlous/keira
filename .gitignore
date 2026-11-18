@@ -29,13 +29,16 @@
 /docs/.doctrees/
 /docs/screenshots/
 
-# Python virtual environment and bytecode caches
+# Python virtual environment, bytecode and linter caches
 /.venv/
 /venv/
 /env/
 __pycache__/
 *.pyc
 *.pyo
+.pylint.d/
+.pytest_cache/
+.mypy_cache/
 
 # Temporary editor files, swaps and backups
 *~

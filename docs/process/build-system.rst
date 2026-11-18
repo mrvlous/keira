@@ -93,6 +93,18 @@ Following the architectural pattern of the upstream Linux Kernel (where the root
 4. **Autonomous Userland Integration**: The root ``Makefile`` and autonomous ``userland/Makefile`` query the root ``Cargo.toml`` dynamically and inject ``-DKEIRA_VERSION=\"$(VERSION)\"`` into C compilation flags and ``clang-tidy`` linters. Userland C binaries include ``<sys/version.h>`` to format help banners and version telemetry.
 5. **Technical Documentation Integration**: The Sphinx documentation builder (``docs/sphinx/load_config.py`` and ``docs/conf.py``) dynamically inspects root ``Cargo.toml``, ensuring that generated documentation releases and search indices stay synchronized with kernel releases.
 
+Unified Toolchain & Configuration Specifications
+================================================
+
+To maintain rigorous code hygiene and formatting parity across multi-language components (Rust, C, Assembly, Python, Kconfig, ReST and Makefiles), Keira standardizes tooling configurations at the repository root:
+
+* **.editorconfig**: Unifies indentation (4-space indent for Rust, C, Python; 8-column tabs for Kconfig), character sets (UTF-8) and Unix line feeds across all text editors and IDEs.
+* **rustfmt.toml**: Enforces a 100-character line width, 4-space indentation and Unix line endings across all 12 kernel crates.
+* **.clang-format**: Enforces LLVM-based C style with 4-space indentation and a 100-character limit across all userland utilities and headers.
+* **.pylintrc**: Enforces Python 3 standard library best practices, 100-character line limits and 4-space indentation across ``scripts/`` and Sphinx extensions.
+* **.gitattributes**: Mandates LF line termination normalization for all text, Python, Kconfig and configuration files.
+* **scripts/checkpatch.py**: Validates incoming changesets, checking for trailing whitespace, SPDX license identifiers, zero Oxford commas and style guide compliance.
+
 Comprehensive Make Targets Inventory
 ====================================
 
