@@ -35,6 +35,10 @@ F: Cargo.toml
 F: Cargo.lock
 F: rust-toolchain.toml
 F: rustfmt.toml
+F: .clang-format
+F: .editorconfig
+F: .pylintrc
+F: .gitattributes
 F: Kconfig*
 F: scripts/
 F: .config*

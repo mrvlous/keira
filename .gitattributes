@@ -21,6 +21,14 @@
 *.css text
 *.js text
 *.sh text
+*.py text
+*.ini text
+*.cfg text
+Kconfig text
+*defconfig text
+.pylintrc text
+.editorconfig text
+.clang-format text
 Makefile text
 
 # Mark executable and archive binary files as binary

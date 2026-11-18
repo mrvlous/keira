@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Pylint Static Analysis Configuration
+#
+# Configures code analysis rules and thresholds for Python scripts in Keira Kernel,
+# including scripts/kconfig/, scripts/ tools and docs/sphinx/ extensions.
+
+[MAIN]
+# Python code to execute, usually for sys.path manipulation
+init-hook=
+
+# Files or directories to be skipped
+ignore=.git,build,target,_build,venv,.venv,__pycache__
+
+# Use multiple processes to speed up Pylint
+jobs=0
+
+# Pickle collected data for later comparisons
+persistent=no
+
+[MESSAGES CONTROL]
+# Disable specific checks that conflict with kernel tooling idioms
+disable=
+    raw-checker-failed,
+    bad-inline-option,
+    locally-disabled,
+    file-ignored,
+    suppressed-message,
+    useless-suppression,
+    deprecated-pragma,
+    use-symbolic-message-instead,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-branches,
+    too-many-instance-attributes,
+    too-many-lines,
+    too-many-locals,
+    too-many-statements,
+    broad-exception-caught
+
+[REPORTS]
+# Set the output format (text, parseable, colorized, json)
+output-format=text
+
+# Tells whether to display a full report or only the messages
+reports=no
+
+# Activate the evaluation score
+score=yes
+
+[FORMAT]
+# Maximum number of characters on a single line (consistent with rustfmt and clang-format)
+max-line-length=100
+
+# Regexp for a line that is allowed to be longer than the limit
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+
+# String used as indentation unit (4 spaces matching .editorconfig)
+indent-string='    '
+
+# Number of spaces of indent required inside a hanging or continued line
+indent-after-paren=4
+
+# Expected format of line ending (LF for Unix)
+expected-line-ending-format=LF
+
+[BASIC]
+# Good variable names which should always be accepted
+good-names=i,j,k,f,e,p,m,v,q,val,sym,dep,fd,ok,op,ip
+
+# Regular expression matching correct function names
+function-rgx=[a-z_][a-z0-9_]{2,40}$
+
+# Regular expression matching correct variable names
+variable-rgx=[a-z_][a-z0-9_]{1,40}$
+
+# Regular expression matching correct class names
+class-rgx=[A-Z_][a-zA-Z0-9]+$
+
+# Regular expression matching correct module names
+module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# Regular expression matching correct constant names
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Minimum line length for functions/classes that require docstrings
+docstring-min-length=5
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=8
+
+# Maximum number of locals for function / method body
+max-locals=25
+
+# Maximum number of return / yield for function / method body
+max-returns=8
+
+# Maximum number of branch for function / method body
+max-branches=20
+
+# Maximum number of statements in function / method body
+max-statements=80
+
+[SIMILARITIES]
+# Minimum lines number of a similarity
+min-similarity-lines=6
+
+# Ignore comments when computing similarities
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities
+ignore-imports=yes
