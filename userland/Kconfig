@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Privilege Separation & Userland Subsystem Configuration
 #
+# Configures Ring 3 userspace runtime packaging, freestanding C compiler
+# (kcc.elf) and automated POSIX ABI verification test suites.
 
 menu "Privilege Separation & Userland Subsystem"
 

@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Layered Network Stack Configuration
 #
+# Configures bare-metal TCP/IP networking, Intel e1000 PCI network interface
+# drivers and POSIX/BSD socket interfaces.
 
 menu "Networking Subsystem & Device Drivers"
 

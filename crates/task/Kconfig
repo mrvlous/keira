@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Scheduler & Task Concurrency Configuration
 #
-# Process Management & Concurrency Configuration
-#
+# Configures multi-core work-stealing scheduler queues and bare-metal
+# io_uring asynchronous I/O completion engine.
 
 menu "Scheduler & Task Concurrency"
 

@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Virtual Filesystem & Storage Configuration
 #
+# Configures block device filesystems including FAT12/16/32, EXT4
+# and the dynamic procfs virtual pseudo-filesystem.
 
 menu "Filesystems & Storage Subsystem"
 

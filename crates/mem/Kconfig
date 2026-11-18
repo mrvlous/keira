@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Memory Management Subsystem Configuration
 #
+# Configures Address Space Layout Randomization (ASLR), Write XOR Execute (W^X)
+# mitigations and virtual memory protection.
 
 menu "Memory Management & Protection"
 

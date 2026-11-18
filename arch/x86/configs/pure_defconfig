@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Keira Kernel Configuration Baseline
 #
-# Automatically generated file; DO NOT EDIT.
-# Keira Kernel Configuration
+# Automatically generated configuration profile for Keira Kernel.
 #
 
 #

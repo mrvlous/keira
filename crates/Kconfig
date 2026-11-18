@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Kernel Core Subsystems Configuration Index
 #
-# Keira Kernel Core Subsystem Kconfig Index
-#
+# Sources modular configuration specifications for kernel memory, scheduler,
+# virtual filesystem, networking and security subsystems.
 
 menu "Kernel Core Subsystems & Features"
 

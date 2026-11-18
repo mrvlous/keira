@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Architecture-Specific Configuration for x86 and i686
 #
-# Architecture-Specific Configuration for x86 / i686
-#
+# Defines CPU architecture choices, symmetric multiprocessing support
+# and logical core limits for x86 platforms.
 
 menu "Processor Architecture & System Specifications"
 

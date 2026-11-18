@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Security & Enclave Subsystem Configuration
 #
+# Configures POSIX resource limits (RLIMIT) and cryptographic entropy pools
+# seeded by hardware RDRAND and timing jitter.
 
 menu "Security, Hardening & Isolation"
 

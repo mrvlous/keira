@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
+
+# Keira Kernel Master Configuration Root
 #
-# Master Keira Kernel Kconfig Root
-#
+# Central entry point for kernel configuration manifests across architectures,
+# core crates and userspace subsystems.
 
 mainmenu "Keira Kernel Configuration"
 
