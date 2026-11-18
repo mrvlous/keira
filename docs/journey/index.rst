@@ -4,7 +4,7 @@
 The Keira Kernel Learning Journey
 =================================
 
-Educational systems programming chronicles across all 57 engineering milestones.
+Educational systems programming chronicles across all 58 engineering milestones.
 
 Architecture & Subsystems
 =========================

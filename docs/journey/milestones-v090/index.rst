@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-Milestones v0.9.0: Process Groups & Canonical Job Control
-=========================================================
+Milestones v0.9.0: Process Groups, Job Control & Pure Kernel Demarcation
+========================================================================
 
-Chronicles for Milestone 57: Process group isolation, session management and shell job control.
+Chronicles for Milestones 57-58: Process group isolation, session management, shell job control and pure kernel demarcation.
 
 Subtopics & Specifications
 ==========================
@@ -13,3 +13,4 @@ Subtopics & Specifications
    :maxdepth: 1
 
    job-control
+   pure-kernel-demarcation
