@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
-#
-# Code Style and Patch Verification Utility for Keira Kernel
-# Modeled after Linux kernel scripts/checkpatch.pl
+
+"""Code Style and Patch Verification Utility for Keira Kernel.
+
+Enforces SPDX license identifier presence, trailing whitespace limits,
+single spacing and strict absence of Oxford commas. Modeled after Linux
+kernel scripts/checkpatch.pl.
+"""
 
 import os
 import re

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
-#
-# Freestanding Linux-Grade Kconfig Parser and Configuration Model for Keira Kernel
+
+"""Linux-Grade Kconfig Parser and Configuration Model for Keira Kernel.
+
+Grammar parser, symbol model and dependency evaluator for the Keira Kernel
+Kconfig infrastructure, modeled after Linux kernel scripts/kconfig.
+"""
 
 import os
 import re
@@ -309,8 +311,9 @@ class Kconfig:
 
     def write_config(self, config_path):
         with open(config_path, "w", encoding="utf-8") as f:
-            f.write("#\n# Automatically generated file; DO NOT EDIT.\n")
-            f.write(f"# {self.mainmenu}\n#\n\n")
+            f.write("# SPDX-License-Identifier: GPL-2.0-only\n\n")
+            f.write(f"# {self.mainmenu} Specification\n#\n")
+            f.write("# Automatically generated file; DO NOT EDIT.\n#\n\n")
 
             def dump_menu(menu):
                 if menu != self.root_menu:
@@ -345,8 +348,9 @@ class Kconfig:
     def write_autoconf(self, header_path):
         os.makedirs(os.path.dirname(header_path), exist_ok=True)
         with open(header_path, "w", encoding="utf-8") as f:
+            f.write("/* SPDX-License-Identifier: GPL-2.0-only */\n\n")
             f.write("/*\n * Automatically generated file; DO NOT EDIT.\n")
-            f.write(f" * {self.mainmenu}\n */\n\n")
+            f.write(f" * {self.mainmenu} Header\n */\n\n")
             f.write("#ifndef _KEIRA_AUTOCONF_H\n#define _KEIRA_AUTOCONF_H\n\n")
 
             for sym_name, sym in sorted(self.symbols.items()):

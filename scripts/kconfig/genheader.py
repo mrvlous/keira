@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
-#
-# Generates include/generated/autoconf.h from .config
+
+"""Autoconf C Header Generator for Keira Kernel.
+
+Translates active configuration symbols from .config into
+include/generated/autoconf.h preprocessor macros, modeled after
+Linux kernel scripts/kconfig.
+"""
 
 import os
 import re
@@ -42,6 +45,7 @@ def main():
                         macros.append(f"#define {key} {val}")
 
     with open(header_path, "w", encoding="utf-8") as f:
+        f.write("/* SPDX-License-Identifier: GPL-2.0-only */\n\n")
         f.write("/*\n * Automatically generated file; DO NOT EDIT.\n")
         f.write(" * Keira Kernel Configuration Header\n */\n\n")
         f.write("#ifndef _KEIRA_AUTOCONF_H\n#define _KEIRA_AUTOCONF_H\n\n")

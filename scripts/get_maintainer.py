@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
-#
-# Subsystem Maintainer Query Utility for Keira Kernel
-# Modeled after Linux kernel scripts/get_maintainer.pl
+
+"""Subsystem Maintainer Query Utility for Keira Kernel.
+
+Queries subsystem maintainership from MAINTAINERS matching file paths and glob
+patterns. Modeled after Linux kernel scripts/get_maintainer.pl.
+"""
 
 import fnmatch
 import os

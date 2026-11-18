@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
-#
-# Interactive Terminal Menuconfig TUI (curses based) for Keira Kernel
+
+"""Interactive Curses Menuconfig Configuration Editor for Keira Kernel.
+
+Visual terminal user interface for interactive kernel configuration, modeled
+after Linux kernel scripts/kconfig/mconf.
+"""
 
 import curses
 import os

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-#
-# Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
-#
-# Batch Kconfig Configuration Processor (defconfig, pure_defconfig, savedefconfig)
+
+"""Keira Kernel Kconfig Batch Processor.
+
+Batch configuration engine for defconfig, pure_defconfig, savedefconfig
+and oldconfig processing, modeled after Linux kernel scripts/kconfig/conf.
+"""
 
 import argparse
 import os
