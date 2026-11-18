@@ -14,5 +14,6 @@ Architecture & Subsystems
 
    boot-protocol
    constants
+   ring-demarcation
    i686/index
    x86_64/index
