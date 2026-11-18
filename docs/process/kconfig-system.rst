@@ -131,6 +131,8 @@ guards:
 
 .. code-block:: c
 
+   /* SPDX-License-Identifier: GPL-2.0-only */
+
    #ifndef _KEIRA_AUTOCONF_H
    #define _KEIRA_AUTOCONF_H
 
