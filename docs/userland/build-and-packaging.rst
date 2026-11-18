@@ -80,7 +80,6 @@ System configuration files containing build-specific or architecture-specific at
 
 - **``/etc/kernel.cfg``**: Automatically generated with active kernel name, target version, architecture and userland enablement mode.
 - **``/etc/hostname``**: Initialized dynamically to ``keira\n``.
-- **``/etc/os-release``**: Conforms to the standard freedesktop specification with build metadata.
 - **``/etc/issue``**: Formatted console banner identifying kernel release and CPU architecture.
 - **``/etc/hosts``**: Baseline loopback and local node resolution table.
 
