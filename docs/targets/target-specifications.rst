@@ -97,11 +97,20 @@ The ``Makefile`` defines a complete developer interface for compilation, emulati
    * - ``make all``
      - Builds assembly, kernel binary, userland binaries, initrd and bootable ISO for active ``ARCH``.
      - ``preflight``
+   * - ``make menuconfig``
+     - Launches interactive curses-based visual configuration editor (``mconf.py``) and updates ``include/generated/autoconf.h``.
+     - None
    * - ``make defconfig``
-     - Generates default configuration (``.config``) from ``.example.config`` with full userland enabled (``CONFIG_USERLAND=y``).
+     - Generates baseline configuration (``.config``) from ``arch/x86/configs/$(ARCH)_defconfig`` and updates ``include/generated/autoconf.h``.
      - None
    * - ``make pure_defconfig``
-     - Generates pure freestanding Ring 0 configuration (``.config``) from ``.example.config`` without userland (``CONFIG_USERLAND=n``).
+     - Generates pure freestanding Ring 0 configuration (``.config``) from ``arch/x86/configs/pure_defconfig`` without userland (``CONFIG_USERLAND=n``).
+     - None
+   * - ``make savedefconfig``
+     - Generates minimal configuration diff against default symbols to ``defconfig``.
+     - None
+   * - ``make oldconfig``
+     - Validates and refreshes existing ``.config`` and synchronizes ``include/generated/autoconf.h``.
      - None
    * - ``make headers_install``
      - Exports Ring 3 system call and POSIX headers to ``include/uapi/``.
