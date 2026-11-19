@@ -43,6 +43,7 @@ F: .pylintrc
 F: .gitattributes
 F: .gitignore
 F: Kconfig*
+F: Kbuild*
 F: scripts/
 F: .config*
 F: .example.config

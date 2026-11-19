@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Standard Kbuild Compilation & Object Resolution Primitives
+#
+# Defines fundamental helper macros, compiler option probes and object collection
+# functions used across Keira Kernel modular build manifests.
+
+# Shorthand for dry-run suppression in non-verbose builds
+ifeq ($(V),1)
+    quiet       :=
+    Q           :=
+else
+    quiet       := quiet_
+    Q           := @
+endif
+
+# Probes if the assembler supports a given command-line flag
+# Usage: $(call as-option,-flag-to-test,-fallback-flag)
+as-option = $(shell if $(ASM) $(1) -o /dev/null /dev/null >/dev/null 2>&1; \
+    then echo "$(1)"; else echo "$(2)"; fi)
+
+# Probes if the C compiler supports a given command-line flag
+# Usage: $(call cc-option,-flag-to-test,-fallback-flag)
+cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null >/dev/null 2>&1; \
+    then echo "$(1)"; else echo "$(2)"; fi)
+
+# Conditionally adds a warning suppression flag if supported by the compiler
+# Usage: $(call cc-disable-warning,unused-but-set-variable)
+cc-disable-warning = $(call cc-option,-Wno-$(strip $(1)))
+
+# Normalizes and cleans directory paths by removing trailing slashes
+strip-slash = $(patsubst %/,%,$(1))
+
+# Prefixes a list of objects with a directory path
+# Usage: $(call add-prefix,arch/x86/common,$(asm-obj-y))
+add-prefix = $(addprefix $(strip $(1))/,$(2))
+
+# Subsystem directory traversal helpers
+# Extracts directories from $(obj-y) containing trailing slashes
+subdirs = $(filter %/,$(obj-y))
+
+# Extracts non-directory object targets from $(obj-y)
+clean-objs = $(filter-out %/,$(obj-y))

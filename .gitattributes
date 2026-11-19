@@ -24,7 +24,8 @@
 *.py text
 *.ini text
 *.cfg text
-Kconfig text
+Kconfig* text
+Kbuild* text
 *defconfig text
 .pylintrc text
 .editorconfig text

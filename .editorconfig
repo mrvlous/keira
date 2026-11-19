@@ -49,8 +49,8 @@ indent_size = 4
 indent_style = tab
 indent_size = 4
 
-# Indentation settings for Kconfig files
-[{Kconfig*,**/Kconfig*}]
+# Indentation settings for Kconfig and Kbuild files
+[{Kconfig*,**/Kconfig*,Kbuild*,**/Kbuild*}]
 indent_style = tab
 indent_size = 8
 tab_width = 8
