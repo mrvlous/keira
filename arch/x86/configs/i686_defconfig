@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Keira Kernel Configuration Baseline
+# Keira Kernel Configuration Baseline (i686)
 #
-# Automatically generated configuration profile for Keira Kernel.
+# Baseline configuration profile for legacy 32-bit i686 systems.
 #
 
 #
 # Processor Architecture & System Specifications
+#
+#
+# Target CPU Architecture
 #
 # CONFIG_ARCH_X86_64 is not set
 CONFIG_ARCH_I686=y
@@ -14,15 +17,47 @@ CONFIG_SMP=y
 CONFIG_MAX_CPUS=2
 
 #
-# Privilege Separation & Userland Subsystem
+# Kernel Core Subsystems & Features
 #
-CONFIG_USERLAND=y
 
 #
-# Memory Management & Security
+# Memory Management & Protection
 #
 CONFIG_ASLR=y
 CONFIG_W_XOR_X=y
+
+#
+# Scheduler & Task Concurrency
+#
+CONFIG_SCHED_WORK_STEALING=y
+CONFIG_IO_URING=y
+
+#
+# Filesystems & Storage Subsystem
+#
+CONFIG_FS_FAT=y
+CONFIG_FS_EXT4=y
+CONFIG_FS_PROCFS=y
+
+#
+# Networking Subsystem & Device Drivers
+#
+CONFIG_NET_STACK=y
+CONFIG_NET_E1000=y
+CONFIG_NET_SOCKETS=y
+
+#
+# Security, Hardening & Isolation
+#
+CONFIG_RLIMIT=y
+CONFIG_CRYPTO_ENTROPY=y
+
+#
+# Privilege Separation & Userland Subsystem
+#
+CONFIG_USERLAND=y
+CONFIG_USERLAND_COMPILER_KCC=y
+CONFIG_USERLAND_TESTS=y
 
 #
 # Storage, Disk & Emulation Parameters
