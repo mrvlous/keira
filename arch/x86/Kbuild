@@ -8,7 +8,7 @@
 include arch/x86/common/Kbuild
 
 # Architecture-specific bootstrap and kernel low-level assembly
-ifeq ($(CONFIG_ARCH_I686),y)
+ifeq ($(ARCH),i686)
     include arch/x86/i686/Kbuild
 else
     # Default to x86_64 Long Mode
