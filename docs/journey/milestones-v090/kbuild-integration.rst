@@ -32,9 +32,9 @@ Architectural Design & Subdirectory Kbuild Manifests
 Milestone 60 resolves these challenges by introducing standard Linux kernel Kbuild
 principles to Keira:
 
-1. **Core Helpers** (``scripts/Kbuild.include``): Implements standard option probes
-   (``as-option``, ``cc-option``, ``cc-disable-warning``) and path normalization
-   helpers.
+1. **Root Aggregator & Helpers**: Implements root ``Kbuild`` manifest and
+   ``scripts/Kbuild.include`` standard option probes (``as-option``, ``cc-option``,
+   ``cc-disable-warning``) and path normalization helpers.
 2. **Architecture Separation** (``arch/x86/Kbuild``): Decouples x86 bootstrap
    into ``arch/x86/common/Kbuild``, ``arch/x86/x86_64/Kbuild`` and
    ``arch/x86/i686/Kbuild``.

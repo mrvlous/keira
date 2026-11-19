@@ -64,7 +64,8 @@ The Kbuild manifest tree mirrors subsystem boundaries across the kernel reposito
 .. code-block:: text
 
    .
-   ├── Makefile                    # Master build orchestrator (includes Kbuild.include)
+   ├── Makefile                    # Master build orchestrator (includes Kbuild.include & Kbuild)
+   ├── Kbuild                      # Master root Kbuild manifest
    ├── arch/
    │   └── x86/
    │       ├── Kbuild              # Master x86 dispatcher
@@ -91,6 +92,19 @@ The Kbuild manifest tree mirrors subsystem boundaries across the kernel reposito
        ├── tests/Kbuild            # ABI test suites and fuzzing
        └── toolchain/Kbuild        # Native C compiler (kcc)
 
+Master Root Manifest (Kbuild)
+-----------------------------
+
+The root manifest ``Kbuild`` acts as the top-level aggregator, including architecture assembly manifests and kernel crate declarations:
+
+.. code-block:: makefile
+
+   # Architecture-specific bootstrap and kernel low-level assembly
+   include arch/x86/Kbuild
+
+   # Hyper-modular Ring 0 static library crates
+   include crates/Kbuild
+
 Architecture Assembly Manifests (arch/x86/)
 -------------------------------------------
 
@@ -103,7 +117,7 @@ subdirectories based on configuration variables:
    include arch/x86/common/Kbuild
 
    # Architecture-specific bootstrap and kernel low-level assembly
-   ifeq ($(CONFIG_ARCH_I686),y)
+   ifeq ($(ARCH),i686)
        include arch/x86/i686/Kbuild
    else
        include arch/x86/x86_64/Kbuild
