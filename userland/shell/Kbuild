@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Standalone Userspace Shell Kbuild Manifest
 #
 # Declares the primary interactive userspace command-line interpreter.
 
+# Interactive shell supporting pipelines, job control and I/O redirection
 bin-y		+= sh

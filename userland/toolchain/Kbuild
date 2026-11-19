@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Toolchain & Native Compiler Kbuild Manifest
 #
 # Declares native C compiler (kcc) compilation bound to CONFIG_USERLAND_COMPILER_KCC.
 
+# Native freestanding C compiler executable bundled into /bin/kcc.elf
 multi-bin-$(CONFIG_USERLAND_COMPILER_KCC)	+= kcc

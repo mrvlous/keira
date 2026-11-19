@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Core Utilities Kbuild Manifest
 #
 # Declares standard standalone POSIX core utility binaries.
 
+# Standalone POSIX file manipulation and text processing binaries
 bin-y		+= cat \
 		   chmod \
 		   chown \

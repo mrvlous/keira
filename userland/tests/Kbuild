@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # ABI Verification & Diagnostic Test Suites Kbuild Manifest
 #
 # Declares diagnostic and conformance test suites bound to CONFIG_USERLAND_TESTS.
 
+# Single-source automated POSIX conformance and diagnostic test suites
 bin-$(CONFIG_USERLAND_TESTS)		+= test_job_control \
 					   test_pipe \
 					   test_poll \
 					   test_select \
 					   test_threads
 
+# Multi-source master ABI verification and fuzzing suites
 multi-bin-$(CONFIG_USERLAND_TESTS)	+= test_abi \
 					   fuzz_abi

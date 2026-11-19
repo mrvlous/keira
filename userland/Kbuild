@@ -1,15 +1,32 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Master Userland Kbuild Manifest
 #
 # Dispatches userland compilation across categorized package domains.
 
+# Core POSIX command-line utilities (cat, chmod, chown, ls, etc.)
 include coreutils/Kbuild
+
+# Process inspection and telemetry utilities (ps, kill, pmap)
 include procutils/Kbuild
+
+# System administration and identity utilities (uname, hostname, df, etc.)
 include sysutils/Kbuild
+
+# Canonical userspace initialization and power management (init, reboot, poweroff)
 include init/Kbuild
+
+# Standalone interactive userspace shell (sh.elf)
 include shell/Kbuild
+
+# Network diagnostics, packet filtering and fetch utilities (ifconfig, ping, fetch, etc.)
 include netutils/Kbuild
+
+# Native freestanding C compiler toolchain (kcc.elf)
 include toolchain/Kbuild
+
+# Automated POSIX ABI verification and security test suites
 include tests/Kbuild
+
+# Freestanding C runtime standard library archive (libc.a)
 include libc/Kbuild

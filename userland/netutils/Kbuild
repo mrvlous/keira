@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Network Utilities Kbuild Manifest
 #
 # Declares network configuration, diagnostics, packet filtering and fetch utilities.
 
+# Network configuration, diagnostics, routing and file transfer utilities
 bin-y		+= arp \
 		   fetch \
 		   ifconfig \
