@@ -189,11 +189,13 @@ developer utilities modeled after Linux kernel standards:
 * **Patch & Style Verification** (``scripts/checkpatch.py``): Enforces strict
   formatting rules, trailing whitespace detection, SPDX license identifier
   compliance and prose style standards.
+* **Kbuild Primitives** (``scripts/Kbuild.include``): Implements standard Kbuild
+  compilation macros and option probes (see :doc:`kbuild-system`).
 * **Python Quality & Static Analysis** (``.pylintrc``): Standardizes code quality
   thresholds for all build system scripts with a 100-character line length limit.
 * **EditorConfig & Whitespace Standards** (``.editorconfig``): Mandates 8-column
-  hardware tabs for all ``Kconfig*`` files and 4-space indentation for Python, C
-  and Rust sources.
+  hardware tabs for all ``Kconfig*`` and ``Kbuild*`` files and 4-space indentation
+  for Python, C and Rust sources.
 
 Build System & Makefile Targets
 -------------------------------

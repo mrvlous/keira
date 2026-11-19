@@ -100,7 +100,7 @@ Ensure all the following criteria are fulfilled before submitting:
 * [ ] Dual-architecture parity: builds and boots on both ``x86_64`` and ``i686``.
 * [ ] Zero warnings policy: zero compiler warnings or lint errors.
 * [ ] Validated with ``scripts/checkpatch.py`` and ``.pylintrc`` for Python scripts.
-* [ ] Strict ``.editorconfig`` compliance (8-column tabs for Kconfig, 4 spaces for Rust, C and Python).
+* [ ] Strict ``.editorconfig`` compliance (8-column tabs for Kconfig and Kbuild, 4 spaces for Rust, C and Python).
 * [ ] Valid SPDX-License-Identifier headers across all source, build and configuration files.
 * [ ] Zero Oxford commas across all commit messages and documentation prose.
 * [ ] Zero double whitespaces in prose and configuration files.
