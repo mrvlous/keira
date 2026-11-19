@@ -184,6 +184,7 @@ Declarative configuration manifests (``Kconfig``, ``arch/x86/Kconfig``, ``crates
 
    - Use declarative symbol binding (``obj-$(CONFIG_FOO) += ...`` or ``bin-$(CONFIG_BAR) += ...``).
    - Use clean line continuations with tabbed alignment.
+   - Maintain standardized file headers and descriptive section comments across all Kbuild manifests.
 
 4. **Defconfig Profiles**:
 
