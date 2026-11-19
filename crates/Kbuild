@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Kernel Workspace Crates Kbuild Manifest
+#
+# Identifies the 12 hyper-modular kernel crates integrated into libkeira_kernel.a.
+
+crate-y		+= arch \
+		   core \
+		   crypto \
+		   fs \
+		   io \
+		   ipc \
+		   kernel \
+		   mem \
+		   net \
+		   shell \
+		   syscall \
+		   task

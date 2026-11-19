@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# i686 Protected Mode Architecture Kbuild Manifest
+#
+# Declares low-level assembly sources for 32-bit bootstrap, GDT, IDT and system calls.
+
+asm-src-y	+= arch/x86/i686/boot/entry.asm \
+		   arch/x86/i686/boot/ap_trampoline.asm \
+		   arch/x86/i686/kernel/gdt.asm \
+		   arch/x86/i686/kernel/idt.asm \
+		   arch/x86/i686/kernel/isr.asm \
+		   arch/x86/i686/kernel/syscall.asm

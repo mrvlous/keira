@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Master x86 Architecture Kbuild Manifest
+#
+# Dispatches architecture assembly sources to common and architecture-specific subdirectories.
+
+# Common Multiboot2 bootstrap assembly header
+include arch/x86/common/Kbuild
+
+# Architecture-specific bootstrap and kernel low-level assembly
+ifeq ($(CONFIG_ARCH_I686),y)
+    include arch/x86/i686/Kbuild
+else
+    # Default to x86_64 Long Mode
+    include arch/x86/x86_64/Kbuild
+endif
