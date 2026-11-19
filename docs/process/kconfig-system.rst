@@ -178,6 +178,10 @@ The configuration system maintains strict dual-architecture parity across
   freestanding Ring 0 supervisor console image with all userspace staging
   disabled (``CONFIG_USERLAND=n``).
 
+All baseline defconfig profiles (``x86_64_defconfig``, ``i686_defconfig`` and
+``pure_defconfig``) as well as ``.example.config`` share identical section
+comment banners structured to match the root Kconfig menu layout.
+
 Helper Scripts & Code Quality Tools
 -----------------------------------
 
