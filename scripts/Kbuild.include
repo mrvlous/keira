@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Standard Kbuild Compilation & Object Resolution Primitives
 #
 # Defines fundamental helper macros, compiler option probes and object collection

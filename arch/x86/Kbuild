@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Master x86 Architecture Kbuild Manifest
 #
 # Dispatches architecture assembly sources to common and architecture-specific subdirectories.
@@ -11,6 +11,6 @@ include arch/x86/common/Kbuild
 ifeq ($(ARCH),i686)
     include arch/x86/i686/Kbuild
 else
-    # Default to x86_64 Long Mode
+    # Default to modern 64-bit x86_64 Long Mode
     include arch/x86/x86_64/Kbuild
 endif

@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # x86_64 Long Mode Architecture Kbuild Manifest
 #
 # Declares low-level assembly sources for 64-bit bootstrap, GDT, paging, IDT and system calls.
 
+# 64-bit Long Mode bootstrap, GDT, paging, IDT, ISR and syscall trampolines
 asm-src-y	+= arch/x86/x86_64/boot/entry32.asm \
 		   arch/x86/x86_64/boot/entry64.asm \
 		   arch/x86/x86_64/boot/ap_trampoline.asm \

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
-#
+
 # Common x86 Multiboot2 Bootstrap Kbuild Manifest
 #
 # Defines shared Multiboot2 header assembly sources across all x86 targets.
 
+# Shared Multiboot2 bootstrap specification header
 asm-src-y	+= arch/x86/common/boot/multiboot2_header.asm
