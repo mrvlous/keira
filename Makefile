@@ -25,6 +25,9 @@ SHELL           := /bin/bash
 # Include Linux-style configuration file if present
 -include .config
 
+# Include Linux-grade Kbuild infrastructure helpers
+include scripts/Kbuild.include
+
 # Target Architecture: x86_64 (default) or i686 (pure 32-bit x86)
 ifndef ARCH
     ifeq ($(CONFIG_ARCH_I686),y)
@@ -119,13 +122,6 @@ ifeq ($(ARCH),i686)
     RUST_MODE   := release
     RUST_LIB    := target/i686-keira-none/$(RUST_MODE)/libkeira_kernel.a
     QEMU        := qemu-system-i386
-    ASM_SRCS    := arch/x86/common/boot/multiboot2_header.asm \
-                   arch/x86/i686/boot/entry.asm \
-                   arch/x86/i686/boot/ap_trampoline.asm \
-                   arch/x86/i686/kernel/gdt.asm \
-                   arch/x86/i686/kernel/idt.asm \
-                   arch/x86/i686/kernel/isr.asm \
-                   arch/x86/i686/kernel/syscall.asm
 else
     ASM_FLAGS   := -f elf64 -I arch/x86/common/include/
     LD_FLAGS    := -n -T arch/x86/x86_64/linker.ld --gc-sections --no-warn-rwx-segments
@@ -133,17 +129,12 @@ else
     RUST_MODE   := release
     RUST_LIB    := target/x86_64-keira-none/$(RUST_MODE)/libkeira_kernel.a
     QEMU        := qemu-system-x86_64
-    ASM_SRCS    := arch/x86/common/boot/multiboot2_header.asm \
-                   arch/x86/x86_64/boot/entry32.asm \
-                   arch/x86/x86_64/boot/entry64.asm \
-                   arch/x86/x86_64/boot/ap_trampoline.asm \
-                   arch/x86/x86_64/kernel/gdt.asm \
-                   arch/x86/x86_64/kernel/paging.asm \
-                   arch/x86/x86_64/kernel/idt.asm \
-                   arch/x86/x86_64/kernel/isr.asm \
-                   arch/x86/x86_64/kernel/syscall.asm
 endif
 
+# Load modular x86 architecture Kbuild manifest
+include arch/x86/Kbuild
+
+ASM_SRCS        := $(asm-src-y)
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
 ALL_OBJS        := $(ASM_OBJS)
 

@@ -25,6 +25,9 @@ SHELL           := /bin/bash
 # Include Linux-style configuration file if present
 -include ../.config
 
+# Include Linux-grade Kbuild infrastructure helpers
+include ../scripts/Kbuild.include
+
 # Target architecture: x86_64 (default) or i686 (pure 32-bit x86)
 ifeq ($(CONFIG_ARCH_I686),y)
     ARCH        := i686
@@ -107,26 +110,20 @@ LIBC_A          := $(LIB_DIR)/libc.a
 LIB_SRCS        := $(shell find $(LIBC_DIR)/src -type f -name "*.c")
 LIB_OBJS        := $(patsubst $(LIBC_DIR)/src/%.c,$(OBJ_DIR)/libc/%.o,$(LIB_SRCS))
 
-# Canonical list of 46 userland executables organized by professional domain
-CORE_BINS       := cat chmod chown clear echo grep head ln ls mkdir rm tail touch wc
-PROC_BINS       := kill pmap ps
-SYS_BINS        := df dmesg hostname id mount sleep su umount uname whoami
-INIT_BINS       := init poweroff reboot
-SHELL_BINS      := sh
-NET_BINS        := arp fetch ifconfig iptables netstat ping route
-TESTS_BINS      := test_job_control test_pipe test_poll test_select test_threads
-MULTI_BINS      := sysinfo kcc test_abi fuzz_abi
+# Load modular userland package manifests via Kbuild
+include Kbuild
 
-# Conditional compilation based on Kconfig options
-ifeq ($(CONFIG_USERLAND_COMPILER_KCC),n)
-    MULTI_BINS := $(filter-out kcc,$(MULTI_BINS))
-endif
-ifeq ($(CONFIG_USERLAND_TESTS),n)
-    TESTS_BINS :=
-    MULTI_BINS := $(filter-out test_abi fuzz_abi,$(MULTI_BINS))
-endif
+# Categorized binary groups resolved dynamically from Kbuild manifests
+CORE_BINS       := $(filter cat chmod chown clear echo grep head ln ls mkdir rm tail touch wc,$(bin-y))
+PROC_BINS       := $(filter kill pmap ps,$(bin-y))
+SYS_BINS        := $(filter df dmesg hostname id mount sleep su umount uname whoami,$(bin-y))
+INIT_BINS       := $(filter init poweroff reboot,$(bin-y))
+SHELL_BINS      := $(filter sh,$(bin-y))
+NET_BINS        := $(filter arp fetch ifconfig iptables netstat ping route,$(bin-y))
+TESTS_BINS      := $(filter test_job_control test_pipe test_poll test_select test_threads,$(bin-y))
+MULTI_BINS      := $(multi-bin-y)
 
-BINS            := $(sort $(CORE_BINS) $(PROC_BINS) $(SYS_BINS) $(INIT_BINS) $(SHELL_BINS) $(NET_BINS) $(TESTS_BINS) $(MULTI_BINS))
+BINS            := $(sort $(bin-y) $(multi-bin-y))
 BIN_ELFS        := $(patsubst %,$(BIN_DIR)/%.elf,$(BINS))
 
 # Uniform logging definitions matching kernel master build system
