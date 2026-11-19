@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Initialization & Power Management Kbuild Manifest
+#
+# Declares PID 1 userspace init, system shutdown and reboot binaries.
+
+bin-y		+= init \
+		   poweroff \
+		   reboot

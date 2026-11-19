@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Master Userland Kbuild Manifest
+#
+# Dispatches userland compilation across categorized package domains.
+
+include coreutils/Kbuild
+include procutils/Kbuild
+include sysutils/Kbuild
+include init/Kbuild
+include shell/Kbuild
+include netutils/Kbuild
+include toolchain/Kbuild
+include tests/Kbuild
+include libc/Kbuild

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Core Utilities Kbuild Manifest
+#
+# Declares standard standalone POSIX core utility binaries.
+
+bin-y		+= cat \
+		   chmod \
+		   chown \
+		   clear \
+		   echo \
+		   grep \
+		   head \
+		   ln \
+		   ls \
+		   mkdir \
+		   rm \
+		   tail \
+		   touch \
+		   wc

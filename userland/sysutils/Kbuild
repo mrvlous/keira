@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# System Utilities Kbuild Manifest
+#
+# Declares POSIX system administration and identity utilities.
+
+bin-y		+= df \
+		   dmesg \
+		   hostname \
+		   id \
+		   mount \
+		   sleep \
+		   su \
+		   umount \
+		   uname \
+		   whoami
+
+multi-bin-y	+= sysinfo

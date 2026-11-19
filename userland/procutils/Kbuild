@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Process Inspection Utilities Kbuild Manifest
+#
+# Declares process status, signal and virtual memory inspection binaries.
+
+bin-y		+= kill \
+		   pmap \
+		   ps

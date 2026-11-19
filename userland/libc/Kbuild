@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Freestanding C Standard Library (libc.a) Kbuild Manifest
+#
+# Declares runtime library archive targets.
+
+libc-y		+= libc.a
