@@ -57,7 +57,7 @@ In ``crates/shell/src/cmds/util.rs``, the supervisor ``help`` command was restru
 
    Type '<cmd> --help' for options. Press Tab for completion.
 
-Subsystem commands are organized logically across Diagnostics, Security, IPC, Control and Lifecycle. Detailed flag options are delegated to individual command help (``<cmd> --help``), and interactive discovery is supported via hardware Tab auto-completion.
+Subsystem commands are organized logically across Diagnostics, Security, IPC, Control and Lifecycle. Detailed flag options are delegated to individual command help (``<cmd> --help``) and interactive discovery is supported via hardware Tab auto-completion.
 
 4. Ring 3 Shell Native Built-in Help
 ====================================
