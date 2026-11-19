@@ -131,8 +131,8 @@ else
     QEMU        := qemu-system-x86_64
 endif
 
-# Load modular x86 architecture Kbuild manifest
-include arch/x86/Kbuild
+# Load master root Kbuild manifest
+include Kbuild
 
 ASM_SRCS        := $(asm-src-y)
 ASM_OBJS        := $(patsubst %.asm,$(OBJ_DIR)/%.asm.o,$(ASM_SRCS))
