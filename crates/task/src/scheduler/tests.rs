@@ -288,3 +288,35 @@ fn test_clone_constants_and_thread_semantics() {
         }
     }
 }
+
+#[test]
+fn test_kthread_lifecycle_and_daemons() {
+    let _lock = TestLock::acquire();
+    unsafe {
+        init();
+        assert!(TASKS[0].is_some());
+        assert_eq!(TASKS[0].as_ref().unwrap().name, "kernel_shell");
+
+        // Verify standard kernel daemons spawned by init_kthreads
+        assert!(TASKS[1].is_some());
+        assert_eq!(TASKS[1].as_ref().unwrap().name, "kthreadd");
+        assert!(!TASKS[1].as_ref().unwrap().is_user);
+        assert_eq!(TASKS[1].as_ref().unwrap().parent_id, 0);
+
+        assert!(TASKS[2].is_some());
+        assert_eq!(TASKS[2].as_ref().unwrap().name, "kswapd0");
+        assert!(!TASKS[2].as_ref().unwrap().is_user);
+
+        assert!(TASKS[3].is_some());
+        assert_eq!(TASKS[3].as_ref().unwrap().name, "kflushd");
+        assert!(!TASKS[3].as_ref().unwrap().is_user);
+
+        // Test spawning a dynamic custom kernel thread
+        let custom_pid = kthread_create("kworker_test", kthreadd_daemon).expect("spawn kthread");
+        assert_eq!(custom_pid, 4);
+        let task = TASKS[custom_pid].as_ref().unwrap();
+        assert_eq!(task.name, "kworker_test");
+        assert!(!task.is_user);
+        assert_eq!(task.state, TaskState::Ready);
+    }
+}

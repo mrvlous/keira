@@ -116,6 +116,9 @@ pub mod hooks {
                 return None;
             }
             let task = TASKS[pid].as_ref()?;
+            if !task.is_user && task.id != 0 {
+                return Some(0);
+            }
             let bytes = task.name.as_bytes();
             let to_copy = bytes.len().min(buf.len());
             buf[..to_copy].copy_from_slice(&bytes[..to_copy]);
@@ -456,9 +459,13 @@ pub mod state {
             pgid: 0,
             sid: 0,
         };
+        for slot in TASKS[1..].iter_mut() {
+            *slot = None;
+        }
         TASKS[0] = Some(main_task);
         CURRENT_TASK_IDX = 0;
         SCHEDULER_INITIALIZED = true;
+        crate::scheduler::kthread::init_kthreads();
         keira_fs::proc::register_task_hooks(
             task_status_provider,
             task_cmdline_provider,

@@ -283,6 +283,9 @@ pub mod spawn {
     use crate::scheduler::lifecycle::reap_orphaned_zombies;
     use crate::types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
 
+    #[cfg(test)]
+    static mut TEST_TASK_STACKS: [[u8; 16384]; 16] = [[0; 16384]; 16];
+
     pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'static str> {
         let mut slot = None;
         for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
@@ -304,8 +307,18 @@ pub mod spawn {
 
         let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
 
+        #[cfg(test)]
+        let (stack_frame, stack_top) = match pmm::alloc_contiguous_frames(TASK_STACK_PAGES) {
+            Some(f) => (f, f + TASK_STACK_SIZE),
+            None => {
+                let base = TEST_TASK_STACKS[slot_idx % 16].as_mut_ptr() as u64;
+                (base, base + 16384)
+            }
+        };
+        #[cfg(not(test))]
         let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
             .ok_or("Scheduler: Out of memory for task stack")?;
+        #[cfg(not(test))]
         let stack_top = stack_frame + TASK_STACK_SIZE;
 
         let context_ptr =
@@ -438,8 +451,18 @@ pub mod spawn {
 
         let slot_idx = slot.ok_or("Scheduler: Maximum task limit reached")?;
 
+        #[cfg(test)]
+        let (stack_frame, stack_top) = match pmm::alloc_contiguous_frames(TASK_STACK_PAGES) {
+            Some(f) => (f, f + TASK_STACK_SIZE),
+            None => {
+                let base = TEST_TASK_STACKS[slot_idx % 16].as_mut_ptr() as u64;
+                (base, base + 16384)
+            }
+        };
+        #[cfg(not(test))]
         let stack_frame = pmm::alloc_contiguous_frames(TASK_STACK_PAGES)
             .ok_or("Scheduler: Out of memory for task stack")?;
+        #[cfg(not(test))]
         let stack_top = stack_frame + TASK_STACK_SIZE;
 
         let context_ptr =

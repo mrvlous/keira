@@ -83,7 +83,22 @@ pub mod pidinfo {
                     vga::print_str(state_str);
                     vga::print_str(" ");
 
-                    print_padded_str(task.name, 16);
+                    let is_kthread = !task.is_user && task.id != 0;
+                    if is_kthread && !task.name.starts_with('[') {
+                        let mut kbuf = [0u8; 32];
+                        let nb = task.name.as_bytes();
+                        let n = nb.len().min(28);
+                        kbuf[0] = b'[';
+                        kbuf[1..1 + n].copy_from_slice(&nb[..n]);
+                        kbuf[1 + n] = b']';
+                        if let Ok(s) = core::str::from_utf8(&kbuf[..2 + n]) {
+                            print_padded_str(s, 16);
+                        } else {
+                            print_padded_str(task.name, 16);
+                        }
+                    } else {
+                        print_padded_str(task.name, 16);
+                    }
                     vga::print_str(" ");
 
                     let vsize_kb = if task.program_break > task.program_break_start {
@@ -130,8 +145,14 @@ pub mod pidinfo {
                 vga::print_str("):\n");
 
                 vga::print_str("  Command Name:     ");
-                vga::print_str(task.name);
-                vga::print_str("\n");
+                if !task.is_user && task.id != 0 && !task.name.starts_with('[') {
+                    vga::print_str("[");
+                    vga::print_str(task.name);
+                    vga::print_str("] (Ring 0 Kernel Thread)\n");
+                } else {
+                    vga::print_str(task.name);
+                    vga::print_str("\n");
+                }
 
                 vga::print_str("  Process State:    ");
                 let state_desc = match task.state {

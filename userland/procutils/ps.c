@@ -93,7 +93,24 @@ int main(int argc, char **argv) {
             line = next;
         }
 
-        printf("%5d %5d %-6s %s\n", parsed_pid, parsed_ppid, state, name);
+        char cmdline_path[32];
+        snprintf(cmdline_path, sizeof(cmdline_path), "/proc/%d/cmdline", pid);
+        int cfd = open(cmdline_path, O_RDONLY, 0);
+        char cmdline_buf[8] = "";
+        ssize_t cn = (cfd >= 0) ? read(cfd, cmdline_buf, sizeof(cmdline_buf) - 1) : -1;
+        if (cfd >= 0) {
+            close(cfd);
+        }
+
+        char display_name[80];
+        if (cn == 0 && parsed_pid > 0) {
+            snprintf(display_name, sizeof(display_name), "[%s]", name);
+        } else {
+            strncpy(display_name, name, sizeof(display_name) - 1);
+            display_name[sizeof(display_name) - 1] = '\0';
+        }
+
+        printf("%5d %5d %-6s %s\n", parsed_pid, parsed_ppid, state, display_name);
     }
 
     return 0;

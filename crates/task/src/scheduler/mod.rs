@@ -18,6 +18,7 @@ pub mod core;
 pub mod diag;
 pub mod dispatch;
 pub mod identity;
+pub mod kthread;
 pub mod lifecycle;
 pub mod process;
 pub mod signal;
@@ -39,6 +40,9 @@ pub use identity::{
     get_current_egid, get_current_euid, get_current_gid, get_current_pgid, get_current_sid,
     get_current_uid, get_task_pgid, get_task_sid, set_current_gid, set_current_uid, set_task_pgid,
     setsid_current,
+};
+pub use kthread::{
+    init_kthreads, kflushd_daemon, kswapd_daemon, kthread_create, kthreadd_daemon,
 };
 pub use lifecycle::{
     exit_current, reap_orphaned_zombies, reap_orphaned_zombies_locked, stop_task, sys_waitpid,
