@@ -27,6 +27,8 @@ fn test_procfs_nodes_exist() {
     assert!(exists("loadavg"));
     assert!(exists("cmdline"));
     assert!(exists("mounts"));
+    assert!(exists("modules"));
+    assert!(exists("kallsyms"));
     assert!(exists("partitions"));
     assert!(exists("self/status"));
     assert!(exists("self/cmdline"));
@@ -135,4 +137,20 @@ fn test_read_task_maps_node() {
     assert!(s.contains("00400000-00405000"));
     assert!(s.contains("r-xp"));
     assert!(s.contains("/bin/test"));
+}
+
+#[test]
+fn test_read_modules_and_kallsyms() {
+    let mut buf = [0u8; 1024];
+    let n = read_proc_file("modules", &mut buf).expect("read modules failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 modules");
+    assert!(s.contains("ext4_fs"));
+    assert!(s.contains("e1000_nic"));
+    assert!(s.contains("ahci_sata"));
+
+    let n = read_proc_file("kallsyms", &mut buf).expect("read kallsyms failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 kallsyms");
+    assert!(s.contains("vga_print_str"));
+    assert!(s.contains("pmm_alloc_frame"));
+    assert!(s.contains("ext4_mount"));
 }

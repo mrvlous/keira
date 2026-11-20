@@ -16,11 +16,11 @@
 
 pub mod read {
     use crate::proc::system::{
-        read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_loadavg,
-        read_meminfo, read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route,
-        read_net_tcp, read_net_udp, read_net_unix, read_nf_conntrack_stat, read_partitions,
-        read_randomize_va_space, read_slabinfo, read_sockstat, read_uptime, read_version,
-        read_vmstat,
+        read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_kallsyms,
+        read_loadavg, read_meminfo, read_modules, read_mounts, read_net_arp, read_net_dev,
+        read_net_raw, read_net_route, read_net_tcp, read_net_udp, read_net_unix,
+        read_nf_conntrack_stat, read_partitions, read_randomize_va_space, read_slabinfo,
+        read_sockstat, read_uptime, read_version, read_vmstat,
     };
     use crate::proc::task::hooks::CURRENT_PID_HOOK;
     use crate::proc::task::{
@@ -58,6 +58,8 @@ pub mod read {
                 | "loadavg"
                 | "cmdline"
                 | "mounts"
+                | "modules"
+                | "kallsyms"
                 | "partitions"
                 | "self"
                 | "net"
@@ -129,6 +131,8 @@ pub mod read {
             "loadavg" => read_loadavg(buf),
             "cmdline" => read_cmdline(buf),
             "mounts" | "self/mounts" => read_mounts(buf),
+            "modules" => read_modules(buf),
+            "kallsyms" => read_kallsyms(buf),
             "partitions" => read_partitions(buf),
             "net/dev" => read_net_dev(buf),
             "net/route" => read_net_route(buf),
