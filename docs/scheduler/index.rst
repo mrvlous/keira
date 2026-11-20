@@ -13,6 +13,7 @@ Architecture & Subsystems
    :maxdepth: 2
 
    cgroups/index
+   kthreads
    scheduler-core
    signals/index
    smp-ipi/index

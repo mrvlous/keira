@@ -18,10 +18,13 @@ Subtopics & Specifications
    clear
    echo
    head
+   insmod
    ln
    ls
+   lsmod
    mkdir
    rm
+   rmmod
    tail
    test
    touch

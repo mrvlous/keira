@@ -15,6 +15,7 @@ Subtopics & Specifications
    fuzz-abi
    test-abi
    test-job-control
+   test-modules
    test-pipe
    test-poll
    test-select

@@ -14,5 +14,6 @@ Architecture & Subsystems
 
    collections/index
    kernel-lifecycle/index
+   modules
    primitives
    synchronization/index
