@@ -169,3 +169,13 @@ Build System Integration Benefits
    compilation recipes, compiler flags and linker rules.
 4. **Linux Developer Parity**: Developers familiar with the Linux kernel build system
    experience an identical workflow and syntax.
+
+Automated Unit Testing & Verification
+-------------------------------------
+
+To ensure reliable grammar parsing, condition evaluation and toolchain option probing, a dedicated unit test suite resides in ``scripts/kconfig/test_kconfig.py``:
+
+.. code-block:: bash
+
+   make test-kbuild   # Runs Python unit tests for Kconfig and Kbuild macros
+   make test-unit     # Runs both test-kbuild and cargo workspace unit tests
