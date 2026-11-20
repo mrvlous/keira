@@ -3,7 +3,6 @@
 # Keira Kernel Configuration Baseline (Pure Ring 0)
 #
 # Baseline configuration profile for pure freestanding Ring 0 supervisor console.
-#
 
 #
 # Processor Architecture & System Specifications
@@ -11,8 +10,12 @@
 #
 # Target CPU Architecture
 #
+# Select target instruction set architecture.
+# Choose either modern 64-bit x86_64 or legacy 32-bit i686.
 CONFIG_ARCH_X86_64=y
 # CONFIG_ARCH_I686 is not set
+
+# Enable Symmetric Multiprocessing (SMP) and logical core topology.
 CONFIG_SMP=y
 CONFIG_MAX_CPUS=2
 
@@ -23,18 +26,21 @@ CONFIG_MAX_CPUS=2
 #
 # Memory Management & Protection
 #
+# Hardware and virtual memory security hardening.
 CONFIG_ASLR=y
 CONFIG_W_XOR_X=y
 
 #
 # Scheduler & Task Concurrency
 #
+# Multi-core work-stealing queue scheduler and asynchronous I/O engine.
 CONFIG_SCHED_WORK_STEALING=y
 CONFIG_IO_URING=y
 
 #
 # Filesystems & Storage Subsystem
 #
+# Block device filesystems and virtual pseudo-filesystem drivers.
 CONFIG_FS_FAT=y
 CONFIG_FS_EXT4=y
 CONFIG_FS_PROCFS=y
@@ -42,6 +48,7 @@ CONFIG_FS_PROCFS=y
 #
 # Networking Subsystem & Device Drivers
 #
+# Bare-metal TCP/IP protocol stack, Intel e1000 PCI driver and BSD socket interfaces.
 CONFIG_NET_STACK=y
 CONFIG_NET_E1000=y
 CONFIG_NET_SOCKETS=y
@@ -49,18 +56,28 @@ CONFIG_NET_SOCKETS=y
 #
 # Security, Hardening & Isolation
 #
+# POSIX resource limits (RLIMIT) and cryptographic entropy pools.
 CONFIG_RLIMIT=y
 CONFIG_CRYPTO_ENTROPY=y
 
 #
 # Privilege Separation & Userland Subsystem
 #
+# Controls whether Ring 3 C userland runtime (libc.a, crt0.o) and core utility
+# binaries are built and bundled into initrd and rootfs:
+#   y - Full monolithic kernel with POSIX userland runtime, binaries and C compiler.
+#   n - Pure freestanding Ring 0 kernel entering supervisor console directly.
 # CONFIG_USERLAND is not set
 
 #
 # Storage, Disk & Emulation Parameters
 #
+# Root filesystem disk image size in megabytes (MB).
 CONFIG_DISK_SIZE=32
+
+# Virtual RAM allocation and CPU topology for QEMU emulation.
 CONFIG_QEMU_MEM="128M"
 CONFIG_QEMU_CPUS=2
+
+# Build verbosity: set to 1 for full compiler command lines, 0 for concise output.
 CONFIG_VERBOSE=0
