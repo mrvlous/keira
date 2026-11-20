@@ -54,3 +54,18 @@ Userspace programs interface with the module subsystem via standard Linux system
 * ``sys_delete_module`` (Vector 35): Unloads a module if it has zero active dependencies.
 
 Additionally, the state of all kernel modules is exported dynamically via the virtual pseudo-filesystem at ``/proc/modules`` and ``/proc/kallsyms``.
+
+5. In-Kernel ELF Relocatable (.ko) Object Linking & Relocations
+---------------------------------------------------------------
+
+Keira provides a native freestanding in-kernel dynamic linker for relocatable ELF object files (``.ko``) across both ``x86_64`` and ``i686`` architectures:
+
+* **ELF Parser (``crates/core/src/module/elf.rs``)**: Validates ``ET_REL`` object headers, extracts section headers, resolves section names from ``.shstrtab`` and enumerates symbols from ``.symtab``.
+* **Relocation Engine (``crates/core/src/module/reloc.rs``)**: Computes and patches machine relocations in-place:
+  - ``R_X86_64_64`` (direct 64-bit ``S + A``)
+  - ``R_X86_64_PC32`` (PC-relative 32-bit signed ``S + A - P``)
+  - ``R_X86_64_32`` (direct 32-bit unsigned ``S + A``)
+  - ``R_386_32`` (direct 32-bit ``S + A``)
+  - ``R_386_PC32`` (PC-relative 32-bit ``S + A - P``)
+* **Symbol Resolution & GPL Licensing**: Unresolved external symbols are resolved dynamically against ``BASE_KALLSYMS`` and ``DYNAMIC_SYMBOLS``. Symbols marked with ``is_gpl_only`` require modules to declare GPL-compatible licensing.
+* **Dynamic Loader (``crates/core/src/module/loader.rs``)**: Coordinates memory slot assignment, section placement, relocation patching and lifecycle execution (``init_module`` and ``cleanup_module``).
