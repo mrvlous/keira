@@ -18,4 +18,5 @@ Subtopics & Specifications
    test-pipe
    test-poll
    test-select
+   test-sh-scripting
    test-threads

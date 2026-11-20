@@ -23,5 +23,6 @@ Subtopics & Specifications
    mkdir
    rm
    tail
+   test
    touch
    wc

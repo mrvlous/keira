@@ -36,11 +36,41 @@ The userspace shell implements essential built-in commands natively within the b
      - ``pwd``
      - Displays the current working directory path
    * - ``echo``
-     - ``echo [args...]``
-     - Prints arguments to standard output with ``$?`` and environment variable expansion
+     - ``echo [-n] [args...]``
+     - Prints arguments to standard output with variable and parameter expansion
    * - ``export``
      - ``export [VAR=VAL]``
-     - Sets an environment variable or prints existing environment variables
+     - Sets and exports an environment variable or displays existing exports
+   * - ``unset``
+     - ``unset <VAR>``
+     - Removes variable from shell symbol table and process environment
+   * - ``set``
+     - ``set``
+     - Lists all active shell variables and their assigned values
+   * - ``shift``
+     - ``shift [n]``
+     - Shifts positional parameters ($1, $2, ...) left by n positions
+   * - ``test`` / ``[``
+     - ``test EXPR`` / ``[ EXPR ]``
+     - Evaluates conditional expressions and returns 0 (true) or 1 (false)
+   * - ``source`` / ``.``
+     - ``source <file>`` / ``. <file>``
+     - Executes script statements inside the current shell context
+   * - ``break``
+     - ``break``
+     - Breaks out of the innermost enclosing for or while loop
+   * - ``continue``
+     - ``continue``
+     - Skips to the next iteration of the enclosing for or while loop
+   * - ``return``
+     - ``return [code]``
+     - Returns from sourced script with specified exit status
+   * - ``true`` / ``:``
+     - ``true`` / ``:``
+     - Null command returning successful exit status 0
+   * - ``false``
+     - ``false``
+     - Null command returning failure exit status 1
    * - ``clear``
      - ``clear``
      - Clears terminal screen via standard ANSI escape codes (``\x1b[2J\x1b[H``)
@@ -154,7 +184,64 @@ F. Background Jobs (&) and Terminal Job Control
    sleep 5 &
    keira:/#
 
-4. Invocation & Execution Examples
+4. Shell Scripting Language Engine
+==================================
+
+Starting with Milestone 61, ``sh.elf`` provides a structured POSIX shell scripting language interpreter:
+
+A. Parameter & Variable Expansion
+---------------------------------
+
+- **Local & Exported Variables**: Set variables using ``VAR=value`` or ``export VAR=value``. Access values via ``$VAR`` or ``${VAR}``.
+- **Special Status Variables**:
+  - ``$?``: Exit status of the most recently executed command or pipeline.
+  - ``$$``: Process ID of the active shell instance.
+  - ``$#``: Number of positional arguments passed to the script.
+  - ``$0``: Invocation name or script path.
+  - ``$1`` .. ``$9``: Positional arguments.
+  - ``$*``: Concatenation of all positional parameters.
+- **Quoting Semantics**: Single quotes (``'...'``) preserve literal contents without expansion. Double quotes (``"..."``) allow variable expansion while preserving whitespace.
+
+B. Conditional Branching (if-then-elif-else-fi)
+-----------------------------------------------
+
+Supports multi-branch conditional execution:
+
+.. code-block:: bash
+
+   if [ -f /etc/hostname ]; then
+       echo "Host configuration found"
+   elif [ -d /etc ]; then
+       echo "Directory exists"
+   else
+       echo "Missing configuration"
+   fi
+
+C. Iterative Loops (for & while)
+--------------------------------
+
+Supports iterative execution over word lists or dynamic condition expressions:
+
+.. code-block:: bash
+
+   # Iterating over words:
+   for service in network filesystem scheduler; do
+       echo "Initializing $service..."
+   done
+
+   # Condition-driven loop:
+   COUNT=3
+   while [ $COUNT -gt 0 ]; do
+       echo "Ticking: $COUNT"
+       COUNT=0
+   done
+
+D. Multiline Block Parsing & Secondary Prompt
+---------------------------------------------
+
+In interactive mode, when a compound statement block begins (e.g. ``for``, ``if`` or ``while``), the shell displays the secondary prompt ``>`` (POSIX ``PS2``) until the matching terminator (``done`` or ``fi``) completes the block.
+
+5. Invocation & Execution Examples
 ==================================
 
 Supervisor Command Bridge (sh)
@@ -211,12 +298,12 @@ Users can invoke ``sh`` or ``sh.elf`` directly from the supervisor prompt withou
      Kernel: Keira Monolithic
    [KFS] System initialization sequence completed.
 
-5. Technical Specifications
+6. Technical Specifications
 ===========================
 
 - **Source Path**: ``userland/shell/sh.c``
 - **Binary Locations**: ``/bin/sh.elf``, ``/bin/sh``
 - **Privilege Level**: Ring 3 unprivileged
-- **Dependencies**: Freestanding ``libc.a`` (``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``, ``<sys/wait.h>``)
+- **Dependencies**: Freestanding ``libc.a`` (``<stdio.h>``, ``<stdlib.h>``, ``<string.h>``, ``<unistd.h>``, ``<sys/stat.h>``, ``<sys/wait.h>``)
 - **System Calls**: ``sys_open``, ``sys_close``, ``sys_read``, ``sys_write``, ``sys_pipe``, ``sys_dup2``, ``sys_fork``, ``sys_execve``, ``sys_waitpid``, ``sys_setpgid``, ``sys_getpgrp``, ``sys_getpgid``, ``sys_setsid``, ``sys_chdir``, ``sys_getcwd`` and ``sys_exit``
-- **Script Engine**: Supports ``#!/bin/sh`` shebang headers, ``#`` comment filtering and line-by-line sequential command dispatch
+- **Script Engine**: Supports ``#!/bin/sh`` shebang headers, ``#`` comment filtering, parameter expansion, test conditions, compound control flow statements (if, for, while) and multiline block parsing
