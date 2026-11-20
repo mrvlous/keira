@@ -17,5 +17,6 @@ bin-y		+= cat \
 		   mkdir \
 		   rm \
 		   tail \
+		   test \
 		   touch \
 		   wc

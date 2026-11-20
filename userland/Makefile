@@ -114,7 +114,7 @@ LIB_OBJS        := $(patsubst $(LIBC_DIR)/src/%.c,$(OBJ_DIR)/libc/%.o,$(LIB_SRCS
 include Kbuild
 
 # Categorized binary groups resolved dynamically from Kbuild manifests
-CORE_BINS       := $(filter cat chmod chown clear echo grep head ln ls mkdir rm tail touch wc,$(bin-y))
+CORE_BINS       := $(filter cat chmod chown clear echo grep head ln ls mkdir rm tail test touch wc,$(bin-y))
 PROC_BINS       := $(filter kill pmap ps,$(bin-y))
 SYS_BINS        := $(filter df dmesg hostname id mount sleep su umount uname whoami,$(bin-y))
 INIT_BINS       := $(filter init poweroff reboot,$(bin-y))
@@ -221,6 +221,8 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	done
 	$(Q)cp $(DESTDIR)/bin/fetch.elf $(DESTDIR)/bin/curl.elf
 	$(Q)cp $(DESTDIR)/bin/fetch $(DESTDIR)/bin/curl
+	$(Q)cp $(DESTDIR)/bin/test.elf $(DESTDIR)/bin/[.elf
+	$(Q)cp $(DESTDIR)/bin/test $(DESTDIR)/bin/[
 	@$(LOG_DONE) "Userland installation complete ($(ARCH))"
 
 format: ## Format all userland C source and header files with clang-format
