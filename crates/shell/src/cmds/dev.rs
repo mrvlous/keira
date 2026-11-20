@@ -190,16 +190,57 @@ pub mod modules {
             let arg1 = parts.next();
             if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
                 vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("Usage: insmod <name> [size]\n\n");
+                vga::print_str("Usage: insmod <file.ko | name> [size]\n\n");
                 vga::print_str(
-                    "Description:\n  Insert a loadable kernel module into the running kernel.\n\n",
+                    "Description:\n  Insert an ELF relocatable module or dynamic driver into the running kernel.\n\n",
                 );
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 return;
             }
 
-            let mod_name = arg1.unwrap();
+            let target = arg1.unwrap();
+
+            // Attempt reading and dynamically linking as an ELF .ko object if file exists or ends with .ko
+            if target.ends_with(".ko") || keira_fs::vfs::exists(target) {
+                let mut file_buf = [0u8; 16384];
+                if let Ok(bytes_read) = keira_fs::vfs::read_file_offset(target, 0, &mut file_buf) {
+                    if bytes_read >= 16 && file_buf[0..4] == [0x7F, b'E', b'L', b'F'] {
+                        let mod_name = target
+                            .rsplit('/')
+                            .next()
+                            .unwrap_or(target)
+                            .trim_end_matches(".ko");
+                        match keira_core::module::load_elf_module(mod_name, &file_buf[..bytes_read], true) {
+                            Ok(loaded) => {
+                                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                                vga::print_str("[kernel] ELF module '");
+                                vga::print_str(loaded.name_str());
+                                vga::print_str("' linked successfully (addr: ");
+                                vga::print_hex(loaded.load_address);
+                                vga::print_str(", size: ");
+                                vga::print_u64(loaded.size as u64);
+                                vga::print_str(" bytes)\n");
+                                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                                return;
+                            }
+                            Err(e) => {
+                                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                                vga::print_str("insmod: failed to link ELF module '");
+                                vga::print_str(target);
+                                vga::print_str("': ");
+                                vga::print_str(e.as_str());
+                                vga::print_str("\n");
+                                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fallback to name-based module registration
+            let mod_name = target;
             let mod_size = parts
                 .next()
                 .and_then(|s| s.parse::<usize>().ok())
@@ -251,7 +292,15 @@ pub mod modules {
             }
 
             let mod_name = arg1.unwrap();
-            match keira_core::module::unregister_module(mod_name) {
+
+            // Try dynamic ELF unloading first, fallback to registry unregister
+            let unload_res = if keira_core::module::unload_elf_module(mod_name).is_ok() {
+                Ok(())
+            } else {
+                keira_core::module::unregister_module(mod_name)
+            };
+
+            match unload_res {
                 Ok(()) => {
                     vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                     vga::print_str("[kernel] Module '");
