@@ -33,8 +33,30 @@ unsafe fn get_uptime_ms() -> u64 {
 
 /// Syscall 34: Load kernel extension module.
 pub fn handle_init_module(arg1: u64, arg2: u64) -> u64 {
-    let name_ptr = arg1 as *const u8;
+    let ptr = arg1 as *const u8;
     let size = arg2 as usize;
+    if ptr.is_null() || size == 0 {
+        return errno_to_ret(EINVAL);
+    }
+
+    // Check if user passed an in-memory ELF relocatable object image
+    if size >= 16 {
+        let mut magic = [0u8; 4];
+        if unsafe { copy_from_user(&mut magic, arg1) }.is_ok()
+            && magic == [0x7F, b'E', b'L', b'F']
+        {
+            let elf_len = core::cmp::min(size, 16384);
+            let mut elf_buf = [0u8; 16384];
+            if unsafe { copy_from_user(&mut elf_buf[..elf_len], arg1) }.is_ok() {
+                match keira_core::module::sys_init_module_elf("user_ko", &elf_buf[..elf_len]) {
+                    Ok(_) => return 0,
+                    Err(err) => return err as u64,
+                }
+            }
+        }
+    }
+
+    let name_ptr = arg1 as *const u8;
     let mut name_buf = [0u8; 32];
     let len = match unsafe { read_user_string(name_ptr, &mut name_buf) } {
         Ok(l) => l,
