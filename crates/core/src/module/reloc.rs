@@ -19,14 +19,14 @@
 
 use crate::error::KernelError;
 
-// --- x86_64 Relocation Types (System V AMD64 ABI) ---
+/// x86_64 relocation types defined by System V AMD64 ABI.
 pub const R_X86_64_NONE: u32 = 0;
 pub const R_X86_64_64: u32 = 1;
 pub const R_X86_64_PC32: u32 = 2;
 pub const R_X86_64_32: u32 = 10;
 pub const R_X86_64_32S: u32 = 11;
 
-// --- i386 Relocation Types (System V i386 ABI) ---
+/// i386 relocation types defined by System V i386 ABI.
 pub const R_386_NONE: u32 = 0;
 pub const R_386_32: u32 = 1;
 pub const R_386_PC32: u32 = 2;
