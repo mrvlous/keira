@@ -126,7 +126,202 @@ pub mod virt {
     pub use self::drivers::*;
 }
 
+pub mod modules {
+    pub mod lsmod {
+        use keira_io::vga;
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            if let Some("-h") | Some("--help") = parts.next() {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: lsmod [-h]\n\n");
+                vga::print_str("Description:\n  Show status of loaded kernel modules in memory.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            let (mods, count) = keira_core::module::get_modules_snapshot();
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Module                  Size  Used by  State     Address\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+
+            for m_opt in mods.iter().flatten() {
+                let name = m_opt.name_str();
+                vga::print_str(name);
+                for _ in 0..24usize.saturating_sub(name.len()) {
+                    vga::print_str(" ");
+                }
+
+                vga::print_u64(m_opt.size as u64);
+                let sz_len = if m_opt.size >= 100000 {
+                    6
+                } else if m_opt.size >= 10000 {
+                    5
+                } else if m_opt.size >= 1000 {
+                    4
+                } else {
+                    3
+                };
+                for _ in 0..10usize.saturating_sub(sz_len) {
+                    vga::print_str(" ");
+                }
+
+                vga::print_u64(m_opt.ref_count as u64);
+                vga::print_str("        ");
+
+                vga::print_str(m_opt.state.as_str());
+                for _ in 0..10usize.saturating_sub(m_opt.state.as_str().len()) {
+                    vga::print_str(" ");
+                }
+
+                vga::print_hex(m_opt.load_address);
+                vga::print_str("\n");
+            }
+            vga::print_str("\nTotal loaded modules: ");
+            vga::print_u64(count as u64);
+            vga::print_str("\n");
+        }
+    }
+
+    pub mod insmod {
+        use keira_io::vga;
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let arg1 = parts.next();
+            if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: insmod <name> [size]\n\n");
+                vga::print_str(
+                    "Description:\n  Insert a loadable kernel module into the running kernel.\n\n",
+                );
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            let mod_name = arg1.unwrap();
+            let mod_size = parts
+                .next()
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(32768);
+            let load_addr = 0xFFFF_8000_0050_0000u64 + ((mod_size as u64) & 0x000F_FFFF);
+
+            match keira_core::module::register_module(
+                mod_name,
+                mod_size,
+                load_addr,
+                "Dynamic Loadable Kernel Module",
+            ) {
+                Ok(idx) => {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("[kernel] Module '");
+                    vga::print_str(mod_name);
+                    vga::print_str("' loaded successfully at slot ");
+                    vga::print_u64(idx as u64);
+                    vga::print_str(" (addr: ");
+                    vga::print_hex(load_addr);
+                    vga::print_str(")\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
+                Err(e) => {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str("Error loading module '");
+                    vga::print_str(mod_name);
+                    vga::print_str("': ");
+                    vga::print_str(e.as_str());
+                    vga::print_str("\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
+            }
+        }
+    }
+
+    pub mod rmmod {
+        use keira_io::vga;
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let arg1 = parts.next();
+            if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: rmmod <name>\n\n");
+                vga::print_str("Description:\n  Unload a module from the running kernel.\n\n");
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            let mod_name = arg1.unwrap();
+            match keira_core::module::unregister_module(mod_name) {
+                Ok(()) => {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("[kernel] Module '");
+                    vga::print_str(mod_name);
+                    vga::print_str("' unloaded successfully\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
+                Err(e) => {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str("Error unloading module '");
+                    vga::print_str(mod_name);
+                    vga::print_str("': ");
+                    vga::print_str(e.as_str());
+                    vga::print_str("\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
+            }
+        }
+    }
+
+    pub mod modinfo {
+        use keira_io::vga;
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let arg1 = parts.next();
+            if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: modinfo <name>\n\n");
+                vga::print_str(
+                    "Description:\n  Show information about a Linux-grade kernel module.\n\n",
+                );
+                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            let mod_name = arg1.unwrap();
+            if let Some(m) = keira_core::module::get_module(mod_name) {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("filename:       /lib/modules/");
+                vga::print_str(m.name_str());
+                vga::print_str(".ko\n");
+                vga::print_str("description:    ");
+                vga::print_str(m.description);
+                vga::print_str("\nauthor:         Moh. Ananda Firmansyah Putra <mrvlous@proton.me>\n");
+                vga::print_str("license:        GPL-2.0-only\n");
+                vga::print_str("size:           ");
+                vga::print_u64(m.size as u64);
+                vga::print_str(" bytes\n");
+                vga::print_str("refcount:       ");
+                vga::print_u64(m.ref_count as u64);
+                vga::print_str("\nstate:          ");
+                vga::print_str(m.state.as_str());
+                vga::print_str("\nload_address:   ");
+                vga::print_hex(m.load_address);
+                vga::print_str("\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            } else {
+                vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                vga::print_str("modinfo: ERROR: Module ");
+                vga::print_str(mod_name);
+                vga::print_str(" not found.\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            }
+        }
+    }
+}
+
 pub use self::hardware::devices;
+pub use self::modules::{insmod, lsmod, modinfo, rmmod};
 pub use self::virt::drivers;
 
 #[cfg(test)]
@@ -142,5 +337,44 @@ mod tests {
         let mut args = "drivers --help".split_whitespace();
         args.next();
         drivers::run(&mut args);
+
+        let mut args = "lsmod --help".split_whitespace();
+        args.next();
+        lsmod::run(&mut args);
+
+        let mut args = "insmod --help".split_whitespace();
+        args.next();
+        insmod::run(&mut args);
+
+        let mut args = "rmmod --help".split_whitespace();
+        args.next();
+        rmmod::run(&mut args);
+
+        let mut args = "modinfo --help".split_whitespace();
+        args.next();
+        modinfo::run(&mut args);
+    }
+
+    #[test]
+    fn test_modules_commands_execution() {
+        let mut args = "lsmod".split_whitespace();
+        args.next();
+        lsmod::run(&mut args);
+
+        let mut args = "modinfo ext4_fs".split_whitespace();
+        args.next();
+        modinfo::run(&mut args);
+
+        let mut args = "insmod test_mod 16384".split_whitespace();
+        args.next();
+        insmod::run(&mut args);
+
+        let mut args = "modinfo test_mod".split_whitespace();
+        args.next();
+        modinfo::run(&mut args);
+
+        let mut args = "rmmod test_mod".split_whitespace();
+        args.next();
+        rmmod::run(&mut args);
     }
 }

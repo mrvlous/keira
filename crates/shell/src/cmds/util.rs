@@ -33,7 +33,7 @@ pub mod misc {
             vga::print_str("  cpu, smp       Processor topology, features and SMP cores\n");
             vga::print_str("  memory, slab   Physical, virtual and slab allocator metrics\n");
             vga::print_str("  devices, pci   PCI hardware buses and peripheral devices\n");
-            vga::print_str("  drivers, disk  Storage block geometry and registered drivers\n");
+            vga::print_str("  drivers, lsmod Hardware drivers and loadable kernel modules\n");
             vga::print_str("  regs, irq      CPU registers and interrupt request lines\n\n");
             vga::print_str("Security & IPC:\n");
             vga::print_str("  secinfo, aslr  Hardware mitigations and ASLR entropy engine\n");
