@@ -187,7 +187,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
         format lint user libc docs htmldocs docs-clean docs-lint docs-check docs-linkcheck docs-info pdfdocs disk initrd help info check \
-        size objdump qemu-net test test-all test-unit fs-root user-format user-lint user-size user-test user-info \
+        size objdump qemu-net test test-all test-unit test-kbuild fs-root user-format user-lint user-size user-test user-info \
         preflight preflight-qemu preflight-format preflight-lint menuconfig defconfig full_defconfig pure_defconfig kernel_defconfig savedefconfig oldconfig headers_install
 
 .DEFAULT_GOAL   := all
@@ -544,7 +544,12 @@ qemu-net: preflight-qemu all ## Launch Keira in QEMU with e1000 NIC emulation
 	$(Q)$(QEMU) $(QEMU_NET_FLAGS)
 
 # Automated testing & verification
-test-unit: ## Run cargo host unit tests across all workspace crates
+test-kbuild: ## Run unit tests for Kconfig engine and Kbuild primitives
+	@$(LOG_INFO) "Running Kconfig & Kbuild test suite..."
+	$(Q)python3 scripts/kconfig/test_kconfig.py
+	@$(LOG_DONE) "Kconfig & Kbuild test suite completed successfully"
+
+test-unit: test-kbuild ## Run cargo host unit tests across all workspace crates and Kbuild test suite
 	@$(LOG_INFO) "Running cargo host unit tests across workspace..."
 	$(Q)$(CARGO) test --workspace -- --test-threads=1
 	@$(LOG_DONE) "Host unit tests completed successfully"
