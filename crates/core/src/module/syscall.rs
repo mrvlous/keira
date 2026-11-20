@@ -16,6 +16,7 @@
 
 pub mod handlers {
     use crate::error::KernelError;
+    use crate::module::loader::{load_elf_module, unload_elf_module};
     use crate::module::registry::{register_module, unregister_module};
 
     pub fn sys_init_module(name: &str, size: usize) -> Result<i64, i64> {
@@ -33,9 +34,25 @@ pub mod handlers {
         }
     }
 
+    pub fn sys_init_module_elf(name: &str, elf_bytes: &[u8]) -> Result<i64, i64> {
+        match load_elf_module(name, elf_bytes, true) {
+            Ok(loaded) => Ok(loaded.load_address as i64),
+            Err(KernelError::DeviceBusy) => Err(-16), // -EBUSY
+            Err(KernelError::OutOfMemory) => Err(-12), // -ENOMEM
+            Err(KernelError::InvalidArgument) => Err(-22), // -EINVAL
+            Err(KernelError::PermissionDenied) => Err(-1), // -EPERM
+            Err(KernelError::NotFound) => Err(-2),     // -ENOENT (missing symbol)
+            Err(_) => Err(-8),                         // -ENOEXEC
+        }
+    }
+
     pub fn sys_delete_module(name: &str, _flags: u32) -> Result<i64, i64> {
         if name.is_empty() {
             return Err(-22); // -EINVAL
+        }
+
+        if unload_elf_module(name).is_ok() {
+            return Ok(0);
         }
 
         match unregister_module(name) {
@@ -47,4 +64,4 @@ pub mod handlers {
     }
 }
 
-pub use self::handlers::{sys_delete_module, sys_init_module};
+pub use self::handlers::{sys_delete_module, sys_init_module, sys_init_module_elf};

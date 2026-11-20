@@ -18,7 +18,10 @@
 //! registration management and system call ABI entry points.
 
 pub mod core;
+pub mod elf;
+pub mod loader;
 pub mod registry;
+pub mod reloc;
 pub mod symbol;
 pub mod syscall;
 
@@ -26,6 +29,11 @@ pub mod syscall;
 mod tests;
 
 pub use self::core::{KernelModule, ModuleState, MAX_MODULE_NAME};
+pub use self::elf::{
+    ElfClass, ElfHeaderInfo, ElfRelocInfo, ElfSectionHeader, ElfSymbolInfo,
+};
+pub use self::loader::{load_elf_module, unload_elf_module, LoadedModule};
+pub use self::reloc::apply_relocation;
 pub use registry::{
     get_module, get_modules_snapshot, register_module, unregister_module, MAX_MODULES, MODULE_TABLE,
 };
@@ -33,7 +41,7 @@ pub use symbol::{
     lookup_symbol_by_addr, register_symbol, resolve_symbol, DynamicSymbol, KernelSymbol,
     BASE_KALLSYMS, DYNAMIC_SYMBOLS, MAX_DYNAMIC_SYMBOLS,
 };
-pub use syscall::{sys_delete_module, sys_init_module};
+pub use syscall::{sys_delete_module, sys_init_module, sys_init_module_elf};
 
 /// Backward-compatibility alias module for legacy module::descriptor imports.
 pub mod descriptor {
