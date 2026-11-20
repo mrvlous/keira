@@ -120,7 +120,7 @@ SYS_BINS        := $(filter df dmesg hostname id mount sleep su umount uname who
 INIT_BINS       := $(filter init poweroff reboot,$(bin-y))
 SHELL_BINS      := $(filter sh,$(bin-y))
 NET_BINS        := $(filter arp fetch ifconfig iptables netstat ping route,$(bin-y))
-TESTS_BINS      := $(filter test_job_control test_pipe test_poll test_select test_threads,$(bin-y))
+TESTS_BINS      := $(filter test_job_control test_pipe test_poll test_select test_sh_scripting test_threads,$(bin-y))
 MULTI_BINS      := $(multi-bin-y)
 
 BINS            := $(sort $(bin-y) $(multi-bin-y))
@@ -215,6 +215,7 @@ install: all ## Install userland libraries, headers and binaries into DESTDIR
 	$(Q)cp -r $(LIBC_DIR)/include/* $(DESTDIR)/include/
 	$(Q)cp $(TOOLCHAIN_DIR)/kcc/include/common.h $(DESTDIR)/include/common.h
 	$(Q)cp $(ETC_DIR)/init.sh $(DESTDIR)/etc/init.sh
+	$(Q)cp $(ETC_DIR)/test_scripting.sh $(DESTDIR)/etc/test_scripting.sh
 	$(Q)for b in $(BINS); do \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b.elf; \
 	    cp $(BIN_DIR)/$$b.elf $(DESTDIR)/bin/$$b; \

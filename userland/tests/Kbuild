@@ -9,6 +9,7 @@ bin-$(CONFIG_USERLAND_TESTS)		+= test_job_control \
 					   test_pipe \
 					   test_poll \
 					   test_select \
+					   test_sh_scripting \
 					   test_threads
 
 # Multi-source master ABI verification and fuzzing suites
