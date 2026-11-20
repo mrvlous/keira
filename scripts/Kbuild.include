@@ -16,17 +16,19 @@ endif
 
 # Probes if the assembler supports a given command-line flag
 # Usage: $(call as-option,-flag-to-test,-fallback-flag)
-as-option = $(shell if $(ASM) $(1) -o /dev/null /dev/null >/dev/null 2>&1; \
-    then echo "$(1)"; else echo "$(2)"; fi)
+as-option = $(shell OUT="/tmp/.nasm_probe_$$$$.o"; \
+    if $(ASM) $(1) -o "$$OUT" /dev/null >/dev/null 2>&1; \
+    then rm -f "$$OUT"; echo "$(1)"; else rm -f "$$OUT"; echo "$(2)"; fi)
 
 # Probes if the C compiler supports a given command-line flag
 # Usage: $(call cc-option,-flag-to-test,-fallback-flag)
-cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null >/dev/null 2>&1; \
+cc-option = $(shell if $(CC) -Werror $(1) -c -x c /dev/null -o /dev/null >/dev/null 2>&1; \
     then echo "$(1)"; else echo "$(2)"; fi)
 
 # Conditionally adds a warning suppression flag if supported by the compiler
 # Usage: $(call cc-disable-warning,unused-but-set-variable)
-cc-disable-warning = $(call cc-option,-Wno-$(strip $(1)))
+cc-disable-warning = $(shell if $(CC) -Werror -W$(strip $(1)) -c -x c /dev/null -o /dev/null >/dev/null 2>&1; \
+    then echo "-Wno-$(strip $(1))"; fi)
 
 # Normalizes and cleans directory paths by removing trailing slashes
 strip-slash = $(patsubst %/,%,$(1))
