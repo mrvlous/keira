@@ -173,7 +173,7 @@ Build System Integration Benefits
 Automated Unit Testing & Verification
 -------------------------------------
 
-To ensure reliable grammar parsing, condition evaluation and toolchain option probing, a dedicated unit test suite resides in ``scripts/kconfig/test_kconfig.py``:
+To ensure reliable grammar parsing, condition evaluation and toolchain option probing, a dedicated modular unit test suite resides in ``scripts/kconfig/tests/`` (executed via ``scripts/kconfig/tests/runner.py``):
 
 .. code-block:: bash
 
