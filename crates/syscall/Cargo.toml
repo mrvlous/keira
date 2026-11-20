@@ -2,7 +2,7 @@
 
 # System Call Interface & Dispatch Crate (keira-syscall)
 #
-# Implements 89 POSIX system call dispatch vectors, x86_64 SYSCALL and
+# Implements 114 POSIX system call numbers (93 active vectors), x86_64 SYSCALL and
 # i686 INT 0x80 calling conventions, TSS configuration and safe user copying.
 
 [package]
