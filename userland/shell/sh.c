@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/version.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -26,6 +27,30 @@
 #define SH_MAX_LINE 512
 #define SH_MAX_ARGS 64
 #define SH_HISTORY_MAX 32
+#define SH_MAX_VARS 128
+#define SH_VAR_NAME_MAX 64
+#define SH_VAR_VAL_MAX 256
+
+typedef struct {
+    char name[SH_VAR_NAME_MAX];
+    char value[SH_VAR_VAL_MAX];
+    int exported;
+} sh_var_t;
+
+static sh_var_t sh_vars[SH_MAX_VARS];
+static int sh_var_count = 0;
+
+static int sh_argc = 0;
+static char sh_argv_storage[SH_MAX_ARGS][SH_MAX_LINE];
+static char *sh_argv[SH_MAX_ARGS];
+
+static int sh_loop_break = 0;
+static int sh_loop_continue = 0;
+static int sh_return_flag = 0;
+
+static int run_command_string(char *cmd_str);
+static int execute_top_statement(char *stmt);
+static int run_script_stream(FILE *fp);
 
 static char sh_history[SH_HISTORY_MAX][SH_MAX_LINE];
 static int sh_history_count = 0;
@@ -320,26 +345,333 @@ static int builtin_pwd(void) {
     return 1;
 }
 
-static int builtin_echo(int argc, char **argv) {
-    for (int i = 1; i < argc; i++) {
-        char *arg = argv[i];
-        if (arg[0] == '$') {
-            if (strcmp(arg, "$?") == 0) {
-                printf("%d", last_exit_status);
-            } else {
-                char *val = getenv(arg + 1);
-                if (val) {
-                    printf("%s", val);
+static sh_var_t *sh_var_find(const char *name) {
+    if (!name || name[0] == '\0') {
+        return NULL;
+    }
+    for (int i = 0; i < sh_var_count; i++) {
+        if (strcmp(sh_vars[i].name, name) == 0) {
+            return &sh_vars[i];
+        }
+    }
+    return NULL;
+}
+
+static const char *sh_var_get(const char *name) {
+    if (!name || name[0] == '\0') {
+        return NULL;
+    }
+    sh_var_t *v = sh_var_find(name);
+    if (v) {
+        return v->value;
+    }
+    return getenv(name);
+}
+
+static int sh_var_set(const char *name, const char *value, int is_export) {
+    if (!name || name[0] == '\0') {
+        return -1;
+    }
+    sh_var_t *v = sh_var_find(name);
+    if (v) {
+        strncpy(v->value, value ? value : "", SH_VAR_VAL_MAX - 1);
+        v->value[SH_VAR_VAL_MAX - 1] = '\0';
+        if (is_export) {
+            v->exported = 1;
+        }
+        if (v->exported) {
+            setenv(name, v->value, 1);
+        }
+        return 0;
+    }
+    if (sh_var_count < SH_MAX_VARS) {
+        strncpy(sh_vars[sh_var_count].name, name, SH_VAR_NAME_MAX - 1);
+        sh_vars[sh_var_count].name[SH_VAR_NAME_MAX - 1] = '\0';
+        strncpy(sh_vars[sh_var_count].value, value ? value : "", SH_VAR_VAL_MAX - 1);
+        sh_vars[sh_var_count].value[SH_VAR_VAL_MAX - 1] = '\0';
+        sh_vars[sh_var_count].exported = is_export;
+        if (is_export) {
+            setenv(name, value ? value : "", 1);
+        }
+        sh_var_count++;
+        return 0;
+    }
+    return -1;
+}
+
+static int sh_var_unset(const char *name) {
+    if (!name || name[0] == '\0') {
+        return -1;
+    }
+    for (int i = 0; i < sh_var_count; i++) {
+        if (strcmp(sh_vars[i].name, name) == 0) {
+            for (int j = i; j < sh_var_count - 1; j++) {
+                sh_vars[j] = sh_vars[j + 1];
+            }
+            sh_var_count--;
+            unsetenv(name);
+            return 0;
+        }
+    }
+    unsetenv(name);
+    return 0;
+}
+
+static void expand_parameters(const char *src, char *dst, size_t dst_size) {
+    size_t d = 0;
+    const char *s = src;
+    int in_squote = 0;
+    int in_dquote = 0;
+
+    while (*s && d + 1 < dst_size) {
+        if (*s == '\'' && !in_dquote) {
+            in_squote = !in_squote;
+            dst[d++] = *s++;
+        } else if (*s == '"' && !in_squote) {
+            in_dquote = !in_dquote;
+            dst[d++] = *s++;
+        } else if (*s == '$' && !in_squote) {
+            s++;
+            if (*s == '?') {
+                char num[16];
+                snprintf(num, sizeof(num), "%d", last_exit_status);
+                size_t nlen = strlen(num);
+                if (d + nlen < dst_size) {
+                    memcpy(&dst[d], num, nlen);
+                    d += nlen;
                 }
+                s++;
+            } else if (*s == '$') {
+                char num[16];
+                snprintf(num, sizeof(num), "%d", (int)getpid());
+                size_t nlen = strlen(num);
+                if (d + nlen < dst_size) {
+                    memcpy(&dst[d], num, nlen);
+                    d += nlen;
+                }
+                s++;
+            } else if (*s == '#') {
+                char num[16];
+                snprintf(num, sizeof(num), "%d", sh_argc > 1 ? (sh_argc - 1) : 0);
+                size_t nlen = strlen(num);
+                if (d + nlen < dst_size) {
+                    memcpy(&dst[d], num, nlen);
+                    d += nlen;
+                }
+                s++;
+            } else if (*s >= '0' && *s <= '9') {
+                int arg_idx = *s - '0';
+                s++;
+                const char *val = "";
+                if (arg_idx < sh_argc) {
+                    val = sh_argv[arg_idx];
+                }
+                size_t vlen = strlen(val);
+                if (d + vlen < dst_size) {
+                    memcpy(&dst[d], val, vlen);
+                    d += vlen;
+                }
+            } else if (*s == '*' || *s == '@') {
+                s++;
+                for (int i = 1; i < sh_argc; i++) {
+                    if (i > 1 && d + 1 < dst_size) {
+                        dst[d++] = ' ';
+                    }
+                    size_t vlen = strlen(sh_argv[i]);
+                    if (d + vlen < dst_size) {
+                        memcpy(&dst[d], sh_argv[i], vlen);
+                        d += vlen;
+                    }
+                }
+            } else if (*s == '{') {
+                s++;
+                char var_name[64];
+                size_t v_idx = 0;
+                while (*s && *s != '}' && v_idx + 1 < sizeof(var_name)) {
+                    var_name[v_idx++] = *s++;
+                }
+                var_name[v_idx] = '\0';
+                if (*s == '}') {
+                    s++;
+                }
+                const char *val = sh_var_get(var_name);
+                if (val) {
+                    size_t vlen = strlen(val);
+                    if (d + vlen < dst_size) {
+                        memcpy(&dst[d], val, vlen);
+                        d += vlen;
+                    }
+                }
+            } else if ((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') || *s == '_') {
+                char var_name[64];
+                size_t v_idx = 0;
+                while ((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') ||
+                       (*s >= '0' && *s <= '9') || *s == '_') {
+                    if (v_idx + 1 < sizeof(var_name)) {
+                        var_name[v_idx++] = *s;
+                    }
+                    s++;
+                }
+                var_name[v_idx] = '\0';
+                const char *val = sh_var_get(var_name);
+                if (val) {
+                    size_t vlen = strlen(val);
+                    if (d + vlen < dst_size) {
+                        memcpy(&dst[d], val, vlen);
+                        d += vlen;
+                    }
+                }
+            } else {
+                dst[d++] = '$';
             }
         } else {
-            printf("%s", arg);
+            dst[d++] = *s++;
         }
+    }
+    dst[d] = '\0';
+}
+
+static int eval_test(int argc, char **argv) {
+    if (argc <= 0) {
+        return 1;
+    }
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-o") == 0 && i > 0 && i < argc - 1) {
+            int left = eval_test(i, argv);
+            if (left == 0) {
+                return 0;
+            }
+            return eval_test(argc - i - 1, argv + i + 1);
+        }
+    }
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-a") == 0 && i > 0 && i < argc - 1) {
+            int left = eval_test(i, argv);
+            if (left != 0) {
+                return 1;
+            }
+            return eval_test(argc - i - 1, argv + i + 1);
+        }
+    }
+
+    if (strcmp(argv[0], "!") == 0) {
+        return eval_test(argc - 1, argv + 1) == 0 ? 1 : 0;
+    }
+
+    if (argc >= 2 && strcmp(argv[0], "(") == 0 && strcmp(argv[argc - 1], ")") == 0) {
+        return eval_test(argc - 2, argv + 1);
+    }
+
+    if (argc == 1) {
+        return argv[0][0] != '\0' ? 0 : 1;
+    }
+
+    if (argc == 2) {
+        const char *op = argv[0];
+        const char *target = argv[1];
+
+        if (strcmp(op, "-z") == 0) {
+            return strlen(target) == 0 ? 0 : 1;
+        }
+        if (strcmp(op, "-n") == 0) {
+            return strlen(target) > 0 ? 0 : 1;
+        }
+
+        struct stat st;
+        if (strcmp(op, "-e") == 0) {
+            return stat(target, &st) == 0 ? 0 : 1;
+        }
+        if (strcmp(op, "-f") == 0) {
+            return (stat(target, &st) == 0 && S_ISREG(st.st_mode)) ? 0 : 1;
+        }
+        if (strcmp(op, "-d") == 0) {
+            return (stat(target, &st) == 0 && S_ISDIR(st.st_mode)) ? 0 : 1;
+        }
+        if (strcmp(op, "-s") == 0) {
+            return (stat(target, &st) == 0 && st.st_size > 0) ? 0 : 1;
+        }
+        if (strcmp(op, "-r") == 0) {
+            return access(target, R_OK) == 0 ? 0 : 1;
+        }
+        if (strcmp(op, "-w") == 0) {
+            return access(target, W_OK) == 0 ? 0 : 1;
+        }
+        if (strcmp(op, "-x") == 0) {
+            return access(target, X_OK) == 0 ? 0 : 1;
+        }
+
+        return 1;
+    }
+
+    if (argc == 3) {
+        const char *left = argv[0];
+        const char *op = argv[1];
+        const char *right = argv[2];
+
+        if (strcmp(op, "=") == 0 || strcmp(op, "==") == 0) {
+            return strcmp(left, right) == 0 ? 0 : 1;
+        }
+        if (strcmp(op, "!=") == 0) {
+            return strcmp(left, right) != 0 ? 0 : 1;
+        }
+
+        int n1 = atoi(left);
+        int n2 = atoi(right);
+
+        if (strcmp(op, "-eq") == 0) {
+            return n1 == n2 ? 0 : 1;
+        }
+        if (strcmp(op, "-ne") == 0) {
+            return n1 != n2 ? 0 : 1;
+        }
+        if (strcmp(op, "-lt") == 0) {
+            return n1 < n2 ? 0 : 1;
+        }
+        if (strcmp(op, "-le") == 0) {
+            return n1 <= n2 ? 0 : 1;
+        }
+        if (strcmp(op, "-gt") == 0) {
+            return n1 > n2 ? 0 : 1;
+        }
+        if (strcmp(op, "-ge") == 0) {
+            return n1 >= n2 ? 0 : 1;
+        }
+
+        return 1;
+    }
+
+    return 1;
+}
+
+static int builtin_test(int argc, char **argv) {
+    if (argc > 0 && (strcmp(argv[0], "[") == 0 || strcmp(argv[0], "[.elf") == 0)) {
+        if (argc < 2 || strcmp(argv[argc - 1], "]") != 0) {
+            fprintf(stderr, "sh: [: missing `]'\n");
+            return 2;
+        }
+        argc--;
+    }
+    return eval_test(argc - 1, argv + 1);
+}
+
+static int builtin_echo(int argc, char **argv) {
+    int newline = 1;
+    int start = 1;
+    if (argc > 1 && strcmp(argv[1], "-n") == 0) {
+        newline = 0;
+        start = 2;
+    }
+    for (int i = start; i < argc; i++) {
+        printf("%s", argv[i]);
         if (i < argc - 1) {
             putchar(' ');
         }
     }
-    putchar('\n');
+    if (newline) {
+        putchar('\n');
+    }
     return 0;
 }
 
@@ -357,13 +689,70 @@ static int builtin_export(int argc, char **argv) {
         char *eq = strchr(argv[i], '=');
         if (eq) {
             *eq = '\0';
-            setenv(argv[i], eq + 1, 1);
+            sh_var_set(argv[i], eq + 1, 1);
             *eq = '=';
         } else {
-            setenv(argv[i], "", 1);
+            const char *existing = sh_var_get(argv[i]);
+            sh_var_set(argv[i], existing ? existing : "", 1);
         }
     }
     return 0;
+}
+
+static int builtin_unset(int argc, char **argv) {
+    for (int i = 1; i < argc; i++) {
+        sh_var_unset(argv[i]);
+    }
+    return 0;
+}
+
+static int builtin_set(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
+    for (int i = 0; i < sh_var_count; i++) {
+        printf("%s=%s\n", sh_vars[i].name, sh_vars[i].value);
+    }
+    return 0;
+}
+
+static int builtin_shift(int argc, char **argv) {
+    int n = 1;
+    if (argc > 1) {
+        n = atoi(argv[1]);
+        if (n < 1) {
+            n = 1;
+        }
+    }
+    if (sh_argc <= 1) {
+        return 0;
+    }
+    if (n >= sh_argc) {
+        sh_argc = 1;
+        sh_argv[1] = NULL;
+        return 0;
+    }
+    for (int i = 1; i + n < sh_argc; i++) {
+        strncpy(sh_argv_storage[i], sh_argv_storage[i + n], SH_MAX_LINE - 1);
+        sh_argv_storage[i][SH_MAX_LINE - 1] = '\0';
+    }
+    sh_argc -= n;
+    sh_argv[sh_argc] = NULL;
+    return 0;
+}
+
+static int builtin_source(int argc, char **argv) {
+    if (argc < 2) {
+        printf("sh: %s: filename argument required\n", argv[0]);
+        return 2;
+    }
+    FILE *fp = fopen(argv[1], "r");
+    if (!fp) {
+        printf("sh: %s: No such file or directory\n", argv[1]);
+        return 127;
+    }
+    int status = run_script_stream(fp);
+    fclose(fp);
+    return status;
 }
 
 static int builtin_help(void) {
@@ -372,17 +761,24 @@ static int builtin_help(void) {
     puts("Shell Built-ins:");
     puts("  cd [dir]       Change current working directory");
     puts("  pwd            Print working directory");
-    puts("  export [var]   Set environment variable");
-    puts("  jobs           List background jobs");
-    puts("  fg [id]        Bring background job to foreground");
-    puts("  bg [id]        Resume stopped job in background");
+    puts("  echo [-n]      Echo arguments with variable expansion");
+    puts("  export [var]   Set or export environment variable");
+    puts("  unset <var>    Unset shell or environment variable");
+    puts("  set            List active shell variables");
+    puts("  shift [n]      Shift positional parameters");
+    puts("  test / [       Evaluate conditional expression");
+    puts("  source / .     Execute script in current shell context");
     puts("  history        Display command execution history");
-    puts("  clear          Clear terminal display screen");
-    puts("  help           Display this reference manual");
-    puts("  exit           Exit shell and return to Ring 0 supervisor\n");
-    puts("System Utilities:");
-    puts("  Type 'ls /bin' to inspect available system binaries.");
-    puts("  Type '<binary> --help' for individual program options.");
+    puts("  jobs           List background and suspended jobs");
+    puts("  fg [%job]      Bring background job to foreground");
+    puts("  bg [%job]      Resume stopped job in background");
+    puts("  help           Display shell command reference");
+    puts("  exit [code]    Exit userspace shell\n");
+    puts("Scripting Language Constructs:");
+    puts("  if CMD; then CMDS; [elif CMD; then CMDS;] [else CMDS;] fi");
+    puts("  for VAR in WORDS; do CMDS; done");
+    puts("  while CMD; do CMDS; done");
+    puts("  Variables: $VAR, ${VAR}, $?, $$, $#, $0..$9, $*");
     return 0;
 }
 
@@ -495,6 +891,31 @@ static int execute_single_command(int argc, char **argv) {
         return 0;
     }
 
+    /* Check if command is a standalone assignment: VAR=value */
+    if (clean_argc == 1 && strchr(clean_argv[0], '=')) {
+        char *eq = strchr(clean_argv[0], '=');
+        *eq = '\0';
+        int is_valid_name = 1;
+        if (!((clean_argv[0][0] >= 'a' && clean_argv[0][0] <= 'z') ||
+              (clean_argv[0][0] >= 'A' && clean_argv[0][0] <= 'Z') ||
+              clean_argv[0][0] == '_')) {
+            is_valid_name = 0;
+        }
+        for (char *c = clean_argv[0] + 1; *c; c++) {
+            if (!((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') ||
+                  (*c >= '0' && *c <= '9') || *c == '_')) {
+                is_valid_name = 0;
+                break;
+            }
+        }
+        if (is_valid_name) {
+            sh_var_set(clean_argv[0], eq + 1, 0);
+            *eq = '=';
+            return 0;
+        }
+        *eq = '=';
+    }
+
     char full_cmd[SH_MAX_LINE];
     full_cmd[0] = '\0';
     for (int i = 0; i < clean_argc; i++) {
@@ -547,6 +968,29 @@ static int execute_single_command(int argc, char **argv) {
         ret_status = builtin_echo(clean_argc, clean_argv);
     } else if (strcmp(clean_argv[0], "export") == 0) {
         ret_status = builtin_export(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "unset") == 0) {
+        ret_status = builtin_unset(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "set") == 0) {
+        ret_status = builtin_set(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "shift") == 0) {
+        ret_status = builtin_shift(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "test") == 0 || strcmp(clean_argv[0], "[") == 0) {
+        ret_status = builtin_test(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], ".") == 0 || strcmp(clean_argv[0], "source") == 0) {
+        ret_status = builtin_source(clean_argc, clean_argv);
+    } else if (strcmp(clean_argv[0], "break") == 0) {
+        sh_loop_break = 1;
+        ret_status = 0;
+    } else if (strcmp(clean_argv[0], "continue") == 0) {
+        sh_loop_continue = 1;
+        ret_status = 0;
+    } else if (strcmp(clean_argv[0], "return") == 0) {
+        sh_return_flag = 1;
+        ret_status = (clean_argc > 1) ? atoi(clean_argv[1]) : 0;
+    } else if (strcmp(clean_argv[0], "true") == 0 || strcmp(clean_argv[0], ":") == 0) {
+        ret_status = 0;
+    } else if (strcmp(clean_argv[0], "false") == 0) {
+        ret_status = 1;
     } else if (strcmp(clean_argv[0], "clear") == 0) {
         printf("\x1b[2J\x1b[H");
         ret_status = 0;
@@ -641,8 +1085,10 @@ static int execute_pipeline(char *cmd_line) {
     pipes[num_pipes++] = start;
 
     if (num_pipes == 1) {
+        char expanded[SH_MAX_LINE * 2];
+        expand_parameters(pipes[0], expanded, sizeof(expanded));
         char *argv[SH_MAX_ARGS];
-        int argc = tokenize_line(pipes[0], argv, SH_MAX_ARGS);
+        int argc = tokenize_line(expanded, argv, SH_MAX_ARGS);
         return execute_single_command(argc, argv);
     }
 
@@ -683,8 +1129,10 @@ static int execute_pipeline(char *cmd_line) {
             dup2(saved_stdout, STDOUT_FILENO);
         }
 
+        char expanded[SH_MAX_LINE * 2];
+        expand_parameters(pipes[i], expanded, sizeof(expanded));
         char *argv[SH_MAX_ARGS];
-        int argc = tokenize_line(pipes[i], argv, SH_MAX_ARGS);
+        int argc = tokenize_line(expanded, argv, SH_MAX_ARGS);
         if (argc > 0) {
             pipe_status = execute_single_command(argc, argv);
         }
@@ -783,6 +1231,294 @@ static int execute_chained_statement(char *statement) {
     return status;
 }
 
+static int is_word_boundary(char c) {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == ';' || c == '\0';
+}
+
+static int is_kw(const char *start, const char *p, const char *kw) {
+    size_t kw_len = strlen(kw);
+    if (p > start && !is_word_boundary(*(p - 1))) {
+        return 0;
+    }
+    if (strncmp(p, kw, kw_len) == 0 && is_word_boundary(p[kw_len])) {
+        return 1;
+    }
+    return 0;
+}
+
+static char *find_matching_kw(char *str, const char *kw1, const char *kw2, const char *kw3) {
+    char *p = str;
+    char in_quote = '\0';
+    int depth = 0;
+
+    while (*p) {
+        if ((*p == '"' || *p == '\'') && in_quote == '\0') {
+            in_quote = *p;
+        } else if (*p == in_quote) {
+            in_quote = '\0';
+        } else if (in_quote == '\0') {
+            if (is_kw(str, p, "if") || is_kw(str, p, "for") || is_kw(str, p, "while")) {
+                depth++;
+            } else if (is_kw(str, p, "fi") || is_kw(str, p, "done")) {
+                if (depth > 0) {
+                    depth--;
+                }
+            } else if (depth == 0) {
+                if (kw1 && is_kw(str, p, kw1)) {
+                    return p;
+                }
+                if (kw2 && is_kw(str, p, kw2)) {
+                    return p;
+                }
+                if (kw3 && is_kw(str, p, kw3)) {
+                    return p;
+                }
+            }
+        }
+        p++;
+    }
+    return NULL;
+}
+
+static int execute_if_statement(char *cmd) {
+    char *p = cmd + 2;
+    while (*p && is_space(*p)) {
+        p++;
+    }
+
+    char *then_kw = find_matching_kw(p, "then", NULL, NULL);
+    if (!then_kw) {
+        printf("sh: syntax error: `then' expected\n");
+        return 2;
+    }
+
+    *then_kw = '\0';
+    char *cond_str = p;
+    char *after_then = then_kw + 4;
+    while (*after_then && (is_space(*after_then) || *after_then == ';')) {
+        after_then++;
+    }
+
+    char *end_branch = find_matching_kw(after_then, "elif", "else", "fi");
+    if (!end_branch) {
+        printf("sh: syntax error: unexpected EOF waiting for `fi'\n");
+        return 2;
+    }
+
+    int cond_status = run_command_string(cond_str);
+
+    if (cond_status == 0) {
+        char saved = *end_branch;
+        *end_branch = '\0';
+        int then_status = run_command_string(after_then);
+        *end_branch = saved;
+        return then_status;
+    }
+
+    if (is_kw(after_then, end_branch, "elif")) {
+        char *elif_str = end_branch + 2;
+        return execute_if_statement(elif_str);
+    } else if (is_kw(after_then, end_branch, "else")) {
+        char *after_else = end_branch + 4;
+        while (*after_else && (is_space(*after_else) || *after_else == ';')) {
+            after_else++;
+        }
+        char *fi_kw = find_matching_kw(after_else, "fi", NULL, NULL);
+        if (!fi_kw) {
+            printf("sh: syntax error: unexpected EOF waiting for `fi'\n");
+            return 2;
+        }
+        *fi_kw = '\0';
+        return run_command_string(after_else);
+    }
+
+    return 0;
+}
+
+static int execute_for_statement(char *cmd) {
+    char *p = cmd + 3;
+    while (*p && is_space(*p)) {
+        p++;
+    }
+
+    char var_name[64];
+    size_t v_idx = 0;
+    while (*p && !is_space(*p) && *p != ';' && v_idx + 1 < sizeof(var_name)) {
+        var_name[v_idx++] = *p++;
+    }
+    var_name[v_idx] = '\0';
+
+    while (*p && is_space(*p)) {
+        p++;
+    }
+    if (strncmp(p, "in", 2) != 0 || !is_word_boundary(p[2])) {
+        printf("sh: syntax error: `in' expected in for loop\n");
+        return 2;
+    }
+    p += 2;
+    while (*p && is_space(*p)) {
+        p++;
+    }
+
+    char *do_kw = find_matching_kw(p, "do", NULL, NULL);
+    if (!do_kw) {
+        printf("sh: syntax error: `do' expected in for loop\n");
+        return 2;
+    }
+
+    *do_kw = '\0';
+    char *words_raw = p;
+    char *after_do = do_kw + 2;
+    while (*after_do && (is_space(*after_do) || *after_do == ';')) {
+        after_do++;
+    }
+
+    char *done_kw = find_matching_kw(after_do, "done", NULL, NULL);
+    if (!done_kw) {
+        printf("sh: syntax error: unexpected EOF waiting for `done'\n");
+        return 2;
+    }
+    *done_kw = '\0';
+    char *body_str = after_do;
+
+    char expanded_words[SH_MAX_LINE * 2];
+    expand_parameters(words_raw, expanded_words, sizeof(expanded_words));
+
+    char *words[SH_MAX_ARGS];
+    int word_count = tokenize_line(expanded_words, words, SH_MAX_ARGS);
+
+    int status = 0;
+    for (int i = 0; i < word_count; i++) {
+        sh_var_set(var_name, words[i], 0);
+
+        char body_copy[SH_MAX_LINE * 2];
+        strncpy(body_copy, body_str, sizeof(body_copy) - 1);
+        body_copy[sizeof(body_copy) - 1] = '\0';
+
+        status = run_command_string(body_copy);
+
+        if (sh_loop_break) {
+            sh_loop_break = 0;
+            break;
+        }
+        if (sh_loop_continue) {
+            sh_loop_continue = 0;
+            continue;
+        }
+        if (sh_return_flag) {
+            break;
+        }
+    }
+
+    return status;
+}
+
+static int execute_while_statement(char *cmd) {
+    char *p = cmd + 5;
+    while (*p && is_space(*p)) {
+        p++;
+    }
+
+    char *do_kw = find_matching_kw(p, "do", NULL, NULL);
+    if (!do_kw) {
+        printf("sh: syntax error: `do' expected in while loop\n");
+        return 2;
+    }
+
+    *do_kw = '\0';
+    char *cond_str = p;
+    char *after_do = do_kw + 2;
+    while (*after_do && (is_space(*after_do) || *after_do == ';')) {
+        after_do++;
+    }
+
+    char *done_kw = find_matching_kw(after_do, "done", NULL, NULL);
+    if (!done_kw) {
+        printf("sh: syntax error: unexpected EOF waiting for `done'\n");
+        return 2;
+    }
+    *done_kw = '\0';
+    char *body_str = after_do;
+
+    int status = 0;
+    while (1) {
+        char cond_copy[SH_MAX_LINE * 2];
+        strncpy(cond_copy, cond_str, sizeof(cond_copy) - 1);
+        cond_copy[sizeof(cond_copy) - 1] = '\0';
+
+        int cond_status = run_command_string(cond_copy);
+        if (cond_status != 0) {
+            break;
+        }
+
+        char body_copy[SH_MAX_LINE * 2];
+        strncpy(body_copy, body_str, sizeof(body_copy) - 1);
+        body_copy[sizeof(body_copy) - 1] = '\0';
+
+        status = run_command_string(body_copy);
+
+        if (sh_loop_break) {
+            sh_loop_break = 0;
+            break;
+        }
+        if (sh_loop_continue) {
+            sh_loop_continue = 0;
+            continue;
+        }
+        if (sh_return_flag) {
+            break;
+        }
+    }
+
+    return status;
+}
+
+static int execute_top_statement(char *stmt) {
+    while (*stmt && is_space(*stmt)) {
+        stmt++;
+    }
+    if (!*stmt) {
+        return 0;
+    }
+
+    if (is_kw(stmt, stmt, "if")) {
+        return execute_if_statement(stmt);
+    }
+    if (is_kw(stmt, stmt, "for")) {
+        return execute_for_statement(stmt);
+    }
+    if (is_kw(stmt, stmt, "while")) {
+        return execute_while_statement(stmt);
+    }
+
+    return execute_chained_statement(stmt);
+}
+
+static int calculate_block_depth_delta(const char *line) {
+    int delta = 0;
+    const char *p = line;
+    char in_quote = '\0';
+
+    while (*p) {
+        if ((*p == '"' || *p == '\'') && in_quote == '\0') {
+            in_quote = *p;
+        } else if (*p == in_quote) {
+            in_quote = '\0';
+        } else if (in_quote == '\0') {
+            if (*p == '#' && (p == line || *(p - 1) != '$')) {
+                break;
+            }
+            if (is_kw(line, p, "if") || is_kw(line, p, "for") || is_kw(line, p, "while")) {
+                delta++;
+            } else if (is_kw(line, p, "fi") || is_kw(line, p, "done")) {
+                delta--;
+            }
+        }
+        p++;
+    }
+    return delta;
+}
+
 static int run_command_string(char *cmd_str) {
     char *s = cmd_str;
     char q = '\0';
@@ -791,7 +1527,7 @@ static int run_command_string(char *cmd_str) {
             q = *s;
         } else if (*s == q) {
             q = '\0';
-        } else if (*s == '#' && q == '\0') {
+        } else if (*s == '#' && q == '\0' && (s == cmd_str || *(s - 1) != '$')) {
             *s = '\0';
             break;
         }
@@ -801,6 +1537,7 @@ static int run_command_string(char *cmd_str) {
     char *p = cmd_str;
     char *stmt_start = p;
     char in_quote = '\0';
+    int block_depth = 0;
     int status = 0;
 
     while (*p) {
@@ -808,27 +1545,26 @@ static int run_command_string(char *cmd_str) {
             in_quote = *p;
         } else if (*p == in_quote) {
             in_quote = '\0';
-        } else if (*p == ';' && in_quote == '\0') {
-            *p = '\0';
-            while (*stmt_start && is_space(*stmt_start)) {
-                stmt_start++;
+        } else if (in_quote == '\0') {
+            if (is_kw(cmd_str, p, "if") || is_kw(cmd_str, p, "for") || is_kw(cmd_str, p, "while")) {
+                block_depth++;
+            } else if (is_kw(cmd_str, p, "fi") || is_kw(cmd_str, p, "done")) {
+                if (block_depth > 0) {
+                    block_depth--;
+                }
+            } else if (block_depth == 0 && (*p == ';' || *p == '\n')) {
+                *p = '\0';
+                while (*stmt_start && is_space(*stmt_start)) {
+                    stmt_start++;
+                }
+                if (*stmt_start) {
+                    status = execute_top_statement(stmt_start);
+                    if (sh_return_flag || sh_loop_break || sh_loop_continue) {
+                        return status;
+                    }
+                }
+                stmt_start = p + 1;
             }
-            if (*stmt_start) {
-                status = execute_chained_statement(stmt_start);
-            }
-            stmt_start = p + 1;
-        } else if (*p == '&' && in_quote == '\0' && *(p + 1) != '&' &&
-                   (p == cmd_str || *(p - 1) != '&')) {
-            char saved = *(p + 1);
-            *(p + 1) = '\0';
-            while (*stmt_start && is_space(*stmt_start)) {
-                stmt_start++;
-            }
-            if (*stmt_start) {
-                status = execute_chained_statement(stmt_start);
-            }
-            *(p + 1) = saved;
-            stmt_start = p + 1;
         }
         p++;
     }
@@ -837,7 +1573,60 @@ static int run_command_string(char *cmd_str) {
         stmt_start++;
     }
     if (*stmt_start) {
-        status = execute_chained_statement(stmt_start);
+        status = execute_top_statement(stmt_start);
+    }
+
+    return status;
+}
+
+static int run_script_stream(FILE *fp) {
+    char block_buf[SH_MAX_LINE * 4];
+    block_buf[0] = '\0';
+    size_t block_len = 0;
+    int block_depth = 0;
+
+    char line_buf[SH_MAX_LINE];
+    int status = 0;
+
+    while (fgets(line_buf, sizeof(line_buf), fp)) {
+        job_reap();
+        size_t len = strlen(line_buf);
+        while (len > 0 && (line_buf[len - 1] == '\n' || line_buf[len - 1] == '\r')) {
+            line_buf[--len] = '\0';
+        }
+        if (len == 0 && block_depth == 0) {
+            continue;
+        }
+
+        int delta = calculate_block_depth_delta(line_buf);
+        block_depth += delta;
+        if (block_depth < 0) {
+            block_depth = 0;
+        }
+
+        if (block_len + len + 2 < sizeof(block_buf)) {
+            if (block_len > 0) {
+                block_buf[block_len++] = '\n';
+                block_buf[block_len] = '\0';
+            }
+            memcpy(&block_buf[block_len], line_buf, len);
+            block_len += len;
+            block_buf[block_len] = '\0';
+        }
+
+        if (block_depth == 0 && block_len > 0) {
+            status = run_command_string(block_buf);
+            block_buf[0] = '\0';
+            block_len = 0;
+            if (sh_return_flag) {
+                sh_return_flag = 0;
+                break;
+            }
+        }
+    }
+
+    if (block_len > 0) {
+        status = run_command_string(block_buf);
     }
 
     return status;
@@ -849,21 +1638,7 @@ static int run_script_file(const char *filename) {
         printf("sh: %s: No such file or directory\n", filename);
         return 127;
     }
-
-    char line_buf[SH_MAX_LINE];
-    int status = 0;
-    while (fgets(line_buf, sizeof(line_buf), fp)) {
-        job_reap();
-        size_t len = strlen(line_buf);
-        while (len > 0 && (line_buf[len - 1] == '\n' || line_buf[len - 1] == '\r')) {
-            line_buf[--len] = '\0';
-        }
-        if (len == 0) {
-            continue;
-        }
-        status = run_command_string(line_buf);
-    }
-
+    int status = run_script_stream(fp);
     fclose(fp);
     return status;
 }
@@ -1031,43 +1806,85 @@ int main(int argc, char **argv) {
             printf("sh: -c: option requires an argument\n");
             return 2;
         }
-        char cmd_buf[SH_MAX_LINE];
-        cmd_buf[0] = '\0';
-        size_t current_len = 0;
-        for (int i = 2; i < argc; i++) {
-            size_t arg_len = strlen(argv[i]);
-            if (current_len + arg_len + 2 < sizeof(cmd_buf)) {
-                if (current_len > 0) {
-                    cmd_buf[current_len++] = ' ';
-                    cmd_buf[current_len] = '\0';
-                }
-                memcpy(&cmd_buf[current_len], argv[i], arg_len);
-                current_len += arg_len;
-                cmd_buf[current_len] = '\0';
-            }
+        sh_argc = 1;
+        strncpy(sh_argv_storage[0], "sh", SH_MAX_LINE - 1);
+        sh_argv_storage[0][SH_MAX_LINE - 1] = '\0';
+        sh_argv[0] = sh_argv_storage[0];
+        for (int i = 3; i < argc && sh_argc < SH_MAX_ARGS - 1; i++) {
+            strncpy(sh_argv_storage[sh_argc], argv[i], SH_MAX_LINE - 1);
+            sh_argv_storage[sh_argc][SH_MAX_LINE - 1] = '\0';
+            sh_argv[sh_argc] = sh_argv_storage[sh_argc];
+            sh_argc++;
         }
-        return run_command_string(cmd_buf);
+        sh_argv[sh_argc] = NULL;
+
+        return run_command_string(argv[2]);
     }
 
     if (argc >= 2 && argv[1][0] != '-') {
+        sh_argc = 0;
+        for (int i = 1; i < argc && sh_argc < SH_MAX_ARGS - 1; i++) {
+            strncpy(sh_argv_storage[sh_argc], argv[i], SH_MAX_LINE - 1);
+            sh_argv_storage[sh_argc][SH_MAX_LINE - 1] = '\0';
+            sh_argv[sh_argc] = sh_argv_storage[sh_argc];
+            sh_argc++;
+        }
+        sh_argv[sh_argc] = NULL;
         return run_script_file(argv[1]);
     }
+
+    sh_argc = 1;
+    strncpy(sh_argv_storage[0], "sh", SH_MAX_LINE - 1);
+    sh_argv_storage[0][SH_MAX_LINE - 1] = '\0';
+    sh_argv[0] = sh_argv_storage[0];
+    sh_argv[1] = NULL;
+
+    char block_buf[SH_MAX_LINE * 4];
+    block_buf[0] = '\0';
+    size_t block_len = 0;
+    int block_depth = 0;
 
     char line_buf[SH_MAX_LINE];
     while (1) {
         job_reap();
-        print_shell_prompt();
+        if (block_depth == 0) {
+            print_shell_prompt();
+        } else {
+            printf("> ");
+            fflush(stdout);
+        }
 
         int n = sh_readline(line_buf, sizeof(line_buf));
         if (n < 0) {
             puts("exit");
             break;
         }
-        if (n == 0) {
+        if (n == 0 && block_depth == 0) {
             continue;
         }
 
-        run_command_string(line_buf);
+        int delta = calculate_block_depth_delta(line_buf);
+        block_depth += delta;
+        if (block_depth < 0) {
+            block_depth = 0;
+        }
+
+        size_t len = strlen(line_buf);
+        if (block_len + len + 2 < sizeof(block_buf)) {
+            if (block_len > 0) {
+                block_buf[block_len++] = '\n';
+                block_buf[block_len] = '\0';
+            }
+            memcpy(&block_buf[block_len], line_buf, len);
+            block_len += len;
+            block_buf[block_len] = '\0';
+        }
+
+        if (block_depth == 0 && block_len > 0) {
+            run_command_string(block_buf);
+            block_buf[0] = '\0';
+            block_len = 0;
+        }
     }
 
     return last_exit_status;
