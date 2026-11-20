@@ -65,5 +65,7 @@ Thumbs.db
 # Linux-style build configuration and exported UAPI headers
 .config
 .config.old
+.config_test*
+.tmp_config*
 defconfig
 /include/
