@@ -6,6 +6,7 @@
 
 # Single-source automated POSIX conformance and diagnostic test suites
 bin-$(CONFIG_USERLAND_TESTS)		+= test_job_control \
+					   test_modules \
 					   test_pipe \
 					   test_poll \
 					   test_select \

@@ -114,13 +114,13 @@ LIB_OBJS        := $(patsubst $(LIBC_DIR)/src/%.c,$(OBJ_DIR)/libc/%.o,$(LIB_SRCS
 include Kbuild
 
 # Categorized binary groups resolved dynamically from Kbuild manifests
-CORE_BINS       := $(filter cat chmod chown clear echo grep head ln ls mkdir rm tail test touch wc,$(bin-y))
+CORE_BINS       := $(filter cat chmod chown clear echo grep head insmod ln ls lsmod mkdir rm rmmod tail test touch wc,$(bin-y))
 PROC_BINS       := $(filter kill pmap ps,$(bin-y))
 SYS_BINS        := $(filter df dmesg hostname id mount sleep su umount uname whoami,$(bin-y))
 INIT_BINS       := $(filter init poweroff reboot,$(bin-y))
 SHELL_BINS      := $(filter sh,$(bin-y))
 NET_BINS        := $(filter arp fetch ifconfig iptables netstat ping route,$(bin-y))
-TESTS_BINS      := $(filter test_job_control test_pipe test_poll test_select test_sh_scripting test_threads,$(bin-y))
+TESTS_BINS      := $(filter test_job_control test_modules test_pipe test_poll test_select test_sh_scripting test_threads,$(bin-y))
 MULTI_BINS      := $(multi-bin-y)
 
 BINS            := $(sort $(bin-y) $(multi-bin-y))

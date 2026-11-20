@@ -12,10 +12,13 @@ bin-y		+= cat \
 		   echo \
 		   grep \
 		   head \
+		   insmod \
 		   ln \
 		   ls \
+		   lsmod \
 		   mkdir \
 		   rm \
+		   rmmod \
 		   tail \
 		   test \
 		   touch \
