@@ -29,7 +29,7 @@ of computer systems across 60 chronological engineering milestones:
 * Milestones 37-42: Text Pipelines, POSIX DAC Permissions, VFS Cache Trinity (dcache/icache), Memory Introspection and Dynamic ProcFS.
 * Milestones 43-48: Hardware Mitigations (W^X/ASLR), Cryptographic Entropy, Process RLIMIT Sandboxing, UNIX Sockets and Ring Buffer Logging.
 * Milestones 49-56: CoW Fork Engine, VMA Address Spaces, POSIX Multiplexing (poll/select), BSD Sockets, System Identity and Power Management.
-* Milestones 57-60: POSIX Process Groups, Shell Job Control, Pure Kernel Demarcation, Linux-Grade Kconfig and Modular Kbuild Architecture.
+* Milestones 57-61: POSIX Process Groups, Shell Job Control, Pure Kernel Demarcation, Linux-Grade Kconfig, Modular Kbuild Architecture and POSIX Shell Scripting Language Engine.
 
 Read the detailed engineering journal: docs/journey/index.rst
 System architecture overview: docs/arch/index.rst
