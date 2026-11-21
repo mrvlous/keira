@@ -16,6 +16,7 @@ Architecture & Subsystems
    build-system
    kconfig-system
    kbuild-system
+   kernel-tooling
    coding-style
    documentation-system
    maintainers
