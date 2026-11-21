@@ -32,8 +32,10 @@ pub use self::inode::{
     INODE_MISSES, INODE_WRITEBACKS, S_IFBLK, S_IFCHR, S_IFDIR, S_IFIFO, S_IFLNK, S_IFREG, S_IFSOCK,
 };
 pub use self::page::{
-    clear_page_cache, find_page_index, flush_dirty_pages, get_page_cache_stats, insert_page,
-    invalidate_inode, read_page, write_page, PageCacheEntry, PAGE_CACHE, PAGE_CACHE_CAPACITY,
-    PAGE_CLOCK, PAGE_EVICTIONS, PAGE_FLAG_DIRTY, PAGE_FLAG_LOCKED, PAGE_FLAG_REFERENCED,
-    PAGE_FLAG_VALID, PAGE_HITS, PAGE_MISSES, PAGE_SIZE, PAGE_WRITEBACKS,
+    clear_page_cache, count_dirty_pages, evict_clean_pages, find_page_index, flush_dirty_pages,
+    get_kflushd_telemetry, get_page_cache_stats, insert_page, invalidate_inode, kflushd_step,
+    read_page, write_page, KflushdTelemetry, PageCacheEntry, KFLUSHD_LAST_TICKS,
+    KFLUSHD_PAGES_COMMITTED, KFLUSHD_PASSES, PAGE_CACHE, PAGE_CACHE_CAPACITY, PAGE_CLOCK,
+    PAGE_EVICTIONS, PAGE_FLAG_DIRTY, PAGE_FLAG_LOCKED, PAGE_FLAG_REFERENCED, PAGE_FLAG_VALID,
+    PAGE_HITS, PAGE_MISSES, PAGE_SIZE, PAGE_WRITEBACKS,
 };

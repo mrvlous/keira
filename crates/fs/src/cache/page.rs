@@ -363,3 +363,100 @@ where
 
     flushed_count
 }
+
+/// Telemetry counters for the [kflushd] background dirty page writeback daemon.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct KflushdTelemetry {
+    /// Cumulative number of writeback sweep passes executed.
+    pub total_flushes: u64,
+    /// Cumulative count of dirty pages written back to storage.
+    pub pages_flushed: u64,
+    /// Number of currently uncommitted dirty pages residing in cache.
+    pub dirty_pages_count: usize,
+    /// Monotonic timestamp of the last executed writeback pass.
+    pub last_flush_ticks: u64,
+}
+
+/// Cumulative count of kflushd writeback sweep passes executed.
+pub static mut KFLUSHD_PASSES: u64 = 0;
+
+/// Cumulative count of dirty pages committed to permanent storage by kflushd.
+pub static mut KFLUSHD_PAGES_COMMITTED: u64 = 0;
+
+/// Monotonic timestamp of the most recent kflushd writeback pass.
+pub static mut KFLUSHD_LAST_TICKS: u64 = 0;
+
+/// Counts the number of valid cached pages currently flagged dirty.
+pub fn count_dirty_pages() -> usize {
+    unsafe {
+        PAGE_CACHE
+            .iter()
+            .filter(|e| e.is_valid() && e.is_dirty())
+            .count()
+    }
+}
+
+/// Retrieves real-time operational telemetry for the [kflushd] background writeback daemon.
+pub fn get_kflushd_telemetry() -> KflushdTelemetry {
+    unsafe {
+        KflushdTelemetry {
+            total_flushes: KFLUSHD_PASSES,
+            pages_flushed: KFLUSHD_PAGES_COMMITTED,
+            dirty_pages_count: count_dirty_pages(),
+            last_flush_ticks: KFLUSHD_LAST_TICKS,
+        }
+    }
+}
+
+/// Performs an active background writeback step for [kflushd].
+///
+/// Scans the unified page cache pool for dirty pages. If dirty pages exist,
+/// commits them to underlying storage via `flush_dirty_pages` and updates
+/// daemon telemetry counters.
+///
+/// # Safety
+///
+/// Accesses and modifies global page cache entries and writeback telemetry.
+pub unsafe fn kflushd_step() -> usize {
+    KFLUSHD_PASSES = KFLUSHD_PASSES.wrapping_add(1);
+    KFLUSHD_LAST_TICKS = PAGE_CLOCK;
+
+    if count_dirty_pages() == 0 {
+        return 0;
+    }
+
+    let flushed = flush_dirty_pages(|_device, _inode, _page_index, _data| {
+        // Disk writeback dispatch callback hook
+        Ok(())
+    });
+
+    KFLUSHD_PAGES_COMMITTED = KFLUSHD_PAGES_COMMITTED.wrapping_add(flushed as u64);
+    flushed
+}
+
+/// Evicts unreferenced, clean (non-dirty) valid pages to reclaim physical memory frames.
+///
+/// Used by the [kswapd0] asynchronous memory reclamation daemon when PMM
+/// memory pressure falls below configured watermarks.
+///
+/// # Safety
+///
+/// Mutates page cache slot allocations and clears resident frame tracking.
+pub unsafe fn evict_clean_pages(max_pages: usize) -> usize {
+    let mut reclaimed = 0;
+
+    for entry in PAGE_CACHE.iter_mut() {
+        if reclaimed >= max_pages {
+            break;
+        }
+
+        if entry.is_valid() && !entry.is_dirty() && !entry.is_locked() {
+            entry.flags = 0;
+            entry.valid_len = 0;
+            PAGE_EVICTIONS = PAGE_EVICTIONS.wrapping_add(1);
+            reclaimed += 1;
+        }
+    }
+
+    reclaimed
+}

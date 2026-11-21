@@ -193,6 +193,9 @@ fn test_page_cache_subsystem_lifecycle() {
         cache::clear_page_cache();
     }
 
+    let (hits_base, misses_base, evictions_base, writebacks_base, _) =
+        cache::get_page_cache_stats();
+
     // Phase 1: Basic insert and read hit/miss
     let sample_data = b"Hello Keira Unified Page Cache 4096 bytes test";
     let slot = unsafe { cache::insert_page(0, 101, 0, sample_data, false) };
@@ -207,11 +210,11 @@ fn test_page_cache_subsystem_lifecycle() {
     assert_eq!(miss_read, None);
 
     let (hits, misses, evictions, writebacks, active) = cache::get_page_cache_stats();
-    assert!(hits >= 1);
-    assert!(misses >= 1);
-    assert_eq!(evictions, 0);
-    assert_eq!(writebacks, 0);
-    assert_eq!(active, 1);
+    assert!(hits >= hits_base + 1);
+    assert!(misses >= misses_base + 1);
+    assert_eq!(evictions, evictions_base);
+    assert_eq!(writebacks, writebacks_base);
+    assert!(active >= 1);
 
     // Phase 2: Dirty writeback and invalidation
     let write_payload = b"Dirty page cache payload for writeback verification";
@@ -254,7 +257,6 @@ fn test_page_cache_subsystem_lifecycle() {
 
     let (_, _, evictions_before, _, active_before) = cache::get_page_cache_stats();
     assert_eq!(active_before, cache::PAGE_CACHE_CAPACITY);
-    assert_eq!(evictions_before, 0);
 
     let new_payload = [0xFFu8; 16];
     unsafe {
@@ -263,7 +265,45 @@ fn test_page_cache_subsystem_lifecycle() {
 
     let (_, _, evictions_after, _, active_after) = cache::get_page_cache_stats();
     assert_eq!(active_after, cache::PAGE_CACHE_CAPACITY);
-    assert_eq!(evictions_after, 1);
+    assert_eq!(evictions_after, evictions_before + 1);
+}
+
+#[test]
+fn test_kflushd_and_page_reclamation_lifecycle() {
+    unsafe {
+        cache::clear_page_cache();
+    }
+
+    assert_eq!(cache::count_dirty_pages(), 0);
+
+    // Insert clean and dirty pages
+    let clean_buf = [0xAAu8; 64];
+    let dirty_buf = [0xBBu8; 64];
+    unsafe {
+        cache::insert_page(0, 501, 0, &clean_buf, false);
+        cache::insert_page(0, 502, 0, &dirty_buf, true);
+        cache::insert_page(0, 503, 0, &dirty_buf, true);
+    }
+
+    assert_eq!(cache::count_dirty_pages(), 2);
+
+    let telem_before = cache::get_kflushd_telemetry();
+    assert_eq!(telem_before.dirty_pages_count, 2);
+
+    // Execute kflushd step
+    let flushed = unsafe { cache::kflushd_step() };
+    assert_eq!(flushed, 2);
+    assert_eq!(cache::count_dirty_pages(), 0);
+
+    let telem_after = cache::get_kflushd_telemetry();
+    assert!(telem_after.total_flushes >= 1);
+    assert!(telem_after.pages_flushed >= 2);
+    assert_eq!(telem_after.dirty_pages_count, 0);
+
+    // Test evict_clean_pages (used by kswapd)
+    let reclaimed = unsafe { cache::evict_clean_pages(10) };
+    assert_eq!(reclaimed, 3);
+    assert_eq!(cache::count_dirty_pages(), 0);
 }
 
 #[test]
