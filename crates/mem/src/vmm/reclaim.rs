@@ -145,4 +145,108 @@ pub mod tree {
     }
 }
 
+pub mod kswapd {
+    use crate::pmm;
+
+    /// Memory pressure watermark levels for asynchronous PMM reclamation.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    pub enum MemoryPressure {
+        /// Plentiful free frames; no reclamation necessary (> 20% free).
+        Normal,
+        /// Below low watermark; asynchronous [kswapd0] reclamation triggered (< 20% free).
+        Low,
+        /// Below minimum watermark; critical memory pressure (< 5% free).
+        Critical,
+    }
+
+    /// Telemetry counters for the [kswapd0] background memory reclamation daemon.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    pub struct KswapdTelemetry {
+        /// Cumulative number of memory audit scans executed.
+        pub scan_runs: u64,
+        /// Cumulative physical frames reclaimed and returned to PMM pool.
+        pub pages_reclaimed: u64,
+        /// Number of low or critical memory pressure events detected.
+        pub pressure_events: u64,
+        /// Monotonic timestamp of the last executed reclamation scan.
+        pub last_scan_ticks: u64,
+    }
+
+    /// Cumulative count of kswapd memory scan passes.
+    pub static mut KSWAPD_SCANS: u64 = 0;
+
+    /// Cumulative count of physical frames reclaimed by kswapd.
+    pub static mut KSWAPD_PAGES_RECLAIMED: u64 = 0;
+
+    /// Cumulative count of memory pressure triggers.
+    pub static mut KSWAPD_PRESSURE_EVENTS: u64 = 0;
+
+    /// Monotonic timestamp of the most recent kswapd scan.
+    pub static mut KSWAPD_LAST_TICKS: u64 = 0;
+
+    /// Evaluates current PMM memory pressure against low and critical watermarks.
+    pub fn check_memory_pressure() -> MemoryPressure {
+        let (total, _used, free) = pmm::get_stats();
+        if total == 0 {
+            return MemoryPressure::Normal;
+        }
+
+        let free_percent = (free * 100) / total;
+        if free_percent < 5 {
+            MemoryPressure::Critical
+        } else if free_percent < 20 {
+            MemoryPressure::Low
+        } else {
+            MemoryPressure::Normal
+        }
+    }
+
+    /// Retrieves real-time operational telemetry for the [kswapd0] reclamation daemon.
+    pub fn get_kswapd_telemetry() -> KswapdTelemetry {
+        unsafe {
+            KswapdTelemetry {
+                scan_runs: KSWAPD_SCANS,
+                pages_reclaimed: KSWAPD_PAGES_RECLAIMED,
+                pressure_events: KSWAPD_PRESSURE_EVENTS,
+                last_scan_ticks: KSWAPD_LAST_TICKS,
+            }
+        }
+    }
+
+    /// Performs an active background memory reclamation sweep for [kswapd0].
+    ///
+    /// Evaluates physical memory pressure. When pressure is detected,
+    /// triggers clean cache page eviction and updates daemon telemetry.
+    ///
+    /// # Safety
+    ///
+    /// Mutates global kswapd telemetry counters and triggers physical memory reclamation.
+    pub unsafe fn kswapd_step(reclaim_fn: Option<fn(usize) -> usize>) -> usize {
+        KSWAPD_SCANS = KSWAPD_SCANS.wrapping_add(1);
+        KSWAPD_LAST_TICKS = KSWAPD_LAST_TICKS.wrapping_add(1);
+
+        let pressure = check_memory_pressure();
+        if pressure == MemoryPressure::Normal {
+            return 0;
+        }
+
+        KSWAPD_PRESSURE_EVENTS = KSWAPD_PRESSURE_EVENTS.wrapping_add(1);
+
+        let target_pages = match pressure {
+            MemoryPressure::Critical => 16,
+            MemoryPressure::Low => 4,
+            MemoryPressure::Normal => 0,
+        };
+
+        let mut reclaimed = 0;
+        if let Some(f) = reclaim_fn {
+            reclaimed = f(target_pages);
+        }
+
+        KSWAPD_PAGES_RECLAIMED = KSWAPD_PAGES_RECLAIMED.wrapping_add(reclaimed as u64);
+        reclaimed
+    }
+}
+
+pub use self::kswapd::*;
 pub use self::tree::*;

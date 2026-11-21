@@ -818,3 +818,38 @@ fn test_vma_retrieval_and_fork_cloning() {
         assert_eq!(get_vmas_for_pml4(child_pml4, &mut child_vmas), 0);
     }
 }
+
+fn mock_reclaim(target: usize) -> usize {
+    target
+}
+
+#[test]
+fn test_kswapd_watermarks_and_reclamation_lifecycle() {
+    let _lock = crate::pmm::TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    let pressure = check_memory_pressure();
+    assert!(matches!(
+        pressure,
+        MemoryPressure::Normal | MemoryPressure::Low | MemoryPressure::Critical
+    ));
+
+    let telem_before = get_kswapd_telemetry();
+
+    let reclaimed = unsafe { kswapd_step(Some(mock_reclaim)) };
+
+    let telem_after = get_kswapd_telemetry();
+    assert_eq!(telem_after.scan_runs, telem_before.scan_runs + 1);
+
+    if pressure != MemoryPressure::Normal {
+        assert!(reclaimed > 0);
+        assert_eq!(
+            telem_after.pressure_events,
+            telem_before.pressure_events + 1
+        );
+        assert_eq!(
+            telem_after.pages_reclaimed,
+            telem_before.pages_reclaimed + reclaimed as u64
+        );
+    } else {
+        assert_eq!(reclaimed, 0);
+    }
+}
