@@ -322,7 +322,7 @@ class Kconfig:
                     if isinstance(item, Menu):
                         dump_menu(item)
                     elif isinstance(item, Choice):
-                        f.write(f"#\n# {item.prompt or 'Choice'}\n#\n")
+                        f.write(f"\n#\n# {item.prompt or 'Choice'}\n#\n")
                         selected = item.get_selected(self)
                         for sym in item.items:
                             if sym == selected:
