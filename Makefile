@@ -187,7 +187,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
         format lint user libc docs htmldocs docs-clean docs-lint docs-check docs-linkcheck docs-info pdfdocs disk initrd help info check \
-        size objdump qemu-net test test-all test-unit test-kbuild fs-root user-format user-lint user-size user-test user-info \
+        size objdump bloat faddr2line qemu-net test test-all test-unit test-kbuild fs-root user-format user-lint user-size user-test user-info \
         preflight preflight-qemu preflight-format preflight-lint menuconfig defconfig full_defconfig pure_defconfig kernel_defconfig savedefconfig oldconfig headers_install
 
 .DEFAULT_GOAL   := all
@@ -607,6 +607,14 @@ size: $(KERNEL_BIN) ## Display kernel binary size and section breakdown
 
 objdump: $(KERNEL_BIN) ## Dump kernel ELF section headers and layout
 	$(Q)objdump -h $(KERNEL_BIN)
+
+bloat: $(KERNEL_BIN) ## Compare kernel binary symbol sizes (PREV=<old_bin> CURR=<new_bin>)
+	@$(LOG_INFO) "Analyzing kernel binary footprint delta ($(ARCH))..."
+	$(Q)python3 scripts/bloat-o-meter $(if $(PREV),$(PREV),$(KERNEL_BIN)) $(if $(CURR),$(CURR),$(KERNEL_BIN))
+
+faddr2line: $(KERNEL_BIN) ## Translate fault address to source location (ADDR=<addr|sym+offset>)
+	@$(LOG_INFO) "Symbolizing fault address $(ADDR) ($(ARCH))..."
+	$(Q)python3 scripts/faddr2line $(if $(BIN),$(BIN),$(KERNEL_BIN)) $(ADDR)
 
 check: ## Verify all required build dependencies are installed
 	@MISSING=0; \
