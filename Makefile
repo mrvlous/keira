@@ -187,7 +187,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
         format lint user libc docs htmldocs docs-clean docs-lint docs-check docs-linkcheck docs-info pdfdocs disk initrd help info check \
-        size objdump qemu-net test test-all test-unit test-kbuild fs-root user-format user-lint user-size user-test user-info \
+        size objdump qemu-net test test-all test-unit test-kbuild test-online-net fs-root user-format user-lint user-size user-test user-info \
         preflight preflight-qemu preflight-format preflight-lint menuconfig defconfig full_defconfig pure_defconfig kernel_defconfig savedefconfig oldconfig headers_install
 
 .DEFAULT_GOAL   := all
@@ -564,6 +564,11 @@ test-all: preflight-qemu ## Run automated headless smoke tests on all architectu
 	$(Q)$(MAKE) ARCH=x86_64 test
 	$(Q)$(MAKE) ARCH=i686 test
 	@$(LOG_DONE) "All architecture tests completed successfully"
+
+test-online-net: preflight-qemu all ## Run live Ring 3 curl and fetch tests against public internet REST APIs
+	@$(LOG_INFO) "Running live Ring 3 public internet REST API test suite..."
+	$(Q)python3 scripts/test_online_rest_api.py
+	@$(LOG_DONE) "Live public internet REST API test suite complete"
 
 # Code hygiene, formatting and linting
 clean: ## Remove build directory and compiled artifacts across all subsystems

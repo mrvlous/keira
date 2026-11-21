@@ -60,6 +60,24 @@ Fetching Payloads to Standard Output
    # Retrieve via curl alias:
    keira:/# curl http://httpbin.org/get
 
+Fetching Live Public Internet REST APIs
+----------------------------------------
+
+.. code-block:: bash
+
+   # Query live public IP address via icanhazip.com:
+   keira:/# curl -v http://icanhazip.com
+
+   # Retrieve JSON formatted public IP via api.ipify.org:
+   keira:/# fetch -i http://api.ipify.org/?format=json
+
+   # Retrieve JSON origin details via httpbin.org:
+   keira:/# curl http://httpbin.org/ip
+
+   # Save remote geolocation REST payload to disk file:
+   keira:/# fetch -o /tmp/geo.json http://ip-api.com/json
+   keira:/# cat /tmp/geo.json
+
 Writing Payloads to File
 ------------------------
 
