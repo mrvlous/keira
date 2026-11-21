@@ -20,10 +20,13 @@
 //! - `sync/`: Concurrency locks, CPU affinity tracking and reentrancy detection.
 //! - `telemetry/`: Real-time metrics queries, statistics counters and structural invariant validation.
 
+pub mod buddy;
 pub mod frame;
 pub mod region;
 pub mod sync;
 pub mod telemetry;
+
+pub use buddy::{FreeArea, MAX_ORDER, ORDER_COUNT};
 
 pub use frame::{
     active_shared_frames, alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount,
