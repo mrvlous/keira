@@ -221,7 +221,7 @@ pub mod kswapd {
     /// # Safety
     ///
     /// Mutates global kswapd telemetry counters and triggers physical memory reclamation.
-    pub unsafe fn kswapd_step(reclaim_fn: Option<fn(usize) -> usize>) -> usize {
+    pub unsafe fn kswapd_step(reclaim_fn: Option<unsafe fn(usize) -> usize>) -> usize {
         KSWAPD_SCANS = KSWAPD_SCANS.wrapping_add(1);
         KSWAPD_LAST_TICKS = KSWAPD_LAST_TICKS.wrapping_add(1);
 

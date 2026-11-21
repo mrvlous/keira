@@ -819,7 +819,7 @@ fn test_vma_retrieval_and_fork_cloning() {
     }
 }
 
-fn mock_reclaim(target: usize) -> usize {
+unsafe fn mock_reclaim(target: usize) -> usize {
     target
 }
 

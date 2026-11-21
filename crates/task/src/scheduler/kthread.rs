@@ -32,6 +32,10 @@ pub mod daemon {
     /// Background page reclamation and slab monitor daemon.
     pub fn kswapd_daemon() {
         loop {
+            unsafe {
+                let _reclaimed =
+                    keira_mem::vmm::kswapd_step(Some(keira_fs::cache::evict_clean_pages));
+            }
             #[cfg(target_os = "none")]
             unsafe {
                 core::arch::asm!("pause");
@@ -42,6 +46,9 @@ pub mod daemon {
     /// Background buffer and page cache writeback daemon.
     pub fn kflushd_daemon() {
         loop {
+            unsafe {
+                let _flushed = keira_fs::cache::kflushd_step();
+            }
             #[cfg(target_os = "none")]
             unsafe {
                 core::arch::asm!("pause");
