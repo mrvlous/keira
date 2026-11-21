@@ -29,6 +29,10 @@ Command Reference
      - ``dcache``
      - Display VFS dentry cache lookup metrics, positive/negative hits and capacity
      - ``-h, --help``
+   * - ``daemons``
+     - ``daemons [-h] [-f] [-r]``
+     - Display runtime operational telemetry for Ring 0 background kernel daemons (alias: ``kthreads``)
+     - ``-f, --flush``: Writeback pass ``-r, --reclaim``: Reclamation pass ``-h, --help``: Usage info
    * - ``devices``
      - ``devices``
      - Probe and display PCI device bus topology and configuration space (alias: ``pci``)
