@@ -271,6 +271,109 @@ pub mod daemon {
             }
         }
     }
+    pub mod daemons {
+        use crate::args::CliArgs;
+        use keira_io::vga;
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let args = CliArgs::parse(parts);
+
+            if args.has_flag('h', "help") {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: daemons [OPTIONS]\n\n");
+                vga::print_str(
+                    "Description:\n  Display runtime operational telemetry for Ring 0 background kernel daemons.\n\n",
+                );
+                vga::print_str("Options:\n");
+                vga::print_str("  -f, --flush    Trigger manual writeback pass on [kflushd]\n");
+                vga::print_str("  -r, --reclaim  Trigger manual reclamation pass on [kswapd0]\n");
+                vga::print_str("  -h, --help     Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            if args.has_flag('f', "flush") {
+                let flushed = unsafe { keira_fs::cache::kflushd_step() };
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("[kflushd] Manual writeback complete: ");
+                vga::print_u64(flushed as u64);
+                vga::print_str(" dirty pages committed\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            if args.has_flag('r', "reclaim") {
+                let reclaimed = unsafe {
+                    keira_mem::vmm::kswapd_step(Some(keira_fs::cache::evict_clean_pages))
+                };
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("[kswapd0] Manual reclamation complete: ");
+                vga::print_u64(reclaimed as u64);
+                vga::print_str(" clean pages evicted\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            let flush_telem = keira_fs::cache::get_kflushd_telemetry();
+            let swap_telem = keira_mem::vmm::get_kswapd_telemetry();
+            let pressure = keira_mem::vmm::check_memory_pressure();
+
+            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::print_str("=== Active Ring 0 Background Kernel Daemons ===\n\n");
+
+            // [kthreadd]
+            vga::set_color(vga::Color::Yellow, vga::Color::Black);
+            vga::print_str("[kthreadd] ");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("PID: 1 | Role: Kernel Thread Coordinator | Mode: Ring 0\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("  Status: Active | Parent: 0 (swapper/idle) | Managed Workers: 2\n\n");
+
+            // [kswapd0]
+            vga::set_color(vga::Color::Yellow, vga::Color::Black);
+            vga::print_str("[kswapd0]  ");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("PID: 2 | Role: Physical Memory Reclamation Daemon\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("  Scans: ");
+            vga::print_u64(swap_telem.scan_runs);
+            vga::print_str(" | Reclaimed: ");
+            vga::print_u64(swap_telem.pages_reclaimed);
+            vga::print_str(" frames | Pressure Events: ");
+            vga::print_u64(swap_telem.pressure_events);
+            vga::print_str("\n  Memory Pressure: ");
+            match pressure {
+                keira_mem::vmm::MemoryPressure::Normal => {
+                    vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                    vga::print_str("Normal (>20% free)");
+                }
+                keira_mem::vmm::MemoryPressure::Low => {
+                    vga::set_color(vga::Color::LightRed, vga::Color::Black);
+                    vga::print_str("Low (<20% free - active)");
+                }
+                keira_mem::vmm::MemoryPressure::Critical => {
+                    vga::set_color(vga::Color::Red, vga::Color::Black);
+                    vga::print_str("Critical (<5% free - urgent)");
+                }
+            }
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str(" | Watermarks: High=80%, Low=20%, Min=5%\n\n");
+
+            // [kflushd]
+            vga::set_color(vga::Color::Yellow, vga::Color::Black);
+            vga::print_str("[kflushd]  ");
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("PID: 3 | Role: Page Cache Writeback Synchronization Daemon\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("  Passes: ");
+            vga::print_u64(flush_telem.total_flushes);
+            vga::print_str(" | Pages Flushed: ");
+            vga::print_u64(flush_telem.pages_flushed);
+            vga::print_str(" | Dirty Pages in Cache: ");
+            vga::print_u64(flush_telem.dirty_pages_count as u64);
+            vga::print_str("\n  Writeback Policy: Interval / Dirty Watermark | Capacity: 32 pages (128 KiB)\n");
+        }
+    }
     pub mod watchpoint {
         use crate::args::CliArgs;
         use keira_arch::debug::breakpoint::{
@@ -3040,6 +3143,7 @@ pub use self::control::power;
 pub use self::control::reset;
 pub use self::control::sync;
 pub use self::control::wipe;
+pub use self::daemon::daemons;
 pub use self::daemon::syslog;
 pub use self::daemon::watchpoint;
 pub use self::info::aslrinfo;
@@ -3288,5 +3392,23 @@ mod tests {
 
         let mut args_default = "".split_whitespace();
         selectinfo::run(&mut args_default);
+    }
+
+    #[test]
+    fn test_sys_daemons() {
+        let mut args_help = "daemons --help".split_whitespace();
+        args_help.next();
+        daemons::run(&mut args_help);
+
+        let mut args_flush = "daemons -f".split_whitespace();
+        args_flush.next();
+        daemons::run(&mut args_flush);
+
+        let mut args_reclaim = "daemons -r".split_whitespace();
+        args_reclaim.next();
+        daemons::run(&mut args_reclaim);
+
+        let mut args_default = "".split_whitespace();
+        daemons::run(&mut args_default);
     }
 }

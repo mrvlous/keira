@@ -16,9 +16,9 @@
 
 pub mod read {
     use crate::proc::system::{
-        read_cmdline, read_cpuinfo, read_ip_tables_names, read_ip_tables_rules, read_kallsyms,
-        read_loadavg, read_meminfo, read_modules, read_mounts, read_net_arp, read_net_dev,
-        read_net_raw, read_net_route, read_net_tcp, read_net_udp, read_net_unix,
+        read_cmdline, read_cpuinfo, read_daemons, read_ip_tables_names, read_ip_tables_rules,
+        read_kallsyms, read_loadavg, read_meminfo, read_modules, read_mounts, read_net_arp,
+        read_net_dev, read_net_raw, read_net_route, read_net_tcp, read_net_udp, read_net_unix,
         read_nf_conntrack_stat, read_partitions, read_randomize_va_space, read_slabinfo,
         read_sockstat, read_uptime, read_version, read_vmstat,
     };
@@ -51,6 +51,7 @@ pub mod read {
             node,
             "" | "uptime"
                 | "meminfo"
+                | "daemons"
                 | "slabinfo"
                 | "vmstat"
                 | "cpuinfo"
@@ -124,6 +125,7 @@ pub mod read {
             "" | "net" | "net/stat" | "sys" | "sys/kernel" => Ok(0),
             "uptime" => read_uptime(buf),
             "meminfo" => read_meminfo(buf),
+            "daemons" => read_daemons(buf),
             "slabinfo" => read_slabinfo(buf),
             "vmstat" => read_vmstat(buf),
             "cpuinfo" => read_cpuinfo(buf),
@@ -193,7 +195,7 @@ pub mod read {
 
     use crate::vfs::VirtualDirEntry;
 
-    pub static PROC_ENTRIES: [VirtualDirEntry; 12] = [
+    pub static PROC_ENTRIES: [VirtualDirEntry; 13] = [
         VirtualDirEntry {
             name: ".",
             d_type: 4,
@@ -253,6 +255,11 @@ pub mod read {
             name: "sys",
             d_type: 4,
             ino: 20,
+        },
+        VirtualDirEntry {
+            name: "daemons",
+            d_type: 8,
+            ino: 21,
         },
     ];
 

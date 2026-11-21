@@ -154,3 +154,14 @@ fn test_read_modules_and_kallsyms() {
     assert!(s.contains("pmm_alloc_frame"));
     assert!(s.contains("ext4_mount"));
 }
+
+#[test]
+fn test_read_daemons() {
+    assert!(exists("daemons"));
+    let mut buf = [0u8; 512];
+    let n = read_proc_file("daemons", &mut buf).expect("read daemons failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 daemons");
+    assert!(s.contains("kthreadd: pid=1"));
+    assert!(s.contains("kswapd0: pid=2"));
+    assert!(s.contains("kflushd: pid=3"));
+}

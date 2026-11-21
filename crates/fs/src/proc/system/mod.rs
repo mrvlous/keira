@@ -16,6 +16,7 @@
 
 pub mod aslr;
 pub mod cpuinfo;
+pub mod daemons;
 pub mod hooks;
 pub mod iptables_names;
 pub mod iptables_rules;
@@ -41,6 +42,7 @@ pub mod vmstat;
 
 pub use self::aslr::read_randomize_va_space;
 pub use self::cpuinfo::read_cpuinfo;
+pub use self::daemons::read_daemons;
 pub use self::hooks::*;
 pub use self::iptables_names::read_ip_tables_names;
 pub use self::iptables_rules::read_ip_tables_rules;

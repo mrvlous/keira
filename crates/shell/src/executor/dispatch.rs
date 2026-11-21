@@ -173,6 +173,7 @@ pub mod router {
             "icache" => crate::cmds::icache::run(&mut parts),
             "mount" => crate::cmds::fs::mount::mount::run(&mut parts),
             "pipes" => crate::cmds::sys::info::pipes::run(&mut parts),
+            "daemons" | "kthreads" => crate::cmds::sys::daemon::daemons::run(&mut parts),
             "sync" => crate::cmds::sync::run(&mut parts),
             "syslog" | "dmesg" => crate::cmds::syslog::run(&mut parts),
             "unwind" => crate::cmds::unwind::run(&mut parts),
