@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Binary Footprint and Symbol Delta Analyzer
+#
+# Compares symbol sizes between two ELF binaries or symbol dumps.
+# Modeled after Linux kernel scripts/bloat-o-meter.
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+def find_nm_binary(custom_tool=None):
+    if custom_tool:
+        if shutil.which(custom_tool):
+            return custom_tool
+        raise FileNotFoundError(f"Specified nm tool '{custom_tool}' not found")
+
+    for candidate in ["llvm-nm", "nm"]:
+        path = shutil.which(candidate)
+        if path:
+            return path
+    raise FileNotFoundError("Neither 'llvm-nm' nor 'nm' was found in PATH")
+
+def parse_symbols(target, nm_tool=None):
+    symbols = {}
+
+    # If target is already a text file containing nm output, parse directly
+    if os.path.isfile(target) and not is_elf_file(target):
+        with open(target, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                sym = parse_nm_line(line)
+                if sym:
+                    name, size, stype = sym
+                    symbols[name] = {"size": size, "type": stype}
+        return symbols
+
+    if not os.path.exists(target):
+        raise FileNotFoundError(f"Target binary '{target}' does not exist")
+
+    tool = find_nm_binary(nm_tool)
+    cmd = [tool, "--size-sort", "-C", target]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+
+    for line in res.stdout.splitlines():
+        sym = parse_nm_line(line)
+        if sym:
+            name, size, stype = sym
+            symbols[name] = {"size": size, "type": stype}
+
+    return symbols
+
+def is_elf_file(path):
+    try:
+        with open(path, "rb") as f:
+            magic = f.read(4)
+            return magic == b"\x7fELF"
+    except Exception:
+        return False
+
+def parse_nm_line(line):
+    line = line.strip()
+    if not line:
+        return None
+
+    # Matches: <hex-size> <type-char> <symbol-name>
+    parts = line.split(None, 2)
+    if len(parts) < 3:
+        return None
+
+    size_str, stype, name = parts
+    try:
+        size = int(size_str, 16)
+    except ValueError:
+        return None
+
+    # Filter out empty or special non-allocated symbols
+    if stype.lower() in ["a", "n", "u", "v"]:
+        return None
+
+    return (name, size, stype)
+
+def compare_symbols(old_syms, new_syms):
+    all_names = set(old_syms.keys()).union(set(new_syms.keys()))
+    deltas = []
+
+    add_count = 0
+    remove_count = 0
+    grow_count = 0
+    shrink_count = 0
+    total_up = 0
+    total_down = 0
+
+    old_total = sum(s["size"] for s in old_syms.values())
+    new_total = sum(s["size"] for s in new_syms.values())
+
+    for name in all_names:
+        old_size = old_syms.get(name, {}).get("size", 0)
+        new_size = new_syms.get(name, {}).get("size", 0)
+        stype = new_syms.get(name, {}).get("type") or old_syms.get(name, {}).get("type", "?")
+
+        delta = new_size - old_size
+        if delta == 0:
+            continue
+
+        if old_size == 0:
+            add_count += 1
+            total_up += delta
+        elif new_size == 0:
+            remove_count += 1
+            total_down += abs(delta)
+        elif delta > 0:
+            grow_count += 1
+            total_up += delta
+        else:
+            shrink_count += 1
+            total_down += abs(delta)
+
+        deltas.append({
+            "name": name,
+            "old": old_size,
+            "new": new_size,
+            "delta": delta,
+            "type": stype
+        })
+
+    # Sort deltas descending by absolute delta magnitude
+    deltas.sort(key=lambda x: abs(x["delta"]), reverse=True)
+
+    net_delta = new_total - old_total
+    percent = (net_delta / old_total * 100.0) if old_total > 0 else 0.0
+
+    summary = {
+        "add": add_count,
+        "remove": remove_count,
+        "grow": grow_count,
+        "shrink": shrink_count,
+        "up": total_up,
+        "down": total_down,
+        "net": net_delta,
+        "old_total": old_total,
+        "new_total": new_total,
+        "percent": percent,
+        "deltas": deltas
+    }
+
+    return summary
+
+def format_report(summary, compact=False, limit=0):
+    lines = []
+    lines.append(
+        f"add/remove: {summary['add']}/{summary['remove']} "
+        f"grow/shrink: {summary['grow']}/{summary['shrink']} "
+        f"up/down: {summary['up']}/-{summary['down']} ({summary['net']})"
+    )
+
+    if not compact:
+        header = f"{'Function / Symbol':<60} {'old':>8} {'new':>8} {'delta':>8}"
+        lines.append(header)
+        lines.append("-" * len(header))
+
+        count = 0
+        for item in summary["deltas"]:
+            if limit > 0 and count >= limit:
+                lines.append(f"... ({len(summary['deltas']) - count} additional symbols omitted)")
+                break
+
+            sign = "+" if item["delta"] > 0 else ""
+            old_str = str(item["old"]) if item["old"] > 0 else "-"
+            new_str = str(item["new"]) if item["new"] > 0 else "-"
+            delta_str = f"{sign}{item['delta']}"
+
+            # Truncate symbol name cleanly if exceptionally long
+            name = item["name"]
+            if len(name) > 58:
+                name = name[:55] + "..."
+
+            lines.append(f"{name:<60} {old_str:>8} {new_str:>8} {delta_str:>8}")
+            count += 1
+
+    sign = "+" if summary["net"] > 0 else ""
+    lines.append(
+        f"Total: Before={summary['old_total']}, After={summary['new_total']}, "
+        f"delta={sign}{summary['net']} ({sign}{summary['percent']:.2f}%)"
+    )
+
+    return "\n".join(lines)
+
+def run_self_tests():
+    import unittest
+
+    class TestBloatOMeter(unittest.TestCase):
+        def test_parse_nm_line(self):
+            line = "0000000000000145 T ap_main"
+            parsed = parse_nm_line(line)
+            self.assertIsNotNone(parsed)
+            name, size, stype = parsed
+            self.assertEqual(name, "ap_main")
+            self.assertEqual(size, 0x145)
+            self.assertEqual(stype, "T")
+
+        def test_parse_nm_line_invalid(self):
+            self.assertIsNone(parse_nm_line(""))
+            self.assertIsNone(parse_nm_line("not enough parts"))
+            self.assertIsNone(parse_nm_line("invalid_hex T ap_main"))
+
+        def test_compare_symbols(self):
+            old_syms = {
+                "func_same": {"size": 100, "type": "T"},
+                "func_grown": {"size": 200, "type": "T"},
+                "func_shrunk": {"size": 300, "type": "T"},
+                "func_removed": {"size": 150, "type": "T"},
+            }
+            new_syms = {
+                "func_same": {"size": 100, "type": "T"},
+                "func_grown": {"size": 250, "type": "T"},
+                "func_shrunk": {"size": 260, "type": "T"},
+                "func_added": {"size": 80, "type": "T"},
+            }
+            summary = compare_symbols(old_syms, new_syms)
+            self.assertEqual(summary["add"], 1)
+            self.assertEqual(summary["remove"], 1)
+            self.assertEqual(summary["grow"], 1)
+            self.assertEqual(summary["shrink"], 1)
+            self.assertEqual(summary["up"], 130)
+            self.assertEqual(summary["down"], 190)
+            self.assertEqual(summary["old_total"], 750)
+            self.assertEqual(summary["new_total"], 690)
+
+        def test_format_report(self):
+            old_syms = {"func_a": {"size": 100, "type": "T"}}
+            new_syms = {"func_a": {"size": 120, "type": "T"}}
+            summary = compare_symbols(old_syms, new_syms)
+            report = format_report(summary, compact=False)
+            self.assertIn("add/remove: 0/0", report)
+            self.assertIn("grow/shrink: 1/0", report)
+            self.assertIn("func_a", report)
+            self.assertIn("+20", report)
+
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestBloatOMeter)
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    return 0 if result.wasSuccessful() else 1
+
+def main():
+    if "--test" in sys.argv:
+        return run_self_tests()
+
+    parser = argparse.ArgumentParser(
+        description="Keira Kernel - Binary Footprint and Symbol Delta Analyzer"
+    )
+    parser.add_argument("file1", help="Baseline ELF binary or nm symbol dump")
+    parser.add_argument("file2", help="Modified ELF binary or nm symbol dump")
+    parser.add_argument("-c", "--compact", action="store_true", help="Print compact summary only")
+    parser.add_argument("-n", "--limit", type=int, default=50, help="Max symbol rows to display (0 for all)")
+    parser.add_argument("--tool", help="Specify custom nm binary path")
+    parser.add_argument("--test", action="store_true", help="Execute built-in unit tests")
+
+    args = parser.parse_args()
+
+    try:
+        old_syms = parse_symbols(args.file1, nm_tool=args.tool)
+        new_syms = parse_symbols(args.file2, nm_tool=args.tool)
+    except Exception as e:
+        print(f"bloat-o-meter: error: {e}", file=sys.stderr)
+        return 1
+
+    summary = compare_symbols(old_syms, new_syms)
+    report = format_report(summary, compact=args.compact, limit=args.limit)
+    print(report)
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

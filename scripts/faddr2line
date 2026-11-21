@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Keira Kernel - Fault Address and Stack Frame Symbolizer
+#
+# Translates raw CPU addresses and symbol+offset expressions to source code locations.
+# Modeled after Linux kernel scripts/faddr2line.
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+def find_tool(name_list):
+    for name in name_list:
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
+
+def find_symbol_in_binary(binary_path, sym_name, nm_tool=None):
+    tool = nm_tool or find_tool(["llvm-nm", "nm"])
+    if not tool:
+        raise FileNotFoundError("Neither 'llvm-nm' nor 'nm' was found in PATH")
+
+    cmd = [tool, "-S", "-C", binary_path]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+
+    matches = []
+    for line in res.stdout.splitlines():
+        parts = line.strip().split()
+        if len(parts) >= 3:
+            addr_str = parts[0]
+            if len(parts) >= 4:
+                size_str = parts[1]
+                stype = parts[2]
+                name = " ".join(parts[3:])
+            else:
+                size_str = "0"
+                stype = parts[1]
+                name = " ".join(parts[2:])
+
+            if name == sym_name:
+                try:
+                    addr = int(addr_str, 16)
+                    size = int(size_str, 16)
+                    matches.append((addr, size, stype, name))
+                except ValueError:
+                    continue
+
+    if not matches:
+        return None
+
+    # Return the first text or data match
+    for m in matches:
+        if m[2].lower() in ["t", "w"]:
+            return m
+    return matches[0]
+
+def parse_address_spec(spec):
+    # Matches patterns like:
+    # 1. 0x001014d7
+    # 2. kswapd_step+0x18/0x80
+    # 3. kswapd_step+0x18
+    # 4. ap_main+20
+    hex_direct = re.match(r"^(0x)?[0-9a-fA-F]+$", spec)
+    if hex_direct:
+        addr = int(spec, 16)
+        return {"type": "direct", "address": addr, "spec": spec}
+
+    sym_pattern = re.match(r"^([a-zA-Z0-9_:]+)\+(0x[0-9a-fA-F]+|[0-9]+)(?:/(0x[0-9a-fA-F]+|[0-9]+))?$", spec)
+    if sym_pattern:
+        sym_name = sym_pattern.group(1)
+        offset_str = sym_pattern.group(2)
+        size_str = sym_pattern.group(3)
+
+        offset = int(offset_str, 16) if offset_str.startswith("0x") else int(offset_str)
+        size = None
+        if size_str:
+            size = int(size_str, 16) if size_str.startswith("0x") else int(size_str)
+
+        return {
+            "type": "symbolic",
+            "symbol": sym_name,
+            "offset": offset,
+            "size": size,
+            "spec": spec
+        }
+
+    return None
+
+def resolve_address(binary_path, address, addr2line_tool=None):
+    tool = addr2line_tool or find_tool(["llvm-addr2line", "addr2line"])
+    if not tool:
+        raise FileNotFoundError("Neither 'llvm-addr2line' nor 'addr2line' was found in PATH")
+
+    cmd = [tool, "-e", binary_path, "-f", "-C", "-i", hex(address)]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+
+    lines = res.stdout.strip().splitlines()
+    frames = []
+
+    # Output alternates between function name and file:line
+    idx = 0
+    while idx < len(lines):
+        func = lines[idx]
+        loc = lines[idx + 1] if (idx + 1 < len(lines)) else "?:0"
+        frames.append((func, loc))
+        idx += 2
+
+    return frames
+
+def symbolize(binary_path, spec_str, nm_tool=None, addr2line_tool=None):
+    if not os.path.isfile(binary_path):
+        raise FileNotFoundError(f"Binary file '{binary_path}' not found")
+
+    spec = parse_address_spec(spec_str)
+    if not spec:
+        raise ValueError(f"Unrecognized address specification format: '{spec_str}'")
+
+    if spec["type"] == "direct":
+        addr = spec["address"]
+        frames = resolve_address(binary_path, addr, addr2line_tool=addr2line_tool)
+        output_lines = [f"{hex(addr)}:"]
+        for func, loc in frames:
+            output_lines.append(f"  {func} at {loc}")
+        return "\n".join(output_lines)
+
+    # Symbolic resolution
+    sym_info = find_symbol_in_binary(binary_path, spec["symbol"], nm_tool=nm_tool)
+    if not sym_info:
+        raise ValueError(f"Symbol '{spec['symbol']}' not found in binary symbol table")
+
+    base_addr, sym_size, stype, name = sym_info
+    target_addr = base_addr + spec["offset"]
+
+    if spec["size"] and sym_size and spec["size"] != sym_size:
+        print(
+            f"faddr2line: warning: specified size ({spec['size']}) does not match symbol size ({sym_size})",
+            file=sys.stderr
+        )
+
+    if sym_size and spec["offset"] >= sym_size:
+        print(
+            f"faddr2line: warning: offset {spec['offset']} exceeds symbol boundary {sym_size}",
+            file=sys.stderr
+        )
+
+    frames = resolve_address(binary_path, target_addr, addr2line_tool=addr2line_tool)
+    header = f"{spec['symbol']}+{hex(spec['offset'])}"
+    if spec["size"]:
+        header += f"/{hex(spec['size'])}"
+    header += f" ({hex(target_addr)}):"
+
+    output_lines = [header]
+    for func, loc in frames:
+        output_lines.append(f"  {func} at {loc}")
+
+    return "\n".join(output_lines)
+
+def run_self_tests():
+    import unittest
+
+    class TestFaddr2Line(unittest.TestCase):
+        def test_parse_address_spec_direct_hex(self):
+            spec1 = parse_address_spec("0x001014d7")
+            self.assertIsNotNone(spec1)
+            self.assertEqual(spec1["type"], "direct")
+            self.assertEqual(spec1["address"], 0x1014d7)
+
+            spec2 = parse_address_spec("1014d7")
+            self.assertIsNotNone(spec2)
+            self.assertEqual(spec2["type"], "direct")
+            self.assertEqual(spec2["address"], 0x1014d7)
+
+        def test_parse_address_spec_symbolic(self):
+            spec = parse_address_spec("kswapd_step+0x18/0x80")
+            self.assertIsNotNone(spec)
+            self.assertEqual(spec["type"], "symbolic")
+            self.assertEqual(spec["symbol"], "kswapd_step")
+            self.assertEqual(spec["offset"], 0x18)
+            self.assertEqual(spec["size"], 0x80)
+
+        def test_parse_address_spec_symbolic_no_size(self):
+            spec = parse_address_spec("ap_main+20")
+            self.assertIsNotNone(spec)
+            self.assertEqual(spec["type"], "symbolic")
+            self.assertEqual(spec["symbol"], "ap_main")
+            self.assertEqual(spec["offset"], 20)
+            self.assertIsNone(spec["size"])
+
+        def test_parse_address_spec_invalid(self):
+            self.assertIsNone(parse_address_spec(""))
+            self.assertIsNone(parse_address_spec("invalid symbol name with spaces"))
+            self.assertIsNone(parse_address_spec("func++0x10"))
+
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestFaddr2Line)
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    return 0 if result.wasSuccessful() else 1
+
+def main():
+    if "--test" in sys.argv:
+        return run_self_tests()
+
+    parser = argparse.ArgumentParser(
+        description="Keira Kernel - Fault Address and Stack Frame Symbolizer"
+    )
+    parser.add_argument("binary", help="Target ELF kernel binary (e.g. build/x86/x86_64/bin/keira.bin)")
+    parser.add_argument("address", help="Fault address (e.g. 0x001014d7 or kswapd_step+0x18/0x80)")
+    parser.add_argument("--nm-tool", help="Specify custom nm binary path")
+    parser.add_argument("--addr2line-tool", help="Specify custom addr2line binary path")
+    parser.add_argument("--test", action="store_true", help="Execute built-in unit tests")
+
+    args = parser.parse_args()
+
+    try:
+        res = symbolize(
+            args.binary,
+            args.address,
+            nm_tool=args.nm_tool,
+            addr2line_tool=args.addr2line_tool
+        )
+        print(res)
+    except Exception as e:
+        print(f"faddr2line: error: {e}", file=sys.stderr)
+        return 1
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
