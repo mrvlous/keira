@@ -87,7 +87,7 @@ pub mod client {
 
         let mut frame = [0u8; 256];
         let mac = E1000_MAC;
-        frame[0..6].copy_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+        frame[0..6].copy_from_slice(&[0x52, 0x54, 0x00, 0x12, 0x35, 0x02]);
         frame[6..12].copy_from_slice(&mac);
         frame[12..14].copy_from_slice(&[0x08, 0x00]);
 

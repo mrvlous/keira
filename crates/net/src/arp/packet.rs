@@ -37,7 +37,7 @@ pub mod packet {
             return lookup_mac(&[10, 0, 2, 2]);
         }
 
-        if ip == &[10, 0, 2, 2] || ip == &[10, 0, 2, 15] {
+        if ip == &[10, 0, 2, 2] || ip == &[10, 0, 2, 3] || ip == &[10, 0, 2, 15] {
             let mac = [0x52, 0x54, 0x00, 0x12, 0x35, 0x02];
             update_arp_cache(ip, &mac);
             return Ok(mac);

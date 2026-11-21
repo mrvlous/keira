@@ -54,9 +54,15 @@ static int parse_url(const char *url, char *host, size_t host_sz, uint16_t *port
     }
 
     const char *slash = strchr(p, '/');
+    const char *question = strchr(p, '?');
     const char *colon = strchr(p, ':');
 
-    if (slash && colon && colon > slash) {
+    const char *term = slash;
+    if (question && (!term || question < term)) {
+        term = question;
+    }
+
+    if (term && colon && colon > term) {
         colon = NULL;
     }
 
@@ -64,8 +70,8 @@ static int parse_url(const char *url, char *host, size_t host_sz, uint16_t *port
     if (colon) {
         host_len = (size_t)(colon - p);
         *port = (uint16_t)atoi(colon + 1);
-    } else if (slash) {
-        host_len = (size_t)(slash - p);
+    } else if (term) {
+        host_len = (size_t)(term - p);
         *port = 80;
     } else {
         host_len = strlen(p);
@@ -85,6 +91,8 @@ static int parse_url(const char *url, char *host, size_t host_sz, uint16_t *port
         }
         memcpy(path, slash, p_len);
         path[p_len] = '\0';
+    } else if (question) {
+        snprintf(path, path_sz, "/%s", question);
     } else {
         strncpy(path, "/", path_sz - 1);
         path[path_sz - 1] = '\0';
