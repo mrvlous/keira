@@ -21,6 +21,10 @@ Command Reference
      - ``aslrinfo [-v] [0|1|2]``
      - Display and configure Address Space Layout Randomization (ASLR) and hardware entropy status (alias: ``aslr``)
      - ``-v, --verbose``: Display per-task randomized layout table ``-h, --help``: Usage info
+   * - ``buddyinfo``
+     - ``buddyinfo [-z <zone>] [-v]``
+     - Display binary buddy allocator free page fragmentation by order (alias: ``buddy``)
+     - ``-z, --zone <name>``: Filter by zone ``-v, --verbose``: Chunk sizes and capacities ``-h, --help``: Usage info
    * - ``cpu``
      - ``cpu``
      - Display processor model, feature flags, APIC clock, context switches and ticks
@@ -58,9 +62,9 @@ Command Reference
      - Display IDT interrupt vector routing and processed hit counters
      - ``-h, --help``
    * - ``memory``
-     - ``memory [-t|-p|-c|-l]``
-     - Display physical memory (PMM) frames, kernel heap and Copy-On-Write statistics (alias: ``mem``)
-     - ``-c, --cow``: Copy-On-Write sharing and fault metrics ``-p, --paging``: Paging, COW and #PF telemetry ``-l, --slab``: Magazine slab cache stats ``-t, --test``: Heap stress test ``-h, --help``: Usage info
+     - ``memory [-t|-p|-c|-l|-z]``
+     - Display physical memory (PMM) frames, zones, kernel heap and Copy-On-Write statistics (alias: ``mem``)
+     - ``-z, --zone``: Zone watermarks ``-c, --cow``: Copy-On-Write sharing and fault metrics ``-p, --paging``: Paging, COW and #PF telemetry ``-l, --slab``: Magazine slab cache stats ``-t, --test``: Heap stress test ``-h, --help``: Usage info
    * - ``mount``
      - ``mount``
      - Display Virtual Filesystem mount table, filesystem types and root bindings

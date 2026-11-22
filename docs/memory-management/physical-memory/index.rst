@@ -13,5 +13,6 @@ Subtopics & Specifications
    :maxdepth: 1
 
    bitmap-allocator
+   buddy-allocator
    dma-buffers
    memory-regions
