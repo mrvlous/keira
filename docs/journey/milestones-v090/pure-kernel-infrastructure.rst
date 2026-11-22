@@ -9,7 +9,7 @@ Milestone 62 deepens Keira's architectural identity as a pure freestanding monol
 1. Architectural Motivation & Pure Kernel Principles
 ====================================================
 
-Keira is fundamentally a bare-metal monolithic kernel written from first principles in Ring 0. Userland (Ring 3) is strictly an optional reference payload. Operating systems like Linux manage all critical system activities inside Ring 0:
+Keira is fundamentally a bare-metal monolithic kernel written from first principles in Ring 0. Userland (Ring 3) is strictly an optional reference payload. Monolithic kernels like Linux manage all critical system activities inside Ring 0:
 
 1. **Kernel Threads**: Background tasks must execute autonomously in Ring 0 with kernel page table mappings and kernel stacks, without relying on userspace runtimes or synthetic loops.
 2. **Modular In-Kernel Extensions**: The kernel must provide dynamic tracking and lifecycle control for device drivers and filesystems in kernel memory (``MODULE_TABLE``).

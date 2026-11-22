@@ -12,7 +12,7 @@ Historical Context & The Build Scalability Barrier
 --------------------------------------------------
 
 Across 59 preceding milestones, Keira Kernel evolved into a full-featured SMP
-operating system spanning 12 crates, 114 POSIX system calls, bare-metal networking
+monolithic kernel spanning 12 crates, 114 POSIX system calls, bare-metal networking
 and 47 Ring 3 userland utilities. However, source files and compilation targets
 were manually enumerated in root ``Makefile`` and ``userland/Makefile``.
 
@@ -24,7 +24,7 @@ architectural drawbacks:
 2. **Conditional Complexity**: Selective feature toggles (such as disabling ``kcc``
    or ABI test suites) relied on manual ``filter-out`` macro logic.
 3. **Subsystem Isolation**: Subdirectories lacked self-contained build manifests,
-   deviating from the modular organization found in production operating systems.
+   deviating from the modular organization found in production monolithic kernels.
 
 Architectural Design & Subdirectory Kbuild Manifests
 ----------------------------------------------------

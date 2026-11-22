@@ -13,7 +13,7 @@ automatic generation of C header macros in ``include/generated/autoconf.h``.
 Overview & Architectural Philosophy
 -----------------------------------
 
-Operating system kernels manage diverse hardware platforms, optional subsystems
+Monolithic kernels manage diverse hardware platforms, optional subsystems
 and compile-time features. Hardcoding these selections or relying solely on
 scattered environment variables creates fragile build configurations. The Linux
 kernel solved this challenge through Kconfig: a declarative domain-specific

@@ -9,7 +9,7 @@ Milestone 57 introduces POSIX process groups, session leader management and cano
 1. Architectural Motivation
 ===========================
 
-Modern UNIX operating systems manage groups of related processes using Process Group Identifiers (PGID) and Session Identifiers (SID). Prior to Milestone 57, each task possessed credentials (UID, EUID, GID and EGID) but lacked group and session identifiers. This prevented the standalone userspace shell (``sh.elf``) from tracking background jobs, organizing pipelines into distinct execution groups or bringing asynchronous tasks back to the foreground.
+Modern POSIX kernel environments manage groups of related processes using Process Group Identifiers (PGID) and Session Identifiers (SID). Prior to Milestone 57, each task possessed credentials (UID, EUID, GID and EGID) but lacked group and session identifiers. This prevented the standalone userspace shell (``sh.elf``) from tracking background jobs, organizing pipelines into distinct execution groups or bringing asynchronous tasks back to the foreground.
 
 With Milestone 57:
 1. **Task Control Block Tracking**: Every task maintains ``pgid: usize`` and ``sid: usize`` in its task control block.

@@ -9,7 +9,7 @@ Milestone 63 advances Keira's Ring 0 pure kernel architecture by introducing a n
 1. Architectural Motivation & Pure Kernel Dynamic Linking
 =========================================================
 
-In a freestanding monolithic operating system modeled after Linux, modularity must be achieved through dynamic in-kernel object linking:
+In a freestanding monolithic kernel modeled after Linux, modularity must be achieved through dynamic in-kernel object linking:
 
 1. **Relocatable ELF Files (``ET_REL``)**: Kernel modules are compiled as standalone object files without fixed memory addresses. The kernel itself must parse section headers, allocate kernel memory frames and resolve inter-section references.
 2. **Architectural Relocation Engines**: The kernel must compute and patch machine instruction targets directly in memory for both 64-bit (``x86_64``) and 32-bit (``i686``) architectures.

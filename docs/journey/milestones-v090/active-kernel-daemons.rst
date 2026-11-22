@@ -9,7 +9,7 @@ Milestone 64 advances Keira's Ring 0 pure kernel architecture by activating back
 1. Architectural Motivation & Pure Ring 0 Kernel Threads
 ========================================================
 
-In monolithic operating systems modeled after Linux, background asynchronous maintenance tasks must execute within dedicated kernel contexts rather than blocking foreground user applications or shell consoles:
+In monolithic kernels modeled after Linux, background asynchronous maintenance tasks must execute within dedicated kernel contexts rather than blocking foreground user applications or shell consoles:
 
 1. **Pure Ring 0 Execution**: Kernel threads (``kthreads``) have no user-mode address space, no Ring 3 stacks and no userspace C runtime (``libc``). They execute strictly in supervisor mode and are scheduled by the kernel scheduler alongside other tasks.
 2. **Page Cache Dirty Writeback (``[kflushd]``)**: When tasks write file data through the Virtual Filesystem (VFS), data is cached in 4096-byte page cache buffer heads and flagged as dirty. An autonomous daemon must periodically audit the page cache, lock dirty entries, commit modified blocks to physical storage (SATA AHCI / NVMe / RAM disk) and clear dirty flags.
