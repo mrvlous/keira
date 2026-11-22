@@ -31,7 +31,8 @@ pub mod misc {
             vga::print_str("Diagnostics:\n");
             vga::print_str("  system         Display system summary, version and uptime\n");
             vga::print_str("  cpu, smp       Processor topology, features and SMP cores\n");
-            vga::print_str("  memory, slab   Physical, virtual and slab allocator metrics\n");
+            vga::print_str("  memory, buddy  Physical memory, buddy orders and zone watermarks\n");
+            vga::print_str("  slab, slabinfo Kernel slab object caches and CPU depot magazines\n");
             vga::print_str("  devices, pci   PCI hardware buses and peripheral devices\n");
             vga::print_str("  drivers, lsmod Hardware drivers and loadable kernel modules\n");
             vga::print_str("  regs, irq      CPU registers and interrupt request lines\n\n");

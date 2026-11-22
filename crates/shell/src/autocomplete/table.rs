@@ -23,6 +23,8 @@ pub mod engine {
     pub const COMMANDS_LIST: &[&str] = &[
         "aslr",
         "aslrinfo",
+        "buddy",
+        "buddyinfo",
         "cpu",
         "daemons",
         "dcache",

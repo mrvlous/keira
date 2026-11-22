@@ -2,7 +2,7 @@
 
 # Supervisor Diagnostic Shell Crate (keira-shell)
 #
-# Implements Ring 0 emergency interactive shell, 33 diagnostic commands,
+# Implements Ring 0 emergency interactive shell, 34 diagnostic commands,
 # CliArgs tokenizer, tab auto-completion and kvi modal text editor.
 
 [package]

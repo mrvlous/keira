@@ -1114,7 +1114,7 @@ pub mod info {
             if args.has_flag('h', "help") {
                 {
                     vga::set_color(vga::Color::White, vga::Color::Black);
-                    vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-c] [-l]\n\n");
+                    vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-c] [-l] [-z] [-h]\n\n");
                     vga::print_str(
                 "Description:\n  Display physical frame allocator, kernel heap and paging statistics.\n\n",
             );
@@ -1132,6 +1132,9 @@ pub mod info {
                     );
                     vga::print_str(
                         "  -l, --slab     Display magazine slab object cache telemetry\n",
+                    );
+                    vga::print_str(
+                        "  -z, --zone     Display physical memory zone statistics and watermarks\n",
                     );
                     vga::print_str("  -h, --help     Show this help message and exit\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
@@ -1174,6 +1177,11 @@ pub mod info {
 
             if args.has_flag('l', "slab") {
                 display_slab_cache_telemetry();
+                return;
+            }
+
+            if args.has_flag('z', "zone") {
+                display_zone_watermark_telemetry();
                 return;
             }
 
@@ -1311,6 +1319,8 @@ pub mod info {
                     print_padded_num(phys_free / 1024, " KB");
                 }
                 vga::print_str("\n\n");
+                display_zone_watermark_telemetry();
+                vga::print_str("\n");
 
                 let (_total, _used, _free, peak_bytes, active_allocs, fragmentation_pct) =
                     keira_mem::heap_get_telemetry();
@@ -1339,6 +1349,25 @@ pub mod info {
                 vga::print_str("  Fragmentation     : ");
                 vga::print_u64(fragmentation_pct as u64);
                 vga::print_str(" %\n");
+            }
+        }
+
+        fn display_zone_watermark_telemetry() {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Physical Memory Zones & Watermarks:\n");
+            vga::print_str("ZONE      MANAGED    FREE       WMARK_MIN  WMARK_LOW  WMARK_HIGH\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("--------  ---------  ---------  ---------  ---------  ----------\n");
+
+            let zones = keira_mem::get_all_zones();
+            for zone in zones {
+                print_fixed_str(zone.name, 10);
+                print_fixed_u64(zone.managed_pages as u64, 11);
+                print_fixed_u64(zone.free_pages as u64, 11);
+                print_fixed_u64(zone.wmark_min as u64, 11);
+                print_fixed_u64(zone.wmark_low as u64, 11);
+                print_fixed_u64(zone.wmark_high as u64, 11);
+                vga::print_str("\n");
             }
         }
 
@@ -2507,6 +2536,132 @@ pub mod info {
             }
         }
     }
+    pub mod buddyinfo {
+        use crate::args::CliArgs;
+        use keira_io::vga;
+        use keira_mem::{get_all_zones, MAX_ORDER};
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let args = CliArgs::parse(parts);
+
+            if args.has_flag('h', "help") {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: buddyinfo [-z <zone>] [-v] [-h]\n\n");
+                vga::print_str(
+                    "Description:\n  Display binary buddy allocator free page fragmentation by order.\n\n",
+                );
+                vga::print_str("Options:\n");
+                vga::print_str("  -z, --zone <name> Filter output by memory zone (DMA, Normal, HighMem)\n");
+                vga::print_str("  -v, --verbose     Display chunk sizes and memory capacities per order\n");
+                vga::print_str("  -h, --help        Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            if args.has_flag('v', "verbose") {
+                display_verbose_buddyinfo();
+                return;
+            }
+
+            display_standard_buddyinfo(args.get_opt('z', "zone"));
+        }
+
+        fn display_standard_buddyinfo(zone_filter: Option<&str>) {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Binary Buddy Allocator Free Page Chunks by Order:\n");
+            vga::print_str("Zone         0      1      2      3      4      5      6      7      8      9     10\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("------- ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------\n");
+
+            let zones = get_all_zones();
+            for zone in zones {
+                if let Some(target) = zone_filter {
+                    if !zone.name.eq_ignore_ascii_case(target) {
+                        continue;
+                    }
+                }
+                print_padded_zone_name(zone.name);
+                for order in 0..=MAX_ORDER {
+                    let count = zone.free_areas[order].nr_free;
+                    print_padded_order_num(count);
+                }
+                vga::print_str("\n");
+            }
+        }
+
+        fn display_verbose_buddyinfo() {
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Buddy Allocator Order Hierarchy & Sizes:\n");
+            vga::print_str("ORDER  CHUNK SIZE  PAGES  DMA CHUNKS  NORMAL CHUNKS  HIGHMEM CHUNKS\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("-----  ----------  -----  ----------  -------------  --------------\n");
+
+            let zones = get_all_zones();
+            for order in 0..=MAX_ORDER {
+                let pages = 1usize << order;
+                let kb = pages * 4;
+                vga::print_str(" ");
+                vga::print_u64(order as u64);
+                if order < 10 {
+                    vga::print_str("     ");
+                } else {
+                    vga::print_str("    ");
+                }
+                if kb >= 1024 {
+                    vga::print_u64((kb / 1024) as u64);
+                    vga::print_str(" MB       ");
+                } else {
+                    vga::print_u64(kb as u64);
+                    if kb < 10 {
+                        vga::print_str(" KB       ");
+                    } else if kb < 100 {
+                        vga::print_str(" KB      ");
+                    } else {
+                        vga::print_str(" KB     ");
+                    }
+                }
+                vga::print_u64(pages as u64);
+                if pages < 10 {
+                    vga::print_str("      ");
+                } else if pages < 100 {
+                    vga::print_str("     ");
+                } else if pages < 1000 {
+                    vga::print_str("    ");
+                } else {
+                    vga::print_str("   ");
+                }
+
+                for zone in zones {
+                    let count = zone.free_areas[order].nr_free;
+                    print_padded_order_num(count);
+                    vga::print_str("     ");
+                }
+                vga::print_str("\n");
+            }
+        }
+
+        fn print_padded_zone_name(name: &str) {
+            vga::print_str(name);
+            let pad = 7usize.saturating_sub(name.len());
+            for _ in 0..pad {
+                vga::print_str(" ");
+            }
+        }
+
+        fn print_padded_order_num(num: usize) {
+            let mut digits = 1;
+            let mut temp = num;
+            while temp >= 10 {
+                digits += 1;
+                temp /= 10;
+            }
+            let spaces = 7usize.saturating_sub(digits);
+            for _ in 0..spaces {
+                vga::print_str(" ");
+            }
+            vga::print_u64(num as u64);
+        }
+    }
     pub mod smp {
         use crate::args::CliArgs;
         use keira_arch::smp::{get_core_info, get_online_cores_count, init_smp, CoreStatus};
@@ -3147,6 +3302,7 @@ pub use self::daemon::daemons;
 pub use self::daemon::syslog;
 pub use self::daemon::watchpoint;
 pub use self::info::aslrinfo;
+pub use self::info::buddyinfo;
 pub use self::info::cpu;
 pub use self::info::irq;
 pub use self::info::memory;
@@ -3215,6 +3371,28 @@ mod tests {
         let mut args = "memory --help".split_whitespace();
         args.next();
         memory::run(&mut args);
+
+        let mut args_zone = "memory -z".split_whitespace();
+        args_zone.next();
+        memory::run(&mut args_zone);
+    }
+
+    #[test]
+    fn test_sys_buddyinfo() {
+        let mut args_help = "buddyinfo --help".split_whitespace();
+        args_help.next();
+        buddyinfo::run(&mut args_help);
+
+        let mut args_verbose = "buddyinfo -v".split_whitespace();
+        args_verbose.next();
+        buddyinfo::run(&mut args_verbose);
+
+        let mut args_zone = "buddyinfo -z DMA".split_whitespace();
+        args_zone.next();
+        buddyinfo::run(&mut args_zone);
+
+        let mut args_default = "".split_whitespace();
+        buddyinfo::run(&mut args_default);
     }
 
     #[test]

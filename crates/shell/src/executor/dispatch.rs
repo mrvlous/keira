@@ -159,6 +159,7 @@ pub mod router {
             "cpu" => crate::cmds::cpu::run(&mut parts),
             "smp" => crate::cmds::smp::run(&mut parts),
             "memory" | "mem" => crate::cmds::memory::run(&mut parts),
+            "buddyinfo" | "buddy" => crate::cmds::buddyinfo::run(&mut parts),
             "slabinfo" | "slab" => crate::cmds::slabinfo::run(&mut parts),
             "devices" | "pci" => crate::cmds::devices::run(&mut parts),
             "drivers" => crate::cmds::drivers::run(&mut parts),
