@@ -15,6 +15,7 @@
 //! System-level diagnostic and telemetry ProcFS nodes.
 
 pub mod aslr;
+pub mod buddyinfo;
 pub mod cpuinfo;
 pub mod daemons;
 pub mod hooks;
@@ -41,6 +42,7 @@ pub mod version;
 pub mod vmstat;
 
 pub use self::aslr::read_randomize_va_space;
+pub use self::buddyinfo::read_buddyinfo;
 pub use self::cpuinfo::read_cpuinfo;
 pub use self::daemons::read_daemons;
 pub use self::hooks::*;

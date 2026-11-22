@@ -59,7 +59,8 @@ fn test_virtual_directory_enumeration() {
     assert_eq!(proc::get_proc_entry(10).map(|e| e.name), Some("self"));
     assert_eq!(proc::get_proc_entry(11).map(|e| e.name), Some("sys"));
     assert_eq!(proc::get_proc_entry(12).map(|e| e.name), Some("daemons"));
-    assert_eq!(proc::get_proc_entry(13), None);
+    assert_eq!(proc::get_proc_entry(13).map(|e| e.name), Some("buddyinfo"));
+    assert_eq!(proc::get_proc_entry(14), None);
 }
 
 #[test]

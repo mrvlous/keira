@@ -20,6 +20,7 @@ use super::*;
 fn test_procfs_nodes_exist() {
     assert!(exists("uptime"));
     assert!(exists("meminfo"));
+    assert!(exists("buddyinfo"));
     assert!(exists("slabinfo"));
     assert!(exists("vmstat"));
     assert!(exists("cpuinfo"));
@@ -108,6 +109,16 @@ fn test_read_slabinfo_and_vmstat() {
     assert!(s.contains("nr_alloc_pages"));
     assert!(s.contains("pgfault"));
     assert!(s.contains("tlb_flushes"));
+}
+
+#[test]
+fn test_read_buddyinfo() {
+    let mut buf = [0u8; 1024];
+    let n = read_proc_file("buddyinfo", &mut buf).expect("read buddyinfo failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 buddyinfo");
+    assert!(s.contains("Node 0, zone      DMA"));
+    assert!(s.contains("Node 0, zone   Normal"));
+    assert!(s.contains("Node 0, zone  HighMem"));
 }
 
 #[test]
