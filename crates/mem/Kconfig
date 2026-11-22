@@ -3,7 +3,7 @@
 # Memory Management Subsystem Configuration
 #
 # Configures Address Space Layout Randomization (ASLR), Write XOR Execute (W^X)
-# mitigations and virtual memory protection.
+# mitigations, binary buddy page allocator and physical memory zones.
 
 menu "Memory Management & Protection"
 
@@ -20,5 +20,20 @@ config W_XOR_X
 	help
 	  Enforce strict W^X page table flags ensuring memory pages are
 	  never simultaneously writable and executable.
+
+config BUDDY_ALLOCATOR
+	bool "Binary Buddy Page Allocator"
+	default y
+	help
+	  Enable power-of-two binary buddy page frame allocator with
+	  order chunk splitting, bitwise XOR buddy pairing and recursive
+	  coalescing.
+
+config MEMORY_ZONES
+	bool "Physical Memory Zone Architecture"
+	default y
+	help
+	  Categorize physical RAM into ZONE_DMA, ZONE_NORMAL and ZONE_HIGHMEM
+	  with watermark threshold monitoring for background reclamation.
 
 endmenu

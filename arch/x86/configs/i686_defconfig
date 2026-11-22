@@ -30,6 +30,8 @@ CONFIG_MAX_CPUS=2
 # Hardware and virtual memory security hardening.
 CONFIG_ASLR=y
 CONFIG_W_XOR_X=y
+CONFIG_BUDDY_ALLOCATOR=y
+CONFIG_MEMORY_ZONES=y
 
 #
 # Scheduler & Task Concurrency
