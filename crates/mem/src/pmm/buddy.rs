@@ -20,10 +20,10 @@
 
 use super::frame::types::{MAX_PHYS_ADDR_LIMIT, MAX_TRACKED_FRAMES, PAGE_SIZE};
 
-/// Maximum allocation order supported by the buddy allocator (4 KB to 8 MB).
-pub const MAX_ORDER: usize = 11;
+/// Maximum allocation order supported by the buddy allocator (4 KB to 4 MB).
+pub const MAX_ORDER: usize = 10;
 
-/// Total number of distinct allocation order levels (0 through 11 inclusive).
+/// Total number of distinct allocation order levels (0 through 10 inclusive).
 pub const ORDER_COUNT: usize = MAX_ORDER + 1;
 
 /// Total 64-bit words required to store 4-bit order tags across 1,048,576 frames.

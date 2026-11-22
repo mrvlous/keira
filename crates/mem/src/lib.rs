@@ -41,13 +41,15 @@ pub use heap::{
 pub use pmm::TEST_MUTEX;
 pub use pmm::{
     active_shared_frames, alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount,
-    free_contiguous_frames, free_frame, free_memory, get_cow_refcount_stats, get_freed_frame_count,
-    get_stats, init as pmm_init, is_frame_allocated, is_valid_ram_range, mark_frame_allocated,
-    mark_frame_free, max_physical_address, peak_shared_frames, release_frame, reset_pmm_stats,
-    reset_refcounts, retain_frame, set_test_ram_region, set_test_ram_region_empty, total_memory,
-    total_usable_memory, used_memory, verify_pmm_invariants, verify_pmm_invariants_locked,
-    KERNEL_BASE_1MB, MAX_PHYS_ADDR_LIMIT, MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, PAGE_SIZE,
-    PAGE_SIZE_4K,
+    free_contiguous_frames, free_frame, free_memory, get_all_zones, get_cow_refcount_stats,
+    get_freed_frame_count, get_stats, get_zone, init as pmm_init, is_any_zone_critical,
+    is_any_zone_under_pressure, is_frame_allocated, is_valid_ram_range, mark_frame_allocated,
+    mark_frame_free, max_physical_address, peak_shared_frames, pfn_to_zone, release_frame,
+    reset_pmm_stats, reset_refcounts, retain_frame, set_test_ram_region, set_test_ram_region_empty,
+    total_memory, total_usable_memory, used_memory, verify_pmm_invariants,
+    verify_pmm_invariants_locked, FreeArea, MemoryZone, ZoneType, KERNEL_BASE_1MB,
+    MAX_ORDER, MAX_PHYS_ADDR_LIMIT, MAX_SHARED_COW_FRAMES, MAX_TRACKED_FRAMES, ORDER_COUNT,
+    PAGE_SIZE, PAGE_SIZE_4K,
 };
 pub use slab::{
     get_all_kmem_caches, kmem_cache_alloc, kmem_cache_create, kmem_cache_free, CpuDepot,

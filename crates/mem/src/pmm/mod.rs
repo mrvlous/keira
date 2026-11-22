@@ -25,8 +25,13 @@ pub mod frame;
 pub mod region;
 pub mod sync;
 pub mod telemetry;
+pub mod zone;
 
 pub use buddy::{FreeArea, MAX_ORDER, ORDER_COUNT};
+pub use zone::{
+    get_all_zones, get_zone, is_any_zone_critical, is_any_zone_under_pressure, pfn_to_zone,
+    MemoryZone, ZoneType,
+};
 
 pub use frame::{
     active_shared_frames, alloc_contiguous_frames, alloc_frame, alloc_order, frame_refcount,

@@ -184,8 +184,15 @@ pub mod kswapd {
     /// Monotonic timestamp of the most recent kswapd scan.
     pub static mut KSWAPD_LAST_TICKS: u64 = 0;
 
-    /// Evaluates current PMM memory pressure against low and critical watermarks.
+    /// Evaluates current PMM memory pressure against zone watermarks and percentage limits.
     pub fn check_memory_pressure() -> MemoryPressure {
+        if pmm::is_any_zone_critical() {
+            return MemoryPressure::Critical;
+        }
+        if pmm::is_any_zone_under_pressure() {
+            return MemoryPressure::Low;
+        }
+
         let (total, _used, free) = pmm::get_stats();
         if total == 0 {
             return MemoryPressure::Normal;

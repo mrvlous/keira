@@ -107,6 +107,7 @@ pub mod boot {
             REGION_COUNT = 1;
             TOTAL_USABLE_RAM = capped_end.saturating_sub(start);
             MAX_PHYS_ADDR = capped_end;
+            super::super::zone::init_zones(&REGIONS[..REGION_COUNT]);
             return;
         }
 
@@ -154,6 +155,8 @@ pub mod boot {
 
             entry_ptr += entry_size;
         }
+
+        super::super::zone::init_zones(&REGIONS[..REGION_COUNT]);
     }
 }
 

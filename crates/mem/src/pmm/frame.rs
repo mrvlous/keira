@@ -173,6 +173,20 @@ pub mod bitmap {
         if order > 10 {
             return None;
         }
+        {
+            let _guard = PmmGuard::lock();
+            unsafe {
+                if let Some(addr) = super::super::zone::zone_alloc_order(super::super::zone::ZoneType::Normal, order) {
+                    let count = 1usize << order;
+                    for i in 0..count {
+                        let frame = addr + (i as u64) * PAGE_SIZE;
+                        mark_frame_allocated(frame);
+                    }
+                    USED_FRAMES_COUNT += count as u64;
+                    return Some(addr);
+                }
+            }
+        }
         alloc_contiguous_frames(1usize << order)
     }
 
