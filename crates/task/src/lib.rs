@@ -25,6 +25,7 @@ pub mod security;
 pub mod signal;
 pub mod stack;
 pub mod types;
+pub mod wait;
 
 pub use aslr::{
     generate_task_aslr_offsets, get_aslr_limits, get_aslr_policy, get_aslr_status, set_aslr_policy,
@@ -69,6 +70,11 @@ pub use signal::{
 };
 pub use stack::*;
 pub use types::{FileDescriptor, InterruptContext, Task, TaskState, MAX_FDS};
+pub use wait::{
+    format_waitqueue_stats, get_wait_queue_snapshots, WaitQueueEntry, WaitQueueHead,
+    WaitQueueSnapshot, CHILD_EXIT_WQ, KFLUSHD_WQ, KSWAPD_WQ, MAX_WAITERS_PER_QUEUE, PIPE_READ_WQ,
+    PIPE_WRITE_WQ, REGISTERED_WAIT_QUEUES, WQ_FLAG_EXCLUSIVE, WQ_FLAG_WOKEN,
+};
 
 #[cfg(test)]
 mod tests;
