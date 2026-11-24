@@ -554,9 +554,14 @@ test-unit: test-kbuild ## Run cargo host unit tests across all workspace crates 
 	$(Q)$(CARGO) test --workspace -- --test-threads=1
 	@$(LOG_DONE) "Host unit tests completed successfully"
 
-test: preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
+test-smoke: ## Run host-side unit tests for the QEMU smoke-test runner
+	@$(LOG_INFO) "Running QEMU smoke-test runner unit tests..."
+	$(Q)python3 -m unittest discover -s scripts/testing -p 'test_*.py'
+	@$(LOG_DONE) "QEMU smoke-test runner unit tests completed successfully"
+
+test: test-smoke preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
-	$(Q)timeout 10s $(QEMU) $(QEMU_FLAGS) -display none </dev/null > $(BUILD_DIR)/test.log 2>&1 || true
+	$(Q)scripts/testing/qemu_smoke.py --timeout 10 --log "$(BUILD_DIR)/test.log" -- $(QEMU) $(QEMU_FLAGS) -display none -monitor none
 	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
 
 test-all: preflight-qemu ## Run automated headless smoke tests on all architectures
