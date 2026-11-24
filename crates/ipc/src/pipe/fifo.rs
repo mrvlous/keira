@@ -161,6 +161,7 @@ pub mod ops {
                         slot.head = (slot.head + 1) % PIPE_BUFFER_CAPACITY;
                         slot.count -= 1;
                     }
+                    let _ = keira_task::PIPE_WRITE_WQ.wake_up();
                     return Ok(to_read);
                 }
 
@@ -201,6 +202,9 @@ pub mod ops {
                     slot.tail = (slot.tail + 1) % PIPE_BUFFER_CAPACITY;
                     slot.count += 1;
                 }
+                if to_write > 0 {
+                    let _ = keira_task::PIPE_READ_WQ.wake_up();
+                }
                 return Ok(to_write);
             }
         }
@@ -213,6 +217,7 @@ pub mod ops {
                 if slot.readers_count > 0 {
                     slot.readers_count -= 1;
                 }
+                let _ = keira_task::PIPE_WRITE_WQ.wake_up_all();
                 if slot.readers_count == 0 && slot.writers_count == 0 {
                     *slot = PipeChannel::empty();
                 }
@@ -227,6 +232,7 @@ pub mod ops {
                 if slot.writers_count > 0 {
                     slot.writers_count -= 1;
                 }
+                let _ = keira_task::PIPE_READ_WQ.wake_up_all();
                 if slot.readers_count == 0 && slot.writers_count == 0 {
                     *slot = PipeChannel::empty();
                 }

@@ -79,6 +79,8 @@ pub mod daemon {
                     t.state = TaskState::Blocked;
                     t.parent_id = 1;
                 }
+                crate::wait::KSWAPD_WQ
+                    .prepare_to_wait(crate::wait::WaitQueueEntry::new(pid, 0), TaskState::Blocked);
             }
         }
         // Spawn kflushd (PID 3)
@@ -88,6 +90,8 @@ pub mod daemon {
                     t.state = TaskState::Blocked;
                     t.parent_id = 1;
                 }
+                crate::wait::KFLUSHD_WQ
+                    .prepare_to_wait(crate::wait::WaitQueueEntry::new(pid, 0), TaskState::Blocked);
             }
         }
     }

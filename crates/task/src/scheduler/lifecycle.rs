@@ -67,6 +67,7 @@ pub mod exit {
 
                 // Wake up parent if blocked
                 if pid < MAX_TASKS {
+                    let _ = crate::wait::CHILD_EXIT_WQ.wake_up();
                     if let Some(ref mut parent) = TASKS[pid] {
                         if parent.state == TaskState::Blocked {
                             parent.state = TaskState::Ready;
@@ -260,8 +261,11 @@ pub mod wait {
                     crate::scheduler::work_stealing::mark_task_dequeued(parent_idx);
                 }
             }
+            let entry = crate::wait::WaitQueueEntry::new(parent_idx, 0);
+            crate::wait::CHILD_EXIT_WQ.prepare_to_wait(entry, TaskState::Blocked);
 
             core::arch::asm!("sti; int 32; cli");
+            crate::wait::CHILD_EXIT_WQ.finish_wait(parent_idx);
         }
     }
 
