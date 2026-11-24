@@ -2,8 +2,8 @@
 
 # Scheduler & Task Concurrency Configuration
 #
-# Configures multi-core work-stealing scheduler queues and bare-metal
-# io_uring asynchronous I/O completion engine.
+# Configures multi-core work-stealing scheduler queues, event wait queues
+# and bare-metal io_uring asynchronous I/O completion engine.
 
 menu "Scheduler & Task Concurrency"
 
@@ -13,6 +13,13 @@ config SCHED_WORK_STEALING
 	help
 	  Enable work-stealing queues across symmetric multiprocessing cores
 	  to balance thread execution loads.
+
+config WAIT_QUEUES
+	bool "Kernel Wait Queues & Sleep Synchronization"
+	default y
+	help
+	  Enable Linux-grade kernel wait queue heads (wait_queue_head_t),
+	  condition wakeups and event sleep synchronization.
 
 config IO_URING
 	bool "Asynchronous I/O Engine (io_uring)"
