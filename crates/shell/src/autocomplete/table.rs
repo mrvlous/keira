@@ -73,8 +73,10 @@ pub mod engine {
         "unwind",
         "vma",
         "vmainfo",
+        "waitqueue",
         "watchpoint",
         "wipe",
+        "wq",
     ];
 
     pub const STANDARD_PATHS: &[&str] = &[

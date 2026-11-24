@@ -3292,6 +3292,81 @@ pub mod info {
             inspect_task_vma(target_pid, fg, bg);
         }
     }
+    pub mod waitqueue {
+        use crate::args::CliArgs;
+        use keira_io::vga;
+        use keira_task::get_wait_queue_snapshots;
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let args = CliArgs::parse(parts);
+
+            if args.has_flag('h', "help") {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: waitqueue [-v] [-h]\n\n");
+                vga::print_str(
+                    "Description:\n  Display kernel wait queues and condition sleep synchronization.\n\n",
+                );
+                vga::print_str("Options:\n");
+                vga::print_str(
+                    "  -v, --verbose Display waiting task PIDs registered on each wait queue\n",
+                );
+                vga::print_str("  -h, --help    Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Kernel Wait Queues & Sleep Synchronization:\n");
+            vga::print_str("NAME                WAITERS  TOTAL WAITS      WAKEUPS    LAST WAKE (ms)\n");
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str("------------------  -------  -----------  -----------  ----------------\n");
+
+            let snapshots = get_wait_queue_snapshots();
+            for snap in &snapshots {
+                print_padded_wq_name(snap.name);
+                print_padded_num(snap.waiters_count as u64, 9);
+                print_padded_num(snap.total_waits, 13);
+                print_padded_num(snap.total_wakeups, 13);
+                print_padded_num(snap.last_wake_tick, 18);
+                vga::print_str("\n");
+
+                if args.has_flag('v', "verbose") && snap.waiters_count > 0 {
+                    vga::set_color(vga::Color::DarkGrey, vga::Color::Black);
+                    vga::print_str("  `- Waiting PIDs: [");
+                    for i in 0..snap.waiting_pids_len {
+                        vga::print_u64(snap.waiting_pids[i] as u64);
+                        if i + 1 < snap.waiting_pids_len {
+                            vga::print_str(", ");
+                        }
+                    }
+                    vga::print_str("]\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                }
+            }
+        }
+
+        fn print_padded_wq_name(name: &str) {
+            vga::print_str(name);
+            let spaces = 20usize.saturating_sub(name.len());
+            for _ in 0..spaces {
+                vga::print_str(" ");
+            }
+        }
+
+        fn print_padded_num(num: u64, width: usize) {
+            let mut digits = 1;
+            let mut temp = num;
+            while temp >= 10 {
+                digits += 1;
+                temp /= 10;
+            }
+            let spaces = width.saturating_sub(digits);
+            for _ in 0..spaces {
+                vga::print_str(" ");
+            }
+            vga::print_u64(num);
+        }
+    }
 }
 
 pub use self::control::power;
@@ -3319,6 +3394,7 @@ pub use self::info::system;
 pub use self::info::unixsock;
 pub use self::info::unwind;
 pub use self::info::vmainfo;
+pub use self::info::waitqueue;
 
 #[cfg(test)]
 mod tests {
@@ -3588,5 +3664,19 @@ mod tests {
 
         let mut args_default = "".split_whitespace();
         daemons::run(&mut args_default);
+    }
+
+    #[test]
+    fn test_sys_waitqueue() {
+        let mut args_help = "waitqueue --help".split_whitespace();
+        args_help.next();
+        waitqueue::run(&mut args_help);
+
+        let mut args_verbose = "waitqueue -v".split_whitespace();
+        args_verbose.next();
+        waitqueue::run(&mut args_verbose);
+
+        let mut args_default = "".split_whitespace();
+        waitqueue::run(&mut args_default);
     }
 }
