@@ -19,7 +19,7 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 66 chronological engineering milestones:
+of computer systems across 67 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -29,7 +29,7 @@ of computer systems across 66 chronological engineering milestones:
 * Milestones 37-42: Text Pipelines, POSIX DAC Permissions, VFS Cache Trinity (dcache/icache), Memory Introspection and Dynamic ProcFS.
 * Milestones 43-48: Hardware Mitigations (W^X/ASLR), Cryptographic Entropy, Process RLIMIT Sandboxing, UNIX Sockets and Ring Buffer Logging.
 * Milestones 49-56: CoW Fork Engine, VMA Address Spaces, POSIX Multiplexing (poll/select), BSD Sockets, System Identity and Power Management.
-* Milestones 57-66: POSIX Process Groups, Shell Job Control, Pure Kernel Demarcation, Linux-Grade Kconfig, Modular Kbuild Architecture, POSIX Shell Scripting Language Engine, Ring 0 Pure Kernel Infrastructure, In-Kernel ELF Relocatable Module Loader, Active Ring 0 Background Daemons, Linux-Grade Kernel Tooling Architecture and Binary Buddy Allocator.
+* Milestones 57-67: POSIX Process Groups, Shell Job Control, Pure Kernel Demarcation, Linux-Grade Kconfig, Modular Kbuild Architecture, POSIX Shell Scripting Language Engine, Ring 0 Pure Kernel Infrastructure, In-Kernel ELF Relocatable Module Loader, Active Ring 0 Background Daemons, Linux-Grade Kernel Tooling Architecture, Binary Buddy Allocator and Kernel Wait Queues.
 
 Read the detailed engineering journal: docs/journey/index.rst
 System architecture overview: docs/arch/index.rst
