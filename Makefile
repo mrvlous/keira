@@ -561,7 +561,7 @@ test-smoke: ## Run host-side unit tests for the QEMU smoke-test runner
 
 test: test-smoke preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
-	$(Q)scripts/testing/qemu_smoke.py --timeout 10 --log "$(BUILD_DIR)/test.log" -- $(QEMU) $(QEMU_FLAGS) -display none -monitor none
+	$(Q)python3 scripts/testing/qemu_smoke.py --timeout 10 --log "$(BUILD_DIR)/test.log" -- $(QEMU) $(QEMU_FLAGS) -display none -monitor none
 	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
 
 test-all: preflight-qemu ## Run automated headless smoke tests on all architectures
