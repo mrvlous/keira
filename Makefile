@@ -187,7 +187,7 @@ SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
         format lint user libc docs htmldocs docs-clean docs-lint docs-check docs-linkcheck docs-info pdfdocs disk initrd help info check \
-        size objdump bloat faddr2line qemu-net test test-all test-unit test-kbuild fs-root user-format user-lint user-size user-test user-info \
+        size objdump bloat faddr2line qemu-net test test-all test-unit test-kbuild test-smoke fs-root user-format user-lint user-size user-test user-info \
         preflight preflight-qemu preflight-format preflight-lint menuconfig defconfig full_defconfig pure_defconfig kernel_defconfig savedefconfig oldconfig headers_install
 
 .DEFAULT_GOAL   := all
