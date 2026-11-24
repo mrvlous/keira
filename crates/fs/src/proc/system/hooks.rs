@@ -109,3 +109,16 @@ pub fn register_aslr_hook(hook: Option<AslrPolicyProvider>) {
         ASLR_POLICY_HOOK = hook;
     }
 }
+
+/// Callback provider function type for synthesizing wait queue telemetry into a buffer.
+pub type WaitQueueTelemetryProvider = fn(buf: &mut [u8]) -> usize;
+
+/// Registered hook for live in-kernel wait queue reflection (/proc/waitqueue).
+pub static mut WAITQUEUE_HOOK: Option<WaitQueueTelemetryProvider> = None;
+
+/// Registers live wait queue introspection hook.
+pub fn register_waitqueue_hook(hook: WaitQueueTelemetryProvider) {
+    unsafe {
+        WAITQUEUE_HOOK = Some(hook);
+    }
+}

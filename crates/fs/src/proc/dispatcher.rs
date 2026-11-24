@@ -21,7 +21,7 @@ pub mod read {
         read_mounts, read_net_arp, read_net_dev, read_net_raw, read_net_route, read_net_tcp,
         read_net_udp, read_net_unix, read_nf_conntrack_stat, read_partitions,
         read_randomize_va_space, read_slabinfo, read_sockstat, read_uptime, read_version,
-        read_vmstat,
+        read_vmstat, read_waitqueue,
     };
     use crate::proc::task::hooks::CURRENT_PID_HOOK;
     use crate::proc::task::{
@@ -53,6 +53,7 @@ pub mod read {
             "" | "uptime"
                 | "meminfo"
                 | "buddyinfo"
+                | "waitqueue"
                 | "daemons"
                 | "slabinfo"
                 | "vmstat"
@@ -128,6 +129,7 @@ pub mod read {
             "uptime" => read_uptime(buf),
             "meminfo" => read_meminfo(buf),
             "buddyinfo" => read_buddyinfo(buf),
+            "waitqueue" => read_waitqueue(buf),
             "daemons" => read_daemons(buf),
             "slabinfo" => read_slabinfo(buf),
             "vmstat" => read_vmstat(buf),
@@ -198,7 +200,7 @@ pub mod read {
 
     use crate::vfs::VirtualDirEntry;
 
-    pub static PROC_ENTRIES: [VirtualDirEntry; 14] = [
+    pub static PROC_ENTRIES: [VirtualDirEntry; 15] = [
         VirtualDirEntry {
             name: ".",
             d_type: 4,
@@ -268,6 +270,11 @@ pub mod read {
             name: "buddyinfo",
             d_type: 8,
             ino: 22,
+        },
+        VirtualDirEntry {
+            name: "waitqueue",
+            d_type: 8,
+            ino: 23,
         },
     ];
 

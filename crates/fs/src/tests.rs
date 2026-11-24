@@ -60,7 +60,8 @@ fn test_virtual_directory_enumeration() {
     assert_eq!(proc::get_proc_entry(11).map(|e| e.name), Some("sys"));
     assert_eq!(proc::get_proc_entry(12).map(|e| e.name), Some("daemons"));
     assert_eq!(proc::get_proc_entry(13).map(|e| e.name), Some("buddyinfo"));
-    assert_eq!(proc::get_proc_entry(14), None);
+    assert_eq!(proc::get_proc_entry(14).map(|e| e.name), Some("waitqueue"));
+    assert_eq!(proc::get_proc_entry(15), None);
 }
 
 #[test]

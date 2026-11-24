@@ -72,8 +72,8 @@ pub use lvm::volume::{
 };
 pub use proc::{
     get_pid_dir_entry, get_proc_entry, is_proc_dir, read_proc_file, read_task_maps,
-    register_extended_task_hooks, register_task_hooks, register_task_maps_hook, task_exists,
-    PID_DIR_ENTRIES, PROC_ENTRIES,
+    register_extended_task_hooks, register_task_hooks, register_task_maps_hook,
+    register_waitqueue_hook, task_exists, PID_DIR_ENTRIES, PROC_ENTRIES,
 };
 pub use tar::reader::{
     cat_file as tar_cat_file, exists as tar_exists, init as tar_init, list_files as tar_list_files,
