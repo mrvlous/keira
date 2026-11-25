@@ -11,7 +11,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Interactive system shell, code editor, autocomplete and 78 native commands for Keira Kernel"
+description = "Supervisor diagnostic shell, code editor, autocomplete and 36 diagnostic commands for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }
