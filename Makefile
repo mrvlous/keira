@@ -106,6 +106,7 @@ else
 endif
 
 USER_DIR        ?= userland
+USERLAND_SRCS   := $(shell find $(USER_DIR) -path "$(USER_DIR)/build" -prune -o -type f ! -name "*.o" ! -name "*.a" ! -name "*.elf" ! -name "*.d" -print)
 
 # Verbose mode: set V=1 to display raw command executions
 ifeq ($(V),1)
@@ -453,7 +454,7 @@ headers_install: ## Export Ring 3 userland ABI headers to $(INSTALL_HDR_PATH)
 
 # Canonical root filesystem & disk image rules
 ifeq ($(USERLAND),0)
-$(FS_ROOT_STAMP): | dirs
+$(FS_ROOT_STAMP): $(wildcard .config) | dirs
 	@$(LOG_INFO) "Populating minimal root filesystem for pure kernel mode ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT) $(STAGING_DIR)/.fs-root-stamp-*
 	$(Q)mkdir -p $(FS_ROOT)/bin
@@ -472,7 +473,7 @@ $(FS_ROOT_STAMP): | dirs
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Minimal root filesystem ready ($(ARCH))"
 else
-$(FS_ROOT_STAMP): | dirs
+$(FS_ROOT_STAMP): $(USERLAND_SRCS) $(wildcard .config) | dirs
 	@$(LOG_INFO) "Populating canonical root filesystem via userland installation ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT) $(STAGING_DIR)/.fs-root-stamp-*
 	$(Q)mkdir -p $(FS_ROOT)/bin
