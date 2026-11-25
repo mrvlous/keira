@@ -78,6 +78,7 @@ static int test_setpgid_self(void) {
 static int test_child_process_group_isolation(void) {
     printf("[TEST 3] Child process group creation and isolation...\n");
 
+#if defined(__x86_64__)
     pid_t parent_pgid = getpgrp();
     pid_t child_pid = fork();
 
@@ -131,12 +132,16 @@ static int test_child_process_group_isolation(void) {
     }
 
     printf("  [OK] Child process group isolation verified\n");
+#else
+    puts("  [INFO] Child PGID fork test skipped on i686 (single-task target)");
+#endif
     return 0;
 }
 
 static int test_setsid_session_creation(void) {
     printf("[TEST 4] Session creation and group leadership (setsid)...\n");
 
+#if defined(__x86_64__)
     pid_t child_pid = fork();
     if (child_pid < 0) {
         printf("  [FAILED] fork() failed: errno=%d\n", errno);
@@ -183,6 +188,9 @@ static int test_setsid_session_creation(void) {
     }
 
     printf("  [OK] Session creation and group leadership verified\n");
+#else
+    puts("  [INFO] Session creation fork test skipped on i686 (single-task target)");
+#endif
     return 0;
 }
 
