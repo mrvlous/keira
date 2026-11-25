@@ -1,0 +1,49 @@
+
+name: Keira CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - ci/github-actions-pipeline
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            nasm \
+            gcc \
+            binutils \
+            make \
+            python3 \
+            grub-pc-bin \
+            grub-common \
+            xorriso \
+            dosfstools \
+            mtools \
+            qemu-system-x86
+
+      - name: Setup Rust Nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Run unit tests
+        run: make test-unit
+
+      - name: Run QEMU smoke tests
+        run: make test
+        
