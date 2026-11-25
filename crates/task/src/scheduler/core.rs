@@ -90,7 +90,7 @@ pub mod hooks {
                  SigBlk:\t{:08x}\n\
                  SigPnd:\t{:08x}\n\
                  voluntary_ctxt_switches:\t{}\n",
-                task.name,
+                task.comm_str(),
                 state_str,
                 task.id,
                 task.id,
@@ -119,7 +119,7 @@ pub mod hooks {
             if !task.is_user && task.id != 0 {
                 return Some(0);
             }
-            let bytes = task.name.as_bytes();
+            let bytes = task.cmdline_bytes();
             let to_copy = bytes.len().min(buf.len());
             buf[..to_copy].copy_from_slice(&bytes[..to_copy]);
             Some(to_copy)
@@ -153,7 +153,7 @@ pub mod hooks {
                 writer,
                 "{} ({}) {} {} {} 0 0 -1 4194304 0 0 0 0 {} {} 0 0 20 0 1 0 0 {} {} 18446744073709551615 4194304 8388608 {} {} 0 {} {} 0 0 0 0 0 17 0 0 0 0 0 0 {} {} {} 0 0 0 0 {}\n",
                 task.id,
-                task.name,
+                task.comm_str(),
                 state_char,
                 task.parent_id,
                 pgrp,
@@ -280,7 +280,7 @@ pub mod hooks {
             let _ = core::write!(
                 writer,
                 " r-xp 00000000 00:00 0                  {}\n",
-                task.name
+                task.comm_str()
             );
 
             // 2. Data / BSS segment
@@ -290,7 +290,7 @@ pub mod hooks {
             let _ = core::write!(
                 writer,
                 " rw-p 00005000 00:00 0                  {}\n",
-                task.name
+                task.comm_str()
             );
 
             // 3. Heap segment (if active)
@@ -426,6 +426,10 @@ pub mod state {
         let main_task = Task {
             id: 0,
             name: "kernel_shell",
+            comm: [0u8; 32],
+            comm_len: 0,
+            cmdline: [0u8; 128],
+            cmdline_len: 0,
             rsp: 0,
             stack_addr: main_stack,
             state: TaskState::Running,

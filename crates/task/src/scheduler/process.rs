@@ -221,6 +221,14 @@ pub mod clone {
                     } else {
                         "fork_child"
                     },
+                    comm: if is_thread { [0u8; 32] } else { parent.comm },
+                    comm_len: if is_thread { 0 } else { parent.comm_len },
+                    cmdline: if is_thread {
+                        [0u8; 128]
+                    } else {
+                        parent.cmdline
+                    },
+                    cmdline_len: if is_thread { 0 } else { parent.cmdline_len },
                     rsp: child_context_ptr as u64,
                     stack_addr: stack_frame,
                     state: TaskState::Ready,
@@ -384,6 +392,10 @@ pub mod spawn {
         let new_task = Task {
             id: slot_idx,
             name,
+            comm: [0u8; 32],
+            comm_len: 0,
+            cmdline: [0u8; 128],
+            cmdline_len: 0,
             rsp: context_ptr as u64,
             stack_addr: stack_frame,
             state: TaskState::Ready,
@@ -556,6 +568,10 @@ pub mod spawn {
         let new_task = Task {
             id: slot_idx,
             name,
+            comm: [0u8; 32],
+            comm_len: 0,
+            cmdline: [0u8; 128],
+            cmdline_len: 0,
             rsp: context_ptr as u64,
             stack_addr: stack_frame,
             state: TaskState::Ready,

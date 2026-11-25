@@ -84,9 +84,10 @@ pub mod pidinfo {
                     vga::print_str(" ");
 
                     let is_kthread = !task.is_user && task.id != 0;
-                    if is_kthread && !task.name.starts_with('[') {
+                    let cname = task.comm_str();
+                    if is_kthread && !cname.starts_with('[') {
                         let mut kbuf = [0u8; 32];
-                        let nb = task.name.as_bytes();
+                        let nb = cname.as_bytes();
                         let n = nb.len().min(28);
                         kbuf[0] = b'[';
                         kbuf[1..1 + n].copy_from_slice(&nb[..n]);
@@ -94,10 +95,10 @@ pub mod pidinfo {
                         if let Ok(s) = core::str::from_utf8(&kbuf[..2 + n]) {
                             print_padded_str(s, 16);
                         } else {
-                            print_padded_str(task.name, 16);
+                            print_padded_str(cname, 16);
                         }
                     } else {
-                        print_padded_str(task.name, 16);
+                        print_padded_str(cname, 16);
                     }
                     vga::print_str(" ");
 
@@ -145,12 +146,13 @@ pub mod pidinfo {
                 vga::print_str("):\n");
 
                 vga::print_str("  Command Name:     ");
-                if !task.is_user && task.id != 0 && !task.name.starts_with('[') {
+                let cname = task.comm_str();
+                if !task.is_user && task.id != 0 && !cname.starts_with('[') {
                     vga::print_str("[");
-                    vga::print_str(task.name);
+                    vga::print_str(cname);
                     vga::print_str("] (Ring 0 Kernel Thread)\n");
                 } else {
-                    vga::print_str(task.name);
+                    vga::print_str(cname);
                     vga::print_str("\n");
                 }
 

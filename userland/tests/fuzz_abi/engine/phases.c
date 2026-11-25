@@ -65,8 +65,7 @@ int run_phase1_syscall_fuzzing(int *out_calls) {
          * calls */
         if (vec == SYS_EXIT || vec == SYS_EXEC || vec == SYS_FORK || vec == SYS_CLONE_THREAD ||
             vec == SYS_SECCOMP || vec == SYS_SIGACTION || vec == SYS_SIGRETURN ||
-            vec == SYS_SIGPROCMASK || vec == SYS_WAIT || vec == SYS_WAITPID || vec == SYS_HTTP ||
-            vec == SYS_HTTP_GET) {
+            vec == SYS_SIGPROCMASK || vec == SYS_WAIT || vec == SYS_WAITPID) {
             continue;
         }
 

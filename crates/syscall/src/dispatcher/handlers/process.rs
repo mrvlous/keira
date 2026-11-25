@@ -68,7 +68,8 @@ pub fn handle_exit(arg1: u64) -> u64 {
         }
         0
     } else {
-        0xDEADBEEF
+        crate::dispatcher::mark_user_exit_pending();
+        exit_code as u64
     }
 }
 
@@ -284,6 +285,8 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
             match spawn_user("user_app", entry_point, initial_user_rsp, child_pml4) {
                 Ok(pid) => {
                     if let Some(ref mut task) = keira_task::scheduler::TASKS[pid] {
+                        task.set_comm(filename_str);
+                        task.set_cmdline(exec_args);
                         task.stack_aslr_offset = stack_aslr;
                         task.mmap_aslr_offset = mmap_aslr;
                         task.brk_aslr_offset = brk_aslr;

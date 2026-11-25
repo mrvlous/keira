@@ -30,10 +30,16 @@ pub mod test {
     }
 
     #[test]
-    fn test_sanitize_ret_behavior() {
-        assert_eq!(sanitize_ret(1, 0xDEAD_BEEF), 0xDEAD_BEEF + 1);
-        assert_eq!(sanitize_ret(2, 0xDEAD_BEEF), 0xDEAD_BEEF);
-        assert_eq!(sanitize_ret(5, 0x1234), 0x1234);
+    fn test_user_exit_flag_and_no_sentinel_corruption() {
+        assert_eq!(check_and_clear_user_exit(), 0);
+        mark_user_exit_pending();
+        assert_eq!(check_and_clear_user_exit(), 1);
+        assert_eq!(check_and_clear_user_exit(), 0);
+        // Deprecated vector 17 returns clean ENOSYS; valid values ending in 0xDEADBEEF are preserved.
+        assert_eq!(
+            syscall_dispatcher(17, 0, 0, 0, 0, 0, 0),
+            errno_to_ret(ENOSYS)
+        );
     }
 
     #[test]

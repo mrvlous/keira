@@ -43,6 +43,7 @@ global abort_user_mode
 global main_kernel_stack
 
 extern syscall_dispatcher
+extern check_and_clear_user_exit
 
 section .data
 align 4
@@ -146,9 +147,15 @@ isr128:
     call syscall_dispatcher     ; Result returned in EAX
     add esp, 56                 ; Clean 7 * 8 = 56 bytes off stack
 
-    ; Check if process called sys_exit (signaled by magic sentinel 0xDEADBEEF)
-    cmp eax, 0xDEADBEEF
-    je .exit_user_mode
+    ; Check per-CPU kernel flag if task requested synchronous user-mode unwind
+    push edx
+    push eax
+    call check_and_clear_user_exit
+    mov ecx, eax
+    pop eax
+    pop edx
+    test ecx, ecx
+    jnz .exit_user_mode
 
     ; Reload User Data Segment (0x23)
     mov dx, 0x23

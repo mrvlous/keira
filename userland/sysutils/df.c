@@ -120,7 +120,9 @@ int main(int argc, char **argv) {
             unsigned long total = 0;
             unsigned long used = 0;
             unsigned long avail = 0;
-            if (strcmp(fstype, "fat16") == 0 || strcmp(fstype, "ext4") == 0) {
+            if (strcmp(fstype, "fat") == 0 || strcmp(fstype, "fat12") == 0 ||
+                strcmp(fstype, "fat16") == 0 || strcmp(fstype, "fat32") == 0 ||
+                strcmp(fstype, "vfat") == 0 || strcmp(fstype, "ext4") == 0) {
                 total = get_partition_blocks(dev);
                 used = (total > 4096) ? 2048 : (total / 4);
                 avail = (total > used) ? (total - used) : 0;

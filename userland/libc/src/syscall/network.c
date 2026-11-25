@@ -29,11 +29,6 @@ int sys_connect(int sockfd, const void *addr, size_t addrlen) {
                          (uint64_t)addrlen);
 }
 
-ssize_t sys_http_get(const char *url, void *buf, size_t count) {
-    return (ssize_t)syscall3(SYS_HTTP_GET, (uint64_t)(uintptr_t)url, (uint64_t)(uintptr_t)buf,
-                             (uint64_t)count);
-}
-
 long sys_ping(const char *target_ip, int timeout_ms) {
     return (long)syscall2(SYS_PING, (uint64_t)(uintptr_t)target_ip, (uint64_t)timeout_ms);
 }

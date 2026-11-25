@@ -34,14 +34,14 @@
 #define SYS_GETPID 14
 #define SYS_GETCWD 15
 #define SYS_CHDIR 16
-#define SYS_HTTP 17
-#define SYS_HTTP_GET 17
 #define SYS_MMAP 20
 #define SYS_MUNMAP 21
 #define SYS_KILL 22
 #define SYS_PIPE 23
 #define SYS_SOCKET 24
 #define SYS_CONNECT 25
+#define SYS_LISTEN 26
+#define SYS_ACCEPT 27
 #define SYS_SHMGET 28
 #define SYS_SHMAT 29
 #define SYS_FORK 30
@@ -58,8 +58,6 @@
 #define SYS_CLONE_THREAD 41
 #define SYS_KVM_CREATE_VM 42
 #define SYS_KVM_RUN_VCPU 43
-#define SYS_ACCEPT 43
-#define SYS_LISTEN 43
 #define SYS_SYSLOG 44
 #define SYS_TIMER_CREATE 45
 #define SYS_TIMER_SETTIME 46
@@ -195,7 +193,6 @@ int sys_mount(const char *source, const char *target, const char *filesystemtype
 int sys_umount(const char *target);
 int sys_umount2(const char *target, int flags);
 long sys_ping(const char *target_ip, int timeout_ms);
-ssize_t sys_http_get(const char *url, void *buf, size_t count);
 int sys_chmod(const char *pathname, mode_t mode);
 int sys_chown(const char *pathname, uid_t owner, gid_t group);
 int sys_stat(const char *pathname, struct stat *statbuf);

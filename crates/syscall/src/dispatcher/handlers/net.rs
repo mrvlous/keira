@@ -83,6 +83,35 @@ pub fn handle_connect(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     }
 }
 
+/// Validates that `fd` refers to an open socket descriptor in the active task.
+unsafe fn ensure_open_socket_fd(fd: usize) -> Result<(), u64> {
+    if let Some(t) = &TASKS[CURRENT_TASK_IDX] {
+        if fd < MAX_FDS && t.fds[fd].is_open && t.fds[fd].is_socket {
+            Ok(())
+        } else {
+            Err(errno_to_ret(EBADF))
+        }
+    } else {
+        Err(errno_to_ret(ESRCH))
+    }
+}
+
+/// Syscall 26: Mark a socket as passive listener for incoming connections.
+pub fn handle_listen(arg1: u64, _arg2: u64) -> u64 {
+    match unsafe { ensure_open_socket_fd(arg1 as usize) } {
+        Ok(()) => errno_to_ret(crate::user_copy::ENOSYS),
+        Err(e) => e,
+    }
+}
+
+/// Syscall 27: Accept an incoming connection on a listening socket.
+pub fn handle_accept(arg1: u64, _arg2: u64, _arg3: u64) -> u64 {
+    match unsafe { ensure_open_socket_fd(arg1 as usize) } {
+        Ok(()) => errno_to_ret(crate::user_copy::ENOSYS),
+        Err(e) => e,
+    }
+}
+
 /// Syscall 33: Establish a secure TLS connection.
 pub fn handle_tls_connect(arg1: u64) -> u64 {
     let host_ptr = arg1 as *const u8;

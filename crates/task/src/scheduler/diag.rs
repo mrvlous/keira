@@ -30,8 +30,9 @@ pub mod table {
             print_padded_u64(task.id as u64, 7);
             print_padded_u64(task.tgid as u64, 7);
 
-            vga::print_str(task.name);
-            for _ in 0..(22usize.saturating_sub(task.name.len())) {
+            let cname = task.comm_str();
+            vga::print_str(cname);
+            for _ in 0..(22usize.saturating_sub(cname.len())) {
                 vga::print_str(" ");
             }
 

@@ -26,7 +26,13 @@ pub mod test {
         assert_eq!(SYS_READ, 7);
         assert_eq!(SYS_WRITE, 8);
         assert_eq!(SYS_MMAP, 20);
+        assert_eq!(SYS_SOCKET, 24);
+        assert_eq!(SYS_CONNECT, 25);
+        assert_eq!(SYS_LISTEN, 26);
+        assert_eq!(SYS_ACCEPT, 27);
         assert_eq!(SYS_FORK, 30);
+        assert_eq!(SYS_KVM_CREATE_VM, 42);
+        assert_eq!(SYS_KVM_RUN_VCPU, 43);
         assert_eq!(SYS_DUP2, 85);
         assert_eq!(SYS_GETDENTS, 86);
         assert_eq!(SYS_UNLINK, 87);
@@ -59,7 +65,13 @@ pub mod test {
         assert_eq!(syscall_name(SYS_EXIT), "sys_exit");
         assert_eq!(syscall_name(SYS_OPEN), "sys_open");
         assert_eq!(syscall_name(SYS_MMAP), "sys_mmap");
+        assert_eq!(syscall_name(SYS_SOCKET), "sys_socket");
+        assert_eq!(syscall_name(SYS_CONNECT), "sys_connect");
+        assert_eq!(syscall_name(SYS_LISTEN), "sys_listen");
+        assert_eq!(syscall_name(SYS_ACCEPT), "sys_accept");
         assert_eq!(syscall_name(SYS_FORK), "sys_fork");
+        assert_eq!(syscall_name(SYS_KVM_CREATE_VM), "sys_kvm_create_vm");
+        assert_eq!(syscall_name(SYS_KVM_RUN_VCPU), "sys_kvm_run_vcpu");
         assert_eq!(syscall_name(SYS_DUP2), "sys_dup2");
         assert_eq!(syscall_name(SYS_GETDENTS), "sys_getdents");
         assert_eq!(syscall_name(SYS_UNLINK), "sys_unlink");

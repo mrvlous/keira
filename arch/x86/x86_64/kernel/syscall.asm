@@ -60,6 +60,7 @@ global abort_user_mode
 global main_kernel_stack
 
 extern syscall_dispatcher
+extern check_and_clear_user_exit
 
 section .data
 align 8
@@ -159,9 +160,13 @@ syscall_handler_asm:
     call syscall_dispatcher     ; Execute Rust syscall handler (return value in RAX)
     add rsp, 16                 ; Pop 7th argument and padding
 
-    ; Check if task requested termination (sentinel 0xDEADBEEF)
-    cmp eax, 0xDEADBEEF
-    je .exit_user_mode
+    ; Check per-CPU kernel flag if task requested synchronous user-mode unwind
+    push rax
+    call check_and_clear_user_exit
+    mov r10d, eax
+    pop rax
+    test r10d, r10d
+    jnz .exit_user_mode
 
     ; Restore preserved user registers
     pop r10

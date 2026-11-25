@@ -24,6 +24,10 @@ pub mod descriptor {
     pub struct Task {
         pub id: usize,
         pub name: &'static str,
+        pub comm: [u8; 32],
+        pub comm_len: usize,
+        pub cmdline: [u8; 128],
+        pub cmdline_len: usize,
         pub rsp: u64,
         pub stack_addr: u64,
         pub state: TaskState,
@@ -56,6 +60,110 @@ pub mod descriptor {
         pub rlimits: [crate::rlimit::RLimit; crate::rlimit::RLIM_NLIMITS],
         pub pgid: usize,
         pub sid: usize,
+    }
+
+    impl Task {
+        /// Records the short executable basename (up to 32 bytes) for process reporting.
+        pub fn set_comm(&mut self, path: &str) {
+            let base = path.rsplit('/').next().unwrap_or(path);
+            let bytes = base.as_bytes();
+            let len = bytes.len().min(self.comm.len());
+            self.comm = [0u8; 32];
+            self.comm[..len].copy_from_slice(&bytes[..len]);
+            self.comm_len = len;
+        }
+
+        /// Records formatted execution arguments for `/proc/<pid>/cmdline`.
+        pub fn set_cmdline(&mut self, args: &[&str]) {
+            self.cmdline = [0u8; 128];
+            let mut pos = 0usize;
+            for (i, arg) in args.iter().enumerate() {
+                if i > 0 {
+                    if pos >= self.cmdline.len() {
+                        break;
+                    }
+                    self.cmdline[pos] = b' ';
+                    pos += 1;
+                }
+                let bytes = arg.as_bytes();
+                let n = bytes.len().min(self.cmdline.len() - pos);
+                self.cmdline[pos..pos + n].copy_from_slice(&bytes[..n]);
+                pos += n;
+            }
+            self.cmdline_len = pos;
+        }
+
+        /// Returns the task's executable command name, falling back to its static descriptor name.
+        pub fn comm_str(&self) -> &str {
+            if self.comm_len > 0 {
+                core::str::from_utf8(&self.comm[..self.comm_len]).unwrap_or(self.name)
+            } else {
+                self.name
+            }
+        }
+
+        /// Returns command-line bytes for `/proc/<pid>/cmdline`.
+        pub fn cmdline_bytes(&self) -> &[u8] {
+            if self.cmdline_len > 0 {
+                &self.cmdline[..self.cmdline_len]
+            } else {
+                self.comm_str().as_bytes()
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_task_comm_and_cmdline_helpers() {
+            let mut task = Task {
+                id: 5,
+                name: "user_app",
+                comm: [0u8; 32],
+                comm_len: 0,
+                cmdline: [0u8; 128],
+                cmdline_len: 0,
+                rsp: 0,
+                stack_addr: 0,
+                state: TaskState::Ready,
+                fds: [FileDescriptor::new(); MAX_FDS],
+                program_break: 0,
+                program_break_start: 0,
+                cwd: [0u8; 128],
+                cwd_len: 1,
+                parent_id: 0,
+                pml4_phys: 0,
+                exit_code: 0,
+                is_user: true,
+                uid: 0,
+                gid: 0,
+                euid: 0,
+                egid: 0,
+                saved_sigcontext: None,
+                signal_mask: 0,
+                pending_signals: 0,
+                is_orphan: false,
+                tgid: 5,
+                is_thread: false,
+                clear_child_tid: 0,
+                tls: 0,
+                cpu_ticks: 0,
+                switches: 0,
+                stack_aslr_offset: 0,
+                mmap_aslr_offset: 0,
+                brk_aslr_offset: 0,
+                rlimits: crate::rlimit::default_rlimits(),
+                pgid: 5,
+                sid: 5,
+            };
+            assert_eq!(task.comm_str(), "user_app");
+            task.set_comm("/bin/curl.elf");
+            assert_eq!(task.comm_str(), "curl.elf");
+            task.set_cmdline(&["/bin/curl.elf", "http://icanhazip.com"]);
+            assert_eq!(task.cmdline_bytes(), b"/bin/curl.elf http://icanhazip.com");
+        }
     }
 }
 

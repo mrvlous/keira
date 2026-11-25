@@ -321,13 +321,24 @@ pub mod daemon {
             vga::set_color(vga::Color::LightCyan, vga::Color::Black);
             vga::print_str("=== Active Ring 0 Background Kernel Daemons ===\n\n");
 
+            let worker_count = unsafe {
+                keira_task::scheduler::TASKS
+                    .iter()
+                    .take(keira_task::scheduler::MAX_TASKS)
+                    .flatten()
+                    .filter(|t| !t.is_user && t.id > 1)
+                    .count()
+            };
+
             // [kthreadd]
             vga::set_color(vga::Color::Yellow, vga::Color::Black);
             vga::print_str("[kthreadd] ");
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("PID: 1 | Role: Kernel Thread Coordinator | Mode: Ring 0\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            vga::print_str("  Status: Active | Parent: 0 (swapper/idle) | Managed Workers: 2\n\n");
+            vga::print_str("  Status: Active | Parent: 0 (swapper/idle) | Managed Workers: ");
+            vga::print_u64(worker_count as u64);
+            vga::print_str("\n\n");
 
             // [kswapd0]
             vga::set_color(vga::Color::Yellow, vga::Color::Black);

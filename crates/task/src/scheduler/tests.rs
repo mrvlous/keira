@@ -102,6 +102,10 @@ fn test_task_process_groups_and_sessions() {
         let child_task = Task {
             id: 1,
             name: "child_proc",
+            comm: [0u8; 32],
+            comm_len: 0,
+            cmdline: [0u8; 128],
+            cmdline_len: 0,
             rsp: 0,
             stack_addr: 0,
             state: TaskState::Ready,
@@ -210,6 +214,10 @@ fn test_orphan_reparenting_and_reap() {
         let dummy_task = Task {
             id: 1,
             name: "dummy_orphan",
+            comm: [0u8; 32],
+            comm_len: 0,
+            cmdline: [0u8; 128],
+            cmdline_len: 0,
             rsp: 0,
             stack_addr: 0,
             state: TaskState::Zombie(42),

@@ -14,17 +14,28 @@
 
 //! 64-bit fast syscall entry point and security-checked request dispatcher.
 
+use core::sync::atomic::{AtomicBool, Ordering};
+
 use crate::dispatcher::handlers::*;
 use crate::user_copy::{errno_to_ret, ENOSYS, EPERM};
 
-/// Masks reserved sentinel return value `0xDEAD_BEEF` for non-exit syscalls.
-#[inline(always)]
-pub fn sanitize_ret(num: u64, val: u64) -> u64 {
-    if num != 2 && (val & 0xFFFF_FFFF) == 0xDEAD_BEEF {
-        val.wrapping_add(1)
-    } else {
-        val
-    }
+const MAX_EXIT_CORES: usize = 64;
+#[allow(clippy::declare_interior_mutable_const)]
+const INIT_EXIT_FLAG: AtomicBool = AtomicBool::new(false);
+static USER_EXIT_PENDING: [AtomicBool; MAX_EXIT_CORES] = [INIT_EXIT_FLAG; MAX_EXIT_CORES];
+
+/// Marks the current CPU core as returning via synchronous Ring 3 unwind.
+#[inline]
+pub fn mark_user_exit_pending() {
+    let core_id = keira_arch::cpu::get_current_core_id() % MAX_EXIT_CORES;
+    USER_EXIT_PENDING[core_id].store(true, Ordering::Release);
+}
+
+/// Reads and clears the pending user exit flag for the current CPU core.
+#[no_mangle]
+pub extern "C" fn check_and_clear_user_exit() -> u32 {
+    let core_id = keira_arch::cpu::get_current_core_id() % MAX_EXIT_CORES;
+    u32::from(USER_EXIT_PENDING[core_id].swap(false, Ordering::AcqRel))
 }
 
 /// Central system call dispatcher invoked by processor `syscall` assembly stub.
@@ -38,8 +49,7 @@ pub extern "C" fn syscall_dispatcher(
     arg5: u64,
     arg6: u64,
 ) -> u64 {
-    let ret = syscall_dispatcher_inner(num, arg1, arg2, arg3, arg4, arg5, arg6);
-    sanitize_ret(num, ret)
+    syscall_dispatcher_inner(num, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 fn syscall_dispatcher_inner(
@@ -77,6 +87,8 @@ fn syscall_dispatcher_inner(
         23 => handle_pipe(arg1),
         24 => handle_socket(arg1, arg2, arg3),
         25 => handle_connect(arg1, arg2, arg3),
+        26 => handle_listen(arg1, arg2),
+        27 => handle_accept(arg1, arg2, arg3),
         28 => handle_shmget(arg1),
         29 => handle_shmat(arg1),
         30 => handle_fork(),
