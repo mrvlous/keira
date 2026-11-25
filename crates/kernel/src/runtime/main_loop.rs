@@ -25,9 +25,9 @@ pub fn enter_main_loop() -> ! {
     vga::print_str("Keira Kernel ");
     vga::print_str(env!("CARGO_PKG_VERSION"));
     #[cfg(target_arch = "x86_64")]
-    vga::print_str(" (x86_64) - tty1\n\n");
+    vga::print_str(" (x86_64)\n\n");
     #[cfg(target_arch = "x86")]
-    vga::print_str(" (i686) - tty1\n\n");
+    vga::print_str(" (i686)\n\n");
 
     #[cfg(target_os = "none")]
     unsafe {

@@ -230,27 +230,7 @@ pub mod lookup {
             let off12 = (12 - 1) * 256;
             write_inode_to_bytes(&elf, &mut temp_block[off12..off12 + 256]);
 
-            // 4. Boot config Inode #14
-            let mut boot_cfg = Ext4Inode {
-                i_mode: EXT4_S_IFREG | 0o644,
-                i_size_lo: 128,
-                i_links_count: 1,
-                i_blocks_lo: 2,
-                i_flags: EXT4_EXTENTS_FL,
-                ..Default::default()
-            };
-            boot_cfg.i_block[0] = 0x0A;
-            boot_cfg.i_block[1] = 0xF3;
-            boot_cfg.i_block[2] = 0x01;
-            boot_cfg.i_block[4] = 0x04;
-            boot_cfg.i_block[12] = 0x00;
-            boot_cfg.i_block[16] = 0x01;
-            boot_cfg.i_block[20] = 0x01; // LBA lo 2049
-            boot_cfg.i_block[21] = 0x08;
-            let off14 = (14 - 1) * 256;
-            write_inode_to_bytes(&boot_cfg, &mut temp_block[off14..off14 + 256]);
-
-            // 5. Version text Inode #15
+            // 4. Version text Inode #15
             let mut ver_txt = Ext4Inode {
                 i_mode: EXT4_S_IFREG | 0o644,
                 i_size_lo: 64,

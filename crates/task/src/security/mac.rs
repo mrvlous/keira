@@ -342,15 +342,15 @@ mod tests {
         // Permissive mode
         set_mode(MacMode::Permissive);
         assert_eq!(get_mode(), MacMode::Permissive);
-        assert!(check_path_access(2, "/etc/kernel.cfg", MAC_WRITE));
+        assert!(check_path_access(2, "/etc/hostname", MAC_WRITE));
 
         // Enforcing mode
         set_mode(MacMode::Enforcing);
         assert_eq!(get_mode(), MacMode::Enforcing);
 
         assert!(check_path_access(2, "/bin/ls", MAC_READ));
-        assert!(!check_path_access(2, "/etc/kernel.cfg", MAC_WRITE));
-        assert!(check_path_access(1, "/etc/kernel.cfg", MAC_WRITE));
+        assert!(!check_path_access(2, "/etc/hostname", MAC_WRITE));
+        assert!(check_path_access(1, "/etc/hostname", MAC_WRITE));
 
         let (checks, violations) = get_stats();
         assert!(checks > 0);

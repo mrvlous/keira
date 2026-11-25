@@ -69,17 +69,17 @@ fn test_is_dir_virtual_mounts() {
 #[test]
 fn test_vfs_symlink_lifecycle() {
     assert!(!is_symlink("/tmp/sym_test"));
-    assert!(create_symlink("/etc/kernel.cfg", "/tmp/sym_test").is_ok());
+    assert!(create_symlink("/etc/hostname", "/tmp/sym_test").is_ok());
     assert!(is_symlink("/tmp/sym_test"));
     assert!(exists("/tmp/sym_test"));
 
     let mut buf = [0u8; 64];
     let len = read_symlink("/tmp/sym_test", &mut buf).expect("read symlink failed");
-    assert_eq!(&buf[..len], b"/etc/kernel.cfg");
+    assert_eq!(&buf[..len], b"/etc/hostname");
 
     let mut out_buf = [0u8; 128];
     let resolved = resolve_symlinks("/tmp/sym_test", &mut out_buf).expect("resolve failed");
-    assert_eq!(resolved, "/etc/kernel.cfg");
+    assert_eq!(resolved, "/etc/hostname");
 
     assert!(remove_symlink("/tmp/sym_test"));
     assert!(!is_symlink("/tmp/sym_test"));

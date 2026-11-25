@@ -2822,7 +2822,7 @@ pub mod info {
                     vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str("Keira Kernel ");
                     vga::print_str(env!("CARGO_PKG_VERSION"));
-                    vga::print_str("-keira-1 (");
+                    vga::print_str(" (");
                     vga::print_str(ARCH_NAME);
                     vga::print_str("-unknown-none)\n");
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);

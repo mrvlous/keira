@@ -67,7 +67,12 @@ pub mod logo {
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
         vga::print_str("Keira Kernel ");
         vga::print_str(env!("CARGO_PKG_VERSION"));
-        vga::print_str("-keira-1 (tty1)\n\n");
+        #[cfg(target_arch = "x86_64")]
+        vga::print_str(" (x86_64)\n\n");
+        #[cfg(target_arch = "x86")]
+        vga::print_str(" (i686)\n\n");
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        vga::print_str("\n\n");
     }
 }
 

@@ -70,7 +70,7 @@ fn test_mac_type_enforcement() {
     // Permissive mode: access allowed even if violates rule
     set_mac_mode(MacMode::Permissive);
     assert_eq!(get_mac_mode(), MacMode::Permissive);
-    assert!(check_path_access(2, "/etc/kernel.cfg", MAC_WRITE));
+    assert!(check_path_access(2, "/etc/hostname", MAC_WRITE));
 
     // Enforcing mode: User (PID 2) cannot write to /etc/
     set_mac_mode(MacMode::Enforcing);
@@ -78,11 +78,11 @@ fn test_mac_type_enforcement() {
 
     // User reading /bin/ is allowed
     assert!(check_path_access(2, "/bin/ls", MAC_READ));
-    // User writing to /etc/kernel.cfg is forbidden
-    assert!(!check_path_access(2, "/etc/kernel.cfg", MAC_WRITE));
+    // User writing to /etc/hostname is forbidden
+    assert!(!check_path_access(2, "/etc/hostname", MAC_WRITE));
 
     // System (PID 1) can write to /etc/
-    assert!(check_path_access(1, "/etc/kernel.cfg", MAC_WRITE));
+    assert!(check_path_access(1, "/etc/hostname", MAC_WRITE));
 
     let (checks, violations) = get_mac_stats();
     assert!(checks > 0);

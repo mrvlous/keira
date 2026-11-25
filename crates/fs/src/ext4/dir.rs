@@ -201,12 +201,9 @@ pub mod lookup {
             let root_lost = Ext4DirEntry::new(10, EXT4_FT_DIR, b"lost+found", 20);
             off += write_dir_entry_to_block(&root_lost, &mut ROOT_DIR_BLOCK, off);
 
-            let root_sys = Ext4DirEntry::new(11, EXT4_FT_DIR, b"system", 16);
-            off += write_dir_entry_to_block(&root_sys, &mut ROOT_DIR_BLOCK, off);
-
             let rem = 1024 - off as u16;
-            let root_boot = Ext4DirEntry::new(14, EXT4_FT_REG_FILE, b"boot.cfg", rem);
-            write_dir_entry_to_block(&root_boot, &mut ROOT_DIR_BLOCK, off);
+            let root_sys = Ext4DirEntry::new(11, EXT4_FT_DIR, b"system", rem);
+            write_dir_entry_to_block(&root_sys, &mut ROOT_DIR_BLOCK, off);
 
             // Format System directory on-disk binary block
             let mut soff = 0;
@@ -280,11 +277,14 @@ pub mod lookup {
         Ok((current_ino, node))
     }
 
+    #[cfg(test)]
     static mut DATA_LBA_2048: [u8; 512] = [0u8; 512];
-    static mut DATA_LBA_2049: [u8; 512] = [0u8; 512];
+    #[cfg(test)]
     static mut DATA_LBA_2050: [u8; 512] = [0u8; 512];
+    #[cfg(test)]
     static mut DATA_BLOCKS_INITIALIZED: bool = false;
 
+    #[cfg(test)]
     fn ensure_data_blocks_initialized() {
         unsafe {
             if DATA_BLOCKS_INITIALIZED {
@@ -294,9 +294,6 @@ pub mod lookup {
             DATA_LBA_2048[..4].copy_from_slice(b"\x7FELF");
             DATA_LBA_2048[4] = 2;
             DATA_LBA_2048[5] = 1;
-
-            let cfg = b"timeout=5\ndefault=keira\ntitle=Keira Kernel (EXT4 Boot Partition)\n";
-            DATA_LBA_2049[..cfg.len()].copy_from_slice(cfg);
 
             let ver = b"Keira Kernel (EXT4 Driver Active)\n";
             DATA_LBA_2050[..ver.len()].copy_from_slice(ver);
@@ -310,8 +307,6 @@ pub mod lookup {
         if !inode.is_regular_file() {
             return Err("Target is not a regular file");
         }
-
-        ensure_data_blocks_initialized();
 
         let extent = inode
             .first_extent()
@@ -328,18 +323,26 @@ pub mod lookup {
             }
         }
 
-        let sector_data = unsafe {
-            match physical_lba {
-                2048 => DATA_LBA_2048,
-                2049 => DATA_LBA_2049,
-                2050 => DATA_LBA_2050,
-                _ => return Err("EXT4 unmapped data block sector"),
-            }
-        };
+        #[cfg(test)]
+        {
+            ensure_data_blocks_initialized();
+            let sector_data = unsafe {
+                match physical_lba {
+                    2048 => DATA_LBA_2048,
+                    2050 => DATA_LBA_2050,
+                    _ => return Err("EXT4 unmapped data block sector"),
+                }
+            };
 
-        let to_copy = file_size.min(512);
-        buf[..to_copy].copy_from_slice(&sector_data[..to_copy]);
-        Ok(to_copy)
+            let to_copy = file_size.min(512);
+            buf[..to_copy].copy_from_slice(&sector_data[..to_copy]);
+            Ok(to_copy)
+        }
+        #[cfg(not(test))]
+        {
+            let _ = (physical_lba, file_size);
+            Err("No EXT4 block device attached")
+        }
     }
 }
 
