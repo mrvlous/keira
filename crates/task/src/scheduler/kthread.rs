@@ -19,13 +19,34 @@ pub mod daemon {
     use crate::scheduler::process::spawn;
     use crate::types::TaskState;
 
+    #[cfg(target_os = "none")]
+    unsafe fn wait_on_kthread_wq(wq: *mut crate::wait::WaitQueueHead) {
+        let pid = crate::scheduler::core::CURRENT_TASK_IDX;
+        let queue = &mut *wq;
+        queue.prepare_to_wait(crate::wait::WaitQueueEntry::new(pid, 0), TaskState::Blocked);
+        core::arch::asm!("sti; int 32");
+        queue.finish_wait(pid);
+    }
+
+    #[cfg(target_os = "none")]
+    unsafe fn sleep_kthread_idle() {
+        let pid = crate::scheduler::core::CURRENT_TASK_IDX;
+        if let Some(ref mut t) = TASKS[pid] {
+            t.state = TaskState::Blocked;
+        }
+        crate::scheduler::work_stealing::mark_task_dequeued(pid);
+        core::arch::asm!("sti; int 32");
+    }
+
     /// Master kernel daemon worker function.
     pub fn kthreadd_daemon() {
         loop {
             #[cfg(target_os = "none")]
             unsafe {
-                core::arch::asm!("pause");
+                sleep_kthread_idle();
             }
+            #[cfg(not(target_os = "none"))]
+            core::hint::spin_loop();
         }
     }
 
@@ -38,8 +59,14 @@ pub mod daemon {
             }
             #[cfg(target_os = "none")]
             unsafe {
-                core::arch::asm!("pause");
+                if !keira_mem::is_any_zone_under_pressure() {
+                    wait_on_kthread_wq(core::ptr::addr_of_mut!(crate::wait::KSWAPD_WQ));
+                } else {
+                    core::arch::asm!("pause");
+                }
             }
+            #[cfg(not(target_os = "none"))]
+            core::hint::spin_loop();
         }
     }
 
@@ -51,8 +78,10 @@ pub mod daemon {
             }
             #[cfg(target_os = "none")]
             unsafe {
-                core::arch::asm!("pause");
+                wait_on_kthread_wq(core::ptr::addr_of_mut!(crate::wait::KFLUSHD_WQ));
             }
+            #[cfg(not(target_os = "none"))]
+            core::hint::spin_loop();
         }
     }
 
@@ -65,18 +94,13 @@ pub mod daemon {
                 let has_pending = !(&*core::ptr::addr_of!(crate::workqueue::SYSTEM_WQ)).is_empty()
                     || !(&*core::ptr::addr_of!(crate::workqueue::SYSTEM_UNBOUND_WQ)).is_empty();
                 if !has_pending {
-                    let pid = crate::scheduler::core::CURRENT_TASK_IDX;
-                    let wq = &mut *core::ptr::addr_of_mut!(crate::wait::WORKQUEUE_WQ);
-                    wq.prepare_to_wait(
-                        crate::wait::WaitQueueEntry::new(pid, 0),
-                        TaskState::Blocked,
-                    );
-                    core::arch::asm!("sti; int 32");
-                    wq.finish_wait(pid);
+                    wait_on_kthread_wq(core::ptr::addr_of_mut!(crate::wait::WORKQUEUE_WQ));
                 } else {
                     core::arch::asm!("pause");
                 }
             }
+            #[cfg(not(target_os = "none"))]
+            core::hint::spin_loop();
         }
     }
 

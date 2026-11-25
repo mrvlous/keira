@@ -325,3 +325,42 @@ fn test_kthread_lifecycle_and_daemons() {
         assert_eq!(task.state, TaskState::Ready);
     }
 }
+
+#[test]
+fn test_exit_current_invokes_cleanup_before_clearing_fds() {
+    use ::core::sync::atomic::{AtomicBool, Ordering};
+    static HOOK_SAW_OPEN_SOCKET: AtomicBool = AtomicBool::new(false);
+
+    fn verify_cleanup_hook(pid: usize) {
+        unsafe {
+            if let Some(ref task) = TASKS[pid] {
+                if task.fds[3].is_open && task.fds[3].is_socket {
+                    HOOK_SAW_OPEN_SOCKET.store(true, Ordering::SeqCst);
+                }
+            }
+        }
+    }
+
+    let _lock = TestLock::acquire();
+    unsafe {
+        init();
+        let pid = spawn("exit_cleanup_test", kthreadd_daemon).expect("spawn test task");
+        if let Some(ref mut t) = TASKS[pid] {
+            t.fds[3] = FileDescriptor::new_socket(77, false);
+        }
+        HOOK_SAW_OPEN_SOCKET.store(false, Ordering::SeqCst);
+        register_task_cleanup_hook(verify_cleanup_hook);
+
+        let saved_curr = CURRENT_TASK_IDX;
+        CURRENT_TASK_IDX = pid;
+        exit_current(0);
+        CURRENT_TASK_IDX = saved_curr;
+
+        assert!(
+            HOOK_SAW_OPEN_SOCKET.load(Ordering::SeqCst),
+            "TASK_CLEANUP_HOOK must inspect open FDs before exit_current clears them"
+        );
+        assert!(!TASKS[pid].as_ref().unwrap().fds[3].is_open);
+        TASKS[pid] = None;
+    }
+}

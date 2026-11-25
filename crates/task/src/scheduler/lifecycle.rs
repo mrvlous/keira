@@ -30,8 +30,17 @@ pub mod exit {
                 let pid = if let Some(ref mut task) = TASKS[idx] {
                     task.exit_code = exit_code;
                     task.state = TaskState::Zombie(exit_code);
+                    task.parent_id
+                } else {
+                    0
+                };
 
-                    // Auto-reclaim open file descriptors and flock write locks
+                if let Some(hook) = TASK_CLEANUP_HOOK {
+                    hook(idx);
+                }
+
+                // Auto-reclaim open file descriptors and flock write locks after hook inspection
+                if let Some(ref mut task) = TASKS[idx] {
                     for fd in 0..MAX_FDS {
                         if task.fds[fd].is_open {
                             if task.fds[fd].write_mode {
@@ -44,18 +53,10 @@ pub mod exit {
                             task.fds[fd] = FileDescriptor::new();
                         }
                     }
-
-                    task.parent_id
-                } else {
-                    0
-                };
+                }
 
                 release_all_locks_for_task(idx);
                 crate::scheduler::work_stealing::mark_task_dequeued(idx);
-
-                if let Some(hook) = TASK_CLEANUP_HOOK {
-                    hook(idx);
-                }
 
                 // Reparent any child tasks to PID 0 (kernel_shell / Init)
                 for child in TASKS.iter_mut().take(MAX_TASKS).skip(1).flatten() {
@@ -86,11 +87,15 @@ pub mod exit {
         };
 
         if parent_id != 0 || CURRENT_TASK_IDX != 0 {
-            core::arch::asm!("sti; int 32");
-            loop {
-                core::arch::asm!("hlt");
+            #[cfg(target_os = "none")]
+            {
+                core::arch::asm!("sti; int 32");
+                loop {
+                    core::arch::asm!("hlt");
+                }
             }
         } else {
+            #[cfg(target_os = "none")]
             core::arch::asm!("sti");
         }
     }
