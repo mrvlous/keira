@@ -268,7 +268,17 @@ Allowed Types:
 Allowed Scopes:
 ~~~~~~~~~~~~~~~
 
-``arch``, ``core``, ``crypto``, ``mem``, ``io``, ``fs``, ``ipc``, ``net``, ``task``, ``syscall``, ``shell``, ``kernel``, ``userland``, ``build``, ``docs``.
+``arch``, ``core``, ``crypto``, ``mem``, ``io``, ``fs``, ``ipc``, ``net``, ``task``, ``syscall``, ``shell``, ``kernel``, ``userland``, ``build``, ``docs``, ``scripts``, ``sync``, ``journey``.
+
+Automated Commit Message Verification:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Install the local ``commit-msg`` hook or validate a range with ``scripts/checkpatch.py`` to catch missing scopes, ampersands and Oxford commas before committing:
+
+.. code-block:: bash
+
+   python3 scripts/checkpatch.py --install-hook
+   python3 scripts/checkpatch.py --git-log HEAD~10..HEAD
 
 9. Console Output & CLI Styling Standards
 =========================================

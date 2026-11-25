@@ -44,6 +44,9 @@ Perform static analysis on userland C code, Sphinx documentation and kernel scri
    # Validates patch style, trailing whitespace, SPDX identifiers and coding rules
    python3 scripts/checkpatch.py <changed files>
 
+   # Installs the local Git commit-msg hook enforcing commit conventions and zero Oxford commas
+   python3 scripts/checkpatch.py --install-hook
+
 4. Documentation Style & SPDX Verification
 ------------------------------------------
 
