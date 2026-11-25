@@ -28,11 +28,15 @@ pub unsafe fn enter_userspace() {
     pr_info!("tss", "Task State Segment CPU context loaded");
     pr_info!("msr", "CPU Ring 3 user-mode syscall interface MSRs enabled");
     pr_info!("mac", "Mandatory Access Control security subsystem active");
-    pr_info!("init", "executing canonical userspace init process (PID 1)");
-    pr_info!(
-        "init",
-        "system initialization complete; spawning interactive shell"
-    );
+
+    if cfg!(kconfig_userland) && !keira_core::has_boot_cmdline_flag("console=ring0") {
+        pr_info!("init", "userspace execution interface ready");
+    } else {
+        pr_info!(
+            "init",
+            "pure Ring 0 kernel profile active (userland skipped)"
+        );
+    }
 }
 
 pub mod context {

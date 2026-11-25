@@ -24,6 +24,6 @@ mod tests;
 pub use cpu::detect_cpu;
 pub use early::early_bringup;
 pub use multiboot::{
-    parse_multiboot2, BootPayloadInfo, MULTIBOOT2_BOOTLOADER_MAGIC, TAG_TYPE_END,
+    parse_multiboot2, BootPayloadInfo, MULTIBOOT2_BOOTLOADER_MAGIC, TAG_TYPE_CMDLINE, TAG_TYPE_END,
     TAG_TYPE_FRAMEBUFFER, TAG_TYPE_MODULE,
 };

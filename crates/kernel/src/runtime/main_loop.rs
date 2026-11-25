@@ -36,50 +36,65 @@ pub fn enter_main_loop() -> ! {
 
     shell::run_boot_script();
 
-    // Run canonical early userspace init (PID 1) in Ring 3 if present
+    let userland_requested =
+        cfg!(kconfig_userland) && !keira_core::has_boot_cmdline_flag("console=ring0");
+
+    // Launch optional early userspace init (respecting init= override) when enabled
     #[cfg(target_arch = "x86_64")]
-    unsafe {
-        let init_path = if keira_fs::exists("/bin/init.elf") {
-            Some("/bin/init.elf")
-        } else if keira_fs::exists("/bin/init") {
-            Some("/bin/init")
-        } else {
-            None
-        };
+    if userland_requested {
+        unsafe {
+            let mut cmd_init_buf = [0u8; 64];
+            let custom_init = keira_core::get_boot_cmdline_value("init", &mut cmd_init_buf)
+                .filter(|p| keira_fs::exists(p));
 
-        if let Some(path) = init_path {
-            let _ = shell::run_user_program(path, &[path]);
+            let init_path = if let Some(p) = custom_init {
+                Some(p)
+            } else if keira_fs::exists("/bin/init.elf") {
+                Some("/bin/init.elf")
+            } else if keira_fs::exists("/bin/init") {
+                Some("/bin/init")
+            } else {
+                None
+            };
+
+            if let Some(path) = init_path {
+                keira_core::pr_info!("init", "executing userspace init binary: {}", path);
+                let _ = shell::run_user_program(path, &[path]);
+            }
+
+            let sh_path = if keira_fs::exists("/bin/sh.elf") {
+                Some("/bin/sh.elf")
+            } else if keira_fs::exists("/bin/sh") {
+                Some("/bin/sh")
+            } else {
+                None
+            };
+
+            if let Some(path) = sh_path {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                let _ = shell::run_user_program(path, &[path]);
+            } else if init_path.is_none() {
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str(
+                    "[kernel] Pure freestanding Ring 0 mode: No userland binary attached.\n",
+                );
+                vga::print_str(
+                    "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
+                );
+                vga::set_color(vga::Color::White, vga::Color::Black);
+            }
         }
-    }
-
-    // Direct handover to canonical Ring 3 userspace shell on 64-bit systems
-    #[cfg(target_arch = "x86_64")]
-    unsafe {
-        let sh_path = if keira_fs::exists("/bin/sh.elf") {
-            Some("/bin/sh.elf")
-        } else if keira_fs::exists("/bin/sh") {
-            Some("/bin/sh")
-        } else {
-            None
-        };
-
-        if let Some(path) = sh_path {
-            vga::set_color(vga::Color::White, vga::Color::Black);
-            let _ = shell::run_user_program(path, &[path]);
-        } else {
-            vga::set_color(vga::Color::LightGreen, vga::Color::Black);
-            vga::print_str(
-                "[kernel] Pure freestanding Ring 0 mode: No userland /bin/sh attached.\n",
-            );
-            vga::print_str(
-                "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
-            );
-            vga::set_color(vga::Color::White, vga::Color::Black);
-        }
+    } else {
+        vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+        vga::print_str("[kernel] Pure freestanding Ring 0 mode (CONFIG_USERLAND=n).\n");
+        vga::print_str(
+            "[kernel] Entering supervisor console (Ring 0). Type 'help' for diagnostics.\n\n",
+        );
+        vga::set_color(vga::Color::White, vga::Color::Black);
     }
 
     #[cfg(target_arch = "x86")]
-    if !keira_fs::exists("/bin/sh.elf") && !keira_fs::exists("/bin/sh") {
+    if !userland_requested || (!keira_fs::exists("/bin/sh.elf") && !keira_fs::exists("/bin/sh")) {
         vga::set_color(vga::Color::LightGreen, vga::Color::Black);
         vga::print_str("[kernel] Pure freestanding Ring 0 mode: No userland /bin/sh attached.\n");
         vga::print_str(

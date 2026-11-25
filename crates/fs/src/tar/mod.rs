@@ -26,6 +26,6 @@ mod tests;
 
 pub use self::header::{octal_str_to_u64, UstarHeader};
 pub use self::reader::{
-    cat_file, exists, get_file_size, init, list_files, read_file_content, read_file_offset,
-    INITRD_END, INITRD_START,
+    cat_file, exists, get_file_size, init, is_initrd_loaded, list_files, read_file_content,
+    read_file_offset, INITRD_END, INITRD_START,
 };

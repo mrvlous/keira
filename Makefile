@@ -59,16 +59,7 @@ ISO_OUT_DIR     := $(BUILD_DIR)/iso
 DISK_DIR        := $(BUILD_DIR)/disk
 OBJ_DIR         := $(BUILD_DIR)/obj
 STAGING_DIR     := $(BUILD_DIR)/staging
-ISO_DIR         := $(STAGING_DIR)/isofiles
-FS_ROOT         := $(STAGING_DIR)/fs_root
-FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp-$(USERLAND)
-
-KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
-KERNEL_ISO      := $(ISO_OUT_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
-DISK_IMG        := $(DISK_DIR)/disk.img
-INITRD_TAR      := $(DISK_DIR)/initrd.tar
-
-# Configurable build parameters (with Kconfig-style override support)
+# Userland build switch resolved before staging paths and ISO outputs
 ifeq ($(CONFIG_USERLAND),y)
     USERLAND    ?= 1
 else ifeq ($(CONFIG_USERLAND),n)
@@ -76,6 +67,21 @@ else ifeq ($(CONFIG_USERLAND),n)
 else
     USERLAND    ?= 1
 endif
+export KEIRA_USERLAND := $(USERLAND)
+
+ifeq ($(USERLAND),0)
+    ISO_DIR     := $(STAGING_DIR)/isofiles-bare
+    KERNEL_ISO  := $(ISO_OUT_DIR)/$(KERNEL_NAME)-bare-$(ARCH)-$(DATE_SUFFIX).iso
+else
+    ISO_DIR     := $(STAGING_DIR)/isofiles
+    KERNEL_ISO  := $(ISO_OUT_DIR)/$(KERNEL_NAME)-$(ARCH)-$(DATE_SUFFIX).iso
+endif
+FS_ROOT         := $(STAGING_DIR)/fs_root
+FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp-$(USERLAND)
+
+KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
+DISK_IMG        := $(DISK_DIR)/disk.img
+INITRD_TAR      := $(DISK_DIR)/initrd.tar
 
 ifeq ($(CONFIG_SMP),y)
     ifdef CONFIG_QEMU_CPUS
@@ -391,21 +397,26 @@ include/generated/autoconf.h:
 	$(Q)python3 scripts/kconfig/genheader.py .config include/generated/autoconf.h
 
 # Binary & ISO construction rules
+ifeq ($(USERLAND),0)
+$(KERNEL_ISO): $(KERNEL_BIN) | dirs
+	@$(LOG_ISO) "Creating standalone pure-kernel bootable ISO ($(ARCH))..."
+	$(Q)rm -rf $(ISO_DIR)
+	$(Q)mkdir -p $(ISO_DIR)/boot/grub
+	$(Q)cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_NAME).bin
+	$(Q)printf 'set timeout=0\nset default=0\n\nmenuentry "Keira Kernel (Ring 0)" {\n\tmultiboot2 /boot/keira.bin console=ring0 quiet\n\tboot\n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)$(GRUB_MKRESCUE) -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
+	@$(LOG_DONE) "$(KERNEL_ISO) ready"
+else
 $(KERNEL_ISO): $(KERNEL_BIN) $(INITRD_TAR) | dirs
 	@$(LOG_ISO) "Creating bootable ISO ($(ARCH))..."
+	$(Q)rm -rf $(ISO_DIR)
 	$(Q)mkdir -p $(ISO_DIR)/boot/grub
 	$(Q)cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_NAME).bin
 	$(Q)cp $(INITRD_TAR) $(ISO_DIR)/boot/initrd.tar
-	$(Q)echo 'set timeout=0' > $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo 'set default=0' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo '' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo 'menuentry "Keira" {' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo '	multiboot2 /boot/keira.bin' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo '	module2 /boot/initrd.tar initrd' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo '	boot' >> $(ISO_DIR)/boot/grub/grub.cfg
-	$(Q)echo '}' >> $(ISO_DIR)/boot/grub/grub.cfg
+	$(Q)printf 'set timeout=0\nset default=0\n\nmenuentry "Keira Kernel" {\n\tmultiboot2 /boot/keira.bin console=tty0 root=/dev/sda quiet\n\tmodule2 /boot/initrd.tar initrd\n\tboot\n}\n' > $(ISO_DIR)/boot/grub/grub.cfg
 	$(Q)$(GRUB_MKRESCUE) -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null
 	@$(LOG_DONE) "$(KERNEL_ISO) ready"
+endif
 
 $(KERNEL_BIN): $(ALL_OBJS) $(RUST_LIB) FORCE | dirs
 	@$(LOG_LD) "Linking kernel ($(ARCH))..."

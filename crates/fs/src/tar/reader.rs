@@ -25,6 +25,11 @@ pub mod bounds {
             INITRD_END = end;
         }
     }
+
+    /// Returns whether a non-empty USTAR initrd payload has been registered by the bootloader.
+    pub fn is_initrd_loaded() -> bool {
+        unsafe { INITRD_START != 0 && INITRD_END > INITRD_START }
+    }
 }
 
 pub mod listing {

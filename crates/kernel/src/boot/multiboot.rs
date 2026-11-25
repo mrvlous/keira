@@ -70,6 +70,19 @@ pub unsafe fn parse_multiboot2(multiboot_info_ptr: usize) -> BootPayloadInfo {
         }
 
         match tag_type {
+            TAG_TYPE_CMDLINE => {
+                if tag_size > 8 {
+                    let max_bytes = (tag_size as usize - 8).min(keira_core::MAX_CMDLINE_LEN);
+                    let raw_slice = core::slice::from_raw_parts((addr + 8) as *const u8, max_bytes);
+                    let nul_pos = raw_slice
+                        .iter()
+                        .position(|&b| b == 0)
+                        .unwrap_or(raw_slice.len());
+                    if let Ok(cmdline_str) = core::str::from_utf8(&raw_slice[..nul_pos]) {
+                        keira_core::set_boot_cmdline(cmdline_str);
+                    }
+                }
+            }
             TAG_TYPE_MODULE => {
                 let start = *((addr + 8) as *const u32) as u64;
                 let end = *((addr + 12) as *const u32) as u64;
@@ -107,6 +120,13 @@ pub unsafe fn parse_multiboot2(multiboot_info_ptr: usize) -> BootPayloadInfo {
         }
 
         addr += ((tag_size + 7) & !7) as usize;
+    }
+
+    if !keira_core::is_boot_cmdline_set() {
+        #[cfg(kconfig_userland)]
+        keira_core::set_boot_cmdline("console=tty0 quiet");
+        #[cfg(not(kconfig_userland))]
+        keira_core::set_boot_cmdline("console=ring0 quiet");
     }
 
     payload

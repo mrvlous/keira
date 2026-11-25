@@ -70,12 +70,17 @@ pub unsafe fn init_storage_and_fs() {
                 keira_core::pr_warn!("vfs", "FAT16 root mount failed: {}", e);
             }
         }
-    } else {
+    } else if keira_fs::tar::is_initrd_loaded() {
         keira_core::pr_info!(
             "block",
             "no hardware drive attached; falling back to ramdisk"
         );
         keira_core::pr_info!("vfs", "mounted root filesystem (ramdisk/initrd)");
+    } else {
+        keira_core::pr_info!(
+            "block",
+            "no hardware drive or initrd attached; virtual rootfs active (procfs/devfs/tmpfs)"
+        );
     }
 
     keira_mem::vmm::register_file_backing_hooks(file_backing_read, file_backing_sync);

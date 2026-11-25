@@ -65,10 +65,17 @@ pub unsafe fn init_security_and_measure(initrd_start: u64, initrd_end: u64) {
         "tpm",
         "TPM 2.0 hardware security enclave and PCR banks initialized"
     );
-    keira_core::pr_info!(
-        "ima",
-        "measured boot: kernel image and initrd integrity verified"
-    );
+    if initrd_start != 0 && initrd_end > initrd_start {
+        keira_core::pr_info!(
+            "ima",
+            "measured boot: kernel image and initrd integrity verified"
+        );
+    } else {
+        keira_core::pr_info!(
+            "ima",
+            "measured boot: kernel image integrity verified (no initrd)"
+        );
+    }
     keira_core::pr_info!("sched", "preemptive round-robin thread scheduler active");
 }
 

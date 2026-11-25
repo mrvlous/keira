@@ -26,9 +26,12 @@ pub fn read_loadavg(buf: &mut [u8]) -> Result<usize, &'static str> {
     Ok(writer.len())
 }
 
-/// Reads static kernel bootloader command-line arguments into destination buffer.
+/// Reads kernel bootloader command-line arguments into destination buffer.
 pub fn read_cmdline(buf: &mut [u8]) -> Result<usize, &'static str> {
+    let mut cmd_buf = [0u8; keira_core::MAX_CMDLINE_LEN];
+    let len = keira_core::copy_boot_cmdline(&mut cmd_buf);
+    let cmd_str = core::str::from_utf8(&cmd_buf[..len]).unwrap_or("quiet");
     let mut writer = BufWriter::new(buf);
-    let _ = writeln!(writer, "console=tty0 root=/dev/sda quiet");
+    let _ = writeln!(writer, "{}", cmd_str);
     Ok(writer.len())
 }

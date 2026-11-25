@@ -20,12 +20,18 @@
 
 #![no_std]
 
+pub mod cmdline;
 pub mod collections;
 pub mod error;
 pub mod log;
 pub mod mem;
 pub mod module;
 pub mod sync;
+
+pub use cmdline::{
+    copy_boot_cmdline, get_boot_cmdline_value, has_boot_cmdline_flag, is_boot_cmdline_set,
+    reset_boot_cmdline, set_boot_cmdline, MAX_CMDLINE_LEN,
+};
 
 pub use collections::lru_cache::LruCache;
 pub use collections::ring_buffer::RingBuffer;

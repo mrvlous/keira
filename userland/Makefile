@@ -29,12 +29,14 @@ SHELL           := /bin/bash
 include ../scripts/Kbuild.include
 
 # Target architecture: x86_64 (default) or i686 (pure 32-bit x86)
-ifeq ($(CONFIG_ARCH_I686),y)
-    ARCH        := i686
-else ifeq ($(CONFIG_ARCH_X86_64),y)
-    ARCH        := x86_64
-else
-    ARCH        ?= x86_64
+ifndef ARCH
+    ifeq ($(CONFIG_ARCH_I686),y)
+        ARCH    := i686
+    else ifeq ($(CONFIG_ARCH_X86_64),y)
+        ARCH    := x86_64
+    else
+        ARCH    := x86_64
+    endif
 endif
 
 # Single source of truth: extract kernel release version from root Cargo.toml
