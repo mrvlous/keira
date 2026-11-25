@@ -42,7 +42,7 @@ pub use identity::{
     setsid_current,
 };
 pub use kthread::{
-    init_kthreads, kflushd_daemon, kswapd_daemon, kthread_create, kthreadd_daemon,
+    init_kthreads, kflushd_daemon, kswapd_daemon, kthread_create, kthreadd_daemon, kworker_daemon,
 };
 pub use lifecycle::{
     exit_current, reap_orphaned_zombies, reap_orphaned_zombies_locked, stop_task, sys_waitpid,

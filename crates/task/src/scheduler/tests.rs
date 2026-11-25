@@ -311,9 +311,14 @@ fn test_kthread_lifecycle_and_daemons() {
         assert_eq!(TASKS[3].as_ref().unwrap().name, "kflushd");
         assert!(!TASKS[3].as_ref().unwrap().is_user);
 
+        assert!(TASKS[4].is_some());
+        assert_eq!(TASKS[4].as_ref().unwrap().name, "kworker/0:0");
+        assert!(!TASKS[4].as_ref().unwrap().is_user);
+        assert_eq!(TASKS[4].as_ref().unwrap().parent_id, 1);
+
         // Test spawning a dynamic custom kernel thread
         let custom_pid = kthread_create("kworker_test", kthreadd_daemon).expect("spawn kthread");
-        assert_eq!(custom_pid, 4);
+        assert_eq!(custom_pid, 5);
         let task = TASKS[custom_pid].as_ref().unwrap();
         assert_eq!(task.name, "kworker_test");
         assert!(!task.is_user);

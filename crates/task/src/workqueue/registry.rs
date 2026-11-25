@@ -71,10 +71,14 @@ impl WorkQueueSnapshot {
 /// Schedules an immediate work item onto `SYSTEM_WQ`.
 pub fn schedule_work(name: &'static str, func: WorkFn, data: usize) -> Result<u64, &'static str> {
     let work = WorkStruct::new(name, func, data);
-    unsafe {
+    let work_id = unsafe {
         let wq = &mut *core::ptr::addr_of_mut!(SYSTEM_WQ);
-        wq.queue_work(work)
+        wq.queue_work(work)?
+    };
+    unsafe {
+        let _ = (&mut *core::ptr::addr_of_mut!(crate::wait::WORKQUEUE_WQ)).wake_up();
     }
+    Ok(work_id)
 }
 
 /// Schedules a delayed work item onto `SYSTEM_UNBOUND_WQ`.
@@ -85,10 +89,16 @@ pub fn schedule_delayed_work(
     delay_ms: u64,
 ) -> Result<u64, &'static str> {
     let dwork = DelayedWork::new(name, func, data, delay_ms);
-    unsafe {
+    let work_id = unsafe {
         let wq = &mut *core::ptr::addr_of_mut!(SYSTEM_UNBOUND_WQ);
-        wq.queue_delayed_work(dwork)
+        wq.queue_delayed_work(dwork)?
+    };
+    if delay_ms == 0 {
+        unsafe {
+            let _ = (&mut *core::ptr::addr_of_mut!(crate::wait::WORKQUEUE_WQ)).wake_up();
+        }
     }
+    Ok(work_id)
 }
 
 /// Cancels a pending work item by identifier across registered system queues.

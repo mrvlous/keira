@@ -33,8 +33,11 @@ pub static mut KSWAPD_WQ: WaitQueueHead = WaitQueueHead::new("kswapd_wq");
 /// Wait queue for background buffer writeback daemon.
 pub static mut KFLUSHD_WQ: WaitQueueHead = WaitQueueHead::new("kflushd_wq");
 
+/// Wait queue for background kernel workqueue executor daemon.
+pub static mut WORKQUEUE_WQ: WaitQueueHead = WaitQueueHead::new("workqueue_wq");
+
 /// Total number of system registered wait queues.
-pub const REGISTERED_WAIT_QUEUES: usize = 5;
+pub const REGISTERED_WAIT_QUEUES: usize = 6;
 
 /// Telemetry snapshot of a single wait queue head.
 #[derive(Copy, Clone, Debug)]
@@ -81,6 +84,7 @@ pub fn get_wait_queue_snapshots() -> [WaitQueueSnapshot; REGISTERED_WAIT_QUEUES]
             &mut *core::ptr::addr_of_mut!(PIPE_WRITE_WQ),
             &mut *core::ptr::addr_of_mut!(KSWAPD_WQ),
             &mut *core::ptr::addr_of_mut!(KFLUSHD_WQ),
+            &mut *core::ptr::addr_of_mut!(WORKQUEUE_WQ),
         ];
 
         for (i, wq) in queues.into_iter().enumerate() {
@@ -142,7 +146,11 @@ pub fn format_waitqueue_stats(buf: &mut [u8]) -> usize {
         let _ = write!(
             writer,
             "{:<18} {:>8} {:>12} {:>12} {:>14}\n",
-            snap.name, snap.waiters_count, snap.total_waits, snap.total_wakeups, snap.last_wake_tick
+            snap.name,
+            snap.waiters_count,
+            snap.total_waits,
+            snap.total_wakeups,
+            snap.last_wake_tick
         );
     }
 

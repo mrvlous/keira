@@ -56,6 +56,30 @@ pub mod daemon {
         }
     }
 
+    /// Background kernel workqueue executor daemon (`[kworker/0:0]`).
+    pub fn kworker_daemon() {
+        loop {
+            let _processed = crate::workqueue::process_pending_workqueues();
+            #[cfg(target_os = "none")]
+            unsafe {
+                let has_pending = !(&*core::ptr::addr_of!(crate::workqueue::SYSTEM_WQ)).is_empty()
+                    || !(&*core::ptr::addr_of!(crate::workqueue::SYSTEM_UNBOUND_WQ)).is_empty();
+                if !has_pending {
+                    let pid = crate::scheduler::core::CURRENT_TASK_IDX;
+                    let wq = &mut *core::ptr::addr_of_mut!(crate::wait::WORKQUEUE_WQ);
+                    wq.prepare_to_wait(
+                        crate::wait::WaitQueueEntry::new(pid, 0),
+                        TaskState::Blocked,
+                    );
+                    core::arch::asm!("sti; int 32");
+                    wq.finish_wait(pid);
+                } else {
+                    core::arch::asm!("pause");
+                }
+            }
+        }
+    }
+
     /// Spawns a named kernel thread running strictly in Ring 0.
     pub fn kthread_create(name: &'static str, entry: fn()) -> Result<usize, &'static str> {
         unsafe { spawn(name, entry) }
@@ -94,9 +118,20 @@ pub mod daemon {
                     .prepare_to_wait(crate::wait::WaitQueueEntry::new(pid, 0), TaskState::Blocked);
             }
         }
+        // Spawn kworker/0:0 (PID 4)
+        if let Ok(pid) = kthread_create("kworker/0:0", kworker_daemon) {
+            unsafe {
+                if let Some(ref mut t) = TASKS[pid] {
+                    t.state = TaskState::Blocked;
+                    t.parent_id = 1;
+                }
+                (&mut *core::ptr::addr_of_mut!(crate::wait::WORKQUEUE_WQ))
+                    .prepare_to_wait(crate::wait::WaitQueueEntry::new(pid, 0), TaskState::Blocked);
+            }
+        }
     }
 }
 
 pub use self::daemon::{
-    init_kthreads, kflushd_daemon, kswapd_daemon, kthread_create, kthreadd_daemon,
+    init_kthreads, kflushd_daemon, kswapd_daemon, kthread_create, kthreadd_daemon, kworker_daemon,
 };

@@ -90,10 +90,11 @@ fn test_wait_queue_wake_up_all() {
 #[test]
 fn test_wait_queue_registry_and_format() {
     let snapshots = get_wait_queue_snapshots();
-    assert_eq!(snapshots.len(), 5);
+    assert_eq!(snapshots.len(), 6);
     assert_eq!(snapshots[0].name, "child_exit_wq");
     assert_eq!(snapshots[1].name, "pipe_read_wq");
     assert_eq!(snapshots[2].name, "pipe_write_wq");
+    assert_eq!(snapshots[5].name, "workqueue_wq");
 
     let mut buf = [0u8; 1024];
     let len = format_waitqueue_stats(&mut buf);

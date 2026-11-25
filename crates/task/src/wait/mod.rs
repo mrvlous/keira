@@ -25,6 +25,6 @@ mod tests;
 pub use entry::{WaitQueueEntry, WQ_FLAG_EXCLUSIVE, WQ_FLAG_WOKEN};
 pub use queue::{WaitQueueHead, MAX_WAITERS_PER_QUEUE};
 pub use registry::{
-    format_waitqueue_stats, get_wait_queue_snapshots, WaitQueueSnapshot, CHILD_EXIT_WQ,
-    KFLUSHD_WQ, KSWAPD_WQ, PIPE_READ_WQ, PIPE_WRITE_WQ, REGISTERED_WAIT_QUEUES,
+    format_waitqueue_stats, get_wait_queue_snapshots, WaitQueueSnapshot, CHILD_EXIT_WQ, KFLUSHD_WQ,
+    KSWAPD_WQ, PIPE_READ_WQ, PIPE_WRITE_WQ, REGISTERED_WAIT_QUEUES, WORKQUEUE_WQ,
 };
