@@ -371,7 +371,9 @@ pub mod daemon {
             vga::print_u64(flush_telem.pages_flushed);
             vga::print_str(" | Dirty Pages in Cache: ");
             vga::print_u64(flush_telem.dirty_pages_count as u64);
-            vga::print_str("\n  Writeback Policy: Interval / Dirty Watermark | Capacity: 32 pages (128 KiB)\n");
+            vga::print_str(
+                "\n  Writeback Policy: Interval / Dirty Watermark | Capacity: 32 pages (128 KiB)\n",
+            );
         }
     }
     pub mod watchpoint {
@@ -1114,7 +1116,9 @@ pub mod info {
             if args.has_flag('h', "help") {
                 {
                     vga::set_color(vga::Color::White, vga::Color::Black);
-                    vga::print_str("Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-c] [-l] [-z] [-h]\n\n");
+                    vga::print_str(
+                        "Usage: memory [-m] [-k] [-b] [-s] [-t] [-p] [-c] [-l] [-z] [-h]\n\n",
+                    );
                     vga::print_str(
                 "Description:\n  Display physical frame allocator, kernel heap and paging statistics.\n\n",
             );
@@ -2551,8 +2555,12 @@ pub mod info {
                     "Description:\n  Display binary buddy allocator free page fragmentation by order.\n\n",
                 );
                 vga::print_str("Options:\n");
-                vga::print_str("  -z, --zone <name> Filter output by memory zone (DMA, Normal, HighMem)\n");
-                vga::print_str("  -v, --verbose     Display chunk sizes and memory capacities per order\n");
+                vga::print_str(
+                    "  -z, --zone <name> Filter output by memory zone (DMA, Normal, HighMem)\n",
+                );
+                vga::print_str(
+                    "  -v, --verbose     Display chunk sizes and memory capacities per order\n",
+                );
                 vga::print_str("  -h, --help        Show this help message and exit\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 return;
@@ -3317,13 +3325,17 @@ pub mod info {
 
             vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Kernel Wait Queues & Sleep Synchronization:\n");
-            vga::print_str("NAME                WAITERS  TOTAL WAITS      WAKEUPS    LAST WAKE (ms)\n");
+            vga::print_str(
+                "NAME                WAITERS  TOTAL WAITS      WAKEUPS    LAST WAKE (ms)\n",
+            );
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-            vga::print_str("------------------  -------  -----------  -----------  ----------------\n");
+            vga::print_str(
+                "------------------  -------  -----------  -----------  ----------------\n",
+            );
 
             let snapshots = get_wait_queue_snapshots();
             for snap in &snapshots {
-                print_padded_wq_name(snap.name);
+                print_padded_col(snap.name, 20);
                 print_padded_num(snap.waiters_count as u64, 9);
                 print_padded_num(snap.total_waits, 13);
                 print_padded_num(snap.total_wakeups, 13);
@@ -3345,15 +3357,15 @@ pub mod info {
             }
         }
 
-        fn print_padded_wq_name(name: &str) {
-            vga::print_str(name);
-            let spaces = 20usize.saturating_sub(name.len());
+        pub(super) fn print_padded_col(s: &str, width: usize) {
+            vga::print_str(s);
+            let spaces = width.saturating_sub(s.len());
             for _ in 0..spaces {
                 vga::print_str(" ");
             }
         }
 
-        fn print_padded_num(num: u64, width: usize) {
+        pub(super) fn print_padded_num(num: u64, width: usize) {
             let mut digits = 1;
             let mut temp = num;
             while temp >= 10 {
@@ -3365,6 +3377,96 @@ pub mod info {
                 vga::print_str(" ");
             }
             vga::print_u64(num);
+        }
+    }
+    pub mod workqueue {
+        use crate::args::CliArgs;
+        use keira_io::vga;
+        use keira_task::{
+            flush_system_workqueues, get_workqueue_snapshots, run_workqueue_self_test,
+        };
+
+        pub fn run(parts: &mut core::str::SplitWhitespace) {
+            let args = CliArgs::parse(parts);
+
+            if args.has_flag('h', "help") {
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Usage: workqueue [-v] [-f] [-t] [-h]\n\n");
+                vga::print_str(
+                    "Description:\n  Display kernel workqueues and deferred Ring 0 task execution.\n\n",
+                );
+                vga::print_str("Options:\n");
+                vga::print_str(
+                    "  -v, --verbose Display queued work item descriptors per workqueue\n",
+                );
+                vga::print_str(
+                    "  -f, --flush   Flush and execute all queued deferred work items\n",
+                );
+                vga::print_str(
+                    "  -t, --test    Schedule a diagnostic probe job and verify execution\n",
+                );
+                vga::print_str("  -h, --help    Show this help message and exit\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            if args.has_flag('f', "flush") {
+                let flushed = flush_system_workqueues();
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("[kworker/0:0] Flushed ");
+                vga::print_u64(flushed as u64);
+                vga::print_str(" deferred work item(s)\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            if args.has_flag('t', "test") {
+                let (before, after) = run_workqueue_self_test();
+                vga::set_color(vga::Color::LightGreen, vga::Color::Black);
+                vga::print_str("[OK] ");
+                vga::set_color(vga::Color::White, vga::Color::Black);
+                vga::print_str("Workqueue probe executed (counter: ");
+                vga::print_u64(before);
+                vga::print_str(" -> ");
+                vga::print_u64(after);
+                vga::print_str(")\n");
+                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                return;
+            }
+
+            vga::set_color(vga::Color::White, vga::Color::Black);
+            vga::print_str("Kernel Workqueues & Deferred Execution ([kworker/0:0]):\n");
+            vga::print_str(
+                "WORKQUEUE       PENDING   QUEUED  EXECUTED  CANCELLED  LAST RUN (ms)\n",
+            );
+            vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+            vga::print_str(
+                "--------------  -------  -------  --------  ---------  -------------\n",
+            );
+
+            let snapshots = get_workqueue_snapshots();
+            for snap in &snapshots {
+                super::waitqueue::print_padded_col(snap.name, 16);
+                super::waitqueue::print_padded_num(snap.pending_count as u64, 7);
+                super::waitqueue::print_padded_num(snap.total_queued, 9);
+                super::waitqueue::print_padded_num(snap.total_executed, 10);
+                super::waitqueue::print_padded_num(snap.total_cancelled, 11);
+                super::waitqueue::print_padded_num(snap.last_exec_tick, 15);
+                vga::print_str("\n");
+
+                if args.has_flag('v', "verbose") && snap.items_len > 0 {
+                    for i in 0..snap.items_len {
+                        let item = snap.items[i];
+                        vga::print_str("  `- work[");
+                        vga::print_u64(item.id);
+                        vga::print_str("]: ");
+                        vga::print_str(item.name);
+                        vga::print_str(" (due=");
+                        vga::print_u64(item.execute_at_ms);
+                        vga::print_str("ms)\n");
+                    }
+                }
+            }
         }
     }
 }
@@ -3395,6 +3497,7 @@ pub use self::info::unixsock;
 pub use self::info::unwind;
 pub use self::info::vmainfo;
 pub use self::info::waitqueue;
+pub use self::info::workqueue;
 
 #[cfg(test)]
 mod tests {
@@ -3678,5 +3781,27 @@ mod tests {
 
         let mut args_default = "".split_whitespace();
         waitqueue::run(&mut args_default);
+    }
+
+    #[test]
+    fn test_sys_workqueue() {
+        let mut args_help = "workqueue --help".split_whitespace();
+        args_help.next();
+        workqueue::run(&mut args_help);
+
+        let mut args_verbose = "workqueue -v".split_whitespace();
+        args_verbose.next();
+        workqueue::run(&mut args_verbose);
+
+        let mut args_test = "workqueue -t".split_whitespace();
+        args_test.next();
+        workqueue::run(&mut args_test);
+
+        let mut args_flush = "workqueue -f".split_whitespace();
+        args_flush.next();
+        workqueue::run(&mut args_flush);
+
+        let mut args_default = "".split_whitespace();
+        workqueue::run(&mut args_default);
     }
 }

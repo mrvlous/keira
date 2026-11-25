@@ -134,7 +134,9 @@ pub mod modules {
             if let Some("-h") | Some("--help") = parts.next() {
                 vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("Usage: lsmod [-h]\n\n");
-                vga::print_str("Description:\n  Show status of loaded kernel modules in memory.\n\n");
+                vga::print_str(
+                    "Description:\n  Show status of loaded kernel modules in memory.\n\n",
+                );
                 vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
                 return;
@@ -211,7 +213,11 @@ pub mod modules {
                             .next()
                             .unwrap_or(target)
                             .trim_end_matches(".ko");
-                        match keira_core::module::load_elf_module(mod_name, &file_buf[..bytes_read], true) {
+                        match keira_core::module::load_elf_module(
+                            mod_name,
+                            &file_buf[..bytes_read],
+                            true,
+                        ) {
                             Ok(loaded) => {
                                 vga::set_color(vga::Color::LightGreen, vga::Color::Black);
                                 vga::print_str("[kernel] ELF module '");
@@ -345,7 +351,9 @@ pub mod modules {
                 vga::print_str(".ko\n");
                 vga::print_str("description:    ");
                 vga::print_str(m.description);
-                vga::print_str("\nauthor:         Moh. Ananda Firmansyah Putra <mrvlous@proton.me>\n");
+                vga::print_str(
+                    "\nauthor:         Moh. Ananda Firmansyah Putra <mrvlous@proton.me>\n",
+                );
                 vga::print_str("license:        GPL-2.0-only\n");
                 vga::print_str("size:           ");
                 vga::print_u64(m.size as u64);

@@ -188,6 +188,7 @@ pub mod router {
             "unixsock" | "unix" => crate::cmds::sys::info::unixsock::run(&mut parts),
             "vmainfo" | "vma" => crate::cmds::sys::info::vmainfo::run(&mut parts),
             "waitqueue" | "wq" => crate::cmds::sys::info::waitqueue::run(&mut parts),
+            "workqueue" | "kworker" => crate::cmds::sys::info::workqueue::run(&mut parts),
             "pollinfo" | "poll" => crate::cmds::sys::info::pollinfo::run(&mut parts),
             "selectinfo" | "select" => crate::cmds::sys::info::selectinfo::run(&mut parts),
             "run" => crate::cmds::run::run(&mut parts),

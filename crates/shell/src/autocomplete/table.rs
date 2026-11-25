@@ -38,6 +38,7 @@ pub mod engine {
         "insmod",
         "irq",
         "kthreads",
+        "kworker",
         "limit",
         "lsmod",
         "mem",
@@ -76,6 +77,7 @@ pub mod engine {
         "waitqueue",
         "watchpoint",
         "wipe",
+        "workqueue",
         "wq",
     ];
 

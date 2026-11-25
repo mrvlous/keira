@@ -44,6 +44,7 @@ pub mod misc {
             vga::print_str("  waitqueue, wq  Kernel wait queues and condition synchronization\n\n");
             vga::print_str("Control & Lifecycle:\n");
             vga::print_str("  daemons, kthreads Active Ring 0 background kernel daemons\n");
+            vga::print_str("  workqueue, kworker Deferred kernel workqueues and kworker pool\n");
             vga::print_str("  syslog, dmesg  Circular kernel logging buffer messages\n");
             vga::print_str("  sync, wipe     Flush dirty cache buffers and reset display\n");
             vga::print_str("  sh, run <elf>  Launch Ring 3 shell or execute ELF binary\n");
