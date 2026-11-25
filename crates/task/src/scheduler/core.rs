@@ -482,6 +482,7 @@ pub mod state {
         keira_mem::register_mmap_aslr_hook(mmap_aslr_offset_provider);
         keira_fs::proc::register_aslr_hook(Some(crate::aslr::get_aslr_policy));
         keira_fs::proc::register_waitqueue_hook(crate::wait::format_waitqueue_stats);
+        keira_fs::proc::register_workqueues_hook(crate::workqueue::format_workqueue_stats);
     }
 
     fn mmap_aslr_offset_provider() -> u64 {

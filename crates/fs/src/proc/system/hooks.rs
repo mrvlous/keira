@@ -122,3 +122,16 @@ pub fn register_waitqueue_hook(hook: WaitQueueTelemetryProvider) {
         WAITQUEUE_HOOK = Some(hook);
     }
 }
+
+/// Callback provider function type for synthesizing workqueue telemetry into a buffer.
+pub type WorkQueueTelemetryProvider = fn(buf: &mut [u8]) -> usize;
+
+/// Registered hook for live in-kernel workqueue reflection (/proc/workqueues).
+pub static mut WORKQUEUES_HOOK: Option<WorkQueueTelemetryProvider> = None;
+
+/// Registers live workqueue introspection hook.
+pub fn register_workqueues_hook(hook: WorkQueueTelemetryProvider) {
+    unsafe {
+        WORKQUEUES_HOOK = Some(hook);
+    }
+}

@@ -41,6 +41,7 @@ pub mod uptime;
 pub mod version;
 pub mod vmstat;
 pub mod waitqueue;
+pub mod workqueues;
 
 pub use self::aslr::read_randomize_va_space;
 pub use self::buddyinfo::read_buddyinfo;
@@ -69,3 +70,4 @@ pub use self::uptime::read_uptime;
 pub use self::version::read_version;
 pub use self::vmstat::read_vmstat;
 pub use self::waitqueue::read_waitqueue;
+pub use self::workqueues::read_workqueues;

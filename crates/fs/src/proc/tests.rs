@@ -186,3 +186,13 @@ fn test_read_waitqueue() {
     assert!(s.contains("# Name"));
     assert!(s.contains("Waiters"));
 }
+
+#[test]
+fn test_read_workqueues() {
+    assert!(exists("workqueues"));
+    let mut buf = [0u8; 512];
+    let n = read_proc_file("workqueues", &mut buf).expect("read workqueues failed");
+    let s = core::str::from_utf8(&buf[..n]).expect("utf8 workqueues");
+    assert!(s.contains("# Workqueue"));
+    assert!(s.contains("Pending"));
+}
