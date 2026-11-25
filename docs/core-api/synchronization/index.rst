@@ -4,7 +4,7 @@
 Synchronization & Concurrency
 =============================
 
-Locking primitives, spinlocks, mutexes and epoch-based reclamation.
+Locking primitives, spinlocks, mutexes, wait queues, workqueues and epoch-based reclamation.
 
 Subtopics & Specifications
 ==========================
@@ -15,3 +15,5 @@ Subtopics & Specifications
    ebr-sync
    mutexes
    spinlocks
+   waitqueues
+   workqueues

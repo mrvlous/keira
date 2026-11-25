@@ -149,6 +149,10 @@ Command Reference
      - ``vmainfo [-a] [pid]``
      - Display Virtual Memory Areas (VMAs), page mappings and address space layout (alias: ``vma``)
      - ``-a, --all``: Inspect VMAs for all active tasks ``-h, --help``: Usage info
+   * - ``waitqueue``
+     - ``waitqueue [-v]``
+     - Display kernel wait queues and condition sleep synchronization metrics (alias: ``wq``)
+     - ``-v, --verbose``: Show waiting task PIDs per queue ``-h, --help``: Usage info
    * - ``watchpoint``
      - ``watchpoint``
      - Inspect hardware debug registers (DR0-DR3) and watchpoint traps
@@ -157,3 +161,7 @@ Command Reference
      - ``wipe``
      - Clear and reset the VGA text console display buffer
      - ``-h, --help``
+   * - ``workqueue``
+     - ``workqueue [-v|-f|-t]``
+     - Display deferred kernel workqueues and ``[kworker/0:0]`` execution statistics (alias: ``kworker``)
+     - ``-v, --verbose``: List pending work descriptors ``-f, --flush``: Flush queued jobs ``-t, --test``: Run probe job ``-h, --help``: Usage info
