@@ -14,7 +14,7 @@ Introduced in Milestone 61, this test suite verifies that ``sh.elf`` correctly e
 1. **Parameter Expansion**: Asserts variable assignment, interpolation, positional parameter bindings (``$0``, ``$1``, ``$#``) and special status parameters (``$?``, ``$$``).
 2. **Conditional Execution**: Tests multi-branch ``if-then-elif-else-fi`` statements and verifies correct branch selection based on process exit statuses.
 3. **Iterative Loops**: Verifies ``for-in-do-done`` word iterations and ``while-do-done`` condition loops with counter updates.
-4. **Canonical Script Dispatch**: Forks and executes ``/etc/test_scripting.sh``, asserting exit status propagation and shebang dispatch.
+4. **Canonical Script Dispatch**: Spawns and executes ``/etc/test_scripting.sh`` on 64-bit targets via ``execve()`` and ``waitpid()``, asserting exit status propagation and shebang dispatch. On single-task 32-bit targets (``i686``), subprocess spawning is skipped and ``sh.elf /etc/test_scripting.sh`` validates direct script execution.
 
 2. Test Execution & Output
 ==========================
