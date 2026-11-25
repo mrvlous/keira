@@ -234,7 +234,9 @@ pub unsafe fn free_pages(free_areas: &mut [FreeArea; ORDER_COUNT], addr: u64, or
 
     while (current_order as usize) < MAX_ORDER {
         let buddy = buddy_pfn(pfn, current_order);
-        if buddy >= MAX_TRACKED_FRAMES {
+        if buddy >= MAX_TRACKED_FRAMES
+            || super::zone::pfn_to_zone(buddy) != super::zone::pfn_to_zone(pfn)
+        {
             break;
         }
 
@@ -268,13 +270,10 @@ pub fn get_total_free_pages(free_areas: &[FreeArea; ORDER_COUNT]) -> usize {
     total
 }
 
-/// Resets all order map words and free area structures to pristine unallocated state.
-pub unsafe fn reset_buddy_structures(free_areas: &mut [FreeArea; ORDER_COUNT]) {
+/// Resets all order map words and test metadata without touching a specific FreeArea array.
+pub unsafe fn reset_order_map() {
     for word in ORDER_MAP.iter_mut() {
         *word = 0xFFFF_FFFF_FFFF_FFFF;
-    }
-    for area in free_areas.iter_mut() {
-        *area = FreeArea::new();
     }
     #[cfg(test)]
     {
@@ -284,6 +283,14 @@ pub unsafe fn reset_buddy_structures(free_areas: &mut [FreeArea; ORDER_COUNT]) {
         for item in TEST_PREV.iter_mut() {
             *item = 0;
         }
+    }
+}
+
+/// Resets all order map words and free area structures to pristine unallocated state.
+pub unsafe fn reset_buddy_structures(free_areas: &mut [FreeArea; ORDER_COUNT]) {
+    reset_order_map();
+    for area in free_areas.iter_mut() {
+        *area = FreeArea::new();
     }
 }
 

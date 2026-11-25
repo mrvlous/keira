@@ -108,6 +108,7 @@ pub mod boot {
             TOTAL_USABLE_RAM = capped_end.saturating_sub(start);
             MAX_PHYS_ADDR = capped_end;
             super::super::zone::init_zones(&REGIONS[..REGION_COUNT]);
+            super::super::zone::seed_usable_regions(&mut REGIONS[..REGION_COUNT]);
             return;
         }
 
@@ -157,6 +158,7 @@ pub mod boot {
         }
 
         super::super::zone::init_zones(&REGIONS[..REGION_COUNT]);
+        super::super::zone::seed_usable_regions(&mut REGIONS[..REGION_COUNT]);
     }
 }
 

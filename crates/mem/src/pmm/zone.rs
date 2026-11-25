@@ -18,9 +18,12 @@
 //! Calculates watermark thresholds (min, low, high) for background memory
 //! reclamation coordination with [kswapd0].
 
-use super::buddy::{alloc_pages, enqueue_free_block, free_pages, FreeArea, ORDER_COUNT};
+use super::buddy::{alloc_pages, enqueue_free_block, free_pages, FreeArea, MAX_ORDER, ORDER_COUNT};
 use super::frame::types::{MAX_TRACKED_FRAMES, PAGE_SIZE};
 use super::region::descriptor::UsableRegion;
+
+/// Upper physical address boundary mapped 1:1 during early boot before VMM extends tables.
+pub const BUDDY_IDENTITY_CAP: u64 = 0x4000_0000;
 
 /// PFN boundary for ZONE_DMA (0 to 16 MB).
 pub const ZONE_DMA_END_PFN: usize = 16 * 1024 * 1024 / PAGE_SIZE as usize;
@@ -136,13 +139,22 @@ pub fn get_all_zones() -> &'static [MemoryZone; ZONE_COUNT] {
     unsafe { &ZONES }
 }
 
-/// Initializes memory zones and calculates initial watermarks.
-pub unsafe fn init_zones(usable_regions: &[UsableRegion]) {
+/// Resets all physical memory zones and buddy order metadata to empty state.
+pub unsafe fn reset_zones() {
     for zone in ZONES.iter_mut() {
         zone.managed_pages = 0;
         zone.free_pages = 0;
+        zone.wmark_min = 0;
+        zone.wmark_low = 0;
+        zone.wmark_high = 0;
         zone.free_areas = [FreeArea::new(); ORDER_COUNT];
     }
+    super::buddy::reset_order_map();
+}
+
+/// Initializes memory zones and calculates initial watermarks.
+pub unsafe fn init_zones(usable_regions: &[UsableRegion]) {
+    reset_zones();
 
     for region in usable_regions {
         if region.end <= region.start {
@@ -175,6 +187,79 @@ pub unsafe fn seed_zone_block(pfn: usize, order: u8) {
     zone.free_pages += 1usize << order;
 }
 
+/// Computes the largest power-of-two order block aligned at `start_pfn` within `limit_pfn`.
+#[inline]
+const fn largest_aligned_order(start_pfn: usize, limit_pfn: usize) -> u8 {
+    let remaining = limit_pfn.saturating_sub(start_pfn);
+    let mut order = MAX_ORDER as u8;
+    while order > 0 {
+        let pages = 1usize << order;
+        if pages <= remaining && start_pfn.is_multiple_of(pages) {
+            break;
+        }
+        order -= 1;
+    }
+    order
+}
+
+/// Invokes a callback over maximally aligned per-zone power-of-two blocks in `[start_pfn, end_pfn)`.
+unsafe fn for_each_zone_block(mut start_pfn: usize, end_pfn: usize, mut f: impl FnMut(usize, u8)) {
+    let capped_end = end_pfn.min(MAX_TRACKED_FRAMES);
+    while start_pfn < capped_end {
+        let zone = pfn_to_zone(start_pfn);
+        let zone_limit = match zone {
+            ZoneType::Dma => capped_end.min(ZONE_DMA_END_PFN),
+            ZoneType::Normal => capped_end.min(ZONE_NORMAL_END_PFN),
+            ZoneType::HighMem => capped_end,
+        };
+        if zone_limit <= start_pfn {
+            break;
+        }
+        let order = largest_aligned_order(start_pfn, zone_limit);
+        f(start_pfn, order);
+        start_pfn += 1usize << order;
+    }
+}
+
+/// Partitions a contiguous PFN interval into maximally aligned per-zone buddy blocks.
+pub unsafe fn seed_zone_range(start_pfn: usize, end_pfn: usize) {
+    for_each_zone_block(start_pfn, end_pfn, |pfn, order| {
+        seed_zone_block(pfn, order);
+    });
+}
+
+/// Returns whether all zones covering `[start_pfn, end_pfn)` have active managed pages.
+pub unsafe fn is_range_zone_managed(start_pfn: usize, end_pfn: usize) -> bool {
+    if start_pfn >= end_pfn || end_pfn > MAX_TRACKED_FRAMES {
+        return false;
+    }
+    let first_z = pfn_to_zone(start_pfn) as usize;
+    let last_z = pfn_to_zone(end_pfn - 1) as usize;
+    (first_z..=last_z).all(|z| ZONES[z].managed_pages > 0)
+}
+
+/// Frees a contiguous PFN interval back into its enclosing buddy zones.
+pub unsafe fn zone_free_range(start_pfn: usize, end_pfn: usize) {
+    for_each_zone_block(start_pfn, end_pfn, |pfn, order| {
+        let addr = (pfn as u64) * PAGE_SIZE;
+        let _ = zone_free_order(addr, order);
+    });
+}
+
+/// Seeds buddy allocator free lists across all usable RAM regions within identity-mapped bounds.
+pub unsafe fn seed_usable_regions(regions: &mut [UsableRegion]) {
+    super::buddy::reset_order_map();
+    for region in regions.iter_mut() {
+        let capped_end = region.end.min(BUDDY_IDENTITY_CAP);
+        if capped_end > region.current {
+            let start_pfn = (region.current / PAGE_SIZE) as usize;
+            let end_pfn = (capped_end / PAGE_SIZE) as usize;
+            seed_zone_range(start_pfn, end_pfn);
+            region.current = capped_end;
+        }
+    }
+}
+
 /// Allocates an order block from the preferred zone with fallback to lower zones.
 pub unsafe fn zone_alloc_order(pref: ZoneType, order: u8) -> Option<u64> {
     let order_pages = 1usize << order;
@@ -189,26 +274,23 @@ pub unsafe fn zone_alloc_order(pref: ZoneType, order: u8) -> Option<u64> {
     }
 
     // Secondary fallback: if HighMem failed, fall back to Normal; if Normal failed, fall back to DMA
-    if pref == ZoneType::HighMem {
-        if ZONES[ZoneType::Normal as usize].free_pages >= order_pages {
-            if let Some(addr) = alloc_pages(&mut ZONES[ZoneType::Normal as usize].free_areas, order)
-            {
-                ZONES[ZoneType::Normal as usize].free_pages = ZONES[ZoneType::Normal as usize]
-                    .free_pages
-                    .saturating_sub(order_pages);
-                return Some(addr);
-            }
+    if pref == ZoneType::HighMem && ZONES[ZoneType::Normal as usize].free_pages >= order_pages {
+        if let Some(addr) = alloc_pages(&mut ZONES[ZoneType::Normal as usize].free_areas, order) {
+            ZONES[ZoneType::Normal as usize].free_pages = ZONES[ZoneType::Normal as usize]
+                .free_pages
+                .saturating_sub(order_pages);
+            return Some(addr);
         }
     }
 
-    if pref == ZoneType::Normal || pref == ZoneType::HighMem {
-        if ZONES[ZoneType::Dma as usize].free_pages >= order_pages {
-            if let Some(addr) = alloc_pages(&mut ZONES[ZoneType::Dma as usize].free_areas, order) {
-                ZONES[ZoneType::Dma as usize].free_pages = ZONES[ZoneType::Dma as usize]
-                    .free_pages
-                    .saturating_sub(order_pages);
-                return Some(addr);
-            }
+    if (pref == ZoneType::Normal || pref == ZoneType::HighMem)
+        && ZONES[ZoneType::Dma as usize].free_pages >= order_pages
+    {
+        if let Some(addr) = alloc_pages(&mut ZONES[ZoneType::Dma as usize].free_areas, order) {
+            ZONES[ZoneType::Dma as usize].free_pages = ZONES[ZoneType::Dma as usize]
+                .free_pages
+                .saturating_sub(order_pages);
+            return Some(addr);
         }
     }
 

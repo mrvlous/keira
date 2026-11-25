@@ -45,6 +45,23 @@ pub mod bitmap {
     pub(crate) static mut FREED_FRAME_COUNT: u64 = 0;
     pub static mut ALLOCATION_BITMAP: [u64; BITMAP_WORDS] = [0; BITMAP_WORDS];
 
+    /// Zeros `count` contiguous identity-mapped physical pages on bare metal.
+    #[inline]
+    unsafe fn zero_frames_identity(start_frame: u64, count: usize) {
+        #[cfg(not(test))]
+        {
+            let ptr = start_frame as *mut u64;
+            let u64_count = count * 512;
+            for i in 0..u64_count {
+                *ptr.add(i) = 0;
+            }
+        }
+        #[cfg(test)]
+        {
+            let _ = (start_frame, count);
+        }
+    }
+
     pub fn alloc_frame() -> Option<u64> {
         let _guard = PmmGuard::lock();
 
@@ -55,11 +72,7 @@ pub mod bitmap {
                 FREE_LIST_HEAD = *(frame as *const u64);
                 mark_frame_allocated(frame);
                 USED_FRAMES_COUNT += 1;
-
-                let ptr = frame as *mut u64;
-                for i in 0..512 {
-                    *ptr.add(i) = 0;
-                }
+                zero_frames_identity(frame, 1);
                 return Some(frame);
             }
 
@@ -70,17 +83,19 @@ pub mod bitmap {
                     region.current += PAGE_SIZE;
                     mark_frame_allocated(frame);
                     USED_FRAMES_COUNT += 1;
-
-                    #[cfg(not(test))]
-                    {
-                        let ptr = frame as *mut u64;
-                        for i in 0..512 {
-                            *ptr.add(i) = 0;
-                        }
-                    }
+                    zero_frames_identity(frame, 1);
                     return Some(frame);
                 }
                 CURRENT_REGION_IDX += 1;
+            }
+
+            if let Some(frame) =
+                super::super::zone::zone_alloc_order(super::super::zone::ZoneType::Normal, 0)
+            {
+                mark_frame_allocated(frame);
+                USED_FRAMES_COUNT += 1;
+                zero_frames_identity(frame, 1);
+                return Some(frame);
             }
 
             None
@@ -111,21 +126,35 @@ pub mod bitmap {
                         mark_frame_allocated(frame);
                     }
                     USED_FRAMES_COUNT += count as u64;
-
-                    #[cfg(not(test))]
-                    {
-                        let ptr = start_frame as *mut u64;
-                        let u64_count = count * 512;
-                        for i in 0..u64_count {
-                            *ptr.add(i) = 0;
-                        }
-                    }
+                    zero_frames_identity(start_frame, count);
                     return Some(start_frame);
                 }
                 CURRENT_REGION_IDX += 1;
             }
 
-            // Secondary fallback: linear scan across tracked frames in valid regions
+            if count <= (1usize << super::super::buddy::MAX_ORDER) {
+                let order = count.next_power_of_two().trailing_zeros() as u8;
+                if let Some(start_frame) = super::super::zone::zone_alloc_order(
+                    super::super::zone::ZoneType::Normal,
+                    order,
+                ) {
+                    for i in 0..count {
+                        let frame = start_frame + (i as u64) * PAGE_SIZE;
+                        mark_frame_allocated(frame);
+                    }
+                    USED_FRAMES_COUNT += count as u64;
+                    let alloc_pages = 1usize << order;
+                    if alloc_pages > count {
+                        let tail_start_pfn = (start_frame / PAGE_SIZE) as usize + count;
+                        let tail_end_pfn = (start_frame / PAGE_SIZE) as usize + alloc_pages;
+                        super::super::zone::zone_free_range(tail_start_pfn, tail_end_pfn);
+                    }
+                    zero_frames_identity(start_frame, count);
+                    return Some(start_frame);
+                }
+            }
+
+            // Tertiary fallback: linear scan across tracked frames in valid regions
             let max_search = MAX_PHYS_ADDR.min(MAX_PHYS_ADDR_LIMIT);
             let max_frames = (max_search / PAGE_SIZE) as usize;
             let mut run_start = 0usize;
@@ -147,15 +176,7 @@ pub mod bitmap {
                                 mark_frame_allocated(frame);
                             }
                             USED_FRAMES_COUNT += count as u64;
-
-                            #[cfg(not(test))]
-                            {
-                                let ptr = start_addr as *mut u64;
-                                let u64_count = count * 512;
-                                for i in 0..u64_count {
-                                    *ptr.add(i) = 0;
-                                }
-                            }
+                            zero_frames_identity(start_addr, count);
                             return Some(start_addr);
                         }
                         run_len = 0;
@@ -186,6 +207,7 @@ pub mod bitmap {
                         mark_frame_allocated(frame);
                     }
                     USED_FRAMES_COUNT += count as u64;
+                    zero_frames_identity(addr, count);
                     return Some(addr);
                 }
             }
@@ -252,6 +274,7 @@ pub mod bitmap {
             for slot in ALLOCATION_BITMAP.iter_mut() {
                 *slot = 0;
             }
+            super::super::zone::reset_zones();
         }
     }
 
@@ -332,10 +355,18 @@ pub mod bitmap {
             FREED_FRAME_COUNT += 1;
             USED_FRAMES_COUNT = USED_FRAMES_COUNT.saturating_sub(1);
 
+            let pfn = (frame / PAGE_SIZE) as usize;
+            let routed_to_buddy = frame < super::super::zone::BUDDY_IDENTITY_CAP
+                && super::super::zone::is_range_zone_managed(pfn, pfn + 1)
+                && super::super::zone::zone_free_order(frame, 0);
             #[cfg(not(test))]
-            {
+            if !routed_to_buddy {
                 *(frame as *mut u64) = FREE_LIST_HEAD;
                 FREE_LIST_HEAD = frame;
+            }
+            #[cfg(test)]
+            {
+                let _ = routed_to_buddy;
             }
             true
         }
@@ -385,17 +416,25 @@ pub mod bitmap {
                 USED_FRAMES_COUNT = 0;
             }
 
-            #[cfg(not(test))]
-            {
-                let end_frame = start_frame + total_bytes - PAGE_SIZE;
-                let mut curr = start_frame;
-                while curr < end_frame {
-                    let next = curr + PAGE_SIZE;
-                    *(curr as *mut u64) = next;
-                    curr = next;
+            let start_pfn = (start_frame / PAGE_SIZE) as usize;
+            let end_pfn = (end_addr / PAGE_SIZE) as usize;
+            let routed_to_buddy = end_addr <= super::super::zone::BUDDY_IDENTITY_CAP
+                && super::super::zone::is_range_zone_managed(start_pfn, end_pfn);
+            if routed_to_buddy {
+                super::super::zone::zone_free_range(start_pfn, end_pfn);
+            } else {
+                #[cfg(not(test))]
+                {
+                    let end_frame = start_frame + total_bytes - PAGE_SIZE;
+                    let mut curr = start_frame;
+                    while curr < end_frame {
+                        let next = curr + PAGE_SIZE;
+                        *(curr as *mut u64) = next;
+                        curr = next;
+                    }
+                    *(end_frame as *mut u64) = FREE_LIST_HEAD;
+                    FREE_LIST_HEAD = start_frame;
                 }
-                *(end_frame as *mut u64) = FREE_LIST_HEAD;
-                FREE_LIST_HEAD = start_frame;
             }
             true
         }

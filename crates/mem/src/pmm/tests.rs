@@ -625,3 +625,58 @@ fn test_cow_multi_level_sharing_and_stats() {
     assert_eq!(frame_refcount(frame), 0);
     assert_eq!(active_shared_frames(), 0);
 }
+
+#[test]
+fn test_zone_seeded_alloc_free_and_pressure_clear() {
+    use super::region::descriptor::{REGIONS, REGION_COUNT};
+    use super::zone::{get_zone, init_zones, is_any_zone_critical, seed_usable_regions, ZoneType};
+
+    let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    reset_pmm_stats();
+    set_test_ram_region_empty(0x100_0000, 0x300_0000);
+
+    unsafe {
+        init_zones(&REGIONS[..REGION_COUNT]);
+        seed_usable_regions(&mut REGIONS[..REGION_COUNT]);
+    }
+
+    assert!(!is_any_zone_critical());
+    let initial_free = get_zone(ZoneType::Normal).free_pages;
+    assert_eq!(initial_free, 0x200_0000 / PAGE_SIZE as usize);
+
+    let f1 = alloc_frame().expect("Zone-seeded alloc_frame failed");
+    let f2 = alloc_order(2).expect("Zone-seeded alloc_order(2) failed");
+    let f3 = alloc_contiguous_frames(3).expect("Zone-seeded non-pow2 alloc failed");
+
+    assert_eq!(
+        get_zone(ZoneType::Normal).free_pages,
+        initial_free - (1 + 4 + 3)
+    );
+
+    assert!(free_frame(f1));
+    assert!(free_contiguous_frames(f2, 4));
+    assert!(free_contiguous_frames(f3, 3));
+
+    assert_eq!(get_zone(ZoneType::Normal).free_pages, initial_free);
+    assert!(verify_pmm_invariants().is_ok());
+}
+
+#[test]
+fn test_buddy_coalescing_stops_at_zone_boundary() {
+    use super::buddy::get_pfn_order;
+    use super::zone::{
+        get_zone, reset_zones, seed_zone_range, zone_free_order, ZoneType, ZONE_DMA_END_PFN,
+    };
+
+    let _lock = TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    unsafe {
+        reset_zones();
+        seed_zone_range(ZONE_DMA_END_PFN - 1, ZONE_DMA_END_PFN);
+        assert!(zone_free_order((ZONE_DMA_END_PFN as u64) * PAGE_SIZE, 0));
+    }
+
+    assert_eq!(get_pfn_order(ZONE_DMA_END_PFN - 1), Some(0));
+    assert_eq!(get_pfn_order(ZONE_DMA_END_PFN), Some(0));
+    assert_eq!(get_zone(ZoneType::Dma).free_pages, 1);
+    assert_eq!(get_zone(ZoneType::Normal).free_pages, 1);
+}
