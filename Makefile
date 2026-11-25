@@ -378,7 +378,7 @@ user-info: ## Display userland architecture and toolchain configuration
 
 rust: preflight | dirs ## Build Rust kernel static library
 	@$(LOG_CARGO) "Building Rust kernel ($(ARCH) $(RUST_MODE))...."
-	$(Q)$(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
+	$(Q)set -o pipefail; $(CARGO) -Zjson-target-spec -Zbuild-std=core,compiler_builtins build --target $(RUST_TARGET) --$(RUST_MODE) -p keira-kernel 2>&1 | sed 's/^/        /'
 
 dirs: preflight include/generated/autoconf.h ## Create architecture-isolated build output directory hierarchy
 	$(Q)mkdir -p $(BUILD_ROOT) $(BUILD_DIR) $(BUILD_DIR)/lib $(BIN_DIR) $(ISO_OUT_DIR) $(DISK_DIR) $(OBJ_DIR) $(STAGING_DIR) include/generated
