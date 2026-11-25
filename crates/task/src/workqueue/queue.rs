@@ -14,7 +14,7 @@
 
 //! Bounded Ring 0 workqueue implementation (`workqueue_struct`).
 
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use keira_core::sync::{IrqSpinLock, LockRank};
 
@@ -26,7 +26,7 @@ use crate::workqueue::work::{
 /// Maximum concurrent deferred work descriptors per queue.
 pub const MAX_WORK_ITEMS_PER_QUEUE: usize = 32;
 
-static NEXT_WORK_ID: AtomicU64 = AtomicU64::new(1);
+static NEXT_WORK_ID: AtomicUsize = AtomicUsize::new(1);
 
 /// Snapshot of a pending deferred work descriptor for telemetry inspection.
 #[derive(Copy, Clone, Debug)]
@@ -110,7 +110,7 @@ impl WorkQueueStruct {
         execute_at_ms: u64,
         delayed: bool,
     ) -> Result<u64, &'static str> {
-        let work_id = NEXT_WORK_ID.fetch_add(1, Ordering::Relaxed);
+        let work_id = NEXT_WORK_ID.fetch_add(1, Ordering::Relaxed) as u64;
         work.id = work_id;
         work.queued_tick_ms = now_ms;
         work.execute_at_ms = execute_at_ms;

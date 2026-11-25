@@ -15,7 +15,7 @@
 //! Global system workqueue instances and telemetry snapshot providers.
 
 use core::fmt::Write;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::workqueue::queue::{WorkItemSnapshot, WorkQueueStruct, MAX_WORK_ITEMS_PER_QUEUE};
 use crate::workqueue::work::{DelayedWork, WorkFn, WorkStruct};
@@ -29,7 +29,7 @@ pub static mut SYSTEM_UNBOUND_WQ: WorkQueueStruct = WorkQueueStruct::new("events
 /// Total number of registered system workqueues.
 pub const REGISTERED_WORKQUEUES: usize = 2;
 
-static DIAGNOSTIC_PROBE_COUNT: AtomicU64 = AtomicU64::new(0);
+static DIAGNOSTIC_PROBE_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 /// Telemetry snapshot summarizing a registered workqueue and its pending items.
 #[derive(Copy, Clone, Debug)]
@@ -132,16 +132,16 @@ pub fn flush_system_workqueues() -> usize {
 }
 
 fn diagnostic_probe_worker(delta: usize) {
-    DIAGNOSTIC_PROBE_COUNT.fetch_add(delta.max(1) as u64, Ordering::Relaxed);
+    DIAGNOSTIC_PROBE_COUNT.fetch_add(delta.max(1), Ordering::Relaxed);
 }
 
 /// Runs a synchronous Ring 0 self-test by queuing and flushing a probe work item.
 pub fn run_workqueue_self_test() -> (u64, u64) {
-    let before = DIAGNOSTIC_PROBE_COUNT.load(Ordering::Relaxed);
+    let before = DIAGNOSTIC_PROBE_COUNT.load(Ordering::Relaxed) as u64;
     if schedule_work("kworker_probe", diagnostic_probe_worker, 1).is_ok() {
         let _ = process_pending_workqueues();
     }
-    let after = DIAGNOSTIC_PROBE_COUNT.load(Ordering::Relaxed);
+    let after = DIAGNOSTIC_PROBE_COUNT.load(Ordering::Relaxed) as u64;
     (before, after)
 }
 
