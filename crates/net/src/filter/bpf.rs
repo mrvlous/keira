@@ -171,9 +171,9 @@ pub mod map {
         unsafe {
             for map in BPF_MAPS.iter() {
                 if map.in_use && map.id == map_id {
-                    for i in 0..map.entries_count {
-                        if map.entries[i].0 == key {
-                            return Some(map.entries[i].1);
+                    for &(entry_k, entry_v) in map.entries.iter().take(map.entries_count) {
+                        if entry_k == key {
+                            return Some(entry_v);
                         }
                     }
                 }

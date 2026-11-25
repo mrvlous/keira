@@ -15,6 +15,8 @@
 //! N_TTY line discipline, canonical input editing and termios flags.
 
 pub mod discipline {
+    use core::sync::atomic::{AtomicBool, Ordering};
+
     use super::termios::{Termios, ICANON, ISIG, VEOF, VERASE, VINTR};
 
     static mut ACTIVE_TERMIOS: Termios = Termios {
@@ -41,17 +43,10 @@ pub mod discipline {
     static mut LINE_LEN: usize = 0;
     static mut LAST_CHAR_WAS_CR: bool = false;
     static mut LAST_BACKSPACE_POPPED: bool = false;
-    static mut EOF_PENDING: bool = false;
+    static EOF_PENDING: AtomicBool = AtomicBool::new(false);
 
     pub fn take_eof_pending() -> bool {
-        unsafe {
-            if EOF_PENDING {
-                EOF_PENDING = false;
-                true
-            } else {
-                false
-            }
-        }
+        EOF_PENDING.swap(false, Ordering::SeqCst)
     }
 
     pub static mut SIGINT_HOOK: Option<fn()> = None;
@@ -89,7 +84,7 @@ pub mod discipline {
                 if c == ACTIVE_TERMIOS.c_cc[VEOF] {
                     LAST_BACKSPACE_POPPED = false;
                     if LINE_LEN == 0 {
-                        EOF_PENDING = true;
+                        EOF_PENDING.store(true, Ordering::SeqCst);
                     } else {
                         #[allow(clippy::needless_range_loop)]
                         for i in 0..LINE_LEN {

@@ -95,24 +95,24 @@ pub mod control {
                     vga::print_str("  MADT Cores    : ");
                     vga::print_u64(topo.core_count as u64);
                     vga::print_str(" cores discovered [APIC IDs: ");
-                    for i in 0..topo.core_count {
+                    for (i, core_info) in topo.cores.iter().enumerate().take(topo.core_count) {
                         if i > 0 {
                             vga::print_str(", ");
                         }
-                        vga::print_u64(topo.cores[i].apic_id as u64);
+                        vga::print_u64(core_info.apic_id as u64);
                     }
                     vga::print_str("]\n");
 
                     if topo.iso_count > 0 {
                         vga::print_str("  IRQ Overrides : ");
-                        for i in 0..topo.iso_count {
+                        for (i, iso) in topo.isos.iter().enumerate().take(topo.iso_count) {
                             if i > 0 {
                                 vga::print_str(", ");
                             }
                             vga::print_str("IRQ ");
-                            vga::print_u64(topo.isos[i].source_irq as u64);
+                            vga::print_u64(iso.source_irq as u64);
                             vga::print_str("->GSI ");
-                            vga::print_u64(topo.isos[i].gsi as u64);
+                            vga::print_u64(iso.gsi as u64);
                         }
                         vga::print_str("\n");
                     }
@@ -842,20 +842,18 @@ pub mod info {
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
                 unsafe {
-                    for slot in TASKS.iter() {
-                        if let Some(ref task) = slot {
-                            vga::print_str("    ");
-                            print_padded_num(task.id as u64, 5);
-                            vga::print_str(" ");
-                            print_padded_str(task.name, 16);
-                            vga::print_str(" ");
-                            print_hex_col(task.stack_aslr_offset, 13);
-                            vga::print_str(" ");
-                            print_hex_col(task.mmap_aslr_offset, 13);
-                            vga::print_str(" ");
-                            print_hex_col(task.brk_aslr_offset, 12);
-                            vga::print_str("\n");
-                        }
+                    for task in TASKS.iter().flatten() {
+                        vga::print_str("    ");
+                        print_padded_num(task.id as u64, 5);
+                        vga::print_str(" ");
+                        print_padded_str(task.comm_str(), 16);
+                        vga::print_str(" ");
+                        print_hex_col(task.stack_aslr_offset, 13);
+                        vga::print_str(" ");
+                        print_hex_col(task.mmap_aslr_offset, 13);
+                        vga::print_str(" ");
+                        print_hex_col(task.brk_aslr_offset, 12);
+                        vga::print_str("\n");
                     }
                 }
             }
@@ -1861,8 +1859,7 @@ pub mod info {
         );
                 vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-                for res in 0..RLIM_NLIMITS {
-                    let rlim = current_task.rlimits[res];
+                for (res, &rlim) in current_task.rlimits.iter().enumerate().take(RLIM_NLIMITS) {
                     let name = resource_name(res);
                     let unit = resource_unit(res);
 
@@ -1892,60 +1889,52 @@ pub mod info {
             );
                     vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
-                    for i in 0..MAX_TASKS {
-                        if let Some(ref t) = TASKS[i] {
-                            let mut open_fds = 0;
-                            for fd in &t.fds {
-                                if fd.is_open {
-                                    open_fds += 1;
-                                }
-                            }
-                            let heap_kb =
-                                t.program_break.saturating_sub(t.program_break_start) / 1024;
-                            let fd_limit = t.rlimits[keira_task::rlimit::RLIMIT_NOFILE]
-                                .cur
-                                .min(MAX_FDS as u64);
+                    for t in TASKS.iter().take(MAX_TASKS).flatten() {
+                        let open_fds = t.fds.iter().filter(|fd| fd.is_open).count();
+                        let heap_kb = t.program_break.saturating_sub(t.program_break_start) / 1024;
+                        let fd_limit = t.rlimits[keira_task::rlimit::RLIMIT_NOFILE]
+                            .cur
+                            .min(MAX_FDS as u64);
 
-                            let mut digits = 1;
-                            let mut temp = t.id as u64;
-                            while temp >= 10 {
-                                digits += 1;
-                                temp /= 10;
-                            }
-                            vga::print_u64(t.id as u64);
-                            for _ in digits..6 {
-                                vga::print_str(" ");
-                            }
-
-                            print_padded_str(t.name, 16);
-
-                            let mut ofd_digits = 1;
-                            let mut ofd_temp = open_fds;
-                            while ofd_temp >= 10 {
-                                ofd_digits += 1;
-                                ofd_temp /= 10;
-                            }
-                            vga::print_u64(open_fds as u64);
-                            for _ in ofd_digits..12 {
-                                vga::print_str(" ");
-                            }
-
-                            print_limit_val(fd_limit, 12);
-
-                            let mut hk_digits = 1;
-                            let mut hk_temp = heap_kb;
-                            while hk_temp >= 10 {
-                                hk_digits += 1;
-                                hk_temp /= 10;
-                            }
-                            vga::print_u64(heap_kb);
-                            for _ in hk_digits..14 {
-                                vga::print_str(" ");
-                            }
-
-                            print_limit_val(t.rlimits[keira_task::rlimit::RLIMIT_DATA].cur, 14);
-                            vga::print_str("\n");
+                        let mut digits = 1;
+                        let mut temp = t.id as u64;
+                        while temp >= 10 {
+                            digits += 1;
+                            temp /= 10;
                         }
+                        vga::print_u64(t.id as u64);
+                        for _ in digits..6 {
+                            vga::print_str(" ");
+                        }
+
+                        print_padded_str(t.comm_str(), 16);
+
+                        let mut ofd_digits = 1;
+                        let mut ofd_temp = open_fds;
+                        while ofd_temp >= 10 {
+                            ofd_digits += 1;
+                            ofd_temp /= 10;
+                        }
+                        vga::print_u64(open_fds as u64);
+                        for _ in ofd_digits..12 {
+                            vga::print_str(" ");
+                        }
+
+                        print_limit_val(fd_limit, 12);
+
+                        let mut hk_digits = 1;
+                        let mut hk_temp = heap_kb;
+                        while hk_temp >= 10 {
+                            hk_digits += 1;
+                            hk_temp /= 10;
+                        }
+                        vga::print_u64(heap_kb);
+                        for _ in hk_digits..14 {
+                            vga::print_str(" ");
+                        }
+
+                        print_limit_val(t.rlimits[keira_task::rlimit::RLIMIT_DATA].cur, 14);
+                        vga::print_str("\n");
                     }
                 }
             }
@@ -2600,9 +2589,8 @@ pub mod info {
                     }
                 }
                 print_padded_zone_name(zone.name);
-                for order in 0..=MAX_ORDER {
-                    let count = zone.free_areas[order].nr_free;
-                    print_padded_order_num(count);
+                for area in zone.free_areas.iter().take(MAX_ORDER + 1) {
+                    print_padded_order_num(area.nr_free);
                 }
                 vga::print_str("\n");
             }
@@ -3466,8 +3454,7 @@ pub mod info {
                 vga::print_str("\n");
 
                 if args.has_flag('v', "verbose") && snap.items_len > 0 {
-                    for i in 0..snap.items_len {
-                        let item = snap.items[i];
+                    for &item in snap.items.iter().take(snap.items_len) {
                         vga::print_str("  `- work[");
                         vga::print_u64(item.id);
                         vga::print_str("]: ");

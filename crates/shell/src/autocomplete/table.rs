@@ -156,8 +156,8 @@ pub mod engine {
             }
 
             BUFFER_LEN = prefix_start;
-            for i in 0..completed.0 {
-                INPUT_BUFFER[BUFFER_LEN] = completed.1[i];
+            for &ch in completed.1.iter().take(completed.0) {
+                INPUT_BUFFER[BUFFER_LEN] = ch;
                 BUFFER_LEN += 1;
             }
 

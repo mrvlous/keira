@@ -38,8 +38,7 @@ pub mod cli {
 
         /// Check if a short flag (e.g. `c` for `-c`) or long flag (e.g. `clear` for `--clear`) is present.
         pub fn has_flag(&self, short: char, long: &str) -> bool {
-            for i in 0..self.token_count {
-                let tok = self.tokens[i];
+            for &tok in self.tokens.iter().take(self.token_count) {
                 if let Some(rest) = tok.strip_prefix("--") {
                     if rest == long {
                         return true;

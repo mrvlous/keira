@@ -14,6 +14,7 @@
 
 //! Subsystem module: ping.
 
+#[allow(clippy::module_inception)]
 pub mod ping {
     use crate::driver::e1000::{self, E1000_FOUND, E1000_MAC, PACKETS_RECEIVED};
     use crate::ip::ipv4::ip_checksum;

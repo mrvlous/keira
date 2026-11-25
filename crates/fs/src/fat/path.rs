@@ -51,8 +51,7 @@ pub mod lfn {
         let total_chars = accum.max_index * 13;
         let mut utf8_len = 0;
 
-        for i in 0..total_chars {
-            let c = accum.chars[i];
+        for &c in accum.chars.iter().take(total_chars) {
             if c == 0x0000 || c == 0xFFFF {
                 break;
             }

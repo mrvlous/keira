@@ -215,12 +215,7 @@ pub mod pidinfo {
                 vga::print_hex(task.program_break);
                 vga::print_str("\n");
 
-                let mut open_fds = 0usize;
-                for fd in 0..MAX_FDS {
-                    if task.fds[fd].is_open {
-                        open_fds += 1;
-                    }
-                }
+                let open_fds = task.fds.iter().filter(|f| f.is_open).count();
                 vga::print_str("  Open Descriptors: ");
                 vga::print_u64(open_fds as u64);
                 vga::print_str(" / ");

@@ -14,6 +14,7 @@
 
 //! Zero-copy page splicing (, ) pipe operations.
 
+#[allow(clippy::module_inception)]
 pub mod splice {
     pub fn sys_splice(
         _fd_in: u64,

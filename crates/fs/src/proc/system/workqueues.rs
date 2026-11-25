@@ -27,9 +27,9 @@ pub fn read_workqueues(buf: &mut [u8]) -> Result<usize, &'static str> {
     }
 
     let mut writer = BufWriter::new(buf);
-    let _ = write!(
+    let _ = writeln!(
         writer,
-        "{:<16} {:>8} {:>10} {:>10} {:>10} {:>14}\n",
+        "{:<16} {:>8} {:>10} {:>10} {:>10} {:>14}",
         "# Workqueue", "Pending", "Queued", "Executed", "Cancelled", "Last Run (ms)"
     );
     Ok(writer.len())

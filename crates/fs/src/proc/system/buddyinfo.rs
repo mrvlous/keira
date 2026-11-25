@@ -16,7 +16,7 @@
 
 use crate::proc::writer::BufWriter;
 use core::fmt::Write;
-use keira_mem::{get_all_zones, MAX_ORDER};
+use keira_mem::get_all_zones;
 
 /// Reads formatted buddy allocator free page fragmentation into destination buffer.
 pub fn read_buddyinfo(buf: &mut [u8]) -> Result<usize, &'static str> {
@@ -25,11 +25,10 @@ pub fn read_buddyinfo(buf: &mut [u8]) -> Result<usize, &'static str> {
 
     for zone in zones {
         let _ = write!(writer, "Node 0, zone {:>8}", zone.name);
-        for order in 0..=MAX_ORDER {
-            let count = zone.free_areas[order].nr_free;
-            let _ = write!(writer, " {:>6}", count);
+        for area in &zone.free_areas {
+            let _ = write!(writer, " {:>6}", area.nr_free);
         }
-        let _ = write!(writer, "\n");
+        let _ = writeln!(writer);
     }
 
     Ok(writer.len())

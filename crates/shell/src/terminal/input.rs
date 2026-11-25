@@ -60,12 +60,10 @@ pub mod keyboard {
                             vga::print_str("\n");
                         }
                     }
-                    _ if (32..127).contains(&c) => {
-                        if is_echo {
-                            let s = [c];
-                            if let Ok(c_str) = core::str::from_utf8(&s) {
-                                vga::print_str(c_str);
-                            }
+                    _ if (32..127).contains(&c) && is_echo => {
+                        let s = [c];
+                        if let Ok(c_str) = core::str::from_utf8(&s) {
+                            vga::print_str(c_str);
                         }
                     }
                     _ => {}

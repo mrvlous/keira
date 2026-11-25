@@ -92,12 +92,10 @@ pub fn get_wait_queue_snapshots() -> [WaitQueueSnapshot; REGISTERED_WAIT_QUEUES]
             let mut pids = [0usize; MAX_WAITERS_PER_QUEUE];
             let mut pids_len = 0;
 
-            for slot in wq.waiters.iter() {
-                if let Some(ref entry) = slot {
-                    if pids_len < MAX_WAITERS_PER_QUEUE {
-                        pids[pids_len] = entry.task_id;
-                        pids_len += 1;
-                    }
+            for entry in wq.waiters.iter().flatten() {
+                if pids_len < MAX_WAITERS_PER_QUEUE {
+                    pids[pids_len] = entry.task_id;
+                    pids_len += 1;
                 }
             }
 
@@ -135,17 +133,17 @@ impl<'a> Write for SliceWriter<'a> {
 /// Formats wait queue telemetry table into destination buffer.
 pub fn format_waitqueue_stats(buf: &mut [u8]) -> usize {
     let mut writer = SliceWriter { buf, offset: 0 };
-    let _ = write!(
+    let _ = writeln!(
         writer,
-        "{:<18} {:>8} {:>12} {:>12} {:>14}\n",
+        "{:<18} {:>8} {:>12} {:>12} {:>14}",
         "# Name", "Waiters", "Total Waits", "Wakeups", "Last Wake (ms)"
     );
 
     let snapshots = get_wait_queue_snapshots();
     for snap in &snapshots {
-        let _ = write!(
+        let _ = writeln!(
             writer,
-            "{:<18} {:>8} {:>12} {:>12} {:>14}\n",
+            "{:<18} {:>8} {:>12} {:>12} {:>14}",
             snap.name,
             snap.waiters_count,
             snap.total_waits,

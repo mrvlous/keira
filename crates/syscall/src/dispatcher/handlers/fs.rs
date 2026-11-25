@@ -176,8 +176,8 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
             let max_open_limit =
                 (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
             let mut fd_slot = None;
-            for i in 0..max_open_limit {
-                if !t.fds[i].is_open {
+            for (i, fd_entry) in t.fds.iter().enumerate().take(max_open_limit) {
+                if !fd_entry.is_open {
                     fd_slot = Some(i);
                     break;
                 }
@@ -1457,7 +1457,7 @@ pub fn handle_mount(arg1: u64, arg2: u64, arg3: u64, arg4: u64, _arg5: u64) -> u
         Err(_) => return errno_to_ret(EINVAL),
     };
 
-    let fs_type = match keira_fs::vfs::FilesystemType::from_str(fstype_str) {
+    let fs_type = match keira_fs::vfs::FilesystemType::parse(fstype_str) {
         Some(t) => t,
         None => return errno_to_ret(ENODEV),
     };
@@ -1800,7 +1800,7 @@ pub fn handle_stat(arg1: u64, arg2: u64) -> u64 {
         st_rdev: 0,
         st_size: file_size as i64,
         st_blksize: 4096,
-        st_blocks: (file_size as u64 + 511) / 512,
+        st_blocks: (file_size as u64).div_ceil(512),
         st_atime: 1700000000,
         st_mtime: 1700000000,
         st_ctime: 1700000000,

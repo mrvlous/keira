@@ -27,9 +27,9 @@ pub fn read_waitqueue(buf: &mut [u8]) -> Result<usize, &'static str> {
     }
 
     let mut writer = BufWriter::new(buf);
-    let _ = write!(
+    let _ = writeln!(
         writer,
-        "{:<18} {:>8} {:>12} {:>12} {:>14}\n",
+        "{:<18} {:>8} {:>12} {:>12} {:>14}",
         "# Name", "Waiters", "Total Waits", "Wakeups", "Last Wake (ms)"
     );
     Ok(writer.len())

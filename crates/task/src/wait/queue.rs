@@ -58,11 +58,9 @@ impl WaitQueueHead {
     pub fn prepare_to_wait(&mut self, entry: WaitQueueEntry, state: TaskState) {
         let _guard = self.lock.lock();
 
-        for slot in self.waiters.iter() {
-            if let Some(ref e) = slot {
-                if e.task_id == entry.task_id {
-                    return;
-                }
+        for e in self.waiters.iter().flatten() {
+            if e.task_id == entry.task_id {
+                return;
             }
         }
 

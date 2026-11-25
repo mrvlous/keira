@@ -14,6 +14,7 @@
 
 //! Subsystem module: table.
 
+#[allow(clippy::module_inception)]
 pub mod table {
     use crate::socket::handle::{SocketEntry, MAX_SOCKETS, SOCKET_BUF_SIZE};
     use crate::tcp::state::{get_next_src_port, TcpState};
@@ -210,7 +211,7 @@ pub mod table {
                                 && other.id != id
                                 && other.domain == crate::socket::family::domains::AF_UNIX
                                 && other.path_len > 0
-                                && &other.path[..other.path_len] == &target_path[..other.path_len]
+                                && other.path[..other.path_len] == target_path[..other.path_len]
                             {
                                 target_id = Some(other.id);
                                 break;

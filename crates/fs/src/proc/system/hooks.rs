@@ -54,45 +54,49 @@ pub fn register_unix_net_hook(unix_hook: Option<NetTelemetryProvider>) {
     }
 }
 
+/// Bundle of optional network telemetry callbacks for ProcFS registration.
+#[derive(Default, Clone, Copy)]
+pub struct NetProcHooks {
+    pub route: Option<NetTelemetryProvider>,
+    pub arp: Option<NetTelemetryProvider>,
+    pub dev: Option<NetTelemetryProvider>,
+    pub tcp: Option<NetTelemetryProvider>,
+    pub udp: Option<NetTelemetryProvider>,
+    pub raw: Option<NetTelemetryProvider>,
+    pub iptables: Option<NetTelemetryProvider>,
+    pub conntrack: Option<NetTelemetryProvider>,
+    pub sockstat: Option<NetTelemetryProvider>,
+}
+
 /// Registers live network subsystem callback hooks for dynamic bare-metal introspection.
-pub fn register_net_hooks(
-    route_hook: Option<NetTelemetryProvider>,
-    arp_hook: Option<NetTelemetryProvider>,
-    dev_hook: Option<NetTelemetryProvider>,
-    tcp_hook: Option<NetTelemetryProvider>,
-    udp_hook: Option<NetTelemetryProvider>,
-    raw_hook: Option<NetTelemetryProvider>,
-    iptables_hook: Option<NetTelemetryProvider>,
-    conntrack_hook: Option<NetTelemetryProvider>,
-    sockstat_hook: Option<NetTelemetryProvider>,
-) {
+pub fn register_net_hooks(hooks: NetProcHooks) {
     unsafe {
-        if route_hook.is_some() {
-            NET_ROUTE_HOOK = route_hook;
+        if hooks.route.is_some() {
+            NET_ROUTE_HOOK = hooks.route;
         }
-        if arp_hook.is_some() {
-            NET_ARP_HOOK = arp_hook;
+        if hooks.arp.is_some() {
+            NET_ARP_HOOK = hooks.arp;
         }
-        if dev_hook.is_some() {
-            NET_DEV_HOOK = dev_hook;
+        if hooks.dev.is_some() {
+            NET_DEV_HOOK = hooks.dev;
         }
-        if tcp_hook.is_some() {
-            NET_TCP_HOOK = tcp_hook;
+        if hooks.tcp.is_some() {
+            NET_TCP_HOOK = hooks.tcp;
         }
-        if udp_hook.is_some() {
-            NET_UDP_HOOK = udp_hook;
+        if hooks.udp.is_some() {
+            NET_UDP_HOOK = hooks.udp;
         }
-        if raw_hook.is_some() {
-            NET_RAW_HOOK = raw_hook;
+        if hooks.raw.is_some() {
+            NET_RAW_HOOK = hooks.raw;
         }
-        if iptables_hook.is_some() {
-            NET_IPTABLES_HOOK = iptables_hook;
+        if hooks.iptables.is_some() {
+            NET_IPTABLES_HOOK = hooks.iptables;
         }
-        if conntrack_hook.is_some() {
-            NET_CONNTRACK_HOOK = conntrack_hook;
+        if hooks.conntrack.is_some() {
+            NET_CONNTRACK_HOOK = hooks.conntrack;
         }
-        if sockstat_hook.is_some() {
-            NET_SOCKSTAT_HOOK = sockstat_hook;
+        if hooks.sockstat.is_some() {
+            NET_SOCKSTAT_HOOK = hooks.sockstat;
         }
     }
 }

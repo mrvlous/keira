@@ -26,15 +26,15 @@ pub fn syscall_task_cleanup_hook(pid: usize) {
                 let _ = crate::user_copy::copy_to_user(ctid, &zero.to_ne_bytes());
                 let _ = keira_ipc::futex::futex_wake(ctid as usize, 1, 0xFFFF_FFFF);
             }
-            for fd in 0..keira_task::types::MAX_FDS {
-                if task.fds[fd].is_open {
-                    if task.fds[fd].is_socket {
-                        let _ = keira_net::socket::close_socket(task.fds[fd].socket_id as u64);
-                    } else if task.fds[fd].is_pipe {
-                        if task.fds[fd].pipe_write {
-                            keira_ipc::pipe::close_pipe_write(task.fds[fd].pipe_id);
+            for fd_entry in &task.fds {
+                if fd_entry.is_open {
+                    if fd_entry.is_socket {
+                        let _ = keira_net::socket::close_socket(fd_entry.socket_id as u64);
+                    } else if fd_entry.is_pipe {
+                        if fd_entry.pipe_write {
+                            keira_ipc::pipe::close_pipe_write(fd_entry.pipe_id);
                         } else {
-                            keira_ipc::pipe::close_pipe_read(task.fds[fd].pipe_id);
+                            keira_ipc::pipe::close_pipe_read(fd_entry.pipe_id);
                         }
                     }
                 }

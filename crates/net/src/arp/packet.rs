@@ -14,6 +14,7 @@
 
 //! Subsystem module: packet.
 
+#[allow(clippy::module_inception)]
 pub mod packet {
     use crate::arp::cache::{update_arp_cache, ARP_CACHE};
     use crate::driver::e1000;

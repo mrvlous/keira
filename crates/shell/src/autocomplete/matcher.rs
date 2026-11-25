@@ -14,6 +14,7 @@
 
 //! Subsystem module: matcher.
 
+#[allow(clippy::module_inception)]
 pub mod matcher {
     /// Locates the start position and text slice of the last whitespace-delimited word in a buffer.
     pub fn find_last_word(buf: &[u8]) -> (usize, &str) {

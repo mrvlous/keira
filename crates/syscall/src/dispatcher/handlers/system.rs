@@ -472,7 +472,7 @@ pub fn handle_getrandom(buf_ptr: u64, buflen: u64, _flags: u64) -> u64 {
     let mut written = 0;
     while written < len {
         let chunk_size = (len - written).min(chunk_buf.len());
-        for i in 0..(chunk_size + 3) / 4 {
+        for i in 0..chunk_size.div_ceil(4) {
             let entropy = keira_arch::cpu::get_entropy_u32();
             let bytes = entropy.to_ne_bytes();
             let start = i * 4;

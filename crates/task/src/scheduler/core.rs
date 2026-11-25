@@ -146,12 +146,12 @@ pub mod hooks {
             } else {
                 super::state::TASK_STACK_SIZE
             };
-            let rss = (vsize + 4095) / 4096;
+            let rss = vsize.div_ceil(4096);
 
             let mut writer = SliceWriter { buf, offset: 0 };
-            let _ = core::write!(
+            let _ = writeln!(
                 writer,
-                "{} ({}) {} {} {} 0 0 -1 4194304 0 0 0 0 {} {} 0 0 20 0 1 0 0 {} {} 18446744073709551615 4194304 8388608 {} {} 0 {} {} 0 0 0 0 0 17 0 0 0 0 0 0 {} {} {} 0 0 0 0 {}\n",
+                "{} ({}) {} {} {} 0 0 -1 4194304 0 0 0 0 {} {} 0 0 20 0 1 0 0 {} {} 18446744073709551615 4194304 8388608 {} {} 0 {} {} 0 0 0 0 0 17 0 0 0 0 0 0 {} {} {} 0 0 0 0 {}",
                 task.id,
                 task.comm_str(),
                 state_char,
@@ -186,26 +186,22 @@ pub mod hooks {
             } else {
                 super::state::TASK_STACK_SIZE
             };
-            let total_pages = (vsize + 4095) / 4096;
+            let total_pages = vsize.div_ceil(4096);
             let rss_pages = total_pages;
             let shared_pages = 0;
             let text_pages = if task.is_user { 4 } else { 1 };
             let lib_pages = 0;
-            let data_pages =
-                (task.program_break.saturating_sub(task.program_break_start) + 4095) / 4096;
+            let data_pages = task
+                .program_break
+                .saturating_sub(task.program_break_start)
+                .div_ceil(4096);
             let dt_pages = 0;
 
             let mut writer = SliceWriter { buf, offset: 0 };
-            let _ = core::write!(
+            let _ = writeln!(
                 writer,
-                "{} {} {} {} {} {} {}\n",
-                total_pages,
-                rss_pages,
-                shared_pages,
-                text_pages,
-                lib_pages,
-                data_pages,
-                dt_pages
+                "{} {} {} {} {} {} {}",
+                total_pages, rss_pages, shared_pages, text_pages, lib_pages, data_pages, dt_pages
             );
             Some(writer.offset)
         }
@@ -224,11 +220,9 @@ pub mod hooks {
         unsafe {
             let mut count = 0;
             for (i, task) in TASKS.iter().enumerate() {
-                if task.is_some() {
-                    if count < out_pids.len() {
-                        out_pids[count] = i;
-                        count += 1;
-                    }
+                if task.is_some() && count < out_pids.len() {
+                    out_pids[count] = i;
+                    count += 1;
                 }
             }
             count
@@ -269,7 +263,7 @@ pub mod hooks {
                 // Kernel thread: emit kernel stack mapping
                 let stack_top = task.stack_addr + super::state::TASK_STACK_SIZE;
                 write_vaddr_range(&mut writer, task.stack_addr, stack_top);
-                let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [kstack]\n");
+                let _ = writeln!(writer, " rw-p 00000000 00:00 0                  [kstack]");
                 return Some(writer.offset);
             }
 
@@ -277,9 +271,9 @@ pub mod hooks {
             let text_start: u64 = 0x0040_0000;
             let text_end: u64 = text_start + 0x5000;
             write_vaddr_range(&mut writer, text_start, text_end);
-            let _ = core::write!(
+            let _ = writeln!(
                 writer,
-                " r-xp 00000000 00:00 0                  {}\n",
+                " r-xp 00000000 00:00 0                  {}",
                 task.comm_str()
             );
 
@@ -287,16 +281,16 @@ pub mod hooks {
             let data_start: u64 = text_end;
             let data_end: u64 = data_start + 0x1000;
             write_vaddr_range(&mut writer, data_start, data_end);
-            let _ = core::write!(
+            let _ = writeln!(
                 writer,
-                " rw-p 00005000 00:00 0                  {}\n",
+                " rw-p 00005000 00:00 0                  {}",
                 task.comm_str()
             );
 
             // 3. Heap segment (if active)
             if task.program_break > task.program_break_start {
                 write_vaddr_range(&mut writer, task.program_break_start, task.program_break);
-                let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [heap]\n");
+                let _ = writeln!(writer, " rw-p 00000000 00:00 0                  [heap]");
             }
 
             // 4. Dynamic VMAs from VMA_TABLE (anonymous mmap or file-backed mmap)
@@ -330,20 +324,11 @@ pub mod hooks {
                     } else {
                         'p'
                     };
-                    let path = if let Some(p) = vma.file_path_str() {
-                        p
-                    } else {
-                        "[anon]"
-                    };
-                    let _ = core::write!(
+                    let path = vma.file_path_str().unwrap_or("[anon]");
+                    let _ = writeln!(
                         writer,
-                        " {}{}{}{} {:08x} 00:00 0                  {}\n",
-                        r,
-                        w,
-                        x,
-                        p,
-                        vma.file_offset,
-                        path
+                        " {}{}{}{} {:08x} 00:00 0                  {}",
+                        r, w, x, p, vma.file_offset, path
                     );
                 }
             }
@@ -361,7 +346,7 @@ pub mod hooks {
                 let stack_top = 0x7FFFFFE00000u64.saturating_sub(task.stack_aslr_offset);
                 let stack_bottom = stack_top.saturating_sub(0x20000);
                 write_vaddr_range(&mut writer, stack_bottom, stack_top);
-                let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [stack]\n");
+                let _ = writeln!(writer, " rw-p 00000000 00:00 0                  [stack]");
             }
 
             Some(writer.offset)

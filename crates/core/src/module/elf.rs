@@ -495,7 +495,7 @@ pub fn parse_relocation(
             let r_info = read_u32_le(data, offset + 4)?;
             let r_addend = read_u32_le(data, offset + 8)? as i64;
             let sym_idx = (r_info >> 8) as usize;
-            let rel_type = (r_info & 0xFF) as u32;
+            let rel_type = r_info & 0xFF;
 
             Ok(ElfRelocInfo {
                 offset: r_offset,
@@ -508,7 +508,7 @@ pub fn parse_relocation(
             let r_offset = read_u32_le(data, offset)? as u64;
             let r_info = read_u32_le(data, offset + 4)?;
             let sym_idx = (r_info >> 8) as usize;
-            let rel_type = (r_info & 0xFF) as u32;
+            let rel_type = r_info & 0xFF;
 
             Ok(ElfRelocInfo {
                 offset: r_offset,

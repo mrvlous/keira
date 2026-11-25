@@ -11,7 +11,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "x86_64 CPU instructions, MSRs, timers, APIC and virtualization for Keira Kernel"
+description = "CPU instructions, MSRs, timers, APIC and virtualization for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

@@ -97,8 +97,7 @@ pub mod table {
                     vga::print_str(" ");
                 }
                 vga::print_str("10/100/1G   ");
-                for m_idx in 0..6 {
-                    let b = entry.mac[m_idx];
+                for (m_idx, &b) in entry.mac.iter().enumerate() {
                     let chars = b"0123456789ABCDEF";
                     let buf = [chars[((b >> 4) & 0xF) as usize], chars[(b & 0xF) as usize]];
                     if let Ok(s) = core::str::from_utf8(&buf) {
@@ -169,8 +168,8 @@ pub mod table {
                 // Default gateway mapping if ARP resolution has not run yet
                 let _ = writeln!(
                     writer,
-                    "{:<16} 0x{:<9x} 0x{:<9x} {:<21} {:<8} {:}",
-                    "10.0.2.2", 1, 2, "52:54:00:12:34:56", "*", "eth0"
+                    "{:<16} 0x{:<9x} 0x{:<9x} {:<21} {:<8} eth0",
+                    "10.0.2.2", 1, 2, "52:54:00:12:34:56", "*"
                 );
             }
         }

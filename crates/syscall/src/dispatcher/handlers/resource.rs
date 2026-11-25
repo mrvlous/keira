@@ -146,8 +146,13 @@ pub fn handle_prlimit64(pid: u64, resource: u64, new_limit_ptr: u64, old_limit_p
             current_idx
         } else {
             let mut found = None;
-            for i in 0..keira_task::types::MAX_TASKS {
-                if let Some(ref t) = TASKS[i] {
+            let tasks_ptr = &raw const TASKS;
+            for (i, slot) in (*tasks_ptr)
+                .iter()
+                .enumerate()
+                .take(keira_task::types::MAX_TASKS)
+            {
+                if let Some(ref t) = slot {
                     if t.id == target_pid as usize {
                         found = Some(i);
                         break;

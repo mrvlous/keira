@@ -14,6 +14,7 @@
 
 //! Subsystem module: client.
 
+#[allow(clippy::module_inception)]
 pub mod client {
     use crate::arp::protocol::{handle_arp_packet, send_arp_announcement};
     use crate::dns::cache::{DNS_CACHE, DNS_CACHE_COUNT};

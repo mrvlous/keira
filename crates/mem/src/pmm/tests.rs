@@ -553,9 +553,9 @@ fn test_cow_hash_table_collision_and_backward_shift_deletion() {
 
     // Allocate 128 frames and verify O(1) hash table retention and telemetry
     let mut frames = [0u64; 128];
-    for i in 0..128 {
+    for slot in &mut frames {
         let f = alloc_frame().expect("Alloc frame failed");
-        frames[i] = f;
+        *slot = f;
         assert_eq!(retain_frame(f), 2);
         assert_eq!(frame_refcount(f), 2);
     }

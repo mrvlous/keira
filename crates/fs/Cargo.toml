@@ -11,7 +11,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Virtual Filesystem (VFS), FAT12/16/32, EXT4, TAR initrd, LVM/RAID and ELF64 loader for Keira Kernel"
+description = "Virtual Filesystem (VFS), FAT12/16/32, EXT4, TAR initrd, LVM/RAID and ELF loader for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

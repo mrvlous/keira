@@ -45,7 +45,7 @@ pub mod fs_type {
         }
 
         /// Parses a filesystem type string into a recognized enum variant.
-        pub fn from_str(s: &str) -> Option<Self> {
+        pub fn parse(s: &str) -> Option<Self> {
             match s {
                 "fat" | "vfat" | "fat16" => Some(Self::Fat),
                 "initrd" | "tar" => Some(Self::Initrd),

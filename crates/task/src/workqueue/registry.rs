@@ -160,17 +160,15 @@ pub fn get_workqueue_snapshots() -> [WorkQueueSnapshot; REGISTERED_WORKQUEUES] {
             let mut item_snaps = [WorkItemSnapshot::empty(); MAX_WORK_ITEMS_PER_QUEUE];
             let mut items_len = 0usize;
 
-            for slot in wq.items.iter() {
-                if let Some(ref item) = slot {
-                    if items_len < MAX_WORK_ITEMS_PER_QUEUE {
-                        item_snaps[items_len] = WorkItemSnapshot {
-                            id: item.id,
-                            name: item.name,
-                            flags: item.flags,
-                            execute_at_ms: item.execute_at_ms,
-                        };
-                        items_len += 1;
-                    }
+            for item in wq.items.iter().flatten() {
+                if items_len < MAX_WORK_ITEMS_PER_QUEUE {
+                    item_snaps[items_len] = WorkItemSnapshot {
+                        id: item.id,
+                        name: item.name,
+                        flags: item.flags,
+                        execute_at_ms: item.execute_at_ms,
+                    };
+                    items_len += 1;
                 }
             }
 
@@ -209,17 +207,17 @@ impl<'a> Write for SliceWriter<'a> {
 /// Formats workqueue telemetry table into destination buffer.
 pub fn format_workqueue_stats(buf: &mut [u8]) -> usize {
     let mut writer = SliceWriter { buf, offset: 0 };
-    let _ = write!(
+    let _ = writeln!(
         writer,
-        "{:<16} {:>8} {:>10} {:>10} {:>10} {:>14}\n",
+        "{:<16} {:>8} {:>10} {:>10} {:>10} {:>14}",
         "# Workqueue", "Pending", "Queued", "Executed", "Cancelled", "Last Run (ms)"
     );
 
     let snapshots = get_workqueue_snapshots();
     for snap in &snapshots {
-        let _ = write!(
+        let _ = writeln!(
             writer,
-            "{:<16} {:>8} {:>10} {:>10} {:>10} {:>14}\n",
+            "{:<16} {:>8} {:>10} {:>10} {:>10} {:>14}",
             snap.name,
             snap.pending_count,
             snap.total_queued,

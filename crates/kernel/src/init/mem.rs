@@ -76,7 +76,10 @@ pub unsafe fn init_memory(multiboot_info_ptr: usize, initrd_end: u64) {
     }
 
     keira_core::pr_info!("pmm", "physical memory frame allocator active");
+    #[cfg(target_arch = "x86_64")]
     keira_core::pr_info!("vmm", "4-level paging memory manager initialized");
+    #[cfg(target_arch = "x86")]
+    keira_core::pr_info!("vmm", "2-level 32-bit paging memory manager initialized");
     keira_core::pr_info!("slab", "segregated magazine slab kernel heap ready");
 }
 

@@ -379,11 +379,9 @@ pub mod table {
         }
         let mut count = 0;
         for vma in VMA_TABLE.iter() {
-            if vma.is_active && vma.pml4_phys == pml4_phys {
-                if count < out_vmas.len() {
-                    out_vmas[count] = *vma;
-                    count += 1;
-                }
+            if vma.is_active && vma.pml4_phys == pml4_phys && count < out_vmas.len() {
+                out_vmas[count] = *vma;
+                count += 1;
             }
         }
         count
@@ -396,8 +394,7 @@ pub mod table {
         if parent_pml4 == 0 || child_pml4 == 0 {
             return Ok(());
         }
-        for i in 0..MAX_VMAS {
-            let vma = VMA_TABLE[i];
+        for &vma in VMA_TABLE.iter().take(MAX_VMAS) {
             if vma.is_active && vma.pml4_phys == parent_pml4 {
                 let mut slot = None;
                 for (j, candidate) in VMA_TABLE.iter().enumerate() {

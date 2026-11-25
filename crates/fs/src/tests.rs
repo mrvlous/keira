@@ -158,17 +158,10 @@ fn test_proc_net_hooks_dynamic_dispatch() {
         msg.len()
     }
 
-    proc::register_net_hooks(
-        None,
-        None,
-        Some(mock_dev),
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-    );
+    proc::register_net_hooks(proc::NetProcHooks {
+        dev: Some(mock_dev),
+        ..Default::default()
+    });
 
     let mut buf = [0u8; 128];
     let n = read_proc_file("net/dev", &mut buf).expect("read net/dev failed");
@@ -214,8 +207,8 @@ fn test_page_cache_subsystem_lifecycle() {
     assert_eq!(miss_read, None);
 
     let (hits, misses, evictions, writebacks, active) = cache::get_page_cache_stats();
-    assert!(hits >= hits_base + 1);
-    assert!(misses >= misses_base + 1);
+    assert!(hits > hits_base);
+    assert!(misses > misses_base);
     assert_eq!(evictions, evictions_base);
     assert_eq!(writebacks, writebacks_base);
     assert!(active >= 1);

@@ -234,6 +234,7 @@ pub mod mount {
             vga::print_u64(val);
         }
     }
+    #[allow(clippy::module_inception)]
     pub mod mount {
         use crate::args::CliArgs;
         use keira_fs::vfs::{get_active_mounts, vfs_mount, FilesystemType};
@@ -293,7 +294,7 @@ pub mod mount {
             }
 
             let fstype_str = args.get_opt('t', "type").unwrap_or("fat");
-            let fs_type = match FilesystemType::from_str(fstype_str) {
+            let fs_type = match FilesystemType::parse(fstype_str) {
                 Some(t) => t,
                 None => {
                     vga::set_color(vga::Color::LightRed, vga::Color::Black);

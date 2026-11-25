@@ -43,8 +43,8 @@ pub fn handle_pipe2(arg1: u64, arg2: u64) -> u64 {
         if let Some(t) = task {
             let max_open_limit =
                 (t.rlimits[keira_task::rlimit::RLIMIT_NOFILE].cur as usize).min(MAX_FDS);
-            for i in 3..max_open_limit {
-                if !t.fds[i].is_open {
+            for (i, fd_entry) in t.fds.iter().enumerate().take(max_open_limit).skip(3) {
+                if !fd_entry.is_open {
                     if rd_slot.is_none() {
                         rd_slot = Some(i);
                     } else if wr_slot.is_none() {

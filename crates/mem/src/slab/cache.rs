@@ -270,7 +270,7 @@ pub mod manager {
             if active == 0 {
                 0
             } else {
-                (active + MAGAZINE_CAPACITY - 1) / MAGAZINE_CAPACITY
+                active.div_ceil(MAGAZINE_CAPACITY)
             }
         }
 
@@ -281,7 +281,7 @@ pub mod manager {
             if total == 0 {
                 0
             } else {
-                (total + MAGAZINE_CAPACITY - 1) / MAGAZINE_CAPACITY
+                total.div_ceil(MAGAZINE_CAPACITY)
             }
         }
 

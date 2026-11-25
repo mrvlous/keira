@@ -162,7 +162,7 @@ pub fn format_task_limits(rlimits: &[RLimit; RLIM_NLIMITS], buf: &mut [u8]) -> u
     buf[..copy_len].copy_from_slice(&header[..copy_len]);
     offset += copy_len;
 
-    for res in 0..RLIM_NLIMITS {
+    for (res, rlim) in rlimits.iter().enumerate() {
         if offset >= buf.len() {
             break;
         }
@@ -182,7 +182,7 @@ pub fn format_task_limits(rlimits: &[RLimit; RLIM_NLIMITS], buf: &mut [u8]) -> u
         }
 
         // Format soft limit
-        let cur_val = rlimits[res].cur;
+        let cur_val = rlim.cur;
         if cur_val == RLIM_INFINITY {
             let str_val = b"unlimited";
             let l = str_val.len().min(buf.len().saturating_sub(offset));
@@ -211,7 +211,7 @@ pub fn format_task_limits(rlimits: &[RLimit; RLIM_NLIMITS], buf: &mut [u8]) -> u
         }
 
         // Format hard limit
-        let max_val = rlimits[res].max;
+        let max_val = rlim.max;
         if max_val == RLIM_INFINITY {
             let str_val = b"unlimited";
             let l = str_val.len().min(buf.len().saturating_sub(offset));

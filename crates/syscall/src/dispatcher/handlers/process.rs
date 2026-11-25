@@ -292,11 +292,11 @@ pub fn handle_exec(arg1: u64, arg2: u64) -> u64 {
                         task.brk_aslr_offset = brk_aslr;
                         task.program_break += brk_aslr;
                         task.program_break_start += brk_aslr;
-                        for fd in 0..keira_task::types::MAX_FDS {
-                            if task.fds[fd].is_open && task.fds[fd].is_pipe {
+                        for fd_entry in &task.fds {
+                            if fd_entry.is_open && fd_entry.is_pipe {
                                 keira_ipc::pipe::dup_pipe_endpoint(
-                                    task.fds[fd].pipe_id,
-                                    task.fds[fd].pipe_write,
+                                    fd_entry.pipe_id,
+                                    fd_entry.pipe_write,
                                 );
                             }
                         }
@@ -458,11 +458,11 @@ pub fn handle_fork() -> u64 {
         match fork_current_task() {
             Ok(child_pid) => {
                 if let Some(ref task) = keira_task::scheduler::TASKS[child_pid] {
-                    for fd in 0..keira_task::types::MAX_FDS {
-                        if task.fds[fd].is_open && task.fds[fd].is_pipe {
+                    for fd_entry in &task.fds {
+                        if fd_entry.is_open && fd_entry.is_pipe {
                             keira_ipc::pipe::dup_pipe_endpoint(
-                                task.fds[fd].pipe_id,
-                                task.fds[fd].pipe_write,
+                                fd_entry.pipe_id,
+                                fd_entry.pipe_write,
                             );
                         }
                     }
