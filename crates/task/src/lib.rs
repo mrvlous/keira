@@ -26,6 +26,7 @@ pub mod signal;
 pub mod stack;
 pub mod types;
 pub mod wait;
+pub mod workqueue;
 
 pub use aslr::{
     generate_task_aslr_offsets, get_aslr_limits, get_aslr_policy, get_aslr_status, set_aslr_policy,
@@ -74,6 +75,13 @@ pub use wait::{
     format_waitqueue_stats, get_wait_queue_snapshots, WaitQueueEntry, WaitQueueHead,
     WaitQueueSnapshot, CHILD_EXIT_WQ, KFLUSHD_WQ, KSWAPD_WQ, MAX_WAITERS_PER_QUEUE, PIPE_READ_WQ,
     PIPE_WRITE_WQ, REGISTERED_WAIT_QUEUES, WQ_FLAG_EXCLUSIVE, WQ_FLAG_WOKEN,
+};
+pub use workqueue::{
+    cancel_system_work, flush_system_workqueues, format_workqueue_stats, get_workqueue_snapshots,
+    process_pending_workqueues, run_workqueue_self_test, schedule_delayed_work, schedule_work,
+    DelayedWork, WorkFn, WorkItemSnapshot, WorkQueueSnapshot, WorkQueueStruct,
+    MAX_WORK_ITEMS_PER_QUEUE, REGISTERED_WORKQUEUES, SYSTEM_UNBOUND_WQ, SYSTEM_WQ,
+    WORK_STRUCT_ACTIVE, WORK_STRUCT_COMPLETED, WORK_STRUCT_DELAYED, WORK_STRUCT_PENDING,
 };
 
 #[cfg(test)]
