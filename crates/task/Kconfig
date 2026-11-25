@@ -2,8 +2,8 @@
 
 # Scheduler & Task Concurrency Configuration
 #
-# Configures multi-core work-stealing scheduler queues, event wait queues
-# and bare-metal io_uring asynchronous I/O completion engine.
+# Configures multi-core work-stealing scheduler queues, wait queues,
+# deferred kernel workqueues and bare-metal io_uring asynchronous I/O engine.
 
 menu "Scheduler & Task Concurrency"
 
@@ -20,6 +20,14 @@ config WAIT_QUEUES
 	help
 	  Enable Linux-grade kernel wait queue heads (wait_queue_head_t),
 	  condition wakeups and event sleep synchronization.
+
+config WORK_QUEUES
+	bool "Kernel Workqueues & Deferred Execution (kworker)"
+	default y
+	depends on WAIT_QUEUES
+	help
+	  Enable Linux-grade kernel workqueues (work_struct and delayed_work)
+	  with background Ring 0 [kworker/0:0] deferred callback execution.
 
 config IO_URING
 	bool "Asynchronous I/O Engine (io_uring)"

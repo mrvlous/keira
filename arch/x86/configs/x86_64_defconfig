@@ -36,9 +36,10 @@ CONFIG_MEMORY_ZONES=y
 #
 # Scheduler & Task Concurrency
 #
-# Multi-core work-stealing queue scheduler, wait queues and asynchronous I/O engine.
+# Multi-core work-stealing scheduler, wait queues, workqueues and io_uring engine.
 CONFIG_SCHED_WORK_STEALING=y
 CONFIG_WAIT_QUEUES=y
+CONFIG_WORK_QUEUES=y
 CONFIG_IO_URING=y
 
 #
