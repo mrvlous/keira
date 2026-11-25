@@ -8,12 +8,13 @@
 
 CompileFlags:
   Add:
-    # User-space application and library header directory
-    - "-Iuserland/include"
+    # User-space application and library header directories
+    - "-Iinclude"
+    - "-Iuserland/libc/include"
     # User-space binary internal header directories
-    - "-Iuserland/bin/kcc/include"
-    - "-Iuserland/bin/sysinfo/include"
-    - "-Iuserland/bin/test_abi/include"
-    - "-Iuserland/bin/fuzz_abi/include"
+    - "-Iuserland/toolchain/kcc/include"
+    - "-Iuserland/sysutils/sysinfo/include"
+    - "-Iuserland/tests/test_abi/include"
+    - "-Iuserland/tests/fuzz_abi/include"
     - "-ffreestanding"
     - "-m64"

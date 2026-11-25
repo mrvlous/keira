@@ -21,6 +21,8 @@
 *.img
 *.tar
 *.d
+*.dmp
+*.ppm
 
 # Documentation build and Sphinx artifacts
 /docs/_build/
@@ -65,6 +67,7 @@ Thumbs.db
 # Linux-style build configuration and exported UAPI headers
 .config
 .config.old
+.config.bak
 .config_test*
 .tmp_config*
 defconfig
