@@ -42,8 +42,7 @@ pub fn handle_init_module(arg1: u64, arg2: u64) -> u64 {
     // Check if user passed an in-memory ELF relocatable object image
     if size >= 16 {
         let mut magic = [0u8; 4];
-        if unsafe { copy_from_user(&mut magic, arg1) }.is_ok()
-            && magic == [0x7F, b'E', b'L', b'F']
+        if unsafe { copy_from_user(&mut magic, arg1) }.is_ok() && magic == [0x7F, b'E', b'L', b'F']
         {
             let elf_len = core::cmp::min(size, 16384);
             let mut elf_buf = [0u8; 16384];

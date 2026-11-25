@@ -29,9 +29,7 @@ pub mod syscall;
 mod tests;
 
 pub use self::core::{KernelModule, ModuleState, MAX_MODULE_NAME};
-pub use self::elf::{
-    ElfClass, ElfHeaderInfo, ElfRelocInfo, ElfSectionHeader, ElfSymbolInfo,
-};
+pub use self::elf::{ElfClass, ElfHeaderInfo, ElfRelocInfo, ElfSectionHeader, ElfSymbolInfo};
 pub use self::loader::{load_elf_module, unload_elf_module, LoadedModule};
 pub use self::reloc::apply_relocation;
 pub use registry::{

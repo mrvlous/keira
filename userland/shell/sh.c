@@ -897,8 +897,7 @@ static int execute_single_command(int argc, char **argv) {
         *eq = '\0';
         int is_valid_name = 1;
         if (!((clean_argv[0][0] >= 'a' && clean_argv[0][0] <= 'z') ||
-              (clean_argv[0][0] >= 'A' && clean_argv[0][0] <= 'Z') ||
-              clean_argv[0][0] == '_')) {
+              (clean_argv[0][0] >= 'A' && clean_argv[0][0] <= 'Z') || clean_argv[0][0] == '_')) {
             is_valid_name = 0;
         }
         for (char *c = clean_argv[0] + 1; *c; c++) {

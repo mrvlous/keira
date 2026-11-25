@@ -18,9 +18,7 @@
 //! Calculates watermark thresholds (min, low, high) for background memory
 //! reclamation coordination with [kswapd0].
 
-use super::buddy::{
-    alloc_pages, enqueue_free_block, free_pages, FreeArea, ORDER_COUNT,
-};
+use super::buddy::{alloc_pages, enqueue_free_block, free_pages, FreeArea, ORDER_COUNT};
 use super::frame::types::{MAX_TRACKED_FRAMES, PAGE_SIZE};
 use super::region::descriptor::UsableRegion;
 
@@ -195,8 +193,9 @@ pub unsafe fn zone_alloc_order(pref: ZoneType, order: u8) -> Option<u64> {
         if ZONES[ZoneType::Normal as usize].free_pages >= order_pages {
             if let Some(addr) = alloc_pages(&mut ZONES[ZoneType::Normal as usize].free_areas, order)
             {
-                ZONES[ZoneType::Normal as usize].free_pages =
-                    ZONES[ZoneType::Normal as usize].free_pages.saturating_sub(order_pages);
+                ZONES[ZoneType::Normal as usize].free_pages = ZONES[ZoneType::Normal as usize]
+                    .free_pages
+                    .saturating_sub(order_pages);
                 return Some(addr);
             }
         }
@@ -205,8 +204,9 @@ pub unsafe fn zone_alloc_order(pref: ZoneType, order: u8) -> Option<u64> {
     if pref == ZoneType::Normal || pref == ZoneType::HighMem {
         if ZONES[ZoneType::Dma as usize].free_pages >= order_pages {
             if let Some(addr) = alloc_pages(&mut ZONES[ZoneType::Dma as usize].free_areas, order) {
-                ZONES[ZoneType::Dma as usize].free_pages =
-                    ZONES[ZoneType::Dma as usize].free_pages.saturating_sub(order_pages);
+                ZONES[ZoneType::Dma as usize].free_pages = ZONES[ZoneType::Dma as usize]
+                    .free_pages
+                    .saturating_sub(order_pages);
                 return Some(addr);
             }
         }

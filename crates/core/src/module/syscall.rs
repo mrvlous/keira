@@ -41,8 +41,8 @@ pub mod handlers {
             Err(KernelError::OutOfMemory) => Err(-12), // -ENOMEM
             Err(KernelError::InvalidArgument) => Err(-22), // -EINVAL
             Err(KernelError::PermissionDenied) => Err(-1), // -EPERM
-            Err(KernelError::NotFound) => Err(-2),     // -ENOENT (missing symbol)
-            Err(_) => Err(-8),                         // -ENOEXEC
+            Err(KernelError::NotFound) => Err(-2),    // -ENOENT (missing symbol)
+            Err(_) => Err(-8),                        // -ENOEXEC
         }
     }
 

@@ -116,7 +116,16 @@ fn test_elf_relocations_computation() {
     assert_eq!(val32, 0x1024);
 
     // Test 32-bit R_386_32: S + A
-    assert!(apply_relocation(&mut buf, 16, R_386_32, false, 0xC010_1000, 0x10, 0xC050_0000).is_ok());
+    assert!(apply_relocation(
+        &mut buf,
+        16,
+        R_386_32,
+        false,
+        0xC010_1000,
+        0x10,
+        0xC050_0000
+    )
+    .is_ok());
     let val_386 = u32::from_le_bytes(buf[16..20].try_into().unwrap());
     assert_eq!(val_386, 0xC010_1010);
 
@@ -140,8 +149,8 @@ fn test_elf_header_parsing_and_validation() {
     hdr64[18..20].copy_from_slice(&EM_X86_64.to_le_bytes());
     hdr64[40..48].copy_from_slice(&64u64.to_le_bytes()); // shoff
     hdr64[58..60].copy_from_slice(&64u16.to_le_bytes()); // shentsize
-    hdr64[60..62].copy_from_slice(&4u16.to_le_bytes());  // shnum
-    hdr64[62..64].copy_from_slice(&1u16.to_le_bytes());  // shstrndx
+    hdr64[60..62].copy_from_slice(&4u16.to_le_bytes()); // shnum
+    hdr64[62..64].copy_from_slice(&1u16.to_le_bytes()); // shstrndx
 
     let res64 = parse_elf_header(&hdr64).expect("64-bit header parse should succeed");
     assert_eq!(res64.class, ElfClass::Elf64);
@@ -159,8 +168,8 @@ fn test_elf_header_parsing_and_validation() {
     hdr32[18..20].copy_from_slice(&EM_386.to_le_bytes());
     hdr32[32..36].copy_from_slice(&52u32.to_le_bytes()); // shoff
     hdr32[46..48].copy_from_slice(&40u16.to_le_bytes()); // shentsize
-    hdr32[48..50].copy_from_slice(&3u16.to_le_bytes());  // shnum
-    hdr32[50..52].copy_from_slice(&1u16.to_le_bytes());  // shstrndx
+    hdr32[48..50].copy_from_slice(&3u16.to_le_bytes()); // shnum
+    hdr32[50..52].copy_from_slice(&1u16.to_le_bytes()); // shstrndx
 
     let res32 = parse_elf_header(&hdr32).expect("32-bit header parse should succeed");
     assert_eq!(res32.class, ElfClass::Elf32);
@@ -191,12 +200,13 @@ fn test_synthetic_elf_module_loading_and_unloading() {
     elf[18..20].copy_from_slice(&EM_X86_64.to_le_bytes());
     elf[40..48].copy_from_slice(&64u64.to_le_bytes()); // shoff = 64
     elf[58..60].copy_from_slice(&64u16.to_le_bytes()); // shentsize = 64
-    elf[60..62].copy_from_slice(&6u16.to_le_bytes());  // shnum = 6
-    elf[62..64].copy_from_slice(&2u16.to_le_bytes());  // shstrndx = 2
+    elf[60..62].copy_from_slice(&6u16.to_le_bytes()); // shnum = 6
+    elf[62..64].copy_from_slice(&2u16.to_le_bytes()); // shstrndx = 2
 
     // Section 1: .text payload (offset 448, size 16)
     let text_off = 448usize;
-    elf[text_off..text_off + 16].copy_from_slice(&[0x48, 0xC7, 0xC0, 0, 0, 0, 0, 0xC3, 0, 0, 0, 0, 0, 0, 0, 0]);
+    elf[text_off..text_off + 16]
+        .copy_from_slice(&[0x48, 0xC7, 0xC0, 0, 0, 0, 0, 0xC3, 0, 0, 0, 0, 0, 0, 0, 0]);
 
     // Section 2: .shstrtab (offset 480, size 48)
     let shstr_off = 480usize;
@@ -212,7 +222,7 @@ fn test_synthetic_elf_module_loading_and_unloading() {
     elf[symtab_off + 30..symtab_off + 32].copy_from_slice(&1u16.to_le_bytes()); // shndx = 1 (.text)
     elf[symtab_off + 32..symtab_off + 40].copy_from_slice(&0u64.to_le_bytes()); // value = 0
     elf[symtab_off + 40..symtab_off + 48].copy_from_slice(&8u64.to_le_bytes()); // size = 8
-    // Sym 2: vga_print_str external (name_off 13, info 0x10 (GLOBAL NOTYPE), shndx 0 (UNDEF))
+                                                                                // Sym 2: vga_print_str external (name_off 13, info 0x10 (GLOBAL NOTYPE), shndx 0 (UNDEF))
     elf[symtab_off + 48..symtab_off + 52].copy_from_slice(&13u32.to_le_bytes());
     elf[symtab_off + 52] = 0x10;
     elf[symtab_off + 54..symtab_off + 56].copy_from_slice(&SHN_UNDEF.to_le_bytes());

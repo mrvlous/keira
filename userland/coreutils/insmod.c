@@ -50,10 +50,12 @@ int main(int argc, char **argv) {
         ssize_t n = read(fd, elf_buf, sizeof(elf_buf));
         close(fd);
 
-        if (n >= 16 && (unsigned char)elf_buf[0] == 0x7F && elf_buf[1] == 'E' && elf_buf[2] == 'L' && elf_buf[3] == 'F') {
+        if (n >= 16 && (unsigned char)elf_buf[0] == 0x7F && elf_buf[1] == 'E' &&
+            elf_buf[2] == 'L' && elf_buf[3] == 'F') {
             int64_t ret = syscall2(SYS_INIT_MODULE, (uint64_t)(uintptr_t)elf_buf, (uint64_t)n);
             if (ret < 0) {
-                fprintf(stderr, "insmod: ERROR: could not insert ELF module '%s': error %ld\n", target, (long)ret);
+                fprintf(stderr, "insmod: ERROR: could not insert ELF module '%s': error %ld\n",
+                        target, (long)ret);
                 return 1;
             }
             printf("insmod: ELF module '%s' inserted successfully\n", target);
@@ -73,7 +75,8 @@ int main(int argc, char **argv) {
 
     int64_t ret = syscall2(SYS_INIT_MODULE, (uint64_t)(uintptr_t)name, (uint64_t)size);
     if (ret < 0) {
-        fprintf(stderr, "insmod: ERROR: could not insert module '%s': error %ld\n", name, (long)ret);
+        fprintf(stderr, "insmod: ERROR: could not insert module '%s': error %ld\n", name,
+                (long)ret);
         return 1;
     }
 

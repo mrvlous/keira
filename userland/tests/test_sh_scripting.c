@@ -51,7 +51,8 @@ static int test_variables(void) {
 
 static int test_conditionals(void) {
     printf("[TEST 2] Testing conditional branching (if-then-elif-else-fi)...\n");
-    int ret = run_sh_command("VAL=10; if [ $VAL -eq 5 ]; then exit 1; elif [ $VAL -eq 10 ]; then exit 0; else exit 2; fi");
+    int ret = run_sh_command("VAL=10; if [ $VAL -eq 5 ]; then exit 1; elif [ $VAL -eq 10 ]; then "
+                             "exit 0; else exit 2; fi");
     if (ret != 0) {
         printf("  [FAIL] Conditional test returned status %d\n", ret);
         return 1;

@@ -20,7 +20,11 @@
 #include <unistd.h>
 
 #define TEST_PASS(desc) printf("  [PASS] %s\n", desc)
-#define TEST_FAIL(desc) do { printf("  [FAIL] %s\n", desc); return 1; } while (0)
+#define TEST_FAIL(desc)                \
+    do {                               \
+        printf("  [FAIL] %s\n", desc); \
+        return 1;                      \
+    } while (0)
 
 int main(void) {
     printf("============================================================\n");
@@ -98,13 +102,16 @@ int main(void) {
     // 7. Test in-memory ELF relocatable object linking via sys_init_module
     unsigned char elf[512];
     memset(elf, 0, sizeof(elf));
-    elf[0] = 0x7F; elf[1] = 'E'; elf[2] = 'L'; elf[3] = 'F';
+    elf[0] = 0x7F;
+    elf[1] = 'E';
+    elf[2] = 'L';
+    elf[3] = 'F';
 #if defined(__x86_64__)
-    elf[4] = 2; // Elf64
-    elf[5] = 1; // Little-endian
-    elf[6] = 1; // EV_CURRENT
-    elf[16] = 1; // ET_REL
-    elf[18] = 62; // EM_X86_64
+    elf[4] = 2;                 // Elf64
+    elf[5] = 1;                 // Little-endian
+    elf[6] = 1;                 // EV_CURRENT
+    elf[16] = 1;                // ET_REL
+    elf[18] = 62;               // EM_X86_64
     *(uint64_t *)&elf[40] = 64; // shoff
     *(uint16_t *)&elf[58] = 64; // shentsize
     *(uint16_t *)&elf[60] = 3;  // shnum (NULL, .text, .shstrtab)
@@ -113,23 +120,23 @@ int main(void) {
     memcpy(&elf[300], shstr, 17);
     // Sec 1: .text
     uint8_t *s1 = &elf[128];
-    *(uint32_t *)&s1[0] = 1; // name_off
-    *(uint32_t *)&s1[4] = 1; // SHT_PROGBITS
-    *(uint64_t *)&s1[8] = 6; // SHF_ALLOC | SHF_EXECINSTR
+    *(uint32_t *)&s1[0] = 1;    // name_off
+    *(uint32_t *)&s1[4] = 1;    // SHT_PROGBITS
+    *(uint64_t *)&s1[8] = 6;    // SHF_ALLOC | SHF_EXECINSTR
     *(uint64_t *)&s1[24] = 280; // offset
     *(uint64_t *)&s1[32] = 16;  // size
     // Sec 2: .shstrtab
     uint8_t *s2 = &elf[192];
-    *(uint32_t *)&s2[0] = 7; // name_off
-    *(uint32_t *)&s2[4] = 3; // SHT_STRTAB
+    *(uint32_t *)&s2[0] = 7;    // name_off
+    *(uint32_t *)&s2[4] = 3;    // SHT_STRTAB
     *(uint64_t *)&s2[24] = 300; // offset
     *(uint64_t *)&s2[32] = 17;  // size
 #else
-    elf[4] = 1; // Elf32
-    elf[5] = 1; // Little-endian
-    elf[6] = 1; // EV_CURRENT
-    elf[16] = 1; // ET_REL
-    elf[18] = 3; // EM_386
+    elf[4] = 1;                 // Elf32
+    elf[5] = 1;                 // Little-endian
+    elf[6] = 1;                 // EV_CURRENT
+    elf[16] = 1;                // ET_REL
+    elf[18] = 3;                // EM_386
     *(uint32_t *)&elf[32] = 52; // shoff
     *(uint16_t *)&elf[46] = 40; // shentsize
     *(uint16_t *)&elf[48] = 3;  // shnum

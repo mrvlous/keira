@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
             char state[32] = "";
             char addr[64] = "";
 
-            int matched = sscanf(line, "%63s %31s %31s %15s %31s %63s",
-                                 name, size, ref, dash, state, addr);
+            int matched =
+                sscanf(line, "%63s %31s %31s %15s %31s %63s", name, size, ref, dash, state, addr);
             if (matched >= 5) {
                 printf("%-20s %8s %8s %-10s %s\n", name, size, ref, state, addr);
             } else {

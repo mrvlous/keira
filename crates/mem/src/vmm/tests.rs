@@ -825,7 +825,9 @@ unsafe fn mock_reclaim(target: usize) -> usize {
 
 #[test]
 fn test_kswapd_watermarks_and_reclamation_lifecycle() {
-    let _lock = crate::pmm::TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    let _lock = crate::pmm::TEST_MUTEX
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let pressure = check_memory_pressure();
     assert!(matches!(
         pressure,

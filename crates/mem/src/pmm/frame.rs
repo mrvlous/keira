@@ -176,7 +176,10 @@ pub mod bitmap {
         {
             let _guard = PmmGuard::lock();
             unsafe {
-                if let Some(addr) = super::super::zone::zone_alloc_order(super::super::zone::ZoneType::Normal, order) {
+                if let Some(addr) = super::super::zone::zone_alloc_order(
+                    super::super::zone::ZoneType::Normal,
+                    order,
+                ) {
                     let count = 1usize << order;
                     for i in 0..count {
                         let frame = addr + (i as u64) * PAGE_SIZE;
