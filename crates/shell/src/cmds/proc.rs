@@ -319,6 +319,81 @@ pub mod task {
 
         use keira_task::stack::*;
 
+        struct TaskSnapshot {
+            cwd: [u8; 128],
+            cwd_len: usize,
+            is_user: bool,
+            uid: u32,
+            gid: u32,
+            euid: u32,
+            egid: u32,
+            rlimits: [keira_task::RLimit; keira_task::RLIM_NLIMITS],
+        }
+
+        unsafe fn capture_task_snapshot() -> TaskSnapshot {
+            let mut snap = TaskSnapshot {
+                cwd: [0u8; 128],
+                cwd_len: 1,
+                is_user: false,
+                uid: 0,
+                gid: 0,
+                euid: 0,
+                egid: 0,
+                rlimits: keira_task::default_rlimits(),
+            };
+            snap.cwd[0] = b'/';
+            if let Some(ref task) = keira_task::scheduler::TASKS[0] {
+                snap.cwd = task.cwd;
+                snap.cwd_len = task.cwd_len;
+                snap.is_user = task.is_user;
+                snap.uid = task.uid;
+                snap.gid = task.gid;
+                snap.euid = task.euid;
+                snap.egid = task.egid;
+                snap.rlimits = task.rlimits;
+            }
+            snap
+        }
+
+        unsafe fn restore_supervisor_task(snap: &TaskSnapshot) {
+            keira_syscall::dispatcher::syscall_task_cleanup_hook(0);
+            if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
+                task.is_user = snap.is_user;
+                task.state = keira_task::TaskState::Running;
+                task.saved_sigcontext = None;
+                task.signal_mask = 0;
+                task.pending_signals = 0;
+                task.cwd = snap.cwd;
+                task.cwd_len = snap.cwd_len;
+                task.uid = snap.uid;
+                task.gid = snap.gid;
+                task.euid = snap.euid;
+                task.egid = snap.egid;
+                task.rlimits = snap.rlimits;
+                for fd in 3..keira_task::MAX_FDS {
+                    if task.fds[fd].is_open {
+                        if task.fds[fd].write_mode {
+                            if let Ok(path_str) =
+                                core::str::from_utf8(&task.fds[fd].path[..task.fds[fd].path_len])
+                            {
+                                keira_fs::lock::release_lock(path_str, 0);
+                            }
+                        }
+                        task.fds[fd] = keira_task::FileDescriptor::new();
+                    }
+                }
+                for (fd, item) in task.fds.iter_mut().enumerate().take(3) {
+                    *item = keira_task::FileDescriptor::new();
+                    item.is_open = true;
+                    item.write_mode = fd != 0;
+                    item.path[..8].copy_from_slice(b"/dev/tty");
+                    item.path_len = 8;
+                }
+            }
+            keira_task::signal::reset_signal_handlers(0);
+            keira_task::security::seccomp_reset();
+        }
+
         /// Execute a freestanding user mode ELF program in an isolated address space with CLI arguments.
         ///
         /// # Safety
@@ -363,6 +438,7 @@ pub mod task {
             #[cfg(target_arch = "x86")]
             {
                 let prev_sched = keira_task::scheduler::SCHEDULER_INITIALIZED;
+                let snap = capture_task_snapshot();
                 keira_task::scheduler::SCHEDULER_INITIALIZED = false;
 
                 if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
@@ -379,9 +455,18 @@ pub mod task {
                     }
                 }
 
-                let entry_point = load_elf(filename)?;
-                let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
-                let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
+                let entry_point = match load_elf(filename) {
+                    Ok(ep) => {
+                        let elf_bytes = keira_fs::elf::last_loaded_elf_slice();
+                        let _ = keira_crypto::tpm::measure_binary(elf_bytes, filename);
+                        ep
+                    }
+                    Err(e) => {
+                        restore_supervisor_task(&snap);
+                        keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
+                        return Err(e);
+                    }
+                };
                 let top_stack_page = USER_STACK_TOP & !(pmm::PAGE_SIZE - 1);
                 let ptr = top_stack_page as *mut u8;
                 let initial_user_rsp = setup_user_stack_32(ptr, top_stack_page, args, entry_point);
@@ -393,13 +478,8 @@ pub mod task {
                 let _job_id = keira_task::signal::add_job(1, filename, true);
                 jump_to_user(entry_point, initial_user_rsp);
                 keira_task::signal::remove_job_by_pid(1);
-                keira_task::signal::reset_signal_handlers(0);
-                keira_task::security::seccomp_reset();
 
-                if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
-                    task.is_user = false;
-                }
-
+                restore_supervisor_task(&snap);
                 keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
                 core::arch::asm!("sti");
 
@@ -408,6 +488,7 @@ pub mod task {
 
             #[cfg(target_arch = "x86_64")]
             {
+                let snap = capture_task_snapshot();
                 let parent_pml4 = vmm::active_pml4();
                 let child_pml4 = vmm::clone_kernel_pml4()?;
 
@@ -429,33 +510,10 @@ pub mod task {
                 let cleanup_and_restore = |child: u64, brk: u64| {
                     if let Some(ref mut task) = keira_task::scheduler::TASKS[0] {
                         task.pml4_phys = parent_pml4;
-                        task.state = keira_task::TaskState::Running;
-                        task.saved_sigcontext = None;
-                        task.signal_mask = 0;
-                        task.pending_signals = 0;
-                        for fd in 3..keira_task::MAX_FDS {
-                            if task.fds[fd].is_open {
-                                if task.fds[fd].write_mode {
-                                    if let Ok(path_str) = core::str::from_utf8(
-                                        &task.fds[fd].path[..task.fds[fd].path_len],
-                                    ) {
-                                        keira_fs::lock::release_lock(path_str, 0);
-                                    }
-                                }
-                                task.fds[fd].is_open = false;
-                            }
-                        }
-                        for (fd, item) in task.fds.iter_mut().enumerate().take(3) {
-                            item.is_open = true;
-                            item.write_mode = fd != 0;
-                            item.path[..8].copy_from_slice(b"/dev/tty");
-                            item.path_len = 8;
-                        }
                     }
+                    restore_supervisor_task(&snap);
                     vmm::switch_address_space(parent_pml4);
                     vmm::free_user_pages(child, brk);
-                    keira_task::signal::reset_signal_handlers(0);
-                    keira_task::security::seccomp_reset();
                 };
 
                 let entry_point = match load_elf(filename) {
