@@ -1256,13 +1256,13 @@ static char *find_matching_kw(char *str, const char *kw1, const char *kw2, const
         } else if (*p == in_quote) {
             in_quote = '\0';
         } else if (in_quote == '\0') {
-            if (is_kw(str, p, "if") || is_kw(str, p, "for") || is_kw(str, p, "while")) {
-                depth++;
-            } else if (is_kw(str, p, "fi") || is_kw(str, p, "done")) {
-                if (depth > 0) {
-                    depth--;
+            if (*p == '#' && (p == str || is_word_boundary(*(p - 1)))) {
+                while (*p && *p != '\n') {
+                    p++;
                 }
-            } else if (depth == 0) {
+                continue;
+            }
+            if (depth == 0) {
                 if (kw1 && is_kw(str, p, kw1)) {
                     return p;
                 }
@@ -1273,10 +1273,24 @@ static char *find_matching_kw(char *str, const char *kw1, const char *kw2, const
                     return p;
                 }
             }
+            if (is_kw(str, p, "if") || is_kw(str, p, "for") || is_kw(str, p, "while")) {
+                depth++;
+            } else if (is_kw(str, p, "fi") || is_kw(str, p, "done")) {
+                if (depth > 0) {
+                    depth--;
+                }
+            }
         }
         p++;
     }
     return NULL;
+}
+
+static void trim_trailing_delimiters(char *start, char *end) {
+    while (end > start && (is_space(*(end - 1)) || *(end - 1) == ';')) {
+        end--;
+    }
+    *end = '\0';
 }
 
 static int execute_if_statement(char *cmd) {
@@ -1291,7 +1305,7 @@ static int execute_if_statement(char *cmd) {
         return 2;
     }
 
-    *then_kw = '\0';
+    trim_trailing_delimiters(p, then_kw);
     char *cond_str = p;
     char *after_then = then_kw + 4;
     while (*after_then && (is_space(*after_then) || *after_then == ';')) {
@@ -1365,7 +1379,7 @@ static int execute_for_statement(char *cmd) {
         return 2;
     }
 
-    *do_kw = '\0';
+    trim_trailing_delimiters(p, do_kw);
     char *words_raw = p;
     char *after_do = do_kw + 2;
     while (*after_do && (is_space(*after_do) || *after_do == ';')) {
@@ -1424,7 +1438,7 @@ static int execute_while_statement(char *cmd) {
         return 2;
     }
 
-    *do_kw = '\0';
+    trim_trailing_delimiters(p, do_kw);
     char *cond_str = p;
     char *after_do = do_kw + 2;
     while (*after_do && (is_space(*after_do) || *after_do == ';')) {
@@ -1504,7 +1518,7 @@ static int calculate_block_depth_delta(const char *line) {
         } else if (*p == in_quote) {
             in_quote = '\0';
         } else if (in_quote == '\0') {
-            if (*p == '#' && (p == line || *(p - 1) != '$')) {
+            if (*p == '#' && (p == line || is_word_boundary(*(p - 1)))) {
                 break;
             }
             if (is_kw(line, p, "if") || is_kw(line, p, "for") || is_kw(line, p, "while")) {
@@ -1526,9 +1540,11 @@ static int run_command_string(char *cmd_str) {
             q = *s;
         } else if (*s == q) {
             q = '\0';
-        } else if (*s == '#' && q == '\0' && (s == cmd_str || *(s - 1) != '$')) {
-            *s = '\0';
-            break;
+        } else if (*s == '#' && q == '\0' && (s == cmd_str || is_word_boundary(*(s - 1)))) {
+            while (*s && *s != '\n') {
+                *s++ = ' ';
+            }
+            continue;
         }
         s++;
     }
