@@ -50,9 +50,9 @@ Slicing File Prefixes
 .. code-block:: bash
 
    # Outputting the first 2 lines of a file:
-   keira:/# head -n 2 /etc/kernel.cfg
-   KERNEL_NAME=keira
-   KERNEL_VERSION=0.9.0
+   keira:/# head -n 2 /etc/hosts
+   127.0.0.1	localhost
+   ::1		localhost
 
    # Reading the first 16 bytes:
    keira:/# head -c 16 /tmp/main.c

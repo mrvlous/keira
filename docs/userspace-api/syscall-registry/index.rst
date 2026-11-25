@@ -4,7 +4,7 @@
 System Call Vector Registry
 ===========================
 
-Numerical table and vector signatures for all 109 system calls.
+Numerical table and vector signatures for all 111 active system calls.
 
 Subtopics & Specifications
 ==========================

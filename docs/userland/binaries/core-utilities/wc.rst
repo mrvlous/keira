@@ -54,8 +54,8 @@ File Metrics
    1 1 6 /etc/hostname
 
    # Counting lines only:
-   keira:/# wc -l /etc/kernel.cfg
-   4 /etc/kernel.cfg
+   keira:/# wc -l /etc/hosts
+   3 /etc/hosts
 
 Pipeline Metrics
 ----------------

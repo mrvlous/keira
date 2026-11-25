@@ -11,9 +11,9 @@ Keira enforces an austere architectural demarcation between the Ring 0 superviso
 
 Keira is fundamentally a freestanding monolithic kernel in Ring 0, not an operating system distribution. The kernel maintains absolute independence from any userland package, daemon or binary disk:
 
-- **Autonomous Supervisor Operation (USERLAND=0)**: When built with ``USERLAND=0`` (or booted via ``make run-bare``), Keira compiles and runs without any userland disk or external binary. The kernel initializes physical memory, devices, SMP cores and lands directly into an in-kernel diagnostic supervisor console (``ring0@keira:/#``).
+- **Autonomous Supervisor Operation (USERLAND=0)**: When built with ``USERLAND=0`` (or booted via ``make run-bare`` / ``make pure_defconfig``), Keira compiles into a standalone pure kernel ISO (``keira-bare-<arch>-*.iso``) without any userland disk, ``initrd.tar`` or ``/etc/*`` files. The kernel initializes physical memory, devices, SMP cores and lands directly into the Ring 0 supervisor console (``ring0@keira:/#``).
 - **Optional Reference Userspace (USERLAND=1)**: When enabled with ``USERLAND=1``, the build system compiles the freestanding C runtime (``libc.a``), the native compiler (``kcc.elf``) and core diagnostic utilities into a root filesystem disk image. This layer serves as an official ABI conformance test suite to stress-test system call vectors, memory protections, BSD sockets and asynchronous I/O.
-- **Zero Distro Bloat Invariant**: Keira strictly omits traditional distribution metadata, package databases, fake user tables (``/etc/passwd``) and PAM modules. The sole configuration descriptor generated during rootfs staging is ``/etc/kernel.cfg`` alongside baseline POSIX node resolution files.
+- **Zero Distro Bloat Invariant**: Keira strictly omits traditional distribution metadata, package databases, issue banners, fake user tables (``/etc/passwd``) and PAM modules. Only baseline POSIX node resolution files (``/etc/hostname`` and ``/etc/hosts``) are staged when userland is enabled.
 
 .. code-block:: text
 

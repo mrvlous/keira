@@ -176,7 +176,8 @@ The configuration system maintains strict dual-architecture parity across
   protected mode, PAE paging, 2-core SMP, full userland and diagnostic tools.
 * **Pure Kernel Default** (``arch/x86/configs/pure_defconfig``): Configures a
   freestanding Ring 0 supervisor console image with all userspace staging
-  disabled (``CONFIG_USERLAND=n``).
+  and ``initrd.tar`` disabled (``CONFIG_USERLAND=n``), producing standalone
+  ``keira-bare-<arch>-*.iso`` images propagated into Rust via ``crates/kernel/build.rs``.
 
 All baseline defconfig profiles (``x86_64_defconfig``, ``i686_defconfig`` and
 ``pure_defconfig``) as well as ``.example.config`` share identical section

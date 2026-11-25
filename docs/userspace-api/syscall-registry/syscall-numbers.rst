@@ -27,8 +27,8 @@ Keira establishes numerical system call constants across eight functional subsys
      - ``init_module``, ``delete_module``, ``clock_gettime_fast``, ``ptrace``, ``kvm_create_vm``, ``kvm_run_vcpu``, ``syslog``, ``timer_create``, ``timer_settime``, ``perf_event_open``, ``seccomp``, ``gettimeofday``, ``settimeofday``, ``clock_gettime``, ``nanosleep``, ``raid_lvm``, ``perf_event``, ``bpf``, ``tpm2``, ``pci_bridge``, ``getrandom``, ``uname`` and ``reboot``
    * - **Process & Credentials**
      - ``numbers/process.rs``
-     - 23
-     - ``putc``, ``exit``, ``sleep``, ``uptime``, ``exec``, ``wait``, ``getpid``, ``getcwd``, ``chdir``, ``fork``, ``clone_thread``, ``prctl``, ``getuid``, ``setuid``, ``waitpid``, ``getppid``, ``getgid``, ``setgid``, ``geteuid``, ``getegid``, ``getrlimit``, ``setrlimit`` and ``prlimit64``
+     - 27
+     - ``putc``, ``exit``, ``sleep``, ``uptime``, ``exec``, ``wait``, ``getpid``, ``getcwd``, ``chdir``, ``fork``, ``clone_thread``, ``prctl``, ``getuid``, ``setuid``, ``waitpid``, ``getppid``, ``getgid``, ``setgid``, ``geteuid``, ``getegid``, ``getrlimit``, ``setrlimit``, ``prlimit64``, ``setpgid``, ``getpgrp``, ``getpgid`` and ``setsid``
    * - **Inter-Process Comm (IPC)**
      - ``numbers/ipc.rs``
      - 14
@@ -40,19 +40,15 @@ Keira establishes numerical system call constants across eight functional subsys
    * - **Networking & Sockets**
      - ``numbers/net.rs``
      - 9
-     - ``socket``, ``connect``, ``tls_connect``, ``accept``, ``listen``, ``netfilter``, ``ping``, ``socketpair`` and ``http_get``
+     - ``socket``, ``connect``, ``listen``, ``accept``, ``tls_connect``, ``netfilter``, ``ping``, ``socketpair`` and ``dns_resolve``
    * - **POSIX Signal Management**
      - ``numbers/signal.rs``
      - 5
      - ``kill``, ``sigaction``, ``sigreturn``, ``sigprocmask`` and ``sigpending``
-   * - **Deprecated Applications**
-     - ``numbers/net.rs``
-     - 1
-     - ``http`` (Vector 17 deprecated to ``-ENOSYS`` in Milestone 54)
    * - **Total Registered Constants**
      -
-     - **108**
-     - **105 unique vectors spanning IDs 1 through 109** (audited across ``x86_64`` and ``i686``)
+     - **111**
+     - **111 unique vectors spanning IDs 1 through 114** (audited across ``x86_64`` and ``i686``)
 
 2. Macro Constant Declarations
 ==============================
@@ -77,13 +73,14 @@ The kernel exports canonical ``#define`` macros in ``<sys/syscall.h>`` matching 
    #define SYS_GETPID              14
    #define SYS_GETCWD              15
    #define SYS_CHDIR               16
-   #define SYS_HTTP                17
    #define SYS_MMAP                20
    #define SYS_MUNMAP              21
    #define SYS_KILL                22
    #define SYS_PIPE                23
    #define SYS_SOCKET              24
    #define SYS_CONNECT             25
+   #define SYS_LISTEN              26
+   #define SYS_ACCEPT              27
    #define SYS_SHMGET              28
    #define SYS_SHMAT               29
    #define SYS_FORK                30

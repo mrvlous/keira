@@ -50,9 +50,9 @@ Slicing File Suffixes
 .. code-block:: bash
 
    # Outputting the last 2 lines of a file:
-   keira:/# tail -n 2 /etc/kernel.cfg
-   KERNEL_ARCH=x86_64
-   USERLAND=1
+   keira:/# tail -n 2 /etc/hosts
+   ::1		localhost
+   10.0.2.15	keira
 
    # Extracting the last 15 bytes:
    keira:/# tail -c 15 /etc/hostname

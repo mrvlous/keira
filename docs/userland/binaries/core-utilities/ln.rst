@@ -43,14 +43,14 @@ In accordance with Keira's freestanding pure-kernel architecture:
 
 .. code-block:: bash
 
-   # Create a symbolic link pointing to kernel configuration:
-   keira:/# ln -s /etc/kernel.cfg /tmp/cfg_link
+   # Create a symbolic link pointing to host resolution configuration:
+   keira:/# ln -s /etc/hosts /tmp/hosts_link
 
    # Verify transparent target resolution:
-   keira:/# cat /tmp/cfg_link
-   KERNEL_NAME=keira
-   KERNEL_VERSION=0.9.0
-   KERNEL_ARCH=x86_64
+   keira:/# cat /tmp/hosts_link
+   127.0.0.1	localhost
+   ::1		localhost
+   10.0.2.15	keira
 
    # Force overwrite of an existing destination link with verbose output:
    keira:/# ln -sfv /bin/ls /tmp/my_ls
@@ -58,10 +58,10 @@ In accordance with Keira's freestanding pure-kernel architecture:
 
    # Execute the target binary via the symbolic link:
    keira:/# /tmp/my_ls /etc
-   kernel.cfg  hostname
+   hosts  hostname
 
    # Unlink the link without affecting the target:
-   keira:/# rm /tmp/cfg_link
+   keira:/# rm /tmp/hosts_link
 
 4. Technical Specifications
 ===========================

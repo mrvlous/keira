@@ -24,7 +24,7 @@ Milestone 16 refactors the entire VFS router, pseudo-filesystems (ProcFS and Dev
        Root --> Dev["/dev<br/><i>Device Nodes (tty, null, zero, urandom)</i>"]
        Root --> Proc["/proc<br/><i>Kernel & Task Telemetry (cpuinfo, meminfo)</i>"]
        Root --> Sys["/sys<br/><i>Hardware & Subsystem Attributes</i>"]
-       Root --> Etc["/etc<br/><i>System Configuration (hostname, kernel.cfg)</i>"]
+       Root --> Etc["/etc<br/><i>Host Configuration (hostname, hosts)</i>"]
        Root --> Include["/include<br/><i>Freestanding C Standard Headers</i>"]
        Root --> Lib["/lib<br/><i>Static Libraries (libc.a)</i>"]
        Root --> Tmp["/tmp<br/><i>Volatile Scratch Files (main.c)</i>"]
@@ -57,7 +57,7 @@ Milestone 16 refactors the entire VFS router, pseudo-filesystems (ProcFS and Dev
      - Hardware topology and kernel subsystem state nodes
    * - ``/etc``
      - FAT16 / Ext4
-     - Host configuration files (``/etc/hostname``, ``/etc/kernel.cfg``)
+     - Optional host configuration files (``/etc/hostname``, ``/etc/hosts``)
    * - ``/include``
      - FAT16 / Ext4
      - Freestanding C standard library headers (``stdio.h``, ``stdlib.h``, ``string.h``)
@@ -76,7 +76,7 @@ Milestone 16 refactors the entire VFS router, pseudo-filesystems (ProcFS and Dev
 
 .. code-block:: text
 
-   Keira Kernel 0.6.0-keira-1 (tty1)
+   Keira Kernel 0.9.0 (x86_64)
 
    keira:/# system
    Keira Monolithic Kernel v0.6.0
@@ -103,7 +103,7 @@ Milestone 16 refactors the entire VFS router, pseudo-filesystems (ProcFS and Dev
    keira:/# list /etc
    Directory of IDE disk:
      [file] hostname
-     [file] kernel.cfg
+     [file] hosts
 
    keira:/# view /etc/hostname
    keira-node-01

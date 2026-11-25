@@ -76,11 +76,9 @@ The ``userland/`` tree is partitioned into specialized domains to maximize maint
 3. Dynamic Configuration Auto-Generation
 ========================================
 
-System configuration files containing build-specific or architecture-specific attributes are generated dynamically by the master ``Makefile`` during root filesystem staging. This eliminates static, unmaintained text files from version control:
+System configuration files containing runtime network or host attributes are staged dynamically by the master ``Makefile`` when ``USERLAND=1``. Pure Ring 0 builds (``USERLAND=0``) omit all ``/etc`` files and ``initrd.tar`` completely:
 
-- **``/etc/kernel.cfg``**: Automatically generated with active kernel name, target version, architecture and userland enablement mode.
-- **``/etc/hostname``**: Initialized dynamically to ``keira\n``.
-- **``/etc/issue``**: Formatted console banner identifying kernel release and CPU architecture.
+- **``/etc/hostname``**: Initialized dynamically to ``keira\n`` (optional on pure Ring 0 boots).
 - **``/etc/hosts``**: Baseline loopback and local node resolution table.
 
 Runtime state mutation (such as modifying the hostname via ``hostname <new_name>`` or mounting scratch volumes) is orchestrated dynamically by ``/etc/init.sh`` upon PID 1 bootstrap.

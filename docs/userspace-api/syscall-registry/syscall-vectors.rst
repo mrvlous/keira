@@ -41,7 +41,7 @@ Keira implements a robust, secure and standardized system call vector table prov
      - ``%eax`` ($-1$ to $-4095$ for ``errno``)
      - ``%rax`` ($-1$ to $-4095$ for ``errno``)
 
-2. Complete System Call Vector Directory (109 Vectors)
+2. Complete System Call Vector Directory (111 Vectors)
 ======================================================
 
 .. list-table::
@@ -133,11 +133,6 @@ Keira implements a robust, secure and standardized system call vector table prov
      - File I/O
      - ``int chdir(const char *path)``
      - Updates current working directory path
-   * - ``17``
-     - ``SYS_HTTP``
-     - Deprecated
-     - ``long http(void)``
-     - Deprecated application syscall returning ``-ENOSYS``
    * - ``20``
      - ``SYS_MMAP``
      - Memory
@@ -168,6 +163,16 @@ Keira implements a robust, secure and standardized system call vector table prov
      - Network
      - ``int connect(int sockfd, const struct sockaddr *addr, socklen_t len)``
      - Connects socket descriptor to remote address
+   * - ``26``
+     - ``SYS_LISTEN``
+     - Network
+     - ``int listen(int sockfd, int backlog)``
+     - Marks socket descriptor as passive listener (returns ``-ENOSYS``)
+   * - ``27``
+     - ``SYS_ACCEPT``
+     - Network
+     - ``int accept(int sockfd, struct sockaddr *addr, socklen_t *len)``
+     - Accepts connection on passive socket (returns ``-ENOSYS``)
    * - ``28``
      - ``SYS_SHMGET``
      - IPC
