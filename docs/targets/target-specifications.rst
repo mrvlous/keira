@@ -22,12 +22,12 @@ Complete Compilation Pipeline
        subgraph Rust Kernel Crates
            RUST_CRATES["crates/* (12 Hyper-Modular Crates)"] --> CARGO["Cargo (-Zbuild-std)"]
            TARGET_SPEC["targets/x86/<arch>/<arch>-keira-none.json"] --> CARGO
-           CARGO --> KERNEL_LIB["build/x86/<arch>/libkeira_kernel.a"]
+           CARGO --> KERNEL_LIB["target/<arch>-keira-none/release/libkeira_kernel.a"]
        end
 
        subgraph Autonomous Userland Runtime
            USER_MAKE["userland/Makefile (Autonomous Orchestrator)"] --> USER_CRT["crt0.o & libc.a"]
-           USER_MAKE --> USER_BINS["47 Core Utility Binaries"]
+           USER_MAKE --> USER_BINS["53 Userland Binaries & Tests"]
            USER_BINS --> USER_ELFS["build/x86/<arch>/staging/fs_root/bin/*.elf"]
        end
 
@@ -183,15 +183,17 @@ Compilation artifacts are strictly isolated in ``build/`` by architecture:
    build/
    └── x86/
        ├── i686/
-       │   ├── bin/               # keira.bin, kcc.elf, sysinfo.elf, test_abi.elf
-       │   ├── disk/              # initrd.tar, fat32_disk.img, ext4_disk.img
-       │   ├── iso/               # bootable keira-i686-<date>.iso
-       │   └── obj/               # compiled *.asm.o object files
+       │   ├── bin/               # keira.bin kernel ELF binary
+       │   ├── disk/              # initrd.tar and disk.img (FAT16 rootfs)
+       │   ├── iso/               # keira-i686-<date>.iso and keira-bare-i686-<date>.iso
+       │   ├── obj/               # compiled *.asm.o object files
+       │   └── userland/          # libc.a, crt0.o and 53 *.elf binaries
        └── x86_64/
-           ├── bin/               # keira.bin, kcc.elf, sysinfo.elf, test_abi.elf
-           ├── disk/              # initrd.tar, fat32_disk.img, ext4_disk.img
-           ├── iso/               # bootable keira-x86_64-<date>.iso
-           └── obj/               # compiled *.asm.o object files
+           ├── bin/               # keira.bin kernel ELF binary
+           ├── disk/              # initrd.tar and disk.img (FAT16 rootfs)
+           ├── iso/               # keira-x86_64-<date>.iso and keira-bare-x86_64-<date>.iso
+           ├── obj/               # compiled *.asm.o object files
+           └── userland/          # libc.a, crt0.o and 53 *.elf binaries
 
 Host Environment Compatibility
 ==============================

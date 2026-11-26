@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-Ring 3 Userland Utilities (47 Binaries)
+Ring 3 Userland Utilities (53 Binaries)
 =======================================
 
-Complete reference manuals for all 47 freestanding Ring 3 userland utilities and test harnesses.
+Complete reference manuals for all 53 freestanding Ring 3 userland utilities, compiler and test harnesses.
 
 Architecture & Subsystems
 =========================

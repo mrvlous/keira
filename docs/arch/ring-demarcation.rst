@@ -32,7 +32,7 @@ Keira is fundamentally a freestanding monolithic kernel in Ring 0, not an operat
    |             OPTIONAL RING 3 REFERENCE USERSPACE (userland/)           |
    |   - Freestanding C Runtime Library (libc.a & crt0.s)                  |
    |   - Interactive Command Interpreter (sh.elf) with Built-in Help       |
-   |   - 47 Native Utility Binaries, Compiler (kcc.elf) & Test Suites      |
+   |   - 53 Native Utility Binaries, Compiler (kcc.elf) & Test Suites      |
    +-----------------------------------------------------------------------+
 
 2. Hardware Privilege Boundary & Processor Control

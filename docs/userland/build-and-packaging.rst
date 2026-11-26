@@ -4,7 +4,7 @@
 Keira Ring 3 Runtime Architecture, Build System & Packaging
 ===========================================================
 
-The ``userland`` domain provides the freestanding Ring 3 userspace runtime environment hosted directly within the Keira monolithic kernel repository. The Ring 3 runtime delivers an ultra-compact, dependency-free collection of 47 system utilities, a freestanding C standard runtime library (``libc.a``), a native C compiler toolchain (``kcc``) and comprehensive ABI test suites.
+The ``userland`` domain provides the freestanding Ring 3 userspace runtime environment hosted directly within the Keira monolithic kernel repository. The Ring 3 runtime delivers an ultra-compact, dependency-free collection of 53 executables (44 utilities and compiler plus 9 test suites), a freestanding C standard runtime library (``libc.a``), a native C compiler toolchain (``kcc``) and comprehensive ABI harnesses.
 
 1. Architectural Principles & Kernel Demarcation
 ================================================
@@ -20,14 +20,14 @@ Keira enforces a strict separation between Ring 0 supervisor execution and Ring 
    graph TD
        Kernel["Keira Monolithic Kernel (crates/)"] <--> Syscall["Syscall Dispatcher (INT 0x80 / SYSCALL)"]
        Syscall <--> Libc["libc/<br/>Freestanding C Runtime & Headers"]
-       Libc --> Core["coreutils/<br/>14 File & Text Utilities"]
+       Libc --> Core["coreutils/<br/>18 File, Text & Module Utilities"]
        Libc --> Proc["procutils/<br/>3 Process & Memory Utilities"]
        Libc --> Sys["sysutils/<br/>11 System Control Utilities"]
        Libc --> Init["init/<br/>3 Supervisor & Shutdown Utilities"]
        Libc --> Shell["shell/<br/>POSIX Interactive Shell"]
        Libc --> Net["netutils/<br/>7 Network & HTTP Utilities"]
        Libc --> Toolchain["toolchain/<br/>KCC Native C Compiler"]
-       Libc --> Tests["tests/<br/>6 ABI & Stress Test Suites"]
+       Libc --> Tests["tests/<br/>9 ABI & Stress Test Suites"]
        Init --> Config["etc/<br/>Bootstrap Scripts & Auto Configs"]
 
 2. Modular Domain Organization
@@ -43,8 +43,8 @@ The ``userland/`` tree is partitioned into specialized domains to maximize maint
      - Binary Count
      - Scope and Included Executables
    * - ``coreutils/``
-     - 14 binaries
-     - Fundamental POSIX file and text processing: ``cat``, ``chmod``, ``chown``, ``clear``, ``echo``, ``grep``, ``head``, ``ln``, ``ls``, ``mkdir``, ``rm``, ``tail``, ``touch`` and ``wc``.
+     - 18 binaries
+     - Fundamental POSIX file, text and kernel module utilities: ``cat``, ``chmod``, ``chown``, ``clear``, ``echo``, ``grep``, ``head``, ``insmod``, ``ln``, ``ls``, ``lsmod``, ``mkdir``, ``rm``, ``rmmod``, ``tail``, ``test`` (alias ``[``), ``touch`` and ``wc``.
    * - ``procutils/``
      - 3 binaries
      - Process table telemetry, memory mapping and signal dispatch: ``kill``, ``pmap`` and ``ps``.
@@ -64,8 +64,8 @@ The ``userland/`` tree is partitioned into specialized domains to maximize maint
      - 1 binary
      - Native C compiler suite: ``kcc`` (preprocessor, recursive descent parser, AST, codegen and ELF emitter).
    * - ``tests/``
-     - 6 test suites
-     - ABI conformance and fuzzing harnesses: ``test_abi``, ``fuzz_abi``, ``test_pipe``, ``test_poll``, ``test_select`` and ``test_threads``.
+     - 9 test suites
+     - ABI conformance and fuzzing harnesses: ``test_abi``, ``fuzz_abi``, ``test_job_control``, ``test_modules``, ``test_pipe``, ``test_poll``, ``test_select``, ``test_sh_scripting`` and ``test_threads``.
    * - ``libc/``
      - Static Library
      - Freestanding ISO C and POSIX runtime routines, CRT0 startup stubs (``arch/``) and 46 standard headers (``include/``).
@@ -90,7 +90,7 @@ The ``userland/Makefile`` provides targeted build recipes for cross-compilation,
 
 .. code-block:: bash
 
-   # Compile C library and all 47 userland binaries
+   # Compile C library and all 53 userland binaries
    make -C userland ARCH=x86_64 bins
 
    # Format all source files according to clang-format rules

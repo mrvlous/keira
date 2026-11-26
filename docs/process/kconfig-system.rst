@@ -138,6 +138,7 @@ guards:
 
    #define CONFIG_ARCH_X86_64 1
    #define CONFIG_ASLR 1
+   #define CONFIG_BUDDY_ALLOCATOR 1
    #define CONFIG_CRYPTO_ENTROPY 1
    #define CONFIG_DISK_SIZE 32
    #define CONFIG_FS_EXT4 1
@@ -145,6 +146,7 @@ guards:
    #define CONFIG_FS_PROCFS 1
    #define CONFIG_IO_URING 1
    #define CONFIG_MAX_CPUS 2
+   #define CONFIG_MEMORY_ZONES 1
    #define CONFIG_NET_E1000 1
    #define CONFIG_NET_SOCKETS 1
    #define CONFIG_NET_STACK 1
@@ -158,6 +160,8 @@ guards:
    #define CONFIG_USERLAND_TESTS 1
    #define CONFIG_VERBOSE 0
    #define CONFIG_W_XOR_X 1
+   #define CONFIG_WAIT_QUEUES 1
+   #define CONFIG_WORK_QUEUES 1
 
    #endif /* _KEIRA_AUTOCONF_H */
 
@@ -179,9 +183,7 @@ The configuration system maintains strict dual-architecture parity across
   and ``initrd.tar`` disabled (``CONFIG_USERLAND=n``), producing standalone
   ``keira-bare-<arch>-*.iso`` images propagated into Rust via ``crates/kernel/build.rs``.
 
-All baseline defconfig profiles (``x86_64_defconfig``, ``i686_defconfig`` and
-``pure_defconfig``) as well as ``.example.config`` share identical section
-comment banners structured to match the root Kconfig menu layout.
+All baseline defconfig profiles (``x86_64_defconfig``, ``i686_defconfig`` and ``pure_defconfig``) share identical section comment banners structured to match the root Kconfig menu layout.
 
 Helper Scripts & Code Quality Tools
 -----------------------------------

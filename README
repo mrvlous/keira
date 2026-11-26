@@ -8,12 +8,12 @@ Ring 0 built from scratch in safe Rust, Assembly and C, supporting both modern
 Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
-Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 114 POSIX
-system call numbers (93 active vectors), bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
+Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 111 active POSIX
+system call vectors (IDs 1..114), bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
-with I/O redirection and pipelines, 47 native core utilities (cat.elf, chmod.elf, chown.elf, ls.elf, fetch.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test_job_control.elf, test_pipe.elf, test_poll.elf, test_select.elf, pmap.elf, reboot.elf, poweroff.elf, grep.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
+with I/O redirection and pipelines, 53 native userland binaries (44 core, system, network and compiler utilities plus 9 conformance test suites: cat.elf, chmod.elf, chown.elf, grep.elf, ls.elf, fetch.elf, lsmod.elf, insmod.elf, rmmod.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test.elf, test_job_control.elf, test_modules.elf, test_pipe.elf, test_poll.elf, test_select.elf, test_sh_scripting.elf, pmap.elf, reboot.elf, poweroff.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
 canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 41 verified master ABI security test suites, bare-metal io_uring asynchronous I/O engine, High-Precision
-Event Timer (HPET) monotonic clocks, an interactive supervisor diagnostic shell with 36 commands and freestanding native C compiler (kcc.elf).
+Event Timer (HPET) monotonic clocks, an interactive supervisor diagnostic shell with 41 commands (61 invocations with aliases) and freestanding native C compiler (kcc.elf).
 
 The Story & Learning Journey
 ----------------------------
