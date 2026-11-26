@@ -35,10 +35,10 @@ fn test_find_last_word_single_word() {
 
 #[test]
 fn test_find_last_word_multiple_words() {
-    let buf = b"cat system/bin/init";
+    let buf = b"cat /etc/hosts";
     let (start, word) = find_last_word(buf);
     assert_eq!(start, 4);
-    assert_eq!(word, "system/bin/init");
+    assert_eq!(word, "/etc/hosts");
 }
 
 #[test]
@@ -61,12 +61,16 @@ fn test_commands_list_sorted_and_non_empty() {
     assert!(COMMANDS_LIST.contains(&"pci"));
     assert!(COMMANDS_LIST.contains(&"mem"));
     assert!(COMMANDS_LIST.contains(&"dmesg"));
+    assert!(COMMANDS_LIST.contains(&"poweroff"));
+    assert!(COMMANDS_LIST.contains(&"reboot"));
+    assert!(COMMANDS_LIST.contains(&"shutdown"));
     assert!(COMMANDS_LIST.windows(2).all(|w| w[0] < w[1]));
 }
 
 #[test]
 fn test_standard_paths() {
-    assert!(STANDARD_PATHS.contains(&"system/"));
-    assert!(STANDARD_PATHS.contains(&"apps/"));
-    assert!(STANDARD_PATHS.contains(&"data/"));
+    assert!(STANDARD_PATHS.contains(&"/bin/"));
+    assert!(STANDARD_PATHS.contains(&"/etc/"));
+    assert!(STANDARD_PATHS.contains(&"/proc/"));
+    assert!(STANDARD_PATHS.contains(&"/tmp/"));
 }

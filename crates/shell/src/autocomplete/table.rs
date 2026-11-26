@@ -52,7 +52,9 @@ pub mod engine {
         "poll",
         "pollinfo",
         "power",
+        "poweroff",
         "procs",
+        "reboot",
         "regs",
         "reset",
         "rlimit",
@@ -63,6 +65,7 @@ pub mod engine {
         "select",
         "selectinfo",
         "sh",
+        "shutdown",
         "slab",
         "slabinfo",
         "smp",
@@ -82,12 +85,17 @@ pub mod engine {
     ];
 
     pub const STANDARD_PATHS: &[&str] = &[
-        "system/",
-        "apps/",
-        "config/",
-        "data/",
-        "temp/",
-        "system.cfg",
+        "/bin/",
+        "/dev/",
+        "/etc/",
+        "/include/",
+        "/lib/",
+        "/mnt/",
+        "/proc/",
+        "/sys/",
+        "/tmp/",
+        "/usr/",
+        "/var/",
     ];
 
     /// Resolves tab completion against commands or files and updates the VGA console.
