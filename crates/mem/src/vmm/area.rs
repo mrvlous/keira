@@ -439,7 +439,9 @@ pub mod table {
 }
 
 pub mod ops {
-    use super::super::mapping::{free_and_unmap_page, map_page, mprotect_page};
+    #[cfg(not(test))]
+    use super::super::mapping::map_page;
+    use super::super::mapping::{free_and_unmap_page, mprotect_page};
     use super::super::table::{
         active_pml4, is_page_mapped_in_pml4, PAGE_NO_EXECUTE, PAGE_PRESENT, PAGE_USER,
         PAGE_WRITABLE,
@@ -452,6 +454,79 @@ pub mod ops {
         find_active_vma, find_free_mmap_range, validate_virt_addr_range, VMA_TABLE,
     };
     use crate::pmm;
+
+    /// Zeroes a physical frame and loads any backing file slice before page mapping.
+    ///
+    /// Initializing through the kernel-mapped physical frame avoids write faults under
+    /// `CR0.WP` when user protection bits omit `PROT_WRITE` (`PROT_READ` or `PROT_NONE`).
+    pub unsafe fn init_populated_frame(
+        frame_ptr: *mut u8,
+        file_path: Option<&str>,
+        cur_offset: u64,
+        file_size: u64,
+    ) {
+        core::ptr::write_bytes(frame_ptr, 0, pmm::PAGE_SIZE as usize);
+
+        if let (Some(path), Some(read_fn)) = (file_path, FILE_READ_HOOK) {
+            if cur_offset < file_size {
+                let to_read = core::cmp::min(pmm::PAGE_SIZE, file_size - cur_offset) as usize;
+                let slice = core::slice::from_raw_parts_mut(frame_ptr, to_read);
+                let _ = read_fn(path, cur_offset, slice);
+            }
+        }
+    }
+
+    #[cfg(not(test))]
+    unsafe fn populate_and_map_page(
+        vaddr: u64,
+        frame: u64,
+        page_flags: u64,
+        file_path: Option<&str>,
+        cur_offset: u64,
+        file_size: u64,
+    ) -> Result<(), &'static str> {
+        init_populated_frame(frame as *mut u8, file_path, cur_offset, file_size);
+        map_page(vaddr, frame, page_flags)?;
+        keira_arch::cpu::invlpg(vaddr as usize);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    unsafe fn populate_and_map_page(
+        _vaddr: u64,
+        _frame: u64,
+        _page_flags: u64,
+        file_path: Option<&str>,
+        cur_offset: u64,
+        file_size: u64,
+    ) -> Result<(), &'static str> {
+        let mut scratch = [0u8; 4096];
+        init_populated_frame(scratch.as_mut_ptr(), file_path, cur_offset, file_size);
+        Ok(())
+    }
+
+    unsafe fn rollback_populated_pages(
+        start_vaddr: u64,
+        allocated_bytes: u64,
+        base_err: &'static str,
+        rollback_err: &'static str,
+    ) -> &'static str {
+        let mut rollback_offset = 0u64;
+        let mut first_rollback_err = None;
+        while rollback_offset < allocated_bytes {
+            if let Err(e) = free_and_unmap_page(start_vaddr + rollback_offset) {
+                if first_rollback_err.is_none() {
+                    first_rollback_err = Some(e);
+                }
+            }
+            rollback_offset += pmm::PAGE_SIZE;
+        }
+        if first_rollback_err.is_some() {
+            rollback_err
+        } else {
+            base_err
+        }
+    }
 
     pub unsafe fn sys_mmap_file(
         hint_addr: u64,
@@ -557,53 +632,30 @@ pub mod ops {
                 let frame = match pmm::alloc_frame() {
                     Some(f) => f,
                     None => {
-                        // Rollback previously mapped pages and track cleanup errors
-                        let mut rollback_offset = 0u64;
-                        let mut first_rollback_err = None;
-                        while rollback_offset < allocated_pages {
-                            if let Err(e) = free_and_unmap_page(start_vaddr + rollback_offset) {
-                                if first_rollback_err.is_none() {
-                                    first_rollback_err = Some(e);
-                                }
-                            }
-                            rollback_offset += pmm::PAGE_SIZE;
-                        }
-                        if let Some(_err) = first_rollback_err {
-                            return Err("Out of physical memory during mmap allocation (rollback cleanup error encountered)");
-                        }
-                        return Err("Out of physical memory during mmap allocation");
+                        return Err(rollback_populated_pages(
+                            start_vaddr,
+                            allocated_pages,
+                            "Out of physical memory during mmap allocation",
+                            "Out of physical memory during mmap allocation (rollback cleanup error encountered)",
+                        ));
                     }
                 };
 
-                if let Err(e) = map_page(vaddr, frame, page_flags) {
+                if let Err(e) = populate_and_map_page(
+                    vaddr,
+                    frame,
+                    page_flags,
+                    file_path,
+                    file_offset + allocated_pages,
+                    file_size,
+                ) {
                     pmm::free_frame(frame);
-                    let mut rollback_offset = 0u64;
-                    let mut first_rollback_err = None;
-                    while rollback_offset < allocated_pages {
-                        if let Err(re) = free_and_unmap_page(start_vaddr + rollback_offset) {
-                            if first_rollback_err.is_none() {
-                                first_rollback_err = Some(re);
-                            }
-                        }
-                        rollback_offset += pmm::PAGE_SIZE;
-                    }
-                    if let Some(_re) = first_rollback_err {
-                        return Err("Failed to map page during mmap allocation (rollback cleanup error encountered)");
-                    }
-                    return Err(e);
-                }
-
-                let ptr = vaddr as *mut u8;
-                core::ptr::write_bytes(ptr, 0, pmm::PAGE_SIZE as usize);
-
-                if let (Some(path), Some(read_fn)) = (file_path, FILE_READ_HOOK) {
-                    let cur_offset = file_offset + allocated_pages;
-                    if cur_offset < file_size {
-                        let to_read =
-                            core::cmp::min(pmm::PAGE_SIZE, file_size - cur_offset) as usize;
-                        let slice = core::slice::from_raw_parts_mut(ptr, to_read);
-                        let _ = read_fn(path, cur_offset, slice);
-                    }
+                    return Err(rollback_populated_pages(
+                        start_vaddr,
+                        allocated_pages,
+                        e,
+                        "Failed to map page during mmap allocation (rollback cleanup error encountered)",
+                    ));
                 }
 
                 allocated_pages += pmm::PAGE_SIZE;

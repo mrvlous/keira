@@ -855,3 +855,74 @@ fn test_kswapd_watermarks_and_reclamation_lifecycle() {
         assert_eq!(reclaimed, 0);
     }
 }
+
+#[test]
+fn test_mmap_populate_read_only_and_prot_none() {
+    let _vma_lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    let _pmm_lock = crate::pmm::TEST_MUTEX
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    unsafe {
+        reset_vma_table_for(TEST_PML4);
+        crate::pmm::reset_pmm_stats();
+        crate::pmm::set_test_ram_region_empty(0x20_0000, 0x24_0000);
+
+        let before_used = crate::pmm::used_memory();
+
+        let ro_addr = sys_mmap(
+            0,
+            0x2000,
+            PROT_READ,
+            MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE,
+        )
+        .expect("PROT_READ MAP_POPULATE should succeed");
+        let ro_vma = find_active_vma(TEST_PML4, ro_addr).expect("RO VMA should exist");
+        assert_eq!(ro_vma.prot, PROT_READ);
+        assert_eq!(ro_vma.end - ro_vma.start, 0x2000);
+
+        let none_addr = sys_mmap(
+            0,
+            0x1000,
+            PROT_NONE,
+            MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE,
+        )
+        .expect("PROT_NONE MAP_POPULATE should succeed");
+        let none_vma = find_active_vma(TEST_PML4, none_addr).expect("PROT_NONE VMA should exist");
+        assert_eq!(none_vma.prot, PROT_NONE);
+        assert_eq!(none_vma.end - none_vma.start, 0x1000);
+
+        let after_used = crate::pmm::used_memory();
+        assert_eq!(after_used - before_used, 3 * crate::pmm::PAGE_SIZE);
+
+        cleanup_vmas_for_pml4(TEST_PML4);
+        crate::pmm::reset_pmm_stats();
+    }
+}
+
+#[test]
+fn test_init_populated_frame_zeros_and_reads_file() {
+    let _vma_lock = VMA_TEST_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+    unsafe {
+        fn mock_read(_path: &str, offset: u64, buf: &mut [u8]) -> Result<usize, &'static str> {
+            for (i, b) in buf.iter_mut().enumerate() {
+                *b = ((offset as usize + i) & 0xFF) as u8;
+            }
+            Ok(buf.len())
+        }
+        fn mock_sync(_path: &str, _offset: u64, buf: &[u8]) -> Result<usize, &'static str> {
+            Ok(buf.len())
+        }
+
+        register_file_backing_hooks(mock_read, mock_sync);
+
+        let mut frame_buf = [0xAAu8; 4096];
+        area::init_populated_frame(frame_buf.as_mut_ptr(), Some("/tmp/ro.bin"), 4096, 4200);
+
+        // First 104 bytes are populated from the backing file at offset 4096.
+        for (i, &byte) in frame_buf[..104].iter().enumerate() {
+            assert_eq!(byte, ((4096 + i) & 0xFF) as u8);
+        }
+        // Remaining bytes beyond EOF are zero-initialized rather than keeping 0xAA.
+        assert!(frame_buf[104..].iter().all(|&b| b == 0));
+    }
+}
