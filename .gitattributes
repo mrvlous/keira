@@ -7,7 +7,7 @@
 # Enforce Unix-style (LF) line endings for all text files
 * text=auto eol=lf
 
-# Explicitly mark source files as text
+# Explicitly mark source and configuration files as text
 *.c text
 *.h text
 *.rs text
@@ -20,6 +20,7 @@
 *.rst text
 *.css text
 *.js text
+*.html text
 *.sh text
 *.py text
 *.ini text
@@ -30,6 +31,13 @@ Kbuild* text
 .pylintrc text
 .editorconfig text
 .clang-format text
+.gitignore text
+.gitattributes text
+COPYING text
+CREDITS text
+MAINTAINERS text
+README text
+AGENTS.md text
 Makefile text
 
 # Mark executable and archive binary files as binary

@@ -11,7 +11,7 @@
 /build/
 /userland/build/
 
-# Compiled objects, libraries and binary artifacts
+# Compiled objects, libraries, disk images and binary artifacts
 *.o
 *.a
 *.bin
@@ -19,6 +19,7 @@
 *.elf
 *.iso
 *.img
+*.qcow2
 *.tar
 *.d
 *.dmp
@@ -41,6 +42,8 @@ __pycache__/
 .pylint.d/
 .pytest_cache/
 .mypy_cache/
+.coverage
+htmlcov/
 
 # Temporary editor files, swaps and backups
 *~
@@ -60,6 +63,7 @@ Thumbs.db
 .vscode/
 .vscode-test/
 .clangd/
+compile_commands.json
 .eglot/
 .cache/
 .gdb_history
