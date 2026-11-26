@@ -28,8 +28,8 @@ config USERLAND_TESTS
 	default y
 	depends on USERLAND
 	help
-	  Build and install the 41 automated POSIX ABI verification test binaries
-	  in /bin/tests.
+	  Build and install the 9 automated POSIX ABI and subsystem test
+	  binaries (covering all 41 security suites) into /bin.
 
 endmenu
 
@@ -39,7 +39,7 @@ config DISK_SIZE
 	int "Root Filesystem Disk Size (MB)"
 	default 32
 	help
-	  Size of the generated ext4 root filesystem disk image in megabytes.
+	  Size of the generated FAT16 root filesystem disk image in megabytes.
 
 config QEMU_MEM
 	string "QEMU Virtual Machine Memory Allocation"
