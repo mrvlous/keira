@@ -81,6 +81,37 @@ class TestDefconfigProfiles(unittest.TestCase):
         self.assertIn('#define CONFIG_QEMU_MEM "128M"', header_content)
         self.assertIn("#define CONFIG_SMP 1", header_content)
 
+    def test_savedefconfig_spdx_header_and_string_quoting(self):
+        cfg_path = os.path.join(self.temp_dir, ".config")
+        def_path = os.path.join(self.temp_dir, "defconfig")
+
+        kconf = Kconfig("Kconfig")
+        kconf.load_config("arch/x86/configs/pure_defconfig")
+        kconf.symbols["QEMU_MEM"].value = "256M"
+        kconf.write_config(cfg_path)
+
+        import subprocess
+
+        res = subprocess.run(
+            [
+                sys.executable,
+                "scripts/kconfig/conf.py",
+                "-o",
+                cfg_path,
+                "--savedefconfig",
+                def_path,
+                "Kconfig",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertIn("Saved minimal configuration", res.stdout)
+        with open(def_path, "r", encoding="utf-8") as f:
+            saved = f.read()
+        self.assertTrue(saved.startswith("# SPDX-License-Identifier: GPL-2.0-only\n"))
+        self.assertIn("# CONFIG_USERLAND is not set", saved)
+        self.assertIn('CONFIG_QEMU_MEM="256M"', saved)
 
 if __name__ == "__main__":
     unittest.main()

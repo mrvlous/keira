@@ -35,11 +35,7 @@ def main():
                 target_arch = "i686"
             else:
                 target_arch = "x86_64"
-            candidate = f"arch/x86/configs/{target_arch}_defconfig"
-            if os.path.exists(candidate):
-                defconfig_file = candidate
-            elif os.path.exists(".example.config"):
-                defconfig_file = ".example.config"
+            defconfig_file = f"arch/x86/configs/{target_arch}_defconfig"
         if os.path.exists(defconfig_file):
             kconf.load_config(defconfig_file)
         kconf.write_config(args.output)
@@ -50,8 +46,6 @@ def main():
         if os.path.exists(candidate):
             kconf.load_config(candidate)
         else:
-            if os.path.exists(".example.config"):
-                kconf.load_config(".example.config")
             if "USERLAND" in kconf.symbols:
                 kconf.symbols["USERLAND"].value = False
         kconf.write_config(args.output)
@@ -60,6 +54,9 @@ def main():
     elif args.savedefconfig:
         kconf.load_config(args.output)
         with open(args.savedefconfig, "w", encoding="utf-8") as f:
+            f.write("# SPDX-License-Identifier: GPL-2.0-only\n\n")
+            f.write("# Keira Kernel Configuration Baseline (Minimal)\n#\n")
+            f.write("# Automatically generated minimal defconfig; non-default overrides.\n\n")
             for name, sym in sorted(kconf.symbols.items()):
                 val = sym.get_value(kconf)
                 def_val = sym.get_effective_default(kconf)
@@ -69,6 +66,8 @@ def main():
                             f.write(f"CONFIG_{name}=y\n")
                         else:
                             f.write(f"# CONFIG_{name} is not set\n")
+                    elif sym.type == "string":
+                        f.write(f'CONFIG_{name}="{val}"\n')
                     else:
                         f.write(f"CONFIG_{name}={val}\n")
         print(f"[KCONFIG] Saved minimal configuration to {args.savedefconfig}")
