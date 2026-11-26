@@ -2,8 +2,8 @@
 
 # Memory Management Subsystem Crate (keira-mem)
 #
-# Implements PMM bitmap frame tracking, multi-level paging VMM, segregated
-# slab heap allocators, contiguous DMA buffers and swap paging.
+# Implements Binary Buddy PMM allocator, physical memory zones, multi-level
+# paging VMM, segregated slab heap allocators, DMA buffers and swap paging.
 
 [package]
 name = "keira-mem"
@@ -11,7 +11,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Physical memory allocator, multi-level virtual paging, DMA and swap pager for Keira Kernel"
+description = "Binary buddy PMM, memory zones, multi-level virtual paging, slab, DMA and swap pager for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }

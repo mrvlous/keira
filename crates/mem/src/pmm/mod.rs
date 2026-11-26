@@ -12,13 +12,15 @@
  * GNU General Public License for more details.
  */
 
-//! Physical Memory Manager (PMM) bitmap frame allocator and memory accounting.
+//! Physical Memory Manager (PMM) binary buddy allocator, memory zones and frame accounting.
 //!
 //! Subdivided into specialized hyper-modular sub-packages:
-//! - `frame/`: Physical frame types, limits, constants and 64-bit bitmap state.
-//! - `region/`: Usable RAM regions, memory hole validation and Multiboot2 boot parsing.
-//! - `sync/`: Concurrency locks, CPU affinity tracking and reentrancy detection.
-//! - `telemetry/`: Real-time metrics queries, statistics counters and structural invariant validation.
+//! - `buddy`: Power-of-two free area freelists, splitting and coalescing engine.
+//! - `frame`: Physical frame types, zone-backed allocation, CoW refcounts and tracking state.
+//! - `region`: Usable RAM regions, memory hole validation and Multiboot2 boot parsing.
+//! - `sync`: Concurrency locks, CPU affinity tracking and reentrancy detection.
+//! - `telemetry`: Real-time metrics queries, statistics counters and structural invariant validation.
+//! - `zone`: Physical RAM partitioning (ZONE_DMA, ZONE_NORMAL, ZONE_HIGHMEM) and watermarks.
 
 pub mod buddy;
 pub mod frame;
