@@ -11,8 +11,8 @@ The ``su.elf`` executable (``/bin/su.elf`` and ``/bin/su``) is a freestanding Ri
 
 In Keira's monolithic design:
 
-1. **Kernel Privilege Demotion & Boundaries**: Calls ``setgid()`` (Vector 46) and ``setuid()`` (Vector 23) in Ring 0. Only processes with effective UID 0 are permitted to arbitrarily alter their credentials; unprivileged processes attempting elevation are rejected by the kernel with ``EPERM`` (``Operation not permitted``).
-2. **Session Shell Dispatch**: Configures standard environment variables (``USER``, ``LOGNAME``, ``SHELL``) and dispatches ``/bin/sh`` via ``execve()`` (Vector 11).
+1. **Kernel Privilege Demotion & Boundaries**: Calls ``setgid()`` (Vector 69) and ``setuid()`` (Vector 61) in Ring 0. Only processes with effective UID 0 are permitted to arbitrarily alter their credentials; unprivileged processes attempting elevation are rejected by the kernel with ``EPERM`` (``Operation not permitted``).
+2. **Session Shell Dispatch**: Configures standard environment variables (``USER``, ``LOGNAME``, ``SHELL``) and dispatches ``/bin/sh`` via ``execve()`` (Vector 5).
 3. **Child Lifecycle & Wait**: Because Keira's ``execve`` spawns an isolated user task and returns the child PID to the parent process, ``su`` awaits child process completion via ``waitpid()``, exiting with the child's exact exit status.
 
 2. Command-Line Options
@@ -65,5 +65,5 @@ In Keira's monolithic design:
 
 - **Source Path**: ``userland/sysutils/su.c``
 - **Binary Locations**: ``/bin/su.elf``, ``/bin/su``
-- **System Call Invocations**: ``SYS_SETGID`` (Vector 46), ``SYS_SETUID`` (Vector 23), ``SYS_EXECVE`` (Vector 11), ``SYS_WAITPID`` (Vector 7)
+- **System Call Invocations**: ``SYS_SETGID`` (Vector 69), ``SYS_SETUID`` (Vector 61), ``SYS_EXEC`` (Vector 5), ``SYS_WAITPID`` (Vector 62)
 - **Privilege Level**: Superuser (UID 0) required for arbitrary switching; demoted execution once switched

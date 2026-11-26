@@ -54,10 +54,10 @@ Architectural Interaction
        end
 
        subgraph Ring0Syscalls["Ring 0 System Call Boundary"]
-           SysSetuid["SYS_SETUID (23) / SYS_SETGID (46)"]
-           SysGetuid["SYS_GETUID (24) / SYS_GETGID (47)"]
+           SysSetuid["SYS_SETUID (61) / SYS_SETGID (69)"]
+           SysGetuid["SYS_GETUID (60) / SYS_GETGID (68)"]
            SysGeteuid["SYS_GETEUID (90) / SYS_GETEGID (91)"]
-           SysExecve["SYS_EXECVE (11)<br/><i>Inherits Task Credentials</i>"]
+           SysExecve["SYS_EXEC (5)<br/><i>Inherits Task Credentials</i>"]
        end
 
        subgraph Ring0Task["Ring 0 Task Subsystem"]

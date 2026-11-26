@@ -11,7 +11,7 @@ The ``id.elf`` executable (``/bin/id.elf`` and ``/bin/id``) is a freestanding Ri
 
 In accordance with Keira's freestanding pure-kernel architecture:
 
-1. **Kernel Credential Introspection**: Obtains real and effective user and group identities directly from the kernel via ``getuid()`` (Vector 24), ``geteuid()`` (Vector 90), ``getgid()`` (Vector 47) and ``getegid()`` (Vector 91).
+1. **Kernel Credential Introspection**: Obtains real and effective user and group identities directly from the kernel via ``getuid()`` (Vector 60), ``geteuid()`` (Vector 90), ``getgid()`` (Vector 68) and ``getegid()`` (Vector 91).
 2. **Standard POSIX Output**: Emits the standard ``uid=... gid=... groups=...`` output format, identifying UID 0 / GID 0 as ``root`` and unprivileged identities as numeric IDs.
 3. **Explicit Identity Queries**: Allows querying arbitrary numerical identities (e.g. ``id 1000`` or ``id root``).
 
@@ -70,5 +70,5 @@ In accordance with Keira's freestanding pure-kernel architecture:
 
 - **Source Path**: ``userland/sysutils/id.c``
 - **Binary Locations**: ``/bin/id.elf``, ``/bin/id``
-- **System Call Invocations**: ``SYS_GETUID`` (Vector 24), ``SYS_GETEUID`` (Vector 90), ``SYS_GETGID`` (Vector 47), ``SYS_GETEGID`` (Vector 91)
+- **System Call Invocations**: ``SYS_GETUID`` (Vector 60), ``SYS_GETEUID`` (Vector 90), ``SYS_GETGID`` (Vector 68), ``SYS_GETEGID`` (Vector 91)
 - **Privilege Level**: Ring 3 unprivileged
