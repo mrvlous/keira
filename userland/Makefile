@@ -17,7 +17,7 @@
 # the native compiler toolchain (kcc) and categorized system binaries for Keira Kernel:
 #   1. CRT0 (Assembly) : Compiles Ring 3 architecture startup entry stubs.
 #   2. LIBC (C Lib)    : Archives freestanding standard library into libc.a.
-#   3. Executables     : Compiles and links 47 userland binaries across core, proc, sys, init, shell, net, toolchain and test suites.
+#   3. Executables     : Compiles and links 53 userland binaries across core, proc, sys, init, shell, net, toolchain and test suites.
 #   4. Install         : Exports runtime binaries and headers to destination root.
 
 SHELL           := /bin/bash
@@ -245,7 +245,7 @@ size: libc bins ## Display sizes of libc.a and all compiled userland ELF binarie
 	$(Q)size $(BIN_DIR)/*.elf 2>/dev/null | head -n 15 | sed 's/^/    /' || true
 	@printf "    ... (total %d binaries compiled in $(BIN_DIR))\n\n" $(words $(BINS))
 
-test: libc $(filter %/test_abi.elf %/test_pipe.elf %/test_poll.elf %/test_select.elf %/test_threads.elf %/fuzz_abi.elf,$(BIN_ELFS)) ## Compile and verify userland diagnostic and ABI test binaries
+test: libc $(filter %/test_abi.elf %/test_job_control.elf %/test_modules.elf %/test_pipe.elf %/test_poll.elf %/test_select.elf %/test_sh_scripting.elf %/test_threads.elf %/fuzz_abi.elf,$(BIN_ELFS)) ## Compile and verify userland diagnostic and ABI test binaries
 	@$(LOG_INFO) "Verifying userland test binaries ($(ARCH))..."
 	$(Q)for t in $(BIN_DIR)/test_*.elf $(BIN_DIR)/fuzz_*.elf; do \
 	    if [ -f "$$t" ]; then \
