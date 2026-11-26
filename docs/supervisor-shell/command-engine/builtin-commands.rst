@@ -57,14 +57,26 @@ Command Reference
      - ``icache``
      - Display VFS inode cache telemetry, active entries and allocation statistics
      - ``-h, --help``
+   * - ``insmod``
+     - ``insmod <file.ko | name> [size]``
+     - Load a Ring 0 relocatable ELF kernel module (``.ko``) or register a named module slot
+     - ``-h, --help``
    * - ``irq``
      - ``irq``
      - Display IDT interrupt vector routing and processed hit counters
+     - ``-h, --help``
+   * - ``lsmod``
+     - ``lsmod``
+     - List active loaded kernel modules, text sizes, reference counts and memory addresses
      - ``-h, --help``
    * - ``memory``
      - ``memory [-t|-p|-c|-l|-z]``
      - Display physical memory (PMM) frames, zones, kernel heap and Copy-On-Write statistics (alias: ``mem``)
      - ``-z, --zone``: Zone watermarks ``-c, --cow``: Copy-On-Write sharing and fault metrics ``-p, --paging``: Paging, COW and #PF telemetry ``-l, --slab``: Magazine slab cache stats ``-t, --test``: Heap stress test ``-h, --help``: Usage info
+   * - ``modinfo``
+     - ``modinfo <name>``
+     - Inspect metadata, state, size and virtual address bindings for a loaded kernel module
+     - ``-h, --help``
    * - ``mount``
      - ``mount``
      - Display Virtual Filesystem mount table, filesystem types and root bindings
@@ -97,6 +109,10 @@ Command Reference
      - ``rlimit [-v]``
      - Display process resource limits, soft and hard limits and sandbox quota utilization (alias: ``limit``)
      - ``-v, --verbose``: Display per-task resource utilization and quota limits ``-h, --help``: Usage info
+   * - ``rmmod``
+     - ``rmmod <name>``
+     - Unload and detach a loaded Ring 0 kernel module by name when reference count is zero
+     - ``-h, --help``
    * - ``rnginfo``
      - ``rnginfo [-v]``
      - Display silicon hardware entropy source, random generator subsystems and live entropy sample (alias: ``entropy``)

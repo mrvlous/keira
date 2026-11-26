@@ -4,7 +4,7 @@
 Supervisor Emergency Console
 ============================
 
-Ring 0 emergency monitor, command parser, terminal UI and kvi editor.
+Ring 0 emergency monitor, command parser, tab autocomplete and monochrome terminal UI.
 
 Architecture & Subsystems
 =========================

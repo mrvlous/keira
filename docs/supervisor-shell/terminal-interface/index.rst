@@ -4,7 +4,7 @@
 Terminal UI & Line Editor
 =========================
 
-Input line editing, monochrome console palette and kvi text editor.
+Input line editing, monochrome console palette and interactive supervisor console help.
 
 Subtopics & Specifications
 ==========================
@@ -12,6 +12,6 @@ Subtopics & Specifications
 .. toctree::
    :maxdepth: 1
 
-   kvi-editor
+   help-utility
    line-editor
    monochrome-palette

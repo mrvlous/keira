@@ -10,7 +10,7 @@ Terminal Modes
 ==============
 
 * **Canonical Mode**: Input buffered line-by-line; character editing (``backspace``) enabled.
-* **Raw Mode**: Characters delivered immediately to application without echo or line buffering (used by ``kvi`` editor and shell input loop).
+* **Raw Mode**: Characters delivered immediately to application without echo or line buffering (used by interactive Ring 3 terminal tools and shell line input loops).
 
 APIs
 ====

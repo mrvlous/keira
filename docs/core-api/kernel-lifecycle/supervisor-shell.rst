@@ -4,7 +4,7 @@
 Keira Interactive Shell & Command Subsystem
 ===========================================
 
-The ``shell`` domain provides the kernel emergency supervisor console control plane and 32 built-in diagnostic commands. Standard user utilities (``ps``, ``kill``, ``hostname``, ``dmesg``, ``df``, ``cat``, ``ls``, ``fetch``, ``kcc``, ``sh`` and ``init``) run exclusively in Ring 3 userspace (``/bin``).
+The ``shell`` domain provides the kernel emergency supervisor console control plane and 41 built-in diagnostic commands (61 command and alias invocations). Standard user utilities (``ps``, ``kill``, ``hostname``, ``dmesg``, ``df``, ``cat``, ``ls``, ``fetch``, ``kcc``, ``sh`` and ``init``) run exclusively in Ring 3 userspace (``/bin``).
 
 Shell Architecture
 ==================
@@ -14,7 +14,7 @@ Shell Architecture
    graph TD
        Shell["Interactive Shell"] --> Terminal["terminal/<br/>Prompt, Keyboard & Console Palette"]
        Shell --> Executor["executor/<br/>Command Dispatch, Autocomplete & CliArgs"]
-       Shell --> Cmds["commands/<br/>32 Emergency Commands"]
+       Shell --> Cmds["cmds/<br/>41 Built-in Supervisor Commands"]
 
 Submodule Index
 ===============
@@ -32,6 +32,6 @@ Submodule Index
    * - ``executor/``
      - Command Execution
      - Argument parsing, pipe routing, autocomplete and execution dispatch
-   * - ``commands/``
+   * - ``cmds/``
      - Built-in Commands
-     - Reference manuals for all 32 built-in emergency commands
+     - Reference manuals for all 41 built-in supervisor diagnostic commands

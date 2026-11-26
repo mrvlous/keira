@@ -4,7 +4,7 @@
 General Utility Commands
 ========================
 
-The ``util`` command suite provides emergency diagnostics assistance for the supervisor console. Terminal screen clearing in Ring 0 is handled via the native supervisor command ``wipe``.
+The ``util`` command suite provides interactive diagnostic assistance for the Ring 0 supervisor console. Terminal screen clearing in Ring 0 is handled via ``wipe``.
 
 Command Reference
 =================
@@ -19,5 +19,5 @@ Command Reference
      - Flags / Options
    * - ``help``
      - ``help``
-     - Display interactive emergency command index or command usage
+     - Display interactive supervisor command index across all 41 built-in commands
      - ``-h, --help``
