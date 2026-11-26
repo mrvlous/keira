@@ -217,6 +217,7 @@ pub fn init_at(base_addr: u64) -> Result<HpetInfo, &'static str> {
         HPET_START_TICKS = start_ticks;
         HPET_INFO = Some(info);
         HPET_INITIALIZED = true;
+        super::pit::sync_hpet_anchor();
 
         Ok(info)
     }
