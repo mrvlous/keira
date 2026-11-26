@@ -2,8 +2,8 @@
 
 # Supervisor Diagnostic Shell Crate (keira-shell)
 #
-# Implements Ring 0 emergency interactive shell, 36 diagnostic commands,
-# CliArgs tokenizer, tab auto-completion and kvi modal text editor.
+# Implements Ring 0 interactive diagnostic shell, 41 commands (61 with aliases),
+# CliArgs tokenizer, tab auto-completion and terminal UI primitives.
 
 [package]
 name = "keira-shell"
@@ -11,7 +11,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Supervisor diagnostic shell, code editor, autocomplete and 36 diagnostic commands for Keira Kernel"
+description = "Supervisor diagnostic shell, autocomplete and 41 diagnostic commands for Keira Kernel"
 
 [dependencies]
 keira-core = { path = "../core" }
