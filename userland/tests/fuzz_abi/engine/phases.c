@@ -69,14 +69,21 @@ int run_phase1_syscall_fuzzing(int *out_calls) {
             continue;
         }
 
-        /* Prevent closing stdin, stdout and stderr descriptors */
-        if (vec == SYS_CLOSE && a1 <= 2) {
+        /* Prevent closing standard descriptors or cloning blocking tty stdin */
+        if (vec == SYS_CLOSE && (uintptr_t)a1 <= 2) {
+            continue;
+        }
+        if ((vec == SYS_DUP || vec == SYS_DUP2 || vec == SYS_FCNTL) && (uintptr_t)a1 <= 2) {
+            continue;
+        }
+        if (vec == SYS_DUP2 && (uintptr_t)a2 <= 2) {
             continue;
         }
 
         /* Prevent self-immolation during kill fuzzing */
         if (vec == SYS_KILL) {
-            if (a1 == 0 || a1 == (uint64_t)getpid() || a1 == (uint64_t)-1) {
+            intptr_t target_pid = (intptr_t)a1;
+            if (target_pid == 0 || target_pid == (intptr_t)getpid() || target_pid == -1) {
                 a1 = 99999;
             }
         }
@@ -87,8 +94,8 @@ int run_phase1_syscall_fuzzing(int *out_calls) {
             a2 = 0;
         }
 
-        /* Prevent blocking on stdin (fd 0 / tty) */
-        if (vec == SYS_READ && a1 == 0) {
+        /* Prevent blocking on stdin (fd 0 / tty) across both 32-bit and 64-bit ABIs */
+        if (vec == SYS_READ && (uintptr_t)a1 <= 2) {
             a1 = 999;
         }
 
