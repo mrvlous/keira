@@ -202,6 +202,51 @@ pub fn handle_open(arg1: u64, arg2: u64) -> u64 {
 }
 
 /// Syscall 7: Read from file descriptor into user buffer.
+/// Drains COM1 UART bytes into the TTY line discipline and reads into user buffer.
+unsafe fn read_tty_fd(buf_ptr: u64, len: usize, nonblocking: bool) -> u64 {
+    let mut kernel_buf = [0u8; 512];
+    let to_read = len.min(kernel_buf.len());
+    #[cfg(target_os = "none")]
+    loop {
+        while let Some(mut b) = keira_io::serial::poll_byte() {
+            if b == 0 {
+                break;
+            }
+            if b == b'\r' {
+                b = b'\n';
+            }
+            keira_io::tty::push_char(b);
+        }
+        if let Ok(bytes) = keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read]) {
+            if bytes > 0 {
+                if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                    return bytes as u64;
+                }
+                return errno_to_ret(EFAULT);
+            }
+            if keira_io::tty::take_eof_pending() {
+                return 0;
+            }
+            if nonblocking {
+                return errno_to_ret(EAGAIN);
+            }
+        } else {
+            return errno_to_ret(EIO);
+        }
+        core::arch::asm!("sti; hlt");
+    }
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = nonblocking;
+        if let Ok(bytes) = keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read]) {
+            if bytes > 0 && copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
+                return bytes as u64;
+            }
+        }
+        0
+    }
+}
+
 pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
     let fd = arg1 as usize;
     let buf_ptr = arg2;
@@ -270,53 +315,11 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 };
 
                 if let Some(node_name) = path_str.strip_prefix("/dev/") {
+                    if node_name == "tty" {
+                        return read_tty_fd(buf_ptr, len as usize, t.fds[fd].nonblocking);
+                    }
                     let mut kernel_buf = [0u8; 512];
                     let to_read = (len as usize).min(kernel_buf.len());
-                    if node_name == "tty" {
-                        #[cfg(target_os = "none")]
-                        loop {
-                            while keira_io::serial::has_byte() {
-                                let mut b = keira_io::serial::read_byte();
-                                if b == 0 {
-                                    break;
-                                }
-                                if b == b'\r' {
-                                    b = b'\n';
-                                }
-                                keira_io::tty::push_char(b);
-                            }
-                            if let Ok(bytes) =
-                                keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
-                            {
-                                if bytes > 0 {
-                                    if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
-                                        return bytes as u64;
-                                    }
-                                    return errno_to_ret(EFAULT);
-                                }
-                                if keira_io::tty::take_eof_pending() {
-                                    return 0;
-                                }
-                                if t.fds[fd].nonblocking {
-                                    return errno_to_ret(EAGAIN);
-                                }
-                            } else {
-                                return errno_to_ret(EIO);
-                            }
-                            core::arch::asm!("sti; hlt");
-                        }
-                        #[cfg(not(target_os = "none"))]
-                        {
-                            if let Ok(bytes) =
-                                keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
-                            {
-                                if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
-                                    return bytes as u64;
-                                }
-                            }
-                            return 0;
-                        }
-                    }
 
                     if let Ok(bytes) =
                         keira_fs::dev::read_dev_node(node_name, &mut kernel_buf[..to_read])
@@ -360,51 +363,7 @@ pub fn handle_read(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 pmm::free_frame(frame);
                 return to_copy as u64;
             } else if fd == 0 {
-                let mut kernel_buf = [0u8; 128];
-                let to_read = (len as usize).min(kernel_buf.len());
-                #[cfg(target_os = "none")]
-                loop {
-                    while keira_io::serial::has_byte() {
-                        let mut b = keira_io::serial::read_byte();
-                        if b == 0 {
-                            break;
-                        }
-                        if b == b'\r' {
-                            b = b'\n';
-                        }
-                        keira_io::tty::push_char(b);
-                    }
-                    if let Ok(bytes) =
-                        keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
-                    {
-                        if bytes > 0 {
-                            if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
-                                return bytes as u64;
-                            }
-                            return errno_to_ret(EFAULT);
-                        }
-                        if keira_io::tty::take_eof_pending() {
-                            return 0;
-                        }
-                    } else {
-                        return errno_to_ret(EIO);
-                    }
-                    core::arch::asm!("sti; hlt");
-                }
-                #[cfg(not(target_os = "none"))]
-                {
-                    if let Ok(bytes) =
-                        keira_fs::dev::read_dev_node("tty", &mut kernel_buf[..to_read])
-                    {
-                        if bytes > 0 {
-                            if copy_to_user(buf_ptr, &kernel_buf[..bytes]).is_ok() {
-                                return bytes as u64;
-                            }
-                            return errno_to_ret(EFAULT);
-                        }
-                    }
-                    return 0;
-                }
+                return read_tty_fd(buf_ptr, len as usize, false);
             }
         }
     }

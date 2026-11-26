@@ -16,174 +16,197 @@
 
 pub mod discipline {
     use core::sync::atomic::{AtomicBool, Ordering};
+    use keira_core::sync::IrqMutex;
 
     use super::termios::{Termios, ICANON, ISIG, VEOF, VERASE, VINTR};
 
-    static mut ACTIVE_TERMIOS: Termios = Termios {
-        c_iflag: 0x0500,
-        c_oflag: 0x0005,
-        c_cflag: 0x00BF,
-        c_lflag: 0x8A3B,
-        c_line: 0,
-        c_cc: [
-            3, 28, 127, 21, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0,
-        ],
-        c_ispeed: 38400,
-        c_ospeed: 38400,
-    };
-
     pub const COOKED_BUF_SIZE: usize = 512;
-    static mut COOKED_QUEUE: [u8; COOKED_BUF_SIZE] = [0; COOKED_BUF_SIZE];
-    static mut COOKED_HEAD: usize = 0;
-    static mut COOKED_TAIL: usize = 0;
-
     pub const LINE_BUF_SIZE: usize = 256;
-    static mut LINE_BUF: [u8; LINE_BUF_SIZE] = [0; LINE_BUF_SIZE];
-    static mut LINE_LEN: usize = 0;
-    static mut LAST_CHAR_WAS_CR: bool = false;
-    static mut LAST_BACKSPACE_POPPED: bool = false;
+
+    struct LdiscState {
+        termios: Termios,
+        cooked_queue: [u8; COOKED_BUF_SIZE],
+        cooked_head: usize,
+        cooked_tail: usize,
+        line_buf: [u8; LINE_BUF_SIZE],
+        line_len: usize,
+        last_char_was_cr: bool,
+        last_backspace_popped: bool,
+        sigint_hook: Option<fn()>,
+    }
+
+    impl LdiscState {
+        const fn new() -> Self {
+            Self {
+                termios: Termios {
+                    c_iflag: 0x0500,
+                    c_oflag: 0x0005,
+                    c_cflag: 0x00BF,
+                    c_lflag: 0x8A3B,
+                    c_line: 0,
+                    c_cc: [
+                        3, 28, 127, 21, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                    ],
+                    c_ispeed: 38400,
+                    c_ospeed: 38400,
+                },
+                cooked_queue: [0; COOKED_BUF_SIZE],
+                cooked_head: 0,
+                cooked_tail: 0,
+                line_buf: [0; LINE_BUF_SIZE],
+                line_len: 0,
+                last_char_was_cr: false,
+                last_backspace_popped: false,
+                sigint_hook: None,
+            }
+        }
+
+        fn push_cooked_byte(&mut self, b: u8) -> bool {
+            let next_tail = (self.cooked_tail + 1) % COOKED_BUF_SIZE;
+            if next_tail != self.cooked_head {
+                self.cooked_queue[self.cooked_tail] = b;
+                self.cooked_tail = next_tail;
+                true
+            } else {
+                false
+            }
+        }
+
+        fn flush_line_buf(&mut self) {
+            for i in 0..self.line_len {
+                let b = self.line_buf[i];
+                let _ = self.push_cooked_byte(b);
+            }
+            self.line_len = 0;
+        }
+    }
+
+    static LDISC: IrqMutex<LdiscState> = IrqMutex::new(LdiscState::new());
     static EOF_PENDING: AtomicBool = AtomicBool::new(false);
 
     pub fn take_eof_pending() -> bool {
         EOF_PENDING.swap(false, Ordering::SeqCst)
     }
 
-    pub static mut SIGINT_HOOK: Option<fn()> = None;
-
     pub fn set_sigint_hook(hook: fn()) {
-        unsafe {
-            SIGINT_HOOK = Some(hook);
-        }
+        LDISC.lock().sigint_hook = Some(hook);
     }
 
     pub fn get_termios() -> Termios {
-        unsafe { ACTIVE_TERMIOS }
+        LDISC.lock().termios
     }
 
     pub fn set_termios(t: &Termios) {
-        unsafe {
-            ACTIVE_TERMIOS = *t;
+        let mut state = LDISC.lock();
+        let was_canon = (state.termios.c_lflag & ICANON) != 0;
+        let now_canon = (t.c_lflag & ICANON) != 0;
+        // Flush any typed-ahead canonical bytes before switching to raw mode so
+        // earlier characters cannot stay stranded and reorder behind later reads.
+        if was_canon && !now_canon && state.line_len > 0 {
+            state.flush_line_buf();
+            state.last_char_was_cr = false;
         }
+        state.termios = *t;
     }
 
     pub fn push_char(c: u8) -> bool {
-        unsafe {
-            let lflag = ACTIVE_TERMIOS.c_lflag;
+        let hook_to_run: Option<fn()>;
+        let accepted = {
+            let mut state = LDISC.lock();
+            let lflag = state.termios.c_lflag;
 
-            if (lflag & ISIG) != 0 && c == ACTIVE_TERMIOS.c_cc[VINTR] {
-                LINE_LEN = 0;
-                LAST_BACKSPACE_POPPED = false;
-                if let Some(hook) = SIGINT_HOOK {
-                    hook();
-                }
-                return false;
-            }
-
-            if (lflag & ICANON) != 0 {
-                if c == ACTIVE_TERMIOS.c_cc[VEOF] {
-                    LAST_BACKSPACE_POPPED = false;
-                    if LINE_LEN == 0 {
-                        EOF_PENDING.store(true, Ordering::SeqCst);
-                    } else {
-                        #[allow(clippy::needless_range_loop)]
-                        for i in 0..LINE_LEN {
-                            let b = LINE_BUF[i];
-                            let next_tail = (COOKED_TAIL + 1) % COOKED_BUF_SIZE;
-                            if next_tail != COOKED_HEAD {
-                                COOKED_QUEUE[COOKED_TAIL] = b;
-                                COOKED_TAIL = next_tail;
-                            }
-                        }
-                        LINE_LEN = 0;
-                    }
-                    return true;
-                }
-
-                if c == b'\n' && LAST_CHAR_WAS_CR {
-                    LAST_CHAR_WAS_CR = false;
-                    LAST_BACKSPACE_POPPED = false;
-                    return false;
-                }
-                LAST_CHAR_WAS_CR = c == b'\r';
-
-                if c == 0x08 || c == 0x7F || c == ACTIVE_TERMIOS.c_cc[VERASE] {
-                    if LINE_LEN > 0 {
-                        LINE_LEN -= 1;
-                        LAST_BACKSPACE_POPPED = true;
-                        true
-                    } else {
-                        LAST_BACKSPACE_POPPED = false;
-                        false
-                    }
-                } else if c == b'\r' || c == b'\n' {
-                    LAST_BACKSPACE_POPPED = false;
-                    if LINE_LEN < LINE_BUF_SIZE {
-                        LINE_BUF[LINE_LEN] = b'\n';
-                        LINE_LEN += 1;
-                    }
-                    #[allow(clippy::needless_range_loop)]
-                    for i in 0..LINE_LEN {
-                        let b = LINE_BUF[i];
-                        let next_tail = (COOKED_TAIL + 1) % COOKED_BUF_SIZE;
-                        if next_tail != COOKED_HEAD {
-                            COOKED_QUEUE[COOKED_TAIL] = b;
-                            COOKED_TAIL = next_tail;
-                        }
-                    }
-                    LINE_LEN = 0;
-                    true
-                } else if LINE_LEN < LINE_BUF_SIZE - 1 {
-                    LAST_BACKSPACE_POPPED = false;
-                    LINE_BUF[LINE_LEN] = c;
-                    LINE_LEN += 1;
-                    true
-                } else {
-                    LAST_BACKSPACE_POPPED = false;
-                    false
-                }
+            if (lflag & ISIG) != 0 && c == state.termios.c_cc[VINTR] {
+                state.line_len = 0;
+                state.last_backspace_popped = false;
+                hook_to_run = state.sigint_hook;
+                false
             } else {
-                LAST_BACKSPACE_POPPED = false;
-                let next_tail = (COOKED_TAIL + 1) % COOKED_BUF_SIZE;
-                if next_tail != COOKED_HEAD {
-                    COOKED_QUEUE[COOKED_TAIL] = c;
-                    COOKED_TAIL = next_tail;
-                    true
+                hook_to_run = None;
+                if (lflag & ICANON) != 0 {
+                    if c == state.termios.c_cc[VEOF] {
+                        state.last_backspace_popped = false;
+                        if state.line_len == 0 {
+                            EOF_PENDING.store(true, Ordering::SeqCst);
+                        } else {
+                            state.flush_line_buf();
+                        }
+                        true
+                    } else if c == b'\n' && state.last_char_was_cr {
+                        state.last_char_was_cr = false;
+                        state.last_backspace_popped = false;
+                        false
+                    } else {
+                        state.last_char_was_cr = c == b'\r';
+
+                        if c == 0x08 || c == 0x7F || c == state.termios.c_cc[VERASE] {
+                            if state.line_len > 0 {
+                                state.line_len -= 1;
+                                state.last_backspace_popped = true;
+                                true
+                            } else {
+                                state.last_backspace_popped = false;
+                                false
+                            }
+                        } else if c == b'\r' || c == b'\n' {
+                            state.last_backspace_popped = false;
+                            if state.line_len < LINE_BUF_SIZE {
+                                let idx = state.line_len;
+                                state.line_buf[idx] = b'\n';
+                                state.line_len = idx + 1;
+                            }
+                            state.flush_line_buf();
+                            true
+                        } else if state.line_len < LINE_BUF_SIZE - 1 {
+                            state.last_backspace_popped = false;
+                            let idx = state.line_len;
+                            state.line_buf[idx] = c;
+                            state.line_len = idx + 1;
+                            true
+                        } else {
+                            state.last_backspace_popped = false;
+                            false
+                        }
+                    }
                 } else {
-                    false
+                    state.last_backspace_popped = false;
+                    state.push_cooked_byte(c)
                 }
             }
+        };
+
+        if let Some(hook) = hook_to_run {
+            hook();
         }
+        accepted
     }
 
     pub fn last_erase_succeeded() -> bool {
-        unsafe { LAST_BACKSPACE_POPPED }
+        LDISC.lock().last_backspace_popped
     }
 
     pub fn line_len() -> usize {
-        unsafe { LINE_LEN }
+        LDISC.lock().line_len
     }
 
     pub fn read_tty(buf: &mut [u8]) -> usize {
-        unsafe {
-            let mut count = 0;
-            while count < buf.len() && COOKED_HEAD != COOKED_TAIL {
-                buf[count] = COOKED_QUEUE[COOKED_HEAD];
-                COOKED_HEAD = (COOKED_HEAD + 1) % COOKED_BUF_SIZE;
-                count += 1;
-            }
-            count
+        let mut state = LDISC.lock();
+        let mut count = 0;
+        while count < buf.len() && state.cooked_head != state.cooked_tail {
+            buf[count] = state.cooked_queue[state.cooked_head];
+            state.cooked_head = (state.cooked_head + 1) % COOKED_BUF_SIZE;
+            count += 1;
         }
+        count
     }
 
     pub fn flush_tty() {
-        unsafe {
-            COOKED_HEAD = 0;
-            COOKED_TAIL = 0;
-            LINE_LEN = 0;
-            LAST_CHAR_WAS_CR = false;
-            LAST_BACKSPACE_POPPED = false;
-        }
+        let mut state = LDISC.lock();
+        state.cooked_head = 0;
+        state.cooked_tail = 0;
+        state.line_len = 0;
+        state.last_char_was_cr = false;
+        state.last_backspace_popped = false;
     }
 }
 
@@ -364,5 +387,35 @@ mod tests {
         assert!(!push_char(0x08));
         assert!(!super::discipline::last_erase_succeeded());
         assert_eq!(super::discipline::line_len(), 0);
+    }
+
+    #[test]
+    fn test_canonical_to_raw_flushes_pending_input() {
+        let mut canon = get_termios();
+        canon.c_lflag |= ICANON;
+        set_termios(&canon);
+        super::discipline::flush_tty();
+
+        // Simulate type-ahead before interactive readline turns ICANON off.
+        assert!(push_char(b's'));
+        assert_eq!(super::discipline::line_len(), 1);
+
+        let mut raw = canon;
+        raw.c_lflag &= !ICANON;
+        set_termios(&raw);
+        assert_eq!(super::discipline::line_len(), 0);
+
+        for &b in b"u 1000\n" {
+            assert!(push_char(b));
+        }
+
+        let mut out = [0u8; 16];
+        let n = read_tty(&mut out);
+        assert_eq!(n, 8);
+        assert_eq!(&out[..n], b"su 1000\n");
+
+        let mut extra = [0u8; 4];
+        let n2 = read_tty(&mut extra);
+        assert_eq!(n2, 0);
     }
 }

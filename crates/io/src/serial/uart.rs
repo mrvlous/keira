@@ -17,10 +17,14 @@
 pub mod driver {
     use core::sync::atomic::{AtomicBool, Ordering};
     use keira_arch::cpu::{inb, outb};
+    #[cfg(target_os = "none")]
+    use keira_core::sync::IrqMutex;
 
     pub const COM1: u16 = 0x3F8;
 
     static SERIAL_INITIALIZED: AtomicBool = AtomicBool::new(false);
+    #[cfg(target_os = "none")]
+    static SERIAL_RX_LOCK: IrqMutex<()> = IrqMutex::new(());
 
     pub fn init() {
         unsafe {
@@ -74,6 +78,23 @@ pub mod driver {
             unsafe { inb(COM1) }
         } else {
             0
+        }
+    }
+
+    /// Atomically polls COM1 receive FIFO under an IRQ-safe mutex.
+    pub fn poll_byte() -> Option<u8> {
+        #[cfg(not(target_os = "none"))]
+        {
+            None
+        }
+        #[cfg(target_os = "none")]
+        {
+            let _guard = SERIAL_RX_LOCK.lock();
+            if has_byte() {
+                Some(unsafe { inb(COM1) })
+            } else {
+                None
+            }
         }
     }
 

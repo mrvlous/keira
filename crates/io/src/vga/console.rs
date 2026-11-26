@@ -192,8 +192,7 @@ pub mod buffer {
     unsafe fn shell_handle_keypress(_c: u8) {}
 
     pub fn handle_timer_tick() {
-        while crate::serial::has_byte() {
-            let mut b = crate::serial::read_byte();
+        while let Some(mut b) = crate::serial::poll_byte() {
             if b == 0 {
                 break;
             }
