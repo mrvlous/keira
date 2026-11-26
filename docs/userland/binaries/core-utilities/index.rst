@@ -4,7 +4,7 @@
 Core Utilities Manuals
 ======================
 
-Dedicated reference manuals for core utilities utilities.
+Dedicated reference manuals for freestanding POSIX core utilities.
 
 Subtopics & Specifications
 ==========================
@@ -17,6 +17,7 @@ Subtopics & Specifications
    chown
    clear
    echo
+   grep
    head
    insmod
    ln
