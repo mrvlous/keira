@@ -49,7 +49,6 @@ IGNORED_EXTENSIONS = (
 SPDX_REQUIRED_EXTENSIONS = (".rs", ".c", ".h", ".asm", ".py", ".sh")
 PROSE_EXTENSIONS = (".rst", ".md", ".txt")
 
-
 def check_file(file_path):
     """Validate a single source or documentation file for style rules."""
     issues = []
@@ -80,7 +79,6 @@ def check_file(file_path):
 
     return issues
 
-
 def extract_commit_lines(message_text):
     """Strip Git comment and scissor diff lines from a commit message."""
     extracted = []
@@ -94,7 +92,6 @@ def extract_commit_lines(message_text):
     while extracted and not extracted[-1].strip():
         extracted.pop()
     return extracted
-
 
 def check_commit_subject(subject):
     """Validate the first line of a commit message against project conventions."""
@@ -140,7 +137,6 @@ def check_commit_subject(subject):
 
     return issues
 
-
 def check_commit_message(message_text):
     """Validate commit message format, grammar and Oxford comma rules."""
     issues = []
@@ -169,7 +165,6 @@ def check_commit_message(message_text):
 
     return issues
 
-
 def check_commit_msg_file(file_path):
     """Read and validate a Git COMMIT_EDITMSG file on disk."""
     if not os.path.isfile(file_path):
@@ -188,7 +183,6 @@ def check_commit_msg_file(file_path):
 
     print("[CHECKPATCH] Commit message complies with project style rules.")
     return 0
-
 
 def check_git_log(rev_range):
     """Validate commit messages across a Git revision or range specification."""
@@ -215,7 +209,6 @@ def check_git_log(rev_range):
         f"\n[CHECKPATCH] Verified {len(records)} commits, {total_issues} issues found."
     )
     return 1 if total_issues > 0 else 0
-
 
 def install_commit_msg_hook():
     """Install the local Git commit-msg hook backed by scripts/checkpatch.py."""
@@ -247,7 +240,6 @@ def install_commit_msg_hook():
     print(f"[CHECKPATCH] Installed Git commit-msg hook at {hook_path}")
     return 0
 
-
 def check_paths(paths):
     """Recursively validate all provided file and directory paths."""
     total_issues = 0
@@ -278,7 +270,6 @@ def check_paths(paths):
 
     print(f"\n[CHECKPATCH] Verified {checked_files} files, {total_issues} issues found.")
     return 1 if total_issues > 0 else 0
-
 
 def run_self_tests():
     """Execute built-in unit tests for file and commit message verification."""
@@ -338,7 +329,6 @@ def run_self_tests():
     result = runner.run(suite)
     return 0 if result.wasSuccessful() else 1
 
-
 def main():
     """Parse CLI arguments and dispatch checkpatch validation modes."""
     parser = argparse.ArgumentParser(
@@ -381,7 +371,6 @@ def main():
 
     parser.print_help()
     return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

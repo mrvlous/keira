@@ -71,6 +71,5 @@ class TestKconfigGrammarParsing(unittest.TestCase):
         self.kconf.symbols["USERLAND"].value = False
         self.assertFalse(self.kconf.eval_condition("SMP || USERLAND"))
 
-
 if __name__ == "__main__":
     unittest.main()

@@ -96,6 +96,5 @@ class TestKconfigModel(unittest.TestCase):
         self.assertFalse(parent_menu.is_visible(kconf))
         self.assertFalse(child_menu.is_visible(kconf))
 
-
 if __name__ == "__main__":
     unittest.main()

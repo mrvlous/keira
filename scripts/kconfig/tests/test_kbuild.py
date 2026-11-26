@@ -45,6 +45,5 @@ class TestKbuildIncludePrimitives(unittest.TestCase):
         self.assertIn("STRIP:foo/bar", out)
         self.assertIn("PREFIX:arch/x86/boot.o arch/x86/kernel.o", out)
 
-
 if __name__ == "__main__":
     unittest.main()
