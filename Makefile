@@ -180,16 +180,13 @@ LOG_ERR         := printf "[ERR]   %s\n"
 LOG_CHECK       := printf "  [OK]    %s\n"
 LOG_MISS        := printf "  [MISS]  %s\n"
 
-# Canonical filesystem manifests
-SHELL_CMDS      := drives use ramdisk system cpu smp runtime time memory \
-                   devices initrd wipe reset run write tasks disk list \
-                   go view create folder delete edit copy help history \
-                   move search download network stop sync \
-                   fileinfo framebuffer usb https hostname syslog kvm \
-                   nvme ext4 mount cgroups futex bpf tpm swap seccomp epoll \
-                   drivers lkm unwind watchpoint power perf timer eventfd mac mqueue \
-                   pipes kill jobs fg bg lvm raid firewall \
-                   shutdown reboot
+# Active Ring 0 supervisor diagnostic command manifest
+SHELL_CMDS      := system cpu smp memory buddyinfo slabinfo devices drivers \
+                   lsmod insmod rmmod modinfo regs irq disk dcache \
+                   icache mount pipes daemons sync syslog unwind watchpoint \
+                   wipe pidinfo secinfo aslrinfo rnginfo rlimit unixsock vmainfo \
+                   waitqueue workqueue pollinfo selectinfo run sh reset power \
+                   help
 
 # Phony targets declaration
 .PHONY: all full fll run run-64 run-32 run-x86_64 run-i686 run-bare debug clean mrproper distclean rust kernel kernel-iso iso dirs \
