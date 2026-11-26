@@ -318,7 +318,7 @@ pub mod daemon {
             let swap_telem = keira_mem::vmm::get_kswapd_telemetry();
             let pressure = keira_mem::vmm::check_memory_pressure();
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("=== Active Ring 0 Background Kernel Daemons ===\n\n");
 
             let worker_count = unsafe {
@@ -1826,7 +1826,7 @@ pub mod info {
 
             let is_verbose = args.has_flag('v', "verbose");
 
-            vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+            vga::set_color(vga::Color::White, vga::Color::Black);
             vga::print_str("Keira Process Resource Limits (RLIMIT) Subsystem\n");
             vga::set_color(vga::Color::LightGrey, vga::Color::Black);
 
@@ -1872,7 +1872,7 @@ pub mod info {
 
                 if is_verbose {
                     vga::print_str("\n");
-                    vga::set_color(vga::Color::LightCyan, vga::Color::Black);
+                    vga::set_color(vga::Color::White, vga::Color::Black);
                     vga::print_str("Active Task Sandboxing & Quota Utilization:\n");
                     vga::set_color(vga::Color::Yellow, vga::Color::Black);
                     print_padded_str("PID", 6);
