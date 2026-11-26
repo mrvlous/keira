@@ -10,7 +10,6 @@ from pathlib import Path
 from docutils import nodes
 from sphinx.util.docutils import SphinxDirective
 
-
 class MaintainersIncludeDirective(SphinxDirective):
     """Renders MAINTAINERS entries as a structured table."""
 
@@ -103,7 +102,6 @@ class MaintainersIncludeDirective(SphinxDirective):
         self.set_source_info(table)
         return [table]
 
-
 def setup(app):
     """Register maintainers-include directive."""
     app.add_directive("maintainers-include", MaintainersIncludeDirective)
@@ -112,4 +110,3 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
-

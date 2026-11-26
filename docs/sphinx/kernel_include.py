@@ -12,7 +12,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
-
 class KernelIncludeDirective(SphinxDirective):
     """Include a kernel source file or documentation snippet."""
 
@@ -91,7 +90,6 @@ class KernelIncludeDirective(SphinxDirective):
 
         self.set_source_info(node)
         return [node]
-
 
 def setup(app):
     """Register kernel-include and sphinx-include directives."""

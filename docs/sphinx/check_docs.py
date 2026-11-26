@@ -15,7 +15,6 @@ Validates:
 import sys
 from pathlib import Path
 
-
 def check_file(path: Path) -> list[str]:
     """Check a single .rst file for compliance."""
     errors = []
@@ -77,7 +76,6 @@ def check_file(path: Path) -> list[str]:
 
     return errors
 
-
 def main() -> int:
     """Scan docs directory and report violations."""
     docs_root = Path(__file__).resolve().parent.parent
@@ -104,7 +102,6 @@ def main() -> int:
 
     print("SUCCESS: 100% compliant with Keira documentation style guidelines.")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

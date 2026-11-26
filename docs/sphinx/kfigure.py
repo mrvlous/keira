@@ -9,7 +9,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
-
 class KernelFigureDirective(SphinxDirective):
     """Renders styled architecture and sequence figures."""
 
@@ -39,7 +38,6 @@ class KernelFigureDirective(SphinxDirective):
         self.set_source_info(container)
         return [container]
 
-
 def setup(app):
     """Register kernel-figure directive."""
     app.add_directive("kernel-figure", KernelFigureDirective)
@@ -48,4 +46,3 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
-

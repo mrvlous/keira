@@ -5,7 +5,6 @@
 import re
 from pathlib import Path
 
-
 def get_kernel_version() -> str:
     """Extract kernel release version from root Cargo.toml or fallback to 0.9.0."""
     try:
@@ -20,7 +19,6 @@ def get_kernel_version() -> str:
         pass
     return "0.9.0"
 
-
 def setup(app):
     """Sphinx extension setup hook."""
     return {
@@ -28,4 +26,3 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
-
