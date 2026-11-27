@@ -2,7 +2,7 @@
 
 # Keira Kernel Configuration Baseline (Pure Ring 0)
 #
-# Baseline configuration profile for pure freestanding Ring 0 supervisor console.
+# Baseline configuration profile for pure freestanding Ring 0 systems without Ring 3 userland.
 
 #
 # Processor Architecture & System Specifications
