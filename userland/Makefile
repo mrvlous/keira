@@ -67,10 +67,11 @@ TESTS_DIR       := tests
 ETC_DIR         := etc
 
 # Architecture-specific toolchain flags
+DEPFLAGS        := -MMD -MP
 ifeq ($(ARCH),i686)
     ASM_FLAGS   := -f elf32
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m32 -O2 \
-                   -mno-sse -mno-sse2 -mno-mmx \
+                   -mno-sse -mno-sse2 -mno-mmx $(DEPFLAGS) \
                    -DKEIRA_VERSION=\"$(VERSION)\" \
                    -I../include \
                    -I$(LIBC_DIR)/include \
@@ -85,7 +86,7 @@ else
     ASM_FLAGS   := -f elf64
     CFLAGS      := -ffreestanding -nostdlib -fno-stack-protector -m64 -O2 \
                    -mno-sse -mno-sse2 -mno-mmx -mno-sse3 -mno-ssse3 \
-                   -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 \
+                   -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 $(DEPFLAGS) \
                    -DKEIRA_VERSION=\"$(VERSION)\" \
                    -I../include \
                    -I$(LIBC_DIR)/include \
@@ -153,7 +154,7 @@ $(CRT_OBJ): $(CRT_SRC) | dirs
 	$(Q)$(ASM) $(ASM_FLAGS) -o $@ $<
 
 # Freestanding C library objects
-$(OBJ_DIR)/libc/%.o: $(LIBC_DIR)/src/%.c | dirs
+$(OBJ_DIR)/libc/%.o: $(LIBC_DIR)/src/%.c ../Cargo.toml Makefile | dirs
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
@@ -169,7 +170,7 @@ libc: $(LIBC_A) ## Build freestanding C standard library (libc.a)
 
 # Single-file userland utility binaries compilation template
 define SINGLE_BIN_RULE
-$$(OBJ_DIR)/$(1)/%.o: $(1)/%.c | dirs
+$$(OBJ_DIR)/$(1)/%.o: $(1)/%.c ../Cargo.toml Makefile | dirs
 	$$(Q)mkdir -p $$(dir $$@)
 	$$(Q)$$(CC) $$(CFLAGS) -c $$< -o $$@
 
@@ -189,7 +190,7 @@ $(foreach b,$(TESTS_BINS),$(eval $(call SINGLE_BIN_RULE,$(TESTS_DIR),$(b))))
 
 # Multi-file complex project binaries compilation template
 define MULTI_BIN_RULE
-$$(OBJ_DIR)/$(1)/%.o: $(1)/%.c | dirs
+$$(OBJ_DIR)/$(1)/%.o: $(1)/%.c ../Cargo.toml Makefile | dirs
 	$$(Q)mkdir -p $$(dir $$@)
 	$$(Q)$$(CC) $$(CFLAGS) -c $$< -o $$@
 
@@ -203,6 +204,10 @@ $(eval $(call MULTI_BIN_RULE,$(SYS_DIR)/sysinfo,sysinfo))
 $(eval $(call MULTI_BIN_RULE,$(TOOLCHAIN_DIR)/kcc,kcc))
 $(eval $(call MULTI_BIN_RULE,$(TESTS_DIR)/test_abi,test_abi))
 $(eval $(call MULTI_BIN_RULE,$(TESTS_DIR)/fuzz_abi,fuzz_abi))
+
+# Compiler-generated header dependency tracking
+DEPS            := $(shell find $(OBJ_DIR) -type f -name "*.d" 2>/dev/null)
+-include $(DEPS)
 
 bins: $(BIN_ELFS) ## Build all user space utility binaries
 
