@@ -74,34 +74,70 @@ pub mod driver {
     pub(crate) static mut SECTOR_BUF_PHYS: u64 = 0;
     pub(crate) static mut PORT_DMA_ALLOCATED: bool = false;
 
+    /// Reads a 32-bit register from the AHCI Host Bus Adapter MMIO space at `offset`.
+    ///
+    /// # Safety
+    /// `ABAR_VIRTUAL` must hold a valid mapped AHCI MMIO base address and
+    /// `ABAR_VIRTUAL + offset` must be 4-byte aligned within the mapped HBA register region.
     unsafe fn read_abar(offset: usize) -> u32 {
         let ptr = (ABAR_VIRTUAL + offset as u64) as *const u32;
         core::ptr::read_volatile(ptr)
     }
 
+    /// Writes a 32-bit value to the AHCI Host Bus Adapter MMIO space at `offset`.
+    ///
+    /// # Safety
+    /// `ABAR_VIRTUAL` must hold a valid writable mapped AHCI MMIO base address and
+    /// `ABAR_VIRTUAL + offset` must be 4-byte aligned within the mapped HBA register region.
     unsafe fn write_abar(offset: usize, val: u32) {
         let ptr = (ABAR_VIRTUAL + offset as u64) as *mut u32;
         core::ptr::write_volatile(ptr, val);
     }
 
+    /// Reads a 32-bit register for AHCI `port` at byte `offset`.
+    ///
+    /// # Safety
+    /// `port` must be an implemented port index (< 32) and the computed port register offset
+    /// must satisfy the alignment and mapping preconditions of [`read_abar`].
     unsafe fn read_port(port: usize, offset: usize) -> u32 {
         let port_offset = PORT_BASE + port * PORT_SIZE + offset;
         read_abar(port_offset)
     }
 
+    /// Writes a 32-bit value to a register for AHCI `port` at byte `offset`.
+    ///
+    /// # Safety
+    /// `port` must be an implemented port index (< 32) and the computed port register offset
+    /// must satisfy the alignment and mapping preconditions of [`write_abar`].
     unsafe fn write_port(port: usize, offset: usize, val: u32) {
         let port_offset = PORT_BASE + port * PORT_SIZE + offset;
         write_abar(port_offset, val);
     }
 
+    /// Performs a brief bus delay by writing to diagnostic port `0x80`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) on an x86 platform where port `0x80` is an
+    /// unused POST diagnostic port.
     unsafe fn io_delay() {
         core::arch::asm!("out 0x80, al", in("al") 0u8);
     }
 
+    /// Executes an `mfence` memory barrier to order DMA buffer writes and MMIO accesses.
+    ///
+    /// # Safety
+    /// Caller must execute on an x86 CPU supporting SSE2 (`mfence`).
     pub unsafe fn flush_dma_cache() {
         core::arch::asm!("mfence", options(nostack, preserves_flags));
     }
 
+    /// Executes a single-sector SATA DMA read or write command on the specified AHCI port.
+    ///
+    /// # Safety
+    /// `init()` must have succeeded so `ABAR_VIRTUAL`, `CLB_PHYS`, `CTB_PHYS` and
+    /// `SECTOR_BUF_PHYS` are mapped, identity-addressed and writable. `port` must be an active
+    /// initialized SATA port (< 32), the CPU must support `io_delay()` and callers must
+    /// serialize access to the shared DMA buffers and port registers.
     pub unsafe fn sata_dma_transfer(
         port: usize,
         sector: u32,
@@ -187,6 +223,13 @@ pub mod driver {
         Ok(())
     }
 
+    /// Issues an ATA `FLUSH CACHE` command on the specified AHCI port and waits for completion.
+    ///
+    /// # Safety
+    /// When `PORT_DMA_ALLOCATED` is true, `ABAR_VIRTUAL`, `CLB_PHYS` and `CTB_PHYS` must
+    /// reference mapped identity-addressed writable HBA/DMA memory and `port` must be an
+    /// active initialized SATA port (< 32). Callers must execute in Ring 0 on an SSE2-capable
+    /// CPU and serialize access to the shared DMA structures and port registers.
     pub unsafe fn sata_flush_cache(port: usize) -> Result<(), &'static str> {
         if !PORT_DMA_ALLOCATED {
             return Ok(());

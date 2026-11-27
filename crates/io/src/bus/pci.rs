@@ -20,6 +20,12 @@ pub mod config {
 
     pub const PCI_CONFIG_DATA: u16 = 0xCFC;
 
+    /// Reads a 32-bit aligned dword from PCI configuration space via ports `0xCF8` and `0xCFC`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to PCI configuration I/O
+    /// ports `0xCF8` and `0xCFC` so address selection and data reads are not interleaved.
+    /// Callers should also pass `slot < 32` and `func < 8`.
     pub unsafe fn pci_read_config_u32(bus: u8, slot: u8, func: u8, offset: u8) -> u32 {
         let address = ((bus as u32) << 16)
             | ((slot as u32) << 11)
@@ -31,6 +37,12 @@ pub mod config {
         inl(PCI_CONFIG_DATA)
     }
 
+    /// Writes a 32-bit aligned dword to PCI configuration space via ports `0xCF8` and `0xCFC`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to PCI configuration I/O
+    /// ports `0xCF8` and `0xCFC` and ensure `val` is valid for the addressed register. Callers
+    /// should also pass `slot < 32` and `func < 8`.
     pub unsafe fn pci_write_config_u32(bus: u8, slot: u8, func: u8, offset: u8, val: u32) {
         let address = ((bus as u32) << 16)
             | ((slot as u32) << 11)
@@ -42,6 +54,10 @@ pub mod config {
         outl(PCI_CONFIG_DATA, val);
     }
 
+    /// Reads the 16-bit PCI vendor ID for the addressed bus, slot and function.
+    ///
+    /// # Safety
+    /// Caller must satisfy the safety preconditions of [`pci_read_config_u32`].
     pub unsafe fn get_vendor_id(bus: u8, slot: u8, func: u8) -> u16 {
         let val = pci_read_config_u32(bus, slot, func, 0);
         (val & 0xFFFF) as u16

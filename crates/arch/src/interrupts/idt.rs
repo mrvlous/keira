@@ -237,6 +237,11 @@ pub mod descriptor {
         }
     }
 
+    /// Loads the global `IDTR` descriptor into the processor IDTR register.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) after `init()` has initialized `IDT` and `IDTR`
+    /// and ensure no concurrent modification to `IDT` or `IDTR` occurs while loading.
     pub unsafe fn load_current_idt() {
         #[cfg(target_os = "none")]
         idt_load(core::ptr::addr_of!(IDTR) as usize);

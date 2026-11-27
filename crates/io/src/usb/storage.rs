@@ -71,11 +71,21 @@ pub mod bot {
         cbw
     }
 
+    /// Marks the global USB mass storage device state as mounted.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to the `USB_STORAGE_MOUNTED` static so no concurrent
+    /// unsynchronized reads or writes occur.
     pub unsafe fn mount_usb_storage() -> Result<(), &'static str> {
         USB_STORAGE_MOUNTED = true;
         Ok(())
     }
 
+    /// Marks the global USB mass storage device state as unmounted.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to the `USB_STORAGE_MOUNTED` static so no concurrent
+    /// unsynchronized reads or writes occur.
     pub unsafe fn eject_usb_storage() -> Result<(), &'static str> {
         USB_STORAGE_MOUNTED = false;
         Ok(())

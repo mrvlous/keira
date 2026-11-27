@@ -187,6 +187,11 @@ pub mod buffer {
         fn shell_handle_keypress(c: u8);
     }
 
+    /// No-op test stub matching the external `shell_handle_keypress` FFI signature.
+    ///
+    /// # Safety
+    /// Matches the `unsafe` FFI declaration for host tests; this stub performs no memory
+    /// accesses or side effects.
     #[cfg(test)]
     unsafe fn shell_handle_keypress(_c: u8) {}
 
@@ -218,6 +223,13 @@ pub mod buffer {
         }
     }
 
+    /// Saves underlying framebuffer pixels and draws the 12x16 graphics mouse cursor.
+    ///
+    /// # Safety
+    /// When `fb_active()` is true, `FRAMEBUFFER_ADDR` must point to a valid writable
+    /// 4-byte-aligned 32-bpp linear framebuffer covering `FRAMEBUFFER_HEIGHT` rows of
+    /// `FRAMEBUFFER_PITCH` bytes. Callers must ensure `px + 11` and `py + 15` do not overflow
+    /// `u32` and synchronize access to `FRAMEBUFFER_*` and `SAVED_MOUSE_PIXELS`.
     pub unsafe fn draw_mouse_graphics(px: u32, py: u32) {
         if !fb_active() {
             return;
@@ -251,6 +263,13 @@ pub mod buffer {
         }
     }
 
+    /// Restores framebuffer pixels previously saved underneath the graphics mouse cursor.
+    ///
+    /// # Safety
+    /// When `fb_active()` is true, `FRAMEBUFFER_ADDR` must point to a valid writable
+    /// 4-byte-aligned 32-bpp linear framebuffer covering `FRAMEBUFFER_HEIGHT` rows of
+    /// `FRAMEBUFFER_PITCH` bytes. Callers must ensure `px + 11` and `py + 15` do not overflow
+    /// `u32` and synchronize access to `FRAMEBUFFER_*` and `SAVED_MOUSE_PIXELS`.
     pub unsafe fn restore_mouse_graphics(px: u32, py: u32) {
         if !fb_active() {
             return;
@@ -274,18 +293,35 @@ pub mod buffer {
         }
     }
 
+    /// Hides the graphics mouse cursor by restoring its saved background pixels.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to `MOUSE_VISIBLE`, `MOUSE_X` and `MOUSE_Y` and satisfy
+    /// the safety preconditions of [`restore_mouse_graphics`] when `MOUSE_VISIBLE` is true.
     pub unsafe fn hide_mouse_graphics() {
         if MOUSE_VISIBLE {
             restore_mouse_graphics(MOUSE_X, MOUSE_Y);
         }
     }
 
+    /// Draws the graphics mouse cursor at its current coordinates when visible.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to `MOUSE_VISIBLE`, `MOUSE_X` and `MOUSE_Y` and satisfy
+    /// the safety preconditions of [`draw_mouse_graphics`] when `MOUSE_VISIBLE` is true.
     pub unsafe fn show_mouse_graphics() {
         if MOUSE_VISIBLE {
             draw_mouse_graphics(MOUSE_X, MOUSE_Y);
         }
     }
 
+    /// Renders an 8x16 glyph at the given character cell coordinates in the framebuffer.
+    ///
+    /// # Safety
+    /// When `fb_active()` is true, `FRAMEBUFFER_ADDR` must point to a valid writable
+    /// 4-byte-aligned 32-bpp linear framebuffer covering `FRAMEBUFFER_HEIGHT` rows of
+    /// `FRAMEBUFFER_PITCH` bytes. Callers must ensure `char_col * 8 + 8` and
+    /// `char_row * 16 + 16` do not overflow `u32` and synchronize access to `FRAMEBUFFER_*`.
     pub unsafe fn draw_char(c: u8, char_col: u32, char_row: u32, fg: u32, bg: u32) {
         if !fb_active() {
             return;
@@ -318,6 +354,14 @@ pub mod buffer {
         }
     }
 
+    /// Draws or erases the 8x2 underline text cursor at the current framebuffer cursor cell.
+    ///
+    /// # Safety
+    /// When `fb_active()` is true, `FRAMEBUFFER_ADDR` must point to a valid writable
+    /// 4-byte-aligned 32-bpp linear framebuffer covering `FRAMEBUFFER_HEIGHT` rows of
+    /// `FRAMEBUFFER_PITCH` bytes. Callers must ensure `CURSOR_X * 8 + 8` and
+    /// `CURSOR_Y * 16 + 16` do not overflow `u32` and synchronize access to `CURSOR_X`,
+    /// `CURSOR_Y`, `ACTIVE_FG_COLOR`, `ACTIVE_BG_COLOR` and `FRAMEBUFFER_*`.
     pub unsafe fn draw_cursor(visible: bool) {
         if !fb_active() {
             return;
@@ -347,6 +391,13 @@ pub mod buffer {
         }
     }
 
+    /// Scrolls the active graphics framebuffer up by one 16-pixel text row.
+    ///
+    /// # Safety
+    /// When `fb_active()` is true, `FRAMEBUFFER_HEIGHT` must be at least 16 and
+    /// `FRAMEBUFFER_ADDR` must point to a non-null writable 4-byte-aligned 32-bpp framebuffer
+    /// covering `FRAMEBUFFER_HEIGHT` rows of `FRAMEBUFFER_PITCH` bytes. Callers must also
+    /// synchronize access to `FRAMEBUFFER_*` and `ACTIVE_BG_COLOR`.
     pub unsafe fn scroll_up() {
         if !fb_active() {
             return;

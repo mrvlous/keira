@@ -52,6 +52,12 @@ pub struct BootPayloadInfo {
 use keira_fs::tar;
 use keira_io::vga;
 
+/// Parses the Multiboot2 boot information structure and records boot payload metadata.
+///
+/// # Safety
+/// If `multiboot_info_ptr` is non-zero, it must point to a valid mapped Multiboot2 structure
+/// terminated by `TAG_TYPE_END` whose tag headers and payloads are readable for their
+/// declared `tag_size`. Callers must synchronize writes to `keira_io::vga::FRAMEBUFFER_*`.
 pub unsafe fn parse_multiboot2(multiboot_info_ptr: usize) -> BootPayloadInfo {
     let mut payload = BootPayloadInfo::default();
 

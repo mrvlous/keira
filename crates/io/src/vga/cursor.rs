@@ -20,6 +20,11 @@ pub mod hardware {
 
     pub const CRTC_DATA_PORT: u16 = 0x3D5;
 
+    /// Updates the VGA CRTC hardware text-mode cursor position registers.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to VGA CRTC I/O ports
+    /// `0x3D4` and `0x3D5` and ensure `row * 80 + col` does not overflow `u16`.
     pub unsafe fn vga_set_hardware_cursor(col: u16, row: u16) {
         let pos = row * 80 + col;
         outb(CRTC_INDEX_PORT, 0x0F);

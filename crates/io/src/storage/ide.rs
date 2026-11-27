@@ -60,6 +60,11 @@ pub mod driver {
     pub const STATUS_DRQ: u8 = 1 << 3;
     pub const STATUS_BSY: u8 = 1 << 7;
 
+    /// Polls the primary IDE status register until the `BSY` flag clears or times out.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to primary IDE controller
+    /// I/O port `0x1F7`.
     pub unsafe fn ide_wait_ready() -> Result<(), &'static str> {
         let mut timeout = 100_000;
         while (inb(IDE_STATUS) & STATUS_BSY) != 0 {
@@ -71,6 +76,11 @@ pub mod driver {
         Ok(())
     }
 
+    /// Issues an ATA `IDENTIFY` command to the primary master drive and returns 28-bit sectors.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to primary IDE controller
+    /// I/O ports (`0x1F0..=0x1F7`) so command sequences and data reads are not interleaved.
     pub unsafe fn identify() -> Result<u32, &'static str> {
         outb(IDE_DEV_SEL, 0xA0);
         outb(IDE_SECCOUNT, 0);
@@ -116,6 +126,12 @@ pub mod driver {
         Ok(sectors_28)
     }
 
+    /// Reads a single 512-byte sector at 28-bit LBA `lba` via PIO into `buffer`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to primary IDE controller
+    /// I/O ports (`0x1F0..=0x1F7`). `buffer` must be at least 2-byte aligned because it is
+    /// written as 256 `u16` words.
     pub unsafe fn read_sector(lba: u32, buffer: &mut [u8; 512]) -> Result<(), &'static str> {
         if lba > 0x0FFFFFFF {
             return Err("IDE Read: LBA address exceeds 28-bit limit");
@@ -152,6 +168,12 @@ pub mod driver {
         Ok(())
     }
 
+    /// Writes a single 512-byte sector from `buffer` to 28-bit LBA `lba` via PIO.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to primary IDE controller
+    /// I/O ports (`0x1F0..=0x1F7`). `buffer` must be at least 2-byte aligned because it is read
+    /// as 256 `u16` words.
     pub unsafe fn write_sector(lba: u32, buffer: &[u8; 512]) -> Result<(), &'static str> {
         if lba > 0x0FFFFFFF {
             return Err("IDE Write: LBA address exceeds 28-bit limit");

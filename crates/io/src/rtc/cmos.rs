@@ -113,6 +113,11 @@ pub mod driver {
         }
     }
 
+    /// Reads the current CMOS RTC date and time into `time_ptr` when non-null.
+    ///
+    /// # Safety
+    /// If `time_ptr` is non-null, it must be properly aligned, writable and valid for writing a
+    /// single `RtcTime` value without aliasing any active Rust reference.
     #[no_mangle]
     pub unsafe extern "C" fn rtc_get_time(time_ptr: *mut RtcTime) {
         if !time_ptr.is_null() {

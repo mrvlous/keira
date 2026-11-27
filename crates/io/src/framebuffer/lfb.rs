@@ -16,6 +16,11 @@
 pub mod cursor {
     use super::draw::draw_pixel;
 
+    /// Draws an 8x10 monochrome arrow cursor onto the linear framebuffer at `(x, y)`.
+    ///
+    /// # Safety
+    /// Callers must ensure `x + 7` and `y + 9` do not overflow `u32` and satisfy the safety
+    /// preconditions of [`draw_pixel`].
     pub unsafe fn draw_mouse_cursor(x: u32, y: u32) {
         let cursor_shape: [[u8; 8]; 10] = [
             [1, 0, 0, 0, 0, 0, 0, 0],
@@ -47,6 +52,13 @@ pub mod cursor {
 pub mod draw {
     use super::state::{FB_ADDR, FB_HEIGHT, FB_PITCH, FB_WIDTH};
 
+    /// Writes a 32-bit pixel color at `(x, y)` in the linear framebuffer.
+    ///
+    /// # Safety
+    /// When `x < FB_WIDTH` and `y < FB_HEIGHT`, `FB_ADDR` must point to a valid writable
+    /// 4-byte-aligned 32-bpp framebuffer covering `FB_HEIGHT` rows of `FB_PITCH` bytes.
+    /// Callers must ensure `y * (FB_PITCH / 4) + x` does not overflow `u32` and synchronize
+    /// access to the `FB_*` statics.
     pub unsafe fn draw_pixel(x: u32, y: u32, color: u32) {
         if x >= FB_WIDTH || y >= FB_HEIGHT {
             return;
@@ -56,6 +68,12 @@ pub mod draw {
         *ptr.add(offset) = color;
     }
 
+    /// Fills the entire linear framebuffer with a solid 32-bit color.
+    ///
+    /// # Safety
+    /// `FB_ADDR` must point to a valid writable 4-byte-aligned 32-bpp framebuffer covering
+    /// `FB_HEIGHT` rows of `FB_PITCH` bytes and callers must synchronize concurrent access to
+    /// `FB_*`.
     pub unsafe fn fill_screen(color: u32) {
         for y in 0..FB_HEIGHT {
             for x in 0..FB_WIDTH {
@@ -64,6 +82,11 @@ pub mod draw {
         }
     }
 
+    /// Draws a filled rectangle at `(x, y)` with dimensions `w` by `h`.
+    ///
+    /// # Safety
+    /// Callers must ensure `x + w` and `y + h` do not overflow `u32` and satisfy the safety
+    /// preconditions of [`draw_pixel`].
     pub unsafe fn draw_rect(x: u32, y: u32, w: u32, h: u32, color: u32) {
         for py in y..(y + h) {
             for px in x..(x + w) {
@@ -76,6 +99,12 @@ pub mod draw {
 pub mod driver {
     use super::state::{FB_ACTIVE, FB_ADDR, FB_HEIGHT, FB_PITCH, FB_WIDTH};
 
+    /// Configures the global linear framebuffer geometry and base address.
+    ///
+    /// # Safety
+    /// Callers must ensure exclusive access to the `FB_*` statics during update and when
+    /// `addr` is non-zero must ensure `addr` is a valid writable 4-byte-aligned framebuffer
+    /// base covering `height` rows of `pitch` bytes.
     pub unsafe fn set_resolution(width: u32, height: u32, pitch: u32, addr: u64) {
         FB_WIDTH = width;
         FB_HEIGHT = height;
@@ -188,6 +217,11 @@ pub mod font {
         [0, 0, 118, 220, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
 
+    /// Renders a printable ASCII 8x16 glyph at pixel coordinates `(x, y)`.
+    ///
+    /// # Safety
+    /// Callers must ensure `x + 7` and `y + 15` do not overflow `u32` and satisfy the safety
+    /// preconditions of [`draw_pixel`].
     pub unsafe fn draw_char(x: u32, y: u32, c: char, fg: u32, bg: u32) {
         let ascii = c as usize;
         if !(32..=126).contains(&ascii) {
@@ -207,6 +241,11 @@ pub mod font {
         }
     }
 
+    /// Renders a string of 8x16 glyphs starting at pixel coordinates `(x, y)`.
+    ///
+    /// # Safety
+    /// Callers must ensure advancing `cur_x` by 8 per character and adding 7 in [`draw_char`]
+    /// does not overflow `u32` and satisfy the safety preconditions of [`draw_char`].
     pub unsafe fn draw_string(x: u32, y: u32, text: &str, fg: u32, bg: u32) {
         let mut cur_x = x;
         for c in text.chars() {

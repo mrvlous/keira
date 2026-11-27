@@ -142,6 +142,11 @@ pub mod driver {
         }
     }
 
+    /// Pushes a decoded byte into the PS/2 keyboard input ring buffer if space remains.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to `KBD_QUEUE`, `KBD_HEAD` and `KBD_TAIL` so mutations
+    /// do not race with interrupt handlers or other threads.
     pub unsafe fn push_input_char(c: u8) {
         let next_head = (KBD_HEAD + 1) % KBD_QUEUE_SIZE;
         if next_head != KBD_TAIL {
@@ -150,6 +155,11 @@ pub mod driver {
         }
     }
 
+    /// Pops the oldest buffered byte from the PS/2 keyboard input ring buffer.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to `KBD_QUEUE`, `KBD_HEAD` and `KBD_TAIL` so reads and
+    /// tail updates do not race with interrupt handlers or other threads.
     pub unsafe fn pop_input_char() -> Option<u8> {
         if KBD_HEAD == KBD_TAIL {
             None
@@ -160,6 +170,10 @@ pub mod driver {
         }
     }
 
+    /// Returns the number of unread bytes currently queued in the PS/2 keyboard buffer.
+    ///
+    /// # Safety
+    /// Callers must synchronize access to `KBD_HEAD` and `KBD_TAIL` against concurrent updates.
     pub unsafe fn input_queue_len() -> usize {
         if KBD_HEAD >= KBD_TAIL {
             KBD_HEAD - KBD_TAIL
@@ -168,6 +182,11 @@ pub mod driver {
         }
     }
 
+    /// Clears all pending bytes from the PS/2 keyboard input ring buffer.
+    ///
+    /// # Safety
+    /// Callers must ensure exclusive synchronized access to `KBD_HEAD` and `KBD_TAIL` without
+    /// concurrent IRQ handler or consumer activity.
     pub unsafe fn flush_input_queue() {
         KBD_HEAD = 0;
         KBD_TAIL = 0;
