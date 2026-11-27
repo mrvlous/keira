@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: Keira CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            nasm \
+            binutils \
+            gcc-multilib \
+            grub-pc-bin \
+            grub-common \
+            xorriso \
+            qemu-system-x86 \
+            dosfstools \
+            mtools \
+            clang \
+            clang-format \
+            clang-tidy
+
+      - name: Install Rust Nightly
+        run: |
+          rustup toolchain install nightly --component rust-src
+
+      - name: Verify toolchain
+        run: |
+          rustc --version
+          cargo --version
+          qemu-system-x86_64 --version
+
+      - name: Run multi-architecture tests
+        run: make test-all
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install lint dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            clang \
+            clang-format \
+            clang-tidy \
+            python3 \
+            python3-pip
+
+      - name: Install Rust Nightly
+        run: |
+          rustup toolchain install nightly --component rust-src
+
+      - name: Run checkpatch
+        run: python3 scripts/checkpatch.py
+
+      - name: Run project lint
+        run: make lint
+
+      - name: Run documentation lint
+        run: make docs-lint
