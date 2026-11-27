@@ -16,6 +16,12 @@
 pub mod requeue {
     use crate::futex::hash::table::{FUTEX_TABLE, TOTAL_FUTEX_REQUEUES, TOTAL_FUTEX_WAKES};
 
+    /// Wakes up to `count` waiters matching `uaddr` and `bitset` in `FUTEX_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `FUTEX_TABLE` and `TOTAL_FUTEX_WAKES` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn futex_wake(uaddr: usize, count: u32, bitset: u32) -> Result<u32, &'static str> {
         let mut woken = 0u32;
         let mask = if bitset == 0 { 0xFFFFFFFF } else { bitset };
@@ -33,6 +39,12 @@ pub mod requeue {
         Ok(woken)
     }
 
+    /// Requeues up to `count` waiters from `uaddr` to `uaddr2` in `FUTEX_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `FUTEX_TABLE` and `TOTAL_FUTEX_REQUEUES` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn futex_requeue(
         uaddr: usize,
         uaddr2: usize,

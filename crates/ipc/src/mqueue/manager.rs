@@ -66,10 +66,22 @@ pub mod table {
         PosixMessageQueue::empty(7),
     ];
 
+    /// Returns a shared `'static` slice reference to the global message queue table.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure no mutable reference to `MQUEUE_TABLE` exists and that `MQUEUE_TABLE`
+    /// is not mutated for the entire lifetime of the returned `'static` reference.
     pub unsafe fn get_mqueue_table() -> &'static [PosixMessageQueue] {
         &MQUEUE_TABLE
     }
 
+    /// Returns the number of active message queues and total queued messages in `MQUEUE_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `MQUEUE_TABLE` is not mutated and no mutable reference to it exists for
+    /// the duration of the call.
     pub unsafe fn get_mqueue_stats() -> (usize, usize) {
         let mut queues = 0;
         let mut total_msgs = 0;
@@ -82,6 +94,12 @@ pub mod table {
         (queues, total_msgs)
     }
 
+    /// Opens an existing message queue by `name` or allocates a new slot in `MQUEUE_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `MQUEUE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn mq_open(
         name: &str,
         flags: u32,
@@ -126,6 +144,12 @@ pub mod table {
         Err("POSIX Message Queue table capacity reached")
     }
 
+    /// Enqueues a message payload with priority `prio` into the queue matching `name_or_id`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `MQUEUE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn mq_send(name_or_id: &str, payload: &[u8], prio: u32) -> Result<(), &'static str> {
         if payload.len() > MQUEUE_MSG_SIZE {
             return Err("Payload size exceeds maximum queue message capacity (128 bytes)");
@@ -152,6 +176,12 @@ pub mod table {
         Err("No free message slot")
     }
 
+    /// Dequeues the highest-priority message from `name_or_id` and copies it into `out_buf`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `MQUEUE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn mq_receive(
         name_or_id: &str,
         out_buf: &mut [u8],
@@ -187,6 +217,12 @@ pub mod table {
         }
     }
 
+    /// Clears and deallocates the active message queue matching `name` in `MQUEUE_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `MQUEUE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn mq_unlink(name: &str) -> Result<(), &'static str> {
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.name_as_str() == name {
@@ -201,6 +237,12 @@ pub mod table {
         Err("Message queue not found")
     }
 
+    /// Clears and deallocates the active message queue matching `id` in `MQUEUE_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `MQUEUE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn mq_unlink_by_id(id: u32) -> Result<(), &'static str> {
         for q in MQUEUE_TABLE.iter_mut() {
             if q.in_use && q.id == id {
@@ -215,6 +257,13 @@ pub mod table {
         Err("Message queue not found")
     }
 
+    /// Looks up an active message queue by numeric ID or name and returns a mutable reference.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `MQUEUE_TABLE` with no other accesses or
+    /// outstanding references to `MQUEUE_TABLE` or the returned element for the entire `'static`
+    /// lifetime of the returned reference.
     pub unsafe fn find_queue_mut(
         name_or_id: &str,
     ) -> Result<&'static mut PosixMessageQueue, &'static str> {
@@ -258,6 +307,14 @@ pub mod ops {
     use crate::mqueue::manager::table::mq_open;
     use crate::mqueue::queue::message::{MQUEUE_MAX_MSGS, MQUEUE_MSG_SIZE};
 
+    /// Opens or creates a POSIX message queue from a NUL-terminated name pointer.
+    ///
+    /// # Safety
+    ///
+    /// If `name_ptr` is non-null, callers must ensure it points within a single allocated object
+    /// to a NUL-terminated byte sequence or at least 31 readable bytes without concurrent writes.
+    /// Callers must also ensure exclusive access to `MQUEUE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn sys_mq_open(
         name_ptr: *const u8,
         oflag: i32,

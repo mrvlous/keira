@@ -158,6 +158,14 @@ pub mod engine {
         Err("Epoll descriptor not found")
     }
 
+    /// Evaluates the current epoll readiness bitmask for `fd` against `requested_events`.
+    ///
+    /// # Safety
+    ///
+    /// When `fd` is non-negative, callers must ensure `keira_task::scheduler::CURRENT_TASK_IDX`
+    /// is a valid in-bounds index into `keira_task::scheduler::TASKS`. Callers must also ensure
+    /// `CURRENT_TASK_IDX`, `TASKS`, `PIPE_TABLE` and `keira_net`'s socket table are not mutated
+    /// and have no outstanding mutable references for the duration of the call.
     pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
         let mut ready = 0u32;
         if fd < 0 {

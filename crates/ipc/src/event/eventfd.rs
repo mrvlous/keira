@@ -69,10 +69,22 @@ pub mod counter {
     pub static mut TOTAL_EVENTFD_WRITES: u64 = 1;
     pub static mut TOTAL_EVENTFD_READS: u64 = 0;
 
+    /// Returns a shared `'static` slice reference to the global eventfd descriptor table.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure no mutable reference to `EVENTFD_TABLE` exists and that
+    /// `EVENTFD_TABLE` is not mutated for the entire lifetime of the returned `'static` reference.
     pub unsafe fn get_eventfd_table() -> &'static [EventFdEntry] {
         &EVENTFD_TABLE
     }
 
+    /// Returns the active eventfd count along with cumulative write and read totals.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `EVENTFD_TABLE`, `TOTAL_EVENTFD_WRITES` and `TOTAL_EVENTFD_READS`
+    /// are not mutated and have no outstanding mutable references during the call.
     pub unsafe fn get_eventfd_stats() -> (usize, u64, u64) {
         let mut active = 0;
         for slot in EVENTFD_TABLE.iter() {
@@ -83,6 +95,13 @@ pub mod counter {
         (active, TOTAL_EVENTFD_WRITES, TOTAL_EVENTFD_READS)
     }
 
+    /// Allocates a new eventfd slot in `EVENTFD_TABLE` with `init_val` and `flags`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `EVENTFD_TABLE`, `NEXT_EFD_ID` and
+    /// `TOTAL_EVENTFD_WRITES` with no concurrent accesses or outstanding references for the
+    /// duration of the call.
     pub unsafe fn create_eventfd(init_val: u64, flags: u32) -> Result<u32, &'static str> {
         for slot in EVENTFD_TABLE.iter_mut() {
             if !slot.in_use {
@@ -101,6 +120,12 @@ pub mod counter {
         Err("EventFD table capacity exhausted")
     }
 
+    /// Reads and updates the counter of the active eventfd entry matching `id`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `EVENTFD_TABLE` and `TOTAL_EVENTFD_READS` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn read_eventfd(id: u32) -> Result<u64, &'static str> {
         for slot in EVENTFD_TABLE.iter_mut() {
             if slot.in_use && slot.id == id {
@@ -121,6 +146,13 @@ pub mod counter {
         Err("Invalid EventFD descriptor")
     }
 
+    /// Adds `val` to the counter of the active eventfd entry matching `id`.
+    ///
+    /// # Safety
+    ///
+    /// When `val` is non-zero, callers must ensure exclusive access to `EVENTFD_TABLE` and
+    /// `TOTAL_EVENTFD_WRITES` with no concurrent accesses or outstanding references for the
+    /// duration of the call.
     pub unsafe fn write_eventfd(id: u32, val: u64) -> Result<(), &'static str> {
         if val == 0 {
             return Ok(());
@@ -138,6 +170,12 @@ pub mod counter {
         Err("Invalid EventFD descriptor")
     }
 
+    /// Clears and releases the active eventfd slot matching `id`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `EVENTFD_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn close_eventfd(id: u32) -> Result<(), &'static str> {
         for slot in EVENTFD_TABLE.iter_mut() {
             if slot.in_use && slot.id == id {
@@ -152,10 +190,24 @@ pub mod counter {
 pub mod ops {
     use crate::event::eventfd::counter::create_eventfd;
 
+    /// Creates an eventfd descriptor initialized with `init_val` and `flags`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `EVENTFD_TABLE`, `NEXT_EFD_ID` and
+    /// `TOTAL_EVENTFD_WRITES` with no concurrent accesses or outstanding references for the
+    /// duration of the call.
     pub unsafe fn sys_eventfd(init_val: u32, flags: u32) -> Result<u64, &'static str> {
         create_eventfd(init_val as u64, flags).map(|id| id as u64)
     }
 
+    /// Creates a signal notification descriptor backed by an eventfd entry.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `EVENTFD_TABLE`, `NEXT_EFD_ID` and
+    /// `TOTAL_EVENTFD_WRITES` with no concurrent accesses or outstanding references for the
+    /// duration of the call.
     pub unsafe fn sys_signalfd(_fd: i32, _mask: u64, _flags: u32) -> Result<u64, &'static str> {
         create_eventfd(1, 0).map(|id| id as u64)
     }

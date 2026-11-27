@@ -56,6 +56,12 @@ pub mod ops {
     use crate::futex::hash::table::{FUTEX_TABLE, TOTAL_FUTEX_WAITS};
     use crate::futex::wait::waiter::FutexWaiter;
 
+    /// Enqueues a waiter for `uaddr` into `FUTEX_TABLE` and increments `TOTAL_FUTEX_WAITS`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `FUTEX_TABLE` and `TOTAL_FUTEX_WAITS` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn futex_wait(
         uaddr: usize,
         val: u32,
@@ -76,6 +82,12 @@ pub mod ops {
         Err("Futex wait queue capacity full")
     }
 
+    /// Removes all active futex waiter entries associated with `pid` from `FUTEX_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `FUTEX_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn cleanup_futex_waiters_for_pid(pid: u32) {
         for slot in FUTEX_TABLE.iter_mut() {
             if slot.in_use && slot.pid == pid {

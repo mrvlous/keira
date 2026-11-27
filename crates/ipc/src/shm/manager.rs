@@ -86,14 +86,32 @@ pub mod table {
         },
     ];
 
+    /// Returns a shared `'static` slice reference to the global shared memory table.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure no mutable reference to `SHM_TABLE` exists and that `SHM_TABLE` is
+    /// not mutated for the entire lifetime of the returned `'static` reference.
     pub unsafe fn get_shm_table() -> &'static [ShmSegment] {
         &SHM_TABLE
     }
 
+    /// Returns a shared `'static` slice reference to the global semaphore table.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure no mutable reference to `SEM_TABLE` exists and that `SEM_TABLE` is
+    /// not mutated for the entire lifetime of the returned `'static` reference.
     pub unsafe fn get_sem_table() -> &'static [Semaphore] {
         &SEM_TABLE
     }
 
+    /// Allocates a shared memory segment of `size` bytes in `SHM_TABLE` and returns its ID.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SHM_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn create_shm(size: usize) -> Result<usize, &'static str> {
         for seg in SHM_TABLE.iter_mut() {
             if !seg.in_use {
@@ -108,6 +126,12 @@ pub mod table {
         Err("SHM table full")
     }
 
+    /// Marks the active shared memory segment matching `id` as unused and clears its fields.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SHM_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn remove_shm(id: u32) -> Result<(), &'static str> {
         for seg in SHM_TABLE.iter_mut() {
             if seg.id == id && seg.in_use {
@@ -121,6 +145,12 @@ pub mod table {
         Err("Shared memory segment not found or not in use")
     }
 
+    /// Allocates a counting semaphore in `SEM_TABLE` with `key` and `init_val`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SEM_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn create_sem(key: u32, init_val: i32) -> Result<u32, &'static str> {
         for sem in SEM_TABLE.iter_mut() {
             if !sem.in_use {
@@ -134,6 +164,12 @@ pub mod table {
         Err("Semaphore table full")
     }
 
+    /// Marks the active semaphore matching `id` as unused and resets its counters.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SEM_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn remove_sem(id: u32) -> Result<(), &'static str> {
         for sem in SEM_TABLE.iter_mut() {
             if sem.id == id && sem.in_use {
@@ -146,6 +182,12 @@ pub mod table {
         Err("Semaphore not found or not in use")
     }
 
+    /// Increments the attach count for `shmid` and returns its physical frame address if active.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SHM_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn get_shm_frame(shmid: usize) -> Option<u64> {
         if shmid < 4 && SHM_TABLE[shmid].in_use {
             SHM_TABLE[shmid].attach_count += 1;
@@ -164,6 +206,14 @@ pub mod ops {
         SEM_CMD_RM, SHM_CMD_AT, SHM_CMD_DT, SHM_CMD_GET, SHM_CMD_INFO, SHM_CMD_RM,
     };
 
+    /// Dispatches shared memory and semaphore diagnostic or control commands.
+    ///
+    /// # Safety
+    ///
+    /// For `SHM_CMD_INFO`, callers must ensure `SHM_TABLE` and `SEM_TABLE` are not mutated and no
+    /// mutable references to them exist. For `SHM_CMD_RM` and `SEM_CMD_RM`, callers must ensure
+    /// exclusive access with no concurrent accesses or outstanding references to `SHM_TABLE` and
+    /// `SEM_TABLE` respectively.
     pub unsafe fn sys_shm_sem(cmd: u32, arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
         match cmd {
             SHM_CMD_INFO => {

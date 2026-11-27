@@ -79,6 +79,12 @@ pub mod ops {
         SYSTEM_PIPE,
     };
 
+    /// Writes bytes from `buf` into the global `SYSTEM_PIPE` ring buffer.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SYSTEM_PIPE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn write_pipe(buf: &[u8]) -> usize {
         let pipe_ptr = &raw mut SYSTEM_PIPE;
         let pipe = &mut *pipe_ptr;
@@ -97,6 +103,12 @@ pub mod ops {
         written
     }
 
+    /// Reads available bytes from the global `SYSTEM_PIPE` ring buffer into `buf`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SYSTEM_PIPE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn read_pipe(buf: &mut [u8]) -> usize {
         let pipe_ptr = &raw mut SYSTEM_PIPE;
         let pipe = &mut *pipe_ptr;
@@ -115,6 +127,12 @@ pub mod ops {
         read_bytes
     }
 
+    /// Resets the global `SYSTEM_PIPE` buffer state and returns placeholder pipe descriptors.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `SYSTEM_PIPE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn create_pipe() -> Result<(usize, usize), &'static str> {
         let pipe_ptr = &raw mut SYSTEM_PIPE;
         let pipe = &mut *pipe_ptr;
@@ -124,6 +142,12 @@ pub mod ops {
         Ok((3, 4))
     }
 
+    /// Allocates a new pipe channel slot in `PIPE_TABLE` and returns its identifier.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` and `NEXT_PIPE_ID` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn create_pipe_channel(flags: u32) -> Result<u32, &'static str> {
         for slot in PIPE_TABLE.iter_mut() {
             if !slot.in_use {
@@ -150,6 +174,13 @@ pub mod ops {
         Err("Pipe table capacity exhausted")
     }
 
+    /// Reads available bytes from the pipe channel matching `pipe_id` into `buf`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` with no concurrent accesses or
+    /// outstanding references. When bytes are read, callers must also ensure no conflicting
+    /// references or unsynchronized concurrent access to `keira_task::PIPE_WRITE_WQ`.
     pub unsafe fn read_pipe_channel(pipe_id: u32, buf: &mut [u8]) -> Result<usize, i64> {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -179,6 +210,13 @@ pub mod ops {
         Err(-9) // -EBADF
     }
 
+    /// Writes bytes from `buf` into the pipe channel matching `pipe_id`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` with no concurrent accesses or
+    /// outstanding references. When bytes are written, callers must also ensure no conflicting
+    /// references or unsynchronized concurrent access to `keira_task::PIPE_READ_WQ`.
     pub unsafe fn write_pipe_channel(pipe_id: u32, buf: &[u8]) -> Result<usize, i64> {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -210,6 +248,13 @@ pub mod ops {
         Err(-9) // -EBADF
     }
 
+    /// Decrements the reader count for `pipe_id`, wakes writers and frees the slot when unused.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` with no concurrent accesses or
+    /// outstanding references. If a matching active pipe exists, callers must also ensure no
+    /// conflicting references or unsynchronized concurrent access to `keira_task::PIPE_WRITE_WQ`.
     pub unsafe fn close_pipe_read(pipe_id: u32) {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -225,6 +270,13 @@ pub mod ops {
         }
     }
 
+    /// Decrements the writer count for `pipe_id`, wakes readers and frees the slot when unused.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` with no concurrent accesses or
+    /// outstanding references. If a matching active pipe exists, callers must also ensure no
+    /// conflicting references or unsynchronized concurrent access to `keira_task::PIPE_READ_WQ`.
     pub unsafe fn close_pipe_write(pipe_id: u32) {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -240,6 +292,12 @@ pub mod ops {
         }
     }
 
+    /// Increments the reader or writer reference count for the pipe channel matching `pipe_id`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` with no concurrent accesses or
+    /// outstanding references for the duration of the call.
     pub unsafe fn dup_pipe_endpoint(pipe_id: u32, is_write: bool) {
         for slot in PIPE_TABLE.iter_mut() {
             if slot.in_use && slot.id == pipe_id {
@@ -253,6 +311,12 @@ pub mod ops {
         }
     }
 
+    /// Returns the count of active pipe channels and total buffered bytes in `PIPE_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `PIPE_TABLE` is not mutated and no mutable reference to it exists for
+    /// the duration of the call.
     pub unsafe fn get_pipe_stats() -> (usize, usize) {
         let mut active = 0usize;
         let mut buffered = 0usize;
@@ -265,10 +329,22 @@ pub mod ops {
         (active, buffered)
     }
 
+    /// Returns a shared `'static` reference to the global pipe channel table.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure no mutable reference to `PIPE_TABLE` exists and that `PIPE_TABLE` is
+    /// not mutated for the entire lifetime of the returned `'static` reference.
     pub unsafe fn get_pipe_table() -> &'static [PipeChannel; MAX_PIPES] {
         &*core::ptr::addr_of!(PIPE_TABLE)
     }
 
+    /// Resets all slots in `PIPE_TABLE` to empty and resets `NEXT_PIPE_ID` to `1`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `PIPE_TABLE` and `NEXT_PIPE_ID` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn pipe_table_reset() {
         for slot in PIPE_TABLE.iter_mut() {
             *slot = PipeChannel::empty();
@@ -276,6 +352,12 @@ pub mod ops {
         NEXT_PIPE_ID = 1;
     }
 
+    /// Queries readiness flags `(readable, writable, hangup, error)` for `pipe_id`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `PIPE_TABLE` is not mutated and no mutable reference to it exists for
+    /// the duration of the call.
     pub unsafe fn query_pipe_readiness(pipe_id: u32, is_write: bool) -> (bool, bool, bool, bool) {
         for slot in PIPE_TABLE.iter() {
             if slot.in_use && slot.id == pipe_id {
