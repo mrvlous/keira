@@ -106,7 +106,7 @@ def setup(app):
     """Register maintainers-include directive."""
     app.add_directive("maintainers-include", MaintainersIncludeDirective)
     return {
-        "version": "0.9.0",
+        "version": "0.10.0",
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

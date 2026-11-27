@@ -36,7 +36,7 @@ Kernel event logs and boot traces are queried through live kernel memory:
 
    # Display live kernel ring buffer log:
    keira:/# dmesg
-   [     0.000000 ] x86/boot: Keira Kernel v0.9.0 booting (pure freestanding Ring 0)
+   [     0.000000 ] x86/boot: Keira Kernel v0.10.0 booting (pure freestanding Ring 0)
    [     0.000000 ] serial: 16550A UART at port 0x3f8 (irq 4, baud 115200)
    [     0.000000 ] console: colour VGA+ 80x25 text console ready
    [     0.000000 ] idt: 256 interrupt descriptor gates mapped

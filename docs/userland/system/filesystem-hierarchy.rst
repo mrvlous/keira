@@ -76,10 +76,10 @@ Milestone 16 refactors the entire VFS router, pseudo-filesystems (ProcFS and Dev
 
 .. code-block:: text
 
-   Keira Kernel 0.9.0 (x86_64)
+   Keira Kernel 0.10.0 (x86_64)
 
    keira:/# system
-   Keira Monolithic Kernel v0.6.0
+   Keira Monolithic Kernel v0.10.0
    Target Architecture : x86_64-unknown-none (64-Bit Long Mode)
    SMP Cores Active    : 2 Cores Online (APIC Preemption @ 1000 Hz)
    Memory Total / Free : 256 MiB / 238 MiB

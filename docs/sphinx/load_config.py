@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 def get_kernel_version() -> str:
-    """Extract kernel release version from root Cargo.toml or fallback to 0.9.0."""
+    """Extract kernel release version from root Cargo.toml or fallback to 0.10.0."""
     try:
         repo_root = Path(__file__).resolve().parent.parent.parent
         cargo_path = repo_root / "Cargo.toml"
@@ -17,7 +17,7 @@ def get_kernel_version() -> str:
                 return match.group(1)
     except Exception:
         pass
-    return "0.9.0"
+    return "0.10.0"
 
 def setup(app):
     """Sphinx extension setup hook."""

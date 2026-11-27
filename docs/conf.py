@@ -23,7 +23,7 @@ try:
 
     _kernel_version = get_kernel_version()
 except Exception:
-    _kernel_version = "0.9.0"
+    _kernel_version = "0.10.0"
 
 # Project Information
 project = "Keira Kernel"
