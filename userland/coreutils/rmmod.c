@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0-only
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Keira Kernel - Freestanding Module Removal Utility (rmmod)
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
+ * Copyright (C) 2026 Moh. Ananda Firmansyah Putra
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
