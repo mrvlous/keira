@@ -21,7 +21,7 @@ echo "[TEST] Starting Keira POSIX shell scripting verification suite..."
 
 # 1. Variable Assignment & Interpolation
 NAME=keira
-VERSION=0.9.0
+VERSION=0.10.0
 echo "[TEST 1] Variables: name=$NAME version=$VERSION pid=$$"
 
 # 2. Positional Parameters & Argument Count
