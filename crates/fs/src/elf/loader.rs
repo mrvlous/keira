@@ -304,7 +304,7 @@ pub mod load {
                     core::ptr::write_bytes(bss_ptr, 0, (seg.p_memsz - seg.p_filesz) as usize);
                 }
             }
-            return Ok(entry);
+            Ok(entry)
         }
 
         #[cfg(target_arch = "x86_64")]

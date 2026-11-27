@@ -479,7 +479,7 @@ pub mod task {
                 keira_task::scheduler::SCHEDULER_INITIALIZED = prev_sched;
                 core::arch::asm!("sti");
 
-                return Ok(());
+                Ok(())
             }
 
             #[cfg(target_arch = "x86_64")]

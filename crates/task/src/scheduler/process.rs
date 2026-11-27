@@ -58,9 +58,7 @@ pub mod clone {
         #[cfg(target_arch = "x86")]
         {
             let _ = (flags, child_stack, ptid, ctid, newtls);
-            return Err(
-                "Scheduler: Fork/Clone is unsupported on 32-bit architecture without MMU paging",
-            );
+            Err("Scheduler: Fork/Clone is unsupported on 32-bit architecture without MMU paging")
         }
 
         #[cfg(not(target_arch = "x86"))]

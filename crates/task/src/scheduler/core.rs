@@ -338,7 +338,7 @@ pub mod hooks {
                 let stack_top = 0x07FFF000u64;
                 let stack_bottom = stack_top.saturating_sub(0x20000);
                 write_vaddr_range(&mut writer, stack_bottom, stack_top);
-                let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [stack]\n");
+                let _ = writeln!(writer, " rw-p 00000000 00:00 0                  [stack]");
             }
             #[cfg(not(target_arch = "x86"))]
             {

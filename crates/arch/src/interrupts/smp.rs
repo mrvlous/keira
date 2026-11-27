@@ -454,8 +454,8 @@ pub fn init_smp() {
             if acpi_topo.madt_found && acpi_topo.core_count > 0 {
                 // Hardware ACPI MADT topology discovery
                 let mut registered = 1;
-                for i in 0..acpi_topo.core_count {
-                    let target_apic_id = acpi_topo.cores[i].apic_id;
+                for core_info in acpi_topo.cores.iter().take(acpi_topo.core_count) {
+                    let target_apic_id = core_info.apic_id;
                     if target_apic_id != bsp_apic_id && registered < MAX_CORES {
                         SMP_CORES[registered] = Some(CpuCore {
                             core_id: registered as u8,
