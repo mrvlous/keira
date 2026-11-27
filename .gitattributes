@@ -56,3 +56,6 @@ Makefile text
 *.o binary
 *.elf binary
 *.tar binary
+*.pcap binary
+*.ppm binary
+*.dmp binary
