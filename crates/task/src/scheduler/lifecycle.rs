@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Process lifecycle management (waitpid, exit, zombie reaping).
 
@@ -22,6 +21,14 @@ pub mod exit {
     };
     use crate::types::{FileDescriptor, TaskState, MAX_FDS};
 
+    /// Terminates the current task, reclaims its resources and yields to the scheduler.
+    ///
+    /// # Safety
+    ///
+    /// Must be called from a normal task context with `CURRENT_TASK_IDX < MAX_TASKS` and without
+    /// holding `SCHEDULER_LOCK`, VFS flock locks or `CHILD_EXIT_WQ`. The function acquires
+    /// `SCHEDULER_LOCK`, indexes `TASKS[CURRENT_TASK_IDX]` directly, invokes `TASK_CLEANUP_HOOK`
+    /// if registered and on non-zero tasks enables interrupts and triggers `int 32` to halt.
     pub unsafe fn exit_current(exit_code: i32) {
         let parent_id = {
             let _guard = SCHEDULER_LOCK.lock();
@@ -100,6 +107,13 @@ pub mod exit {
         }
     }
 
+    /// Marks a non-zero task as terminated (`Zombie(-9)`) and dequeues it from work-stealing.
+    ///
+    /// # Safety
+    ///
+    /// Iterates and mutates `TASKS[1..MAX_TASKS]` without acquiring `SCHEDULER_LOCK`. Callers
+    /// must guarantee exclusive access to `TASKS` (for example by holding `SCHEDULER_LOCK` or
+    /// running with preemption and secondary cores quiesced) so no concurrent updates race.
     pub unsafe fn stop_task(pid: usize) -> Result<(), &'static str> {
         if pid == 0 {
             return Err("Cannot stop the kernel shell (Task 0)");
@@ -124,6 +138,14 @@ pub mod reap {
     };
     use crate::types::TaskState;
 
+    /// Reclaims orphaned or reparented zombie tasks while the scheduler lock is held.
+    ///
+    /// # Safety
+    ///
+    /// Caller must hold `SCHEDULER_LOCK` (or equivalent exclusive access over `TASKS` and
+    /// `CURRENT_TASK_IDX`) with preemption disabled, since this function mutates `TASKS` and
+    /// invokes `TASK_CLEANUP_HOOK` without locking. Reaped zombie tasks must not still have
+    /// their `pml4_phys` or `stack_addr` frames actively used by any CPU.
     pub unsafe fn reap_orphaned_zombies_locked() {
         let curr = CURRENT_TASK_IDX;
         for (i, child_slot) in TASKS.iter_mut().enumerate().take(MAX_TASKS).skip(1) {
@@ -158,6 +180,13 @@ pub mod reap {
         }
     }
 
+    /// Acquires `SCHEDULER_LOCK` and reclaims orphaned or reparented zombie task descriptors.
+    ///
+    /// # Safety
+    ///
+    /// Must be called without `SCHEDULER_LOCK` already held (the lock is non-reentrant).
+    /// Reaped zombie tasks must have no active CPU references to their `pml4_phys` or
+    /// `stack_addr` frames. If `TASK_CLEANUP_HOOK` is set, it must be safe under `SCHEDULER_LOCK`.
     pub unsafe fn reap_orphaned_zombies() {
         let _guard = SCHEDULER_LOCK.lock();
         reap_orphaned_zombies_locked();
@@ -174,6 +203,17 @@ pub mod wait {
     use crate::signal::action::reset_signal_handlers;
     use crate::types::TaskState;
 
+    /// Waits for a child task to exit, reaps its zombie state and optionally writes exit status.
+    ///
+    /// # Safety
+    ///
+    /// Must be called from a normal schedulable task context with `CURRENT_TASK_IDX < MAX_TASKS`
+    /// and without holding `SCHEDULER_LOCK`, since the function acquires `SCHEDULER_LOCK`,
+    /// indexes `TASKS[CURRENT_TASK_IDX]` directly and executes `sti; int 32; cli` to block when
+    /// waiting. If `status_ptr` is non-null, it must be valid, properly aligned and writable for
+    /// an `i32` in the active address space. Reaped child tasks must have no active CPU uses of
+    /// their `pml4_phys` or `stack_addr` frames; `SIGNAL_HANDLERS` and `TASK_CLEANUP_HOOK` must
+    /// also be safe to update under `SCHEDULER_LOCK`.
     pub unsafe fn sys_waitpid(
         target_pid: i64,
         status_ptr: *mut i32,
@@ -274,6 +314,14 @@ pub mod wait {
         }
     }
 
+    /// Blocks the current task until child `child_id` exits and has been reaped.
+    ///
+    /// # Safety
+    ///
+    /// Delegates to `sys_waitpid` with a null status pointer and `options = 0`. Must be called
+    /// from a normal schedulable task context with `CURRENT_TASK_IDX < MAX_TASKS` and without
+    /// holding `SCHEDULER_LOCK`, as it may block via `sti; int 32; cli` and reclaim child page
+    /// tables, stacks and signal handlers.
     pub unsafe fn wait_for_task(child_id: usize) {
         let _ = sys_waitpid(child_id as i64, core::ptr::null_mut(), 0);
     }

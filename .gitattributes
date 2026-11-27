@@ -31,8 +31,14 @@ Kbuild* text
 .pylintrc text
 .editorconfig text
 .clang-format text
+.clangd text
+.clippy.toml text
 .gitignore text
 .gitattributes text
+rustfmt.toml text
+rust-toolchain.toml text
+*.yml text
+*.yaml text
 COPYING text
 CREDITS text
 MAINTAINERS text
@@ -44,7 +50,12 @@ Makefile text
 *.bin binary
 *.iso binary
 *.img binary
+*.qcow2 binary
+*.png binary
 *.a binary
 *.o binary
 *.elf binary
 *.tar binary
+*.pcap binary
+*.ppm binary
+*.dmp binary

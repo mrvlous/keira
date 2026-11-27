@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Page table tree traversal and physical page reclamation.
 
@@ -37,6 +36,13 @@ pub mod tree {
         }
     }
 
+    /// Reclaims all user-space page tables, mapped frames and VMA entries for a PML4.
+    ///
+    /// # Safety
+    ///
+    /// `pml4_phys` must not be active in any core's `CR3`. No live references may access its
+    /// user mappings or page-table frames. All valid table frames reachable from `pml4_phys` must
+    /// be identity-mapped for reading. Callers must synchronize `VMA_TABLE` and PMM state.
     pub unsafe fn free_user_pages(pml4_phys: u64, _program_break: u64) {
         if !is_valid_page_table_frame(pml4_phys) {
             return;
@@ -97,6 +103,13 @@ pub mod tree {
         }
     }
 
+    /// Recursively releases user-mapped frames and page-table frames in a page-table subtree.
+    ///
+    /// # Safety
+    ///
+    /// `table_phys` and all reachable child page-table frames must be inactive, unaliased,
+    /// identity-mapped readable frames matching `level` (`1` for PT, `2` for PD and `3` for
+    /// PDPT), with no concurrent accesses to the subtree or backing frames.
     unsafe fn free_user_page_table_subtree(table_phys: u64, level: u32) {
         if !is_valid_page_table_frame(table_phys) {
             return;
@@ -227,7 +240,9 @@ pub mod kswapd {
     ///
     /// # Safety
     ///
-    /// Mutates global kswapd telemetry counters and triggers physical memory reclamation.
+    /// Callers must serialize calls to `kswapd_step` and `get_kswapd_telemetry` because global
+    /// telemetry counters (`KSWAPD_*`) are accessed without locking. When `reclaim_fn` is `Some`,
+    /// the callback must be safe to invoke with a page reclamation budget of `4` or `16`.
     pub unsafe fn kswapd_step(reclaim_fn: Option<unsafe fn(usize) -> usize>) -> usize {
         KSWAPD_SCANS = KSWAPD_SCANS.wrapping_add(1);
         KSWAPD_LAST_TICKS = KSWAPD_LAST_TICKS.wrapping_add(1);

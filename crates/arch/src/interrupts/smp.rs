@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Symmetric Multiprocessing (SMP), Inter-Processor Interrupts (IPI) and cross-core TLB shootdown.
 
@@ -455,8 +454,8 @@ pub fn init_smp() {
             if acpi_topo.madt_found && acpi_topo.core_count > 0 {
                 // Hardware ACPI MADT topology discovery
                 let mut registered = 1;
-                for i in 0..acpi_topo.core_count {
-                    let target_apic_id = acpi_topo.cores[i].apic_id;
+                for core_info in acpi_topo.cores.iter().take(acpi_topo.core_count) {
+                    let target_apic_id = core_info.apic_id;
                     if target_apic_id != bsp_apic_id && registered < MAX_CORES {
                         SMP_CORES[registered] = Some(CpuCore {
                             core_id: registered as u8,

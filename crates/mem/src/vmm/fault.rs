@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Page fault exception handler and lazy demand paging dispatch.
 
@@ -75,6 +74,14 @@ pub mod handler {
         )
     }
 
+    /// Dispatches a `#PF` exception for CoW promotion, stack growth or demand paging.
+    ///
+    /// # Safety
+    ///
+    /// Must execute against the faulting task's active `CR3` (`active_pml4()`), with page
+    /// tables and allocated PMM frames identity-mapped and writable. For CoW replication, the
+    /// faulting page (`cr2 & !(PAGE_SIZE - 1)`) must be readable for `PAGE_SIZE` bytes. Callers
+    /// must also synchronize concurrent mutations to active page tables and `VMA_TABLE`.
     pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         TOTAL_PAGE_FAULTS.fetch_add(1, Ordering::Relaxed);
 

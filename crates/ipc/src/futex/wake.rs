@@ -1,22 +1,27 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Futex wake and requeue engine.
 
 pub mod requeue {
     use crate::futex::hash::table::{FUTEX_TABLE, TOTAL_FUTEX_REQUEUES, TOTAL_FUTEX_WAKES};
 
+    /// Wakes up to `count` waiters matching `uaddr` and `bitset` in `FUTEX_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `FUTEX_TABLE` and `TOTAL_FUTEX_WAKES` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn futex_wake(uaddr: usize, count: u32, bitset: u32) -> Result<u32, &'static str> {
         let mut woken = 0u32;
         let mask = if bitset == 0 { 0xFFFFFFFF } else { bitset };
@@ -34,6 +39,12 @@ pub mod requeue {
         Ok(woken)
     }
 
+    /// Requeues up to `count` waiters from `uaddr` to `uaddr2` in `FUTEX_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure exclusive access to `FUTEX_TABLE` and `TOTAL_FUTEX_REQUEUES` with no
+    /// concurrent accesses or outstanding references for the duration of the call.
     pub unsafe fn futex_requeue(
         uaddr: usize,
         uaddr2: usize,

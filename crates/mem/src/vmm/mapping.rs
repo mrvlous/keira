@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Virtual memory page mapping, protection modifications and unmapping.
 
@@ -22,6 +21,14 @@ pub mod map {
     use crate::pmm;
     use keira_arch::cpu::invlpg;
 
+    /// Maps a 4 KiB virtual page to a physical frame in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()`, all present intermediate page-table frames and any newly allocated PMM
+    /// frames must be valid, identity-mapped and writable. `physical_addr` and `flags` must form
+    /// a valid hardware mapping without violating Rust aliasing rules. Callers must synchronize
+    /// concurrent page-table mutations.
     pub unsafe fn map_page(
         virtual_addr: u64,
         physical_addr: u64,
@@ -30,6 +37,14 @@ pub mod map {
         map_page_in_pml4(active_pml4(), virtual_addr, physical_addr, flags)
     }
 
+    /// Maps a 4 KiB virtual page to a physical frame in the specified PML4.
+    ///
+    /// # Safety
+    ///
+    /// When `pml4_phys` is non-zero, it and all traversed intermediate page-table frames (which
+    /// must not be huge pages) as well as newly allocated PMM frames must be valid,
+    /// identity-mapped and uniquely writable for 4096 bytes. Callers must ensure `physical_addr`
+    /// and `flags` form a valid mapping and synchronize concurrent edits to `pml4_phys`.
     pub unsafe fn map_page_in_pml4(
         pml4_phys: u64,
         virtual_addr: u64,
@@ -133,6 +148,14 @@ pub mod map {
         Ok(())
     }
 
+    /// Maps a 2 MiB huge page in the active PML4 address space.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()`, traversed PDPT and PD frames (assuming no 1 GiB huge page at PDPT) and
+    /// newly allocated PMM frames must be valid, identity-mapped and writable for 4096 bytes.
+    /// `physical_addr` and `flags` must describe a valid 2 MiB mapping with exclusive access to
+    /// the active page tables during the update.
     pub unsafe fn map_huge_2m_page(
         virtual_addr: u64,
         physical_addr: u64,
@@ -189,6 +212,14 @@ pub mod protect {
     use crate::pmm;
     use keira_arch::interrupts::smp::tlb_shootdown;
 
+    /// Updates protection flags on an existing mapped page in the active PML4.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()` and every present page-table frame along the walk for `virtual_addr` must
+    /// be valid, identity-mapped and writable. `new_flags` must preserve valid permissions for any
+    /// active references to `virtual_addr`. Callers must synchronize concurrent page-table
+    /// updates.
     pub unsafe fn mprotect_page(virtual_addr: u64, new_flags: u64) -> Result<(), &'static str> {
         if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err("Virtual address is not page-aligned");
@@ -250,6 +281,12 @@ pub mod protect {
         Ok(())
     }
 
+    /// Checks whether a virtual address is user-mapped in the active PML4.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()` and all present page-table frames along the walk for `virtual_addr` must
+    /// be valid, identity-mapped and readable without concurrent page-table mutation or freeing.
     pub unsafe fn is_user_page_mapped(virtual_addr: u64, require_writable: bool) -> bool {
         let pml4_idx = ((virtual_addr >> 39) & 0x1FF) as usize;
         let pdpt_idx = ((virtual_addr >> 30) & 0x1FF) as usize;
@@ -309,6 +346,13 @@ pub mod unmap {
     use crate::pmm;
     use keira_arch::interrupts::smp::tlb_shootdown;
 
+    /// Unmaps a mapped 4 KiB or aligned huge page in the active PML4.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()` and every present page-table frame along the walk for `virtual_addr` must
+    /// be valid, identity-mapped and writable. Callers must ensure no active Rust references or
+    /// kernel accesses depend on `virtual_addr` and must synchronize concurrent page-table edits.
     pub unsafe fn unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
         if !virtual_addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err("Virtual address is not page-aligned");
@@ -367,6 +411,13 @@ pub mod unmap {
         Ok(())
     }
 
+    /// Unmaps a 2 MiB huge page from the active PML4.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()` and the traversed PDPT and PD frames (assuming no 1 GiB huge page at PDPT)
+    /// must be valid, identity-mapped and writable. Callers must ensure no active references rely
+    /// on the 2 MiB mapping and must synchronize concurrent page-table edits.
     pub unsafe fn unmap_huge_2m_page(virtual_addr: u64) -> Result<(), &'static str> {
         if !virtual_addr.is_multiple_of(0x20_0000) {
             return Err("Virtual address is not 2MB aligned");
@@ -401,6 +452,13 @@ pub mod unmap {
         Ok(())
     }
 
+    /// Unmaps a page in the active PML4 and releases its backing physical frames.
+    ///
+    /// # Safety
+    ///
+    /// `active_pml4()` and its page-table frames must be valid, identity-mapped and writable.
+    /// Callers must ensure the unmapped virtual range and freed backing frames are no longer
+    /// referenced and synchronize concurrent page-table and PMM operations.
     pub unsafe fn free_and_unmap_page(virtual_addr: u64) -> Result<(), &'static str> {
         if let Some(entry) = get_pte_in_pml4(active_pml4(), virtual_addr) {
             if (entry & PAGE_HUGE) != 0 {

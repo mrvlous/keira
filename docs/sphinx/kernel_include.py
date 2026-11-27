@@ -96,7 +96,7 @@ def setup(app):
     app.add_directive("kernel-include", KernelIncludeDirective)
     app.add_directive("sphinx-include", KernelIncludeDirective)
     return {
-        "version": "0.9.0",
+        "version": "0.10.0",
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

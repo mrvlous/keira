@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! x86_64 Page Table walk routines and page table entry (PTE) manipulation.
 
@@ -89,14 +88,34 @@ pub mod walk {
         }
     }
 
+    /// Returns the physical base address of the currently active PML4 from `CR3`.
+    ///
+    /// # Safety
+    ///
+    /// On bare-metal targets (`target_os = "none"`), must be executed in Ring 0 with privilege
+    /// to read `CR3`.
     pub unsafe fn active_pml4() -> u64 {
         (read_cr3() as u64) & PTE_ADDR_MASK
     }
 
+    /// Loads a new PML4 physical base address into `CR3` to switch address spaces.
+    ///
+    /// # Safety
+    ///
+    /// On bare-metal targets (`target_os = "none"`), must be executed in Ring 0 and `pml4_phys`
+    /// must be a 4 KiB-aligned physical address of a valid PML4 mapping the active kernel code,
+    /// stack and data.
     pub unsafe fn switch_address_space(pml4_phys: u64) {
         write_cr3(pml4_phys as usize);
     }
 
+    /// Walks `pml4_phys` and returns the raw present page-table entry for `virtual_addr`.
+    ///
+    /// # Safety
+    ///
+    /// Under `#[cfg(not(test))]`, `pml4_phys` and every valid RAM page-table frame traversed
+    /// during the walk must be identity-mapped and readable for 4096 bytes without concurrent
+    /// modification or reclamation.
     pub unsafe fn get_pte_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> {
         #[cfg(test)]
         {
@@ -159,6 +178,13 @@ pub mod walk {
         }
     }
 
+    /// Walks `pml4_phys` and returns a mutable pointer to a present 4 KiB leaf PTE.
+    ///
+    /// # Safety
+    ///
+    /// Under `#[cfg(not(test))]`, `pml4_phys` and all traversed valid RAM page-table frames must
+    /// be identity-mapped and readable, with the leaf page table writable. Callers dereferencing
+    /// the returned `*mut u64` must uphold Rust aliasing rules and synchronize concurrent edits.
     pub unsafe fn get_pte_mut_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<*mut u64> {
         #[cfg(test)]
         {
@@ -215,10 +241,23 @@ pub mod walk {
         }
     }
 
+    /// Returns whether `virtual_addr` resolves to a present entry in `pml4_phys`.
+    ///
+    /// # Safety
+    ///
+    /// Under `#[cfg(not(test))]`, `pml4_phys` and all traversed valid RAM page-table frames must
+    /// be identity-mapped and readable without concurrent mutation or reclamation.
     pub unsafe fn is_page_mapped_in_pml4(pml4_phys: u64, virtual_addr: u64) -> bool {
         get_pte_in_pml4(pml4_phys, virtual_addr).is_some()
     }
 
+    /// Translates `virtual_addr` to its mapped physical address in `pml4_phys`.
+    ///
+    /// # Safety
+    ///
+    /// Under `#[cfg(not(test))]`, `pml4_phys` and every valid RAM page-table frame traversed
+    /// during the walk must be identity-mapped and readable for 4096 bytes without concurrent
+    /// modification or reclamation.
     pub unsafe fn get_phys_addr_in_pml4(pml4_phys: u64, virtual_addr: u64) -> Option<u64> {
         #[cfg(test)]
         {
@@ -281,6 +320,13 @@ pub mod walk {
         }
     }
 
+    /// Translates `virtual_addr` to its physical address in the active PML4.
+    ///
+    /// # Safety
+    ///
+    /// Reading `CR3` via `active_pml4()` must be valid in the current privilege level. Under
+    /// `#[cfg(not(test))]`, the active PML4 and traversed valid RAM page-table frames must be
+    /// identity-mapped and readable without concurrent mutation.
     pub unsafe fn get_phys_addr(virtual_addr: u64) -> Option<u64> {
         get_phys_addr_in_pml4(active_pml4(), virtual_addr)
     }

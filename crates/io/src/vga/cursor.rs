@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! VGA hardware text-mode blinking cursor state and I/O port manipulation.
 
@@ -21,6 +20,11 @@ pub mod hardware {
 
     pub const CRTC_DATA_PORT: u16 = 0x3D5;
 
+    /// Updates the VGA CRTC hardware text-mode cursor position registers.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) with exclusive access to VGA CRTC I/O ports
+    /// `0x3D4` and `0x3D5` and ensure `row * 80 + col` does not overflow `u16`.
     pub unsafe fn vga_set_hardware_cursor(col: u16, row: u16) {
         let pos = row * 80 + col;
         outb(CRTC_INDEX_PORT, 0x0F);

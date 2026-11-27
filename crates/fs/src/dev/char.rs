@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Character device drivers (/dev/null, /dev/zero, /dev/random, /dev/tty).
 
 pub mod dispatcher {
     use super::{null, random, tty, zero};
 
+    /// Reads up to `buf.len()` bytes from the named character device node.
+    ///
+    /// # Safety
+    ///
+    /// `buf` must be a valid writable byte slice and the underlying character device subsystem
+    /// (including the CPU entropy source for `"random"` or `"urandom"` and the TTY line discipline
+    /// for `"tty"`) must be initialized and safe to invoke in the caller's execution context.
     pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         match node_name {
             "null" => null::read(buf),
@@ -28,6 +34,13 @@ pub mod dispatcher {
         }
     }
 
+    /// Writes `buf` bytes to the named character device node.
+    ///
+    /// # Safety
+    ///
+    /// `buf` must be a valid readable byte slice and the underlying character device subsystem
+    /// (such as the VGA console for `"tty"`) must be initialized and safe to invoke in the
+    /// caller's execution context.
     pub unsafe fn write_dev_node(node_name: &str, buf: &[u8]) -> Result<usize, &'static str> {
         match node_name {
             "null" => null::write(buf),
@@ -133,6 +146,12 @@ pub mod random {
 pub mod tty {
     use keira_io::vga;
 
+    /// Reads available cooked input bytes from the TTY line discipline into `buf`.
+    ///
+    /// # Safety
+    ///
+    /// `buf` must be a valid writable byte slice and the TTY line discipline subsystem must be
+    /// initialized and safe to access from the caller's execution context.
     pub unsafe fn read(buf: &mut [u8]) -> Result<usize, &'static str> {
         let n = keira_io::tty::read_tty(buf);
         Ok(n)

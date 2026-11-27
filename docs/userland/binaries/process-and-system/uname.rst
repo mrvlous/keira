@@ -58,7 +58,7 @@ System identity reporting is handled cleanly in userspace:
 
    # Print complete system identity:
    keira:/# uname -a
-   Keira keira 0.9.0 Keira Monolithic Kernel x86_64
+   Keira keira 0.10.0 Keira Monolithic Kernel x86_64
 
    # Print machine architecture:
    keira:/# uname -m

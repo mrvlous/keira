@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! FAT cluster allocation, deallocation and cluster chain traversal.
 
@@ -19,6 +18,13 @@ pub mod allocator {
     use crate::fat::types::Fat16Volume;
     use crate::fat::volume::cluster_to_sector;
 
+    /// Allocates a free FAT16 cluster, marks it end-of-chain and zeroes its data sectors.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to the global FAT sector cache and mounted block device
+    /// so no concurrent reads or writes occur. `vol` must describe valid FAT16 geometry whose FAT
+    /// tables and data clusters fall within the mounted device bounds.
     pub unsafe fn alloc_cluster(vol: &Fat16Volume) -> Result<u16, &'static str> {
         let mut sector_data = [0u8; 512];
 
@@ -62,6 +68,13 @@ pub mod deallocator {
     use crate::fat::table::{read_sector, write_sector};
     use crate::fat::types::Fat16Volume;
 
+    /// Frees a FAT16 cluster chain starting at `start_cluster` across all FAT copies.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to the global FAT sector cache and mounted block device.
+    /// `vol` must describe valid FAT16 geometry for the mounted device and `start_cluster` must
+    /// either be outside `2..0xFFF8` or start a valid cluster chain within FAT table bounds.
     pub unsafe fn free_cluster_chain(
         start_cluster: u16,
         vol: &Fat16Volume,
@@ -99,6 +112,13 @@ pub mod traversal {
     use crate::fat::table::read_sector;
     use crate::fat::types::Fat16Volume;
 
+    /// Reads the next cluster entry for `cluster` from the FAT16 allocation table.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to the global FAT sector cache without concurrent
+    /// mutations. `vol` must contain valid FAT16 geometry such that the FAT sector for `cluster`
+    /// resides within the mounted block device.
     pub unsafe fn fat_next_cluster(cluster: u16, vol: &Fat16Volume) -> Result<u16, &'static str> {
         let fat_offset = cluster as u32 * 2;
         let sector = vol.fat_start_sector + (fat_offset / 512);

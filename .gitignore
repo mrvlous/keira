@@ -24,6 +24,9 @@
 *.d
 *.dmp
 *.ppm
+*.pcap
+*.sock
+*.pid
 
 # Documentation build and Sphinx artifacts
 /docs/_build/

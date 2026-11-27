@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Logical Volume Manager volume dispatcher, manager and RAID engine.
 
@@ -23,6 +22,13 @@ pub mod dispatcher {
     };
     use keira_io::vga;
 
+    /// Dispatches LVM volume group and software RAID management commands.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `VOL_GROUPS`, `RAID_ARRAYS` and
+    /// `LVM_INITIALIZED` with no concurrent LVM or RAID calls. VGA console state must be safe to
+    /// access when `cmd` is `LVM_CMD_INFO` or `LVM_CMD_RAID_STATUS`.
     pub unsafe fn sys_raid_lvm(cmd: u32, _arg1: u64, _arg2: u64) -> Result<u64, &'static str> {
         ensure_lvm_initialized();
         match cmd {

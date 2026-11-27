@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Slab cache manager and object allocation backend.
 
@@ -346,6 +345,12 @@ pub mod manager {
         KmemCache::new(name, obj_size, align)
     }
 
+    /// Allocates an object from the specified slab cache for C FFI callers.
+    ///
+    /// # Safety
+    ///
+    /// If `cache` is non-null, it must be properly aligned and point to a valid, initialized
+    /// `KmemCache` instance for the duration of the call.
     #[no_mangle]
     pub unsafe extern "C" fn kmem_cache_alloc(cache: *const KmemCache) -> *mut u8 {
         if cache.is_null() {
@@ -354,6 +359,13 @@ pub mod manager {
         (*cache).alloc()
     }
 
+    /// Returns an allocated object back to the specified slab cache for C FFI callers.
+    ///
+    /// # Safety
+    ///
+    /// If `cache` is non-null, it must be properly aligned and point to a valid, initialized
+    /// `KmemCache` instance for the duration of the call. If `ptr` is non-null, it must be a
+    /// live object previously allocated from that cache and must not be double-freed.
     #[no_mangle]
     pub unsafe extern "C" fn kmem_cache_free(cache: *const KmemCache, ptr: *mut u8) {
         if cache.is_null() || ptr.is_null() {

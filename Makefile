@@ -469,7 +469,7 @@ $(FS_ROOT_STAMP): $(wildcard .config) | dirs
 	$(Q)touch $(FS_ROOT_STAMP)
 	@$(LOG_DONE) "Minimal kernel filesystem layout ready ($(ARCH))"
 else
-$(FS_ROOT_STAMP): $(USERLAND_SRCS) $(wildcard .config) | dirs
+$(FS_ROOT_STAMP): $(USERLAND_SRCS) Cargo.toml $(USER_DIR)/Makefile $(wildcard .config) | dirs
 	@$(LOG_INFO) "Populating userland root filesystem staging ($(ARCH))..."
 	$(Q)rm -rf $(FS_ROOT) $(STAGING_DIR)/.fs-root-stamp-*
 	$(Q)mkdir -p $(FS_ROOT)/bin

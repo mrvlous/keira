@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Advisory file locking (flock) table and record types.
 
@@ -53,6 +52,12 @@ pub mod table {
 
     pub static mut FILE_LOCKS: [FileLock; MAX_FILE_LOCKS] = [FileLock::new(); MAX_FILE_LOCKS];
 
+    /// Acquires an advisory lock on `path` for `task_id` in the global lock table.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `FILE_LOCKS` with no concurrent readers
+    /// or writers.
     pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static str> {
         let path_bytes = path.as_bytes();
         if path_bytes.len() > 127 {
@@ -85,6 +90,12 @@ pub mod table {
         Err("File lock table is full")
     }
 
+    /// Releases the advisory lock on `path` held by `task_id`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `FILE_LOCKS` with no concurrent readers
+    /// or writers.
     pub unsafe fn release_lock(path: &str, task_id: usize) {
         let path_bytes = path.as_bytes();
         for lock in FILE_LOCKS.iter_mut() {
@@ -99,6 +110,12 @@ pub mod table {
         }
     }
 
+    /// Releases all advisory locks currently held by `task_id`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `FILE_LOCKS` with no concurrent readers
+    /// or writers.
     pub unsafe fn release_all_locks_for_task(task_id: usize) {
         for lock in FILE_LOCKS.iter_mut() {
             if lock.is_locked && lock.holder_task_id == task_id {

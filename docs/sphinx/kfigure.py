@@ -42,7 +42,7 @@ def setup(app):
     """Register kernel-figure directive."""
     app.add_directive("kernel-figure", KernelFigureDirective)
     return {
-        "version": "0.9.0",
+        "version": "0.10.0",
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Periodic timer tick dispatch and task preemption routines.
 
@@ -27,6 +26,18 @@ pub mod tick {
     use crate::scheduler::work_stealing::{pick_next_task, push_local};
     use crate::types::TaskState;
 
+    /// Advances scheduler tick accounting and returns the next runnable task stack pointer.
+    ///
+    /// # Safety
+    ///
+    /// Must only be called from the Ring 0 timer interrupt handler with local interrupts
+    /// disabled and `current_rsp` pointing to a valid saved interrupt stack frame for the
+    /// interrupted task. The caller must guarantee serialized access to `TASKS`,
+    /// `CURRENT_TASK_IDX` and the current core's runqueue without nested preemption or
+    /// concurrent unsynchronized mutation of the active task slots. Every runnable task
+    /// in `TASKS` must carry a valid `pml4_phys` page table root, valid `rsp` context
+    /// frame, valid `stack_addr` (or boot kernel stack fallback) for `set_kernel_stack`
+    /// and a canonical `tls` base when non-zero on `x86_64`.
     #[no_mangle]
     pub unsafe extern "C" fn schedule_tick(current_rsp: u64) -> u64 {
         vga::handle_timer_tick();

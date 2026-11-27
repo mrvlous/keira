@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Userspace stack initialization for x86_64 and i386 binaries.
 
 pub mod amd64 {
     use crate::stack::auxv::*;
 
+    /// Initializes a 64-bit userspace stack page with `argc`, `argv`, `envp` and `auxv` entries.
+    ///
+    /// # Safety
+    ///
+    /// `page_ptr` must be non-null, valid for reads and writes across an entire 4096-byte page
+    /// and at least 8-byte aligned so `*mut u64` writes to the argument and auxiliary vectors are
+    /// aligned. `page_ptr` must not overlap the string slices in `args`. `top_page_vaddr` must
+    /// match the mapped userspace virtual base of that 4096-byte page.
     pub unsafe fn setup_user_stack_64(
         page_ptr: *mut u8,
         top_page_vaddr: u64,
@@ -115,6 +122,15 @@ pub mod amd64 {
 pub mod i386 {
     use crate::stack::auxv::*;
 
+    /// Initializes a 32-bit userspace stack page with CDECL startup arguments and `auxv`.
+    ///
+    /// # Safety
+    ///
+    /// `page_ptr` must be non-null, valid for reads and writes across an entire 4096-byte page
+    /// and at least 4-byte aligned so `*mut u32` writes for the argument vector, auxiliary
+    /// vector and startup frame are aligned. `page_ptr` must not overlap the string slices in
+    /// `args`. `top_page_vaddr` must match the mapped userspace virtual base of that page with
+    /// pointer addresses representable in 32 bits.
     pub unsafe fn setup_user_stack_32(
         page_ptr: *mut u8,
         top_page_vaddr: u64,

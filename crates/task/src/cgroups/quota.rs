@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Resource quota limits and memory enforcement accounting.
 
 pub mod limits {
     use crate::cgroups::namespace::table::{parse_u32, CGROUP_TABLE};
 
+    /// Updates memory and CPU share limits for the cgroup matching `name_or_id`.
+    ///
+    /// # Safety
+    ///
+    /// Mutates the global `static mut CGROUP_TABLE` array without synchronization. Callers
+    /// must guarantee exclusive access to `CGROUP_TABLE` and ensure no concurrent readers,
+    /// writers or `'static` slice references from `get_cgroup_table` are active.
     pub unsafe fn set_cgroup_limits(
         name_or_id: &str,
         max_mem: Option<u64>,

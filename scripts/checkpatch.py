@@ -278,19 +278,19 @@ def run_self_tests():
         """Unit test cases for checkpatch style and commit message validation."""
 
         def test_valid_conventional_commit(self):
-            msg = "docs(sync): synchronize fhs, packaging, procfs and syscall registry docs\n"
+            msg = "docs(sync): synchronize fhs, kconfig, procfs and syscall registry docs\n"
             self.assertEqual(check_commit_message(msg), [])
 
         def test_valid_release_and_body(self):
             msg = (
-                "Keira 0.9.0\n\n"
+                "Keira 0.10.0\n\n"
                 "Stabilize buddy allocator, workqueues and shell pipelines.\n"
             )
             self.assertEqual(check_commit_message(msg), [])
 
         def test_reject_oxford_comma_in_subject_and_body(self):
             issues_sub = check_commit_message(
-                "docs(sync): sync FHS, packaging, procfs, and syscall registry docs\n"
+                "docs(sync): sync FHS, kconfig, procfs, and syscall registry docs\n"
             )
             self.assertTrue(any("Oxford comma" in i for i in issues_sub))
             issues_body = check_commit_message(

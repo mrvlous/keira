@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Swap space backing store and page allocation manager.
 
@@ -62,6 +61,13 @@ pub mod manager {
         Ok(())
     }
 
+    /// Enables swap space at the null-terminated path pointer passed from a syscall.
+    ///
+    /// # Safety
+    ///
+    /// If `path_ptr` is non-null, it must point to a readable null-terminated byte string (or
+    /// at least 64 readable bytes) that is not mutated during the call. Callers must serialize
+    /// access to the global swap manager state (`SWAP_ACTIVE`, `SWAP_DEVICE` and `SWAP_BITMAP`).
     pub unsafe fn sys_swapon(path_ptr: *const u8, swapflags: i32) -> Result<u64, &'static str> {
         let path = if !path_ptr.is_null() {
             let mut len = 0;
@@ -90,6 +96,13 @@ pub mod manager {
         Ok(())
     }
 
+    /// Disables active swap space for the optional null-terminated path pointer.
+    ///
+    /// # Safety
+    ///
+    /// If `path_ptr` is non-null, it must point to a readable null-terminated byte string (or
+    /// at least 64 readable bytes) that is not mutated during the call. Callers must serialize
+    /// access to the global swap manager state (`SWAP_ACTIVE`, `SWAP_BITMAP` and counters).
     pub unsafe fn sys_swapoff(path_ptr: *const u8) -> Result<u64, &'static str> {
         let path = if !path_ptr.is_null() {
             let mut len = 0;

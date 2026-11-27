@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! VFS mount table management, mount flags and tmpfs instances.
 
@@ -148,6 +147,12 @@ pub mod table {
     pub struct MountTable {
         pub entries: [MountEntry; MAX_MOUNTS],
         pub is_initialized: bool,
+    }
+
+    impl Default for MountTable {
+        fn default() -> Self {
+            Self::new()
+        }
     }
 
     impl MountTable {
@@ -433,7 +438,7 @@ pub mod table {
 pub mod tmpfs {
     use keira_core::sync::SpinMutex;
 
-    pub const MAX_TMPFS_FILES: usize = 16;
+    pub const MAX_TMPFS_FILES: usize = 64;
 
     pub const MAX_TMPFS_FILE_SIZE: usize = 8192;
 
@@ -796,5 +801,20 @@ mod tests {
         let output = core::str::from_utf8(&buf[..len]).unwrap();
         assert!(output.contains("/proc procfs"));
         assert!(output.contains("/dev devfs"));
+    }
+
+    #[test]
+    fn test_tmpfs_slot_capacity_and_reuse() {
+        tmpfs::clear_all();
+        for i in 0..32 {
+            let mut path = *b"f_00";
+            path[2] = b'0' + (i / 10) as u8;
+            path[3] = b'0' + (i % 10) as u8;
+            let name = core::str::from_utf8(&path).unwrap();
+            assert!(tmpfs::create_file(name).is_ok());
+        }
+        assert!(tmpfs::remove_entry("f_00").is_ok());
+        assert!(tmpfs::create_file("reused").is_ok());
+        tmpfs::clear_all();
     }
 }

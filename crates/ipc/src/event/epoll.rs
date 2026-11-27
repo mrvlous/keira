@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Event polling (epoll) subsystem and event descriptor tables.
 
@@ -159,6 +158,14 @@ pub mod engine {
         Err("Epoll descriptor not found")
     }
 
+    /// Evaluates the current epoll readiness bitmask for `fd` against `requested_events`.
+    ///
+    /// # Safety
+    ///
+    /// When `fd` is non-negative, callers must ensure `keira_task::scheduler::CURRENT_TASK_IDX`
+    /// is a valid in-bounds index into `keira_task::scheduler::TASKS`. Callers must also ensure
+    /// `CURRENT_TASK_IDX`, `TASKS`, `PIPE_TABLE` and `keira_net`'s socket table are not mutated
+    /// and have no outstanding mutable references for the duration of the call.
     pub unsafe fn check_fd_readiness(fd: i32, requested_events: u32) -> u32 {
         let mut ready = 0u32;
         if fd < 0 {

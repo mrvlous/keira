@@ -87,7 +87,7 @@ Centralized Kernel Versioning Architecture
 
 Following the architectural pattern of the upstream Linux Kernel (where the root build system and version headers define the authoritative release), Keira centralizes all version metadata into a single source of truth at the repository root:
 
-1. **Root Workspace Package**: The root ``Cargo.toml`` declares authoritative package metadata within ``[workspace.package]`` (such as ``version = "0.9.0"``, ``edition = "2021"``, ``authors`` and ``license``).
+1. **Root Workspace Package**: The root ``Cargo.toml`` declares authoritative package metadata within ``[workspace.package]`` (such as ``version = "0.10.0"``, ``edition = "2021"``, ``authors`` and ``license``).
 2. **Workspace Inheritance**: All 12 modular kernel crates (``crates/*/Cargo.toml``) inherit their version and package properties dynamically via ``version.workspace = true``, eliminating redundant or drifting version declarations across crates.
 3. **Compile-Time Rust Kernel Exposure**: The core crate (``crates/core/src/lib.rs``) exports canonical constants (``KERNEL_VERSION``, ``KERNEL_VERSION_MAJOR``, ``KERNEL_VERSION_MINOR`` and ``KERNEL_VERSION_PATCH``) extracted directly at compile time via ``env!("CARGO_PKG_VERSION*")``. Ring 0 boot banners, panic containment routines, the supervisor shell and system calls (``uname``) query these constants with zero runtime overhead and zero dynamic allocations.
 4. **Autonomous Userland Integration**: The root ``Makefile`` and autonomous ``userland/Makefile`` query the root ``Cargo.toml`` dynamically and inject ``-DKEIRA_VERSION=\"$(VERSION)\"`` into C compilation flags and ``clang-tidy`` linters. Userland C binaries include ``<sys/version.h>`` to format help banners and version telemetry.

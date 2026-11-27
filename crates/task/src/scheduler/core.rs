@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Core scheduler state and execution lifecycle hooks.
 
@@ -339,7 +338,7 @@ pub mod hooks {
                 let stack_top = 0x07FFF000u64;
                 let stack_bottom = stack_top.saturating_sub(0x20000);
                 write_vaddr_range(&mut writer, stack_bottom, stack_top);
-                let _ = core::write!(writer, " rw-p 00000000 00:00 0                  [stack]\n");
+                let _ = writeln!(writer, " rw-p 00000000 00:00 0                  [stack]");
             }
             #[cfg(not(target_arch = "x86"))]
             {
@@ -396,6 +395,15 @@ pub mod state {
         (switches, ticks, active)
     }
 
+    /// Initializes the global scheduler task table, task 0 state and subsystem hooks.
+    ///
+    /// # Safety
+    ///
+    /// Must be called once during early single-core kernel boot before preemptive timer
+    /// interrupts or secondary CPUs access `TASKS`, `CURRENT_TASK_IDX` or
+    /// `SCHEDULER_INITIALIZED`, as these `static mut` globals are initialized without
+    /// acquiring `SCHEDULER_LOCK`. PMM and VMM must already be initialized so
+    /// `vmm::active_pml4` and `pmm::alloc_contiguous_frames` are valid to call.
     pub unsafe fn init() {
         let mut main_cwd = [0u8; 128];
         main_cwd[0] = b'/';

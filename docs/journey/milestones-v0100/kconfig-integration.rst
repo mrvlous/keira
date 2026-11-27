@@ -13,8 +13,8 @@ Historical Context & The Configuration Challenge
 ------------------------------------------------
 
 As Keira matured across 58 milestones, the kernel grew from a minimal real-mode
-bootloader to an SMP monolithic kernel with 12 crates, 114 POSIX syscalls,
-network stacks, storage filesystems and 47 userland utilities. Managing this
+bootloader to an SMP monolithic kernel with 12 crates, 111 active POSIX syscalls
+(IDs 1..114), network stacks, storage filesystems and 53 userland utilities. Managing this
 expanding parameter space using Makefile variables and manual configuration
 templates became increasingly complex.
 

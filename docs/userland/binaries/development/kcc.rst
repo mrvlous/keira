@@ -34,7 +34,7 @@ A. Help and Version Reference
      -h, --help     Display this help reference and exit
 
    keira:/# kcc -v
-   kcc (Keira C Compiler) 0.9.0
+   kcc (Keira C Compiler) 0.10.0
 
 B. Standard Compilation
 -----------------------

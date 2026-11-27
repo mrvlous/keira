@@ -2,7 +2,7 @@
 
 # Privilege Separation & Userland Subsystem Configuration
 #
-# Configures Ring 3 userspace runtime packaging, freestanding C compiler
+# Configures optional Ring 3 userspace runtime execution, freestanding C compiler
 # (kcc.elf) and automated POSIX ABI verification test suites.
 
 menu "Privilege Separation & Userland Subsystem"
@@ -11,7 +11,7 @@ config USERLAND
 	bool "Enable Ring 3 Userspace Subsystem & Coreutils"
 	default y
 	help
-	  Staging and packaging of Ring 3 userspace binaries, canonical init
+	  Staging of optional Ring 3 userspace binaries, canonical init
 	  (PID 1), standalone shell (sh.elf) and core utilities. If disabled,
 	  produces a pure freestanding Ring 0 supervisor kernel image.
 

@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! FAT file operations, reading and writing.
 
@@ -22,6 +21,12 @@ pub mod ops {
     use crate::fat::types::DirectoryEntry;
     use crate::fat::volume::VOLUME;
 
+    /// Creates an empty regular file at `filename` on the FAT16 volume.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache and the mounted block device.
     pub unsafe fn create_file(filename: &str) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr)
@@ -38,6 +43,12 @@ pub mod ops {
         Ok(())
     }
 
+    /// Deletes a file or empty directory entry at `name` and frees its cluster chain.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache and the mounted block device.
     pub unsafe fn remove_entry(name: &str) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr)
@@ -91,6 +102,12 @@ pub mod read {
     use crate::fat::volume::{cluster_to_sector, VOLUME};
     use keira_io::vga;
 
+    /// Reads a file from the FAT16 volume and prints its contents to the VGA console.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache while reading file clusters.
     pub unsafe fn cat_file(filename: &str) {
         let vol_ptr = &raw const VOLUME;
         let vol = match (*vol_ptr).as_ref() {
@@ -185,6 +202,12 @@ pub mod read {
         vga::set_color(vga::Color::LightGrey, vga::Color::Black);
     }
 
+    /// Reads up to `buffer.len()` bytes from `filename` starting at byte offset 0.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache while reading the file.
     pub unsafe fn read_file_content(
         filename: &str,
         buffer: &mut [u8],
@@ -236,6 +259,12 @@ pub mod read {
         Ok(bytes_read)
     }
 
+    /// Returns the recorded size in bytes of regular file `filename`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache during path resolution.
     pub unsafe fn get_file_size(filename: &str) -> Result<usize, &'static str> {
         let (dir_cluster, name) = resolve_path(filename)?;
         let found = find_entry(name, dir_cluster)?;
@@ -245,6 +274,13 @@ pub mod read {
         Ok(found.entry.file_size as usize)
     }
 
+    /// Reads bytes from `filename` at `offset` into `buffer`, checking the page cache first.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache and the unified page cache. If `VOLUME` is initialized, `sectors_per_cluster`
+    /// must be non-zero.
     pub unsafe fn read_file_offset(
         filename: &str,
         offset: u64,
@@ -346,6 +382,13 @@ pub mod write {
     use crate::fat::types::{DirectoryEntry, Fat16Volume};
     use crate::fat::volume::{cluster_to_sector, VOLUME};
 
+    /// Links cluster `prev` to `next` across every FAT copy on `vol`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to the global FAT sector cache and mounted block device.
+    /// `vol` must describe valid FAT16 geometry and `prev` must address a valid entry inside the
+    /// FAT tables.
     pub unsafe fn link_fat_clusters(
         prev: u16,
         next: u16,
@@ -368,6 +411,13 @@ pub mod write {
         Ok(())
     }
 
+    /// Replaces the entire contents of `filename` with `content` and updates its directory entry.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache, the unified page cache and the mounted block device. If `VOLUME` is
+    /// initialized, `sectors_per_cluster` must be non-zero.
     pub unsafe fn write_file_content(filename: &str, content: &[u8]) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = match (*vol_ptr).as_ref() {
@@ -475,6 +525,12 @@ pub mod write {
         Ok(())
     }
 
+    /// Appends `content` to `filename` up to a combined maximum size of 4096 bytes.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache, the unified page cache and the mounted block device.
     pub unsafe fn append_file_content(
         filename: &str,
         content: &[u8],
@@ -493,6 +549,13 @@ pub mod write {
         Ok(total_len)
     }
 
+    /// Writes `content` to `filename` starting at `offset`, extending the cluster chain if needed.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache and the mounted block device. If `VOLUME` is initialized, `sectors_per_cluster`
+    /// must be non-zero.
     pub unsafe fn write_file_offset(
         filename: &str,
         offset: u64,

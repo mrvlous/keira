@@ -6,14 +6,14 @@ Milestone 60: Linux-Grade Kbuild Infrastructure
 Milestone 60 introduces a Linux-grade, modular Kbuild compilation architecture to
 Keira Kernel. Complementing the declarative Kconfig engine established in Milestone 59,
 Milestone 60 eliminates hardcoded source arrays from master Makefiles and establishes
-hierarchical ``Kbuild`` manifests across architecture subtrees and userland packages.
+hierarchical ``Kbuild`` manifests across architecture subtrees and userland modules.
 
 Historical Context & The Build Scalability Barrier
 --------------------------------------------------
 
 Across 59 preceding milestones, Keira Kernel evolved into a full-featured SMP
-monolithic kernel spanning 12 crates, 114 POSIX system calls, bare-metal networking
-and 47 Ring 3 userland utilities. However, source files and compilation targets
+monolithic kernel spanning 12 crates, 111 active POSIX system calls (IDs 1..114),
+bare-metal networking and 53 Ring 3 userland utilities. However, source files and compilation targets
 were manually enumerated in root ``Makefile`` and ``userland/Makefile``.
 
 While functional for early milestones, centralized source arrays created distinct
@@ -38,7 +38,7 @@ principles to Keira:
 2. **Architecture Separation** (``arch/x86/Kbuild``): Decouples x86 bootstrap
    into ``arch/x86/common/Kbuild``, ``arch/x86/x86_64/Kbuild`` and
    ``arch/x86/i686/Kbuild``.
-3. **Userland Package Autonomy** (``userland/Kbuild``): Distributes utility targets
+3. **Userland Module Autonomy** (``userland/Kbuild``): Distributes utility targets
    across dedicated manifests:
    * ``userland/coreutils/Kbuild``: Foundational POSIX tools.
    * ``userland/procutils/Kbuild``: Process inspection and telemetry.
@@ -65,9 +65,9 @@ Dual-Architecture Verification & Results
 The Kbuild infrastructure was verified through extensive testing:
 
 1. **Dual-Architecture Parity**: Both 64-bit (``x86_64``) and 32-bit (``i686``)
-   targets compile, package and boot cleanly in QEMU.
+   targets compile, archive and boot cleanly in QEMU.
 2. **Clean Make Orchestration**: Master ``Makefile`` and ``userland/Makefile``
-   dynamically resolve 47 userland binaries and architecture assembly sources.
+   dynamically resolve 53 userland binaries and architecture assembly sources.
 3. **Toolchain Consistency**: Enforced 8-column hardware tabs for all ``Kbuild*``
    manifests via ``.editorconfig`` and added tracking in ``MAINTAINERS``.
 4. **Code Quality**: Validated 100% compliance via ``scripts/checkpatch.py`` and

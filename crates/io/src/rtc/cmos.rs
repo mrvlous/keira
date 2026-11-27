@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! Motorola MC146818 CMOS Real-Time Clock (RTC) driver and date-time decoding.
 
@@ -114,6 +113,11 @@ pub mod driver {
         }
     }
 
+    /// Reads the current CMOS RTC date and time into `time_ptr` when non-null.
+    ///
+    /// # Safety
+    /// If `time_ptr` is non-null, it must be properly aligned, writable and valid for writing a
+    /// single `RtcTime` value without aliasing any active Rust reference.
     #[no_mangle]
     pub unsafe extern "C" fn rtc_get_time(time_ptr: *mut RtcTime) {
         if !time_ptr.is_null() {

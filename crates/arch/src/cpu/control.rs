@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2026 Moh. Ananda Firmansyah Putra <mrvlous@proton.me>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+//
+// Copyright (C) 2026 Moh. Ananda Firmansyah Putra
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; version 2 of the License.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 
 //! CPU Control Registers (CR0-CR4, XCR0) and Model-Specific Registers (MSR).
 
@@ -18,6 +17,10 @@ pub mod cr {
     #[cfg(target_os = "none")]
     use core::arch::asm;
 
+    /// Reads the current value of the CPU control register `CR0`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) where reading `CR0` does not fault.
     #[inline(always)]
     pub unsafe fn read_cr0() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -32,6 +35,11 @@ pub mod cr {
         }
     }
 
+    /// Writes a new value to the CPU control register `CR0`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) and ensure `val` preserves valid paging,
+    /// protection and control flags so execution remains stable.
     #[inline(always)]
     pub unsafe fn write_cr0(val: usize) {
         #[cfg(not(target_os = "none"))]
@@ -44,6 +52,10 @@ pub mod cr {
         }
     }
 
+    /// Reads the page-fault linear address from control register `CR2`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) where reading `CR2` does not fault.
     #[inline(always)]
     pub unsafe fn read_cr2() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -58,6 +70,10 @@ pub mod cr {
         }
     }
 
+    /// Reads the page-table root physical address from control register `CR3`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) where reading `CR3` does not fault.
     #[inline(always)]
     pub unsafe fn read_cr3() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -72,6 +88,11 @@ pub mod cr {
         }
     }
 
+    /// Writes a page-table root physical address to control register `CR3`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) and ensure `val` is a valid page-aligned physical
+    /// address of an active page-table hierarchy mapping the running kernel code and stack.
     #[inline(always)]
     pub unsafe fn write_cr3(val: usize) {
         #[cfg(not(target_os = "none"))]
@@ -84,6 +105,10 @@ pub mod cr {
         }
     }
 
+    /// Reads the current value of the CPU control register `CR4`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) where reading `CR4` does not fault.
     #[inline(always)]
     pub unsafe fn read_cr4() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -98,6 +123,11 @@ pub mod cr {
         }
     }
 
+    /// Writes a new value to the CPU control register `CR4`.
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) and ensure `val` enables only CPU-supported
+    /// features compatible with the active paging mode and kernel state.
     #[inline(always)]
     pub unsafe fn write_cr4(val: usize) {
         #[cfg(not(target_os = "none"))]
@@ -110,6 +140,11 @@ pub mod cr {
         }
     }
 
+    /// Reads the processor `RFLAGS` (or `EFLAGS` on 32-bit x86) register.
+    ///
+    /// # Safety
+    /// Caller must have a valid writable stack with space for one machine word because
+    /// `pushfq`/`pushfd` temporarily pushes onto the stack.
     #[inline(always)]
     pub unsafe fn read_rflags() -> usize {
         #[cfg(not(target_os = "none"))]
@@ -150,6 +185,11 @@ pub mod msr {
     pub const AMD_HARDWARE_THERMAL_STATUS_MSR: u32 = 0xC0010064;
     pub const IA32_PERF_STATUS_MSR: u32 = 0x198;
 
+    /// Reads a 64-bit Model-Specific Register (`RDMSR`).
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) and ensure `msr` identifies an implemented
+    /// readable MSR on the current CPU so `rdmsr` does not fault.
     #[inline(always)]
     pub unsafe fn rdmsr(msr: u32) -> u64 {
         #[cfg(not(target_os = "none"))]
@@ -166,6 +206,11 @@ pub mod msr {
         }
     }
 
+    /// Writes a 64-bit value to a Model-Specific Register (`WRMSR`).
+    ///
+    /// # Safety
+    /// Caller must execute in Ring 0 (CPL 0) and ensure `msr` is a valid writable MSR and
+    /// `val` contains no reserved bits or invalid configuration for that register.
     #[inline(always)]
     pub unsafe fn wrmsr(msr: u32, val: u64) {
         #[cfg(not(target_os = "none"))]
