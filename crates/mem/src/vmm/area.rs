@@ -150,6 +150,14 @@ pub mod invariants {
     use super::table::VMA_TABLE;
     use crate::pmm;
 
+    /// Verifies consistency between active VMA permissions and page-table mappings.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `VMA_TABLE` is not concurrently mutated. When `pml4_phys` is
+    /// non-zero under `#[cfg(not(test))]`, `pml4_phys` and every present page-table frame in
+    /// `pml4[1..256]` (and any tables traversed by `get_pte_in_pml4`) must be valid,
+    /// page-aligned, identity-mapped and readable for 4096 bytes.
     pub unsafe fn verify_vma_pte_invariants(pml4_phys: u64) -> Result<(), &'static str> {
         if pml4_phys == 0 {
             return Ok(());
@@ -301,6 +309,12 @@ pub mod table {
 
     pub static mut VMA_TABLE: [Vma; MAX_VMAS] = [Vma::empty(); MAX_VMAS];
 
+    /// Deactivates all VMA entries associated with `pml4_phys`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must hold exclusive access to global `VMA_TABLE` with no concurrent readers or
+    /// writers.
     pub unsafe fn cleanup_vmas_for_pml4(pml4_phys: u64) {
         if pml4_phys == 0 && !cfg!(target_arch = "x86") {
             return;
@@ -312,6 +326,11 @@ pub mod table {
         }
     }
 
+    /// Finds and returns a copy of the active VMA enclosing `addr` in `pml4_phys`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `VMA_TABLE` is not concurrently mutated during the scan.
     pub unsafe fn find_active_vma(pml4_phys: u64, addr: u64) -> Option<Vma> {
         if pml4_phys == 0 && !cfg!(target_arch = "x86") {
             return None;
@@ -332,6 +351,12 @@ pub mod table {
         }
     }
 
+    /// Searches `[MMAP_START, MMAP_END)` for a free virtual address range of `aligned_len` bytes.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `VMA_TABLE` and `MMAP_ASLR_OFFSET_HOOK` are not concurrently mutated
+    /// during the search.
     pub unsafe fn find_free_mmap_range(cur_pml4: u64, aligned_len: u64) -> Option<u64> {
         let offset = MMAP_ASLR_OFFSET_HOOK.map(|f| f()).unwrap_or(0);
         let start_candidate = match MMAP_START.checked_add(offset) {
@@ -372,6 +397,11 @@ pub mod table {
         }
     }
 
+    /// Copies active VMA descriptors for `pml4_phys` into `out_vmas` and returns the count.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `VMA_TABLE` is not concurrently mutated while reading entries.
     pub unsafe fn get_vmas_for_pml4(pml4_phys: u64, out_vmas: &mut [Vma]) -> usize {
         if pml4_phys == 0 && !cfg!(target_arch = "x86") {
             return 0;
@@ -386,6 +416,12 @@ pub mod table {
         count
     }
 
+    /// Duplicates all active VMA entries from `parent_pml4` to `child_pml4`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must hold exclusive access to global `VMA_TABLE` with no concurrent readers or
+    /// writers.
     pub unsafe fn clone_vmas_for_pml4(
         parent_pml4: u64,
         child_pml4: u64,
@@ -411,6 +447,11 @@ pub mod table {
         Ok(())
     }
 
+    /// Returns the total number of active entries in `VMA_TABLE`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `VMA_TABLE` is not concurrently mutated during the count.
     pub unsafe fn total_active_vmas() -> usize {
         let mut count = 0;
         for vma in VMA_TABLE.iter() {
@@ -458,6 +499,11 @@ pub mod ops {
     ///
     /// Initializing through the kernel-mapped physical frame avoids write faults under
     /// `CR0.WP` when user protection bits omit `PROT_WRITE` (`PROT_READ` or `PROT_NONE`).
+    ///
+    /// # Safety
+    ///
+    /// `frame_ptr` must be non-null and uniquely writable for `pmm::PAGE_SIZE` contiguous bytes
+    /// for the duration of the call. `FILE_READ_HOOK` must not be concurrently mutated.
     pub unsafe fn init_populated_frame(
         frame_ptr: *mut u8,
         file_path: Option<&str>,
@@ -475,6 +521,13 @@ pub mod ops {
         }
     }
 
+    /// Initializes a physical frame and maps it at `vaddr` in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// `frame` must be a valid, uniquely owned, identity-mapped physical frame writable for
+    /// `pmm::PAGE_SIZE` bytes. `active_pml4()` and its page tables must satisfy `map_page`
+    /// preconditions, with no concurrent edits to `FILE_READ_HOOK` or the active page tables.
     #[cfg(not(test))]
     unsafe fn populate_and_map_page(
         vaddr: u64,
@@ -490,6 +543,12 @@ pub mod ops {
         Ok(())
     }
 
+    /// Simulates frame initialization against a stack scratch buffer during host unit tests.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `FILE_READ_HOOK` is not concurrently mutated while
+    /// `init_populated_frame` reads it.
     #[cfg(test)]
     unsafe fn populate_and_map_page(
         _vaddr: u64,
@@ -504,6 +563,13 @@ pub mod ops {
         Ok(())
     }
 
+    /// Unmaps and frees `allocated_bytes` of populated pages starting at `start_vaddr`.
+    ///
+    /// # Safety
+    ///
+    /// `start_vaddr` must be page-aligned and `[start_vaddr, start_vaddr + allocated_bytes)`
+    /// must hold pages valid for `free_and_unmap_page` in the active address space without
+    /// active aliases or concurrent page-table mutations.
     unsafe fn rollback_populated_pages(
         start_vaddr: u64,
         allocated_bytes: u64,
@@ -527,6 +593,14 @@ pub mod ops {
         }
     }
 
+    /// Creates an anonymous or file-backed virtual memory mapping in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must hold exclusive access to `VMA_TABLE` and ensure `MMAP_ASLR_OFFSET_HOOK` and
+    /// `FILE_READ_HOOK` are not concurrently mutated. `active_pml4()` and its traversed tables
+    /// must be valid, identity-mapped and writable. Frames allocated under `MAP_POPULATE` must
+    /// be writable via identity mapping with no concurrent page-table mutations.
     pub unsafe fn sys_mmap_file(
         hint_addr: u64,
         length: u64,
@@ -687,6 +761,13 @@ pub mod ops {
         Ok(start_vaddr)
     }
 
+    /// Creates an anonymous virtual memory mapping in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must uphold the preconditions of `sys_mmap_file`: exclusive access to
+    /// `VMA_TABLE`, no concurrent mutation of `MMAP_ASLR_OFFSET_HOOK` or `FILE_READ_HOOK` and
+    /// valid, identity-mapped active page tables synchronized against concurrent edits.
     pub unsafe fn sys_mmap(
         hint_addr: u64,
         length: u64,
@@ -696,6 +777,14 @@ pub mod ops {
         sys_mmap_file(hint_addr, length, prot, flags, None, 0, 0)
     }
 
+    /// Unmaps a virtual memory range from the active address space and returns bytes unmapped.
+    ///
+    /// # Safety
+    ///
+    /// Callers must hold exclusive access to `VMA_TABLE` and synchronize concurrent edits to
+    /// `active_pml4()` page tables. `active_pml4()` and its page tables must be valid,
+    /// identity-mapped and writable. No active Rust references may access `[addr, addr +
+    /// aligned_len)` during or after unmapping.
     pub unsafe fn sys_munmap_ext(addr: u64, length: u64) -> Result<u64, (&'static str, u64)> {
         if length == 0 || !addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err(("Invalid address alignment or zero length for munmap", 0));
@@ -820,6 +909,13 @@ pub mod ops {
         Ok(actual_unmapped_len)
     }
 
+    /// Unmaps a virtual memory range from the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must uphold the preconditions of `sys_munmap_ext`: exclusive access to
+    /// `VMA_TABLE`, synchronized valid identity-mapped `active_pml4()` page tables and no active
+    /// references to the unmapped range.
     pub unsafe fn sys_munmap(addr: u64, length: u64) -> Result<(), &'static str> {
         match sys_munmap_ext(addr, length) {
             Ok(_) => Ok(()),
@@ -827,6 +923,14 @@ pub mod ops {
         }
     }
 
+    /// Updates protection flags on a VMA range in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must hold exclusive access to `VMA_TABLE` and synchronize concurrent edits to
+    /// `active_pml4()` page tables. `active_pml4()` and its page tables must be valid,
+    /// identity-mapped and writable. `prot` must remain compatible with any active memory
+    /// references inside `[addr, addr + aligned_len)`.
     pub unsafe fn sys_mprotect(addr: u64, length: u64, prot: u32) -> Result<(), &'static str> {
         if length == 0 || !addr.is_multiple_of(pmm::PAGE_SIZE) {
             return Err("Invalid address alignment or zero length for mprotect");
@@ -1009,6 +1113,15 @@ pub mod ops {
         Ok(())
     }
 
+    /// Flushes dirty pages of a shared file-backed VMA through the registered sync hook.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure `VMA_TABLE` and `FILE_SYNC_HOOK` are not concurrently mutated and
+    /// synchronize access to `active_pml4()` page tables. Under `#[cfg(not(test))]`,
+    /// `active_pml4()` and traversed page tables must be valid, identity-mapped and writable,
+    /// and every present mapped page in `[addr, addr + aligned_len)` must be safely readable at
+    /// its virtual address for up to `PAGE_SIZE` bytes without data races.
     pub unsafe fn sys_msync(addr: u64, length: u64, _flags: u32) -> Result<(), &'static str> {
         if length == 0 {
             return Err("Invalid msync length (0)");
@@ -1099,6 +1212,13 @@ pub mod ops {
         Ok(())
     }
 
+    /// Creates an anonymous virtual memory mapping in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must uphold the preconditions of `sys_mmap` (`sys_mmap_file`): exclusive access
+    /// to `VMA_TABLE`, no concurrent mutation of `MMAP_ASLR_OFFSET_HOOK` or `FILE_READ_HOOK` and
+    /// valid, identity-mapped active page tables synchronized against concurrent edits.
     pub unsafe fn mmap_anonymous(
         hint_addr: u64,
         length: u64,
@@ -1108,14 +1228,34 @@ pub mod ops {
         sys_mmap(hint_addr, length, prot, flags | MAP_ANONYMOUS)
     }
 
+    /// Unmaps a virtual memory range from the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must uphold the preconditions of `sys_munmap` (`sys_munmap_ext`): exclusive
+    /// access to `VMA_TABLE`, synchronized valid identity-mapped `active_pml4()` page tables and
+    /// no active references to the unmapped range.
     pub unsafe fn munmap_pages(addr: u64, length: u64) -> Result<(), &'static str> {
         sys_munmap(addr, length)
     }
 
+    /// Updates protection flags on a VMA range in the active address space.
+    ///
+    /// # Safety
+    ///
+    /// Callers must uphold the preconditions of `sys_mprotect`: exclusive access to `VMA_TABLE`,
+    /// synchronized valid identity-mapped `active_pml4()` page tables and protection flags
+    /// compatible with any active memory references inside the range.
     pub unsafe fn mprotect_pages(addr: u64, length: u64, prot: u32) -> Result<(), &'static str> {
         sys_mprotect(addr, length, prot)
     }
 
+    /// Validates that a user virtual address range lies within user-space bounds.
+    ///
+    /// # Safety
+    ///
+    /// Currently delegates solely to `validate_virt_addr_range` without dereferencing memory or
+    /// accessing globals, though callers should pass a valid user range when advising mappings.
     pub unsafe fn madvise_pages(addr: u64, length: u64, _advice: u32) -> Result<(), &'static str> {
         validate_virt_addr_range(addr, length)
     }

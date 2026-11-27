@@ -345,6 +345,12 @@ pub mod manager {
         KmemCache::new(name, obj_size, align)
     }
 
+    /// Allocates an object from the specified slab cache for C FFI callers.
+    ///
+    /// # Safety
+    ///
+    /// If `cache` is non-null, it must be properly aligned and point to a valid, initialized
+    /// `KmemCache` instance for the duration of the call.
     #[no_mangle]
     pub unsafe extern "C" fn kmem_cache_alloc(cache: *const KmemCache) -> *mut u8 {
         if cache.is_null() {
@@ -353,6 +359,13 @@ pub mod manager {
         (*cache).alloc()
     }
 
+    /// Returns an allocated object back to the specified slab cache for C FFI callers.
+    ///
+    /// # Safety
+    ///
+    /// If `cache` is non-null, it must be properly aligned and point to a valid, initialized
+    /// `KmemCache` instance for the duration of the call. If `ptr` is non-null, it must be a
+    /// live object previously allocated from that cache and must not be double-freed.
     #[no_mangle]
     pub unsafe extern "C" fn kmem_cache_free(cache: *const KmemCache, ptr: *mut u8) {
         if cache.is_null() || ptr.is_null() {

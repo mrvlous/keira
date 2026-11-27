@@ -139,6 +139,11 @@ pub fn get_all_zones() -> &'static [MemoryZone; ZONE_COUNT] {
 }
 
 /// Resets all physical memory zones and buddy order metadata to empty state.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to global `ZONES` and `ORDER_MAP` with no concurrent
+/// zone or buddy allocator operations.
 pub unsafe fn reset_zones() {
     for zone in ZONES.iter_mut() {
         zone.managed_pages = 0;
@@ -152,6 +157,11 @@ pub unsafe fn reset_zones() {
 }
 
 /// Initializes memory zones and calculates initial watermarks.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to global `ZONES` and `ORDER_MAP`. `usable_regions`
+/// must contain valid non-overlapping physical RAM regions.
 pub unsafe fn init_zones(usable_regions: &[UsableRegion]) {
     reset_zones();
 
@@ -174,6 +184,12 @@ pub unsafe fn init_zones(usable_regions: &[UsableRegion]) {
 }
 
 /// Enqueues an initial free frame block into its matching zone free list during boot.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ZONES` and `ORDER_MAP`. `order as usize` must not
+/// exceed `MAX_ORDER`. `pfn * PAGE_SIZE` must reference a valid, unallocated, identity-mapped
+/// block of `1 << order` pages writable for intrusive buddy list metadata.
 pub unsafe fn seed_zone_block(pfn: usize, order: u8) {
     if pfn >= MAX_TRACKED_FRAMES {
         return;
@@ -202,6 +218,12 @@ const fn largest_aligned_order(start_pfn: usize, limit_pfn: usize) -> u8 {
 }
 
 /// Invokes a callback over maximally aligned per-zone power-of-two blocks in `[start_pfn, end_pfn)`.
+///
+/// # Safety
+///
+/// `f` receives aligned `(pfn, order)` pairs with `order <= MAX_ORDER` and
+/// `pfn < MAX_TRACKED_FRAMES`. Callers must ensure all unsafe state or memory preconditions
+/// required by `f` are satisfied across `[start_pfn, end_pfn)`.
 unsafe fn for_each_zone_block(mut start_pfn: usize, end_pfn: usize, mut f: impl FnMut(usize, u8)) {
     let capped_end = end_pfn.min(MAX_TRACKED_FRAMES);
     while start_pfn < capped_end {
@@ -221,6 +243,12 @@ unsafe fn for_each_zone_block(mut start_pfn: usize, end_pfn: usize, mut f: impl 
 }
 
 /// Partitions a contiguous PFN interval into maximally aligned per-zone buddy blocks.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ZONES` and `ORDER_MAP`. Every frame in
+/// `[start_pfn, end_pfn.min(MAX_TRACKED_FRAMES))` must be free, unseeded, identity-mapped RAM
+/// writable for intrusive buddy free-list pointers.
 pub unsafe fn seed_zone_range(start_pfn: usize, end_pfn: usize) {
     for_each_zone_block(start_pfn, end_pfn, |pfn, order| {
         seed_zone_block(pfn, order);
@@ -228,6 +256,10 @@ pub unsafe fn seed_zone_range(start_pfn: usize, end_pfn: usize) {
 }
 
 /// Returns whether all zones covering `[start_pfn, end_pfn)` have active managed pages.
+///
+/// # Safety
+///
+/// Callers must ensure `ZONES` is not concurrently mutated during the query.
 pub unsafe fn is_range_zone_managed(start_pfn: usize, end_pfn: usize) -> bool {
     if start_pfn >= end_pfn || end_pfn > MAX_TRACKED_FRAMES {
         return false;
@@ -238,6 +270,12 @@ pub unsafe fn is_range_zone_managed(start_pfn: usize, end_pfn: usize) -> bool {
 }
 
 /// Frees a contiguous PFN interval back into its enclosing buddy zones.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ZONES` and `ORDER_MAP`. Frames in
+/// `[start_pfn, end_pfn.min(MAX_TRACKED_FRAMES))` must be valid, allocated, non-aliased
+/// physical RAM writable for intrusive buddy free-list headers on non-test targets.
 pub unsafe fn zone_free_range(start_pfn: usize, end_pfn: usize) {
     for_each_zone_block(start_pfn, end_pfn, |pfn, order| {
         let addr = (pfn as u64) * PAGE_SIZE;
@@ -246,6 +284,11 @@ pub unsafe fn zone_free_range(start_pfn: usize, end_pfn: usize) {
 }
 
 /// Seeds buddy allocator free lists across all usable RAM regions within identity-mapped bounds.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ZONES` and `ORDER_MAP`. Each entry in `regions`
+/// must describe valid, unallocated, identity-mapped RAM up to `BUDDY_IDENTITY_CAP`.
 pub unsafe fn seed_usable_regions(regions: &mut [UsableRegion]) {
     super::buddy::reset_order_map();
     for region in regions.iter_mut() {
@@ -260,6 +303,12 @@ pub unsafe fn seed_usable_regions(regions: &mut [UsableRegion]) {
 }
 
 /// Allocates an order block from the preferred zone with fallback to lower zones.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ZONES` and `ORDER_MAP`. `order` must be less than
+/// `usize::BITS as u8` (and at most `MAX_ORDER` to allocate). All free-list nodes in `ZONES`
+/// must be valid, identity-mapped free blocks consistent with `ORDER_MAP`.
 pub unsafe fn zone_alloc_order(pref: ZoneType, order: u8) -> Option<u64> {
     let order_pages = 1usize << order;
 
@@ -297,6 +346,12 @@ pub unsafe fn zone_alloc_order(pref: ZoneType, order: u8) -> Option<u64> {
 }
 
 /// Frees an order block back into its originating memory zone.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ZONES` and `ORDER_MAP`. `addr` must refer to an
+/// allocated, non-aliased, identity-mapped block of `1 << order` pages belonging to its zone
+/// (writable for 16 bytes on non-test targets). `zone.free_areas` must also be valid.
 pub unsafe fn zone_free_order(addr: u64, order: u8) -> bool {
     if !addr.is_multiple_of(PAGE_SIZE) {
         return false;

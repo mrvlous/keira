@@ -55,7 +55,19 @@ impl FreeArea {
     }
 }
 
+impl Default for FreeArea {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Reads the next and previous pointers of an intrusive free node.
+///
+/// # Safety
+///
+/// On non-test targets `addr` must be non-null, 8-byte aligned and readable for 16 bytes
+/// within a free physical block. Under `#[cfg(test)]` callers must hold exclusive access to
+/// `TEST_NEXT` and `TEST_PREV`.
 #[inline]
 unsafe fn read_node(addr: u64) -> (u64, u64) {
     #[cfg(not(test))]
@@ -72,6 +84,12 @@ unsafe fn read_node(addr: u64) -> (u64, u64) {
 }
 
 /// Writes the next and previous pointers of an intrusive free node.
+///
+/// # Safety
+///
+/// On non-test targets `addr` must be non-null, 8-byte aligned and uniquely writable for 16
+/// bytes within a free physical block. Under `#[cfg(test)]` callers must hold exclusive access
+/// to `TEST_NEXT` and `TEST_PREV`.
 #[inline]
 unsafe fn write_node(addr: u64, next: u64, prev: u64) {
     #[cfg(not(test))]
@@ -88,6 +106,12 @@ unsafe fn write_node(addr: u64, next: u64, prev: u64) {
 }
 
 /// Clears node pointers upon allocation to ensure clean frame initialization.
+///
+/// # Safety
+///
+/// On non-test targets `addr` must be non-null, 8-byte aligned and uniquely writable for 16
+/// bytes within the target physical block. Under `#[cfg(test)]` callers must hold exclusive
+/// access to `TEST_NEXT` and `TEST_PREV`.
 #[inline]
 unsafe fn clear_node(addr: u64) {
     #[cfg(not(test))]
@@ -150,6 +174,13 @@ pub const fn base_pfn(pfn: usize, order: u8) -> usize {
 }
 
 /// Enqueues a free block at the head of the designated order free list.
+///
+/// # Safety
+///
+/// `addr` must point to an unlinked free block matching `pfn` and `order` (8-byte aligned and
+/// writable for 16 bytes on non-test targets). Any existing `free_area.head` must also be a
+/// valid intrusive node. Callers must hold exclusive access to `ORDER_MAP` and test node
+/// arrays.
 pub unsafe fn enqueue_free_block(free_area: &mut FreeArea, addr: u64, pfn: usize, order: u8) {
     let old_head = free_area.head;
     if old_head != 0 {
@@ -163,6 +194,12 @@ pub unsafe fn enqueue_free_block(free_area: &mut FreeArea, addr: u64, pfn: usize
 }
 
 /// Dequeues a specific free block from an order free list.
+///
+/// # Safety
+///
+/// `addr` and any linked `prev` or `next` nodes in `free_area` must be valid, 8-byte aligned
+/// and writable for 16 bytes on non-test targets, with `pfn` matching `addr / PAGE_SIZE`.
+/// Callers must hold exclusive access to `ORDER_MAP` and test node arrays.
 pub unsafe fn dequeue_block(free_area: &mut FreeArea, addr: u64, pfn: usize) {
     let (next, prev) = read_node(addr);
     if prev != 0 {
@@ -181,6 +218,12 @@ pub unsafe fn dequeue_block(free_area: &mut FreeArea, addr: u64, pfn: usize) {
 }
 
 /// Allocates a contiguous block of physical memory of order 2^order pages.
+///
+/// # Safety
+///
+/// Every non-zero `head` and linked intrusive node in `free_areas` must refer to a valid,
+/// free, page-aligned physical block (writable for 16 bytes on non-test targets) consistent
+/// with `ORDER_MAP`. Callers must synchronize access to `ORDER_MAP` and test node arrays.
 pub unsafe fn alloc_pages(free_areas: &mut [FreeArea; ORDER_COUNT], order: u8) -> Option<u64> {
     if (order as usize) > MAX_ORDER {
         return None;
@@ -220,6 +263,13 @@ pub unsafe fn alloc_pages(free_areas: &mut [FreeArea; ORDER_COUNT], order: u8) -
 }
 
 /// Frees a block of physical memory of order 2^order pages, recursively coalescing buddies.
+///
+/// # Safety
+///
+/// `addr` must refer to an allocated, non-aliased block of `1 << order` pages not already
+/// present in `free_areas` (writable for 16 bytes on non-test targets). All nodes in
+/// `free_areas` must be valid and consistent with `ORDER_MAP`. Callers must synchronize access
+/// to `free_areas`, `ORDER_MAP` and test node arrays.
 pub unsafe fn free_pages(free_areas: &mut [FreeArea; ORDER_COUNT], addr: u64, order: u8) -> bool {
     if (order as usize) > MAX_ORDER || !addr.is_multiple_of(PAGE_SIZE) {
         return false;
@@ -270,6 +320,11 @@ pub fn get_total_free_pages(free_areas: &[FreeArea; ORDER_COUNT]) -> usize {
 }
 
 /// Resets all order map words and test metadata without touching a specific FreeArea array.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ORDER_MAP` (and `TEST_NEXT` and `TEST_PREV` under
+/// `#[cfg(test)]`) with no concurrent readers or writers.
 pub unsafe fn reset_order_map() {
     for word in ORDER_MAP.iter_mut() {
         *word = 0xFFFF_FFFF_FFFF_FFFF;
@@ -286,6 +341,11 @@ pub unsafe fn reset_order_map() {
 }
 
 /// Resets all order map words and free area structures to pristine unallocated state.
+///
+/// # Safety
+///
+/// Callers must hold exclusive access to `ORDER_MAP` and test node arrays with no concurrent
+/// buddy allocator operations in progress.
 pub unsafe fn reset_buddy_structures(free_areas: &mut [FreeArea; ORDER_COUNT]) {
     reset_order_map();
     for area in free_areas.iter_mut() {

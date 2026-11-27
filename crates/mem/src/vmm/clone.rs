@@ -25,6 +25,13 @@ pub mod address_space {
     use keira_arch::cpu::invlpg;
     use keira_arch::interrupts::smp::tlb_shootdown;
 
+    /// Allocates a new PML4 populated with kernel higher-half and early identity mappings.
+    ///
+    /// # Safety
+    ///
+    /// `boot_pml4()` must return a valid, readable, 4 KiB-aligned PML4 physical address whose
+    /// entry 0 references a valid PDPT when present. Frames allocated by `pmm::alloc_frame()`
+    /// must be identity-mapped and writable for 4096 bytes without concurrent boot table edits.
     pub unsafe fn clone_kernel_pml4() -> Result<u64, &'static str> {
         let boot_pml4_phys = boot_pml4();
         let boot_pml4 = boot_pml4_phys as *const u64;
@@ -67,6 +74,14 @@ pub mod address_space {
         Ok(new_pml4_phys)
     }
 
+    /// Deep-copies all user-space 4 KiB pages and VMA descriptors from a parent PML4.
+    ///
+    /// # Safety
+    ///
+    /// `parent_pml4_phys` must be a valid, page-aligned, readable PML4 physical address with
+    /// valid kernel higher-half mappings compatible with `switch_address_space`. All valid RAM
+    /// frames in `parent_pml4_phys` and newly allocated child frames must be identity-mapped for
+    /// 4096-byte reads and writes without concurrent page-table or `VMA_TABLE` mutations.
     pub unsafe fn clone_user_address_space(parent_pml4_phys: u64) -> Result<u64, &'static str> {
         let child_pml4_phys = clone_kernel_pml4()?;
 
@@ -183,6 +198,13 @@ pub mod address_space {
         Ok(child_pml4_phys)
     }
 
+    /// Clones a user address space using copy-on-write page sharing and VMA duplication.
+    ///
+    /// # Safety
+    ///
+    /// `parent_pml4_phys` must be a valid, page-aligned, identity-mapped PML4 physical address
+    /// safe for `switch_address_space` whose page-table frames are readable and writable. Callers
+    /// must synchronize against concurrent modifications to `parent_pml4_phys` and `VMA_TABLE`.
     pub unsafe fn clone_user_address_space_cow(parent_pml4_phys: u64) -> Result<u64, &'static str> {
         let child_pml4_phys = clone_kernel_pml4()?;
 

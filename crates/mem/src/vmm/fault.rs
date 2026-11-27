@@ -74,6 +74,14 @@ pub mod handler {
         )
     }
 
+    /// Dispatches a `#PF` exception for CoW promotion, stack growth or demand paging.
+    ///
+    /// # Safety
+    ///
+    /// Must execute against the faulting task's active `CR3` (`active_pml4()`), with page
+    /// tables and allocated PMM frames identity-mapped and writable. For CoW replication, the
+    /// faulting page (`cr2 & !(PAGE_SIZE - 1)`) must be readable for `PAGE_SIZE` bytes. Callers
+    /// must also synchronize concurrent mutations to active page tables and `VMA_TABLE`.
     pub unsafe fn handle_page_fault(cr2: u64, error_code: u64, rsp: u64) -> bool {
         TOTAL_PAGE_FAULTS.fetch_add(1, Ordering::Relaxed);
 

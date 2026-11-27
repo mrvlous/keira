@@ -69,6 +69,14 @@ pub mod boot {
     use super::super::sync::PmmGuard;
     use super::descriptor::{UsableRegion, MAX_PHYS_ADDR, REGIONS, REGION_COUNT};
 
+    /// Initializes physical memory regions and buddy zones from Multiboot2 descriptors.
+    ///
+    /// # Safety
+    ///
+    /// `multiboot_info_ptr` must point to a readable, properly terminated Multiboot2 info
+    /// structure whose memory map tag bounds (`tag_size` and `entry_size`) are valid.
+    /// `kernel_end` must accurately mark the end of the kernel image and early boot data. Identity
+    /// mapping must cover seeded memory up to `BUDDY_IDENTITY_CAP`.
     pub unsafe fn init(multiboot_info_ptr: u64, kernel_end: u64) {
         let _guard = PmmGuard::lock();
         let mut mmap_tag_ptr: u64 = 0;
