@@ -19,6 +19,13 @@ pub mod table {
     use crate::scheduler::core::{MAX_TASKS, TASKS};
     use crate::types::TaskState;
 
+    /// Prints the scheduler task table and telemetry counters to the VGA console.
+    ///
+    /// # Safety
+    ///
+    /// Reads `static mut TASKS` without acquiring `SCHEDULER_LOCK`. Callers must ensure no
+    /// concurrent task creation, state mutation or reaping modifies `TASKS` during the
+    /// traversal and that VGA console access is safe in the calling context.
     pub unsafe fn list_tasks() {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("PID    TGID   TASK NAME             STATE       TICKS       SWITCHES\n");
@@ -79,6 +86,13 @@ pub mod table {
         vga::print_str("\n");
     }
 
+    /// Prints a `u64` value followed by trailing spaces up to `width` columns.
+    ///
+    /// # Safety
+    ///
+    /// Performs no unsafe operations directly and only calls `vga::print_u64` and
+    /// `vga::print_str`. Callers only need to ensure the VGA console is initialized and
+    /// synchronized for the calling context.
     unsafe fn print_padded_u64(val: u64, width: usize) {
         vga::print_u64(val);
         let mut len = 0;

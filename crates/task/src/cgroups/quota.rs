@@ -16,6 +16,13 @@
 pub mod limits {
     use crate::cgroups::namespace::table::{parse_u32, CGROUP_TABLE};
 
+    /// Updates memory and CPU share limits for the cgroup matching `name_or_id`.
+    ///
+    /// # Safety
+    ///
+    /// Mutates the global `static mut CGROUP_TABLE` array without synchronization. Callers
+    /// must guarantee exclusive access to `CGROUP_TABLE` and ensure no concurrent readers,
+    /// writers or `'static` slice references from `get_cgroup_table` are active.
     pub unsafe fn set_cgroup_limits(
         name_or_id: &str,
         max_mem: Option<u64>,

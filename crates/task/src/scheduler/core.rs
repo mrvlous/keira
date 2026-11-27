@@ -395,6 +395,15 @@ pub mod state {
         (switches, ticks, active)
     }
 
+    /// Initializes the global scheduler task table, task 0 state and subsystem hooks.
+    ///
+    /// # Safety
+    ///
+    /// Must be called once during early single-core kernel boot before preemptive timer
+    /// interrupts or secondary CPUs access `TASKS`, `CURRENT_TASK_IDX` or
+    /// `SCHEDULER_INITIALIZED`, as these `static mut` globals are initialized without
+    /// acquiring `SCHEDULER_LOCK`. PMM and VMM must already be initialized so
+    /// `vmm::active_pml4` and `pmm::alloc_contiguous_frames` are valid to call.
     pub unsafe fn init() {
         let mut main_cwd = [0u8; 128];
         main_cwd[0] = b'/';

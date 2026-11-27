@@ -36,6 +36,18 @@ pub mod clone {
     pub const CLONE_CHILD_CLEARTID: u64 = 0x0020_0000;
     pub const CLONE_CHILD_SETTID: u64 = 0x0100_0000;
 
+    /// Clones the currently running task into a new child process or thread descriptor.
+    ///
+    /// # Safety
+    ///
+    /// Must be called with `CURRENT_TASK_IDX < MAX_TASKS` and without holding `SCHEDULER_LOCK`.
+    /// On `not(target_arch = "x86")`, callers must invoke this from a valid syscall entry state
+    /// where `get_current_percpu()` holds valid saved `user_*` registers for the parent task and
+    /// `parent.pml4_phys` is a valid page table root when `CLONE_VM` is unset. Any non-zero,
+    /// 4-byte-aligned `ptid` or `ctid` within `0x1000..0x0000_8000_0000_0000` passed with
+    /// `CLONE_PARENT_SETTID` or `CLONE_CHILD_SETTID` must be mapped and writable in the active
+    /// address space. When `child_stack != 0` or `CLONE_SETTLS` is set, those user addresses must
+    /// be valid for the child context.
     pub unsafe fn clone_current_task(
         flags: u64,
         child_stack: u64,
@@ -276,6 +288,14 @@ pub mod clone {
 pub mod fork {
     use crate::scheduler::process::clone::clone_current_task;
 
+    /// Forks the currently running task using `clone_current_task` with default flags.
+    ///
+    /// # Safety
+    ///
+    /// Must be called with `CURRENT_TASK_IDX < MAX_TASKS` and without holding `SCHEDULER_LOCK`.
+    /// On `not(target_arch = "x86")`, callers must invoke this from a valid syscall entry state
+    /// where `get_current_percpu()` holds valid saved `user_*` registers for the parent task and
+    /// `parent.pml4_phys` is a valid page table root.
     pub unsafe fn fork_current_task() -> Result<usize, &'static str> {
         clone_current_task(0, 0, 0, 0, 0)
     }
@@ -293,6 +313,16 @@ pub mod spawn {
     #[cfg(test)]
     static mut TEST_TASK_STACKS: [[u8; 16384]; 16] = [[0; 16384]; 16];
 
+    /// Creates and enqueues a new Ring 0 kernel thread starting at `entry_point`.
+    ///
+    /// # Safety
+    ///
+    /// Reads and mutates `TASKS` without acquiring `SCHEDULER_LOCK` (and calls
+    /// `reap_orphaned_zombies()` when full, which locks `SCHEDULER_LOCK`). Callers must ensure
+    /// `SCHEDULER_LOCK` is not held, `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent CPU or
+    /// interrupt handler races on `TASKS`, `CURRENT_TASK_IDX` or `TEST_TASK_STACKS`. PMM and VMM
+    /// must be initialized outside `#[cfg(test)]` fallback and `entry_point` must be a valid
+    /// kernel thread entry that does not return past its initial stack frame.
     pub unsafe fn spawn(name: &'static str, entry_point: fn()) -> Result<usize, &'static str> {
         let mut slot = None;
         for (i, item) in TASKS.iter().enumerate().take(MAX_TASKS) {
@@ -436,6 +466,17 @@ pub mod spawn {
         Ok(slot_idx)
     }
 
+    /// Creates and enqueues a new Ring 3 user task starting at `entry_point` and `user_rsp`.
+    ///
+    /// # Safety
+    ///
+    /// Reads and mutates `TASKS` without acquiring `SCHEDULER_LOCK` (and calls
+    /// `reap_orphaned_zombies()` when full, which locks `SCHEDULER_LOCK`). Callers must ensure
+    /// `SCHEDULER_LOCK` is not held, `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent CPU or
+    /// interrupt handler races on `TASKS`, `CURRENT_TASK_IDX` or `TEST_TASK_STACKS`.
+    /// `pml4_phys` must be a valid physical page table root with kernel mappings intact, while
+    /// `entry_point` and `user_rsp` must reference valid Ring 3 code and an initialized user
+    /// stack in that address space.
     pub unsafe fn spawn_user(
         name: &'static str,
         entry_point: u64,

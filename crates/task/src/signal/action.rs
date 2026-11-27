@@ -20,6 +20,14 @@ pub mod disposition {
 
     pub static mut SIGNAL_HANDLERS: [[u64; 32]; MAX_SIGNAL_TASKS] = [[0; 32]; MAX_SIGNAL_TASKS];
 
+    /// Installs a signal handler for `sig` on task `pid` and optionally returns the prior one.
+    ///
+    /// # Safety
+    ///
+    /// Reads and mutates `static mut SIGNAL_HANDLERS` without internal synchronization, so
+    /// callers must ensure mutual exclusion against concurrent signal handler reads or
+    /// writes. When `old_handler` is non-null, it must be valid, properly aligned and
+    /// writable for a `u64` in the active address space.
     pub unsafe fn sys_sigaction(
         pid: usize,
         sig: u32,
@@ -40,6 +48,12 @@ pub mod disposition {
         Ok(0)
     }
 
+    /// Returns the registered signal handler address for `sig` on task `pid` (or `0` if invalid).
+    ///
+    /// # Safety
+    ///
+    /// Reads `static mut SIGNAL_HANDLERS` without internal synchronization. Callers must
+    /// ensure no concurrent unsynchronized writes to `SIGNAL_HANDLERS` occur during access.
     pub unsafe fn get_signal_handler(pid: usize, sig: u32) -> u64 {
         if sig == 0 || sig >= 32 {
             return 0;
@@ -48,6 +62,12 @@ pub mod disposition {
         SIGNAL_HANDLERS[p_idx][sig as usize]
     }
 
+    /// Resets all signal handler entries for task `pid` back to default (`0`).
+    ///
+    /// # Safety
+    ///
+    /// Mutates `static mut SIGNAL_HANDLERS` without internal synchronization. Callers must
+    /// ensure exclusive access so no concurrent reads or writes race on `SIGNAL_HANDLERS`.
     pub unsafe fn reset_signal_handlers(pid: usize) {
         let p_idx = pid.min(MAX_SIGNAL_TASKS - 1);
         SIGNAL_HANDLERS[p_idx] = [0; 32];

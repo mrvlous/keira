@@ -78,10 +78,23 @@ pub mod table {
         keira_core::pr_info!("namespace", "isolated PID container namespaces mapped");
     }
 
+    /// Returns a shared slice view of the global cgroup table.
+    ///
+    /// # Safety
+    ///
+    /// Produces a `'static` shared reference to `static mut CGROUP_TABLE` without locking.
+    /// Callers must ensure no concurrent writes or mutable references to `CGROUP_TABLE`
+    /// exist while the returned slice is live.
     pub unsafe fn get_cgroup_table() -> &'static [Cgroup] {
         &CGROUP_TABLE
     }
 
+    /// Computes active cgroup count, total used memory and total memory limits.
+    ///
+    /// # Safety
+    ///
+    /// Reads `static mut CGROUP_TABLE` without synchronization. Callers must ensure no
+    /// concurrent mutations to `CGROUP_TABLE` occur while iterating over its slots.
     pub unsafe fn get_cgroup_stats() -> (usize, u64, u64) {
         let mut active = 0;
         let mut total_used = 0;
@@ -96,6 +109,13 @@ pub mod table {
         (active, total_used, total_max)
     }
 
+    /// Allocates a new cgroup slot with the specified name, memory limit and CPU shares.
+    ///
+    /// # Safety
+    ///
+    /// Reads and mutates `static mut CGROUP_TABLE` and `static mut NEXT_CGROUP_ID` without
+    /// locking. Callers must guarantee exclusive access and ensure no `'static` slice
+    /// references from `get_cgroup_table` are currently live.
     pub unsafe fn create_cgroup(
         name: &str,
         max_mem: u64,
@@ -129,6 +149,13 @@ pub mod table {
         Err("Cgroup table capacity full")
     }
 
+    /// Deletes the non-root cgroup matching `name_or_id` by clearing its table slot.
+    ///
+    /// # Safety
+    ///
+    /// Mutates `static mut CGROUP_TABLE` without locking. Callers must guarantee exclusive
+    /// access and ensure no concurrent readers, writers or live `'static` references from
+    /// `get_cgroup_table` exist.
     pub unsafe fn delete_cgroup(name_or_id: &str) -> Result<(), &'static str> {
         for slot in CGROUP_TABLE.iter_mut() {
             if slot.in_use

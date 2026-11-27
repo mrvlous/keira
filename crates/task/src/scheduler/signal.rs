@@ -17,12 +17,26 @@ pub mod context {
     use crate::scheduler::core::{CURRENT_TASK_IDX, TASKS};
     use crate::types::InterruptContext;
 
+    /// Stores an interrupted register context for the current task's signal frame.
+    ///
+    /// # Safety
+    ///
+    /// Indexes `TASKS[CURRENT_TASK_IDX]` mutably without bounds checking or acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and mutual
+    /// exclusion against concurrent scheduler or task mutations.
     pub unsafe fn set_saved_sigcontext(ctx: InterruptContext) {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             task.saved_sigcontext = Some(ctx);
         }
     }
 
+    /// Takes and clears the saved signal register context of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Indexes `TASKS[CURRENT_TASK_IDX]` mutably without bounds checking or acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and mutual
+    /// exclusion against concurrent scheduler or task mutations.
     pub unsafe fn take_saved_sigcontext() -> Option<InterruptContext> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             task.saved_sigcontext.take()
@@ -38,6 +52,13 @@ pub mod delivery {
     pub use crate::signal::posix::{SIG_BLOCK, SIG_SETMASK, SIG_UNBLOCK};
     use crate::types::{InterruptContext, TaskState};
 
+    /// Delivers POSIX signal `sig` to task `pid` according to mask and handler state.
+    ///
+    /// # Safety
+    ///
+    /// Reads and mutates `TASKS[pid]` and reads `SIGNAL_HANDLERS` (via `get_signal_handler`)
+    /// without acquiring `SCHEDULER_LOCK`. Callers must ensure external synchronization over
+    /// `TASKS` and `SIGNAL_HANDLERS` so no concurrent mutations race during signal delivery.
     pub unsafe fn send_signal(pid: usize, sig: u32) -> Result<(), &'static str> {
         if pid >= MAX_TASKS {
             return Err("Target PID out of scheduler table range");
@@ -93,6 +114,13 @@ pub mod delivery {
         }
     }
 
+    /// Returns the blocked signal bitmask of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS[CURRENT_TASK_IDX]` without bounds checking or acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and serialized
+    /// access to `TASKS` and `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_signal_mask() -> u32 {
         if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
             t.signal_mask
@@ -101,6 +129,13 @@ pub mod delivery {
         }
     }
 
+    /// Returns the pending signal bitmask of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS[CURRENT_TASK_IDX]` without bounds checking or acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and serialized
+    /// access to `TASKS` and `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_pending_signals() -> u32 {
         if let Some(ref t) = TASKS[CURRENT_TASK_IDX] {
             t.pending_signals
@@ -109,6 +144,15 @@ pub mod delivery {
         }
     }
 
+    /// Updates the current task's blocked signal mask and delivers any newly unmasked signal.
+    ///
+    /// # Safety
+    ///
+    /// Indexes and mutates `TASKS[CURRENT_TASK_IDX]` without bounds checking or acquiring
+    /// `SCHEDULER_LOCK` and invokes `send_signal`. Callers must ensure
+    /// `CURRENT_TASK_IDX < MAX_TASKS` and external synchronization over `TASKS`,
+    /// `CURRENT_TASK_IDX` and `SIGNAL_HANDLERS`. When `old_set` is non-null, it must be
+    /// valid, aligned and writable for a `u32` in the active address space.
     pub unsafe fn sys_sigprocmask(
         how: i32,
         set: u32,

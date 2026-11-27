@@ -16,6 +16,13 @@
 pub mod creds {
     use crate::scheduler::core::{CURRENT_TASK_IDX, MAX_TASKS, TASKS};
 
+    /// Returns the real UID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent mutations race on `TASKS` or
+    /// `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_uid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.uid
@@ -24,6 +31,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the effective UID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent mutations race on `TASKS` or
+    /// `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_euid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.euid
@@ -32,6 +46,13 @@ pub mod creds {
         }
     }
 
+    /// Updates the real and effective UID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `CURRENT_TASK_IDX` and mutates `TASKS[CURRENT_TASK_IDX]` without acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and mutual
+    /// exclusion against concurrent scheduler or task mutations.
     pub unsafe fn set_current_uid(new_uid: u32) -> Result<(), &'static str> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             if task.euid == 0 {
@@ -49,6 +70,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the real GID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent mutations race on `TASKS` or
+    /// `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_gid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.gid
@@ -57,6 +85,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the effective GID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent mutations race on `TASKS` or
+    /// `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_egid() -> u32 {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.egid
@@ -65,6 +100,13 @@ pub mod creds {
         }
     }
 
+    /// Updates the real and effective GID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `CURRENT_TASK_IDX` and mutates `TASKS[CURRENT_TASK_IDX]` without acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and mutual
+    /// exclusion against concurrent scheduler or task mutations.
     pub unsafe fn set_current_gid(new_gid: u32) -> Result<(), &'static str> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             if task.euid == 0 {
@@ -82,6 +124,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the process group ID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent mutations race on `TASKS` or
+    /// `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_pgid() -> usize {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.pgid
@@ -90,6 +139,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the process group ID of task `pid` (or the current task when `pid` is `0`).
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure serialized access so `TASKS` and `CURRENT_TASK_IDX` are not mutated
+    /// concurrently.
     pub unsafe fn get_task_pgid(pid: usize) -> Result<usize, &'static str> {
         let target_pid = if pid == 0 { CURRENT_TASK_IDX } else { pid };
         if target_pid >= MAX_TASKS {
@@ -104,6 +160,14 @@ pub mod creds {
         }
     }
 
+    /// Sets the process group ID of task `pid` (or the current task when `pid` is `0`).
+    ///
+    /// # Safety
+    ///
+    /// Reads `CURRENT_TASK_IDX` and `TASKS[CURRENT_TASK_IDX]` without bounds checking and
+    /// mutates `TASKS[target_pid]` without acquiring `SCHEDULER_LOCK`. Callers must ensure
+    /// `CURRENT_TASK_IDX < MAX_TASKS` and exclusive access against concurrent scheduler or
+    /// task mutations.
     pub unsafe fn set_task_pgid(pid: usize, pgid: usize) -> Result<(), &'static str> {
         let current_pid = CURRENT_TASK_IDX;
         let target_pid = if pid == 0 { current_pid } else { pid };
@@ -142,6 +206,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the session ID of the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure `CURRENT_TASK_IDX < MAX_TASKS` and no concurrent mutations race on `TASKS` or
+    /// `CURRENT_TASK_IDX`.
     pub unsafe fn get_current_sid() -> usize {
         if let Some(ref task) = TASKS[CURRENT_TASK_IDX] {
             task.sid
@@ -150,6 +221,13 @@ pub mod creds {
         }
     }
 
+    /// Returns the session ID of task `pid` (or the current task when `pid` is `0`).
+    ///
+    /// # Safety
+    ///
+    /// Reads `TASKS` and `CURRENT_TASK_IDX` without acquiring `SCHEDULER_LOCK`. Callers must
+    /// ensure serialized access so `TASKS` and `CURRENT_TASK_IDX` are not mutated
+    /// concurrently.
     pub unsafe fn get_task_sid(pid: usize) -> Result<usize, &'static str> {
         let target_pid = if pid == 0 { CURRENT_TASK_IDX } else { pid };
         if target_pid >= MAX_TASKS {
@@ -164,6 +242,13 @@ pub mod creds {
         }
     }
 
+    /// Creates a new session and process group led by the currently active task.
+    ///
+    /// # Safety
+    ///
+    /// Reads `CURRENT_TASK_IDX` and mutates `TASKS[CURRENT_TASK_IDX]` without acquiring
+    /// `SCHEDULER_LOCK`. Callers must ensure `CURRENT_TASK_IDX < MAX_TASKS` and mutual
+    /// exclusion against concurrent scheduler or task mutations.
     pub unsafe fn setsid_current() -> Result<usize, &'static str> {
         if let Some(ref mut task) = TASKS[CURRENT_TASK_IDX] {
             if task.id == task.pgid {

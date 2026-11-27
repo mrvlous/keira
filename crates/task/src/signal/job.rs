@@ -40,6 +40,13 @@ pub mod table {
     pub static mut JOB_TABLE: [Option<JobInfo>; MAX_JOBS] = [const { None }; MAX_JOBS];
     pub static mut JOB_COUNT: usize = 0;
 
+    /// Appends a new background or foreground job entry to the global job table.
+    ///
+    /// # Safety
+    ///
+    /// Mutates `static mut JOB_TABLE` and `static mut JOB_COUNT` without locking. Callers
+    /// must guarantee exclusive access to the job table and ensure `JOB_COUNT <= MAX_JOBS`
+    /// has not been violated externally.
     pub unsafe fn add_job(pid: u32, name: &str, is_fg: bool) -> u32 {
         let job_id = (JOB_COUNT + 1) as u32;
         let nbytes = name.as_bytes();
@@ -64,6 +71,12 @@ pub mod table {
         job_id
     }
 
+    /// Returns the PID of the first running foreground job in the job table, if any.
+    ///
+    /// # Safety
+    ///
+    /// Reads `static mut JOB_TABLE` and `static mut JOB_COUNT` without locking. Callers must
+    /// ensure no concurrent modifications to `JOB_TABLE` or `JOB_COUNT` occur during the scan.
     pub unsafe fn get_foreground_job_pid() -> Option<u32> {
         for job in JOB_TABLE.iter().take(JOB_COUNT).flatten() {
             if job.is_foreground && job.state == JobState::Running {
@@ -73,6 +86,13 @@ pub mod table {
         None
     }
 
+    /// Removes the job entry matching `pid` and compacts subsequent job table slots.
+    ///
+    /// # Safety
+    ///
+    /// Mutates `static mut JOB_TABLE` and `static mut JOB_COUNT` without locking. Callers
+    /// must ensure exclusive access to the job table and guarantee `JOB_COUNT <= MAX_JOBS`
+    /// so slot compaction does not index past `JOB_TABLE`.
     pub unsafe fn remove_job_by_pid(pid: u32) {
         for (i, job_slot) in JOB_TABLE.iter_mut().enumerate().take(JOB_COUNT) {
             if let Some(ref job) = job_slot {
