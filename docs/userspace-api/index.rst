@@ -4,7 +4,7 @@
 Userspace API & System Call Gateway
 ===================================
 
-Kernel/user boundary, 109 system calls registry, dispatchers and fault containment.
+Kernel/user boundary, 111 active POSIX system call vectors registry, dispatchers and fault containment.
 
 Architecture & Subsystems
 =========================
