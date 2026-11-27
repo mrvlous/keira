@@ -438,7 +438,7 @@ pub mod table {
 pub mod tmpfs {
     use keira_core::sync::SpinMutex;
 
-    pub const MAX_TMPFS_FILES: usize = 16;
+    pub const MAX_TMPFS_FILES: usize = 64;
 
     pub const MAX_TMPFS_FILE_SIZE: usize = 8192;
 
@@ -801,5 +801,20 @@ mod tests {
         let output = core::str::from_utf8(&buf[..len]).unwrap();
         assert!(output.contains("/proc procfs"));
         assert!(output.contains("/dev devfs"));
+    }
+
+    #[test]
+    fn test_tmpfs_slot_capacity_and_reuse() {
+        tmpfs::clear_all();
+        for i in 0..32 {
+            let mut path = *b"f_00";
+            path[2] = b'0' + (i / 10) as u8;
+            path[3] = b'0' + (i % 10) as u8;
+            let name = core::str::from_utf8(&path).unwrap();
+            assert!(tmpfs::create_file(name).is_ok());
+        }
+        assert!(tmpfs::remove_entry("f_00").is_ok());
+        assert!(tmpfs::create_file("reused").is_ok());
+        tmpfs::clear_all();
     }
 }
