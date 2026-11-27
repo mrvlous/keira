@@ -23,7 +23,7 @@ Milestone 58 resolves these issues comprehensively while preserving full dual-ar
 The build system staging rules in ``Makefile`` were audited and cleaned:
 
 - **Eradication of ``/etc/os-release``**: The generation of ``/etc/os-release`` was permanently removed from both minimal (``USERLAND=0``) and canonical (``USERLAND=1``) staging recipes.
-- **Sole Source of Truth (``/etc/kernel.cfg``)**: The kernel relies strictly on ``/etc/kernel.cfg`` for build-time metadata (kernel name, target version, architecture and userland enablement flag) alongside canonical POSIX network configuration files (``/etc/hostname`` and ``/etc/hosts``).
+- **Single Source of Truth (``Cargo.toml`` & ``.config``)**: Build metadata and optional userland enablement are resolved directly from the root workspace manifest (``Cargo.toml``) and Kconfig profiles (``.config``), keeping only canonical POSIX node resolution files (``/etc/hostname`` and ``/etc/hosts``) when userland is enabled.
 - **Zero Ring 0 Distro Assumptions**: All hardcoded assumptions about external userland binary counts were removed from the kernel supervisor crate.
 
 3. Streamlined Ring 0 Supervisor Help Matrix
@@ -33,7 +33,7 @@ In ``crates/shell/src/cmds/util.rs``, the supervisor ``help`` command was restru
 
 .. code-block:: text
 
-   Keira Kernel Diagnostic Console (Ring 0 v0.9.0)
+   Keira Kernel Diagnostic Console (Ring 0 v0.10.0)
 
    Diagnostics:
      system         Display system summary, version and uptime
@@ -66,7 +66,7 @@ In ``userland/shell/sh.c``, a native ``builtin_help()`` routine was implemented 
 
 .. code-block:: text
 
-   Keira Userspace Shell Console (Ring 3 v0.9.0)
+   Keira Userspace Shell Console (Ring 3 v0.10.0)
 
    Shell Built-ins:
      cd [dir]       Change current working directory
