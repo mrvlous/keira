@@ -2,7 +2,7 @@
 
 # Master Userland Kbuild Manifest
 #
-# Dispatches userland compilation across categorized package domains.
+# Dispatches userland compilation across categorized userland binary domains.
 
 # Core POSIX command-line utilities (cat, chmod, chown, ls, etc.)
 include coreutils/Kbuild

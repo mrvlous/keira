@@ -54,7 +54,7 @@ else
     Q           := @
 endif
 
-# Ring 3 userspace modular package domains
+# Optional Ring 3 userspace modular binary domains
 LIBC_DIR        := libc
 CORE_DIR        := coreutils
 PROC_DIR        := procutils
@@ -112,7 +112,7 @@ LIBC_A          := $(LIB_DIR)/libc.a
 LIB_SRCS        := $(shell find $(LIBC_DIR)/src -type f -name "*.c")
 LIB_OBJS        := $(patsubst $(LIBC_DIR)/src/%.c,$(OBJ_DIR)/libc/%.o,$(LIB_SRCS))
 
-# Load modular userland package manifests via Kbuild
+# Load modular userland binary manifests via Kbuild
 include Kbuild
 
 # Categorized binary groups resolved dynamically from Kbuild manifests
