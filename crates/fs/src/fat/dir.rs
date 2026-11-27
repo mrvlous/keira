@@ -21,6 +21,13 @@ pub mod entry {
     use crate::fat::types::{DirectoryEntry, Fat16Volume, LfnEntry};
     use crate::fat::volume::cluster_to_sector;
 
+    /// Allocates a free 8.3 directory slot in `dir_cluster` and writes its metadata to disk.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, the global FAT sector cache and the mounted
+    /// block device. `dir_cluster` must be `0` or a valid directory cluster on the initialized
+    /// volume.
     pub unsafe fn create_directory_entry(
         name: [u8; 11],
         attr: u8,
@@ -67,6 +74,13 @@ pub mod entry {
         }
     }
 
+    /// Creates a directory entry in `dir_cluster`, writing preceding LFN records when required.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, the global FAT sector cache and the mounted
+    /// block device. `vol` must match the initialized `VOLUME` and `dir_cluster` must be `0` or a
+    /// valid directory cluster on that volume.
     pub unsafe fn create_directory_entry_with_name(
         sfn_name: [u8; 11],
         original_name: &str,
@@ -184,6 +198,13 @@ pub mod entry {
         }
     }
 
+    /// Initializes a directory cluster with `.` and `..` entries and zeroes remaining sectors.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to the global FAT sector cache and mounted block device.
+    /// `cluster` must be an allocated cluster (`>= 2`) within `vol` and `vol` must have valid
+    /// FAT16 geometry with `sectors_per_cluster >= 1`.
     pub unsafe fn init_dir_cluster(
         cluster: u16,
         parent_cluster: u16,
@@ -240,6 +261,12 @@ pub mod entry {
         Ok(())
     }
 
+    /// Checks whether the directory at `cluster` contains any entries other than `.` and `..`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME` and the global FAT sector cache during
+    /// traversal. When `cluster >= 2`, `cluster` must belong to a valid directory on `VOLUME`.
     pub unsafe fn is_dir_empty(cluster: u16, _vol: &Fat16Volume) -> Result<bool, &'static str> {
         if cluster < 2 {
             return Ok(true);
@@ -265,6 +292,12 @@ pub mod iterator {
     use crate::fat::types::{DirectoryEntry, LfnAccumulator};
     use crate::fat::volume::{cluster_to_sector, VOLUME};
 
+    /// Invokes `callback` for every LBA sector belonging to directory `dir_cluster`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME` and the global FAT sector cache throughout
+    /// iteration. `dir_cluster` must be `0` or a valid directory cluster chain on `VOLUME`.
     pub unsafe fn for_each_directory_sector<F>(
         dir_cluster: u16,
         mut callback: F,
@@ -312,6 +345,12 @@ pub mod iterator {
         pub name_len: usize,
     }
 
+    /// Iterates over active entries in directory `dir_cluster` with resolved LFN or 8.3 names.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME` and the global FAT sector cache throughout
+    /// traversal. `dir_cluster` must be `0` or a valid directory cluster chain on `VOLUME`.
     pub unsafe fn for_each_directory_entry<F>(
         dir_cluster: u16,
         mut callback: F,
@@ -389,6 +428,12 @@ pub mod listing {
     use crate::fat::volume::{cluster_to_sector, CURRENT_DIR_CLUSTER, VOLUME};
     use keira_io::vga;
 
+    /// Prints the contents of directory `dir_cluster` to the VGA console.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME` and the global FAT sector cache with no
+    /// concurrent directory mutations. `dir_cluster` must be `0` or a valid cluster on `VOLUME`.
     pub unsafe fn list_files_in_dir(dir_cluster: u16, show_all: bool) -> Result<(), &'static str> {
         vga::set_color(vga::Color::White, vga::Color::Black);
         vga::print_str("Directory of IDE disk:\n");
@@ -434,10 +479,22 @@ pub mod listing {
         Ok(())
     }
 
+    /// Lists non-hidden entries in the current working directory to the VGA console.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache.
     pub unsafe fn list_files() {
         let _ = list_files_in_dir(CURRENT_DIR_CLUSTER, false);
     }
 
+    /// Invokes `callback` for every entry in the current directory whose name starts with `prefix`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache while iterating matching entries.
     pub unsafe fn find_matches<F>(prefix: &str, mut callback: F)
     where
         F: FnMut(&str),
@@ -452,6 +509,12 @@ pub mod listing {
         });
     }
 
+    /// Creates a new subdirectory at `dirname` on the FAT16 volume.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER`, the global FAT
+    /// sector cache and the mounted block device.
     pub unsafe fn create_dir(dirname: &str) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr)
@@ -479,6 +542,13 @@ pub mod listing {
         Ok(())
     }
 
+    /// Resolves `path` to the starting FAT16 cluster number of the target directory.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache. If `CURRENT_DIR_CLUSTER` is non-zero, it must refer to a valid directory
+    /// cluster (`>= 2`) on `VOLUME`.
     pub unsafe fn get_dir_cluster(path: &str) -> Result<u16, &'static str> {
         let mut clean_path = path;
         if clean_path.ends_with('/') && clean_path.len() > 1 {
@@ -522,6 +592,13 @@ pub mod listing {
         Ok(found.entry.first_cluster_lo)
     }
 
+    /// Changes `CURRENT_DIR_CLUSTER` to the directory specified by `path`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache. If `CURRENT_DIR_CLUSTER` is non-zero, it must refer to a valid directory
+    /// cluster (`>= 2`) on `VOLUME`.
     pub unsafe fn change_directory(path: &str) -> Result<(), &'static str> {
         let vol_ptr = &raw const VOLUME;
         let vol = (*vol_ptr).as_ref().ok_or("FAT16: Volume not initialized")?;

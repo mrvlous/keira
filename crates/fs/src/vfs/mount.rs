@@ -149,6 +149,12 @@ pub mod table {
         pub is_initialized: bool,
     }
 
+    impl Default for MountTable {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl MountTable {
         /// Creates an empty uninitialized mount table.
         pub const fn new() -> Self {

@@ -46,6 +46,12 @@ pub mod cache {
         }
     }
 
+    /// Invalidates every entry in the global 16-slot FAT sector cache.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `SECTOR_CACHE` with no concurrent readers or
+    /// writers.
     pub unsafe fn clear_cache() {
         for entry in SECTOR_CACHE.iter_mut() {
             entry.valid = false;
@@ -59,6 +65,13 @@ pub mod io {
     };
     use keira_io::storage::block::get_mounted_device;
 
+    /// Reads a 512-byte sector into `buffer`, servicing hits from the global LRU sector cache.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure serialized access to `SECTOR_CACHE`, `CACHE_CLOCK`, `CACHE_HITS`,
+    /// `CACHE_MISSES` and `CACHE_EVICTIONS` with no concurrent cache or block-device operations.
+    /// `sector` must be a valid LBA when a block device is mounted.
     pub unsafe fn read_sector(sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'static str> {
         for entry in SECTOR_CACHE.iter_mut() {
             if entry.valid && entry.sector == sector {
@@ -108,6 +121,13 @@ pub mod io {
         Ok(())
     }
 
+    /// Writes a 512-byte sector to the mounted block device and updates any matching cache slot.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure serialized access to `SECTOR_CACHE` and `CACHE_CLOCK` with no
+    /// concurrent sector cache or block-device writes. `sector` must be a valid writable LBA on
+    /// the mounted device.
     pub unsafe fn write_sector(sector: u32, buffer: &[u8; 512]) -> Result<(), &'static str> {
         for entry in SECTOR_CACHE.iter_mut() {
             if entry.valid && entry.sector == sector {
@@ -126,6 +146,12 @@ pub mod io {
         Ok(())
     }
 
+    /// Flushes all valid sector cache entries and device write buffers to the mounted block device.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure no concurrent reads or mutations to `SECTOR_CACHE` occur while cached
+    /// sectors are iterated and flushed to the mounted block device.
     pub unsafe fn flush_dirty_sectors() -> Result<usize, &'static str> {
         let mut count = 0usize;
         if let Some(dev) = get_mounted_device() {

@@ -17,6 +17,12 @@ pub mod buffer {
     pub static mut ELF_FILE_BUF: [u8; 524288] = [0u8; 524288];
     pub static mut LAST_LOADED_LEN: usize = 0;
 
+    /// Returns a slice over the bytes of the most recently loaded ELF image.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure no concurrent mutation of `ELF_FILE_BUF` or `LAST_LOADED_LEN` (such as
+    /// a concurrent `load_elf` call) occurs for as long as the returned `'static` slice is used.
     pub unsafe fn last_loaded_elf_slice() -> &'static [u8] {
         let buf_ptr = core::ptr::addr_of!(ELF_FILE_BUF) as *const u8;
         let len = LAST_LOADED_LEN.min(524288);
@@ -29,6 +35,14 @@ pub mod exec {
         fn jump_to_user(entry: u64, stack: u64);
     }
 
+    /// Transfers control from Ring 0 to Ring 3 at `entry_point` with stack `user_stack_top`.
+    ///
+    /// # Safety
+    ///
+    /// `entry_point` must point to valid mapped executable user code and `user_stack_top` must
+    /// point to a valid mapped Ring 3 stack (readable at `user_stack_top` on `x86_64` for initial
+    /// `argc` and `argv` setup). GDT user descriptors, kernel recovery state and user page
+    /// mappings must be initialized before invocation.
     pub unsafe fn execute_user_mode(entry_point: u64, user_stack_top: u64) {
         jump_to_user(entry_point, user_stack_top);
     }
@@ -48,6 +62,14 @@ pub mod load {
     #[cfg(target_arch = "x86_64")]
     use keira_mem::vmm;
 
+    /// Loads and validates an ELF executable from `filename`, returning its entry-point address.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `ELF_FILE_BUF` and `LAST_LOADED_LEN` with no
+    /// outstanding slices from `last_loaded_elf_slice`. VFS, PMM and the active page tables must
+    /// be initialized (with identity-mapped physical frames on `x86_64` and writable target
+    /// segment ranges on `x86`) with no conflicting user mappings.
     pub unsafe fn load_elf(filename: &str) -> Result<u64, &'static str> {
         let file_buf = unsafe { &mut *core::ptr::addr_of_mut!(ELF_FILE_BUF) };
         let file_len = vfs::read_file(filename, file_buf)?;
@@ -430,6 +452,12 @@ pub mod mapping {
         }
     }
 
+    /// Unmaps partially loaded ELF segments after a load failure and selects the error to report.
+    ///
+    /// # Safety
+    ///
+    /// Every page within `[seg.aligned_start, seg.aligned_start + seg.mapped_bytes)` in `segments`
+    /// must have been mapped exclusively for the aborted ELF load in the active page table.
     pub unsafe fn handle_load_failure(
         segments: &[SegmentMapping],
         load_err: &'static str,
@@ -440,6 +468,13 @@ pub mod mapping {
         }
     }
 
+    /// Unmaps and frees all pages already mapped across `segments` during ELF load rollback.
+    ///
+    /// # Safety
+    ///
+    /// The active page tables and PMM must be initialized. Every page tracked up to `mapped_bytes`
+    /// in each `SegmentMapping` must be mapped and exclusively owned by this load so freeing and
+    /// unmapping it will not corrupt live mappings or double-free physical frames.
     pub unsafe fn rollback_all_segments(segments: &[SegmentMapping]) -> Result<(), &'static str> {
         let mut first_err: Option<&'static str> = None;
         for seg in segments {

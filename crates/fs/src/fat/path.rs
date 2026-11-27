@@ -16,6 +16,12 @@
 pub mod lfn {
     use crate::fat::types::{DirectoryEntry, LfnAccumulator, LfnEntry};
 
+    /// Decodes one FAT Long File Name (LFN) entry into `accum`.
+    ///
+    /// # Safety
+    ///
+    /// `entry` must reference an initialized 32-byte FAT LFN directory entry (`attr == 0x0F`)
+    /// whose bytes validly represent an `LfnEntry` record.
     pub unsafe fn accumulate_lfn(entry: &DirectoryEntry, accum: &mut LfnAccumulator) {
         let lfn = &*(entry as *const DirectoryEntry as *const LfnEntry);
         let seq = lfn.sequence;
@@ -100,6 +106,13 @@ pub mod resolver {
         trimmed
     }
 
+    /// Resolves `path` to its parent directory cluster and final entry name.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache. If `CURRENT_DIR_CLUSTER` is non-zero and `VOLUME` is initialized, it must
+    /// reference a valid directory cluster (`>= 2`) on that volume.
     pub unsafe fn resolve_path(path: &str) -> Result<(u16, &str), &'static str> {
         let is_absolute = path.trim().starts_with('/');
         let mut current_cluster = if is_absolute { 0 } else { CURRENT_DIR_CLUSTER };
@@ -151,6 +164,13 @@ pub mod resolver {
         }
     }
 
+    /// Searches directory `dir_cluster` for an entry matching `filename` by LFN or 8.3 SFN.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME` and the global FAT sector cache during
+    /// directory traversal. `dir_cluster` must be `0` or a valid cluster on the initialized
+    /// FAT16 volume.
     pub unsafe fn find_entry(filename: &str, dir_cluster: u16) -> Result<FoundEntry, &'static str> {
         let mut found: Option<FoundEntry> = None;
         let target_8_3 = filename_to_8_3(filename).ok();

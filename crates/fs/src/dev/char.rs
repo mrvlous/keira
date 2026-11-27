@@ -16,6 +16,13 @@
 pub mod dispatcher {
     use super::{null, random, tty, zero};
 
+    /// Reads up to `buf.len()` bytes from the named character device node.
+    ///
+    /// # Safety
+    ///
+    /// `buf` must be a valid writable byte slice and the underlying character device subsystem
+    /// (including the CPU entropy source for `"random"` or `"urandom"` and the TTY line discipline
+    /// for `"tty"`) must be initialized and safe to invoke in the caller's execution context.
     pub unsafe fn read_dev_node(node_name: &str, buf: &mut [u8]) -> Result<usize, &'static str> {
         match node_name {
             "null" => null::read(buf),
@@ -27,6 +34,13 @@ pub mod dispatcher {
         }
     }
 
+    /// Writes `buf` bytes to the named character device node.
+    ///
+    /// # Safety
+    ///
+    /// `buf` must be a valid readable byte slice and the underlying character device subsystem
+    /// (such as the VGA console for `"tty"`) must be initialized and safe to invoke in the
+    /// caller's execution context.
     pub unsafe fn write_dev_node(node_name: &str, buf: &[u8]) -> Result<usize, &'static str> {
         match node_name {
             "null" => null::write(buf),
@@ -132,6 +146,12 @@ pub mod random {
 pub mod tty {
     use keira_io::vga;
 
+    /// Reads available cooked input bytes from the TTY line discipline into `buf`.
+    ///
+    /// # Safety
+    ///
+    /// `buf` must be a valid writable byte slice and the TTY line discipline subsystem must be
+    /// initialized and safe to access from the caller's execution context.
     pub unsafe fn read(buf: &mut [u8]) -> Result<usize, &'static str> {
         let n = keira_io::tty::read_tty(buf);
         Ok(n)

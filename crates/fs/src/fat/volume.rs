@@ -21,6 +21,12 @@ pub mod boot {
 
     pub static mut CURRENT_DIR_CLUSTER: u16 = 0;
 
+    /// Probes sector 0 of the mounted block device and initializes the global FAT16 volume state.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive access to `VOLUME`, `CURRENT_DIR_CLUSTER` and the global FAT
+    /// sector cache with no concurrent FAT operations or sector I/O.
     pub unsafe fn init() -> Result<(), &'static str> {
         clear_cache();
         let mut boot_sector = [0u8; 512];
@@ -82,6 +88,12 @@ pub mod info {
     use keira_io::storage::block::get_mounted_device;
     use keira_io::vga;
 
+    /// Prints active block device, FAT16 geometry and cache statistics to the VGA console.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure no concurrent mutations to `VOLUME`, the FAT sector cache globals or the
+    /// unified page cache globals while disk information is read and printed.
     pub unsafe fn print_disk_info() {
         if let Some(dev) = get_mounted_device() {
             let sectors = dev.get_size_sectors();

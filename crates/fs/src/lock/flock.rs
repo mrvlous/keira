@@ -52,6 +52,12 @@ pub mod table {
 
     pub static mut FILE_LOCKS: [FileLock; MAX_FILE_LOCKS] = [FileLock::new(); MAX_FILE_LOCKS];
 
+    /// Acquires an advisory lock on `path` for `task_id` in the global lock table.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `FILE_LOCKS` with no concurrent readers
+    /// or writers.
     pub unsafe fn acquire_lock(path: &str, task_id: usize) -> Result<(), &'static str> {
         let path_bytes = path.as_bytes();
         if path_bytes.len() > 127 {
@@ -84,6 +90,12 @@ pub mod table {
         Err("File lock table is full")
     }
 
+    /// Releases the advisory lock on `path` held by `task_id`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `FILE_LOCKS` with no concurrent readers
+    /// or writers.
     pub unsafe fn release_lock(path: &str, task_id: usize) {
         let path_bytes = path.as_bytes();
         for lock in FILE_LOCKS.iter_mut() {
@@ -98,6 +110,12 @@ pub mod table {
         }
     }
 
+    /// Releases all advisory locks currently held by `task_id`.
+    ///
+    /// # Safety
+    ///
+    /// Caller must ensure exclusive, serialized access to `FILE_LOCKS` with no concurrent readers
+    /// or writers.
     pub unsafe fn release_all_locks_for_task(task_id: usize) {
         for lock in FILE_LOCKS.iter_mut() {
             if lock.is_locked && lock.holder_task_id == task_id {
