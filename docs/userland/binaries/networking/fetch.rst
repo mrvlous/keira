@@ -1,10 +1,10 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-fetch.elf Freestanding HTTP Client Utility
-==========================================
+fetch.elf Freestanding HTTP & HTTPS Client Utility
+==================================================
 
-The ``fetch.elf`` executable (``/bin/fetch.elf``, ``/bin/fetch`` and symbolic alias ``/bin/curl``) is a freestanding Ring 3 network client that retrieves resources and web APIs over HTTP from local and external network endpoints.
+The ``fetch.elf`` executable (``/bin/fetch.elf``, ``/bin/fetch`` and symbolic alias ``/bin/curl``) is a freestanding Ring 3 network client that retrieves resources and web APIs over HTTP and HTTPS (RFC 8446 TLS 1.3) from local and external network endpoints.
 
 1. Architectural Purpose
 ========================
@@ -33,6 +33,12 @@ In accordance with UNIX purity and the Keira v0.8.0 pure kernel slimming roadmap
    * - ``-I``
      - ``--head``
      - Displays HTTP response status line and headers only, closing connection immediately
+   * - ``-k``
+     - ``--insecure``
+     - Disables TLS X.509 certificate hostname verification on HTTPS connections
+   * - ``-L``
+     - ``--location``
+     - Follows HTTP/HTTPS 301, 302, 307 and 308 redirect responses automatically
    * - ``-o, -O <file>``
      - *N/A*
      - Writes received payload to specified local file instead of standard output
@@ -68,11 +74,11 @@ Fetching Live Public Internet REST APIs
    # Query live public IP address via icanhazip.com:
    keira:/# curl -v http://icanhazip.com
 
-   # Retrieve JSON formatted public IP via api.ipify.org:
-   keira:/# fetch -i http://api.ipify.org/?format=json
+   # Retrieve JSON formatted public IP over TLS 1.3 HTTPS:
+   keira:/# curl -v https://api.ipify.org/?format=json
 
-   # Retrieve JSON origin details via httpbin.org:
-   keira:/# curl http://httpbin.org/ip
+   # Follow redirects seamlessly across HTTP -> HTTPS:
+   keira:/# curl -L https://httpbin.org/ip
 
    # Save remote geolocation REST payload to disk file:
    keira:/# fetch -o /tmp/geo.json http://ip-api.com/json
@@ -115,5 +121,5 @@ Verbose Network Diagnostics
 - **Binary Locations**: ``/bin/fetch.elf``, ``/bin/fetch``, ``/bin/curl.elf`` and ``/bin/curl``
 - **Privilege Level**: Ring 3 unprivileged
 - **Dependencies**: Freestanding ``libc.a`` (``<arpa/inet.h>``, ``<netdb.h>``, ``<sys/socket.h>``, ``<fcntl.h>``, ``<stdio.h>``, ``<stdlib.h>``, ``<string.h>`` and ``<unistd.h>``)
-- **System Calls**: ``sys_socket`` (Vector 24), ``sys_connect`` (Vector 25), ``sys_write`` (Vector 8), ``sys_read`` (Vector 7), ``sys_open`` (Vector 6), ``sys_close`` (Vector 9), ``sys_dns_resolve`` (Vector 110) and ``sys_exit`` (Vector 2)
+- **System Calls**: ``sys_socket`` (Vector 24), ``sys_connect`` (Vector 25), ``sys_tls_connect`` (Vector 33), ``sys_write`` (Vector 8), ``sys_read`` (Vector 7), ``sys_open`` (Vector 6), ``sys_close`` (Vector 9), ``sys_dns_resolve`` (Vector 110) and ``sys_exit`` (Vector 2)
 - **Streaming Buffer**: 1024-byte chunk buffer with real-time socket draining

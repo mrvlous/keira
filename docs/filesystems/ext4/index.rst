@@ -4,7 +4,7 @@
 EXT4 Filesystem Driver
 ======================
 
-Read-only EXT4 driver, extent trees and directory blocks.
+Persistent read-write EXT4 driver, extent tree allocator, bitmap management and [kflushd] writeback.
 
 Subtopics & Specifications
 ==========================

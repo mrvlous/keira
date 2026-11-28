@@ -9,7 +9,7 @@ Built as an open systems programming learning journey, Keira manages hardware
 resources from first principles, coordinates modular device drivers and
 provides a preemptive multitasking scheduler, multi-core Symmetric
 Multiprocessing (SMP) with 16-bit real-mode AP bootstrap trampolines, 111 active POSIX
-system call vectors (IDs 1..114), bare-metal TCP/IP stack, FAT12/16/32 and EXT4 filesystems, USTAR
+system call vectors (IDs 1..114), bare-metal TCP/IP stack with RFC 8446 TLS 1.3 (HTTPS), FAT12/16/32 and read-write EXT4 filesystems, USTAR
 initrd, canonical userspace init (PID 1, init.elf), standalone userspace shell (sh.elf)
 with I/O redirection and pipelines, 53 native userland binaries (44 core, system, network and compiler utilities plus 9 conformance test suites: cat.elf, chmod.elf, chown.elf, grep.elf, ls.elf, fetch.elf, lsmod.elf, insmod.elf, rmmod.elf, ps.elf, kill.elf, hostname.elf, clear.elf, dmesg.elf, df.elf, ln.elf, mount.elf, umount.elf, test.elf, test_job_control.elf, test_modules.elf, test_pipe.elf, test_poll.elf, test_select.elf, test_sh_scripting.elf, pmap.elf, reboot.elf, poweroff.elf, wc.elf, head.elf, tail.elf, echo.elf, sleep.elf, etc.),
 canonical shell script execution (shebang #!), direct $PATH execution, Ring 3 userland isolation with 41 verified master ABI security test suites, bare-metal io_uring asynchronous I/O engine, High-Precision
@@ -19,7 +19,7 @@ The Story & Learning Journey
 ----------------------------
 
 Keira serves as a hands-on laboratory for understanding the core foundations
-of computer systems across 68 chronological engineering milestones:
+of computer systems across 70 chronological engineering milestones:
 
 * Milestones 01-07: Bootstrap, Virtual Paging, Scheduler, Storage, Networking, Userland and Security.
 * Milestones 08-15: Network Engine, Dual-Arch Parity, EBR, Work-Stealing, Slab and Multi-Threading.
@@ -29,7 +29,7 @@ of computer systems across 68 chronological engineering milestones:
 * Milestones 37-42: Text Pipelines, POSIX DAC Permissions, VFS Cache Trinity (dcache/icache), Memory Introspection and Dynamic ProcFS.
 * Milestones 43-48: Hardware Mitigations (W^X/ASLR), Cryptographic Entropy, Process RLIMIT Sandboxing, UNIX Sockets and Ring Buffer Logging.
 * Milestones 49-56: CoW Fork Engine, VMA Address Spaces, POSIX Multiplexing (poll/select), BSD Sockets, System Identity and Power Management.
-* Milestones 57-68: POSIX Process Groups, Shell Job Control, Pure Kernel Demarcation, Linux-Grade Kconfig, Modular Kbuild Architecture, POSIX Shell Scripting Language Engine, Ring 0 Pure Kernel Infrastructure, In-Kernel ELF Relocatable Module Loader, Active Ring 0 Background Daemons, Linux-Grade Kernel Tooling Architecture, Binary Buddy Allocator, Kernel Wait Queues and Kernel Workqueues.
+* Milestones 57-70: POSIX Process Groups, Shell Job Control, Pure Kernel Demarcation, Linux-Grade Kconfig, Modular Kbuild Architecture, POSIX Shell Scripting Language Engine, Ring 0 Pure Kernel Infrastructure, In-Kernel ELF Relocatable Module Loader, Active Ring 0 Background Daemons, Linux-Grade Kernel Tooling Architecture, Binary Buddy Allocator, Kernel Wait Queues, Kernel Workqueues, End-to-End TLS 1.3 HTTPS Transport and Read-Write EXT4 with [kflushd] Writeback.
 
 Read the detailed engineering journal: docs/journey/index.rst
 System architecture overview: docs/arch/index.rst

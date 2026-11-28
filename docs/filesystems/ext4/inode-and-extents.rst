@@ -4,4 +4,4 @@
 Inode Parsing & Extent Tree Traversal
 =====================================
 
-Traverses 48-bit block extent trees to locate data blocks for requested file offsets.
+Traverses and allocates 48-bit block extent trees (with contiguous extent coalescing and depth-1 promotion) backed by physical block and inode bitmap allocators in ``crates/fs/src/ext4/``.

@@ -4,4 +4,4 @@
 Directory Entries & Path Lookup
 ===============================
 
-Traverses EXT4 linear and hash tree (HTree) directory entries.
+Traverses, creates, updates and unlinks EXT4 linear directory entries (including ``mkdir`` ``.``/``..`` links and POSIX ``getdents`` enumeration).
