@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
 """Run and validate an automated headless QEMU boot smoke test."""
 
@@ -134,8 +135,8 @@ def run_qemu(command, timeout, grace_period, log_path):
                         stopped_after_boot = True
                         break
 
-                if now - start_time >= timeout:
-                    timed_out = boot_detected_at is None
+                if boot_detected_at is None and now - start_time >= timeout:
+                    timed_out = True
                     break
 
                 events = selector.select(timeout=0.1)

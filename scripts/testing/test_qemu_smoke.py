@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: GPL-2.0-only
-"""Unit tests for the QEMU smoke-test result evaluator."""
+"""Unit tests for the QEMU smoke-test runner and result evaluator."""
 
+import selectors
 import unittest
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from qemu_smoke import (
     evaluate_result,
     REQUIRED_MARKERS,
+    run_qemu,
     SUPERVISOR_BOOT_MARKER,
 )
 
@@ -116,6 +120,56 @@ class TestEvaluateResult(unittest.TestCase):
             stopped_after_boot=True,
         )
         self.assertFalse(success)
+
+
+class TestRunQemu(unittest.TestCase):
+    @patch("qemu_smoke.os.read")
+    @patch("qemu_smoke.time.monotonic")
+    @patch("qemu_smoke.selectors.DefaultSelector")
+    @patch("qemu_smoke.subprocess.Popen")
+    def test_grace_period_continues_after_boot_timeout(
+        self,
+        mock_popen,
+        mock_selector,
+        mock_monotonic,
+        mock_read,
+    ):
+        stdout = MagicMock()
+        key = SimpleNamespace(fileobj=stdout, fd=42)
+
+        selector = MagicMock()
+        selector.__enter__.return_value = selector
+        selector.select.side_effect = [
+            [(key, selectors.EVENT_READ)],
+            [],
+        ]
+        selector.get_map.return_value = {42: key}
+        mock_selector.return_value = selector
+
+        process = MagicMock()
+        process.stdout = stdout
+        process.poll.return_value = None
+        process.returncode = None
+        process.terminate.side_effect = (
+            lambda: setattr(process, "returncode", -15)
+        )
+        process.wait.return_value = -15
+        mock_popen.return_value = process
+
+        mock_read.return_value = VALID_OUTPUT.encode("utf-8")
+        mock_monotonic.side_effect = [0.0, 0.9, 1.1, 3.2]
+
+        result = run_qemu(
+            ["qemu-system-x86_64"],
+            timeout=1,
+            grace_period=2,
+            log_path=None,
+        )
+
+        self.assertEqual(result, 0)
+        process.terminate.assert_called_once()
+        process.wait.assert_called_once_with(timeout=3)
+        mock_read.assert_called_once()
 
 
 if __name__ == "__main__":

@@ -554,7 +554,7 @@ test-kbuild: ## Run unit tests for Kconfig engine and Kbuild primitives
 	$(Q)python3 scripts/kconfig/tests/runner.py
 	@$(LOG_DONE) "Kconfig & Kbuild test suite completed successfully"
 
-test-unit: test-kbuild ## Run cargo host unit tests across all workspace crates
+test-unit: test-kbuild ## Run cargo host unit tests across all workspace crates and Kbuild test suite
 	@$(LOG_INFO) "Running cargo host unit tests across workspace..."
 	$(Q)$(CARGO) test --workspace -- --test-threads=1
 	@$(LOG_DONE) "Host unit tests completed successfully"
