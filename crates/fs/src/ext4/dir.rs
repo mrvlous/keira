@@ -251,6 +251,294 @@ pub mod lookup {
         None
     }
 
+    /// Computes aligned on-disk directory record size for `name_len`.
+    pub const fn aligned_dir_entry_size(name_len: usize) -> usize {
+        (8 + name_len + 3) & !3
+    }
+
+    /// Resolve one component `name` inside on-disk directory inode `dir_ino`.
+    pub fn disk_lookup_in_dir(
+        dir_ino: u32,
+        name: &str,
+    ) -> Result<Option<Ext4DirEntry>, &'static str> {
+        let dir_inode = crate::ext4::inode::read_inode_disk(dir_ino)?;
+        if !dir_inode.is_dir() {
+            return Err("EXT4: Target inode is not a directory");
+        }
+        let num_blocks = dir_inode.file_size().div_ceil(4096).max(1) as u32;
+        let mut blk = [0u8; 4096];
+
+        for lblk in 0..num_blocks {
+            let phys = match crate::ext4::inode::resolve_logical_block_disk(&dir_inode, lblk)? {
+                Some(b) => b,
+                None => continue,
+            };
+            crate::ext4::superblock::read_block_4k(phys, &mut blk)?;
+
+            let mut off = 0usize;
+            while off + 8 <= 4096 {
+                let inode =
+                    u32::from_le_bytes([blk[off], blk[off + 1], blk[off + 2], blk[off + 3]]);
+                let rec_len = u16::from_le_bytes([blk[off + 4], blk[off + 5]]) as usize;
+                let name_len = blk[off + 6] as usize;
+                let file_type = blk[off + 7];
+                if rec_len < 8 || off + rec_len > 4096 {
+                    break;
+                }
+                if inode != 0 && off + 8 + name_len <= 4096 {
+                    if let Ok(entry_name) = core::str::from_utf8(&blk[off + 8..off + 8 + name_len])
+                    {
+                        if entry_name == name {
+                            let mut name_buf = [0u8; 32];
+                            let copy_len = name_len.min(32);
+                            name_buf[..copy_len].copy_from_slice(&blk[off + 8..off + 8 + copy_len]);
+                            return Ok(Some(Ext4DirEntry {
+                                inode,
+                                rec_len: rec_len as u16,
+                                name_len: copy_len as u8,
+                                file_type,
+                                name: name_buf,
+                            }));
+                        }
+                    }
+                }
+                off += rec_len;
+            }
+        }
+        Ok(None)
+    }
+
+    /// Resolve a path on the mounted EXT4 disk returning `(parent_ino, child_ino, child_inode)`.
+    pub fn disk_lookup_path(
+        path: &str,
+    ) -> Result<(u32, u32, crate::ext4::inode::Ext4Inode), &'static str> {
+        let trimmed = path.trim_matches('/');
+        if trimmed.is_empty() {
+            let root = crate::ext4::inode::read_inode_disk(crate::ext4::inode::EXT4_ROOT_INO)?;
+            return Ok((
+                crate::ext4::inode::EXT4_ROOT_INO,
+                crate::ext4::inode::EXT4_ROOT_INO,
+                root,
+            ));
+        }
+
+        let mut parent_ino = crate::ext4::inode::EXT4_ROOT_INO;
+        let mut current_ino = crate::ext4::inode::EXT4_ROOT_INO;
+        for segment in trimmed.split('/') {
+            if segment.is_empty() || segment == "." {
+                continue;
+            }
+            if let Some(entry) = disk_lookup_in_dir(current_ino, segment)? {
+                parent_ino = current_ino;
+                current_ino = entry.inode;
+            } else {
+                return Err("Path component not found in EXT4 filesystem");
+            }
+        }
+
+        let node = crate::ext4::inode::read_inode_disk(current_ino)?;
+        Ok((parent_ino, current_ino, node))
+    }
+
+    /// Split parent directory path and final component filename cleanly.
+    pub fn split_parent_and_name(path: &str) -> Result<(&str, &str), &'static str> {
+        let trimmed = path.trim_matches('/');
+        if trimmed.is_empty() {
+            return Err("EXT4: Path has no leaf component");
+        }
+        if let Some(pos) = trimmed.rfind('/') {
+            Ok((&trimmed[..pos], &trimmed[pos + 1..]))
+        } else {
+            Ok(("", trimmed))
+        }
+    }
+
+    /// Insert a new directory entry into on-disk directory `parent_ino`.
+    pub fn disk_add_dir_entry(
+        parent_ino: u32,
+        child_ino: u32,
+        file_type: u8,
+        name: &str,
+    ) -> Result<(), &'static str> {
+        let nbytes = name.as_bytes();
+        if nbytes.is_empty() || nbytes.len() > 255 {
+            return Err("EXT4: Invalid directory entry name length");
+        }
+        let needed = aligned_dir_entry_size(nbytes.len());
+        let mut parent_inode = crate::ext4::inode::read_inode_disk(parent_ino)?;
+        if !parent_inode.is_dir() {
+            return Err("EXT4: Parent is not a directory");
+        }
+        let num_blocks = parent_inode.file_size().div_ceil(4096).max(1) as u32;
+        let mut blk = [0u8; 4096];
+
+        for lblk in 0..num_blocks {
+            let phys = match crate::ext4::inode::resolve_logical_block_disk(&parent_inode, lblk)? {
+                Some(b) => b,
+                None => continue,
+            };
+            crate::ext4::superblock::read_block_4k(phys, &mut blk)?;
+
+            let mut off = 0usize;
+            while off + 8 <= 4096 {
+                let inode =
+                    u32::from_le_bytes([blk[off], blk[off + 1], blk[off + 2], blk[off + 3]]);
+                let rec_len = u16::from_le_bytes([blk[off + 4], blk[off + 5]]) as usize;
+                let cur_nlen = blk[off + 6] as usize;
+                if rec_len < 8 || off + rec_len > 4096 {
+                    break;
+                }
+
+                if inode == 0 && rec_len >= needed {
+                    blk[off..off + 4].copy_from_slice(&child_ino.to_le_bytes());
+                    blk[off + 4..off + 6].copy_from_slice(&(rec_len as u16).to_le_bytes());
+                    blk[off + 6] = nbytes.len() as u8;
+                    blk[off + 7] = file_type;
+                    blk[off + 8..off + 8 + nbytes.len()].copy_from_slice(nbytes);
+                    return crate::ext4::superblock::write_block_4k(phys, &blk);
+                }
+
+                let actual = aligned_dir_entry_size(cur_nlen);
+                if inode != 0 && rec_len >= actual + needed {
+                    let rem = rec_len - actual;
+                    blk[off + 4..off + 6].copy_from_slice(&(actual as u16).to_le_bytes());
+                    let new_off = off + actual;
+                    blk[new_off..new_off + 4].copy_from_slice(&child_ino.to_le_bytes());
+                    blk[new_off + 4..new_off + 6].copy_from_slice(&(rem as u16).to_le_bytes());
+                    blk[new_off + 6] = nbytes.len() as u8;
+                    blk[new_off + 7] = file_type;
+                    blk[new_off + 8..new_off + 8 + nbytes.len()].copy_from_slice(nbytes);
+                    return crate::ext4::superblock::write_block_4k(phys, &blk);
+                }
+
+                off += rec_len;
+            }
+        }
+
+        // Append a brand new 4 KiB block to the directory extent tree
+        let new_phys = crate::ext4::inode::alloc_and_map_block_disk(
+            parent_ino,
+            &mut parent_inode,
+            num_blocks,
+        )?;
+        blk.fill(0);
+        blk[0..4].copy_from_slice(&child_ino.to_le_bytes());
+        blk[4..6].copy_from_slice(&4096u16.to_le_bytes());
+        blk[6] = nbytes.len() as u8;
+        blk[7] = file_type;
+        blk[8..8 + nbytes.len()].copy_from_slice(nbytes);
+        crate::ext4::superblock::write_block_4k(new_phys, &blk)?;
+
+        parent_inode.i_size_lo = parent_inode.i_size_lo.saturating_add(4096);
+        crate::ext4::inode::write_inode_disk(parent_ino, &parent_inode)
+    }
+
+    /// Remove named entry `name` from on-disk directory `parent_ino` and return removed inode.
+    pub fn disk_remove_dir_entry(parent_ino: u32, name: &str) -> Result<u32, &'static str> {
+        let parent_inode = crate::ext4::inode::read_inode_disk(parent_ino)?;
+        if !parent_inode.is_dir() {
+            return Err("EXT4: Parent is not a directory");
+        }
+        let num_blocks = parent_inode.file_size().div_ceil(4096).max(1) as u32;
+        let mut blk = [0u8; 4096];
+
+        for lblk in 0..num_blocks {
+            let phys = match crate::ext4::inode::resolve_logical_block_disk(&parent_inode, lblk)? {
+                Some(b) => b,
+                None => continue,
+            };
+            crate::ext4::superblock::read_block_4k(phys, &mut blk)?;
+
+            let mut off = 0usize;
+            let mut prev_off: Option<usize> = None;
+            while off + 8 <= 4096 {
+                let inode =
+                    u32::from_le_bytes([blk[off], blk[off + 1], blk[off + 2], blk[off + 3]]);
+                let rec_len = u16::from_le_bytes([blk[off + 4], blk[off + 5]]) as usize;
+                let name_len = blk[off + 6] as usize;
+                if rec_len < 8 || off + rec_len > 4096 {
+                    break;
+                }
+
+                if inode != 0 && off + 8 + name_len <= 4096 {
+                    if let Ok(entry_name) = core::str::from_utf8(&blk[off + 8..off + 8 + name_len])
+                    {
+                        if entry_name == name {
+                            if let Some(p_off) = prev_off {
+                                let prev_rec =
+                                    u16::from_le_bytes([blk[p_off + 4], blk[p_off + 5]]) as usize;
+                                let merged = (prev_rec + rec_len) as u16;
+                                blk[p_off + 4..p_off + 6].copy_from_slice(&merged.to_le_bytes());
+                            } else {
+                                blk[off..off + 4].copy_from_slice(&0u32.to_le_bytes());
+                            }
+                            crate::ext4::superblock::write_block_4k(phys, &blk)?;
+                            return Ok(inode);
+                        }
+                    }
+                }
+
+                prev_off = Some(off);
+                off += rec_len;
+            }
+        }
+
+        Err("EXT4: Directory entry not found")
+    }
+
+    /// Compact `(inode, d_type, name_buf, name_len)` tuple returned by EXT4 directory scans.
+    pub type Ext4DirTuple = (u32, u8, [u8; 64], usize);
+
+    /// Retrieve the `target_idx`-th valid directory entry for POSIX `getdents`.
+    pub fn disk_get_dir_entry(
+        dir_ino: u32,
+        target_idx: usize,
+    ) -> Result<Option<Ext4DirTuple>, &'static str> {
+        let dir_inode = crate::ext4::inode::read_inode_disk(dir_ino)?;
+        if !dir_inode.is_dir() {
+            return Err("EXT4: Target is not a directory");
+        }
+        let num_blocks = dir_inode.file_size().div_ceil(4096).max(1) as u32;
+        let mut blk = [0u8; 4096];
+        let mut cur = 0usize;
+
+        for lblk in 0..num_blocks {
+            let phys = match crate::ext4::inode::resolve_logical_block_disk(&dir_inode, lblk)? {
+                Some(b) => b,
+                None => continue,
+            };
+            crate::ext4::superblock::read_block_4k(phys, &mut blk)?;
+
+            let mut off = 0usize;
+            while off + 8 <= 4096 {
+                let inode =
+                    u32::from_le_bytes([blk[off], blk[off + 1], blk[off + 2], blk[off + 3]]);
+                let rec_len = u16::from_le_bytes([blk[off + 4], blk[off + 5]]) as usize;
+                let name_len = blk[off + 6] as usize;
+                let file_type = blk[off + 7];
+                if rec_len < 8 || off + rec_len > 4096 {
+                    break;
+                }
+                if inode != 0 && off + 8 + name_len <= 4096 {
+                    if cur == target_idx {
+                        let mut nbuf = [0u8; 64];
+                        let copy_len = name_len.min(64);
+                        nbuf[..copy_len].copy_from_slice(&blk[off + 8..off + 8 + copy_len]);
+                        let d_type = match file_type {
+                            EXT4_FT_DIR => 4,
+                            crate::ext4::dir::EXT4_FT_SYMLINK => 10,
+                            _ => 8,
+                        };
+                        return Ok(Some((inode, d_type, nbuf, copy_len)));
+                    }
+                    cur += 1;
+                }
+                off += rec_len;
+            }
+        }
+        Ok(None)
+    }
+
     pub fn lookup_path(path: &str) -> Result<(u32, crate::ext4::inode::Ext4Inode), &'static str> {
         ensure_dir_initialized();
         let trimmed = path.trim_start_matches('/');

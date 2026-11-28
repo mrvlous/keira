@@ -35,10 +35,115 @@ pub mod extent {
         pub ee_start_lo: u32, // Low 32 bits of physical block number
     }
 
+    #[repr(C)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+    pub struct Ext4ExtentIdx {
+        pub ei_block: u32,   // Index covers logical blocks from 'block'
+        pub ei_leaf_lo: u32, // Low 32 bits of physical block of the next level
+        pub ei_leaf_hi: u16, // High 16 bits of physical block of the next level
+        pub ei_unused: u16,
+    }
+
+    impl Ext4ExtentHeader {
+        /// Decode a 12-byte extent header from `bytes`.
+        pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
+            if bytes.len() < 12 {
+                return None;
+            }
+            let magic = u16::from_le_bytes([bytes[0], bytes[1]]);
+            if magic != EXT4_EXTENT_HEADER_MAGIC {
+                return None;
+            }
+            Some(Self {
+                eh_magic: magic,
+                eh_entries: u16::from_le_bytes([bytes[2], bytes[3]]),
+                eh_max: u16::from_le_bytes([bytes[4], bytes[5]]),
+                eh_depth: u16::from_le_bytes([bytes[6], bytes[7]]),
+                eh_generation: u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            })
+        }
+
+        /// Encode extent header into first 12 bytes of `bytes`.
+        pub fn write_bytes(&self, bytes: &mut [u8]) {
+            if bytes.len() < 12 {
+                return;
+            }
+            bytes[0..2].copy_from_slice(&self.eh_magic.to_le_bytes());
+            bytes[2..4].copy_from_slice(&self.eh_entries.to_le_bytes());
+            bytes[4..6].copy_from_slice(&self.eh_max.to_le_bytes());
+            bytes[6..8].copy_from_slice(&self.eh_depth.to_le_bytes());
+            bytes[8..12].copy_from_slice(&self.eh_generation.to_le_bytes());
+        }
+    }
+
     impl Ext4Extent {
-        /// Computes full 48-bit physical LBA block address.
+        /// Decode a 12-byte leaf extent from `bytes`.
+        pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
+            if bytes.len() < 12 {
+                return None;
+            }
+            Some(Self {
+                ee_block: u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                ee_len: u16::from_le_bytes([bytes[4], bytes[5]]),
+                ee_start_hi: u16::from_le_bytes([bytes[6], bytes[7]]),
+                ee_start_lo: u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            })
+        }
+
+        /// Encode leaf extent into first 12 bytes of `bytes`.
+        pub fn write_bytes(&self, bytes: &mut [u8]) {
+            if bytes.len() < 12 {
+                return;
+            }
+            bytes[0..4].copy_from_slice(&self.ee_block.to_le_bytes());
+            bytes[4..6].copy_from_slice(&self.ee_len.to_le_bytes());
+            bytes[6..8].copy_from_slice(&self.ee_start_hi.to_le_bytes());
+            bytes[8..12].copy_from_slice(&self.ee_start_lo.to_le_bytes());
+        }
+
+        /// Return actual initialized block length masking the unwritten high bit.
+        pub fn block_count(&self) -> u32 {
+            if self.ee_len > 32768 {
+                (self.ee_len - 32768) as u32
+            } else {
+                self.ee_len as u32
+            }
+        }
+
+        /// Compute full 48-bit physical block address.
         pub fn physical_block(&self) -> u64 {
             ((self.ee_start_hi as u64) << 32) | (self.ee_start_lo as u64)
+        }
+    }
+
+    impl Ext4ExtentIdx {
+        /// Decode a 12-byte internal extent index node entry from `bytes`.
+        pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
+            if bytes.len() < 12 {
+                return None;
+            }
+            Some(Self {
+                ei_block: u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+                ei_leaf_lo: u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+                ei_leaf_hi: u16::from_le_bytes([bytes[8], bytes[9]]),
+                ei_unused: u16::from_le_bytes([bytes[10], bytes[11]]),
+            })
+        }
+
+        /// Encode internal extent index entry into first 12 bytes of `bytes`.
+        pub fn write_bytes(&self, bytes: &mut [u8]) {
+            if bytes.len() < 12 {
+                return;
+            }
+            bytes[0..4].copy_from_slice(&self.ei_block.to_le_bytes());
+            bytes[4..8].copy_from_slice(&self.ei_leaf_lo.to_le_bytes());
+            bytes[8..10].copy_from_slice(&self.ei_leaf_hi.to_le_bytes());
+            bytes[10..12].copy_from_slice(&self.ei_unused.to_le_bytes());
+        }
+
+        /// Compute physical block address of the referenced leaf node.
+        pub fn leaf_block(&self) -> u64 {
+            ((self.ei_leaf_hi as u64) << 32) | (self.ei_leaf_lo as u64)
         }
     }
 }
@@ -277,6 +382,351 @@ pub mod lookup {
                 Ok(generic)
             }
         }
+    }
+
+    /// Resolve disk block and byte offset within that block for `inode_num`.
+    fn inode_table_location(inode_num: u32) -> Result<(u64, usize, usize), &'static str> {
+        let sb =
+            crate::ext4::superblock::get_ext4_superblock().ok_or("EXT4: Superblock not mounted")?;
+        if inode_num == 0 || inode_num > sb.inodes_count || sb.inodes_per_group == 0 {
+            return Err("EXT4: Inode index out of range");
+        }
+        let idx = inode_num - 1;
+        let group = idx / sb.inodes_per_group;
+        let index_in_group = (idx % sb.inodes_per_group) as usize;
+        let bgd = crate::ext4::bgdt::read_group_desc(group)?;
+        let inode_size = (sb.inode_size as usize).max(128);
+        let byte_offset = index_in_group * inode_size;
+        let block_num = (bgd.bg_inode_table_lo as u64) + ((byte_offset / 4096) as u64);
+        let in_block_off = byte_offset % 4096;
+        if in_block_off + inode_size > 4096 {
+            return Err("EXT4: Inode entry straddles block boundary");
+        }
+        Ok((block_num, in_block_off, inode_size))
+    }
+
+    /// Read an EXT4 inode directly from its physical on-disk inode table block.
+    pub fn read_inode_disk(inode_num: u32) -> Result<Ext4Inode, &'static str> {
+        let (block_num, off, size) = inode_table_location(inode_num)?;
+        let mut blk = [0u8; 4096];
+        crate::ext4::superblock::read_block_4k(block_num, &mut blk)?;
+        parse_inode_from_bytes(&blk[off..off + size])
+    }
+
+    /// Write updated EXT4 inode fields back into its on-disk inode table block.
+    pub fn write_inode_disk(inode_num: u32, inode: &Ext4Inode) -> Result<(), &'static str> {
+        let (block_num, off, size) = inode_table_location(inode_num)?;
+        let mut blk = [0u8; 4096];
+        crate::ext4::superblock::read_block_4k(block_num, &mut blk)?;
+        let target = &mut blk[off..off + size];
+        target[0x00..0x02].copy_from_slice(&inode.i_mode.to_le_bytes());
+        target[0x02..0x04].copy_from_slice(&inode.i_uid.to_le_bytes());
+        target[0x04..0x08].copy_from_slice(&inode.i_size_lo.to_le_bytes());
+        target[0x08..0x0C].copy_from_slice(&inode.i_atime.to_le_bytes());
+        target[0x0C..0x10].copy_from_slice(&inode.i_ctime.to_le_bytes());
+        target[0x10..0x14].copy_from_slice(&inode.i_mtime.to_le_bytes());
+        target[0x14..0x18].copy_from_slice(&inode.i_dtime.to_le_bytes());
+        target[0x18..0x1A].copy_from_slice(&inode.i_gid.to_le_bytes());
+        target[0x1A..0x1C].copy_from_slice(&inode.i_links_count.to_le_bytes());
+        target[0x1C..0x20].copy_from_slice(&inode.i_blocks_lo.to_le_bytes());
+        target[0x20..0x24].copy_from_slice(&inode.i_flags.to_le_bytes());
+        target[0x24..0x28].copy_from_slice(&inode.i_osd1.to_le_bytes());
+        target[0x28..0x28 + 60].copy_from_slice(&inode.i_block);
+        if size >= 0x70 {
+            target[0x64..0x68].copy_from_slice(&inode.i_generation.to_le_bytes());
+            target[0x68..0x6C].copy_from_slice(&inode.i_file_acl_lo.to_le_bytes());
+            target[0x6C..0x70].copy_from_slice(&inode.i_size_high.to_le_bytes());
+        }
+        if size >= 0x82 {
+            target[0x80..0x82].copy_from_slice(&inode.i_extra_isize.to_le_bytes());
+        }
+        crate::ext4::superblock::write_block_4k(block_num, &blk)
+    }
+
+    /// Initialize an empty extent leaf header inside `inode.i_block`.
+    pub fn init_inode_extent_header(inode: &mut Ext4Inode) {
+        inode.i_flags |= EXT4_EXTENTS_FL;
+        inode.i_block.fill(0);
+        let hdr = super::extent::Ext4ExtentHeader {
+            eh_magic: super::extent::EXT4_EXTENT_HEADER_MAGIC,
+            eh_entries: 0,
+            eh_max: 4,
+            eh_depth: 0,
+            eh_generation: 0,
+        };
+        hdr.write_bytes(&mut inode.i_block[..12]);
+    }
+
+    /// Map a logical 4 KiB file block `logical_block` to its physical block via extent tree.
+    pub fn resolve_logical_block_disk(
+        inode: &Ext4Inode,
+        logical_block: u32,
+    ) -> Result<Option<u64>, &'static str> {
+        let hdr = match super::extent::Ext4ExtentHeader::from_bytes(&inode.i_block[..12]) {
+            Some(h) => h,
+            None => return Ok(None),
+        };
+
+        if hdr.eh_depth == 0 {
+            let count = (hdr.eh_entries as usize).min(4);
+            for i in 0..count {
+                let off = 12 + i * 12;
+                if let Some(ext) =
+                    super::extent::Ext4Extent::from_bytes(&inode.i_block[off..off + 12])
+                {
+                    let span = ext.block_count();
+                    if logical_block >= ext.ee_block && logical_block < ext.ee_block + span {
+                        let delta = (logical_block - ext.ee_block) as u64;
+                        return Ok(Some(ext.physical_block() + delta));
+                    }
+                }
+            }
+            return Ok(None);
+        }
+
+        if hdr.eh_depth == 1 {
+            let idx_count = (hdr.eh_entries as usize).min(4);
+            let mut chosen: Option<super::extent::Ext4ExtentIdx> = None;
+            for i in 0..idx_count {
+                let off = 12 + i * 12;
+                if let Some(idx) =
+                    super::extent::Ext4ExtentIdx::from_bytes(&inode.i_block[off..off + 12])
+                {
+                    if logical_block >= idx.ei_block {
+                        chosen = Some(idx);
+                    }
+                }
+            }
+            let idx = match chosen {
+                Some(v) => v,
+                None => return Ok(None),
+            };
+            let mut leaf_blk = [0u8; 4096];
+            crate::ext4::superblock::read_block_4k(idx.leaf_block(), &mut leaf_blk)?;
+            let leaf_hdr = super::extent::Ext4ExtentHeader::from_bytes(&leaf_blk[..12])
+                .ok_or("EXT4: Corrupt leaf extent header")?;
+            let entries = (leaf_hdr.eh_entries as usize).min(340);
+            for i in 0..entries {
+                let off = 12 + i * 12;
+                if let Some(ext) = super::extent::Ext4Extent::from_bytes(&leaf_blk[off..off + 12]) {
+                    let span = ext.block_count();
+                    if logical_block >= ext.ee_block && logical_block < ext.ee_block + span {
+                        let delta = (logical_block - ext.ee_block) as u64;
+                        return Ok(Some(ext.physical_block() + delta));
+                    }
+                }
+            }
+            return Ok(None);
+        }
+
+        Err("EXT4: Extent tree depth > 1 unsupported")
+    }
+
+    /// Resolve `logical_block`, allocating and indexing a new physical 4 KiB block if absent.
+    pub fn alloc_and_map_block_disk(
+        inode_num: u32,
+        inode: &mut Ext4Inode,
+        logical_block: u32,
+    ) -> Result<u64, &'static str> {
+        if let Some(existing) = resolve_logical_block_disk(inode, logical_block)? {
+            return Ok(existing);
+        }
+
+        let new_phys = crate::ext4::bitmap::alloc_data_block()?;
+        if inode.extent_header().is_none() {
+            init_inode_extent_header(inode);
+        }
+        let mut hdr = super::extent::Ext4ExtentHeader::from_bytes(&inode.i_block[..12])
+            .ok_or("EXT4: Failed to parse initialized extent header")?;
+
+        if hdr.eh_depth == 0 {
+            let entries = hdr.eh_entries as usize;
+            if entries > 0 {
+                let last_off = 12 + (entries - 1) * 12;
+                if let Some(mut last) =
+                    super::extent::Ext4Extent::from_bytes(&inode.i_block[last_off..last_off + 12])
+                {
+                    let last_span = last.block_count();
+                    if last.ee_len < 32768
+                        && last.ee_block + last_span == logical_block
+                        && last.physical_block() + (last_span as u64) == new_phys
+                    {
+                        last.ee_len += 1;
+                        last.write_bytes(&mut inode.i_block[last_off..last_off + 12]);
+                        inode.i_blocks_lo = inode.i_blocks_lo.saturating_add(8);
+                        write_inode_disk(inode_num, inode)?;
+                        return Ok(new_phys);
+                    }
+                }
+            }
+
+            if entries < (hdr.eh_max as usize).min(4) {
+                let off = 12 + entries * 12;
+                let ext = super::extent::Ext4Extent {
+                    ee_block: logical_block,
+                    ee_len: 1,
+                    ee_start_hi: ((new_phys >> 32) & 0xFFFF) as u16,
+                    ee_start_lo: (new_phys & 0xFFFF_FFFF) as u32,
+                };
+                ext.write_bytes(&mut inode.i_block[off..off + 12]);
+                hdr.eh_entries += 1;
+                hdr.write_bytes(&mut inode.i_block[..12]);
+                inode.i_blocks_lo = inode.i_blocks_lo.saturating_add(8);
+                write_inode_disk(inode_num, inode)?;
+                return Ok(new_phys);
+            }
+
+            // Promote full inline leaf header into depth-1 external extent leaf block
+            let leaf_block_phys = crate::ext4::bitmap::alloc_data_block()?;
+            let mut leaf_buf = [0u8; 4096];
+            let leaf_hdr = super::extent::Ext4ExtentHeader {
+                eh_magic: super::extent::EXT4_EXTENT_HEADER_MAGIC,
+                eh_entries: hdr.eh_entries + 1,
+                eh_max: 340,
+                eh_depth: 0,
+                eh_generation: hdr.eh_generation,
+            };
+            leaf_hdr.write_bytes(&mut leaf_buf[..12]);
+            let copy_len = (hdr.eh_entries as usize) * 12;
+            leaf_buf[12..12 + copy_len].copy_from_slice(&inode.i_block[12..12 + copy_len]);
+            let new_ext = super::extent::Ext4Extent {
+                ee_block: logical_block,
+                ee_len: 1,
+                ee_start_hi: ((new_phys >> 32) & 0xFFFF) as u16,
+                ee_start_lo: (new_phys & 0xFFFF_FFFF) as u32,
+            };
+            new_ext.write_bytes(&mut leaf_buf[12 + copy_len..12 + copy_len + 12]);
+            crate::ext4::superblock::write_block_4k(leaf_block_phys, &leaf_buf)?;
+
+            let first_logical = super::extent::Ext4Extent::from_bytes(&inode.i_block[12..24])
+                .map_or(0, |e| e.ee_block);
+            inode.i_block.fill(0);
+            let root_hdr = super::extent::Ext4ExtentHeader {
+                eh_magic: super::extent::EXT4_EXTENT_HEADER_MAGIC,
+                eh_entries: 1,
+                eh_max: 4,
+                eh_depth: 1,
+                eh_generation: hdr.eh_generation,
+            };
+            root_hdr.write_bytes(&mut inode.i_block[..12]);
+            let root_idx = super::extent::Ext4ExtentIdx {
+                ei_block: first_logical,
+                ei_leaf_lo: (leaf_block_phys & 0xFFFF_FFFF) as u32,
+                ei_leaf_hi: ((leaf_block_phys >> 32) & 0xFFFF) as u16,
+                ei_unused: 0,
+            };
+            root_idx.write_bytes(&mut inode.i_block[12..24]);
+            inode.i_blocks_lo = inode.i_blocks_lo.saturating_add(16);
+            write_inode_disk(inode_num, inode)?;
+            return Ok(new_phys);
+        }
+
+        if hdr.eh_depth == 1 && hdr.eh_entries > 0 {
+            let idx_off = 12 + ((hdr.eh_entries as usize) - 1) * 12;
+            let idx =
+                super::extent::Ext4ExtentIdx::from_bytes(&inode.i_block[idx_off..idx_off + 12])
+                    .ok_or("EXT4: Corrupt root extent index")?;
+            let leaf_phys = idx.leaf_block();
+            let mut leaf_buf = [0u8; 4096];
+            crate::ext4::superblock::read_block_4k(leaf_phys, &mut leaf_buf)?;
+            let mut leaf_hdr = super::extent::Ext4ExtentHeader::from_bytes(&leaf_buf[..12])
+                .ok_or("EXT4: Corrupt leaf extent header")?;
+            let entries = leaf_hdr.eh_entries as usize;
+            if entries > 0 {
+                let last_off = 12 + (entries - 1) * 12;
+                if let Some(mut last) =
+                    super::extent::Ext4Extent::from_bytes(&leaf_buf[last_off..last_off + 12])
+                {
+                    let last_span = last.block_count();
+                    if last.ee_len < 32768
+                        && last.ee_block + last_span == logical_block
+                        && last.physical_block() + (last_span as u64) == new_phys
+                    {
+                        last.ee_len += 1;
+                        last.write_bytes(&mut leaf_buf[last_off..last_off + 12]);
+                        crate::ext4::superblock::write_block_4k(leaf_phys, &leaf_buf)?;
+                        inode.i_blocks_lo = inode.i_blocks_lo.saturating_add(8);
+                        write_inode_disk(inode_num, inode)?;
+                        return Ok(new_phys);
+                    }
+                }
+            }
+            if entries < (leaf_hdr.eh_max as usize).min(340) {
+                let off = 12 + entries * 12;
+                let ext = super::extent::Ext4Extent {
+                    ee_block: logical_block,
+                    ee_len: 1,
+                    ee_start_hi: ((new_phys >> 32) & 0xFFFF) as u16,
+                    ee_start_lo: (new_phys & 0xFFFF_FFFF) as u32,
+                };
+                ext.write_bytes(&mut leaf_buf[off..off + 12]);
+                leaf_hdr.eh_entries += 1;
+                leaf_hdr.write_bytes(&mut leaf_buf[..12]);
+                crate::ext4::superblock::write_block_4k(leaf_phys, &leaf_buf)?;
+                inode.i_blocks_lo = inode.i_blocks_lo.saturating_add(8);
+                write_inode_disk(inode_num, inode)?;
+                return Ok(new_phys);
+            }
+        }
+
+        let _ = crate::ext4::bitmap::free_data_block(new_phys);
+        Err("EXT4: Extent leaf node capacity exceeded")
+    }
+
+    /// Release all data blocks and external leaf blocks referenced by `inode`.
+    pub fn free_all_extents_disk(inode: &mut Ext4Inode) -> Result<(), &'static str> {
+        let hdr = match super::extent::Ext4ExtentHeader::from_bytes(&inode.i_block[..12]) {
+            Some(h) => h,
+            None => return Ok(()),
+        };
+        if hdr.eh_depth == 0 {
+            let count = (hdr.eh_entries as usize).min(4);
+            for i in 0..count {
+                let off = 12 + i * 12;
+                if let Some(ext) =
+                    super::extent::Ext4Extent::from_bytes(&inode.i_block[off..off + 12])
+                {
+                    let base = ext.physical_block();
+                    for j in 0..ext.block_count() {
+                        let _ = crate::ext4::bitmap::free_data_block(base + (j as u64));
+                    }
+                }
+            }
+        } else if hdr.eh_depth == 1 {
+            let idx_count = (hdr.eh_entries as usize).min(4);
+            let mut leaf_buf = [0u8; 4096];
+            for i in 0..idx_count {
+                let off = 12 + i * 12;
+                if let Some(idx) =
+                    super::extent::Ext4ExtentIdx::from_bytes(&inode.i_block[off..off + 12])
+                {
+                    let leaf_phys = idx.leaf_block();
+                    if crate::ext4::superblock::read_block_4k(leaf_phys, &mut leaf_buf).is_ok() {
+                        if let Some(lh) =
+                            super::extent::Ext4ExtentHeader::from_bytes(&leaf_buf[..12])
+                        {
+                            let count = (lh.eh_entries as usize).min(340);
+                            for j in 0..count {
+                                let e_off = 12 + j * 12;
+                                if let Some(ext) = super::extent::Ext4Extent::from_bytes(
+                                    &leaf_buf[e_off..e_off + 12],
+                                ) {
+                                    let base = ext.physical_block();
+                                    for b in 0..ext.block_count() {
+                                        let _ =
+                                            crate::ext4::bitmap::free_data_block(base + (b as u64));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    let _ = crate::ext4::bitmap::free_data_block(leaf_phys);
+                }
+            }
+        }
+        init_inode_extent_header(inode);
+        inode.i_blocks_lo = 0;
+        Ok(())
     }
 }
 
