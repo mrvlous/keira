@@ -243,12 +243,9 @@ pub fn handle_socketpair(domain: u64, socket_type: u64, protocol: u64, sv_ptr: u
                 }
             }
 
-            if found < 2 {
+            let (Some(fd1), Some(fd2)) = (free_fds[0], free_fds[1]) else {
                 return errno_to_ret(EMFILE);
-            }
-
-            let fd1 = free_fds[0].unwrap();
-            let fd2 = free_fds[1].unwrap();
+            };
 
             match keira_net::socket::create_socketpair(domain, socket_type, protocol) {
                 Ok((sock1_id, sock2_id)) => {
