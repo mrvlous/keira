@@ -188,19 +188,19 @@ pub mod modules {
         use keira_io::vga;
 
         pub fn run(parts: &mut core::str::SplitWhitespace) {
-            let arg1 = parts.next();
-            if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
-                vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("Usage: insmod <file.ko | name> [size]\n\n");
-                vga::print_str(
-                    "Description:\n  Insert an ELF relocatable module or dynamic driver into the running kernel.\n\n",
-                );
-                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
-            }
-
-            let target = arg1.unwrap();
+            let target = match parts.next() {
+                Some(v) if !matches!(v, "-h" | "--help") => v,
+                _ => {
+                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    vga::print_str("Usage: insmod <file.ko | name> [size]\n\n");
+                    vga::print_str(
+                        "Description:\n  Insert an ELF relocatable module or dynamic driver into the running kernel.\n\n",
+                    );
+                    vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
+            };
 
             // Attempt reading and dynamically linking as an ELF .ko object if file exists or ends with .ko
             if target.ends_with(".ko") || keira_fs::vfs::exists(target) {
@@ -286,17 +286,17 @@ pub mod modules {
         use keira_io::vga;
 
         pub fn run(parts: &mut core::str::SplitWhitespace) {
-            let arg1 = parts.next();
-            if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
-                vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("Usage: rmmod <name>\n\n");
-                vga::print_str("Description:\n  Unload a module from the running kernel.\n\n");
-                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
-            }
-
-            let mod_name = arg1.unwrap();
+            let mod_name = match parts.next() {
+                Some(v) if !matches!(v, "-h" | "--help") => v,
+                _ => {
+                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    vga::print_str("Usage: rmmod <name>\n\n");
+                    vga::print_str("Description:\n  Unload a module from the running kernel.\n\n");
+                    vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
+            };
 
             // Try dynamic ELF unloading first, fallback to registry unregister
             let unload_res = if keira_core::module::unload_elf_module(mod_name).is_ok() {
@@ -330,19 +330,19 @@ pub mod modules {
         use keira_io::vga;
 
         pub fn run(parts: &mut core::str::SplitWhitespace) {
-            let arg1 = parts.next();
-            if arg1.is_none() || matches!(arg1, Some("-h") | Some("--help")) {
-                vga::set_color(vga::Color::White, vga::Color::Black);
-                vga::print_str("Usage: modinfo <name>\n\n");
-                vga::print_str(
-                    "Description:\n  Show information about a Linux-grade kernel module.\n\n",
-                );
-                vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
-                vga::set_color(vga::Color::LightGrey, vga::Color::Black);
-                return;
-            }
-
-            let mod_name = arg1.unwrap();
+            let mod_name = match parts.next() {
+                Some(v) if !matches!(v, "-h" | "--help") => v,
+                _ => {
+                    vga::set_color(vga::Color::White, vga::Color::Black);
+                    vga::print_str("Usage: modinfo <name>\n\n");
+                    vga::print_str(
+                        "Description:\n  Show information about a Linux-grade kernel module.\n\n",
+                    );
+                    vga::print_str("Options:\n  -h, --help    Show this help message and exit\n");
+                    vga::set_color(vga::Color::LightGrey, vga::Color::Black);
+                    return;
+                }
+            };
             if let Some(m) = keira_core::module::get_module(mod_name) {
                 vga::set_color(vga::Color::White, vga::Color::Black);
                 vga::print_str("filename:       /lib/modules/");
