@@ -15,7 +15,7 @@
 
 #[allow(clippy::module_inception)]
 pub mod table {
-    use crate::socket::handle::{SocketEntry, MAX_SOCKETS, SOCKET_BUF_SIZE};
+    use crate::socket::handle::{SocketEntry, MAX_SOCKETS, SOCKET_BUF_SIZE, SOCKET_TX_BUF_SIZE};
     use crate::tcp::state::{get_next_src_port, TcpState};
 
     pub static mut SOCKET_TABLE: [SocketEntry; MAX_SOCKETS] = [SocketEntry::empty(); MAX_SOCKETS];
@@ -54,10 +54,11 @@ pub mod table {
                     fin_received: false,
                     rx_buf: [0; SOCKET_BUF_SIZE],
                     rx_len: 0,
-                    tx_buf: [0; SOCKET_BUF_SIZE],
+                    tx_buf: [0; SOCKET_TX_BUF_SIZE],
                     tx_len: 0,
                     in_use: true,
                     is_connected: false,
+                    tls_slot: None,
                     peer_id: 0,
                     path: [0; crate::socket::handle::UNIX_PATH_MAX],
                     path_len: 0,
@@ -283,6 +284,40 @@ pub mod table {
         Err("Invalid socket descriptor")
     }
 
+    /// Upgrade an established TCP socket to encrypted TLS 1.3 transport.
+    ///
+    /// # Safety
+    /// Mutates slot in static `SOCKET_TABLE` and transmits/receives TLS 1.3 handshake frames.
+    pub unsafe fn upgrade_socket_tls(
+        sockfd: u64,
+        hostname: &str,
+        allow_insecure: bool,
+    ) -> Result<(), &'static str> {
+        let id = sockfd as u32;
+        for slot in SOCKET_TABLE.iter_mut() {
+            if slot.in_use && slot.id == id {
+                if !slot.is_connected || slot.domain == crate::socket::family::domains::AF_UNIX {
+                    return Err("TLS requires an active TCP connection");
+                }
+                if slot.tls_slot.is_some() {
+                    return Ok(());
+                }
+                let tls_idx = crate::tls::tls_attach_tcp(
+                    hostname,
+                    slot.remote_ip,
+                    slot.remote_port,
+                    slot.local_port,
+                    &mut slot.local_seq,
+                    &mut slot.remote_seq,
+                    allow_insecure,
+                )?;
+                slot.tls_slot = Some(tls_idx);
+                return Ok(());
+            }
+        }
+        Err("Invalid socket descriptor")
+    }
+
     /// Transmit data through an established network socket.
     ///
     /// # Safety
@@ -341,16 +376,30 @@ pub mod table {
                 if !slot.is_connected {
                     return Err("Socket is not connected");
                 }
-                let avail = SOCKET_BUF_SIZE - slot.tx_len;
-                let to_write = core::cmp::min(len, avail);
-                if to_write > 0 {
-                    let dst = slot.tx_buf.as_mut_ptr().add(slot.tx_len);
-                    core::ptr::copy_nonoverlapping(buf, dst, to_write);
-                    slot.tx_len += to_write;
 
-                    if crate::driver::loopback::is_loopback_addr(&slot.remote_ip) {
-                        let slice = core::slice::from_raw_parts(buf, to_write);
-                        let _ = crate::driver::loopback::transmit_loopback_packet(slice);
+                let slice = core::slice::from_raw_parts(buf, len);
+                if let Some(tls_idx) = slot.tls_slot {
+                    let sent = crate::tls::tls_send_slot(
+                        tls_idx,
+                        slot.remote_ip,
+                        slot.remote_port,
+                        slot.local_port,
+                        &mut slot.local_seq,
+                        slot.remote_seq,
+                        slice,
+                    )?;
+                    return Ok(sent);
+                }
+
+                if crate::driver::loopback::is_loopback_addr(&slot.remote_ip) {
+                    let avail = SOCKET_TX_BUF_SIZE.saturating_sub(slot.tx_len);
+                    let to_write = core::cmp::min(len, avail);
+                    if to_write > 0 {
+                        let dst = slot.tx_buf.as_mut_ptr().add(slot.tx_len);
+                        core::ptr::copy_nonoverlapping(buf, dst, to_write);
+                        slot.tx_len += to_write;
+                        let lo_slice = core::slice::from_raw_parts(buf, to_write);
+                        let _ = crate::driver::loopback::transmit_loopback_packet(lo_slice);
 
                         let target_port = slot.remote_port;
                         let sender_id = slot.id;
@@ -378,34 +427,37 @@ pub mod table {
                                 slot.rx_len += copy_sz;
                             }
                         }
-                    } else {
-                        let slice = core::slice::from_raw_parts(buf, to_write);
-                        if crate::driver::e1000::E1000_FOUND {
-                            if slot.remote_seq == 0 {
-                                let _ = crate::tcp::stream::client::tcp_connect(
-                                    slot.remote_ip,
-                                    slot.remote_port,
-                                    slot.local_port,
-                                    slot.local_seq,
-                                )
-                                .map(|ack_seq| {
-                                    slot.remote_seq = ack_seq;
-                                    slot.local_seq = slot.local_seq.wrapping_add(1);
-                                });
-                            }
-                            crate::tcp::stream::client::tcp_send_segment(
-                                slot.remote_ip,
-                                slot.remote_port,
-                                slot.local_port,
-                                slot.local_seq,
-                                slot.remote_seq,
-                                slice,
-                            )?;
-                            slot.local_seq = slot.local_seq.wrapping_add(to_write as u32);
-                        }
                     }
+                    return Ok(to_write);
                 }
-                return Ok(to_write);
+
+                if crate::driver::e1000::E1000_FOUND && len > 0 {
+                    if slot.remote_seq == 0 {
+                        let _ = crate::tcp::stream::client::tcp_connect(
+                            slot.remote_ip,
+                            slot.remote_port,
+                            slot.local_port,
+                            slot.local_seq,
+                        )
+                        .map(|ack_seq| {
+                            slot.remote_seq = ack_seq;
+                            slot.local_seq = slot.local_seq.wrapping_add(1);
+                        });
+                    }
+                    crate::tcp::stream::client::tcp_send_chunked(
+                        slot.remote_ip,
+                        slot.remote_port,
+                        slot.local_port,
+                        &mut slot.local_seq,
+                        slot.remote_seq,
+                        slice,
+                    )?;
+                    let copy_n = core::cmp::min(len, SOCKET_TX_BUF_SIZE);
+                    slot.tx_buf[..copy_n].copy_from_slice(&slice[..copy_n]);
+                    slot.tx_len = copy_n;
+                    return Ok(len);
+                }
+                return Ok(0);
             }
         }
         Err("Invalid socket descriptor")
@@ -439,73 +491,54 @@ pub mod table {
                         return Err("Resource temporarily unavailable");
                     }
 
+                    if let Some(tls_idx) = slot.tls_slot {
+                        let user_out = core::slice::from_raw_parts_mut(buf, len);
+                        return crate::tls::tls_recv_slot(
+                            tls_idx,
+                            slot.remote_ip,
+                            slot.remote_port,
+                            slot.local_port,
+                            slot.local_seq,
+                            &mut slot.remote_seq,
+                            user_out,
+                        );
+                    }
+
                     if !crate::driver::loopback::is_loopback_addr(&slot.remote_ip)
                         && slot.domain != crate::socket::family::domains::AF_UNIX
                         && crate::driver::e1000::E1000_FOUND
                     {
-                        let mut temp_rx = [0u8; 1518];
-                        match crate::tcp::stream::client::tcp_receive_segment(
+                        match crate::tcp::stream::client::tcp_receive_stream(
                             slot.remote_ip,
                             slot.remote_port,
                             slot.local_port,
+                            &mut slot.remote_seq,
+                            slot.local_seq,
                             3000,
-                            &mut temp_rx,
+                            &mut slot.rx_buf,
                         ) {
-                            Ok((payload_len, server_seq, is_fin)) => {
+                            Ok((payload_len, is_fin)) => {
+                                if is_fin {
+                                    slot.fin_received = true;
+                                }
                                 if payload_len > 0 {
-                                    let next_ack = server_seq.wrapping_add(payload_len as u32);
-                                    slot.remote_seq = next_ack;
-                                    let _ = crate::tcp::stream::client::tcp_send_ack(
-                                        slot.remote_ip,
-                                        slot.remote_port,
-                                        slot.local_port,
-                                        slot.local_seq,
-                                        slot.remote_seq,
-                                    );
-
                                     let to_read = core::cmp::min(len, payload_len);
-                                    core::ptr::copy_nonoverlapping(temp_rx.as_ptr(), buf, to_read);
-
+                                    core::ptr::copy_nonoverlapping(
+                                        slot.rx_buf.as_ptr(),
+                                        buf,
+                                        to_read,
+                                    );
                                     if payload_len > to_read {
                                         let leftover = payload_len - to_read;
-                                        let copy_leftover =
-                                            core::cmp::min(leftover, SOCKET_BUF_SIZE);
-                                        core::ptr::copy_nonoverlapping(
-                                            temp_rx.as_ptr().add(to_read),
-                                            slot.rx_buf.as_mut_ptr(),
-                                            copy_leftover,
-                                        );
-                                        slot.rx_len = copy_leftover;
+                                        slot.rx_buf.copy_within(to_read..payload_len, 0);
+                                        slot.rx_len = leftover;
                                     }
-
-                                    if is_fin {
-                                        slot.fin_received = true;
-                                        slot.remote_seq = slot.remote_seq.wrapping_add(1);
-                                        let _ = crate::tcp::stream::client::tcp_send_ack(
-                                            slot.remote_ip,
-                                            slot.remote_port,
-                                            slot.local_port,
-                                            slot.local_seq,
-                                            slot.remote_seq,
-                                        );
-                                    }
-
                                     return Ok(to_read);
-                                } else if is_fin {
-                                    slot.fin_received = true;
-                                    slot.remote_seq = server_seq.wrapping_add(1);
-                                    let _ = crate::tcp::stream::client::tcp_send_ack(
-                                        slot.remote_ip,
-                                        slot.remote_port,
-                                        slot.local_port,
-                                        slot.local_seq,
-                                        slot.remote_seq,
-                                    );
-                                    slot.state = TcpState::Closed;
-                                    return Ok(0);
-                                } else {
-                                    return Ok(0);
                                 }
+                                if is_fin {
+                                    slot.state = TcpState::Closed;
+                                }
+                                return Ok(0);
                             }
                             Err(e) => return Err(e),
                         }
@@ -539,6 +572,17 @@ pub mod table {
         for slot in SOCKET_TABLE.iter_mut() {
             if slot.in_use && slot.id == id {
                 let peer_id = slot.peer_id;
+                if let Some(tls_idx) = slot.tls_slot {
+                    crate::tls::tls_close_slot(
+                        tls_idx,
+                        slot.remote_ip,
+                        slot.remote_port,
+                        slot.local_port,
+                        &mut slot.local_seq,
+                        slot.remote_seq,
+                    );
+                    slot.tls_slot = None;
+                }
                 if !crate::driver::loopback::is_loopback_addr(&slot.remote_ip)
                     && slot.domain != crate::socket::family::domains::AF_UNIX
                     && slot.is_connected

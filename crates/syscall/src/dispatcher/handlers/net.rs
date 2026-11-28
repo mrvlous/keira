@@ -111,8 +111,43 @@ pub fn handle_accept(arg1: u64, _arg2: u64, _arg3: u64) -> u64 {
     }
 }
 
-/// Syscall 33: Establish a secure TLS connection.
-pub fn handle_tls_connect(arg1: u64) -> u64 {
+/// Syscall 33: Establish or upgrade an active TCP socket to TLS 1.3 transport.
+pub fn handle_tls_connect(arg1: u64, arg2: u64, arg3: u64) -> u64 {
+    if arg2 != 0 && (arg1 as usize) < MAX_FDS {
+        let fd = arg1 as usize;
+        let sock_id = unsafe {
+            let task = &TASKS[CURRENT_TASK_IDX];
+            if let Some(t) = task {
+                if t.fds[fd].is_open && t.fds[fd].socket_id > 0 {
+                    t.fds[fd].socket_id
+                } else {
+                    return errno_to_ret(EBADF);
+                }
+            } else {
+                return errno_to_ret(ESRCH);
+            }
+        };
+
+        let mut host_buf = [0u8; 128];
+        let len = match unsafe { read_user_string(arg2 as *const u8, &mut host_buf) } {
+            Ok(l) => l,
+            Err(e) => return errno_to_ret(e),
+        };
+        let host_str = match core::str::from_utf8(&host_buf[..len]) {
+            Ok(s) => s,
+            Err(_) => return errno_to_ret(EINVAL),
+        };
+        let allow_insecure = (arg3 & 1) != 0;
+        if unsafe {
+            keira_net::socket::upgrade_socket_tls(sock_id as u64, host_str, allow_insecure)
+        }
+        .is_ok()
+        {
+            return 0;
+        }
+        return errno_to_ret(EIO);
+    }
+
     let host_ptr = arg1 as *const u8;
     let mut host_buf = [0u8; 64];
     let len = match unsafe { read_user_string(host_ptr, &mut host_buf) } {

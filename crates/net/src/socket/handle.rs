@@ -17,7 +17,8 @@ pub mod descriptor {
     use crate::tcp::state::TcpState;
 
     pub const MAX_SOCKETS: usize = 32;
-    pub const SOCKET_BUF_SIZE: usize = 4096;
+    pub const SOCKET_BUF_SIZE: usize = 16384;
+    pub const SOCKET_TX_BUF_SIZE: usize = 4096;
     pub const UNIX_PATH_MAX: usize = 108;
 
     /// Legacy TCP socket structure maintained for backward compatibility.
@@ -69,10 +70,11 @@ pub mod descriptor {
         pub fin_received: bool,
         pub rx_buf: [u8; SOCKET_BUF_SIZE],
         pub rx_len: usize,
-        pub tx_buf: [u8; SOCKET_BUF_SIZE],
+        pub tx_buf: [u8; SOCKET_TX_BUF_SIZE],
         pub tx_len: usize,
         pub in_use: bool,
         pub is_connected: bool,
+        pub tls_slot: Option<usize>,
         pub peer_id: u32,
         pub path: [u8; UNIX_PATH_MAX],
         pub path_len: usize,
@@ -97,10 +99,11 @@ pub mod descriptor {
                 fin_received: false,
                 rx_buf: [0; SOCKET_BUF_SIZE],
                 rx_len: 0,
-                tx_buf: [0; SOCKET_BUF_SIZE],
+                tx_buf: [0; SOCKET_TX_BUF_SIZE],
                 tx_len: 0,
                 in_use: false,
                 is_connected: false,
+                tls_slot: None,
                 peer_id: 0,
                 path: [0; UNIX_PATH_MAX],
                 path_len: 0,

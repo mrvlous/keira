@@ -79,14 +79,15 @@ pub use socket::sock::{
     close_socket, connect_socket, create_socket, format_proc_raw, format_proc_sockstat,
     format_proc_tcp, format_proc_udp, is_socket_nonblocking, queue_rx_data, recv_socket,
     send_socket, set_socket_nonblocking, socket_is_readable, socket_is_writable,
-    socket_table_reset, validate_socket_port, TcpSocket, AF_INET, AF_INET6, AF_UNIX, AF_UNSPEC,
-    NEXT_SOCKET_ID, SOCKET_TABLE, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
+    socket_table_reset, upgrade_socket_tls, validate_socket_port, TcpSocket, AF_INET, AF_INET6,
+    AF_UNIX, AF_UNSPEC, NEXT_SOCKET_ID, SOCKET_TABLE, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM,
 };
 pub use tcp::{
     parse_tcp_payload, tcp_checksum, tcp_send_and_receive, TcpHeader, TcpState, TCP_FLAG_ACK,
     TCP_FLAG_FIN, TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
 };
 pub use tls::native::{
-    tls_connect, TlsSession, TlsState, TLS_AES_128_GCM_SHA256, TLS_CONTENT_APPLICATION_DATA,
-    TLS_CONTENT_HANDSHAKE, TLS_VERSION_12, TLS_VERSION_13,
+    tls_attach_tcp, tls_close_slot, tls_connect, tls_recv_slot, tls_send_slot, TlsSession,
+    TlsState, TLS_AES_128_GCM_SHA256, TLS_CONTENT_APPLICATION_DATA, TLS_CONTENT_HANDSHAKE,
+    TLS_VERSION_12, TLS_VERSION_13,
 };

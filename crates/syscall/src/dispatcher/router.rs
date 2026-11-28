@@ -93,7 +93,7 @@ fn syscall_dispatcher_inner(
         30 => handle_fork(),
         31 => handle_mprotect(arg1, arg2, arg3),
         32 => handle_madvise(arg1, arg2, arg3),
-        33 => handle_tls_connect(arg1),
+        33 => handle_tls_connect(arg1, arg2, arg3),
         34 => handle_init_module(arg1, arg2),
         35 => handle_delete_module(arg1, arg2),
         36 => handle_clock_gettime_fast(),
