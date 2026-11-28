@@ -198,6 +198,53 @@ pub mod client {
         Err("Connection timed out: SYN-ACK not received")
     }
 
+    const TCP_MSS: usize = 1400;
+
+    /// Transmit data over TCP segmented across standard Ethernet MSS bounds.
+    ///
+    /// # Safety
+    /// Transmits raw Ethernet frames via the e1000 DMA engine and mutates `seq`.
+    pub unsafe fn tcp_send_chunked(
+        target_ip: [u8; 4],
+        target_port: u16,
+        src_port: u16,
+        seq: &mut u32,
+        ack: u32,
+        data: &[u8],
+    ) -> Result<(), &'static str> {
+        if !E1000_FOUND {
+            return Err("Network card offline");
+        }
+        if data.is_empty() {
+            return Ok(());
+        }
+
+        let mut offset = 0;
+        let mut frame = [0u8; 1518];
+        while offset < data.len() {
+            let chunk_len = core::cmp::min(TCP_MSS, data.len() - offset);
+            let flags = if offset + chunk_len == data.len() {
+                0x18
+            } else {
+                0x10
+            };
+            let len = build_tcp_frame(
+                target_ip,
+                target_port,
+                src_port,
+                *seq,
+                ack,
+                flags,
+                &data[offset..offset + chunk_len],
+                &mut frame,
+            );
+            e1000::transmit_raw_frame(&frame[..len])?;
+            *seq = seq.wrapping_add(chunk_len as u32);
+            offset += chunk_len;
+        }
+        Ok(())
+    }
+
     /// Transmit a TCP data segment with PSH | ACK flags.
     ///
     /// # Safety
@@ -210,22 +257,8 @@ pub mod client {
         ack: u32,
         data: &[u8],
     ) -> Result<(), &'static str> {
-        if !E1000_FOUND {
-            return Err("Network card offline");
-        }
-
-        let mut frame = [0u8; 1518];
-        let len = build_tcp_frame(
-            target_ip,
-            target_port,
-            src_port,
-            seq,
-            ack,
-            0x18,
-            data,
-            &mut frame,
-        );
-        e1000::transmit_raw_frame(&frame[..len])
+        let mut cur_seq = seq;
+        tcp_send_chunked(target_ip, target_port, src_port, &mut cur_seq, ack, data)
     }
 
     /// Transmit a standalone TCP acknowledgement frame.
@@ -286,28 +319,45 @@ pub mod client {
         e1000::transmit_raw_frame(&frame[..len])
     }
 
-    /// Poll and receive an incoming TCP segment for the specified port pair.
+    /// Poll and receive in-order TCP payload stream into `out_buf` with burst draining.
+    ///
+    /// Returns `(bytes_read, fin_received)`.
     ///
     /// # Safety
-    /// Receives raw Ethernet frame via e1000 DMA engine.
-    pub unsafe fn tcp_receive_segment(
-        _target_ip: [u8; 4],
+    /// Receives and transmits raw Ethernet frames via e1000 DMA engine.
+    pub unsafe fn tcp_receive_stream(
+        target_ip: [u8; 4],
         target_port: u16,
         src_port: u16,
+        expected_seq: &mut u32,
+        local_seq: u32,
         timeout_ms: u64,
         out_buf: &mut [u8],
-    ) -> Result<(usize, u32, bool), &'static str> {
+    ) -> Result<(usize, bool), &'static str> {
         if !E1000_FOUND {
             return Err("Network card offline");
         }
 
         let mut rx_buf = [0u8; 1518];
         let start_tick = get_uptime_ms();
+        let mut last_rx_tick = start_tick;
+        let mut total_read = 0usize;
+        let mut fin_seen = false;
 
-        while get_uptime_ms() < start_tick + timeout_ms {
+        loop {
+            let now = get_uptime_ms();
+            if total_read == 0 && !fin_seen {
+                if now >= start_tick + timeout_ms {
+                    break;
+                }
+            } else if fin_seen || total_read >= out_buf.len() || now >= last_rx_tick + 25 {
+                break;
+            }
+
             if let Ok(bytes) = e1000::receive_raw_frame(&mut rx_buf) {
                 if bytes >= 42 && rx_buf[12] == 0x08 && rx_buf[13] == 0x06 {
                     handle_arp_packet(&rx_buf[..bytes]);
+                    continue;
                 }
                 if bytes >= 54
                     && rx_buf[12] == 0x08
@@ -319,28 +369,107 @@ pub mod client {
                 {
                     let tcp_flags = rx_buf[47];
                     if (tcp_flags & 0x04) != 0 {
+                        if total_read > 0 {
+                            return Ok((total_read, true));
+                        }
                         return Err("Connection reset by peer");
                     }
-                    let is_fin = (tcp_flags & 0x01) != 0;
-                    let server_seq =
-                        u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
 
+                    let is_fin = (tcp_flags & 0x01) != 0;
+                    let pkt_seq =
+                        u32::from_be_bytes([rx_buf[38], rx_buf[39], rx_buf[40], rx_buf[41]]);
+                    if *expected_seq == 0 {
+                        *expected_seq = pkt_seq;
+                    }
+
+                    let mut advanced = false;
+                    let mut payload_len_seen = 0usize;
                     if let Some(payload) = parse_tcp_payload(&rx_buf[..bytes]) {
-                        if !payload.is_empty() {
-                            let copy_len = core::cmp::min(payload.len(), out_buf.len());
-                            out_buf[..copy_len].copy_from_slice(&payload[..copy_len]);
-                            return Ok((copy_len, server_seq, is_fin));
+                        let plen = payload.len();
+                        payload_len_seen = plen;
+                        if plen > 0 {
+                            if pkt_seq == *expected_seq {
+                                let room = out_buf.len().saturating_sub(total_read);
+                                let copy_len = core::cmp::min(plen, room);
+                                if copy_len > 0 {
+                                    out_buf[total_read..total_read + copy_len]
+                                        .copy_from_slice(&payload[..copy_len]);
+                                    total_read += copy_len;
+                                    *expected_seq = expected_seq.wrapping_add(copy_len as u32);
+                                    last_rx_tick = get_uptime_ms();
+                                    advanced = true;
+                                }
+                            } else {
+                                let skip = expected_seq.wrapping_sub(pkt_seq) as usize;
+                                if skip > 0 && skip < plen {
+                                    let tail = &payload[skip..];
+                                    let room = out_buf.len().saturating_sub(total_read);
+                                    let copy_len = core::cmp::min(tail.len(), room);
+                                    if copy_len > 0 {
+                                        out_buf[total_read..total_read + copy_len]
+                                            .copy_from_slice(&tail[..copy_len]);
+                                        total_read += copy_len;
+                                        *expected_seq = expected_seq.wrapping_add(copy_len as u32);
+                                        last_rx_tick = get_uptime_ms();
+                                        advanced = true;
+                                    }
+                                } else {
+                                    let _ = tcp_send_ack(
+                                        target_ip,
+                                        target_port,
+                                        src_port,
+                                        local_seq,
+                                        *expected_seq,
+                                    );
+                                }
+                            }
                         }
                     }
 
-                    if is_fin {
-                        return Ok((0, server_seq, true));
+                    if is_fin && pkt_seq.wrapping_add(payload_len_seen as u32) == *expected_seq {
+                        *expected_seq = expected_seq.wrapping_add(1);
+                        fin_seen = true;
+                        advanced = true;
+                    }
+
+                    if advanced {
+                        let _ = tcp_send_ack(
+                            target_ip,
+                            target_port,
+                            src_port,
+                            local_seq,
+                            *expected_seq,
+                        );
                     }
                 }
             }
         }
 
-        Ok((0, 0, false))
+        Ok((total_read, fin_seen))
+    }
+
+    /// Poll and receive an incoming TCP segment for the specified port pair.
+    ///
+    /// # Safety
+    /// Receives raw Ethernet frame via e1000 DMA engine.
+    pub unsafe fn tcp_receive_segment(
+        target_ip: [u8; 4],
+        target_port: u16,
+        src_port: u16,
+        timeout_ms: u64,
+        out_buf: &mut [u8],
+    ) -> Result<(usize, u32, bool), &'static str> {
+        let mut expected_seq = 0u32;
+        let (read_len, is_fin) = tcp_receive_stream(
+            target_ip,
+            target_port,
+            src_port,
+            &mut expected_seq,
+            0,
+            timeout_ms,
+            out_buf,
+        )?;
+        Ok((read_len, expected_seq, is_fin))
     }
 
     /// Perform real TCP 3-way handshake (SYN -> SYN-ACK -> PSH-ACK) and receive application response.
