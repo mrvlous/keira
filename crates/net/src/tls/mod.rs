@@ -11,16 +11,22 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-//! Transport Layer Security (TLS 1.3) cryptographic record and session state machine.
+//! Transport Layer Security (TLS 1.3) cryptographic record, handshake and session state machine.
 
 pub mod handshake;
+pub mod keyschedule;
 pub mod record;
+pub mod x509;
 
-pub use handshake::{build_hkdf_label, tls_connect};
+pub use handshake::{
+    build_hkdf_label, tls_attach_tcp, tls_close_slot, tls_connect, tls_recv_slot, tls_send_slot,
+};
 pub use record::*;
 
 pub mod native {
-    pub use super::handshake::{build_hkdf_label, tls_connect};
+    pub use super::handshake::{
+        build_hkdf_label, tls_attach_tcp, tls_close_slot, tls_connect, tls_recv_slot, tls_send_slot,
+    };
     pub use super::record::*;
 }
 
