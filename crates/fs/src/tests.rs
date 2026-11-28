@@ -43,7 +43,8 @@ fn test_virtual_directory_enumeration() {
     assert_eq!(dev::get_dev_entry(6).map(|e| e.name), Some("tty"));
     assert_eq!(dev::get_dev_entry(7).map(|e| e.name), Some("ptmx"));
     assert_eq!(dev::get_dev_entry(8).map(|e| e.name), Some("sda"));
-    assert_eq!(dev::get_dev_entry(9), None);
+    assert_eq!(dev::get_dev_entry(9).map(|e| e.name), Some("sdb"));
+    assert_eq!(dev::get_dev_entry(10), None);
 
     assert_eq!(proc::get_proc_entry(0).map(|e| e.name), Some("."));
     assert_eq!(proc::get_proc_entry(1).map(|e| e.name), Some(".."));

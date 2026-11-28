@@ -62,7 +62,7 @@ pub mod dispatcher {
 
     use crate::vfs::VirtualDirEntry;
 
-    pub static DEV_ENTRIES: [VirtualDirEntry; 9] = [
+    pub static DEV_ENTRIES: [VirtualDirEntry; 10] = [
         VirtualDirEntry {
             name: ".",
             d_type: 4,
@@ -107,6 +107,11 @@ pub mod dispatcher {
             name: "sda",
             d_type: 6,
             ino: 8,
+        },
+        VirtualDirEntry {
+            name: "sdb",
+            d_type: 6,
+            ino: 9,
         },
     ];
 

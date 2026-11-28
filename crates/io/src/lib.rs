@@ -45,7 +45,8 @@ pub use self::serial::uart::{
     print_u64 as serial_print_u64, putchar as serial_putchar,
 };
 pub use self::storage::ahci::{
-    self, flush_dma_cache, init as ahci_init, AhciBlockDevice, AHCI_DEVICE,
+    self, flush_dma_cache, init as ahci_init, sata_dma_transfer_slot, sata_flush_cache_slot,
+    AhciBlockDevice, AHCI_DEVICE, AHCI_SECONDARY_DEVICE,
 };
 pub use self::storage::block::{
     self, flush_mounted_device, for_each_device, get_device, get_mounted_device, mount_device,

@@ -22,10 +22,17 @@ pub fn read_partitions(buf: &mut [u8]) -> Result<usize, &'static str> {
 
     let _ = writeln!(writer, "major minor  #blocks  name\n");
 
-    if let Some(dev) = keira_io::storage::block::get_mounted_device() {
+    let mut minor = 0u32;
+    keira_io::storage::block::for_each_device(|dev, _is_mounted| {
         let blocks = dev.get_size_sectors() / 2;
-        let _ = writeln!(writer, "{:4} {:5} {:9} {}", 8, 0, blocks, dev.get_name());
-    }
+        let display_name = match dev.get_name() {
+            "ahci0" => "sda",
+            "ahci1" => "sdb",
+            other => other,
+        };
+        let _ = writeln!(writer, "{:4} {:5} {:9} {}", 8, minor, blocks, display_name);
+        minor += 16;
+    });
 
     Ok(writer.len())
 }

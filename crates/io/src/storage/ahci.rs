@@ -14,10 +14,12 @@
 //! Advanced Host Controller Interface (AHCI) Serial ATA (SATA) disk driver.
 
 pub mod device {
-    use super::driver::{flush_dma_cache, sata_dma_transfer, sata_flush_cache, SECTOR_BUF_PHYS};
+    use super::driver::{flush_dma_cache, sata_dma_transfer_slot, sata_flush_cache_slot, PORT_DMA};
     use crate::storage::block::BlockDevice;
 
     pub struct AhciBlockDevice {
+        /// Driver slot index (`0` for `ahci0`, `1` for `ahci1`).
+        pub dev_index: usize,
         /// Controller port index attached to this drive.
         pub port_num: usize,
         /// Total capacity in 512-byte sectors.
@@ -27,8 +29,8 @@ pub mod device {
     impl BlockDevice for AhciBlockDevice {
         fn read_sector(&self, sector: u32, buffer: &mut [u8; 512]) -> Result<(), &'static str> {
             unsafe {
-                sata_dma_transfer(self.port_num, sector, false)?;
-                let src = SECTOR_BUF_PHYS as *const u8;
+                sata_dma_transfer_slot(self.dev_index, self.port_num, sector, false)?;
+                let src = PORT_DMA[self.dev_index].sbuf as *const u8;
                 core::ptr::copy_nonoverlapping(src, buffer.as_mut_ptr(), 512);
                 Ok(())
             }
@@ -36,9 +38,9 @@ pub mod device {
 
         fn write_sector(&self, sector: u32, buffer: &[u8; 512]) -> Result<(), &'static str> {
             unsafe {
-                let dst = SECTOR_BUF_PHYS as *mut u8;
+                let dst = PORT_DMA[self.dev_index].sbuf as *mut u8;
                 core::ptr::copy_nonoverlapping(buffer.as_ptr(), dst, 512);
-                sata_dma_transfer(self.port_num, sector, true)?;
+                sata_dma_transfer_slot(self.dev_index, self.port_num, sector, true)?;
                 flush_dma_cache();
                 Ok(())
             }
@@ -49,30 +51,53 @@ pub mod device {
         }
 
         fn get_name(&self) -> &'static str {
-            "ahci0"
+            if self.dev_index == 0 {
+                "ahci0"
+            } else {
+                "ahci1"
+            }
         }
 
         fn flush(&self) -> Result<(), &'static str> {
-            unsafe { sata_flush_cache(self.port_num) }
+            unsafe { sata_flush_cache_slot(self.dev_index, self.port_num) }
         }
     }
 
     pub static mut AHCI_DEVICE: Option<AhciBlockDevice> = None;
+    pub static mut AHCI_SECONDARY_DEVICE: Option<AhciBlockDevice> = None;
 }
 
 pub mod driver {
-    use super::device::{AhciBlockDevice, AHCI_DEVICE};
+    use super::device::{AhciBlockDevice, AHCI_DEVICE, AHCI_SECONDARY_DEVICE};
     use super::registers::*;
     use crate::bus::pci;
     use crate::storage::block::register_device;
     use keira_mem::{pmm, vmm};
 
+    #[derive(Copy, Clone)]
+    pub struct AhciPortDma {
+        pub allocated: bool,
+        pub clb: u64,
+        pub fis: u64,
+        pub ctb: u64,
+        pub sbuf: u64,
+    }
+
+    impl AhciPortDma {
+        /// Create an unallocated AHCI DMA frame descriptor tuple.
+        pub const fn empty() -> Self {
+            Self {
+                allocated: false,
+                clb: 0,
+                fis: 0,
+                ctb: 0,
+                sbuf: 0,
+            }
+        }
+    }
+
     pub(crate) static mut ABAR_VIRTUAL: u64 = 0;
-    pub(crate) static mut CLB_PHYS: u64 = 0;
-    pub(crate) static mut FIS_PHYS: u64 = 0;
-    pub(crate) static mut CTB_PHYS: u64 = 0;
-    pub(crate) static mut SECTOR_BUF_PHYS: u64 = 0;
-    pub(crate) static mut PORT_DMA_ALLOCATED: bool = false;
+    pub(crate) static mut PORT_DMA: [AhciPortDma; 2] = [AhciPortDma::empty(), AhciPortDma::empty()];
 
     /// Reads a 32-bit register from the AHCI Host Bus Adapter MMIO space at `offset`.
     ///
@@ -131,33 +156,40 @@ pub mod driver {
         core::arch::asm!("mfence", options(nostack, preserves_flags));
     }
 
-    /// Executes a single-sector SATA DMA read or write command on the specified AHCI port.
+    /// Executes a single-sector SATA DMA read or write command on the specified AHCI slot and port.
     ///
     /// # Safety
-    /// `init()` must have succeeded so `ABAR_VIRTUAL`, `CLB_PHYS`, `CTB_PHYS` and
-    /// `SECTOR_BUF_PHYS` are mapped, identity-addressed and writable. `port` must be an active
-    /// initialized SATA port (< 32), the CPU must support `io_delay()` and callers must
-    /// serialize access to the shared DMA buffers and port registers.
-    pub unsafe fn sata_dma_transfer(
+    /// `PORT_DMA[slot]` must be allocated and mapped and `port` must be an active initialized SATA
+    /// port (< 32). Callers must serialize concurrent transfers on the same `slot`.
+    pub unsafe fn sata_dma_transfer_slot(
+        slot: usize,
         port: usize,
         sector: u32,
         write: bool,
     ) -> Result<(), &'static str> {
+        let dma = (*core::ptr::addr_of!(PORT_DMA))
+            .get(slot)
+            .copied()
+            .ok_or("AHCI: Invalid slot index")?;
+        if !dma.allocated {
+            return Err("AHCI: Port DMA not allocated");
+        }
+
         write_port(port, PORT_REG_IS, 0xFFFFFFFF);
         write_port(port, PORT_REG_SERR, 0xFFFFFFFF);
 
-        let cmd_header = CLB_PHYS as *mut CmdHeader;
+        let cmd_header = dma.clb as *mut CmdHeader;
         let opts = 5 | if write { 1 << 6 } else { 0 };
         (*cmd_header).opts = opts;
         (*cmd_header).prdtl = 1;
         (*cmd_header).prdbc = 0;
-        (*cmd_header).ctba = CTB_PHYS as u32;
-        (*cmd_header).ctbau = (CTB_PHYS >> 32) as u32;
+        (*cmd_header).ctba = dma.ctb as u32;
+        (*cmd_header).ctbau = (dma.ctb >> 32) as u32;
         for i in 0..4 {
             (*cmd_header).rsv1[i] = 0;
         }
 
-        let cfis = CTB_PHYS as *mut u8;
+        let cfis = dma.ctb as *mut u8;
         core::ptr::write_bytes(cfis, 0, 128);
 
         *cfis.add(0) = 0x27;
@@ -175,9 +207,9 @@ pub mod driver {
         *cfis.add(12) = 1;
         *cfis.add(13) = 0;
 
-        let prdt = (CTB_PHYS + 128) as *mut PrdtEntry;
-        (*prdt).dba = SECTOR_BUF_PHYS as u32;
-        (*prdt).dbau = (SECTOR_BUF_PHYS >> 32) as u32;
+        let prdt = (dma.ctb + 128) as *mut PrdtEntry;
+        (*prdt).dba = dma.sbuf as u32;
+        (*prdt).dbau = (dma.sbuf >> 32) as u32;
         (*prdt).rsv0 = 0;
         (*prdt).dbc = 511;
 
@@ -223,32 +255,42 @@ pub mod driver {
         Ok(())
     }
 
-    /// Issues an ATA `FLUSH CACHE` command on the specified AHCI port and waits for completion.
+    /// Executes a single-sector SATA DMA transfer on primary slot 0.
     ///
     /// # Safety
-    /// When `PORT_DMA_ALLOCATED` is true, `ABAR_VIRTUAL`, `CLB_PHYS` and `CTB_PHYS` must
-    /// reference mapped identity-addressed writable HBA/DMA memory and `port` must be an
-    /// active initialized SATA port (< 32). Callers must execute in Ring 0 on an SSE2-capable
-    /// CPU and serialize access to the shared DMA structures and port registers.
-    pub unsafe fn sata_flush_cache(port: usize) -> Result<(), &'static str> {
-        if !PORT_DMA_ALLOCATED {
-            return Ok(());
-        }
+    /// Satisfies all safety preconditions of [`sata_dma_transfer_slot`].
+    pub unsafe fn sata_dma_transfer(
+        port: usize,
+        sector: u32,
+        write: bool,
+    ) -> Result<(), &'static str> {
+        sata_dma_transfer_slot(0, port, sector, write)
+    }
+
+    /// Issues an ATA `FLUSH CACHE` command on the specified AHCI slot and port.
+    ///
+    /// # Safety
+    /// `PORT_DMA[slot]` must be allocated and mapped and `port` must be an active SATA port (< 32).
+    pub unsafe fn sata_flush_cache_slot(slot: usize, port: usize) -> Result<(), &'static str> {
+        let dma = match (*core::ptr::addr_of!(PORT_DMA)).get(slot) {
+            Some(d) if d.allocated => *d,
+            _ => return Ok(()),
+        };
 
         write_port(port, PORT_REG_IS, 0xFFFFFFFF);
         write_port(port, PORT_REG_SERR, 0xFFFFFFFF);
 
-        let cmd_header = CLB_PHYS as *mut CmdHeader;
+        let cmd_header = dma.clb as *mut CmdHeader;
         (*cmd_header).opts = 5;
         (*cmd_header).prdtl = 0;
         (*cmd_header).prdbc = 0;
-        (*cmd_header).ctba = CTB_PHYS as u32;
-        (*cmd_header).ctbau = (CTB_PHYS >> 32) as u32;
+        (*cmd_header).ctba = dma.ctb as u32;
+        (*cmd_header).ctbau = (dma.ctb >> 32) as u32;
         for i in 0..4 {
             (*cmd_header).rsv1[i] = 0;
         }
 
-        let cfis = CTB_PHYS as *mut u8;
+        let cfis = dma.ctb as *mut u8;
         core::ptr::write_bytes(cfis, 0, 128);
 
         *cfis.add(0) = 0x27;
@@ -296,6 +338,14 @@ pub mod driver {
 
         flush_dma_cache();
         Ok(())
+    }
+
+    /// Issues an ATA `FLUSH CACHE` command on primary slot 0.
+    ///
+    /// # Safety
+    /// Satisfies all safety preconditions of [`sata_flush_cache_slot`].
+    pub unsafe fn sata_flush_cache(port: usize) -> Result<(), &'static str> {
+        sata_flush_cache_slot(0, port)
     }
 
     pub fn init() -> Result<(), &'static str> {
@@ -347,7 +397,11 @@ pub mod driver {
             write_abar(AHCI_REG_GHC, ghc | GHC_AE | GHC_IE);
 
             let pi = read_abar(AHCI_REG_PI);
+            let mut next_slot = 0usize;
             for port in 0..32 {
+                if next_slot >= (&*core::ptr::addr_of!(PORT_DMA)).len() {
+                    break;
+                }
                 if (pi & (1 << port)) != 0 {
                     let mut det_timeout = 10_000;
                     let mut det = 0;
@@ -364,7 +418,7 @@ pub mod driver {
                     }
 
                     if det == 3 && ipm == 1 {
-                        if !PORT_DMA_ALLOCATED {
+                        if !PORT_DMA[next_slot].allocated {
                             let clb =
                                 pmm::alloc_frame().ok_or("AHCI: Failed to alloc CLB frame")?;
                             let fis =
@@ -379,13 +433,16 @@ pub mod driver {
                             vmm::map_page(ctb, ctb, vmm::PAGE_WRITABLE)?;
                             vmm::map_page(sbuf, sbuf, vmm::PAGE_WRITABLE)?;
 
-                            CLB_PHYS = clb;
-                            FIS_PHYS = fis;
-                            CTB_PHYS = ctb;
-                            SECTOR_BUF_PHYS = sbuf;
-                            PORT_DMA_ALLOCATED = true;
+                            PORT_DMA[next_slot] = AhciPortDma {
+                                allocated: true,
+                                clb,
+                                fis,
+                                ctb,
+                                sbuf,
+                            };
                         }
 
+                        let dma = PORT_DMA[next_slot];
                         let p = port;
                         let mut cmd_val = read_port(p, PORT_REG_CMD);
                         cmd_val &= !(1 << 0);
@@ -404,15 +461,15 @@ pub mod driver {
                             t -= 1;
                         }
 
-                        core::ptr::write_bytes(CLB_PHYS as *mut u8, 0, 4096);
-                        core::ptr::write_bytes(FIS_PHYS as *mut u8, 0, 4096);
-                        core::ptr::write_bytes(CTB_PHYS as *mut u8, 0, 4096);
-                        core::ptr::write_bytes(SECTOR_BUF_PHYS as *mut u8, 0, 4096);
+                        core::ptr::write_bytes(dma.clb as *mut u8, 0, 4096);
+                        core::ptr::write_bytes(dma.fis as *mut u8, 0, 4096);
+                        core::ptr::write_bytes(dma.ctb as *mut u8, 0, 4096);
+                        core::ptr::write_bytes(dma.sbuf as *mut u8, 0, 4096);
 
-                        write_port(p, PORT_REG_CLB, CLB_PHYS as u32);
-                        write_port(p, 0x04, (CLB_PHYS >> 32) as u32);
-                        write_port(p, PORT_REG_FB, FIS_PHYS as u32);
-                        write_port(p, 0x0C, (FIS_PHYS >> 32) as u32);
+                        write_port(p, PORT_REG_CLB, dma.clb as u32);
+                        write_port(p, 0x04, (dma.clb >> 32) as u32);
+                        write_port(p, PORT_REG_FB, dma.fis as u32);
+                        write_port(p, 0x0C, (dma.fis >> 32) as u32);
 
                         write_port(p, PORT_REG_IS, 0xFFFFFFFF);
                         write_port(p, PORT_REG_SERR, 0xFFFFFFFF);
@@ -432,16 +489,27 @@ pub mod driver {
 
                         let sig = read_port(p, PORT_REG_SIG);
                         if sig == AHCI_SIG_SATA {
-                            let size_sectors = 20480;
-                            AHCI_DEVICE = Some(AhciBlockDevice {
-                                port_num: port,
-                                size_sectors,
-                            });
-
-                            if let Some(ref dev_ref) = AHCI_DEVICE {
-                                register_device(dev_ref)?;
+                            let size_sectors = 65536;
+                            if next_slot == 0 {
+                                AHCI_DEVICE = Some(AhciBlockDevice {
+                                    dev_index: 0,
+                                    port_num: port,
+                                    size_sectors,
+                                });
+                                if let Some(ref dev_ref) = AHCI_DEVICE {
+                                    register_device(dev_ref)?;
+                                }
+                            } else {
+                                AHCI_SECONDARY_DEVICE = Some(AhciBlockDevice {
+                                    dev_index: 1,
+                                    port_num: port,
+                                    size_sectors,
+                                });
+                                if let Some(ref dev_ref) = AHCI_SECONDARY_DEVICE {
+                                    register_device(dev_ref)?;
+                                }
                             }
-                            break;
+                            next_slot += 1;
                         }
                     }
                 }
