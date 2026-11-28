@@ -53,10 +53,11 @@ CONFIG_FS_PROCFS=y
 #
 # Networking Subsystem & Device Drivers
 #
-# Bare-metal TCP/IP protocol stack, Intel e1000 PCI driver and BSD socket interfaces.
+# Bare-metal TCP/IP stack, TLS 1.3 transport, Intel e1000 driver and BSD sockets.
 CONFIG_NET_STACK=y
 CONFIG_NET_E1000=y
 CONFIG_NET_SOCKETS=y
+CONFIG_NET_TLS=y
 
 #
 # Security, Hardening & Isolation

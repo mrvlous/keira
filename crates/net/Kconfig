@@ -30,4 +30,13 @@ config NET_SOCKETS
 	  Provide standard socket, bind, listen, accept, connect, send and
 	  recv system call interfaces.
 
+config NET_TLS
+	bool "TLS 1.3 (RFC 8446) Encrypted Transport & HTTPS"
+	default y
+	depends on NET_STACK && CRYPTO_ENTROPY
+	help
+	  Enable pure Ring 0 TLS 1.3 cryptographic transport with X25519
+	  ECDH, HKDF-SHA256 key schedule, AES-128-GCM AEAD and X.509
+	  hostname validation for HTTPS clients.
+
 endmenu

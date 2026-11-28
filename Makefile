@@ -81,6 +81,7 @@ FS_ROOT_STAMP   := $(STAGING_DIR)/.fs-root-stamp-$(USERLAND)
 
 KERNEL_BIN      := $(BIN_DIR)/$(KERNEL_NAME).bin
 DISK_IMG        := $(DISK_DIR)/disk.img
+EXT4_IMG        := $(DISK_DIR)/ext4.img
 INITRD_TAR      := $(DISK_DIR)/initrd.tar
 
 ifeq ($(CONFIG_SMP),y)
@@ -151,7 +152,9 @@ ifeq ($(USERLAND),0)
 else
     QEMU_DISK_FLAGS := -device ahci,id=ahci0 \
                        -drive file=$(DISK_IMG),format=raw,id=sata0,if=none \
-                       -device ide-hd,drive=sata0,bus=ahci0.0
+                       -device ide-hd,drive=sata0,bus=ahci0.0 \
+                       -drive file=$(EXT4_IMG),format=raw,id=sata1,if=none \
+                       -device ide-hd,drive=sata1,bus=ahci0.1
 endif
 
 QEMU_FLAGS      := -cdrom $(KERNEL_ISO) \
@@ -297,10 +300,10 @@ preflight-lint: ## Validate presence of static analysis utilities
 ifeq ($(USERLAND),0)
     DISK_TARGET :=
 else
-    DISK_TARGET := $(DISK_IMG)
+    DISK_TARGET := $(DISK_IMG) $(EXT4_IMG)
 endif
 
-all: preflight $(KERNEL_ISO) $(DISK_TARGET) ## Build kernel, ISO image and FAT16 disk image for current ARCH
+all: preflight $(KERNEL_ISO) $(DISK_TARGET) ## Build kernel, ISO image and FAT16/EXT4 disk images for current ARCH
 
 kernel: preflight $(KERNEL_BIN) ## Build only the Ring 0 kernel binary (ELF)
 
@@ -320,7 +323,7 @@ fll: full
 
 iso: preflight $(KERNEL_ISO) ## Package GRUB Multiboot2 bootable ISO image
 
-disk: preflight $(DISK_IMG) ## Create and populate FAT16 hard disk image
+disk: preflight $(DISK_IMG) $(EXT4_IMG) ## Create and populate FAT16 and EXT4 hard disk images
 
 initrd: preflight $(INITRD_TAR) ## Build RAM Disk USTAR archive
 
@@ -500,7 +503,7 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	$(Q)dd if=/dev/zero of=$(DISK_IMG) bs=1M count=$(DISK_SIZE) 2>/dev/null
 	$(Q)mkfs.fat -F 16 $(DISK_IMG) >/dev/null
 	@$(LOG_DISK) "Creating nested Keira directory structure ($(ARCH))..."
-	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/mnt ::/usr ::/usr/src ::/tmp ::/var ::/var/log 2>/dev/null || true
+	$(Q)mmd -i $(DISK_IMG) ::/bin ::/dev ::/proc ::/sys ::/etc ::/include ::/include/sys ::/lib ::/mnt ::/mnt/ext4 ::/usr ::/usr/src ::/tmp ::/var ::/var/log 2>/dev/null || true
 	$(Q)for d in $$(cd $(FS_ROOT) && find . -mindepth 1 -type d | sed 's|^\./||' | sort); do \
 	    mmd -D s -i $(DISK_IMG) ::/$$d 2>/dev/null || true; \
 	done
@@ -509,6 +512,13 @@ $(DISK_IMG): $(FS_ROOT_STAMP)
 	    mcopy -o -i $(DISK_IMG) $(FS_ROOT)/$$f ::/$$f; \
 	done
 	@$(LOG_DONE) "$(DISK_IMG) ready"
+
+$(EXT4_IMG): | dirs
+	@rm -f $(EXT4_IMG)
+	@$(LOG_DISK) "Creating 16MB EXT4 read-write disk image ($(ARCH))..."
+	$(Q)dd if=/dev/zero of=$(EXT4_IMG) bs=1M count=16 2>/dev/null
+	$(Q)mkfs.ext4 -F -q -b 4096 -L KEIRA_EXT4_ROOT -O ^has_journal,extent,filetype,^metadata_csum,^64bit,^orphan_file $(EXT4_IMG)
+	@$(LOG_DONE) "$(EXT4_IMG) ready"
 
 $(INITRD_TAR): $(FS_ROOT_STAMP) | dirs
 	@$(LOG_INFO) "Building RAM Disk (Initrd) ($(ARCH))..."
@@ -614,7 +624,7 @@ faddr2line: $(KERNEL_BIN) ## Translate fault address to source location (ADDR=<a
 check: ## Verify all required build dependencies are installed
 	@MISSING=0; \
 	for tool in $(ASM) $(CC) $(LD) $(CARGO) rustc $(GRUB_MKRESCUE) xorriso $(QEMU) \
-	            clang-format clang-tidy mkfs.fat mmd mcopy tar dd; do \
+	            clang-format clang-tidy mkfs.fat mkfs.ext4 mmd mcopy tar dd; do \
 	    display_name=$$(basename "$$tool"); \
 	    if command -v $$tool >/dev/null 2>&1; then \
 	        $(LOG_CHECK) "$$display_name"; \
@@ -630,11 +640,11 @@ check: ## Verify all required build dependencies are installed
 	    $(LOG_ERR) "$$MISSING missing dependencies detected"; \
 	    printf "\n[INFO] Install missing dependencies using your host package manager:\n"; \
 	    printf "  Ubuntu / Debian:\n"; \
-	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso qemu-system-x86 clang-format clang-tidy dosfstools mtools tar coreutils\n\n"; \
+	    printf "    sudo apt-get update && sudo apt-get install -y nasm gcc binutils cargo rustc grub-pc-bin grub-common xorriso qemu-system-x86 clang-format clang-tidy dosfstools e2fsprogs mtools tar coreutils\n\n"; \
 	    printf "  Arch Linux:\n"; \
-	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso qemu-system-x86 qemu-desktop clang dosfstools mtools tar coreutils\n\n"; \
+	    printf "    sudo pacman -S --needed nasm gcc binutils rust grub xorriso qemu-system-x86 qemu-desktop clang dosfstools e2fsprogs mtools tar coreutils\n\n"; \
 	    printf "  Fedora / RHEL:\n"; \
-	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso qemu-system-x86 clang-tools-extra dosfstools mtools tar coreutils\n\n"; \
+	    printf "    sudo dnf install -y nasm gcc binutils cargo rustc grub2-tools-extra xorriso qemu-system-x86 clang-tools-extra dosfstools e2fsprogs mtools tar coreutils\n\n"; \
 	    printf "  Rust Nightly (required):\n"; \
 	    printf "    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && rustup default nightly\n\n"; \
 	    exit 1; \
