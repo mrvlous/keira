@@ -265,6 +265,26 @@ pub mod table {
             return Err("Mount source device exceeds maximum length");
         }
 
+        if fs_type == FilesystemType::Ext4 {
+            let dev_hint = match source {
+                "/dev/sdb" | "sdb" | "ahci1" => Some("ahci1"),
+                "/dev/sda" | "sda" | "ahci0" => Some("ahci0"),
+                "ext4" => Some("ext4"),
+                "ram1" => Some("ram1"),
+                "ram0" => Some("ram0"),
+                "ide0" => Some("ide0"),
+                _ => None,
+            };
+            if let Some(dev_name) = dev_hint {
+                crate::ext4::init_with_device(dev_name)?;
+            } else if !crate::ext4::is_disk_mounted() {
+                crate::ext4::init()?;
+                if !crate::ext4::is_disk_mounted() {
+                    return Err("No valid EXT4 block volume detected");
+                }
+            }
+        }
+
         let mut table = MOUNT_TABLE.lock();
 
         // Check if target is already mounted
@@ -311,6 +331,11 @@ pub mod table {
             {
                 if entry.fs_type == FilesystemType::Tmpfs {
                     super::tmpfs::clear_all();
+                } else if entry.fs_type == FilesystemType::Ext4 {
+                    unsafe {
+                        let _ = crate::cache::kflushd_step();
+                    }
+                    let _ = crate::ext4::sync_filesystem();
                 }
                 entry.is_active = false;
                 return Ok(());

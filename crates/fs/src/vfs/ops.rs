@@ -26,7 +26,7 @@ pub mod node {
             FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
             FilesystemType::Dev => Err("VFS Error: DevFS nodes are static"),
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::create_file(clean_path),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
+            FilesystemType::Ext4 => crate::ext4::ext4_create_file(clean_path),
             FilesystemType::Fat => unsafe { fat::create_file(clean_path) },
         };
         if res.is_ok() {
@@ -47,7 +47,7 @@ pub mod node {
             FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
             FilesystemType::Dev => Err("VFS Error: DevFS nodes cannot be removed"),
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::remove_entry(clean_path),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
+            FilesystemType::Ext4 => crate::ext4::ext4_remove_entry(clean_path),
             FilesystemType::Fat => unsafe { fat::remove_entry(clean_path) },
         }
     }
@@ -59,7 +59,7 @@ pub mod node {
             FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
             FilesystemType::Dev => Err("VFS Error: DevFS is read-only"),
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::create_dir(clean_path),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 is read-only"),
+            FilesystemType::Ext4 => crate::ext4::ext4_create_dir(clean_path),
             FilesystemType::Fat => unsafe { fat::create_dir(clean_path) },
         };
         if res.is_ok() {
@@ -86,10 +86,13 @@ pub mod node {
             FilesystemType::Initrd => clean_path.is_empty() || tar::exists(clean_path),
             FilesystemType::Proc => crate::proc::exists(clean_path),
             FilesystemType::Dev => {
-                clean_path.is_empty() || crate::dev::char::exists(clean_path) || clean_path == "sda"
+                clean_path.is_empty()
+                    || crate::dev::char::exists(clean_path)
+                    || clean_path == "sda"
+                    || clean_path == "sdb"
             }
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::exists(clean_path),
-            FilesystemType::Ext4 => false,
+            FilesystemType::Ext4 => clean_path.is_empty() || crate::ext4::ext4_exists(clean_path),
             FilesystemType::Fat => unsafe {
                 if fat::VOLUME.is_none() {
                     return tar::exists(clean_path);
@@ -133,7 +136,7 @@ pub mod node {
             FilesystemType::Proc => crate::proc::is_proc_dir(clean_path),
             FilesystemType::Dev => clean_path.is_empty(),
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::is_dir(clean_path),
-            FilesystemType::Ext4 => clean_path.is_empty(),
+            FilesystemType::Ext4 => clean_path.is_empty() || crate::ext4::ext4_is_dir(clean_path),
             FilesystemType::Fat => unsafe {
                 if fat::VOLUME.is_none() {
                     return clean_path.is_empty();
@@ -175,7 +178,7 @@ pub mod node {
                 }
             },
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::get_file_size(clean_path),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 file size query not supported"),
+            FilesystemType::Ext4 => crate::ext4::ext4_get_file_size(clean_path),
             FilesystemType::Proc => Err("VFS Error: ProcFS files have dynamic size"),
             FilesystemType::Dev => Err("VFS Error: DevFS nodes have no size"),
         }
@@ -471,7 +474,7 @@ pub mod read {
                 }
             },
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::read_file(clean_path, buf),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 read not implemented"),
+            FilesystemType::Ext4 => crate::ext4::ext4_read_file(clean_path, buf),
             FilesystemType::Proc => crate::proc::read_proc_file(clean_path, buf),
             FilesystemType::Dev => unsafe { crate::dev::read_dev_node(clean_path, buf) },
         }
@@ -500,7 +503,7 @@ pub mod read {
             FilesystemType::Tmpfs => {
                 crate::vfs::mount::tmpfs::read_file_offset(clean_path, offset, buf)
             }
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 offset read not implemented"),
+            FilesystemType::Ext4 => crate::ext4::ext4_read_file_offset(clean_path, offset, buf),
             FilesystemType::Proc => Err("VFS Error: ProcFS does not support offset read"),
             FilesystemType::Dev => Err("VFS Error: DevFS does not support offset read"),
         }
@@ -580,7 +583,7 @@ pub mod symlink {
             crate::vfs::types::FilesystemType::Tmpfs => {
                 crate::vfs::mount::tmpfs::exists(routed_path)
             }
-            crate::vfs::types::FilesystemType::Ext4 => false,
+            crate::vfs::types::FilesystemType::Ext4 => crate::ext4::ext4_exists(routed_path),
             crate::vfs::types::FilesystemType::Fat => unsafe {
                 if let Ok((dir_cluster, name)) = crate::fat::resolve_path(routed_path) {
                     if name.is_empty() {
@@ -751,7 +754,7 @@ pub mod write {
             FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
             FilesystemType::Dev => unsafe { crate::dev::write_dev_node(clean_path, content) },
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::write_file(clean_path, content),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 write not implemented"),
+            FilesystemType::Ext4 => crate::ext4::ext4_write_file(clean_path, content),
             FilesystemType::Fat => unsafe {
                 fat::write_file_content(clean_path, content)?;
                 Ok(content.len())
@@ -776,7 +779,9 @@ pub mod write {
             FilesystemType::Proc => Err("VFS Error: ProcFS is read-only"),
             FilesystemType::Dev => Err("VFS Error: DevFS does not support offset write"),
             FilesystemType::Tmpfs => crate::vfs::mount::tmpfs::write_file(clean_path, content),
-            FilesystemType::Ext4 => Err("VFS Error: Ext4 write not implemented"),
+            FilesystemType::Ext4 => {
+                crate::ext4::ext4_write_file_offset(clean_path, offset, content)
+            }
             FilesystemType::Fat => unsafe { fat::write_file_offset(clean_path, offset, content) },
         }
     }

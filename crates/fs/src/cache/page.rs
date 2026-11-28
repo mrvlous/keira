@@ -22,6 +22,9 @@ pub const PAGE_SIZE: usize = 4096;
 /// Total capacity of the global unified page cache pool (32 pages = 128 KiB).
 pub const PAGE_CACHE_CAPACITY: usize = 32;
 
+/// Page cache device identifier reserved for mounted EXT4 volumes.
+pub const EXT4_CACHE_DEV_ID: u8 = 2;
+
 /// Page validity flag indicating resident cached data.
 pub const PAGE_FLAG_VALID: u8 = 1 << 0;
 
@@ -218,6 +221,14 @@ unsafe fn allocate_slot() -> usize {
 
     let evict_entry = &mut PAGE_CACHE[oldest_slot];
     if evict_entry.is_dirty() {
+        if evict_entry.device == EXT4_CACHE_DEV_ID {
+            let valid_len = evict_entry.valid_len.min(PAGE_SIZE);
+            let _ = crate::ext4::writeback_page(
+                evict_entry.inode,
+                evict_entry.page_index,
+                &evict_entry.data[..valid_len],
+            );
+        }
         PAGE_WRITEBACKS = PAGE_WRITEBACKS.wrapping_add(1);
     }
     PAGE_EVICTIONS = PAGE_EVICTIONS.wrapping_add(1);
@@ -424,10 +435,16 @@ pub unsafe fn kflushd_step() -> usize {
         return 0;
     }
 
-    let flushed = flush_dirty_pages(|_device, _inode, _page_index, _data| {
-        // Disk writeback dispatch callback hook
+    let flushed = flush_dirty_pages(|device, inode, page_index, data| {
+        if device == EXT4_CACHE_DEV_ID {
+            crate::ext4::writeback_page(inode, page_index, data)?;
+        }
         Ok(())
     });
+
+    if flushed > 0 {
+        let _ = crate::ext4::sync_filesystem();
+    }
 
     KFLUSHD_PAGES_COMMITTED = KFLUSHD_PAGES_COMMITTED.wrapping_add(flushed as u64);
     flushed

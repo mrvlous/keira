@@ -599,7 +599,9 @@ pub fn handle_vmsplice(arg1: u64, arg2: u64, arg3: u64) -> u64 {
 /// Syscall 70: Commit buffer cache to disk.
 pub fn handle_sync() -> u64 {
     unsafe {
+        let _ = keira_fs::cache::kflushd_step();
         let _ = keira_fs::cache::icache_flush_dirty();
+        let _ = keira_fs::ext4::sync_filesystem();
         let _ = keira_fs::fat::flush_dirty_sectors();
         let _ = keira_io::storage::block::flush_mounted_device();
         keira_io::storage::ahci::flush_dma_cache();
@@ -623,6 +625,8 @@ pub fn handle_fsync(arg1: u64) -> u64 {
             return errno_to_ret(EBADF);
         }
 
+        let _ = keira_fs::cache::kflushd_step();
+        let _ = keira_fs::ext4::sync_filesystem();
         let _ = keira_fs::fat::flush_dirty_sectors();
         let _ = keira_io::storage::block::flush_mounted_device();
         keira_io::storage::ahci::flush_dma_cache();
@@ -992,7 +996,7 @@ pub fn handle_getdents(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                 return 0;
             }
 
-            let (_, fs_type) = keira_fs::vfs::route_path(normalized_path);
+            let (routed_path, fs_type) = keira_fs::vfs::route_path(normalized_path);
             if fs_type == keira_fs::vfs::FilesystemType::Tmpfs {
                 let target_idx = t.fds[fd].offset as usize;
                 if let Some((name_arr, name_len, d_type, ino)) =
@@ -1020,6 +1024,36 @@ pub fn handle_getdents(arg1: u64, arg2: u64, arg3: u64) -> u64 {
                     return core::mem::size_of::<Dirent>() as u64;
                 }
                 return 0;
+            }
+
+            if fs_type == keira_fs::vfs::FilesystemType::Ext4 {
+                let target_idx = t.fds[fd].offset as usize;
+                match keira_fs::ext4::ext4_get_dir_entry_by_path(routed_path, target_idx) {
+                    Ok(Some((ino, d_type, name_arr, name_len))) => {
+                        let mut d = Dirent {
+                            d_ino: ino as u64,
+                            d_off: (target_idx + 1) as i64,
+                            d_reclen: core::mem::size_of::<Dirent>() as u16,
+                            d_type,
+                            d_name: [0u8; 256],
+                            _pad: [0u8; 5],
+                        };
+                        let len = name_len.min(255);
+                        d.d_name[..len].copy_from_slice(&name_arr[..len]);
+
+                        let entry_bytes = core::slice::from_raw_parts(
+                            &d as *const Dirent as *const u8,
+                            core::mem::size_of::<Dirent>(),
+                        );
+                        if copy_to_user(buf_ptr, entry_bytes).is_err() {
+                            return errno_to_ret(EFAULT);
+                        }
+                        t.fds[fd].offset += 1;
+                        return core::mem::size_of::<Dirent>() as u64;
+                    }
+                    Ok(None) => return 0,
+                    Err(_) => return errno_to_ret(ENOTDIR),
+                }
             }
 
             let target_cluster = match keira_fs::fat::get_dir_cluster(normalized_path) {

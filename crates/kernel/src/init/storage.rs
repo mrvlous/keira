@@ -82,6 +82,31 @@ pub unsafe fn init_storage_and_fs() {
         );
     }
 
+    if block::get_device("ahci1").is_some() {
+        if !keira_fs::vfs::exists("/mnt") {
+            let _ = keira_fs::vfs::create_dir("/mnt");
+        }
+        if !keira_fs::vfs::exists("/mnt/ext4") {
+            let _ = keira_fs::vfs::create_dir("/mnt/ext4");
+        }
+        match keira_fs::vfs::vfs_mount(
+            "/dev/sdb",
+            "/mnt/ext4",
+            keira_fs::vfs::FilesystemType::Ext4,
+            0,
+        ) {
+            Ok(()) => {
+                keira_core::pr_info!(
+                    "ext4",
+                    "mounted secondary EXT4 read-write volume on /mnt/ext4 (/dev/sdb)"
+                );
+            }
+            Err(e) => {
+                keira_core::pr_warn!("ext4", "secondary /dev/sdb EXT4 mount skipped: {}", e);
+            }
+        }
+    }
+
     keira_mem::vmm::register_file_backing_hooks(file_backing_read, file_backing_sync);
     keira_core::pr_info!(
         "vmm",
