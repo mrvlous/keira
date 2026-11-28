@@ -201,8 +201,8 @@ Keira implements a robust, secure and standardized system call vector table prov
    * - ``33``
      - ``SYS_TLS_CONNECT``
      - Network
-     - ``int tls_connect(int sockfd, const char *hostname)``
-     - Performs in-kernel TLS 1.3 handshake negotiation
+     - ``int tls_connect(int sockfd, const char *hostname, int flags)``
+     - Upgrades connected TCP socket to RFC 8446 TLS 1.3 with X.509 SAN validation
    * - ``34``
      - ``SYS_INIT_MODULE``
      - System

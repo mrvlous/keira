@@ -10,6 +10,7 @@ Character Device Implementation
 * ``urandom``: Provides cryptographically secure random bytes.
 * ``tty``: Interactive terminal character stream interface.
 * ``ptmx``: Pseudoterminal multiplexer master endpoint.
-* ``sda``: Primary storage block device node alias.
+* ``sda``: Primary storage block device node alias (``ahci0``).
+* ``sdb``: Secondary EXT4 block device node alias (``ahci1``, mounted on ``/mnt/ext4``).
 
 Virtual directory enumeration (``SYS_GETDENTS``) is supported over ``/dev``, returning canonical directory entries for all active device nodes.
