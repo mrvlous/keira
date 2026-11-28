@@ -1,55 +1,41 @@
 .. SPDX-License-Identifier: GPL-2.0-only
 
 
-Automated Testing & Verification Suite
-======================================
+Host-Side Unit Testing Architecture
+===================================
 
-Keira employs a multi-tiered testing strategy encompassing unit tests, automated QEMU smoke tests, Ring 3 ABI verification and differential system call fuzzing.
+Keira verifies pure kernel logic, configuration tooling and selftest harnesses on the host prior to bare-metal cross-compilation and QEMU execution.
 
-1. Testing Pyramid
-==================
+1. Unified Host Unit Test Target
+================================
 
-.. code-block:: text
-
-   graph TD
-       Unit["Host Unit Tests (cargo test)"] --> QEMUSmoke["Headless QEMU Smoke Tests (make test / make test-all)"]
-       QEMUSmoke --> ABITests["Ring 3 ABI Conformance (test_abi.elf)"]
-       ABITests --> Fuzzing["System Call Boundary Fuzzing (fuzz_abi.elf)"]
-
-2. Automated QEMU Test Harness
-==============================
-
-Execute headless tests verifying kernel boot, shell initialization, command execution and clean shutdown:
+Execute all host-side Python and Rust unit test suites through a single entrypoint:
 
 .. code-block:: bash
 
-   # Run test suite for current architecture
-   make test
+   # Run Kconfig tests, QEMU smoke selftest unit tests and Rust workspace tests
+   make test-unit
 
-   # Run test suite across both x86_64 and i686 architectures
-   make test-all
+2. Python Tooling & Selftest Suites
+===================================
 
-The test runner:
+1. **Kconfig & Kbuild Engine (``scripts/kconfig/tests/runner.py``)**:
 
-1. Boots kernel in QEMU with ``-display none -serial stdio``.
-2. Interacts with the serial console, executing verification commands (``sysinfo``, ``fs list``, ``net info``).
-3. Evaluates command outputs against expected tokens.
-4. Asserts exit code ``0`` on 100% test pass.
+   .. code-block:: bash
 
-3. Ring 3 ABI Conformance Testing
-=================================
+      make test-kbuild
 
-The ``test_abi.elf`` binary exercises system calls from user mode:
+   Validates grammar parsing, symbol visibility, dependency evaluation and defconfig header generation without external Python dependencies.
 
-* ``fork()``, ``execve()``, ``waitpid()`` process lifecycle validation.
-* POSIX file I/O operations (``open``, ``read``, ``write``, ``lseek``, ``close``).
-* Virtual memory boundary allocation (``mmap``, ``munmap``).
-* Signal delivery, masking and default disposition.
+2. **QEMU Smoke-Test Selftest Runner (``scripts/selftests/tests/runner.py``)**:
 
-4. System Call Fuzz Testing
-===========================
+   .. code-block:: bash
 
-The ``fuzz_abi.elf`` binary runs continuous stress tests against syscall entry points:
+      make test-smoke
 
-* Verifies ``validate_user_ptr`` catches invalid kernel addresses (``0xC0000000+``).
-* Verifies zero-length buffers, negative counts and misaligned pointers return ``-EFAULT`` or ``-EINVAL`` without panicking the kernel.
+   Verifies serial boot marker validation, kernel panic and reboot-loop detection, non-zero exit handling and post-boot grace-period scheduling (``TestEvaluateResult`` and ``TestRunQemu``).
+
+3. Rust Workspace Crate Tests
+=============================
+
+Runs all crate unit tests sequentially (``cargo test --workspace -- --test-threads=1``) across ``keira-arch``, ``keira-core``, ``keira-crypto``, ``keira-fs``, ``keira-io``, ``keira-ipc``, ``keira-kernel``, ``keira-mem``, ``keira-net``, ``keira-shell``, ``keira-syscall`` and ``keira-task``.

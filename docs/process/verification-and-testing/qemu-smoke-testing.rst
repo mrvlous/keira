@@ -23,18 +23,20 @@ Execute headless tests verifying kernel boot, shell initialization, command exec
 
 .. code-block:: bash
 
+   # Run QEMU smoke-test runner host unit tests
+   make test-smoke
+
    # Run test suite for current architecture
    make test
 
    # Run test suite across both x86_64 and i686 architectures
    make test-all
 
-The test runner:
+The test runner (``scripts/selftests/qemu_smoke.py``):
 
-1. Boots kernel in QEMU with ``-display none -serial stdio``.
-2. Interacts with the serial console, executing verification commands (``sysinfo``, ``fs list``, ``net info``).
-3. Evaluates command outputs against expected tokens.
-4. Asserts exit code ``0`` on 100% test pass.
+1. Boots kernel in headless QEMU with ``-display none -monitor none -serial stdio``.
+2. Streams COM1 serial output to validate ``Keira Kernel v`` and userland/pure Ring 0 completion markers while rejecting panics, faults and reboot loops.
+3. Stops QEMU cleanly after a configurable post-boot grace period and archives output to ``build/x86/<arch>/test.log``.
 
 3. Ring 3 ABI Conformance Testing
 =================================

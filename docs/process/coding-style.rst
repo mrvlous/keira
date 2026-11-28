@@ -146,7 +146,7 @@ Documentation (.rst, .md):
 4. Python & Tooling Conventions
 ===============================
 
-All build automation, configuration parsers and quality checkers in ``scripts/``, ``scripts/kconfig/`` and ``docs/sphinx/`` follow strict Python guidelines:
+All build automation, configuration parsers, selftest harnesses and quality checkers in ``scripts/``, ``scripts/kconfig/``, ``scripts/selftests/`` and ``docs/sphinx/`` follow strict Python guidelines:
 
 1. **Freestanding Standard Library Only**:
 

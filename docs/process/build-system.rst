@@ -179,8 +179,14 @@ The ``Makefile`` defines a complete developer interface for compilation, emulati
      - Boots active architecture in QEMU with 4-core Symmetric Multiprocessing enabled.
      - ``preflight-qemu``
    * - ``make test``
-     - Executes automated headless QEMU smoke test for current architecture.
+     - Executes automated headless QEMU smoke test (``scripts/selftests/qemu_smoke.py``) for current architecture.
      - ``preflight-qemu``
+   * - ``make test-smoke``
+     - Executes host-side unit tests for the QEMU smoke-test runner (``scripts/selftests/tests/runner.py``).
+     - None
+   * - ``make test-unit``
+     - Executes Kconfig tests, QEMU smoke-runner tests and workspace Rust unit tests.
+     - ``test-kbuild``, ``test-smoke``
    * - ``make test-all``
      - Executes headless automated test harness across both ``x86_64`` and ``i686`` architectures sequentially.
      - ``preflight-qemu``
