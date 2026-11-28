@@ -664,6 +664,7 @@ info: ## Display build configuration and toolchain versions
 	@printf "    Binary       : $(KERNEL_BIN)\n"
 	@printf "    ISO          : $(KERNEL_ISO)\n"
 	@printf "    Disk Image   : $(DISK_IMG) ($(DISK_SIZE)MB FAT16)\n"
+	@printf "    EXT4 Image   : $(EXT4_IMG) (16MB EXT4)\n"
 	@printf "    Userland     : $(USERLAND) (0=disabled, 1=enabled)\n\n"
 	@printf "  Toolchain\n"
 	@printf "    NASM         : $(shell $(ASM) --version 2>/dev/null | head -1 || echo 'not found')\n"
