@@ -554,19 +554,19 @@ test-kbuild: ## Run unit tests for Kconfig engine and Kbuild primitives
 	$(Q)python3 scripts/kconfig/tests/runner.py
 	@$(LOG_DONE) "Kconfig & Kbuild test suite completed successfully"
 
-test-unit: test-kbuild ## Run cargo host unit tests across all workspace crates and Kbuild test suite
+test-unit: test-kbuild test-smoke ## Run cargo host unit tests, Kconfig tests and QEMU smoke unit tests
 	@$(LOG_INFO) "Running cargo host unit tests across workspace..."
 	$(Q)$(CARGO) test --workspace -- --test-threads=1
 	@$(LOG_DONE) "Host unit tests completed successfully"
 
 test-smoke: ## Run host-side unit tests for the QEMU smoke-test runner
 	@$(LOG_INFO) "Running QEMU smoke-test runner unit tests..."
-	$(Q)python3 -m unittest discover -s scripts/testing -p 'test_*.py'
+	$(Q)python3 scripts/selftests/tests/runner.py
 	@$(LOG_DONE) "QEMU smoke-test runner unit tests completed successfully"
 
-test: test-smoke preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
+test: preflight-qemu all ## Run automated headless QEMU smoke test for current ARCH
 	@$(LOG_INFO) "Running headless QEMU automated test ($(ARCH))..."
-	$(Q)python3 scripts/testing/qemu_smoke.py --timeout 30 --grace-period 2 --log "$(BUILD_DIR)/test.log" -- $(QEMU) $(QEMU_FLAGS) -display none -monitor none
+	$(Q)python3 scripts/selftests/qemu_smoke.py --timeout 30 --grace-period 2 --log "$(BUILD_DIR)/test.log" -- $(QEMU) $(QEMU_FLAGS) -display none -monitor none
 	@$(LOG_DONE) "Automated smoke test complete ($(ARCH))"
 
 test-all: preflight-qemu ## Run automated headless smoke tests on all architectures
