@@ -40,3 +40,8 @@ long sys_netfilter(uint32_t cmd, uint64_t arg1, uint64_t arg2) {
 int sys_dns_resolve(const char *name, uint8_t *ip_out) {
     return (int)syscall2(SYS_DNS_RESOLVE, (uint64_t)(uintptr_t)name, (uint64_t)(uintptr_t)ip_out);
 }
+
+int sys_tls_attach(int sockfd, const char *hostname, int flags) {
+    return (int)syscall3(SYS_TLS_CONNECT, (uint64_t)sockfd, (uint64_t)(uintptr_t)hostname,
+                         (uint64_t)flags);
+}

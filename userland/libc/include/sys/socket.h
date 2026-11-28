@@ -26,6 +26,8 @@
 #define SOCK_DGRAM 2
 #define SOCK_RAW 3
 
+#define TLS_FLAG_INSECURE 1
+
 typedef uint32_t socklen_t;
 
 struct in_addr {
@@ -49,5 +51,6 @@ int socketpair(int domain, int type, int protocol, int sv[2]);
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+int sys_tls_attach(int sockfd, const char *hostname, int flags);
 
 #endif /* _SYS_SOCKET_H */
